@@ -97,3 +97,52 @@ PHX-QA to independently review PR #336 at source/test SHA `741068c7804b83897f5de
   "updated_utc": "2026-11-21T19:55:13.861Z"
 }
 ```
+
+
+## UTC20 follow-up — isolate board parity from the quarantine runner
+
+**Source/test HEAD:** `7e008ea74ef154446e273f7d25423ea07be28d70`  
+**PR:** [#336](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/336) — OPEN / DRAFT / UNMERGED  
+**Parent:** #335 at `d09b0c9dafad8dbbcda5723d8094f4975c14a274`.
+
+### Source organization
+
+The next cleanup pass moved the ESP32/ESP8266 board source extraction, 23-function parity inventory, local polarity guard checks, lexical-extractor fixture, and fail-open mutation probes into adjacent `quarantine_readback_lab_parity.py`.
+
+The runner `quarantine_readback_lab.py` now owns only the source-extracted C++ harness substitution/compile/scenario path and downstream lab orchestration. The existing `quarantine_readback_lab_cpp.py` template was not changed. No firmware sketch, controller contract, financial code, signer/witness, GPIO/relay behavior, workflow, or production admission path changed.
+
+### Exact-head focused evidence
+
+At source/test SHA `7e008ea74ef154446e273f7d25423ea07be28d70`:
+
+- Focused Quarantine Byte Readback [run #44948196546](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44948196546), job `136980070966`: **SUCCESS**.
+- Board parity: 23/23 functions byte-identical.
+- Mutation probes rejected fail-open append verification, fail-open coin disposition, permissive poll status parsing, positive poll admission, quarantine escape mapping drift, and removed local polarity gates.
+- Quarantine source-extracted host scenarios: 36/36 per board (72/72).
+- Escape boundaries: 4/4 per board; length sweep: 161/161 per board; legacy dangling-escape defect reproduction: 5/5 per board.
+- Existing pending-attempt marker tests: 29/29 per board; mount, pending-journal, pending-clear, pending-write/readback and coin-disposition labs also passed in this focused workflow.
+- The workflow's final sentinels remain `SIMULATED_ONLY=1`, `PHYSICAL_POWER_CUT_VERIFIED=0`, and `FINANCIAL_PRODUCTION_AUTHORIZED=0`.
+
+An intermediate commit `abdc677e95f16bbae16c8e40df90bb6cd6eba549` failed the focused job because the Python escape-anchor spelling did not match the extracted C++ source. The anchor was corrected in `7e008ea...`; the exact-head focused run above is the successful result. The failure remains visible in Actions history and is not hidden.
+
+### Full integration at the same source/test SHA
+
+- Push run [#44948192001](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44948192001), exact SHA `7e008ea74ef154446e273f7d25423ea07be28d70`.
+- Validation job `136980131013`: **FAILURE** at inherited QA-owned `Missing poll signature check` in the ESP8266 sketch.
+- All 13 firmware target jobs completed **SUCCESS**, including ESP8266, ESP32, x86_64, Orange Pi Zero 3, and Ruijie.
+- Android job `136980130866` was still building the BlazeRental APK at the last read; overall run was still in progress. Downstream signed import, update bundle and simulation jobs were skipped after validation failure.
+- The PR-triggered Full run `#44948196547` remained queued at the last read.
+
+No signature was invented and no QA-owned assertion was modified. The current main producer still lacks the approved authenticated controller register/poll response contract. Keep firmware default-deny until PHX-CORE publishes canonical bytes/golden vectors and PHX-QA owns the corresponding assertion update.
+
+### Acceptance classification
+
+- **SIMULATED:** source-extracted C++17 fake-LittleFS and Python parity/failure-injection labs.
+- **CI VERIFIED:** focused exact-source workflow at `7e008ea...`; 13 firmware target builds in the Full run.
+- **Full integration:** FAILED at the inherited poll-signature validation gate; Android remained in progress at last read.
+- **HARDWARE ACCEPTED:** NO. Physical LittleFS durability, coin/electrical pulse, relay recovery, 150 controlled power cuts and 30-device/24-hour soak remain NOT TESTED.
+- **PRODUCTION READY:** NO-GO.
+
+### Next exact action
+
+PHX-QA independently reviews the new parity module and replaces the stale positive poll-signature fixture only after PHX-CORE publishes the authenticated register/poll and event-bound receipt contract. PHX-HARDWARE keeps #336 DRAFT and does not modify the shared API or QA-owned assertion.
