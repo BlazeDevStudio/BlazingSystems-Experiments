@@ -2236,14 +2236,56 @@ Only RELEASE-owned test, compatibility workflow and this RELEASE handover are in
 
 ---
 
+## PHX-RELEASE UTC09 — refresh exact HARDWARE #327 source/test pin
+
+**Disposition:** the release-owned ESP32 compatibility matrix was refreshed after a live comparison showed the previous source/test pin had become stale. PR #291 remains OPEN / DRAFT / UNMERGED. **PRODUCTION NO-GO.**
+
+### Exact source provenance
+
+- Repository: `BlazeDevStudio/BlazingSystems-Experiments`.
+- PR #291 branch: `phoenix/release-publisher-isolation-20261115`; base #242: `734b89d9e7792247e8376335c3f3685500ab3f89`.
+- HARDWARE #327 current PR/docs head: `827fa75fa4e56ff3033076cc2f9b7ebb0cddf1a8`.
+- HARDWARE #327 source/test fix commit: `3110a42886bb595e28ba7ddeac16a51c2b86bd1c`.
+- Exact ESP32 sketch: `experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino`.
+- ESP32 sketch Git blob at both the source/test commit and current PR head: `7ffb7b534c7163678726902946a17b04992950a0`.
+- Compare old RELEASE pin `a2d690b511524f8c710813fe4b4fc06cd52de3a8` to source/test `3110a428...`: 1 commit ahead / 0 behind; the only changed path is the HARDWARE-owned ESP8266 host-lab `poll_window_timeline_guard_lab.py`. No ESP32 sketch change.
+- Compare source/test `3110a428...` to PR/docs head `827fa75...`: 1 commit ahead / 0 behind; the only added path is the HARDWARE handover `2026-11-21-hw-poll-window-guard-fixture-source.md`.
+- The previous RELEASE source pin `a2d690b511524f8c710813fe4b4fc06cd52de3a8` is superseded. RELEASE compiles the exact current source/test commit and independently verifies the unchanged ESP32 sketch blob; docs/PR head is recorded separately.
+
+### Test-first and workflow correction
+
+- Test-first RELEASE guard commit: [`332281bf`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/332281bf682cc5dd2eb470f9e4baf9133f1a860b).
+- Expected RED: [BlazePwifi run #44889133902](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44889133902), CI-0701 job `136800881626`. It failed exactly because the old workflow lacked the new source/test SHA and job label: `PHX-RELEASE-ESP32-COMPAT-RED: compatibility workflow is missing required contract values: 3110a428... / source 3110a42886bb`. Downstream validation/build/release jobs were skipped.
+- Workflow correction: [`4c592c3c`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/4c592c3c8ddde56d1099c3338e8da4ce456acc90). It updates only the RELEASE-owned compatibility workflow's job label, expected source SHA and exact checkout ref to `3110a42886bb595e28ba7ddeac16a51c2b86bd1c`.
+- The test-only commit also triggered an old-pin matrix; that run is superseded and is not current-source evidence.
+
+### Exact-source GitHub Actions
+
+- PR matrix [#44889250435](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44889250435): **SUCCESS, 3/3 jobs** — provenance, ESP32 core 3.3.13, ESP32 core 4.0.0.
+- Push matrix [#44889243395](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44889243395): **SUCCESS, 3/3 jobs** — same exact source/test SHA and sketch blob.
+- Both core jobs checked out `3110a42886bb595e28ba7ddeac16a51c2b86bd1c`, verified sketch blob `7ffb7b534c7163678726902946a17b04992950a0`, verified the pinned Arduino CLI 1.6.0 archive (20,111,675 bytes; SHA-256 `321ee249f44c78053234fec0f36101092bc6021bf24939e15e0cc2449c5ed250`) and installed executable SHA-256 `5897b56f5eac106e60c902d6444f2923e918885aaeb119fc4b44ff9db5003ba8`.
+- ESP32 core 3.3.13: **PASS**; two clean builds identical; application image 1,044,592 bytes; SHA-256 `fa008e12e0dccf8b4be0967867b94b4f1cee7e195bc0dcf68e17585aae7e69a1`.
+- ESP32 core 4.0.0: **PASS**; two clean builds identical; application image 1,098,688 bytes; SHA-256 `d6d898a48e58433b7bfd051ac2fd2b4a431277febaf6a71dbbf206fb191fcee6`.
+
+### Integration results and ownership
+
+- Full BlazePwifi PR run [#44889250454](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44889250454) failed at the RELEASE handover-anchor check because this documentation update had not yet been committed. The diagnostic names the new source/test SHA, docs head and PR head as missing. This is an expected intermediate freshness failure; a successor exact-head Full run is required after this handover commit.
+- Windows run [#44889250521](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44889250521) failed at the CORE-owned `PROJECT_HANDOVER.md` freshness gate; Windows build and publisher were skipped. The PISONET negative self-test was not reached by this run.
+- Only RELEASE-owned test, compatibility workflow and this RELEASE handover were changed. No HARDWARE source, CORE handover, PISONET test, QA assertion, shared interface or MASTER coordination file was changed. PR #291 retains inherited cross-role paths; no ownership transfer is implied. Independent QA/MASTER reviews remain absent.
+
+**Evidence boundary: hosted CI only.** The two application images are CI-generated reproducibility evidence, not approved production binaries. No physical board flash, electrical acceptance, real coin test, 150 power cuts, 30-device/24-hour soak, signing, publication, payment migration or customer deployment occurred. **PRODUCTION NO-GO.**
+
+---
+
 ## PHX-RELEASE CURRENT SOURCE ANCHOR (machine-checked)
 
 This is the single machine-checked current pointer for the RELEASE ESP32 compatibility workflow. Older anchors above are historical and superseded.
 
-- HARDWARE #327 docs HEAD: `3ec69716bab4d2d33ad2d95abd480f50a5cd1d32`.
-- HARDWARE #327 source/test SHA: `a2d690b511524f8c710813fe4b4fc06cd52de3a8`.
-- HARDWARE #327 PR HEAD: `a2d690b511524f8c710813fe4b4fc06cd52de3a8`.
-- Previous RELEASE pin (superseded): `5909e6238bc98f76075d910cf2fd09803cbdae99`.
+- HARDWARE #327 docs HEAD: `827fa75fa4e56ff3033076cc2f9b7ebb0cddf1a8`.
+- HARDWARE #327 source/test SHA: `3110a42886bb595e28ba7ddeac16a51c2b86bd1c`.
+- HARDWARE #327 PR HEAD: `827fa75fa4e56ff3033076cc2f9b7ebb0cddf1a8`.
+- Previous RELEASE pin (superseded): `a2d690b511524f8c710813fe4b4fc06cd52de3a8`.
 - ESP32 sketch Git blob SHA: `7ffb7b534c7163678726902946a17b04992950a0`.
-- Exact-source compatibility matrix: [#44886736741](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44886736741) — SUCCESS (3/3 jobs).
+- Exact-source compatibility matrix: [#44889250435](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44889250435) — SUCCESS (3/3 jobs).
+- Push exact-source compatibility matrix: [#44889243395](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44889243395) — SUCCESS (3/3 jobs).
 - **Evidence boundary: hosted CI only.** The application images are CI-generated, not approved production binaries; no physical hardware acceptance is implied.
