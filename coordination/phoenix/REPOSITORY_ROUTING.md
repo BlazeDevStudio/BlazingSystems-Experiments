@@ -1235,3 +1235,15 @@ Manifest e4db324315a1b3543fec17a148fbf960170fcb29 remains DRAFT_REVIEW_ONLY with
 Hardware #333 exact source tree has 2,478 entries / 1,899 blobs; COE #26 has 286 entries / 207 blobs. Firmware, QA, OpenWrt library and Vendo comparisons remain non-equivalent. License applicability to the COE Hardware route requires owner/legal review. Five destination workflows are queued with zero jobs.
 
 Do not stage, copy, move, overwrite, rebase, cherry-pick or promote any route until exact source blobs, license scope, import completeness, test identities and destination CI are accepted by owners and QA.
+
+
+
+## UTC16 exact route provenance refresh — 2026-11-21T16:39Z
+
+Manifest `e4db324315a1b3543fec17a148fbf960170fcb29` remains `DRAFT_REVIEW_ONLY`, 11 routes, Experiments source ref `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`, COE candidate #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`; PHX-MASTER source `coordination/phoenix/`, destination `null`, `coordination-only`.
+
+At unchanged Hardware #333 / COE #26 refs, the prior complete tree counts remain 2,478 entries / 1,899 blobs versus 286 / 207. Fresh blob reads reconfirmed divergent ESP32 and ESP8266 sketches, divergent QA hardening tests, identical BlazePwifi/Pisowifi LICENSE, and a non-identical source-build/destination-CI workflow pair. The source QA hardening test is not present at the manifest's `Pisowifi/tests/` destination; COE has a separate generic test under `Hardware/tests/` with the same positive response-signature expectations. Three source Hardware workflows still do not have exact one-to-one destination equivalents.
+
+No root COE `NOTICE.md` or `Hardware/LICENSE` was found at #26; the prior full-tree audit also found no Hardware NOTICE. Owner/legal review is required before Hardware route acceptance. Five COE #26 workflows remain queued with zero jobs.
+
+No staging, copying, moving, overwriting, rebasing, cherry-picking, route promotion or destination write occurred. Keep #26 FROZEN until each owner accepts exact source blobs, license/NOTICE scope, complete test imports/identities and exact-head destination CI.
