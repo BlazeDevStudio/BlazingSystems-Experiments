@@ -83,7 +83,14 @@ unsigned long millis(){ return 1234UL; }
 struct FakeSerial {
   template<class T> void println(const T &value){ lastSerial=value; }
 } Serial;
-void clearPending(){ ++clearCalls; pendingPulses=0; pendingReady=false; }
+bool clearPending(){
+  ++clearCalls;
+  if(!clearAllowed){journalRecoveryRequired=true; return false;}
+  pendingPulses=0; pendingReady=false;
+  pendingPostAttempted=false;
+  attemptMarkerExists=false;
+  return true;
+}
 struct FakeDisk {
   std::map<std::string,std::vector<uint8_t>> files;
   bool priorOpenFail=false, appendOpenFail=false, verifyOpenFail=false;
