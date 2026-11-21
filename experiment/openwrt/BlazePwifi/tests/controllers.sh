@@ -61,4 +61,9 @@ grep -q 'ESP8266' "$DOC"
 grep -q 'ESP32' "$DOC"
 grep -q 'Linux GPIO' "$DOC"
 
+if [ -f "$ROOT/tests/v05_firmware_hardening_test.sh" ]; then
+  sh "$ROOT/tests/v05_firmware_hardening_test.sh"
+fi
+
 echo "BlazePwifi controller protocol and policy checks passed"
+
