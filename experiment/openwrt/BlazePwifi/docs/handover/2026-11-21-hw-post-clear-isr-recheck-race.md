@@ -34,14 +34,20 @@ No production .ino, controller API, receipt contract, finance, migration, signer
 
 - Initial exact-source run [#44898252978](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44898252978), job `136828429774`, failed in the mutation-check ordering: the mutant was rejected by the no-edge snapshot-count assertion (exit 31) before reaching the injected race assertion (exit 32). The actual ESP32 race scenario itself printed `POST_CLEAR_ISR_RECHECK_PASS 3/3`; the workflow did not reach the ESP8266 race harness.
 - Test-only correction at source/test SHA `8b5b99e08297ba85bda1e665818161ee8d8859f6` places the injected race first so the mutation is rejected by the intended scenario.
-- Corrected exact-head focused run [#44898340322](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44898340322), job `136828701829`: **IN PROGRESS at handover creation; no PASS claimed yet**.
+- Corrected exact-head focused run [#44898340322](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44898340322), job `136828701829`: **SUCCESS** on source/test SHA `8b5b99e08297ba85bda1e665818161ee8d8859f6`.
+- Exact log markers on **both ESP32 and ESP8266**:
+  - `POST_CLEAR_ISR_RECHECK_PASS 3/3; simulated source boundary only`
+  - `MUTATION_REJECTED remove-post-clear-isr-recheck (exit=32)`
+  - Existing `COIN_POST_DISPOSITION_DISPATCH_PASS 7/7`
+  - Existing event-bound authentication bypass mutation rejected (exit 11)
+- The corrected Full build push run [#44898336541](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44898336541) ended **CANCELLED** after validation job `136828756010` **FAILED** at the inherited QA-owned `Missing poll signature check` in `tests/controllers.sh`. Some target jobs passed, but ESP32, x86-64, Android and several optional targets were cancelled; downstream simulations, bundle, signing and publication were not completed. The PR Full run [#44898340282](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44898340282) was also cancelled. Do not claim full integration or all-target build acceptance.
 
-The first Full build at the prior test SHA failed at the inherited QA-owned `Missing poll signature check` assertion; the corrected SHA's Full workflow is separate and must be read to terminal state before any classification. This hardware test does not change or satisfy the CORE/QA poll-response contract.
+The hardware test does not change or satisfy the CORE/QA poll-response contract.
 
 ## Evidence classification and limits
 
 - Current work: SIMULATED C++17 host boundary with exact source extraction.
-- Focused exact-head CI: PENDING at handover creation.
+- Focused exact-head CI: VERIFIED on source/test SHA 8b5b99e08297ba85bda1e665818161ee8d8859f6 (run #44898340322, job 136828701829).
 - Physical GPIO/relay/coin behavior: NOT TESTED.
 - LittleFS physical durability and power-cut behavior: NOT TESTED.
 - 150 controlled power cuts: NOT TESTED.
@@ -57,4 +63,4 @@ The current connected Library search did not locate the requested private `BLAZE
 
 ## Next exact action
 
-PHX-HARDWARE: read the corrected exact-head focused run to terminal state and inspect its logs for both boards plus the intended mutation rejection. Then update this handover and #172/#177 with the exact result. Keep PR #332 DRAFT / UNMERGED and stacked on #330; do not merge, rebase, retarget, flash, migrate, sign, tag, deploy or cut over.
+PHX-HARDWARE: retain the exact-source focused evidence and request QA review of the new race assertion. PHX-CORE/PHX-QA must resolve the inherited authenticated poll-signature contract without weakening default-deny. PHX-MASTER must preserve the #327 → #330 → #332 stack. Keep PR #332 DRAFT / UNMERGED; do not merge, rebase, retarget, flash, migrate, sign, tag, deploy or cut over.
