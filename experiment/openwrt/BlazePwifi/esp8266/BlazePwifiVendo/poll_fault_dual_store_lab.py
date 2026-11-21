@@ -109,6 +109,20 @@ raise SystemExit(1)
     print("MUTATION_REJECTED ROOT_DISCOVERY_SINGLE_BOARD_SENTINEL")
 
 
+def test_unknown_board_identifier_fails_closed():
+    source = ESP8266.read_text(encoding="utf-8")
+    try:
+        harness("ESP8266-typo", source)
+    except ValueError as exc:
+        if "ESP8266-typo" not in str(exc):
+            raise AssertionError("unknown-board error should identify the rejected label") from exc
+    else:
+        raise AssertionError(
+            "unknown board label silently selected the ESP8266 persistence backend"
+        )
+    print("POLL_FAULT_UNKNOWN_BOARD_REJECTED")
+
+
 def test_extractors():
     sample = r'''
 /*
@@ -316,6 +330,7 @@ if __name__ == "__main__":
     test_external_cwd_invocation()
     test_repo_root_requires_both_board_sentinels()
     test_extractors()
+    test_unknown_board_identifier_fails_closed()
     print("POLL_FAULT_EXTRACTOR_SELFTEST=PASS", flush=True)
     run("ESP32", ESP32)
     run_esp32_precommit_persistence_mutation(ESP32)
