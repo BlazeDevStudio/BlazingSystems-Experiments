@@ -2134,3 +2134,27 @@ The Full build [#44842737568](https://github.com/BlazeDevStudio/BlazingSystems-E
 Windows run [#44842737623](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44842737623) terminal **FAILURE** at the same CORE-owned handover freshness gate; Windows build and publisher were skipped. This is not a PISONET negative-self-test result.
 
 The exact-source compatibility matrix is hosted CI evidence for the pinned source and two Arduino cores. It does not clear the independent CORE handover gate, QA poll-signature assertion, signer/freshness-witness requirements, financial migration, or physical acceptance. No production binary was signed or published; no hardware was flashed.
+
+
+## PHX-RELEASE CURRENT SOURCE ANCHOR (machine-checked)
+
+This is the single machine-checked current pointer for the RELEASE ESP32 compatibility workflow. Earlier UTC00 and prior source-pin notes above remain historical evidence, not the current pointer.
+
+- HARDWARE #327 live PR/docs head: `cb362dc46521cd78fe1696cbbb1af7e246d90148`.
+- HARDWARE #327 source/test SHA: `177312434b60509638427cec79bf2d4e11d89d97`.
+- ESP32 sketch Git blob SHA: `ae0da8e2bb301c9c0af1035148d7d3ea2bd13aa7`.
+- RELEASE source-pin workflow commit: `3294518fdeb532cb69c64844f43b57e58df90abc`; compatibility workflow blob at that commit: `d4ad9fa106e7d3e01c5748ff807d8d5eda997bfb`.
+- The test guard is carried by commits `6c4ad28a5f2b83da56bd1efe8b3084a87a52d238` and matcher correction `f0e50a07077ab77cbfe62ad61233c7f648a7eabb`; current test blob: `bf1802472b2c96fb9641fc3cf6fb1d86fd536403`.
+- Exact-source compatibility matrix: [#44849352488](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44849352488) — SUCCESS (3/3 jobs).
+  - Provenance job `136677136760`: PASS.
+  - ESP32 core 4.0.0 job `136677137148`: PASS; two clean application builds identical; `1,098,528` bytes; SHA-256 `90faebdc9a7b160354fecd28ec1c50303e9c232b711a92b7bc9a406e098b3308`.
+  - ESP32 core 3.3.13 job `136677137154`: PASS; two clean application builds identical; `1,044,432` bytes; SHA-256 `43c424f12dcac3a559b792049e7b237e588834669e4b12bdd65f3d2dfe7a27a6`.
+  - Both jobs verified the exact HARDWARE source SHA and sketch blob above, pinned Arduino CLI/core/toolchain, SOURCE_DATE_EPOCH, ELF section/symbol checks, and identical application-image bytes across two clean builds.
+- Test-first handover-sync guard: commit `6c4ad28a5f2b83da56bd1efe8b3084a87a52d238` produced expected RED in Full run [#44850452314](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44850452314), CI-0701 job `136680331727`: the handover did not yet contain the machine-checked current source anchor. The test matcher was corrected in `f0e50a07077ab77cbfe62ad61233c7f648a7eabb` before adding the anchor; final matcher GREEN remains pending the documentation-head run.
+- Full run [#44849352563](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44849352563): overall FAILURE at the CORE-owned `experiment/openwrt/BlazePwifi/PROJECT_HANDOVER.md` freshness gate. Fifteen target build jobs completed SUCCESS; mandatory validation failed because `.github/workflows/blazepisonet-softtimer-release.yml` is newer than the last recorded CORE checkpoint `adcae8141e673dc2147fcad50521ef3a23084d71`. Release/sign/publish jobs were SKIPPED.
+- Windows run [#44849352552](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44849352552): handover freshness FAILED at the same CORE-owned gate; Windows build and publisher were SKIPPED. This is not evidence of a PISONET source failure.
+- PR #291 remains OPEN / DRAFT / UNMERGED. Its 26-path accumulated diff includes inherited CORE and PISONET paths; this task changed only the RELEASE compatibility test and RELEASE handover. Independent submitted reviews remain zero.
+
+**Next:** verify the final documentation-head compatibility workflow executes this handover guard and both ESP32 jobs; PHX-CORE/MASTER must refresh the authoritative CORE handover without RELEASE editing it; PHX-QA should independently review the exact-source and handover-sync contract. MASTER must reconcile the stale #172 owner-index refs with live PR API heads.
+
+**Evidence boundary: hosted CI only.** These are reproducible hosted builds of the exact ESP32 application image, not physical hardware acceptance, signed production binaries, or production release approval. Physical 150 power-cut acceptance and 30-device/24-hour soak remain NOT TESTED. **PRODUCTION NO-GO.**
