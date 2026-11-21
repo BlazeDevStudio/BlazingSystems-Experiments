@@ -27,11 +27,14 @@ from poll_loop_blocking_inhibit_lab_fixtures import (
     MAIN,
     RACE_MAIN,
     post_drain_rollover_main,
-    ACTIVE_HIGH_MISSED_SAMPLE_MAIN,
-    ACTIVE_LOW_MISSED_SAMPLE_MAIN,
+    missed_sample_main,
     TIMING_MAIN,
     RELEASE_EDGE_MAIN,
 )
+
+ACTIVE_HIGH_MISSED_SAMPLE_MAIN = missed_sample_main(active_low=False, failure_code=57)
+ACTIVE_LOW_MISSED_SAMPLE_MAIN = missed_sample_main(active_low=True, failure_code=58)
+
 
 def compile_and_run(code, board, expected=0, label="normal"):
     with tempfile.TemporaryDirectory(prefix="phx-poll-loop-") as folder:

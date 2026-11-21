@@ -375,10 +375,14 @@ int main(){{
 """
 
 
-ACTIVE_HIGH_MISSED_SAMPLE_MAIN = MAIN[:MAIN.index("int main(){")] + r"""
-int main(){
+def missed_sample_main(*, active_low: bool, failure_code: int) -> str:
+    """Build the same missed-sample regression for either electrical input polarity."""
+    polarity = "true" if active_low else "false"
+    label = "LOW" if active_low else "HIGH"
+    return MAIN[:MAIN.index("int main(){")] + rf"""
+int main(){{
   resetState();
-  runCoinActiveLow=false;
+  runCoinActiveLow={polarity};
   configureRuntimePins(runCoinPin,runRelayPin,runLedPin);
   injectDrainAbortWithoutIsr=true;
   injectDrainAbortPulseEndsBeforeSample=true;
@@ -389,37 +393,13 @@ int main(){
      pollIntakeSuspended || pollDrainAbortedOnActiveLine ||
      pendingPulses!=0U || saveCalls!=0 ||
      backupWriteSawRelayOn || backupWriteSawLedOn ||
-     markerOpenSawRelayOn || markerOpenSawLedOn) return 57;
+     markerOpenSawRelayOn || markerOpenSawLedOn) return {failure_code};
   const std::string marker=LittleFS.files["/pollpulse.fault"];
   if(marker.find("COIN_INGRESS_UNRESOLVED")==std::string::npos ||
-     marker.find("pulses=1")==std::string::npos) return 57;
-  std::cout<<"POLL_ABORT_ACTIVE_HIGH_PULSE_ENDED_BEFORE_SAMPLE_FAIL_CLOSED_PASS\\n";
+     marker.find("pulses=1")==std::string::npos) return {failure_code};
+  std::cout<<"POLL_ABORT_ACTIVE_{label}_PULSE_ENDED_BEFORE_SAMPLE_FAIL_CLOSED_PASS\\n";
   return 0;
-}
-"""
-
-
-ACTIVE_LOW_MISSED_SAMPLE_MAIN = MAIN[:MAIN.index("int main(){")] + r"""
-int main(){
-  resetState();
-  runCoinActiveLow=true;
-  configureRuntimePins(runCoinPin,runRelayPin,runLedPin);
-  injectDrainAbortWithoutIsr=true;
-  injectDrainAbortPulseEndsBeforeSample=true;
-  loop();
-  if(!drainAbortInjected || drainAbortActiveLineReenabled || pollCalls!=0 ||
-     !journalRecoveryRequired || !LittleFS.exists("/pollpulse.fault") ||
-     relayOn || ledOn || insertMode || !activeTarget.empty() ||
-     pollIntakeSuspended || pollDrainAbortedOnActiveLine ||
-     pendingPulses!=0U || saveCalls!=0 ||
-     backupWriteSawRelayOn || backupWriteSawLedOn ||
-     markerOpenSawRelayOn || markerOpenSawLedOn) return 58;
-  const std::string marker=LittleFS.files["/pollpulse.fault"];
-  if(marker.find("COIN_INGRESS_UNRESOLVED")==std::string::npos ||
-     marker.find("pulses=1")==std::string::npos) return 58;
-  std::cout<<"POLL_ABORT_ACTIVE_LOW_PULSE_ENDED_BEFORE_SAMPLE_FAIL_CLOSED_PASS\\n";
-  return 0;
-}
+}}
 """
 
 
