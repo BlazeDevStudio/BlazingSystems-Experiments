@@ -1,6 +1,6 @@
 # Project Phoenix — Coordination Index
 
-**Updated:** 2026-11-21T12:38:02Z
+**Updated:** 2026-11-21T19:07:56Z
 **Role:** PHX-MASTER — coordination / architecture / integration provenance only  
 **Safety:** DRAFT REVIEW ONLY · PRODUCTION NO-GO
 
@@ -468,3 +468,11 @@ HARDWARE #335 current HEAD `d09b0c9dafad8dbbcda5723d8094f4975c14a274`, source/te
 ### UTC18 post-checkpoint owner refresh — 2026-11-21T18:21Z
 
 COE RELEASE #35 advanced to 732ba66626d267b9b85c80b251722a3f710f2972. New exact-head sandbox preflight tests pass for non-root-owned Bubblewrap and UID-map denial, but the runner still lacks Bubblewrap (exit 125). Shared validation now also passes duplicate JSON object-key profile rejection, but all ten appliance profiles still fail closed without approved site ULA /48; compile jobs skip. Case-collision passes. See the UTC18 Master audit report for run links. COE #26 is unchanged and FROZEN.
+
+
+## Live exact-head reconciliation — 2026-11-21 UTC19
+
+- [PHX-MASTER UTC19 exact role/CI, COE #26 provenance and Master test blocker](PHX_MASTER_UTC19_20261121_EXACT_ROLE_CI_COE26_PROVENANCE_AND_MASTER_TEST_BLOCKER.md).
+- Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; active v0.6 audit/development `2fbd2475e9f54878c316fa7cea2f228386b0e859`; Master audit-start `cbe37870e30f6f469f76f7d421dcf9103187228b`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`.
+- Current owner PR heads and CI are recorded in the UTC19 report and the appended ROLE_ASSIGNMENTS / INTEGRATION_MATRIX snapshots. No subsystem source was changed.
+- COE #26 remains FROZEN; private registry v11/newer corrections remain inaccessible; Master unittest suite NOT RUN; Production NO-GO.
