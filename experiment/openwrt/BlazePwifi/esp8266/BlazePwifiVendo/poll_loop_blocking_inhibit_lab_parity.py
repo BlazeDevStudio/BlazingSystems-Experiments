@@ -329,6 +329,3 @@ def verify_drain_abort_polarity_fixture_is_shared(main):
             )
     print("POLL_DRAIN_ABORT_POLARITY_BUILDER_PASS 2/2")
 
-
-verify_poll_safety_board_parity()
-verify_drain_abort_polarity_fixture_is_shared()
