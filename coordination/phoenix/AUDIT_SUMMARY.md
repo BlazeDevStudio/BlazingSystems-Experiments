@@ -1673,3 +1673,17 @@ Private Drive v11/newer corrections remain BLOCKED: no Google Drive connector is
 - No subsystem source, destination tree, ownership manifest, financial state, secret, release, or hardware was changed.
 
 **PRODUCTION NO-GO** pending independent protected signing/anti-rollback witness, crash-atomic durable financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak, and owner-authorized release gates.
+
+
+## UTC05 current blockers — 2026-11-21T05:33Z
+
+- HARDWARE #327 focused source-lab checks pass, but Full remains blocked by QA's inherited positive `Missing poll signature check`; firmware remains default-deny.
+- RELEASE #291 compatibility is 3/3 for an ESP32 source directory that is 15/15 blob-identical to current #327; Full and Windows remain blocked by CORE-owned handover freshness.
+- RENTAL #328 shared build remains blocked by CORE handover freshness and the ESP32 core 4.0.0 missing Mbed TLS header.
+- COE #35 fails closed on missing approved site ULA /48 and absent Bubblewrap; do not bypass either.
+- COE #26 remains FROZEN with five queued workflows / zero jobs; exact firmware/test/license/import parity is incomplete.
+- Private registry v11/newer corrections are not accessible through the exposed Drive connector; no older registry substituted.
+- Effective branch protection is UNKNOWN (classic endpoint 403; rulesets empty); full Master Python suite NOT RUN because local GitHub DNS resolution failed.
+- Cleanup #266 remains OPEN / 0/7.
+
+Production remains NO-GO. Master did not touch CORE/RENTAL/PISONET/HARDWARE/QA/RELEASE source paths.

@@ -362,3 +362,8 @@ Current HARDWARE #327 docs head is 4d651e918f71de2e69d1f3bcfe627c4f944c9c39; sou
 - [COE #35 exact-head CI gate reconciliation](PHX_MASTER_UTC04_20261121_COE35_CURRENT_HEAD_CI_GATE_REFRESH.md) — current RELEASE #35 head `07d1a49f...`, case-collision PASS, shared profile gate FAIL closed for missing approved site ULA /48, and sandbox gate FAIL closed because Bubblewrap is unavailable. Includes exact owner actions and revalidated role CI.
 - COE #26 remains frozen at `b382d233...` with five queued workflows / zero jobs; no migration staged. Master branch at audit start was `3a35cd1c...`; this follow-up changes coordination documentation only.
 - Private v11 registry/newer corrections remain inaccessible; no older snapshot substituted. **PRODUCTION NO-GO.**
+
+
+## 2026-11-21 UTC05 — live source and migration audit
+
+- [UTC05 exact-head, Release ESP32 subtree parity, and COE #26 tree audit](PHX_MASTER_UTC05_20261121_RELEASE_PIN_PARITY_AND_COE26_EXACT_TREE_AUDIT.md) records current role heads, exact CI, the 15/15 ESP32 compile-directory identity, and the frozen COE #26 source/destination blob, test, workflow, and license comparison. Production remains NO-GO.

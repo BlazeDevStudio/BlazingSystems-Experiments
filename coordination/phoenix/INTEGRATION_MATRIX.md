@@ -3105,3 +3105,16 @@ COE #26 current workflows: #43096752609, #43096752632, #43096752800, #4309675256
 | COE integration #26 | `b382d233ff06c8791b1028bed3c617cc7b670d12` | FROZEN / NOT ACCEPTED | Five queued workflows / zero jobs; no staging or migration. |
 
 These COE #35 results were re-read from runs tied to the exact PR head. The failing prerequisites are correctly fail-closed; do not bypass them or invent a site prefix. See `PHX_MASTER_UTC04_20261121_COE35_CURRENT_HEAD_CI_GATE_REFRESH.md` for the complete role/CI and governance reconciliation.
+
+
+## UTC05 exact-head integration gate — 2026-11-21T05:33Z
+
+**HARDWARE #327 current source/test:** `0f4cf65b33b0f0fa6bc1889b9f7b14025c610245`; PR/docs head `bef313ef7d676bb52e91ee8b3aa8327297f8a8b7`. Focused Quarantine #44868064907 and Relay/output #44868064885 pass. Full #44868421623 fails only at the QA-owned `Missing poll signature check`; 14/14 target+Android builds passed and downstream gates skipped.
+
+**RELEASE #291:** compatibility #44862405800 is 3/3 PASS. Its source pin `268ca9b...` is older than #327 source/test `0f4cf65...`, but the complete ESP32 compile directory is 15/15 identical blobs. This is exact ESP32 compile-input evidence only, not ESP8266 or whole-branch acceptance. Full #44862406950 and Windows #44862405809 fail at CORE-owned handover freshness.
+
+**COE #26 exact-tree hold:** source tree `0f4cf65...` has 2,461 entries / 1,882 blobs; destination `b382d233...` has 286 / 207; both untruncated. ESP32, ESP8266 and hardening-test blobs differ; 30 source board-local Python labs have no Hardware Python identities at destination; three scoped Hardware workflows are absent in favor of one generic workflow. Pisowifi LICENSE is exact; source root NOTICE is absent at destination; Hardware-specific notice scope remains unresolved. Five destination workflows remain queued / zero jobs.
+
+**COE #35:** current head `9a20f90...`; 122 host tests pass before ten ULA-profile failures; Bubblewrap sandbox fails closed. Site authority and runner prerequisites remain owner actions.
+
+No source move, copy, staging, route promotion, rebase, cherry-pick or destination edit is authorized.

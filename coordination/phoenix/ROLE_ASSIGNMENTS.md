@@ -2135,3 +2135,22 @@ Issue #177 was updated at 2026-11-21T03:57:44Z. Its original `PHX-L-VERIFY` mark
 ### Routing authority
 
 `coordination/phoenix/OWNERSHIP_ROUTES.json` remains unchanged at blob `e4db324315a1b3543fec17a148fbf960170fcb29`, `DRAFT_REVIEW_ONLY`, with PHX-MASTER destination `null`. No subsystem branch, route, or source ownership changed.
+
+
+## UTC05 live exact-head snapshot — 2026-11-21T05:33Z
+
+This section supersedes earlier role-head rows where they conflict; historical audit entries above remain historical.
+
+| Role / PR | Current exact head | Exact evidence / owner action |
+|---|---|---|
+| PHX-MASTER #288 | `phoenix/master-coordination@0af23331efc66c6385586e03ca5cd2257a857cac` before UTC05 audit commit | OPEN / DRAFT / UNMERGED; base `main@f4e8a891...`; 146 paths, all `coordination/phoenix/`. |
+| PHX-CORE #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | #42698139210 scoped PASS; separate Blaze Production Continuation retains CORE. |
+| PHX-RENTAL #328 | `0e0da62acd47c6a1ce287f8a30fc700d603fa070` | APK/API21/API23 PASS; shared #44782114390 FAIL at CORE handover freshness and missing `mbedtls/sha256.h` under ESP32 core 4.0.0. |
+| PHX-PISONET #255 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | Windows #42462978704 scoped PASS; physical COM acceptance NOT TESTED. |
+| PHX-HARDWARE #327 | docs `bef313ef7d676bb52e91ee8b3aa8327297f8a8b7`; source/test `0f4cf65b33b0f0fa6bc1889b9f7b14025c610245` | Focused #44868064907/#44868064885 PASS; Full #44868421623 FAIL at QA-owned missing poll-signature assertion after 14/14 builds pass. |
+| PHX-QA #290 / #292 | `5c29d159...` / `75a3f66d...` | #290 Windows scoped PASS; #292 no PR-triggered CI and historical Master base; QA must replay against current Master. |
+| PHX-RELEASE #291 | `f06ac4df2f61b9c39a03a6ff6009b32948b94778` | Compatibility #44862405800 PASS 3/3; Full #44862406950 and Windows #44862405809 fail at CORE handover freshness. Its ESP32 pin is historical `268ca9...`, but current #327 ESP32 compile directory is 15/15 blob-identical. |
+| COE RELEASE #35 | `9a20f90b7abc9dced9f545733d59801d746bf088` | Case guard PASS; 122 host tests PASS then 10 profiles fail missing approved ULA /48; sandbox fails closed because Bubblewrap is absent. |
+| COE integration #26 | `b382d233ff06c8791b1028bed3c617cc7b670d12` | Five workflows QUEUED / zero jobs; remains FROZEN. |
+
+Master did not modify subsystem source or transfer any role ownership.

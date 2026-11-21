@@ -1165,3 +1165,12 @@ Source: Experiments HARDWARE #327 source/test `c5cb17bfa35ea24615f53097b936c49eb
 Pisowifi LICENSE matches exactly at `1ee55b94183417be977ca287cd7391f9a6f7e721`. Source root NOTICE `f6d92cd...` has no COE root counterpart; Hardware-specific license/NOTICE applicability remains unresolved.
 
 COE #26 workflows #43096752609, #43096752632, #43096752800, #43096752563 and #43096752557 remain QUEUED with zero jobs. The route manifest is unchanged at `e4db324315a1b3543fec17a148fbf960170fcb29`, DRAFT_REVIEW_ONLY, PHX-MASTER target null. **No migration staging or copy is authorized or performed.**
+
+
+## UTC05 exact source snapshot — migration remains review-only (2026-11-21T05:33Z)
+
+The manifest remains `OWNERSHIP_ROUTES.json@e4db324315a1b3543fec17a148fbf960170fcb29`, `DRAFT_REVIEW_ONLY`, source ref Experiments main `f4e8a891...`, destination candidate COE #26 `b382d233...`, PHX-MASTER target `null`. It does not authorize copying current Hardware #327 source/test `0f4cf65...`.
+
+Exact source/destination review is recorded in [the UTC05 audit](PHX_MASTER_UTC05_20261121_RELEASE_PIN_PARITY_AND_COE26_EXACT_TREE_AUDIT.md): current firmware and hardening-test blobs differ; 30 source board-local Python labs and three scoped workflows are not imported as equivalent Hardware identities; source root NOTICE has no COE root counterpart; Hardware-specific license/notice scope remains unresolved. The Pisowifi LICENSE blob matches exactly but does not by itself settle Hardware subtree licensing.
+
+**Disposition:** no copy, move, overwrite, rebase, cherry-pick, staging, route promotion or destination edit. Keep COE #26 FROZEN pending per-file owner review, exact test identity, license/import provenance and destination CI on the exact candidate SHA.
