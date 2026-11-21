@@ -5,22 +5,30 @@ The self-test cases run from the existing poll-loop lab runner.
 """
 
 def normalize_cpp_function_body(body):
-    """Collapse code whitespace without changing C++ literal or comment bytes."""
+    """Collapse code whitespace while preserving preprocessor line boundaries."""
     output = []
     pending_space = False
+    line_has_token = False
     i = 0
 
     def flush_space():
         nonlocal pending_space
-        if pending_space and output and output[-1] != " ":
+        if pending_space and output and output[-1] not in (" ", "\n"):
             output.append(" ")
         pending_space = False
+
+    def newline_end(position):
+        if body[position] == "\r" and position + 1 < len(body) and body[position + 1] == "\n":
+            return position + 2
+        return position + 1
 
     raw_prefixes = ("u8R\"", "uR\"", "UR\"", "LR\"", "R\"")
     while i < len(body):
         ch = body[i]
 
         if ch.isspace():
+            if ch in ("\r", "\n"):
+                line_has_token = False
             pending_space = True
             i += 1
             continue
@@ -43,6 +51,7 @@ def normalize_cpp_function_body(body):
             output.append(body[i:end])
             i = end
             pending_space = False
+            line_has_token = True
             continue
 
         if body.startswith("//", i):
@@ -52,18 +61,15 @@ def normalize_cpp_function_body(body):
                 if body[cursor] not in "\r\n":
                     cursor += 1
                     continue
-                newline_end = cursor + 1
-                if body[cursor] == "\r" and newline_end < len(body) and body[newline_end] == "\n":
-                    newline_end += 1
+                next_line = newline_end(cursor)
                 # C++ phase 2 splices backslash-newline before // comment parsing.
-                # Keep every continued physical line inside the comment token.
                 if cursor > start and body[cursor - 1] == "\\":
-                    cursor = newline_end
+                    cursor = next_line
                     continue
                 break
             end = cursor
             comment = body[start:end].replace("\r\n", "\n").replace("\r", "\n")
-            if output and output[-1] != " ":
+            if output and output[-1] not in (" ", "\n"):
                 output.append(" ")
             output.append(comment)
             i = end
@@ -76,14 +82,16 @@ def normalize_cpp_function_body(body):
                 raise ValueError("unterminated C++ block comment")
             end += 2
             comment = body[i:end].replace("\r\n", "\n").replace("\r", "\n")
-            if output and output[-1] != " ":
+            if output and output[-1] not in (" ", "\n"):
                 output.append(" ")
             output.append(comment)
+            if "\n" in comment or "\r" in comment:
+                line_has_token = False
             i = end
             pending_space = True
             continue
 
-        if ch in ("\"", "'"):
+        if ch in ('"', "'"):
             flush_space()
             quote = ch
             literal_start = i
@@ -102,12 +110,48 @@ def normalize_cpp_function_body(body):
                 raise ValueError("unterminated C++ quoted literal")
             output.append(body[literal_start:i])
             pending_space = False
+            line_has_token = True
+            continue
+
+        if ch == "#" and not line_has_token:
+            # Keep the directive on its own logical line; indentation is harmless,
+            # but moving '#' after a code token changes preprocessing semantics.
+            pending_space = False
+            if output and output[-1] != "\n":
+                output.append("\n")
+            directive_start = i
+            cursor = i
+            while cursor < len(body):
+                if body[cursor] not in "\r\n":
+                    cursor += 1
+                    continue
+                next_line = newline_end(cursor)
+                if cursor > directive_start and body[cursor - 1] == "\\":
+                    cursor = next_line
+                    continue
+                break
+            directive = body[directive_start:cursor].replace("\r\n", "\n").replace("\r", "\n")
+            output.append(directive)
+            if cursor < len(body):
+                output.append("\n")
+                i = newline_end(cursor)
+            else:
+                i = cursor
+            pending_space = False
+            line_has_token = False
+            continue
+
+        if ch == "\\" and i + 1 < len(body) and body[i + 1] in "\r\n":
+            # Phase-2 splice outside literals, comments and directives.
+            # It does not begin a new logical line for directive recognition.
+            i = newline_end(i + 1)
             continue
 
         flush_space()
         output.append(ch)
         i += 1
         pending_space = False
+        line_has_token = True
 
     return "".join(output)
 
