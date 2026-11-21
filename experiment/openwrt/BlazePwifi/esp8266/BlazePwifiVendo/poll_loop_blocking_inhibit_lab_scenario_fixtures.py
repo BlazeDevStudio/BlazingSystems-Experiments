@@ -48,6 +48,28 @@ bool releaseRecordedPulseAfterIdle(){
   return !pollIntakeSuspended && !pollDrainAbortedOnActiveLine &&
          relayOn && ledOn && pendingPulses==1U && !journalRecoveryRequired;
 }
+int runDrainAbortWithoutIsr(bool activeLow, int holdFailureCode, int releaseFailureCode,
+                            const char *heldMarker, const char *releasedMarker){
+  resetState();
+  if(!activeLow){
+    runCoinActiveLow=false;
+    configureRuntimePins(runCoinPin,runRelayPin,runLedPin);
+  }
+  injectDrainAbortWithoutIsr=true;
+  loop();
+  if(!drainAbortInjected || drainAbortActiveLineReenabled || pollCalls!=0 ||
+     !pollIntakeSuspended || !pollDrainAbortedOnActiveLine ||
+     relayOn || ledOn || journalRecoveryRequired || pendingPulses!=1U ||
+     pendingReady || pendingTarget!="target-01" || pendingNonce!="nonce12345678" ||
+     saveCalls!=1 || !lastCoin) return holdFailureCode;
+  std::cout<<heldMarker<<"\\n";
+  fakeNow=(uint32_t)pulseEnd;
+  loop();
+  if(pollIntakeSuspended || pollDrainAbortedOnActiveLine || !relayOn || !ledOn ||
+     pendingPulses!=1U || saveCalls!=1 || journalRecoveryRequired) return releaseFailureCode;
+  std::cout<<releasedMarker<<"\\n";
+  return 0;
+}
 int main(){
   // A prior persistent journal fault must abort even with an idle line and no new ISR edge.
   resetState();
@@ -203,34 +225,18 @@ int main(){
      releaseMarker.find("pulses=1")==std::string::npos) return 30;
   std::cout<<"POLL_RELEASE_WINDOW_ISR_EDGE_PERSISTED_PASS\\n";
 
-  // GPIO sees a pulse during drain without an ISR delta. Capture and persist
-  // it while the poll inhibit stays asserted; release only after the line is idle.
-  resetState(); injectDrainAbortWithoutIsr=true; loop();
-  if(!drainAbortInjected || drainAbortActiveLineReenabled || pollCalls!=0 ||
-     !pollIntakeSuspended || !pollDrainAbortedOnActiveLine ||
-     relayOn || ledOn || journalRecoveryRequired || pendingPulses!=1U ||
-     pendingReady || pendingTarget!="target-01" || pendingNonce!="nonce12345678" ||
-     saveCalls!=1 || !lastCoin) return 34;
-  std::cout<<"POLL_ABORT_ACTIVE_LINE_WITHOUT_ISR_CAPTURED_HELD_PASS\\n";
-  fakeNow=(uint32_t)pulseEnd; loop();
-  if(pollIntakeSuspended || pollDrainAbortedOnActiveLine || !relayOn || !ledOn ||
-     pendingPulses!=1U || saveCalls!=1 || journalRecoveryRequired) return 35;
-  std::cout<<"POLL_ABORT_ACTIVE_LINE_RELEASES_AFTER_IDLE_PASS\\n";
-
-  // Active-high wiring follows the same capture/hold/release ordering.
-  resetState(); runCoinActiveLow=false;
-  configureRuntimePins(runCoinPin,runRelayPin,runLedPin);
-  injectDrainAbortWithoutIsr=true; loop();
-  if(!drainAbortInjected || drainAbortActiveLineReenabled || pollCalls!=0 ||
-     !pollIntakeSuspended || !pollDrainAbortedOnActiveLine ||
-     relayOn || ledOn || journalRecoveryRequired || pendingPulses!=1U ||
-     pendingReady || pendingTarget!="target-01" || pendingNonce!="nonce12345678" ||
-     saveCalls!=1 || !lastCoin) return 36;
-  std::cout<<"POLL_ABORT_ACTIVE_HIGH_WITHOUT_ISR_CAPTURED_HELD_PASS\\n";
-  fakeNow=(uint32_t)pulseEnd; loop();
-  if(pollIntakeSuspended || pollDrainAbortedOnActiveLine || !relayOn || !ledOn ||
-     pendingPulses!=1U || saveCalls!=1 || journalRecoveryRequired) return 37;
-  std::cout<<"POLL_ABORT_ACTIVE_HIGH_RELEASES_AFTER_IDLE_PASS\\n";
+  // One shared scenario body keeps active-low and active-high capture/hold/release
+  // assertions identical while retaining distinct failure codes and log markers.
+  const int activeLowDrainResult=runDrainAbortWithoutIsr(
+      true,34,35,
+      "POLL_ABORT_ACTIVE_LINE_WITHOUT_ISR_CAPTURED_HELD_PASS",
+      "POLL_ABORT_ACTIVE_LINE_RELEASES_AFTER_IDLE_PASS");
+  if(activeLowDrainResult!=0) return activeLowDrainResult;
+  const int activeHighDrainResult=runDrainAbortWithoutIsr(
+      false,36,37,
+      "POLL_ABORT_ACTIVE_HIGH_WITHOUT_ISR_CAPTURED_HELD_PASS",
+      "POLL_ABORT_ACTIVE_HIGH_RELEASES_AFTER_IDLE_PASS");
+  if(activeHighDrainResult!=0) return activeHighDrainResult;
 
   // If the observed pulse disappears before the normal sample, the ingress
   // cannot be assigned to a durable pending event and must latch a fault.
