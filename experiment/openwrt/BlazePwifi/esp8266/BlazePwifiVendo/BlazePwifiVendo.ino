@@ -1816,7 +1816,13 @@ bool appendQuarantineRecord(const String &reason){
 }
 
 bool quarantinePending(const String &reason){
-  if(pendingPulses==0) return false;
+  if(pendingPulses==0){
+    // A verified rejection without its pending event is an inconsistent state.
+    // Preserve the one-shot attempt evidence and force a deny latch.
+    journalRecoveryRequired=true;
+    Serial.println("CRITICAL: quarantine disposition has no pending coin event; operator reconciliation required.");
+    return false;
+  }
   if(!pendingAttemptMarkerMatches()){
     journalRecoveryRequired=true;
     Serial.println("CRITICAL: quarantine disposition denied without a matching durable coin POST attempt marker.");
