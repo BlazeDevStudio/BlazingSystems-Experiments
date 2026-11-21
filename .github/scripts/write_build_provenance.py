@@ -914,9 +914,37 @@ def _arduino_source_bundle(
     source_sketch_tree = _inventory_directory(
         ROOT / sketch_root, "exact Arduino sketch source"
     )
-    staged_sketch_tree = _inventory_directory(
+    if any(
+        relative == "build" or relative.startswith("build/")
+        for relative in source_sketch_tree
+    ):
+        raise ProvenanceError(
+            "Arduino source sketch uses the reserved compiler-output build/ directory"
+        )
+    staged_sketch_inventory = _inventory_directory(
         staged_root / sketch_name, "staged Arduino sketch"
     )
+    if "build" in staged_sketch_inventory:
+        # A regular file named build is not an output directory; leave it in
+        # the comparison so it fails as an unexpected staged source entry.
+        staged_sketch_tree = staged_sketch_inventory
+        generated_build_output_count = 0
+    else:
+        generated_build_outputs = {
+            relative: record
+            for relative, record in staged_sketch_inventory.items()
+            if relative.startswith("build/")
+        }
+        staged_sketch_tree = {
+            relative: record
+            for relative, record in staged_sketch_inventory.items()
+            if not relative.startswith("build/")
+        }
+        # _inventory_directory has already traversed and validated every
+        # generated output as a regular, single-link, non-symlink file. These
+        # compiler intermediates remain in the artifact checksum manifest but
+        # are not source inputs and must not be compared with Git HEAD.
+        generated_build_output_count = len(generated_build_outputs)
     _require_matching_tree("sketch", source_sketch_tree, staged_sketch_tree)
 
     source_library_tree = _inventory_directory(
@@ -983,6 +1011,8 @@ def _arduino_source_bundle(
         "staged_copy_verified": True,
         "sketch_root": sketch_root,
         "sketch_file_count": len(source_sketch_tree),
+        "generated_build_output_file_count": generated_build_output_count,
+        "generated_build_outputs_excluded_from_source_inputs": True,
         "library_root": library_root,
         "library_file_count": len(source_library_tree),
         "rebuild_instructions_path": rebuild_path,
