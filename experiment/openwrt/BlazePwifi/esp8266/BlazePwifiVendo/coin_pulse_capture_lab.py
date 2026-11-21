@@ -668,7 +668,7 @@ def main():
             if "COIN_PULSE_CAPTURE_PASS 17/17" not in result.stdout:
                 failures.append(f"{board} missing pass marker: {result.stdout}")
                 continue
-            print(f"{board}_COIN_PULSE_CAPTURE_PASS 16/16")
+            print(f"{board}_COIN_PULSE_CAPTURE_PASS 17/17")
             for name, signature, old, new, expected in mutations:
                 index = SIGNATURES.index(signature)
                 if old not in functions[index]:
