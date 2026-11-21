@@ -166,16 +166,26 @@ def normalize_cpp_function_body(body):
 
         if body.startswith("//", i):
             start = i
-            newline = body.find("\n", i + 2)
-            if newline < 0:
-                end = len(body)
-                i = end
-            else:
-                end = newline - 1 if newline > i and body[newline - 1] == "\r" else newline
-                i = newline + 1
+            cursor = i + 2
+            while cursor < len(body):
+                if body[cursor] not in "\r\n":
+                    cursor += 1
+                    continue
+                newline_end = cursor + 1
+                if body[cursor] == "\r" and newline_end < len(body) and body[newline_end] == "\n":
+                    newline_end += 1
+                # C++ phase 2 splices backslash-newline before // comment parsing.
+                # Keep every continued physical line inside the comment token.
+                if cursor > start and body[cursor - 1] == "\\":
+                    cursor = newline_end
+                    continue
+                break
+            end = cursor
+            comment = body[start:end].replace("\r\n", "\n").replace("\r", "\n")
             if output and output[-1] != " ":
                 output.append(" ")
-            output.append(body[start:end])
+            output.append(comment)
+            i = end
             pending_space = True
             continue
 
@@ -231,6 +241,8 @@ def verify_cpp_parity_normalizer():
         ("escaped-quote", r'void f(){ const char *s="quote: \" pending"; }', r'void f(){ const char *s="quote: pending"; }', False),
         ("line-comment-content", "void f(){ // pending event\n return true; }", "void f(){ // pending  event\n return true; }", False),
         ("line-comment-backslash-newline-content", "void f(){ // pending \\\n event  text\n return true; }", "void f(){ // pending \\\n event text\n return true; }", False),
+        ("line-comment-splice-boundary", "void f(){ // pending \\\n return false;\n}", "void f(){ // pending\n return false;\n}", False),
+        ("line-comment-crlf-normalization", "void f(){ // pending \\\r\n event text\r\n return true; }", "void f(){ // pending \\\n event text\n return true; }", True),
     )
     for label, left, right, expected_equal in cases:
         actual_equal = normalize_cpp_function_body(left) == normalize_cpp_function_body(right)
