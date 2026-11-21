@@ -1184,3 +1184,11 @@ Exact source/destination review is recorded in [the UTC05 audit](PHX_MASTER_UTC0
 - Current exact-tree comparison is recorded in `INTEGRATION_MATRIX.md` and the UTC08 audit report. The source tree has 2,468 entries and the COE #26 destination 286; firmware, QA tests, board-local labs, workflows, and NOTICE/license scope remain non-equivalent.
 - RELEASE #291's current ESP32 pin is now source-grounded: pinned source `5909e6238bc98f76075d910cf2fd09803cbdae99` and sketch blob `7ffb7b534c7163678726902946a17b04992950a0`; the current #327 ESP32 subtree matches 16/16 blobs. This is compatibility evidence, not migration authority.
 - No destination staging, source copying, moving, overwrite, branch rewrite, cherry-pick, route promotion, or migration was performed. COE #26 stays FROZEN pending owner-reviewed exact-source, license, import, test-identity, and destination CI acceptance.
+
+## PHX-MASTER UTC10 live exact-head and ownership supersession — 2026-11-21 — Hardware stack and manifest source separation
+
+The active Hardware source stack is #322 `50d93e0d...` → #323 `988904e8...` → #326 `58c558fb...` → #327 docs HEAD `827fa75...` (source/test `3110a428...`). #329 `29c7f61...` and #330 `1a1e5e...` are sibling child drafts of #327 at the same parent SHA, not a serial chain; neither may be merged independently. Separate #239/#254/#283 drafts remain outside this stack.
+
+The machine manifest remains `OWNERSHIP_ROUTES.json` blob `e4db324315a1b3543fec17a148fbf960170fcb29`, source ref Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`, COE destination candidate PR #26 `b382d233...`, status DRAFT_REVIEW_ONLY, PHX-MASTER target null. The active Hardware PR tree is not the manifest source ref. No route promotion or migration is authorized.
+
+RELEASE #291 remains owner-controlled. Its 26-path diff contains 21 Release paths, three CORE handover paths and two PISONET test paths; Master will not edit or assume those files. COE #26 remains FROZEN pending per-file blob/test/license/NOTICE provenance and terminal destination CI.

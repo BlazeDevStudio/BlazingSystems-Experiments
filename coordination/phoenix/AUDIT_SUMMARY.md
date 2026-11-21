@@ -1721,3 +1721,21 @@ Production remains NO-GO. Master did not touch CORE/RENTAL/PISONET/HARDWARE/QA/R
 ## PHX-MASTER UTC08 live exact-head reconciliation — 2026-11-21T08:47Z
 
 Current exact-head review found one Hardware test-harness regression, one QA/CORE poll-contract blocker, and several cross-repository gates. HARDWARE #327 at `a2d690b...` has Quarantine PASS, Relay FAIL because the timeline guard still searches the pre-refactor runner for a scenario now stored in the fixture module, and Full FAIL at QA-owned `Missing poll signature check` after all 15 target/platform jobs pass. RELEASE #291 has refreshed its immutable ESP32 source pin; its 16-file compile subtree is byte-identical to current #327 and the current compatibility run passes 3/3, while Full/Windows remain blocked by CORE handover freshness. COE #35 now includes the second pre-cleanup directory-fsync failure injection (125 tests PASS / 2 skips); only the approved site ULA /48 and Bubblewrap runner remain blocking. COE #26 remains frozen after exact tree/license/test comparison. Cleanup #266 remains OPEN, 0/7. Private registry v11/newer corrections are not available; Master Python suite was not run because the container cannot resolve github.com. No subsystem source, destination file, route manifest, or production system was changed. PRODUCTION NO-GO.
+
+## PHX-MASTER UTC10 live exact-head and ownership supersession — 2026-11-21 — readiness and current blockers
+
+**Master:** parent `783c97ce997b6bfd0706f4d11e1b97fff588140e`; PR #288 OPEN/DRAFT/UNMERGED. This update is coordination-only. Inspected Experiments main, v0.5.3 development, v0.6.0 audit foundation, Master, and COE main refs all report `protected=false`; organization rulesets were not independently verified.
+
+**P0 integration:** Hardware #327/#329/#330 focused lab CI passes, but Full validation fails at Controller protocol parity; authenticated poll/receipt contract remains unresolved. RELEASE #291 current head `e2628df...` has three failing Arduino provenance tests and a separate stale CORE handover gate. RENTAL #328 Full remains blocked by handover freshness. COE #26 remains FROZEN with five queued workflows / zero jobs and non-identical source/test/license/NOTICE paths.
+
+**COE release:** #35 has 125 host packaging tests PASS / 2 skips, but all ten profiles fail closed without approved site ULA /48; Bubblewrap is missing and sandbox exits 125. Case-collision check passes. This is not ImageBuilder or physical durability acceptance.
+
+**Other owner checks:** CORE #252 scoped build PASS (separate owner); PISONET #255 Windows CI PASS but native COM/PnP NOT TESTED; QA #290 Windows CI PASS but native COM not invoked; QA #292 has no PR-triggered CI. No owner source branch was changed.
+
+**Migration:** main source tree 2,340 entries / 1,764 blobs; active #327 tree 2,469 / 1,890; COE #26 286 / 207. Firmware, QA test, library, Rental and Pisonet route comparisons remain incomplete/divergent; source NOTICE and Hardware license/notice scope unresolved. Manifest `e4db324315a1b3543fec17a148fbf960170fcb29` remains DRAFT_REVIEW_ONLY, target null. No staging or movement.
+
+**Access/testing:** private Drive v11/newer corrections unavailable; only older Library v3–v7 copies surfaced and were not substituted. No Google Drive connector. AGENTS-linked cloud-policy/recovery docs could not be fetched from their linked GitHub repository; older Library copies are not treated as current. Master Python suite NOT RUN; ordinary `git ls-remote` failed DNS for github.com; no Master workflow run exists.
+
+**Cleanup:** issue #266 remains OPEN, 0/7; Master duplicate/dead-code inventory incomplete.
+
+**PRODUCTION NO-GO:** independent protected signer/anti-rollback witness, crash-atomic durable financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized release gates remain mandatory.

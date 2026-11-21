@@ -3196,3 +3196,34 @@ Exact identities:
 RELEASE #291 now pins Hardware source `5909e6238bc98f76075d910cf2fd09803cbdae99` and ESP32 sketch blob `7ffb7b534c7163678726902946a17b04992950a0`. Its ESP32 source subtree is 16/16 identical to current #327 head `a2d690b...`; compatibility #44885560847 is PASS 3/3. This validates only the pinned ESP32 compile subtree, not the ESP8266 subtree, whole repository, COE migration, or physical acceptance.
 
 The route manifest remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`, `DRAFT_REVIEW_ONLY`, with PHX-MASTER destination `null`. No staging, copying, moving, overwriting, rebasing, cherry-picking, or route promotion occurred.
+
+## PHX-MASTER UTC10 live exact-head and ownership supersession — 2026-11-21 — exact manifest source and active Hardware branch comparison
+
+Manifest source is Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; COE #26 destination is `b382d233ff06c8791b1028bed3c617cc7b670d12`. Active Hardware PR #327 is a separate branch at `827fa75fa4e56ff3033076cc2f9b7ebb0cddf1a8`, source/test anchor `3110a42886bb595e28ba7ddeac16a51c2b86bd1c`; do not conflate it with the manifest's main source ref.
+
+All recursive trees were complete (`truncated=false`): Experiments main 2,340 entries / 1,764 blobs; #327 2,469 / 1,890; COE #26 286 / 207.
+
+### Manifest-pinned main → COE #26
+
+| Route | Source | Destination | Same | Divergent | Source-only | Destination-only |
+|---|---:|---:|---:|---:|---:|---:|
+| ESP32 | 3 | 1 | 0 | 1 | 2 | 0 |
+| ESP8266 | 3 | 1 | 0 | 1 | 2 | 0 |
+| QA tests | 38 | 19 | 1 | 3 | 34 | 15 |
+| CORE library | 15 | 20 | 6 | 9 | 0 | 5 |
+| Vendo CGI | 1 | 1 | 0 | 1 | 0 | 0 |
+| Rental Android (selective-review) | 983 | 8 | 0 | 0 | 983 | 8 |
+| Rental server | 7 | 4 | 0 | 1 | 6 | 3 |
+| Pisonet SoftTimer | 32 | 47 | 13 | 11 | 8 | 23 |
+
+Rental Android is a path-set comparison, not an instruction to copy all 983 files; that route remains selective-review. The standalone-rental profile route remains manual mapping. Test identities/import completeness are not established by basename overlap.
+
+### Active Hardware #327 → COE #26
+
+ESP32 16/1 (0 identical, 1 divergent, 15 source-only); ESP8266 28/1 (0 identical, 1 divergent, 27 source-only); QA 47/19 (1 identical, 3 divergent, 43 source-only, 15 destination-only). #327 has 32 board-local Python labs (9 ESP32 + 23 ESP8266); COE Hardware has zero. #327 has three scoped PHX-HARDWARE workflows; COE has one generic `hardware-ci.yml`.
+
+### License/NOTICE and route disposition
+
+`BlazePwifi/LICENSE` and `Pisowifi/LICENSE` are identical at `1ee55b94183417be977ca287cd7391f9a6f7e721`. Source root `NOTICE.md` blob `f6d92cd21465312be5993631fe26977219be0fb9` is absent from COE; `Hardware/LICENSE` and `Hardware/NOTICE.md` are absent. The Pisowifi license does not prove Hardware subtree license/notice scope.
+
+The unchanged manifest `OWNERSHIP_ROUTES.json` is `e4db324315a1b3543fec17a148fbf960170fcb29`, `DRAFT_REVIEW_ONLY`, source ref main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`, destination PR #26, PHX-MASTER target null. COE #26 has five queued workflows and zero jobs. Keep it FROZEN; no copy, move, overwrite, staging, cherry-pick, rebase, route promotion or destination edit.

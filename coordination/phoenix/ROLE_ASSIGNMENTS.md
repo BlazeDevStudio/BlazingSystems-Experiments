@@ -2213,3 +2213,32 @@ This live refresh supersedes earlier head/CI rows only for the exact refs below.
 | COE integration #26 | `b382d233ff06c8791b1028bed3c617cc7b670d12`; base `a6513ab4412b4c014eee2863e45cbe32d06cb243` | 205 changed paths; five workflows queued, zero jobs | FROZEN; no destination staging or promotion |
 
 CORE implementation remains out of Master scope. No CORE source or branch was modified.
+
+## PHX-MASTER UTC10 live exact-head and ownership supersession — 2026-11-21 — 2026-11-21T10:23Z
+
+Authoritative refs: Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; v0.5.3 development `aad3aade72c1156eecba1fed30907c6d0283b2c5`; v0.6.0 audit foundation `2fbd2475e9f54878c316fa7cea2f228386b0e859`; Master `783c97ce997b6bfd0706f4d11e1b97fff588140e`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`. All inspected refs report `protected=false`; organization rulesets remain unverified. PR #288 is OPEN/DRAFT, based on main, with all changed paths under `coordination/phoenix/`.
+
+### Current owner heads and exact CI
+
+| Owner | Active PR/head | Current evidence | Boundary |
+|---|---|---|---|
+| PHX-CORE | #252 `c82705f2de865c89ab733b10efa84f26f56a5cc4` | Scoped build #42698139210 PASS | Separate CORE continuation owns CORE source/handover; Master did not edit or start competing work. |
+| PHX-RENTAL | #328 `0e0da62acd47c6a1ce287f8a30fc700d603fa070` | APK/API21/API23 PASS; Full #44782114390 handover freshness FAIL | Rental owner retains Android/server changes and handover. |
+| PHX-PISONET | #255 `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | Windows #42462978704 PASS | Native COM/PnP acceptance NOT TESTED. |
+| PHX-HARDWARE | #327 docs `827fa75...`, source/test `3110a428...`; #329 docs `29c7f61...`, source/test `aaf1a0e...`; #330 docs `1a1e5e...`, source/test `5133def2...` | Focused quarantine/relay PASS; all three Full docs-head runs fail at Controller protocol parity; #330 14/14 target jobs PASS | #322→#323→#326→#327 is the active stack; #329/#330 are sibling children of #327. No retarget/rebase/merge. |
+| PHX-QA | #290 `5c29d159...`; #292 `75a3f66d...` | #290 Windows #43633486963 PASS but native COM not invoked; #292 no PR-triggered run | QA owns poll-signature/native-test fixtures; no Master test edits. |
+| PHX-RELEASE | #291 `e2628dfedbd4220c7885c0b2b0e060b808ca25b0` | Full #44892584693 provenance suite 3/35 FAIL; ESP32 core compile legs pass but provenance suite fails; Windows #44892584643 handover freshness FAIL | Release UTC10 role lock already active at issue comment #7061114867; Master does not duplicate Release implementation. |
+| COE RELEASE | #35 `d28271a35776543bf558c90e3a117957829ee61c` | 125 tests PASS / 2 skips; ULA profile gate fails closed; Bubblewrap sandbox exit 125; case-collision PASS | COE release owner retains packaging/profile/sandbox work. |
+| COE integration | #26 `b382d233ff06c8791b1028bed3c617cc7b670d12` | Five workflows QUEUED / zero jobs | FROZEN; no migration or destination edit. |
+
+### Hardware stack clarification
+
+#322 `50d93e0d...` → #323 `988904e8...` → #326 `58c558fb...` → #327 docs HEAD `827fa75...` (source/test anchor `3110a428...`). #329 `29c7f61...` and #330 `1a1e5e...` both base on #327 at the same parent SHA; they are siblings, not a serial chain. Separate #239/#254/#283 drafts are outside this stack. #254 Full fails at ESP32 `mbedtls/sha256.h`; #283 Full PASS does not establish the audited quarantine callsite or authenticated positive response contract.
+
+### RELEASE #291 path ownership and regression
+
+The 26-path #291 diff contains 21 RELEASE paths, three CORE-owned handover paths and two PISONET-owned Windows test paths. Current exact-head CI has three provenance failures: missing Git blobs for `esp/REBUILD.md`, `BlazePendingSequence/library.properties`, and `v060_pending_sequence.h`; staged library-tree drift is not rejected; staged sketch-tree drift is not rejected. Windows separately fails the stale CORE-owned `PROJECT_HANDOVER.md` gate. CORE/PISONET retain their paths; no ownership transfer.
+
+### Cleanup and integration
+
+Cleanup issue #266 remains OPEN, 0/7; Master cleanup inventory is incomplete. Route manifest `e4db324315a1b3543fec17a148fbf960170fcb29` remains DRAFT_REVIEW_ONLY with Master destination null. COE #26 remains frozen pending exact source/test/license/NOTICE/import/CI acceptance. Private Drive v11/newer corrections remain inaccessible; no older registry substituted. Production remains NO-GO.

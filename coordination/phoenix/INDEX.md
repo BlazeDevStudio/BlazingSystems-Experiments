@@ -389,3 +389,9 @@ Current HARDWARE #327 docs head is 4d651e918f71de2e69d1f3bcfe627c4f944c9c39; sou
 - Current HARDWARE #327 head: `a2d690b511524f8c710813fe4b4fc06cd52de3a8`; current RELEASE #291 head: `f685ec977704f2381027d96edf65a41ba0c3d458`; COE #26 remains `b382d233ff06c8791b1028bed3c617cc7b670d12`.
 - §6.67 evidence updated: second pre-cleanup directory-fsync failure injection is now covered and passes in COE #35's exact-head test suite; site ULA and Bubblewrap blockers remain.
 - PR #288 remains OPEN / DRAFT / UNMERGED; COE #26 remains FROZEN; PRODUCTION NO-GO.
+
+## Latest PHX-MASTER audit — UTC10, 2026-11-21
+
+- [Hardware stack, RELEASE #291 provenance, and manifest-source exact-tree audit](PHX_MASTER_UTC10_20261121_HARDWARE_STACK_RELEASE_PROVENANCE_AND_MANIFEST_SOURCE_AUDIT.md).
+- Reconciles active #322→#323→#326→#327 and sibling #329/#330 drafts; RELEASE #291's three provenance failures and cross-owner paths; exact Experiments main vs active #327 vs COE #26 trees; role CI and governance/access blockers.
+- COE #26 remains FROZEN; route manifest `e4db324315a1b3543fec17a148fbf960170fcb29` remains DRAFT_REVIEW_ONLY with Master target null. Private v11/newer registry access remains blocked. Cleanup #266 remains 0/7. Master suite NOT RUN. PRODUCTION NO-GO.
