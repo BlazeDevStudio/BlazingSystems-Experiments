@@ -234,6 +234,7 @@ def normalize_cpp_function_body(body):
 def verify_cpp_parity_normalizer():
     cases = (
         ("formatting-only", 'void f() { return "pending event"; }', 'void f()  {\n  return   "pending event";  }', True),
+        ("preprocessor-directive-newline-boundary", 'void f() {\n#define PHX_VALUE 1\nint value = PHX_VALUE;\n}', 'void f() {\n#define PHX_VALUE 1 int value = PHX_VALUE;\n}', False),
         ("string-literal-whitespace", 'void f(){ return "pending event"; }', 'void f(){ return "pending  event"; }', False),
         ("character-literal-whitespace", "void f(){ char c=' '; }", r"void f(){ char c='\t'; }", False),
         ("comment-content", "void f(){ /* durable record */ return true; }", "void f(){ /*durable record*/ return true; }", False),
