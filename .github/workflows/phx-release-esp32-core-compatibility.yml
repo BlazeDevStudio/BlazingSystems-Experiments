@@ -76,7 +76,7 @@ jobs:
         run: python3 .github/scripts/test_release_artifact_action_pins.py
 
   build:
-    name: "ESP32 core ${{ matrix.esp32_core }} / source 0f365dada855"
+    name: "ESP32 core ${{ matrix.esp32_core }} / source 177312434b60"
     runs-on: ubuntu-latest
     timeout-minutes: 45
     permissions:
@@ -86,7 +86,7 @@ jobs:
       matrix:
         esp32_core: ["3.3.13", "4.0.0"]
     env:
-      EXPECTED_SOURCE_SHA: "0f365dada855368ea3fdfb522768892cf23cc7ea"
+      EXPECTED_SOURCE_SHA: "177312434b60509638427cec79bf2d4e11d89d97"
       EXPECTED_SKETCH_PATH: "experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino"
       EXPECTED_SKETCH_BLOB: "ae0da8e2bb301c9c0af1035148d7d3ea2bd13aa7"
     steps:
@@ -99,7 +99,7 @@ jobs:
       - name: Checkout exact PHX-HARDWARE source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: 0f365dada855368ea3fdfb522768892cf23cc7ea
+          ref: 177312434b60509638427cec79bf2d4e11d89d97
           path: hardware-source
           persist-credentials: false
           fetch-depth: 1
