@@ -40,9 +40,8 @@ The correction commit `5909e623...` changed the stable wrapper to export `missed
 
 At source/test SHA `5909e6238bc98f76075d910cf2fd09803cbdae99`:
 
-- Quarantine/readback [run #44881945608](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44881945608), job `136778934791`: **SUCCESS**.
-- Relay/output [run #44881945690](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44881945690), job `136778935316`: **SUCCESS**.
-- ESP32 boot-polarity [run #44881945690](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44881945690), job `136778935063`: **SUCCESS**.
+- At source/test SHA `5909e6238bc98f76075d910cf2fd09803cbdae99`: Quarantine/readback [run #44881945608](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44881945608), job `136778934791`, **SUCCESS**; Relay/output [run #44881945690](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44881945690), job `136778935316`, **SUCCESS**; ESP32 boot-polarity job `136778935063`, **SUCCESS**.
+- Re-run on latest docs head `91095a835fe762a79ac7c436b8b1f656e627b774`: Quarantine [run #44882290262](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44882290262), job `136779987686`, **SUCCESS**; Relay/output [run #44882290259](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44882290259), jobs `136779987568` and `136779987873`, **SUCCESS**.
 
 The quarantine log confirms both board variants, including:
 - `POLL_ABORT_ACTIVE_HIGH_PULSE_ENDED_BEFORE_SAMPLE_PASS`
@@ -56,11 +55,11 @@ These are source-extracted host simulations. Workflow output explicitly retains 
 
 ## Full integration status
 
-Full BlazePwifi [run #44881945736](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44881945736):
+Full BlazePwifi [run #44882290253](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44882290253) on docs head `91095a835fe762a79ac7c436b8b1f656e627b774`:
 
-- Validation job `136778995968`: **FAIL** — inherited QA-owned `Missing poll signature check`.
-- At this handover capture, 13 of 14 target/platform jobs had completed successfully; Android job `136778996058` was still in progress. Do not count that pending job as a pass.
-- Signed import, browser simulation, update-bundle and downstream publication jobs were skipped after validation failed.
+- Validation job `136779987829`: **FAIL** — inherited QA-owned `Missing poll signature check`.
+- All **14/14 target/platform jobs completed SUCCESS**, including ESP8266, ESP32, Android, x86-64, Orange Pi and Ruijie jobs.
+- Signed import, browser/board simulations, update-bundle, signing handoff, candidate gate and publication jobs were **SKIPPED** after validation failed. This is not a Full integration pass.
 
 The positive poll-signature assertion is not owned by PHX-HARDWARE. Do not add an invented `response_sig`, weaken default-deny, or change the register/poll API. CORE must publish the canonical authenticated response contract first; QA owns the independent assertion.
 
