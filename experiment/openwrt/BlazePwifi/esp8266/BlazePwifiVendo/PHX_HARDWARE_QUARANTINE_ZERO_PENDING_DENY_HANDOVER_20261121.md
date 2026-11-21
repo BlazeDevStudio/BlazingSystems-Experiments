@@ -53,6 +53,14 @@ Source/test SHA: `3292d2a1e207da4241189952eec0e97255a48475`.
 - Docs-head relay/output [run #44872202836](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44872202836), jobs `136749005528` and `136749005721`: PASS on the same docs-only head.
 - Docs-head Full build [run #44872202781](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44872202781), validation job `136749067462`: FAIL at the same QA-owned controller protocol/signature assertion; target builds and downstream release jobs were cancelled or skipped.
 
+## Latest exact-head rerun — 2026-11-21 UTC05
+
+The documentation-only PR head `3698d3281087bbdfa60ef02474dea33fdc56eb1d` was revalidated after the handover update:
+
+- Quarantine/readback [run #44872806385](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44872806385), job `136750869190`: PASS; exact log marker `SOURCE_QUARANTINE_PASS 36/36 scenarios (physical power cut NOT tested)`. It also reran both-board pulse capture, config-read recovery and boot-polarity labs.
+- Relay/output [run #44872806432](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44872806432), jobs `136750869523` and `136750869642`: PASS; both-board pulse/poll-window and output-order mutation checks passed.
+- Full build [run #44872801583](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44872801583), validation job `136750854477`: FAIL at QA-owned `Missing poll signature check`. All 15 target/platform jobs (ESP8266, ESP32, Android, Ruijie, Orange Pi variants and x86-64) completed SUCCESS. All downstream simulations, update-bundle, candidate, signing and publication jobs were skipped.
+
 The firmware fix is **focused CI VERIFIED** and the current docs-only head has **15/15 target/platform builds CI VERIFIED**. The Full controller validation gate still fails, so this is not Full integration CI VERIFIED. The Full integration gate remains failed, and no physical acceptance is inferred.
 
 ## Scope and safety
