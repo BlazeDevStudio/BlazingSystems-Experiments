@@ -149,6 +149,29 @@ int main(){
     return 62;
   }
   std::cout<<"QUARANTINE_FIELD_ESCAPE_BOUNDARY_PASS board=BOARD_NAME"<<std::endl;
+
+  String targetBoundaryValue(124,'B');
+  targetBoundaryValue += " TARGET=tail";
+  const String targetBoundaryEncoded=quarantineLogField(targetBoundaryValue,128);
+  if(targetBoundaryEncoded.length()!=127 ||
+     targetBoundaryEncoded.substr(0,124)!=String(124,'B') ||
+     targetBoundaryEncoded.substr(124)!="..."){
+    std::cerr<<"QUARANTINE_TARGET_ESCAPE_BOUNDARY_FAIL board=BOARD_NAME actual="
+             <<targetBoundaryEncoded<<std::endl;
+    return 63;
+  }
+  std::cout<<"QUARANTINE_TARGET_ESCAPE_BOUNDARY_PASS board=BOARD_NAME"<<std::endl;
+
+  String exactBoundaryValue(117,'C');
+  exactBoundaryValue += " REASON=";
+  const String exactBoundaryEncoded=quarantineLogField(exactBoundaryValue,128);
+  if(exactBoundaryEncoded.length()!=128 ||
+     exactBoundaryEncoded.substr(121)!="REASON="){
+    std::cerr<<"QUARANTINE_FIELD_EXACT_LIMIT_FAIL board=BOARD_NAME actual="
+             <<exactBoundaryEncoded<<std::endl;
+    return 64;
+  }
+  std::cout<<"QUARANTINE_FIELD_EXACT_LIMIT_PASS board=BOARD_NAME"<<std::endl;
   for(int scenario=0;scenario<36;scenario++){
     disk=FakeDisk{};
     clearCount=0;
@@ -493,6 +516,7 @@ for board, ino in BOARDS:
     actual = actual.replace("@@SOURCE_INSPECT@@", extract(source, "bool inspectQuarantineLog("))
     actual = actual.replace("@@SOURCE_APPEND@@", extract(source, "bool appendQuarantineRecord("))
     actual = actual.replace("@@SOURCE_QUARANTINE@@", extract(source, "bool quarantinePending("))
+    actual = actual.replace("BOARD_NAME", board)
     with tempfile.TemporaryDirectory(prefix="phx-hw-q-") as temp:
         cpp = Path(temp, "test.cpp")
         binary = Path(temp, "test")
