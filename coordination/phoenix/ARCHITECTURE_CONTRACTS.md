@@ -1268,3 +1268,17 @@ A compatibility PASS is bound to the immutable source SHA and compiled file blob
 **Exact example:** RELEASE #291 current head f06ac4df2f61b9c39a03a6ff6009b32948b94778 pins Hardware 268ca9bde6d3710b418134ffd328060250fad42f and ESP32 blob 09c02d589ae15b0c8a4f2a3bbcdee20c41d2cb79 (test blob e6d1308ad8be08405da74dbd8dd8a1e47b63842f, workflow blob 3597b451887e1b612ddea3d383093bba734bbc0d). Current HARDWARE #327 source/test 3292d2a1e207da4241189952eec0e97255a48475 is 11 commits ahead / 0 behind and modifies both board sketches. Current ESP32 sketch blob is 7ffb7b534c7163678726902946a17b04992950a0, not the pinned blob. Compatibility run #44862405800 remains a 3/3 PASS for the old pin only; it does not qualify the current #327 tip. RELEASE must refresh the pin and rerun ESP32 cores 3.3.13 and 4.0.0 plus reproducibility/image identity checks.
 
 This contract grants no source ownership, route promotion, merge, signing, hardware flash, payment operation, migration approval, or production release.
+
+## 6.67 Checksum-manifest publication durability and failure-injection boundary — 2026-11-21 UTC06
+
+A generated appliance release manifest is not complete merely because a same-directory no-overwrite hard link was created. The final manifest bytes, published name, and temporary-name cleanup must have distinct durability boundaries.
+
+1. After atomic no-overwrite publication, pin the containing directory with an O_DIRECTORY | O_NOFOLLOW descriptor and open the final manifest relative to it with O_NOFOLLOW. Verify the final file is regular, the published and sorted names identify the expected inode/link count, and the unsorted input is a separate regular file.
+2. Fsync the final manifest file descriptor, then fsync the containing directory before removing either temporary name. Remove temporary names relative to the pinned directory descriptor, then fsync the directory again.
+3. Any open, stat, fsync, or unlink failure must stop packaging with a nonzero RELEASE-BLOCKED result. Do not use a privileged install or unsandboxed fallback. A pre-cleanup file or directory sync failure must retain the temporary names as recovery evidence.
+4. Independent regression coverage must inject failure at both pre-cleanup sync boundaries: the manifest-file fsync and the directory fsync that persists the final published name. Verify nonzero failure, final-name preservation, and temporary-name preservation. The successful call-order test alone is insufficient.
+5. Hosted call-order and failure-injection CI is filesystem-API evidence only. It does not establish storage-controller power-loss durability, actual ImageBuilder sandbox execution, physical power-cut acceptance, or production release readiness.
+
+Exact reviewed implementation: CoinOperatedEcosystem PR #35 source/test commit 3f4028aec38f922e197fa25bd54bf31cdd4c31cd, docs head 93bab4c97e2a487a3223dc209c5be8fbbc609b5c. Current exact-head packaging tests pass 124 tests with two intentional skips; the profile gate and mandatory sandbox remain fail-closed. Master does not own or modify the RELEASE packager or its tests.
+
+This contract grants no merge, signer, publication, hardware flash, payment operation, migration, or production release authority.

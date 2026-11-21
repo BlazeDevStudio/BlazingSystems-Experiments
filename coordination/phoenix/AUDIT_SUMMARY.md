@@ -1704,3 +1704,15 @@ Production remains NO-GO. Master did not touch CORE/RENTAL/PISONET/HARDWARE/QA/R
 - Local exact-head clone failed because github.com DNS could not resolve; the full Master Python suite was NOT RUN. Master exact-head Actions inventory returned no runs.
 
 **Next actions:** QA updates the positive poll-signature fixture only after CORE publishes the authenticated response/receipt contract; RELEASE re-pins and reruns current Hardware source compatibility; CORE refreshes canonical handover under its separate owner; site authority supplies the real approved ULA /48; runner owner supplies trusted pre-provisioned Bubblewrap; keep COE #26 frozen pending per-file provenance, test, license/NOTICE and destination CI acceptance.
+
+## PHX-MASTER UTC06 update — 2026-11-21T06:35:21Z
+
+**New source-grounded review:** COE RELEASE #35 advanced to docs head 93bab4c97e2a487a3223dc209c5be8fbbc609b5c and source/test 3f4028aec38f922e197fa25bd54bf31cdd4c31cd. The new checksum-manifest finalizer pins no-follow directory/file descriptors, verifies inode/link identity, fsyncs the final manifest, fsyncs the directory before cleanup, removes temporary names relative to the pinned directory, then fsyncs the directory again. The exact source/test run #44876039985 reports 124 tests PASS / 2 intentional skips; current docs-head run #44876192956 repeats the 124-test pass before all ten profiles fail closed because the approved site-scoped ULA /48 is missing. Case collision #44876192979 PASS. Sandbox #44876192967 fails closed at missing Bubblewrap (exit 125) after 14/14 host-preflight tests pass.
+
+**Master review request:** the success-path test verifies file → directory → directory fsync ordering. The failure-path test injects an exception on the first fsync only; it does not independently inject failure on the second, pre-cleanup directory fsync. PHX-RELEASE should add a second-call failure regression that proves nonzero blocked exit and preserves the final and temporary names; PHX-QA should independently review the exact source/test SHA. This is a test-coverage request, not a proven source defect. No RELEASE source or test file was edited by Master.
+
+**Separate COE Intercon chain:** #46–#49 remain independent OPEN/DRAFT candidates outside the #26 routing manifest. Their focused stage checks/case guards pass, but the ESP32 build fails on mbedtls/sha256.h under core 4.0.0 in #48/#49; #49 ESP8266 and shared/profile jobs pass. Do not fold this work into #26 without owner review.
+
+**Current blockers retained:** #327 Full fails at QA's positive poll-signature fixture; #291 remains pinned to older Hardware source; #328 shared build fails; COE #35 lacks approved ULA /48 and Bubblewrap; COE #26 has five queued workflows / zero jobs and incomplete source/test/license/NOTICE parity; private Drive registry v11/newer corrections are inaccessible; branch protection remains unverified; full Master Python suite NOT RUN because local GitHub DNS resolution failed; cleanup #266 OPEN / 0/7.
+
+**No subsystem source, private Drive data, destination tree, financial state, secrets, release, or hardware was changed. PRODUCTION NO-GO.**

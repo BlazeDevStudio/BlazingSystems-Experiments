@@ -2175,3 +2175,21 @@ This live snapshot supersedes older role-head rows above only for the exact refs
 | COE integration #26 | b382d233ff06c8791b1028bed3c617cc7b670d12; base main a6513ab4412b4c014eee2863e45cbe32d06cb243 | OPEN / DRAFT / FROZEN; five candidate workflows QUEUED / zero jobs | Keep frozen pending exact source/test/license/NOTICE parity and destination CI. |
 
 CORE implementation and canonical product handover remain outside Master ownership. PR membership, a passing scoped job, or a documentation-only head does not transfer source ownership or release authority.
+
+## PHX-MASTER UTC06 final live role/CI refresh — 2026-11-21T06:35:21Z
+
+This table supersedes earlier exact-head rows only for the refs listed. It records evidence, not ownership transfer.
+
+| Role / PR | Current exact head | Current exact-head CI / disposition | Owner boundary / next action |
+|---|---|---|---|
+| PHX-MASTER #288 | phoenix/master-coordination at parent d203c82ca2a594e5b17c859d1c15cf6608303d45; base main f4e8a891aed8af86d5fd315d28750a0ac3a7372b | OPEN / DRAFT / UNMERGED; 148 paths before this update, all coordination/phoenix; no Master Actions run | Master updates coordination/phoenix only. |
+| PHX-CORE #252 | c82705f2de865c89ab733b10efa84f26f56a5cc4 | Build #42698139210 SUCCESS, scoped | CORE source and canonical handover remain with the separate owner; no Master implementation. |
+| PHX-RENTAL #328 | 0e0da62acd47c6a1ce287f8a30fc700d603fa070 | APK identity #44782114384 PASS; API21/API23 #44782114393 PASS; shared build #44782114390 FAIL | Rental owns Android/APK; CORE owns canonical handover; firmware/toolchain owners resolve the inherited ESP32 core 4.0.0 mbedtls/sha256.h failure. |
+| PHX-PISONET #255 | d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | Windows #42462978704 SUCCESS, scoped | Pisonet owns native COM/PnP and physical serial acceptance; physical acceptance NOT TESTED. |
+| PHX-HARDWARE #327 | docs/PR head a873042c2a59a2197e4b4457c18dc75da12a0d02; source/test 3292d2a1e207da4241189952eec0e97255a48475 | Quarantine #44873105133 PASS; Relay/output #44873105198 PASS; Full #44873105141 FAIL at QA-owned Missing poll signature check after 15/15 target/platform jobs PASS | Hardware retains deny-only firmware; QA updates the positive fixture only after CORE publishes the authenticated poll/receipt contract. |
+| PHX-QA #290 / #292 | 5c29d15994cee1279058f1eca12f2a3180704292 / 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | #290 Windows #43633486963 PASS, scoped; #292 has no PR-triggered run and retains historical Master base b1ca02e2087f3b1a7169ceab9c34e52646e700df | QA owns independent source-exact retest and native COM lab; neither is complete from these runs. |
+| PHX-RELEASE #291 | f06ac4df2f61b9c39a03a6ff6009b32948b94778 | Compatibility #44862405800 PASS 3/3 only for old Hardware pin 268ca9bde6d3710b418134ffd328060250fad42f / ESP32 blob 09c02d589ae15b0c8a4f2a3bbcdee20c41d2cb79; Full #44862406950 and Windows #44862405809 FAIL | Release must re-pin current #327 source/test and rerun; old PASS is immutable-pin evidence only. |
+| COE RELEASE #35 | docs head 93bab4c97e2a487a3223dc209c5be8fbbc609b5c; source/test 3f4028aec38f922e197fa25bd54bf31cdd4c31cd; parent #31 59ed44d0b911e176f1a95b9cf5585ef811ffd31b | Current shared #44876192956: 124 tests PASS / 2 intentional skips, then all 10 profiles fail closed for missing approved site ULA /48; case-collision #44876192979 PASS; sandbox #44876192967 fails exit 125 because Bubblewrap is absent after host preflight 14/14 PASS | Release owns packager; add independent second-fsync failure injection and obtain approved ULA /48 plus trusted Bubblewrap runner. |
+| COE integration #26 | b382d233ff06c8791b1028bed3c617cc7b670d12; COE main a6513ab4412b4c014eee2863e45cbe32d06cb243 | OPEN / DRAFT / FROZEN; five workflows QUEUED / zero jobs | Keep frozen pending exact per-file source/test/license/NOTICE parity, imports and destination CI. |
+
+CORE implementation remains with its separate owner. No subsystem source path, destination path, role branch, or routing-manifest ownership was changed by Master.

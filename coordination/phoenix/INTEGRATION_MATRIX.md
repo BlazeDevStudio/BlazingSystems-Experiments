@@ -3149,3 +3149,24 @@ Additional exact-tree findings: 30 board-local Python labs/helpers in source vs 
 The destination firmware is materially older: source has durable attempt-marker and journal-recovery state; the COE ESP8266/ESP32 copies do not contain the same state, and the destination retains older format-on-mount-failure and unconditional quarantine-clear behavior. Static source inspection only; no runtime/customer incident is claimed.
 
 The exact routing manifest remains OWNERSHIP_ROUTES.json@e4db324315a1b3543fec17a148fbf960170fcb29, DRAFT_REVIEW_ONLY, with PHX-MASTER target null. COE #26 remains FROZEN. No staging, copying, moving, overwriting, cherry-picking, rebasing, or route promotion is authorized.
+
+## UTC06 exact integration refresh — 2026-11-21T06:35:21Z
+
+### COE RELEASE #35 — manifest durability correction, sandbox and profile gates
+
+- Current PR/docs head: 93bab4c97e2a487a3223dc209c5be8fbbc609b5c. Source/test head: 3f4028aec38f922e197fa25bd54bf31cdd4c31cd. Parent #31/base: 59ed44d0b911e176f1a95b9cf5585ef811ffd31b. PR remains OPEN / DRAFT / UNMERGED.
+- Test-first RED #44875832118: 124 packaging/tool tests, two intentional skips; the two new manifest durability assertions failed on the test-only head as expected.
+- Exact source/test validation #44876039985: 124 PASS / 2 intentional skips; the new file/directory fsync and fail-closed tests passed. The following 10-profile admission gate failed because no approved site-scoped RFC 4193 ULA /48 is defined; ESP32/ESP8266 compile jobs were skipped.
+- Current docs-head shared run #44876192956 repeats 124 PASS / 2 intentional skips, then fails all ten profiles at the same missing ULA authority gate. Case-collision #44876192979 PASS. Mandatory sandbox #44876192967: host preflight 14/14 PASS, then Bubblewrap unavailable (exit 125); identity, namespace and sandbox-dependent packaging tests were skipped, not passed.
+- Source review: the successful finalization sequence is file fsync → directory fsync before cleanup → unlink temporary names → directory fsync. The failure test currently makes the first fsync fail; it does not separately inject failure on the second, pre-cleanup directory fsync. This is a coverage gap/request for PHX-RELEASE and independent PHX-QA, not a demonstrated source defect. Master did not edit RELEASE source or tests.
+- CI call ordering is not a physical power-cut proof or storage-controller durability guarantee.
+
+### Separate COE INTERCON Stage 4/5 candidate chain — not part of #26
+
+COE PRs #46 → #47 → #48 → #49 are separate OPEN/DRAFT Intercon branches, not routes in OWNERSHIP_ROUTES.json and not evidence that the frozen Phoenix destination PR #26 is ready. Their focused stage tests and case-collision checks pass, but each overall hardware workflow has an ESP32 compile failure. The #48 and #49 logs identify the same missing mbedtls/sha256.h header under ESP32 core 4.0.0; #49 ESP8266 compile and shared/profile validation pass. Keep this chain under its own owner and do not merge or migrate it through #26.
+
+### Frozen destination and source parity
+
+COE main remains a6513ab4412b4c014eee2863e45cbe32d06cb243; COE #26 remains b382d233ff06c8791b1028bed3c617cc7b670d12. The prior complete, untruncated exact-tree comparison remains applicable because current HARDWARE #327 docs head a873042c2a59a2197e4b4457c18dc75da12a0d02 and COE #26 b382d233 are unchanged: source 2,463 entries / 1,884 blobs versus destination 286 / 207; ESP32 16/1, ESP8266 26/1, QA 47/19; 30 source board-local Python labs absent at destination; root NOTICE and Hardware-specific license scope unresolved. This activation did not rerun the recursive tree walk. No staging, copy, move, overwrite, rebase, cherry-pick, route promotion or destination edit occurred.
+
+The ownership manifest remains e4db324315a1b3543fec17a148fbf960170fcb29, DRAFT_REVIEW_ONLY, with PHX-MASTER target null.

@@ -1,6 +1,6 @@
 # Project Phoenix — Coordination Index
 
-**Updated:** 2026-11-21T04:02:05Z
+**Updated:** 2026-11-21T06:35:21Z
 **Role:** PHX-MASTER — coordination / architecture / integration provenance only  
 **Safety:** DRAFT REVIEW ONLY · PRODUCTION NO-GO
 
@@ -15,7 +15,7 @@
 
 | File | Purpose |
 |---|---|
-| `ARCHITECTURE_CONTRACTS.md` | Cross-subsystem invariants and candidate interface gates; current cross-subsystem deny-only / COE Hardware safety gate is §6.58; current cross-role firmware baseline and exact-build provenance gate is §6.59; current BLAZE-COMMS recipient exactness gate is §6.60; current release compatibility source/PR-tree evidence separation gate is §6.61; current immutable pinned-source qualification vs current branch-tip claims is §6.62; boot-time output-safe ordering is §6.63; coin-authority board parity scope is §6.64; earlier Remote CS gates remain historical. |
+| `ARCHITECTURE_CONTRACTS.md` | Cross-subsystem invariants and candidate interface gates; current cross-subsystem deny-only / COE Hardware safety gate is §6.58; current cross-role firmware baseline and exact-build provenance gate is §6.59; current BLAZE-COMMS recipient exactness gate is §6.60; current release compatibility source/PR-tree evidence separation gate is §6.61; current immutable pinned-source qualification vs current branch-tip claims is §6.62; boot-time output-safe ordering is §6.63; coin-authority board parity scope is §6.64; zero-pulse durable-attempt contradiction is §6.65; immutable release pin qualification is §6.66; checksum-manifest publication durability is §6.67; earlier Remote CS gates remain historical. |
 | `ROLE_ASSIGNMENTS.md` | Current owner/PR heads, scope boundaries and next owner actions. |
 | `INTEGRATION_MATRIX.md` | Exact source/destination heads and CI dispositions. |
 | `AUDIT_SUMMARY.md` | Current blockers and release-readiness disposition. |
@@ -374,3 +374,9 @@ Current HARDWARE #327 docs head is 4d651e918f71de2e69d1f3bcfe627c4f944c9c39; sou
 - [Exact Hardware quarantine-state correction, RELEASE pin invalidation, and COE #26 tree audit](PHX_MASTER_UTC06_20261121_HW327_ZERO_PENDING_QUARANTINE_COE26_EXACT_TREE_ROLE_CI_AUDIT.md) — records HARDWARE #327 source/test 3292d2a1 / docs head a873042c, focused Quarantine/Relay PASS and Full poll-signature fixture failure; supersedes the UTC05 current-tip ESP32 parity claim because RELEASE #291 still pins older Hardware 268ca9b / sketch blob 09c02d.
 - Complete exact-tree comparison: Experiments source 2,463 entries / 1,884 blobs vs COE #26 destination 286 / 207; ESP32 16/1, ESP8266 26/1, QA tests 47/19; 30 source board-local Python labs absent; NOTICE/license scope unresolved.
 - COE #26 remains FROZEN; COE #35 remains blocked by missing approved site ULA /48 and trusted Bubblewrap; Production remains NO-GO.
+
+## PHX-MASTER UTC06 follow-up — 2026-11-21 06:35Z
+
+- [COE #35 manifest-durability and role/CI reconciliation](PHX_MASTER_UTC06_20261121_COE35_MANIFEST_DURABILITY_ROLE_CI_RECONCILIATION.md) — exact source/test 3f4028ae..., docs head 93bab4c..., 124 packaging tests PASS / 2 intentional skips, profile ULA gate FAIL closed, case-collision PASS, mandatory Bubblewrap sandbox FAIL closed. Records the requested second-fsync failure-injection test and separate COE Intercon #46–#49 chain.
+- Current Master parent was d203c82...; the updated Master branch remains draft-only. Route manifest e4db324... is unchanged, DRAFT_REVIEW_ONLY, Master target null. COE #26 remains frozen; no migration staging or copy.
+- Architecture §6.67 now defines checksum-manifest file/directory durability ordering and the independent failure-injection boundary. Production remains NO-GO.
