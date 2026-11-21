@@ -3032,3 +3032,18 @@ Source tree at HARDWARE #327 source/test 177312434...: 2,453 entries. Destinatio
 Hardware source/test `28bf18e...` retains ESP32 sketch blob `ae0da8e...` from the earlier Release pin `177312434...`. Source hardening test `41211b2...` and destination `f921c56...` differ and both retain positive response/register/poll markers. Pisowifi LICENSE `1ee55b...` matches; Experiments root NOTICE `f6d92c...` has no COE root counterpart.
 
 Cross-owner review required for #240, #255, #290 and #291. Cleanup #266 remains 0/7. Full Master suite and native/physical acceptance NOT RUN.
+
+## PHX-MASTER UTC02 exact-head integration refresh — 2026-11-21T02:41Z
+
+| Integration area | Exact ref / evidence | Current tier | Gate |
+|---|---|---|---|
+| ESP8266/ESP32 boot output ordering | HARDWARE #327 source/test `2d10db5...`; Quarantine #44854558168 and Relay #44854558206 PASS | SIMULATED / FOCUSED CI VERIFIED | Physical relay polarity and reset behavior NOT TESTED. |
+| Controller poll/coin admission | Full #44854558160 fails at QA-owned `Missing poll signature check` | BLOCKED | Replace obsolete positive fixture with source-linked negative/default-deny checks; do not add positive firmware admission. |
+| ESP32 release compatibility | RELEASE #291 run #44855121706, exact Hardware source/test `2d10db5...`, ESP32 cores 3.3.13 and 4.0.0 | CI VERIFIED for pinned source/blob only | Release handover anchor must record the run; no hardware/production promotion. |
+| Release Full / Windows | #44855121644 | BLOCKED | CORE-owned `PROJECT_HANDOVER.md` stale after PISONET release workflow; build/publisher skipped. |
+| Release CI-0701 handover anchor | #44855121676 | FAIL | Release-owned handover lacks the just-completed exact-source 3/3 run. Update handover then rerun. |
+| Rental Android | #328 `0e0da62...` APK identity/API21/API23 | CI VERIFIED, scoped | Shared build remains blocked by handover freshness and inherited Mbed TLS 4 header. |
+| COE integration #26 | destination `b382d233...` | FROZEN / NOT ACCEPTED | 5 queued workflows / 0 jobs; tree, firmware, test, license/NOTICE and import differences remain. |
+
+Physical/hardware acceptance, independent QA, protected signing/anti-rollback, durable financial state and production gates remain NO-GO.
+

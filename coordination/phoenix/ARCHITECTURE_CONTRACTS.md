@@ -1209,3 +1209,18 @@ A reproducible build against an immutable source SHA remains evidence for that e
 **Exact example — #291 / #327:** Release compatibility run #44843256993 qualifies Hardware commit `0f365dada...` and ESP32 sketch blob `ae0da8e2...`. Current #327 source/test `177312434...` is two commits ahead with only the handover and host-lab fixture split; the same 71,103-byte sketch blob is verified at both commits. The earlier compile remains valid for that blob, but does not test the new lab fixture modules. Current #327 focused lab CI must be cited separately.
 
 This contract grants no source ownership, route promotion, merge, signing, hardware flash, payment operation, or production approval.
+
+## 6.63 Boot-time output-safe ordering before LittleFS mount — 2026-11-21 UTC02
+
+**Scope:** source-observed ESP8266/ESP32 boot ordering in HARDWARE PR #327 only. This is a bounded integration invariant, not a claim of physical acceptance or a new positive controller/coin authorization contract.
+
+1. Load local board configuration and initialize the secondary persistent fault backup first (EEPROM on ESP8266; NVS on ESP32).
+2. After validated runtime pin/polarity selection, preload relay/LED outputs OFF and attach the coin ISR before `initPendingStore()` mounts LittleFS.
+3. If an ingress fault is observed before LittleFS is available, persist through the already initialized secondary store; after LittleFS mounts, boot recovery must observe the marker and deny admission.
+4. If both stores fail, the current boot remains denied, but durable post-reboot evidence is not guaranteed. Do not describe this as crash-atomic persistence.
+5. This ordering does not prove the external relay's electrical state during reset, pulse capture on real hardware, or 150-power-cut/30-device acceptance. No register/poll/coin response signature, positive admission path, financial behavior or shared API was changed.
+
+**Exact evidence:** HARDWARE source/test `2d10db5db8ad95f15abf335f25cbbbb2d02c7fae`, firmware behavior commit `ebadec9aaed3113c632a0776a2ac71238ecd0d13`, PR/docs head `1db9855aadb1aeeab797c9e298a850546b66037f`; Quarantine #44854558168 and Relay #44854558206 PASS. Full #44854558160 remains FAIL at QA-owned `Missing poll signature check`.
+
+**Evidence tier:** SIMULATED / FOCUSED CI VERIFIED. HARDWARE ACCEPTED: NO. PRODUCTION READY: NO. PHX-HARDWARE owns implementation; PHX-QA owns the stale positive fixture; PHX-MASTER records the cross-role gate only.
+

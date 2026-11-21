@@ -2085,3 +2085,26 @@ Cross-owner review is required: #240 includes CORE handover, QA and Release path
 COE #26 current file pairs remain divergent (ESP32, ESP8266, hardening test); both hardening tests retain positive marker assertions. Pisowifi LICENSE matches; source root NOTICE has no COE root counterpart. Old recursive tree counts at source `177312434...` are not reused after source advanced to `28bf18e...`.
 
 Private v11/newer corrections inaccessible; no older registry substituted. Branch protection unverified; full Master suite not run; no Master Actions run. Production remains NO-GO.
+
+## PHX-MASTER UTC02 live role/CI reconciliation — 2026-11-21T02:41Z
+
+This snapshot supersedes the UTC01 current-head pins only; historical checkpoints remain unchanged. Ownership is unchanged. CORE implementation remains exclusively with the separate Blaze Production Continuation automation.
+
+| Role / PR | Exact live ref | Exact evidence / boundary | Next owner |
+|---|---|---|---|
+| PHX-MASTER #288 | audit-start `fcb3f1d5ad6d9dbe0c9e8431910277fc97693b03`; base main `f4e8a891...` | OPEN / DRAFT / UNMERGED; 143 paths, all coordination/phoenix; no Master Actions run | Master updates coordination only. |
+| PHX-CORE #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | Separate hourly production continuation owns CORE; no parallel Master implementation | CORE automation / custodian. |
+| PHX-RENTAL #328 | `0e0da62acd47c6a1ce287f8a30fc700d603fa070`, base #289 `68928774...` | APK/API21/API23 PASS; last shared build #44782114390 FAIL at CORE handover freshness and inherited Mbed TLS 4 header | CORE/Hardware/Release resolve inherited blockers; Rental keeps Android. |
+| PHX-PISONET #255 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | Scoped Windows evidence only; physical USB-RS232 acceptance NOT TESTED | PISONET owns serial adapter and self-tests. |
+| PHX-HARDWARE #327 | docs `1db9855aadb1aeeab797c9e298a850546b66037f`; source/test `2d10db5db8ad95f15abf335f25cbbbb2d02c7fae`; base #326 `58c558fb...` | Quarantine #44854558168 PASS; Relay #44854558206 PASS; Full #44854558160 FAIL at QA-owned Missing poll signature check after 14 firmware-target + Android jobs PASS | QA replaces obsolete positive fixture; Hardware retains firmware. |
+| PHX-QA #290 / #292 | `5c29d15994cee1279058f1eca12f2a3180704292` / `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | #290 scoped Windows only; #292 no PR-triggered CI and historical Master base `b1ca02e...` | QA rebases/replays and runs exact-head recipient tests. |
+| PHX-RELEASE #291 | `b1a0743d0c211571f6dc7511393ef0f85c18896b`, base #242 `734b89d9...` | Compatibility #44855121706 PASS 3/3 on Hardware source/test `2d10db5...`; Full/Windows #44855121644 FAIL at CORE handover freshness; CI-0701 #44855121676 fails Release handover-anchor assertion | Release refreshes its own exact-source anchor; CORE owner refreshes canonical handover. |
+| COE integration #26 | `b382d233ff06c8791b1028bed3c617cc7b670d12` | OPEN / DRAFT / FROZEN; 5 workflows QUEUED / 0 jobs; exact migration audit appended | Keep frozen pending source, license, import, test and destination CI acceptance. |
+| COE RELEASE #35 / #44 | `580855b6...` / `582fd5d...` | #35 ULA / Bubblewrap blockers; #44 sandbox Bubblewrap blocker | Release / site authority / runner owner. |
+| COE CORE #45 / INTERCON #49 | `9d76a134...` / `aeb8ff11...` | Contract vectors / separate Stage 5.1 candidate; no financial or Hardware route acceptance | CORE/PISONET/QA owners. |
+
+### Exact current terminal CI
+- HARDWARE #327: Quarantine #44854558168 and Relay #44854558206 SUCCESS; Full #44854558160 FAILURE at QA-owned `Missing poll signature check`. Keep deny-only.
+- RELEASE #291: compatibility #44855121706 SUCCESS 3/3 for exact Hardware source/test `2d10db5...`; Full/Windows #44855121644 fails CORE handover freshness; CI-0701 #44855121676 fails because Release handover has not yet recorded the newly completed 3/3 run.
+- COE #26: five queued workflow runs, zero jobs. No destination acceptance.
+

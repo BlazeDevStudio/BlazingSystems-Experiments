@@ -335,3 +335,13 @@ Current HARDWARE #327 docs head is 4d651e918f71de2e69d1f3bcfe627c4f944c9c39; sou
 
 - [PHX_MASTER_UTC01_20261121_0154Z_TERMINAL_ROLE_CI_COE26_REVALIDATION.md](PHX_MASTER_UTC01_20261121_0154Z_TERMINAL_ROLE_CI_COE26_REVALIDATION.md) supersedes earlier UTC01 pins with Hardware #327 source/test `28bf18e...` / docs `e221ab2...`, Release #291 terminal CI, Rental #328, cross-owner path scope and COE #26 file-level provenance.
 - No subsystem source or COE destination path changed; no migration staging or release action. PR #288 remains draft; production remains NO-GO.
+
+## Latest exact-head reconciliation — 2026-11-21 UTC02
+
+- [PHX_MASTER_UTC02_20261121_BOOT_GPIO_RELEASE_PIN_COE26_EXACT_TREE_AUDIT.md](PHX_MASTER_UTC02_20261121_BOOT_GPIO_RELEASE_PIN_COE26_EXACT_TREE_AUDIT.md) — live Hardware #327 boot-order change and exact CI, Release #291 current two-core compatibility pin and separate Full/Windows/anchor failures, and complete COE #26 recursive tree/blob/license/test comparison.
+- HARDWARE #327 docs/source-test heads `1db9855...` / `2d10db5...`; focused Quarantine/Relay PASS; Full FAIL at QA-owned Missing poll signature check.
+- RELEASE #291 head `b1a0743...`; compatibility #44855121706 PASS 3/3 on exact Hardware source/test `2d10db5...`; Full/Windows blocked by CORE handover freshness and CI-0701 needs the current 3/3 run added to Release's handover anchor.
+- COE #26 remains FROZEN at `b382d233...`; 2,457 source PR tree / 2,456 source-test tree vs 286 destination; firmware/test blobs differ; source root NOTICE absent at destination; five queued workflows / zero jobs.
+- Manifest `e4db324...` remains DRAFT_REVIEW_ONLY with PHX-MASTER target null. No migration, copy, move, rebase, cherry-pick or route promotion.
+- Private v11 registry/newer corrections inaccessible; Master suite NOT RUN; branch protection not verified. **PRODUCTION NO-GO.**
+

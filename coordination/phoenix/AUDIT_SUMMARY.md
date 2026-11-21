@@ -1643,3 +1643,17 @@ Private Drive v11/newer corrections remain BLOCKED: no Google Drive connector is
 - Private Drive v11/newer corrections inaccessible; branch protection unverified; full Master Python suite NOT RUN; no Master Actions run.
 
 **PRODUCTION NO-GO** until independent signing/anti-rollback, crash-atomic financial state, reversible migration tests, independent QA, native acceptance, 150 power cuts, 30-device/24-hour soak and owner-authorized gates are verified.
+
+## PHX-MASTER UTC02 readiness and blocker update — 2026-11-21T02:41Z
+
+- HARDWARE #327 added boot-time OFF preload/ISR attachment before LittleFS mount after secondary EEPROM/NVS initialization. Focused Quarantine/Relay CI passes; Full remains failed at the QA-owned positive poll-signature assertion. No physical behavior is certified.
+- RELEASE #291 now has a 3/3 exact-source ESP32 compatibility result for current HARDWARE source/test `2d10db5...` on cores 3.3.13 and 4.0.0. Full/Windows remain blocked by the CORE-owned canonical handover; Release CI-0701 separately needs its own handover anchor updated to include the new 3/3 run.
+- RENTAL #328 remains blocked at inherited CORE handover freshness and Mbed TLS 4 header; Android-only checks remain scoped.
+- COE #26 remains frozen. Exact recursive tree comparison: source PR/docs tree 2,457 entries / source-test tree 2,456 / destination 286; 28 board-local Python lab/helper files vs zero in Hardware destination; 47 routed QA files vs 19 (1 identical, 3 divergent, 43 source-only, 15 destination-only); firmware blobs diverge; root NOTICE absent at destination.
+- Pisowifi LICENSE is byte-identical, but Hardware license/notice applicability remains unresolved. No legal conclusion.
+- Branch metadata says protected=false, repo rulesets list is empty, and branch-protection detail APIs return 403; effective organization-level protection is unverified.
+- Private registry v11/newer corrections remain inaccessible; no Drive connector or current Library copy. No older snapshot substituted.
+- Full Master Python suite NOT RUN; local GitHub DNS unavailable; no Master Actions run at audit-start SHA.
+
+**PRODUCTION NO-GO.** Independent protected signing/anti-rollback witness, crash-atomic durable financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized release gates remain mandatory.
+

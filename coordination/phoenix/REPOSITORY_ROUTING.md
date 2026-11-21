@@ -1115,3 +1115,36 @@ COE #26 remains the only destination candidate and is FROZEN at `b382d233...`; m
 Current file-level comparison: source/test `28bf18e...` ESP32 blob `ae0da8e...` vs COE `3cc7ec54...`; ESP8266 `a1f12edc...` vs `c8be98f...`; hardening test `41211b2...` vs `f921c56...`. Both tests retain positive response/register/poll marker assertions. Pisowifi LICENSE matches at `1ee55b...`; Experiments root NOTICE `f6d92c...` is absent at COE root; `Hardware/LICENSE` is absent at the checked destination path. License/NOTICE scope remains unresolved; no legal conclusion.
 
 The prior recursive tree count was measured at source/test `177312434...`; Hardware has advanced to `28bf18e...`, so the old count is superseded and not repeated without a fresh recursive inventory. Five COE workflows remain queued / zero jobs. No staging, copy, move, overwrite, cherry-pick, rebase or route promotion occurred.
+
+## UTC02 exact destination revalidation — 2026-11-21T02:41Z
+
+COE #26 remains the only destination candidate and is FROZEN at `b382d233ff06c8791b1028bed3c617cc7b670d12`; COE main remains structure-only at `a6513ab4412b4c014eee2863e45cbe32d06cb243`. Route manifest `e4db324315a1b3543fec17a148fbf960170fcb29` remains `DRAFT_REVIEW_ONLY`, PHX-MASTER target null. No copy/move is proposed.
+
+### Complete exact recursive trees
+- HARDWARE #327 PR/docs tree `1db9855a...`: 2,457 entries, `truncated=false`.
+- HARDWARE #327 source/test tree `2d10db5...`: 2,456 entries, `truncated=false`; the docs-head commit adds only the one boot-order handover.
+- COE #26 tree `b382d233...`: 286 entries, `truncated=false`.
+
+| Route | Source | Destination | Identical | Different | Source-only | Destination-only |
+|---|---:|---:|---:|---:|---:|---:|
+| ESP32 | 16 | 1 | 0 | 1 | 15 | 0 |
+| ESP8266 | 24 | 1 | 0 | 1 | 23 | 0 |
+| QA tests | 47 | 19 | 1 | 3 | 43 | 15 |
+| OpenWrt overlay | 54 | 62 | 25 | 28 | 1 | 9 |
+| Rental Android | 983 | 8 | 0 | 0 | 983 | 8 |
+| Standalone rental | 31 | 19 | 0 | 2 | 29 | 17 |
+| Rental server | 7 | 4 | 0 | 1 | 6 | 3 |
+
+The broad standalone-rental route remains `manual-file-mapping-required` and `copy_permitted=false`; these counts do not authorize recursive copy.
+
+### Exact current blobs and license/notice
+- ESP32 sketch: source `142e1ac098aef2844f7d553771720871ee51d5e9`; COE `3cc7ec54b476943dc04a8d1af5e2df5fe054e422` — different.
+- ESP8266 sketch: source `b515b0d00a445eb0c9843659fbbd8c667803b87f`; COE `c8be98f72596681e36a3ad1f8939bf8046c96887` — different.
+- Hardening test: source `41211b2c110ab409f6d9d1812ef12fda73b13211`; COE `f921c56cecc19cab1989507b9b4ade1f45dac54e` — different.
+- Board-local Python labs/helpers: 28 source / 0 in destination Hardware.
+- Routed QA files: 47 source / 19 destination; 1 identical, 3 divergent, 43 source-only, 15 destination-only.
+- Source BlazePwifi LICENSE and destination Pisowifi/LICENSE match `1ee55b94183417be977ca287cd7391f9a6f7e721`.
+- Source root NOTICE `f6d92cd21465312be5993631fe26977219be0fb9` has no COE root counterpart. Hardware-specific notice/license scope remains unresolved.
+
+COE #26 has five queued workflows and zero jobs. No staging, copy, move, overwrite, cherry-pick, rebase, route promotion or destination edit occurred.
+
