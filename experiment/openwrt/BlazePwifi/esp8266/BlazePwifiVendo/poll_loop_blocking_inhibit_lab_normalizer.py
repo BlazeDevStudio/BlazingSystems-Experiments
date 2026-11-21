@@ -177,6 +177,20 @@ def verify_cpp_parity_normalizer():
         ("preprocessor-directive-crlf-normalization",
          '#if FEATURE\r\nint value;\r\n#endif\r\n',
          '#if FEATURE\nint value;\n#endif\n', True),
+        ("preprocessor-block-comment-splice-boundary",
+         """void f(){
+value /* comment \\
+ */ #if FEATURE
+return true;
+#endif
+}""",
+         """void f(){
+value /* comment \\
+ */
+#if FEATURE
+return true;
+#endif
+}""", False),
     )
     for label, left, right, expected_equal in cases:
         actual_equal = normalize_cpp_function_body(left) == normalize_cpp_function_body(right)
