@@ -33,8 +33,8 @@ from poll_loop_blocking_inhibit_lab_fixtures import (
 )
 
 
+from poll_loop_blocking_inhibit_lab_normalizer import verify_cpp_parity_normalizer
 from poll_loop_blocking_inhibit_lab_parity import (
-    verify_cpp_parity_normalizer,
     verify_poll_safety_board_parity,
     verify_drain_abort_polarity_fixture_is_shared,
 )
