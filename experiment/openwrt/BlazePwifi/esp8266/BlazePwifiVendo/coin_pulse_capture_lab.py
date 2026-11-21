@@ -219,11 +219,17 @@ static bool runDeniedGates(){
 }
 static bool runInvalidPinConfig(){
   // An unsafe GPIO map must never turn a sampled fallback-pin edge into a coin event.
-  resetState(141U);
+  resetState(1000U);
   pinConfigSafe=false;
   sampleCoinPulseEdge(true);
-  if(!journalRecoveryRequired || insertMode || !activeTarget.empty() || relayOn || ledOn)
+  if(!journalRecoveryRequired || insertMode || !activeTarget.empty() || relayOn || ledOn){
+    std::cerr<<"UNSAFE_PIN_DEBUG journal="<<journalRecoveryRequired
+             <<" insert="<<insertMode<<" target="<<activeTarget
+             <<" relay="<<relayOn<<" led="<<ledOn
+             <<" pin="<<pinConfigSafe<<" now="<<millis()
+             <<" last="<<lastEdge<<" debounce="<<runDebounceMs<<"\\n";
     return fail("unsafe-pin-sample","unsafe pin mapping did not latch unresolved ingress");
+  }
   if(pendingPulses!=0 || saveCalls!=0 || nonceCalls!=0)
     return fail("unsafe-pin-sample","unsafe pin mapping was assigned to a coin batch");
   if(backupCalls!=1 || markerCalls!=1 || backupEdges!=1U || markerEdges!=1U)
