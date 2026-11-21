@@ -3016,3 +3016,19 @@ Source tree at HARDWARE #327 source/test 177312434...: 2,453 entries. Destinatio
 - Five COE #26 workflow runs are QUEUED and zero jobs exist. The PR description's all-five-modules-unified and 95% readiness claims are unsupported by the exact tree and CI.
 
 **Migration decision:** COE #26 remains FROZEN. No copy, move, overwrite, cherry-pick, rebase, staging, route promotion or merge. OWNERSHIP_ROUTES.json remains e4db324..., DRAFT_REVIEW_ONLY, Master target null.
+
+
+## PHX-MASTER UTC01 terminal CI and migration evidence — 2026-11-21T01:54Z
+
+| Area | Exact ref | Current evidence | Admission |
+|---|---|---|---|
+| HARDWARE #327 | docs `e221ab2...`, source/test `28bf18e...` | Quarantine #44852481279 and Relay #44852481271 PASS; Full #44852750354 fails QA positive poll marker after 14 target/Android jobs pass. | Host-lab/CI only; no physical acceptance. |
+| RELEASE #291 | `d04b5be6...` | Compatibility #44851462501 PASS 3/3 on pinned Hardware source `177312434...` / sketch `ae0da8e...`; Full #44851462517 and Windows #44851462474 fail handover freshness. | Exact sketch qualification only; not production signing. |
+| RENTAL #328 | `0e0da62...` | APK/API21/API23 PASS; shared #44782114390 fails handover freshness and Mbed TLS 4 header. | Android scoped only. |
+| COE #26 | `b382d233...` | Five workflows queued / zero jobs; ESP32, ESP8266 and hardening-test blobs differ; root NOTICE absent at destination. | FROZEN; no migration. |
+| COE #35/#44 | `580855b6...` / `582fd5d...` | #35 all 10 profiles fail without site ULA /48; #35/#44 sandbox fails closed without Bubblewrap; #44 hardware/case checks pass. | No packaging acceptance. |
+| COE #45 | `9d76a134...` | Overlay shell and case checks pass. | No financial acceptance. |
+
+Hardware source/test `28bf18e...` retains ESP32 sketch blob `ae0da8e...` from the earlier Release pin `177312434...`. Source hardening test `41211b2...` and destination `f921c56...` differ and both retain positive response/register/poll markers. Pisowifi LICENSE `1ee55b...` matches; Experiments root NOTICE `f6d92c...` has no COE root counterpart.
+
+Cross-owner review required for #240, #255, #290 and #291. Cleanup #266 remains 0/7. Full Master suite and native/physical acceptance NOT RUN.
