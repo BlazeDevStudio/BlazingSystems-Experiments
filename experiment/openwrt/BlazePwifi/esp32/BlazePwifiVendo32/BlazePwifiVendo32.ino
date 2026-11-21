@@ -5,7 +5,15 @@
 #include <nvs.h>
 #include <LittleFS.h>
 #include <string.h>
+#include <stdlib.h>
+#include <mbedtls/version.h>
+#if MBEDTLS_VERSION_MAJOR == 4
+#include <psa/crypto.h>
+#elif MBEDTLS_VERSION_MAJOR == 3
 #include <mbedtls/sha256.h>
+#else
+#error "Unsupported Mbed TLS major version: BlazePwifi ESP32 supports 3.x and 4.x only"
+#endif
 #include <esp_system.h>
 
 struct Config {
@@ -38,6 +46,7 @@ static const uint16_t POLL_FAULT_RECORD_VERSION=1;
 static_assert(sizeof(PollFaultRecord)==20,"PollFaultRecord layout changed; review persistent format");
 
 volatile uint32_t coinEdgeSequence=0;
+uint32_t lastHandledCoinEdgeSequence=0;
 
 // The ISR only counts the configured active edge. No String, filesystem,
 // network or logging calls are permitted from interrupt context.
@@ -63,9 +72,12 @@ Preferences prefs;
 bool outputPolarityKnown=false;
 nvs_handle_t pollFaultNvsHandle=0;
 bool pollFaultBackupReady=false;
+// A failed commit is ambiguous until a cold boot reads the flash-backed store.
+// Do not count a same-boot NVS cache entry as a durable deny marker.
+bool pollFaultBackupWriteFailed=false;
 WebServer web(80);
 bool insertMode=false, lastCoin=false, pendingReady=false, fsReady=false, journalRecoveryRequired=false, pendingPostAttempted=false;
-bool pollIntakeSuspended=false, pinConfigSafe=true;
+bool pollIntakeSuspended=false, pollDrainAbortedOnActiveLine=false, pinConfigSafe=true;
 bool controllerEnabled=true, coinEnabled=true, relayEnabled=true, ledEnabled=true, setupApOn=false;
 bool runCoinActiveLow=true, runRelayActiveHigh=false, runLedActiveHigh=false;
 uint32_t lastPoll=0, lastEdge=0, lastSend=0, configuredApSince=0;
@@ -77,12 +89,29 @@ String activeTarget, pendingTarget, pendingNonce, setupApName;
 
 String hexDigest(const String &s){
   unsigned char out[32]; char buf[65];
+#if MBEDTLS_VERSION_MAJOR == 4
+  // Mbed TLS 4 removes the legacy SHA module API; keep the same SHA-256
+  // digest bytes through the supported PSA one-shot hash interface.
+  if(psa_crypto_init()!=PSA_SUCCESS) return String();
+  size_t digestLength=0;
+  psa_status_t status=psa_hash_compute(
+    PSA_ALG_SHA_256,
+    (const uint8_t*)s.c_str(),
+    s.length(),
+    out,
+    sizeof(out),
+    &digestLength
+  );
+  if(status!=PSA_SUCCESS || digestLength!=sizeof(out)) return String();
+#elif MBEDTLS_VERSION_MAJOR == 3
   mbedtls_sha256_context c;
   mbedtls_sha256_init(&c);
-  mbedtls_sha256_starts(&c,0);
-  mbedtls_sha256_update(&c,(const unsigned char*)s.c_str(),s.length());
-  mbedtls_sha256_finish(&c,out);
+  int status=mbedtls_sha256_starts(&c,0);
+  if(status==0) status=mbedtls_sha256_update(&c,(const unsigned char*)s.c_str(),s.length());
+  if(status==0) status=mbedtls_sha256_finish(&c,out);
   mbedtls_sha256_free(&c);
+  if(status!=0) return String();
+#endif
   for(int i=0;i<32;i++) sprintf(buf+i*2,"%02x",out[i]);
   buf[64]=0; return String(buf);
 }
@@ -375,21 +404,32 @@ bool pollFaultBackupPresentOrCorrupt(){
 }
 
 bool writePollFaultBackup(uint32_t pulseEdges){
-  if(!pollFaultBackupReady) return false;
+  if(!pollFaultBackupReady || pollFaultBackupWriteFailed) return false;
   size_t existingLength=0;
   const esp_err_t existing=nvs_get_blob(pollFaultNvsHandle,"poll_fault",nullptr,&existingLength);
   if(existing==ESP_OK) return true; // Any existing value, including malformed data, keeps the deny latch.
-  if(existing!=ESP_ERR_NVS_NOT_FOUND) return false;
+  if(existing!=ESP_ERR_NVS_NOT_FOUND){
+    pollFaultBackupWriteFailed=true;
+    return false;
+  }
 
   const PollFaultRecord record=makePollFaultRecord(pulseEdges);
-  if(nvs_set_blob(pollFaultNvsHandle,"poll_fault",&record,sizeof(record))!=ESP_OK) return false;
-  if(nvs_commit(pollFaultNvsHandle)!=ESP_OK) return false;
+  if(nvs_set_blob(pollFaultNvsHandle,"poll_fault",&record,sizeof(record))!=ESP_OK){
+    pollFaultBackupWriteFailed=true;
+    return false;
+  }
+  if(nvs_commit(pollFaultNvsHandle)!=ESP_OK){
+    pollFaultBackupWriteFailed=true;
+    return false;
+  }
 
   PollFaultRecord verify{};
   size_t readLength=sizeof(verify);
   const esp_err_t read=nvs_get_blob(pollFaultNvsHandle,"poll_fault",&verify,&readLength);
-  return read==ESP_OK && readLength==sizeof(verify) &&
-         validPollFaultRecord(verify) && memcmp(&record,&verify,sizeof(record))==0;
+  const bool verified=read==ESP_OK && readLength==sizeof(verify) &&
+                      validPollFaultRecord(verify) && memcmp(&record,&verify,sizeof(record))==0;
+  if(!verified) pollFaultBackupWriteFailed=true;
+  return verified;
 }
 
 void initPollFaultBackupStore(){
@@ -776,7 +816,13 @@ bool appendQuarantineRecord(const String &reason){
 }
 
 bool quarantinePending(const String &reason){
-  if(pendingPulses==0) return false;
+  if(pendingPulses==0){
+    // A verified rejection without its pending event is an inconsistent state.
+    // Preserve the one-shot attempt evidence and force a deny latch.
+    journalRecoveryRequired=true;
+    Serial.println("CRITICAL: quarantine disposition has no pending coin event; operator reconciliation required.");
+    return false;
+  }
   if(!pendingAttemptMarkerMatches()){
     journalRecoveryRequired=true;
     Serial.println("CRITICAL: quarantine disposition denied without a matching durable coin POST attempt marker.");
@@ -830,8 +876,25 @@ bool loadLocalOutputPolarity(){
   return true;
 }
 
+bool configFieldsMatchStored(const char **failedField);
+
 void loadConfig(){
-  prefs.begin("blazevendo",false);
+  if(!prefs.begin("blazevendo",false)){
+    // A failed namespace open is not an empty configuration. Do not query or
+    // write through an inactive Preferences handle; retain safe defaults.
+    cfg=Config{};
+    outputPolarityKnown=false;
+    runRelayActiveHigh=false;
+    runLedActiveHigh=false;
+    pinConfigSafe=false;
+    insertMode=false;
+    activeTarget="";
+    char b[17];
+    snprintf(b,sizeof(b),"%08lX%08lX",(unsigned long)esp_random(),(unsigned long)esp_random());
+    cfg.apPass=String(b);
+    Serial.println("CRITICAL: NVS namespace open failed; config unavailable, outputs remain INPUT.");
+    return;
+  }
   outputPolarityKnown=false;
   cfg.ssid=prefs.getString("ssid","");
   cfg.pass=prefs.getString("pass","");
@@ -849,6 +912,26 @@ void loadConfig(){
   if(cfg.apPass.length()<8){
     char b[17]; snprintf(b,sizeof(b),"%08lX%08lX",(unsigned long)esp_random(),(unsigned long)esp_random());
     cfg.apPass=String(b); prefs.putString("appass",cfg.apPass);
+  }
+
+  // A valid local polarity marker is necessary but not sufficient. Preferences
+  // returns caller-supplied defaults when an NVS string read fails; verify the
+  // just-loaded configuration through the status-bearing readback helper
+  // before trusting the persisted polarity on this boot.
+  if(outputPolarityKnown){
+    const char *failedField=nullptr;
+    if(!configFieldsMatchStored(&failedField)){
+      cfg.relayActiveHigh=false;
+      cfg.ledActiveHigh=false;
+      runRelayActiveHigh=false;
+      runLedActiveHigh=false;
+      outputPolarityKnown=false;
+      pinConfigSafe=false;
+      insertMode=false;
+      activeTarget="";
+      Serial.printf("CRITICAL: NVS config readback failed at key '%s'; outputs remain INPUT.\n",
+                    failedField?failedField:"unknown");
+    }
   }
 }
 
@@ -878,7 +961,80 @@ bool persistLocalOutputPolarity(){
   return true;
 }
 
+bool nvsStringMatchesStored(const char *key,const String &expected){
+  // Do not use a fallback sentinel: any String can legally equal that value.
+  // The buffer overload returns the exact stored byte count (including NUL),
+  // or zero on an NVS read error. Fail closed on length/read/allocation errors.
+  if(!prefs.isKey(key)) return false;
+  const size_t expectedBytes=expected.length()+1;
+  if(prefs.getStringLength(key)!=expectedBytes) return false;
+  char *stored=static_cast<char*>(malloc(expectedBytes));
+  if(!stored) return false;
+  const size_t readBytes=prefs.getString(key,stored,expectedBytes);
+  const bool matches=readBytes==expectedBytes &&
+                     memcmp(stored,expected.c_str(),expectedBytes)==0;
+  free(stored);
+  return matches;
+}
+
+bool configFieldsMatchStored(const char **failedField){
+  if(failedField) *failedField=nullptr;
+  if(!nvsStringMatchesStored("ssid",cfg.ssid)){
+    if(failedField) *failedField="ssid";
+    return false;
+  }
+  if(!nvsStringMatchesStored("pass",cfg.pass)){
+    if(failedField) *failedField="pass";
+    return false;
+  }
+  if(!nvsStringMatchesStored("server",cfg.server)){
+    if(failedField) *failedField="server";
+    return false;
+  }
+  if(!nvsStringMatchesStored("key",cfg.key)){
+    if(failedField) *failedField="key";
+    return false;
+  }
+  if(!nvsStringMatchesStored("id",cfg.id)){
+    if(failedField) *failedField="id";
+    return false;
+  }
+  if(!prefs.isKey("coinpin") || prefs.getInt("coinpin",-1)!=cfg.coinPin){
+    if(failedField) *failedField="coinpin";
+    return false;
+  }
+  if(!prefs.isKey("ledpin") || prefs.getInt("ledpin",-1)!=cfg.insertLedPin){
+    if(failedField) *failedField="ledpin";
+    return false;
+  }
+  if(!prefs.isKey("relaypin") || prefs.getInt("relaypin",-1)!=cfg.relayPin){
+    if(failedField) *failedField="relaypin";
+    return false;
+  }
+  if(!prefs.isKey("coinlow") || prefs.getBool("coinlow",!cfg.coinActiveLow)!=cfg.coinActiveLow){
+    if(failedField) *failedField="coinlow";
+    return false;
+  }
+  if(!prefs.isKey("debounce") || prefs.getUInt("debounce",0xFFFFFFFFU)!=cfg.coinDebounceMs){
+    if(failedField) *failedField="debounce";
+    return false;
+  }
+  if(!prefs.isKey("groupms") || prefs.getUInt("groupms",0xFFFFFFFFU)!=cfg.pulseGroupMs){
+    if(failedField) *failedField="groupms";
+    return false;
+  }
+  return true;
+}
+
+bool configFieldsMatchStored(){
+  return configFieldsMatchStored(nullptr);
+}
+
 bool saveConfig(){
+  // Deassert outputs before changing NVS; setup stays inhibited until reboot.
+  insertMode=false;
+  activeTarget="";
+  applyOutputs();
   // Invalidate local polarity before any other configuration write. A cut
   // during the save leaves the next boot in the INPUT-only unknown state.
   if(prefs.putUChar("polarityv",0)!=1) return false;
@@ -887,6 +1043,19 @@ bool saveConfig(){
   prefs.putInt("coinpin",cfg.coinPin); prefs.putInt("ledpin",cfg.insertLedPin); prefs.putInt("relaypin",cfg.relayPin);
   prefs.putBool("coinlow",cfg.coinActiveLow);
   prefs.putUInt("debounce",cfg.coinDebounceMs); prefs.putUInt("groupms",cfg.pulseGroupMs);
+  // Do not publish polarityv=1 unless every configuration field survived NVS
+  // readback. A failed or partial save remains INPUT-only after reboot.
+  const char *failedField=nullptr;
+  if(!configFieldsMatchStored(&failedField)){
+    Serial.printf("CRITICAL: NVS config readback failed at key '%s'; outputs remain inhibited.\n",
+                  failedField?failedField:"unknown");
+    outputPolarityKnown=false;
+    pinConfigSafe=false;
+    return false;
+  }
+  // A failed polarity write/readback must leave this boot INPUT-only too.
+  outputPolarityKnown=false;
+  pinConfigSafe=false;
   return persistLocalOutputPolarity();
 }
 
@@ -920,6 +1089,8 @@ bool runtimePinsSafe(int coinPin,int relayPin,int ledPin){
          coinPin!=ledPin && relayPin!=ledPin;
 }
 
+bool quarantineCoinIngressTransition();
+
 void configureRuntimePins(int coinPin,int relayPin,int ledPin){
   if(!outputPolarityKnown){
     // No default or remote value can establish physical relay/LED polarity.
@@ -935,6 +1106,7 @@ void configureRuntimePins(int coinPin,int relayPin,int ledPin){
     insertMode=false;
     activeTarget="";
     attachInterrupt(digitalPinToInterrupt(runCoinPin),coinEdgeISR,runCoinActiveLow?FALLING:RISING);
+    quarantineCoinIngressTransition();
     return;
   }
   if(runLedPin!=ledPin) writeLogical(runLedPin,false,runLedActiveHigh);
@@ -946,7 +1118,9 @@ void configureRuntimePins(int coinPin,int relayPin,int ledPin){
   writeLogical(runLedPin,false,runLedActiveHigh);
   pinMode(runCoinPin,INPUT_PULLUP); pinMode(runRelayPin,OUTPUT); pinMode(runLedPin,OUTPUT);
   attachInterrupt(digitalPinToInterrupt(runCoinPin),coinEdgeISR,runCoinActiveLow?FALLING:RISING);
-  writeLogical(runRelayPin,false,runRelayActiveHigh); writeLogical(runLedPin,false,runLedActiveHigh);
+  writeLogical(runRelayPin,false,runRelayActiveHigh);
+  writeLogical(runLedPin,false,runLedActiveHigh);
+  quarantineCoinIngressTransition();
 }
 
 // Intentionally dormant: register/poll admission signatures do not authenticate
@@ -978,29 +1152,44 @@ void applyRemoteConfig(const String &r){
   remoteRevision=rev; applyOutputs();
 }
 
+bool validSha256Hex(const String &digest){
+  if(digest.length()!=64) return false;
+  for(size_t i=0;i<64;i++){
+    const char c=digest[i];
+    if(!((c>='0'&&c<='9') ||
+         (c>='a'&&c<='f') ||
+         (c>='A'&&c<='F'))) return false;
+  }
+  return true;
+}
+
 String lastSentNonce;
 
 String signedBody(const String &action,const String &pulses,const String &target,const String &forcedNonce=""){
   String n=forcedNonce.length()?forcedNonce:freshNonce();
-  lastSentNonce=n;
   String base=cfg.key+"|"+action+"|"+cfg.id+"|"+n+"|"+pulses+"|"+target+"|"+cfg.key;
-  return "action="+action+"&id="+esc(cfg.id)+"&nonce="+n+"&pulses="+pulses+"&target="+esc(target)+"&sig="+hexDigest(base);
+  String digest=hexDigest(base);
+  if(!validSha256Hex(digest)) return String();
+  lastSentNonce=n;
+  return "action="+action+"&id="+esc(cfg.id)+"&nonce="+n+"&pulses="+pulses+"&target="+esc(target)+"&sig="+digest;
 }
 
 String post(const String &action,const String &pulses="0",const String &target="",const String &forcedNonce=""){
   if(WiFi.status()!=WL_CONNECTED) return "";
+  String body=signedBody(action,pulses,target,forcedNonce);
+  if(!body.length()) return "";
   WiFiClient client; HTTPClient h;
   String url="http://"+cfg.server+":4455/cgi-bin/vendo";
   if(!h.begin(client,url)) return "";
   h.setTimeout(3500); h.addHeader("Content-Type","application/x-www-form-urlencoded");
-  int code=h.POST(signedBody(action,pulses,target,forcedNonce));
+  int code=h.POST(body);
   String r=code>0?h.getString():""; h.end(); return r;
 }
 
 void writeLogical(int pin,bool on,bool activeHigh){ digitalWrite(pin,(on==activeHigh)?HIGH:LOW); }
 // Never send a RAM-only pulse if its flash journal failed or is ambiguous.
 bool canAttemptCoinPost(){
-  return outputPolarityKnown && fsReady && !journalRecoveryRequired && !pendingPostAttempted &&
+  return outputPolarityKnown && pinConfigSafe && fsReady && !journalRecoveryRequired && !pendingPostAttempted &&
          pendingReady && pendingPulses>0;
 }
 
@@ -1019,9 +1208,26 @@ bool canStartPoll(){
 void applyOutputs(){
   if(!outputPolarityKnown) return;
   bool accepting=pinConfigSafe && controllerEnabled && coinEnabled && insertMode && activeTarget.length()>0 && fsReady &&
-                 !journalRecoveryRequired && !pendingReady && !pollIntakeSuspended;
+                 !journalRecoveryRequired && !pendingReady && !pollIntakeSuspended &&
+                 snapshotCoinEdgeSequence()==lastHandledCoinEdgeSequence;
   if(ledEnabled) writeLogical(runLedPin,accepting,runLedActiveHigh); else writeLogical(runLedPin,false,runLedActiveHigh);
+
+  // The first GPIO write can be interrupted after the admission snapshot.
+  // Recheck before the relay write so an unresolved edge cannot power the acceptor.
+  if(snapshotCoinEdgeSequence()!=lastHandledCoinEdgeSequence){
+    writeLogical(runLedPin,false,runLedActiveHigh);
+    writeLogical(runRelayPin,false,runRelayActiveHigh);
+    return;
+  }
+
   if(relayEnabled) writeLogical(runRelayPin,accepting,runRelayActiveHigh); else writeLogical(runRelayPin,false,runRelayActiveHigh);
+
+  // An edge may also interrupt the relay write itself. Deassert immediately;
+  // the next loop sample persists the unresolved ingress fault.
+  if(snapshotCoinEdgeSequence()!=lastHandledCoinEdgeSequence){
+    writeLogical(runRelayPin,false,runRelayActiveHigh);
+    writeLogical(runLedPin,false,runLedActiveHigh);
+  }
 }
 
 void latchPollPulseFault(uint32_t pulseEdges){
@@ -1043,21 +1249,60 @@ void latchPollPulseFault(uint32_t pulseEdges){
   }
 }
 
+bool quarantineCoinIngressTransition(){
+  const uint32_t observedEdgeSequence=snapshotCoinEdgeSequence();
+  const uint32_t unhandledEdges=observedEdgeSequence-lastHandledCoinEdgeSequence;
+  const bool lineIdle=coinLineIdle();
+  if(journalRecoveryRequired){
+    lastHandledCoinEdgeSequence=observedEdgeSequence;
+    lastCoin=!lineIdle;
+    if(pendingPulses>0U) pendingReady=true;
+    applyOutputs();
+    return false;
+  }
+  if(lineIdle && unhandledEdges==0U) return true;
+  if(pendingPulses>0U) pendingReady=true;
+  lastHandledCoinEdgeSequence=observedEdgeSequence;
+  lastCoin=!lineIdle;
+  const uint32_t unresolvedEdges=(uint32_t)pendingPulses+
+      (unhandledEdges>0U?unhandledEdges:1U);
+  latchPollPulseFault(unresolvedEdges);
+  Serial.println("CRITICAL: coin ingress was active or an ISR edge crossed pin configuration; operator reconciliation required.");
+  return false;
+}
+
+bool reconcileUnobservedCoinEdges(){
+  const uint32_t observedEdgeSequence=snapshotCoinEdgeSequence();
+  const uint32_t unhandledEdges=observedEdgeSequence-lastHandledCoinEdgeSequence;
+  if(unhandledEdges==0U) return true;
+  lastHandledCoinEdgeSequence=observedEdgeSequence;
+  if(pendingPulses>0) pendingReady=true;
+  latchPollPulseFault((uint32_t)pendingPulses+unhandledEdges);
+  Serial.println("CRITICAL: unobserved coin ISR edge(s) crossed a blocking operation; operator reconciliation required.");
+  return false;
+}
+
 
 
 // Observe a full debounce-width quiet interval after disabling intake.
 // A pulse at any point cancels polling and returns to normal journal handling.
 bool coinLineQuietAfterInhibit(){
+  pollDrainAbortedOnActiveLine=false;
   const uint32_t started=millis();
   // Drain the supported 30–100 ms coin pulse train before blocking HTTP.
   // Preserve a larger configured debounce interval; never shorten it.
   const uint32_t pulseTrainQuietMs=250UL;
   const uint32_t quietMs=runDebounceMs>pulseTrainQuietMs?runDebounceMs:pulseTrainQuietMs;
   while(millis()-started<quietMs){
-    if(!coinLineIdle()) return false;
+    if(!coinLineIdle()){
+      pollDrainAbortedOnActiveLine=true;
+      return false;
+    }
     delay(1);
   }
-  return coinLineIdle();
+  const bool idle=coinLineIdle();
+  if(!idle) pollDrainAbortedOnActiveLine=true;
+  return idle;
 }
 
 // Close the check-to-inhibit race: after the first idle check, disable intake,
@@ -1066,29 +1311,67 @@ bool beginPollWindow(){
   if(!canStartPoll()) return false;
   pollIntakeSuspended=true;
   applyOutputs();
-  if(coinLineQuietAfterInhibit()) return true;
-  pollIntakeSuspended=false;
-  applyOutputs();
-  return false;
+  // The caller must reconcile the ISR sequence before releasing this inhibit,
+  // whether the quiet drain succeeds or aborts.
+  return coinLineQuietAfterInhibit();
 }
  
 void sampleCoinPulseEdge(bool active){
-  if(insertMode && fsReady && !journalRecoveryRequired && activeTarget.length() &&
-     !pendingReady && active && !lastCoin && millis()-lastEdge>runDebounceMs){
-    if(pendingPulses==0){ pendingNonce=freshNonce(); pendingTarget=activeTarget; }
-    if(pendingTarget==activeTarget && pendingPulses<20){
-      pendingPulses++;
-      lastEdge=millis();
-      if(!savePending()){
-        // Preserve a boot-visible deny latch before declaring LittleFS unavailable.
-        latchPollPulseFault(pendingPulses);
-        fsReady=false;
+  const uint32_t observedEdgeSequence=snapshotCoinEdgeSequence();
+  const uint32_t unseenEdges=observedEdgeSequence-lastHandledCoinEdgeSequence;
+  const bool sampledSingleEdge=unseenEdges==1U && active && !lastCoin &&
+      fsReady && !journalRecoveryRequired && !pendingReady &&
+      insertMode && activeTarget.length()>0 &&
+      millis()-lastEdge>runDebounceMs;
+  if(unseenEdges>0U && !sampledSingleEdge){
+    if(pendingPulses>0) pendingReady=true;
+    if(!journalRecoveryRequired){
+      latchPollPulseFault((uint32_t)pendingPulses+unseenEdges);
+      Serial.println("CRITICAL: ISR coin edge could not be sampled and assigned to a pending event; operator reconciliation required.");
+    }
+    lastHandledCoinEdgeSequence=observedEdgeSequence;
+    lastCoin=active;
+    applyOutputs();
+    return;
+  }
+  if(fsReady && !journalRecoveryRequired && active && !lastCoin &&
+     millis()-lastEdge>runDebounceMs){
+    if(!pinConfigSafe){
+      latchPollPulseFault((uint32_t)pendingPulses+1U);
+      pendingReady=true;
+      applyOutputs();
+      Serial.println("CRITICAL: coin pulse observed with unsafe GPIO mapping; operator reconciliation required.");
+    } else if(pendingReady){
+      // A pulse after the pending batch is closed cannot be appended or safely
+      // assigned to a new event. Preserve the old identity and quarantine it.
+      latchPollPulseFault((uint32_t)pendingPulses+1U);
+      pendingReady=true;
+      applyOutputs();
+      Serial.println("CRITICAL: coin pulse arrived after pending batch closed; operator reconciliation required.");
+    } else if(insertMode && activeTarget.length()){
+      if(pendingPulses==0){ pendingNonce=freshNonce(); pendingTarget=activeTarget; }
+      // PendingRecord.pulses is bounded to 20. Never silently discard an edge
+      // that cannot fit the record or that belongs to a different target.
+      if(pendingTarget!=activeTarget || pendingPulses>=20){
+        latchPollPulseFault((uint32_t)pendingPulses+1U);
         pendingReady=true;
         applyOutputs();
-        Serial.println("CRITICAL: pending journal write failed; sticky dual-store fault latch attempted; relay disabled.");
+        Serial.println("CRITICAL: coin pulse batch overflow or target changed; operator reconciliation required.");
+      } else {
+        pendingPulses++;
+        lastEdge=millis();
+        if(!savePending()){
+          // Preserve a boot-visible deny latch before declaring LittleFS unavailable.
+          latchPollPulseFault(pendingPulses);
+          fsReady=false;
+          pendingReady=true;
+          applyOutputs();
+          Serial.println("CRITICAL: pending journal write failed; sticky dual-store fault latch attempted; relay disabled.");
+        }
       }
     }
   }
+  lastHandledCoinEdgeSequence=observedEdgeSequence;
   lastCoin=active;
 }
 
@@ -1292,6 +1575,35 @@ bool coinPostDispositionVerified(const String &response,const String &nonce,
   return false;
 }
 
+void handleCoinPostResponse(const String &response){
+  // Keep the response disposition gate separate from the network loop so the
+  // exact decision path can be compiled and failure-injected on both boards.
+  if(!coinPostDispositionVerified(response,pendingNonce,pendingTarget,pendingPulses)){
+    journalRecoveryRequired=true;
+    Serial.println("CRITICAL: coin POST response lacks approved event-bound authentication; pending evidence retained and automatic replay denied.");
+    applyOutputs();
+    return;
+  }
+  if(pollJsonTopLevelTrue(response,"ok")){
+    if(reconcileUnobservedCoinEdges()) clearPending();
+    if(!reconcileUnobservedCoinEdges()) applyOutputs();
+    applyOutputs();
+  } else if(response.indexOf("coin window expired")>=0 ||
+            response.indexOf("coin target mismatch")>=0 ||
+            response.indexOf("no active coin window")>=0 ||
+            response.indexOf("another vendo selected")>=0){
+    quarantinePending(response);
+    if(!reconcileUnobservedCoinEdges()) applyOutputs();
+    applyOutputs();
+  } else {
+    // An authenticated but malformed/unknown disposition remains ambiguous.
+    journalRecoveryRequired=true;
+    Serial.println("CRITICAL: authenticated coin POST disposition was unknown; pending evidence retained for operator reconciliation.");
+    if(!reconcileUnobservedCoinEdges()) applyOutputs();
+    applyOutputs();
+  }
+}
+
 bool acceptPollResponse(const String &response){
   // MASTER ARCHITECTURE_CONTRACTS §6.3: the current response_sig expression is
   // a derived candidate, not an approved poll authorization contract. CORE has
@@ -1423,7 +1735,6 @@ void connectSta(){
 void setup(){
   Serial.begin(115200); loadConfig();
   initPollFaultBackupStore();
-  initPendingStore();
   runCoinPin=cfg.coinPin; runLedPin=cfg.insertLedPin; runRelayPin=cfg.relayPin;
   if(!runtimePinsSafe(runCoinPin,runRelayPin,runLedPin)){
     pinConfigSafe=false;
@@ -1432,8 +1743,36 @@ void setup(){
   }
   runCoinActiveLow=cfg.coinActiveLow; runRelayActiveHigh=cfg.relayActiveHigh; runLedActiveHigh=cfg.ledActiveHigh;
   runDebounceMs=cfg.coinDebounceMs; runPulseGroupMs=cfg.pulseGroupMs;
+  // NVS fault backup is ready; deassert outputs and attach the coin ISR before
+  // LittleFS mount so an early ingress can still persist to the secondary store.
   configureRuntimePins(runCoinPin,runRelayPin,runLedPin);
+  initPendingStore();
   setupPortal(); connectSta();
+}
+
+void handlePollDrainAbortAfterSample(){
+  if(!pollDrainAbortedOnActiveLine) return;
+  if(journalRecoveryRequired){
+    pollDrainAbortedOnActiveLine=false;
+    pollIntakeSuspended=false;
+    applyOutputs();
+    return;
+  }
+  if(pendingPulses==0U){
+    // The drain saw a pulse but the ordinary sample could not durably queue it.
+    latchPollPulseFault(1U);
+    pollDrainAbortedOnActiveLine=false;
+    pollIntakeSuspended=false;
+    applyOutputs();
+    lastPoll=millis();
+    return;
+  }
+  // A captured pulse keeps intake inhibited until the input line is idle.
+  if(!coinLineIdle()) return;
+  pollDrainAbortedOnActiveLine=false;
+  pollIntakeSuspended=false;
+  applyOutputs();
+  lastPoll=millis();
 }
 
 void loop(){
@@ -1444,49 +1783,65 @@ void loop(){
   }
   if(WiFi.status()==WL_CONNECTED && millis()-lastPoll>1500){
     const uint32_t pollEdgeStart=snapshotCoinEdgeSequence();
-    if(beginPollWindow()){
-    wifiFailures=0;
-    String r=post("poll");
-    // Keep intake inhibited until this response has been accepted or denied.
-    acceptPollResponse(r);
-    pollIntakeSuspended=false;
-    const uint32_t pollEdgeEnd=snapshotCoinEdgeSequence();
-    if(pollEdgeEnd!=pollEdgeStart){
-      latchPollPulseFault(pollEdgeEnd-pollEdgeStart);
-    }
-    applyOutputs();lastPoll=millis();
+    if(pollEdgeStart!=lastHandledCoinEdgeSequence){
+      const uint32_t unhandledEdges=pollEdgeStart-lastHandledCoinEdgeSequence;
+      lastHandledCoinEdgeSequence=pollEdgeStart;
+      if(pendingPulses>0) pendingReady=true;
+      latchPollPulseFault((uint32_t)pendingPulses+unhandledEdges);
+      pollIntakeSuspended=false;
+      applyOutputs();
+      lastPoll=millis();
+    } else {
+      const bool pollWindowReady=beginPollWindow();
+      // Reconcile ISR edges for both drain outcomes while outputs remain inhibited.
+      const uint32_t pollEdgeAfterDrain=snapshotCoinEdgeSequence();
+      if(pollEdgeAfterDrain!=pollEdgeStart){
+        lastHandledCoinEdgeSequence=pollEdgeAfterDrain;
+        if(pendingPulses>0) pendingReady=true;
+        latchPollPulseFault(pollEdgeAfterDrain-pollEdgeStart);
+        pollIntakeSuspended=false;
+        applyOutputs();
+        lastPoll=millis();
+      } else if(pollWindowReady){
+        wifiFailures=0;
+        String r=post("poll");
+        // Keep intake inhibited until this response has been accepted or denied.
+        acceptPollResponse(r);
+        pollIntakeSuspended=false;
+        const uint32_t pollEdgeEnd=snapshotCoinEdgeSequence();
+        lastHandledCoinEdgeSequence=pollEdgeEnd;
+        if(pollEdgeEnd!=pollEdgeStart){
+          if(pendingPulses>0) pendingReady=true;
+          latchPollPulseFault(pollEdgeEnd-pollEdgeStart);
+        }
+        applyOutputs();
+        lastPoll=millis();
+      } else if(pollIntakeSuspended && !pollDrainAbortedOnActiveLine && coinLineIdle()){
+        pollIntakeSuspended=false;
+        applyOutputs();
+        lastPoll=millis();
+      }
     }
   }
-
   bool raw=digitalRead(runCoinPin);
   bool active=runCoinActiveLow?!raw:raw;
   sampleCoinPulseEdge(active);
   if(pendingPulses && !pendingReady && millis()-lastEdge>runPulseGroupMs){ pendingReady=true; lastSend=0; applyOutputs(); }
+  handlePollDrainAbortAfterSample();
   if(canAttemptCoinPost() && WiFi.status()==WL_CONNECTED){
     if(!markPendingPostAttempt()){
       journalRecoveryRequired=true;
       applyOutputs();
+      if(!reconcileUnobservedCoinEdges()) applyOutputs();
+    } else if(!reconcileUnobservedCoinEdges()){
+      applyOutputs();
     } else {
       String r=post("coin",String(pendingPulses),pendingTarget,pendingNonce);
       lastSend=millis();
-      if(!coinPostDispositionVerified(r,pendingNonce,pendingTarget,pendingPulses)){
-        journalRecoveryRequired=true;
-        Serial.println("CRITICAL: coin POST response lacks approved event-bound authentication; pending evidence retained and automatic replay denied.");
-        applyOutputs();
-      } else if(pollJsonTopLevelTrue(r,"ok")){
-        clearPending();
-        applyOutputs();
-      } else if(r.indexOf("coin window expired")>=0 ||
-                r.indexOf("coin target mismatch")>=0 ||
-                r.indexOf("no active coin window")>=0 ||
-                r.indexOf("another vendo selected")>=0){
-        quarantinePending(r);
+      if(!reconcileUnobservedCoinEdges()){
         applyOutputs();
       } else {
-        // An authenticated but malformed/unknown disposition remains ambiguous.
-        journalRecoveryRequired=true;
-        Serial.println("CRITICAL: authenticated coin POST disposition was unknown; pending evidence retained for operator reconciliation.");
-        applyOutputs();
+        handleCoinPostResponse(r);
       }
     }
   }

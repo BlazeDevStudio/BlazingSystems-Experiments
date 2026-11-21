@@ -14,6 +14,8 @@ import re
 import subprocess
 import tempfile
 
+from firmware_lab_source import extract_function as extract
+
 ROOT = Path(__file__).resolve().parents[2]
 BOARDS = (
     ("ESP8266", ROOT / "esp8266/BlazePwifiVendo/BlazePwifiVendo.ino"),
@@ -21,22 +23,31 @@ BOARDS = (
 )
 
 
-def extract(source: str, name: str) -> str:
-    match = re.search(r"\bvoid\s+" + re.escape(name) + r"\s*\([^)]*\)\s*\{", source)
-    if not match:
-        raise RuntimeError(f"missing production function: {name}")
-    depth = 0
-    for index in range(match.end() - 1, len(source)):
-        if source[index] == "{":
-            depth += 1
-        elif source[index] == "}":
-            depth -= 1
-            if depth == 0:
-                return source[match.start():index + 1]
-    raise RuntimeError(f"unbalanced production function: {name}")
+def verify_extractor_ignores_non_code_braces() -> None:
+    """A brace in a C++ literal/comment must not truncate a production function."""
+    fixture = r"""
+void target() {
+  const char *quoted = "}";
+  const char *raw = R"tag({ raw })tag";
+  // }
+  /* } */
+  const char *after = "still inside";
+}
+void following() {}
+"""
+    extracted = extract(fixture, "target")
+    if 'const char *after = "still inside";' not in extracted:
+        raise SystemExit("OUTPUT_EXTRACTOR_FAIL: non-code brace truncated target()")
+    if "void following()" in extracted:
+        raise SystemExit("OUTPUT_EXTRACTOR_FAIL: extractor crossed into following()")
+    print("OUTPUT_EXTRACTOR_LEXICAL_FIXTURE_PASS")
+
+
+verify_extractor_ignores_non_code_braces()
 
 
 CPP = r'''
+#include <cstdint>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -51,12 +62,17 @@ int digitalPinToInterrupt(int pin){ return pin; }
 void detachInterrupt(int) {}
 void attachInterrupt(int,void (*)(void),int) {}
 void coinEdgeISR() {}
+volatile uint32_t coinEdgeSequence=0;
+uint32_t lastHandledCoinEdgeSequence=0;
+uint32_t snapshotCoinEdgeSequence(){ return coinEdgeSequence; }
 
 int runCoinPin=4, runRelayPin=5, runLedPin=14;
 bool runRelayActiveHigh=true, runLedActiveHigh=true, runCoinActiveLow=false;
 bool outputPolarityKnown=true, pinConfigSafe=true, insertMode=true;
 std::string activeTarget="target";
 @@WRITE_LOGICAL@@
+// This lab isolates output ordering; exact ingress behavior has its own source lab.
+bool quarantineCoinIngressTransition(){ return true; }
 @@CONFIGURE@@
 static constexpr bool HAS_LOCAL_POLARITY_GUARD=@@HAS_LOCAL_POLARITY_GUARD@@;
 
@@ -202,6 +218,8 @@ for board, path in BOARDS:
     source = path.read_text(encoding="utf-8")
     write_logical = extract(source, "writeLogical")
     configure = extract(source, "configureRuntimePins")
+    if "quarantineCoinIngressTransition();" not in configure:
+        raise RuntimeError(f"{board}: runtime pin attachment must quarantine coin ingress")
     has_local_polarity_guard = "outputPolarityKnown" in configure
     build_and_run(board, write_logical, configure, expect_pass=True,
                   has_local_polarity_guard=has_local_polarity_guard)

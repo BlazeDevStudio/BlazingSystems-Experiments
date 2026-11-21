@@ -10,28 +10,42 @@ NOT real-flash or power-cut evidence.
 from pathlib import Path
 import re
 import subprocess
+import sys
 import tempfile
 
 ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / "esp8266/BlazePwifiVendo"))
+from firmware_lab_source import extract_block, extract_function
+
 SKETCHES = [
     ("ESP32", ROOT / "esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino"),
     ("ESP8266", ROOT / "esp8266/BlazePwifiVendo/BlazePwifiVendo.ino"),
 ]
 
 def extract(src: str, signature: str) -> str:
-    start = src.find(signature)
-    if start < 0:
-        raise RuntimeError(f"missing {signature}")
-    brace = src.find("{", start)
-    level = 0
-    for pos in range(brace, len(src)):
-        if src[pos] == "{":
-            level += 1
-        elif src[pos] == "}":
-            level -= 1
-            if level == 0:
-                return src[start:pos+1]
-    raise RuntimeError(f"unclosed {signature}")
+    if signature.startswith("struct "):
+        return extract_block(src, signature)
+    name = signature.split("(", 1)[0].split()[-1]
+    return extract_function(src, name)
+
+
+def verify_lexical_extractor_fixture():
+    probes = (
+        ("ordinary string", 'void target() { const char *brace = "}"; int retained = 1; }\nvoid next() { return; }\n'),
+        ("raw string", 'void target() { const char *raw = R"tag(})tag"; int retained = 1; }\nvoid next() { return; }\n'),
+        ("line comment", 'void target() { // }\n int retained = 1; }\nvoid next() { return; }\n'),
+        ("block comment", 'void target() { /* } */ int retained = 1; }\nvoid next() { return; }\n'),
+    )
+    for label, probe in probes:
+        body = extract(probe, "void target()")
+        if "int retained = 1;" not in body or "void next" in body:
+            raise RuntimeError(
+                f"PENDING_JOURNAL_EXTRACTOR_FAIL: {label} brace truncated target()"
+            )
+    print("PENDING_JOURNAL_LEXICAL_EXTRACTOR_PASS 4/4")
+
+
+verify_lexical_extractor_fixture()
 
 CPP = r'''
 #include <algorithm>
@@ -87,6 +101,11 @@ const uint32_t PENDING_MAGIC=@@MAGIC@@;
 bool fsReady=true,pendingReady=false,journalRecoveryRequired=false,pendingPostAttempted=false;
 bool pollIntakeSuspended=false, pinConfigSafe=true;
 bool outputPolarityKnown=true;
+// This journal-recovery fixture exercises stored-record decisions, not ISR
+// delivery. The separate poll-loop lab covers asynchronous edge transitions.
+volatile uint32_t coinEdgeSequence=0;
+uint32_t lastHandledCoinEdgeSequence=0;
+uint32_t snapshotCoinEdgeSequence(){ return coinEdgeSequence; }
 bool insertMode=true,controllerEnabled=true,coinEnabled=true;
 bool ledEnabled=true,relayEnabled=true;
 bool runRelayActiveHigh=true,runLedActiveHigh=true;
@@ -124,6 +143,7 @@ int main(){
   for(int scenario=0;scenario<16;++scenario){
     LittleFS=FakeLittleFS{};
     fsReady=true;pendingReady=false;journalRecoveryRequired=false;pendingPostAttempted=false;
+    coinEdgeSequence=0;lastHandledCoinEdgeSequence=0;
     pendingPulses=0;pendingNonce.clear();pendingTarget.clear();lastSend=42;
     relayOn=false;ledOn=false;
     auto r=validRecord();
@@ -182,6 +202,7 @@ int main(){
   for(int scenario=0;scenario<17;++scenario){
     LittleFS=FakeLittleFS{};
     fsReady=true;pendingReady=true;journalRecoveryRequired=false;pendingPostAttempted=true;
+    coinEdgeSequence=0;lastHandledCoinEdgeSequence=0;
     pendingPulses=4;pendingNonce="nonce12345678";pendingTarget="target12345678";lastSend=42;
     auto r=validRecord();r.pulses=4;r.checksum=pendingChecksum(r);
     LittleFS.files["/pending.attempt"]=bytes(r);

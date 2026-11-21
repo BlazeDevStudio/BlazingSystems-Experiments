@@ -8,28 +8,16 @@ Host simulation only; physical flash power-cut durability is NOT tested.
 from pathlib import Path
 import re
 import subprocess
+import sys
 import tempfile
 
 ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / "esp8266/BlazePwifiVendo"))
+from firmware_lab_source import extract_block, extract_function
 BOARDS = (
     ("ESP32", ROOT / "esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino"),
     ("ESP8266", ROOT / "esp8266/BlazePwifiVendo/BlazePwifiVendo.ino"),
 )
-
-def extract(src: str, signature: str) -> str:
-    start = src.find(signature)
-    if start < 0:
-        raise RuntimeError(f"Missing production source: {signature}")
-    brace = src.find("{", start)
-    depth = 0
-    for i in range(brace, len(src)):
-        if src[i] == "{":
-            depth += 1
-        elif src[i] == "}":
-            depth -= 1
-            if depth == 0:
-                return src[start:i + 1]
-    raise RuntimeError(f"Unbalanced production source: {signature}")
 
 CPP = r'''
 #include <algorithm>
@@ -94,7 +82,7 @@ struct FakeSerial{template<class T>void println(const T&){} } Serial;
 @@STRUCT@@
 const uint32_t PENDING_MAGIC=@@MAGIC@@;
 bool fsReady=true,pendingReady=false,journalRecoveryRequired=false,pendingPostAttempted=false;
-bool outputPolarityKnown=true;
+bool outputPolarityKnown=true, pinConfigSafe=true;
 uint8_t pendingPulses=0;
 uint32_t lastSend=0;
 String pendingNonce,pendingTarget;
@@ -115,7 +103,7 @@ void store(const char*p,const PendingRecord&r){
   LittleFS.files[p]=std::vector<uint8_t>(b,b+sizeof(r));
 }
 void reboot(){
-  fsReady=true;pendingReady=false;journalRecoveryRequired=false;pendingPostAttempted=false;
+  fsReady=true;pendingReady=false;journalRecoveryRequired=false;pendingPostAttempted=false;pinConfigSafe=true;
   pendingPulses=0;lastSend=0;pendingNonce.clear();pendingTarget.clear();
 }
 #define CHECK(c,n) do{if(!(c)){std::cerr<<"ATTEMPT_MARKER_FAIL "<<n<<"\n";return 1;}++passed;}while(0)
@@ -123,6 +111,10 @@ int main(){
   int passed=0;
   LittleFS=FakeLittleFS{};reboot();loadPending();
   CHECK(!pendingReady&&!journalRecoveryRequired&&!canAttemptCoinPost(),"empty journal");
+
+  LittleFS=FakeLittleFS{};reboot();store("/pending.dat",record());loadPending();
+  pinConfigSafe=false;
+  CHECK(pendingReady&&!canAttemptCoinPost(),"unsafe GPIO map blocks pending dispatch");
 
   LittleFS=FakeLittleFS{};reboot();store("/pending.dat",record());loadPending();
   CHECK(pendingReady&&!journalRecoveryRequired&&canAttemptCoinPost(),"unattempted pending eligible");
@@ -264,32 +256,39 @@ int main(){
         LittleFS.exists("/pending.attempt")&&pendingPostAttempted,
         "single pending.bak candidate permits marker");
 
-  std::cout<<"PENDING_ATTEMPT_MARKER_PASS "<<passed<<"/28 source-extracted cases; physical power cuts NOT TESTED\n";
+  std::cout<<"PENDING_ATTEMPT_MARKER_PASS "<<passed<<"/29 source-extracted cases; physical power cuts NOT TESTED\n";
 }
 '''
 
 for board,path in BOARDS:
     src=path.read_text(encoding="utf-8")
-    loop=extract(src,"void loop(){")
-    gate=extract(src,"bool canAttemptCoinPost(){")
+    loop=extract_function(src,"loop")
+    gate=extract_function(src,"canAttemptCoinPost")
     if "!pendingPostAttempted" not in gate:
         raise SystemExit(f"{board}: previous attempt is not denied by POST gate")
     if loop.count('post("coin"')!=1 or loop.find("markPendingPostAttempt()")<0 or loop.find("markPendingPostAttempt()")>loop.find('post("coin"'):
         raise SystemExit(f"{board}: marker is not before the only coin POST call")
-    if "journalRecoveryRequired=true;" not in loop[loop.find('post("coin"'):]:
-        raise SystemExit(f"{board}: ambiguous POST outcome is not fail-closed")
+    coin_post=loop.find('String r=post("coin"')
+    if coin_post < 0 or "handleCoinPostResponse(r);" not in loop[coin_post:]:
+        raise SystemExit(f"{board}: coin POST does not delegate to disposition helper")
+    handler=extract_function(src,"handleCoinPostResponse")
+    auth_guard=handler.find("if(!coinPostDispositionVerified(response,pendingNonce,pendingTarget,pendingPulses))")
+    clear_pending=handler.find("clearPending();")
+    quarantine=handler.find("quarantinePending(response);")
+    if "journalRecoveryRequired=true;" not in handler or auth_guard < 0 or (clear_pending >= 0 and clear_pending < auth_guard) or (quarantine >= 0 and quarantine < auth_guard):
+        raise SystemExit(f"{board}: ambiguous POST outcome is not fail-closed in disposition helper")
     magic=re.search(r"(?:static\s+)?const uint32_t PENDING_MAGIC\s*=\s*(0x[0-9A-Fa-f]+)",src)
     if not magic: raise SystemExit(f"{board}: missing pending magic")
     values={
-      "@@STRUCT@@":extract(src,"struct PendingRecord {")+";",
+      "@@STRUCT@@":extract_block(src,"struct PendingRecord {")+";",
       "@@MAGIC@@":magic.group(1),
-      "@@CHECKSUM@@":extract(src,"uint32_t pendingChecksum("),
-      "@@READ@@":extract(src,"bool readPendingFile("),
-      "@@SAME@@":extract(src,"bool samePendingRecord("),
-      "@@LOAD@@":extract(src,"void loadPending(){"),
-      "@@MARK@@":extract(src,"bool markPendingPostAttempt(){"),
-      "@@ATTEMPT_MATCH@@":extract(src,"bool pendingAttemptMarkerMatches(){"),
-      "@@CLEAR@@":extract(src,"bool clearPending(){"),
+      "@@CHECKSUM@@":extract_function(src,"pendingChecksum"),
+      "@@READ@@":extract_function(src,"readPendingFile"),
+      "@@SAME@@":extract_function(src,"samePendingRecord"),
+      "@@LOAD@@":extract_function(src,"loadPending"),
+      "@@MARK@@":extract_function(src,"markPendingPostAttempt"),
+      "@@ATTEMPT_MATCH@@":extract_function(src,"pendingAttemptMarkerMatches"),
+      "@@CLEAR@@":extract_function(src,"clearPending"),
       "@@GATE@@":gate,
     }
     cpp=CPP
@@ -300,4 +299,4 @@ for board,path in BOARDS:
       subprocess.run(["g++","-std=c++17","-Wall","-Wextra","-Werror","-O2",str(cp),"-o",str(exe)],check=True)
       subprocess.run([str(exe)],check=True)
     print(f"{board}: exact source functions compiled and tested")
-print("PHX-HARDWARE: 28/28 source-extracted cases per board (56/56 total) PASS; actual flash NOT TESTED")
+print("PHX-HARDWARE: 29/29 source-extracted cases per board (58/58 total) PASS; actual flash NOT TESTED")

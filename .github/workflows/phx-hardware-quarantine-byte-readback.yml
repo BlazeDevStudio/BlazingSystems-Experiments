@@ -1,5 +1,12 @@
 name: PHX-HARDWARE Quarantine Byte Readback LAB
 on:
+  push:
+    branches:
+      - "phoenix/hardware-prepoll-edge-abort-20261119"
+    paths:
+      - "experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/**"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/**"
+      - ".github/workflows/phx-hardware-quarantine-byte-readback.yml"
   pull_request:
     paths:
       - "experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/**"
@@ -23,12 +30,23 @@ jobs:
           python3 experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/quarantine_readback_lab.py
           python3 experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/journal_mount_failclosed_lab.py
           python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_fault_dual_store_lab.py
+          python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_fault_latch_edge_count_lab.py
           python3 experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/pending_journal_recovery_lab.py
+          python3 experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/pending_attempt_marker_lab.py
           python3 experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/pending_write_readback_lab.py
           python3 experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/coin_post_gate_lab.py
           python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_window_drain_lab.py
+          python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_loop_blocking_inhibit_lab.py
+          python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/request_digest_failure_lab.py
+          python3 experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/mbedtls_compat_guard_lab.py
+          python3 experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/nvs_string_readback_lab.py
+          python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/boot_polarity_workflow_wiring_lab.py
+      - name: Verify ESP8266 EEPROM config-read failure and local config migration recovery
+        run: python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/config_load_read_failure_lab.py
       - name: Verify pulse capture after poll-drain abort (both board sketches)
         run: python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/coin_pulse_capture_lab.py
+      - name: Verify ESP8266 cold-boot output polarity remains deny until locally configured
+        run: python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/esp8266_boot_polarity_lab.py
       - name: Assert real money and hardware are not certified
         run: |
           echo "SIMULATED_ONLY=1"

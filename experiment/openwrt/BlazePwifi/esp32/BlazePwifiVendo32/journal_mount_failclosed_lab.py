@@ -7,9 +7,13 @@ gating. Does not initialize, flash, or power cycle any physical device.
 """
 from pathlib import Path
 import subprocess
+import sys
 import tempfile
 
 ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / "esp8266/BlazePwifiVendo"))
+from firmware_lab_source import extract_function
+
 BOARDS = [
     ("ESP32", ROOT / "esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino"),
     ("ESP8266", ROOT / "esp8266/BlazePwifiVendo/BlazePwifiVendo.ino"),
@@ -39,6 +43,11 @@ bool pendingReady=false;
 bool journalRecoveryRequired=false;
 bool pollIntakeSuspended=false, pinConfigSafe=true;
 bool outputPolarityKnown=true;
+// The mount lab tests persistence admission, not asynchronous ISR delivery.
+// Keep the new applyOutputs() edge-snapshot dependency idle in this fixture.
+volatile uint32_t coinEdgeSequence=0;
+uint32_t lastHandledCoinEdgeSequence=0;
+uint32_t snapshotCoinEdgeSequence(){ return coinEdgeSequence; }
 std::string activeTarget="target-01";
 bool insertMode=true,controllerEnabled=true,coinEnabled=true;
 bool relayEnabled=true,ledEnabled=true;
@@ -59,6 +68,7 @@ int main(){
     LittleFS=FakeLittleFS{};
     LittleFS.faultMarkerExists=(scenario==7);
     fsReady=false;pendingReady=false;journalRecoveryRequired=false;
+    coinEdgeSequence=0;lastHandledCoinEdgeSequence=0;
     activeTarget="target-01";
     insertMode=true;controllerEnabled=true;coinEnabled=true;
     relayEnabled=true;ledEnabled=true;
@@ -98,19 +108,36 @@ int main(){
 '''
 
 def extract(src: str, token: str) -> str:
-    start = src.find(token)
-    if start < 0:
-        raise RuntimeError(f"Missing firmware function {token}")
-    depth = 0
-    brace = src.find("{", start)
-    for i in range(brace, len(src)):
-        if src[i] == "{":
-            depth += 1
-        elif src[i] == "}":
-            depth -= 1
-            if depth == 0:
-                return src[start:i+1]
-    raise RuntimeError(f"Unclosed firmware function {token}")
+    # The marker is retained for readable call sites; lexical parsing is shared.
+    prefix = token.split("(", 1)[0]
+    parts = prefix.split()
+    if not parts:
+        raise RuntimeError(f"Missing firmware function name in token: {token}")
+    return extract_function(src, parts[-1])
+
+
+def verify_lexical_extractor_regression():
+    cases = (
+        ("ordinary string", '  const char *value = "}";'),
+        ("C++ raw string", '  const char *value = R"tag({ } )tag";'),
+        ("line comment", "  // }"),
+        ("block comment", "  /* } { */"),
+    )
+    for label, statement in cases:
+        fixture = (
+            "bool target(){\n"
+            + statement
+            + "\n  return true;\n}\nbool after(){ return false; }\n"
+        )
+        extracted = extract(fixture, "bool target(){")
+        if "return true;" not in extracted or "bool after()" in extracted:
+            raise SystemExit(
+                f"JOURNAL_MOUNT_EXTRACTOR_FAIL: {label} brace truncated target()"
+            )
+    print("JOURNAL_MOUNT_LEXICAL_EXTRACTOR_PASS 4/4")
+
+
+verify_lexical_extractor_regression()
 
 for board, path in BOARDS:
     real = path.read_text(encoding="utf-8")

@@ -9,6 +9,8 @@ import sys
 import tempfile
 
 ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / "esp8266/BlazePwifiVendo"))
+from firmware_lab_source import extract_function
 BOARDS = (
     ("ESP32", ROOT / "esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino"),
     ("ESP8266", ROOT / "esp8266/BlazePwifiVendo/BlazePwifiVendo.ino"),
@@ -31,7 +33,7 @@ static bool fsReady=true;
 static bool journalRecoveryRequired=false;
 // Mirrors the production one-shot gate state used by canAttemptCoinPost().
 static bool pendingPostAttempted=false;
-bool outputPolarityKnown=true;
+bool outputPolarityKnown=true, pinConfigSafe=true;
 static bool attemptMarkerExists=true, attemptMarkerValid=true;
 static uint8_t pendingPulses=4;
 static bool pendingReady=true;
@@ -222,7 +224,7 @@ int main(){
     bool expectClearAttempt=expectClear || scenario==11;
     bool expectRecovery=scenario==1 || scenario==3 || scenario==4 ||
                         (scenario>=5 && scenario<=10) ||
-                        scenario==11 || scenario==13 || scenario==15 || scenario==16 || scenario==17 || scenario==18 || scenario==34 || (scenario>=19 && scenario!=31 && scenario!=33);
+                        scenario==2 || scenario==11 || scenario==13 || scenario==15 || scenario==16 || scenario==17 || scenario==18 || scenario==34 || (scenario>=19 && scenario!=31 && scenario!=33);
     bool ok=quarantinePending(reason);
     if(ok!=expectClear || clearCount!=(expectClearAttempt?1:0) ||
        (!expectClear && pendingPulses!=(scenario==2?0:4)) ||
@@ -293,25 +295,34 @@ int main(){
 '''
 
 def extract(src: str, signature: str) -> str:
-    pos = src.find(signature)
-    if pos < 0:
-        raise RuntimeError(f"Missing real function: {signature}")
-    brace = src.find("{", pos)
-    depth = 0
-    for i in range(brace, len(src)):
-        if src[i] == "{":
-            depth += 1
-        elif src[i] == "}":
-            depth -= 1
-            if depth == 0:
-                return src[pos:i + 1]
-    raise RuntimeError(f"Unbalanced source: {signature}")
+    # The caller stores a C++ signature prefix; delegate lexical parsing to the
+    # shared helper so braces in comments and literals cannot truncate a body.
+    name = signature.split("(", 1)[0].split()[-1]
+    return extract_function(src, name)
+
+def verify_lexical_extractor():
+    fixture = (
+        'String lexicalProbe(){\n'
+        '  const char *ordinary = "}";\n'
+        '  const char *raw = R"tag({ })tag";\n'
+        '  /* } */\n'
+        '  return ordinary;\n'
+        '}'
+    )
+    if extract(fixture, "String lexicalProbe(") != fixture:
+        raise SystemExit(
+            "PHX-HARDWARE: source extractor truncated a C++ literal/comment fixture"
+        )
+
+
+verify_lexical_extractor()
 
 
 # These helpers define the pending-event/quarantine safety boundary. They are
 # intentionally byte-identical across ESP32 and ESP8266 so board drift cannot
 # silently weaken one controller while the other remains protected.
 PARITY_SIGNATURES = (
+    # Pending-event and quarantine persistence must remain byte-identical.
     "bool readPendingFile(",
     "bool markPendingPostAttempt(",
     "bool pendingAttemptMarkerMatches()",
@@ -323,6 +334,18 @@ PARITY_SIGNATURES = (
     "bool inspectQuarantineLog(",
     "bool appendQuarantineRecord(",
     "bool quarantinePending(",
+    # The two board consumers must also share one poll/coin response boundary.
+    "bool pollJsonSpace(",
+    "bool pollJsonHex(",
+    "bool pollJsonSkipString(",
+    "bool pollJsonSkipComposite(",
+    "bool pollJsonSkipPrimitive(",
+    "bool pollJsonSkipValue(",
+    "bool pollJsonTopLevelTrue(",
+    "bool validSha256Hex(",
+    "bool coinPostDispositionVerified(",
+    "void handleCoinPostResponse(",
+    "bool acceptPollResponse(",
 )
 
 
@@ -354,10 +377,10 @@ def board_parity_mismatches(helpers):
 def board_polarity_guard_problem(helpers):
     esp8266 = helpers["ESP8266"][POLARITY_SIGNATURE]
     esp32 = helpers["ESP32"][POLARITY_SIGNATURE]
-    if "outputPolarityKnown && fsReady" not in esp8266:
-        return "ESP8266 local output-polarity admission guard is missing"
-    if "outputPolarityKnown && fsReady" not in esp32:
-        return "ESP32 local output-polarity admission guard is missing"
+    if "outputPolarityKnown && pinConfigSafe && fsReady" not in esp8266:
+        return "ESP8266 local polarity/GPIO admission guard is missing"
+    if "outputPolarityKnown && pinConfigSafe && fsReady" not in esp32:
+        return "ESP32 local polarity/GPIO admission guard is missing"
     normalized_esp8266 = " ".join(esp8266.split())
     normalized_esp32 = " ".join(esp32.split())
     if normalized_esp8266 != normalized_esp32:
@@ -389,6 +412,43 @@ def verify_board_safety_parity():
     if not board_parity_mismatches(mutated):
         raise SystemExit("PHX-HARDWARE: fail-open board-drift mutation was not detected")
 
+    # A one-board fail-open coin disposition must be rejected before drift ships.
+    disposition_signature = "bool coinPostDispositionVerified("
+    disposition = mutated["ESP8266"][disposition_signature]
+    if disposition.count("return false;") != 1:
+        raise SystemExit("PHX-HARDWARE: coin-disposition fail-open mutation anchor is not unique")
+    mutated_disposition = {board: dict(functions) for board, functions in helpers.items()}
+    mutated_disposition["ESP8266"][disposition_signature] = disposition.replace(
+        "return false;", "return true;", 1
+    )
+    if not board_parity_mismatches(mutated_disposition):
+        raise SystemExit("PHX-HARDWARE: coin-disposition fail-open mutation was not detected")
+
+    # A one-board permissive root-status parser must also be rejected.
+    parser_signature = "bool pollJsonTopLevelTrue("
+    parser = helpers["ESP8266"][parser_signature]
+    parser_anchor = "return p==n && found==1 && accepted;"
+    if parser.count(parser_anchor) != 1:
+        raise SystemExit("PHX-HARDWARE: poll-parser permissive mutation anchor is not unique")
+    mutated_parser = {board: dict(functions) for board, functions in helpers.items()}
+    mutated_parser["ESP8266"][parser_signature] = parser.replace(
+        parser_anchor, "return true;", 1
+    )
+    if not board_parity_mismatches(mutated_parser):
+        raise SystemExit("PHX-HARDWARE: permissive poll-parser mutation was not detected")
+
+    # acceptPollResponse is deliberately deny-only until CORE/QA approve a contract.
+    admission_signature = "bool acceptPollResponse("
+    admission = helpers["ESP8266"][admission_signature]
+    if admission.count("return false;") != 1:
+        raise SystemExit("PHX-HARDWARE: poll-admission mutation anchor is not unique")
+    mutated_admission = {board: dict(functions) for board, functions in helpers.items()}
+    mutated_admission["ESP8266"][admission_signature] = admission.replace(
+        "return false;", "return true;", 1
+    )
+    if not board_parity_mismatches(mutated_admission):
+        raise SystemExit("PHX-HARDWARE: positive poll-admission mutation was not detected")
+
     # Both boards must retain the local polarity admission gate.
     for board in ("ESP8266", "ESP32"):
         polarity_mutated = {name: dict(functions) for name, functions in helpers.items()}
@@ -400,9 +460,12 @@ def verify_board_safety_parity():
         if board_polarity_guard_problem(polarity_mutated) is None:
             raise SystemExit("PHX-HARDWARE: " + board + " output-polarity gate removal mutation was not detected")
 
-    print("BOARD_QUARANTINE_PARITY_PASS 11/11 shared helpers byte-identical")
+    print("BOARD_SHARED_SAFETY_PARITY_PASS 22/22 functions byte-identical")
     print("ESP32_AND_ESP8266_LOCAL_POLARITY_GATES_PASS")
     print("BOARD_PARITY_MUTATION_REJECTED fail-open append verification bypass")
+    print("BOARD_PARITY_MUTATION_REJECTED fail-open coin disposition")
+    print("BOARD_PARITY_MUTATION_REJECTED permissive poll status parser")
+    print("BOARD_PARITY_MUTATION_REJECTED positive poll response admission")
     print("ESP32_AND_ESP8266_POLARITY_MUTATIONS_REJECTED removed local gate")
 
 
@@ -454,8 +517,8 @@ if attempt_marker_result.stderr:
     print(attempt_marker_result.stderr, file=sys.stderr, end="")
 if attempt_marker_result.returncode:
     raise SystemExit(attempt_marker_result.returncode)
-if attempt_marker_result.stdout.count("PENDING_ATTEMPT_MARKER_PASS 28/28") != len(BOARDS):
+if attempt_marker_result.stdout.count("PENDING_ATTEMPT_MARKER_PASS 29/29") != len(BOARDS):
     raise SystemExit("PHX-HARDWARE: attempt-marker per-board summary count mismatch")
-if "PHX-HARDWARE: 28/28 source-extracted cases per board (56/56 total) PASS" not in attempt_marker_result.stdout:
+if "PHX-HARDWARE: 29/29 source-extracted cases per board (58/58 total) PASS" not in attempt_marker_result.stdout:
     raise SystemExit("PHX-HARDWARE: attempt-marker aggregate summary mismatch")
 
