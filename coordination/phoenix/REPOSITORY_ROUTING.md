@@ -1384,3 +1384,12 @@ The machine-readable `OWNERSHIP_ROUTES.json` remains unchanged at blob `e4db3243
 HARDWARE #339 (source/test `f3dca92...`, docs head `b3e15588...`) and separate #340 (source/test `4eefce64...`, docs head `20c5889...`) remain distinct owner-controlled candidates. Their exact recursive trees and the main baseline were compared to COE #26. Both firmware sketches diverge from the destination; Python board-lab helpers have no COE Hardware equivalents; source QA test blobs differ from the COE Hardware test; source root NOTICE and COE Hardware LICENSE/NOTICE gaps remain.
 
 No route promotion, destination staging, copy, move, overwrite, cherry-pick, rebase or COE edit is authorized or performed. Broad Rental standalone remains `manual-file-mapping-required` with `copy_permitted=false`. COE #26 remains FROZEN.
+
+## UTC10 Hardware #341 and COE #26 route disposition — 2026-11-22
+
+The machine-readable `OWNERSHIP_ROUTES.json` remains unchanged at blob `e4db324315a1b3543fec17a148fbf960170fcb29`, schema `phoenix/ownership-routes/v1`, 11 routes, `DRAFT_REVIEW_ONLY`. PHX-MASTER remains coordination-only with destination `null`.
+
+HARDWARE #341 is a separate child of #339 at exact parent `b3e1558845ae2cd508e42d0d4722fdcd28293e32`; it carries a host-lab fixture port and remains OPEN / DRAFT / UNMERGED. It does not authorize a merge or alter the #327/#339 ancestry. COE #26 remains at `b382d233ff06c8791b1028bed3c617cc7b670d12`, FROZEN, with five queued workflows / zero jobs.
+
+The exact #341 helper/runner, firmware sketch and test blobs differ from COE #26; COE Hardware has no Python helper equivalents and has root NOTICE plus Hardware LICENSE/NOTICE gaps. Only BlazePwifi LICENSE ↔ Pisowifi LICENSE is byte-identical. No source staging, copy, move, overwrite, cherry-pick, rebase, destination edit, route promotion or integration proposal occurred. Broad RENTAL remains manual-file-mapping-required with `copy_permitted=false`.
+
