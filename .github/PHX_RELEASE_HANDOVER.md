@@ -2484,7 +2484,7 @@ PR #291 currently has 27 accumulated changed paths: 22 RELEASE, 3 CORE and 2 PIS
 ### Cleanup, registry provenance and next owners
 
 - Cleanup-first issue #266 remains OPEN, **0/7 tracks complete**. This bounded RELEASE handover update does not complete the seven-role cleanup gate.
-- Authorized Library search surfaced a private production-checkpoint metadata record that references canonical Drive registry v11 and its historical 55-project count, but the canonical registry file itself was not surfaced. No older registry snapshot was substituted; no private contents or identifiers were copied to GitHub.
+- Authorized Library search surfaced a private production-checkpoint metadata record that references canonical Drive registry v11 and its historical 55-project count, but the canonical registry file itself was not surfaced and is not available through the current authorized Library/connector surface. No older registry snapshot was substituted; no private contents or identifiers were copied to GitHub.
 - The live #172 control-plane body still contains older embedded #291 / COE #35 role-head pins. PHX-MASTER owns that index and should reconcile it against the exact live refs above; RELEASE did not edit MASTER-owned coordination.
 - PHX-CORE must refresh its own project handover before Full validation can pass. PHX-INFRA must provide the approved disposable Bubblewrap-capable runner with working unprivileged namespaces. PHX-CORE / MASTER must establish approved site-scoped ULA /48 authority. PHX-QA and PHX-MASTER reviews remain pending.
 
