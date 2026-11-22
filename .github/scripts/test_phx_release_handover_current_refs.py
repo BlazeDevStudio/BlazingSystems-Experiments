@@ -62,10 +62,14 @@ COE35_OBSERVED_HEAD = "edb4eb482dfa94bbad2dcf29b90b8463a2165fa5"
 COE35_BASE_SHA = "59ed44d0b911e176f1a95b9cf5585ef811ffd31b"
 
 
-def _utc20_section(content: str) -> str:
-    if UTC20_MARKER not in content:
+def _section_after_marker(content: str, marker: str) -> str:
+    if marker not in content:
         return ""
-    return content.split(UTC20_MARKER, 1)[1].split("\\n## ", 1)[0]
+    return content.split(marker, 1)[1].split("\n## ", 1)[0]
+
+
+def _utc20_section(content: str) -> str:
+    return _section_after_marker(content, UTC20_MARKER)
 
 
 class ReleaseHandoverUTC20CurrentRefsTests(unittest.TestCase):
@@ -120,9 +124,7 @@ COE35_BASE_SHA_UTC21 = "59ed44d0b911e176f1a95b9cf5585ef811ffd31b"
 
 
 def _utc21_section(content: str) -> str:
-    if UTC21_MARKER not in content:
-        return ""
-    return content.split(UTC21_MARKER, 1)[1].split("\\n## ", 1)[0]
+    return _section_after_marker(content, UTC21_MARKER)
 
 
 class ReleaseHandoverUTC21CurrentRefsTests(unittest.TestCase):
@@ -186,8 +188,8 @@ class ReleaseHandoverUTC21CurrentRefsTests(unittest.TestCase):
         self.assertIn("30-device/24-hour soak", self.section)
 
     def test_utc21_section_stops_at_next_heading(self):
-        sample = f"{UTC21_MARKER}\\nkeep-this\\n## NEXT SECTION\\nleaked-sentinel"
-        self.assertEqual(_utc21_section(sample), "\\nkeep-this")
+        sample = f"{UTC21_MARKER}\nkeep-this\n## NEXT SECTION\nleaked-sentinel"
+        self.assertEqual(_utc21_section(sample), "\nkeep-this")
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
