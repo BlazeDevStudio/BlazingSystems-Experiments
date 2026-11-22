@@ -3867,3 +3867,23 @@ GitHub compare #327...#339 returns DIVERGED: 64 commits ahead, 32 behind, merge 
 Experiments experiment/openwrt/BlazePwifi/LICENSE and COE Pisowifi/LICENSE are byte-identical at blob 1ee55b94183417be977ca287cd7391f9a6f7e721. Experiments root NOTICE.md exists at f6d92cd21465312be5993631fe26977219be0fb9; COE root NOTICE.md is absent; COE Hardware/LICENSE and Hardware/NOTICE.md are absent.
 
 **Disposition: NO MIGRATION.** No file staging, copy, move, overwrite, cherry-pick, rebase, retarget, destination edit or route promotion occurred. The unchanged OWNERSHIP_ROUTES.json remains 11 routes, DRAFT_REVIEW_ONLY, PHX-MASTER target null. COE #26 remains FROZEN.
+
+## UTC10 exact #341 source and COE #26 staging comparison — 2026-11-22
+
+The #341 source/test commit `56ce713088fb5dccda5fb5434416fc5b6c75388a` and final docs head `a655d0b5c144535a3ad8e48009fc4498318ff5e3` were re-read at exact refs. COE #26 destination was re-read at `b382d233ff06c8791b1028bed3c617cc7b670d12`.
+
+| Artifact | Experiments #341 | COE #26 | Result |
+|---|---|---|---|
+| ESP8266 sketch | `71160ac8ebd5163b19a56d6c9e229a5429975fc8` | `c8be98f72596681e36a3ad1f8939bf8046c96887` | Different blobs |
+| ESP32 sketch | `53b27aa80fa4a91aabac71de57f550a8eef2cb61` | `3cc7ec54b476943dc04a8d1af5e2df5fe054e422` | Different blobs |
+| Firmware hardening test | `41211b2c110ab409f6d9d1812ef12fda73b13211` | `f921c56cecc19cab1989507b9b4ade1f45dac54e` | Different blobs |
+| Dual-store fixture helper | `c5bc7da2d10e865d8fea2ca6b7fcd735770c1655` | No Hardware Python helper | No destination equivalent |
+| Dual-store runner | `d50d5f9eadd798e3e43464f9c7c10f1908706cae` | No Hardware Python helper | No destination equivalent |
+| LICENSE | `1ee55b94183417be977ca287cd7391f9a6f7e721` | `1ee55b94183417be977ca287cd7391f9a6f7e721` | Byte-identical |
+| Root NOTICE | `f6d92cd21465312be5993631fe26977219be0fb9` | Missing | Gap |
+| Hardware LICENSE / NOTICE | Source root LICENSE/NOTICE only | Both missing | Gap |
+
+COE #26 PR changed-file inventory is 205 paths and contains zero `Hardware/**/*.py` files. #327's fixture/runner blobs (`894589c45500f76c0728ffa1ce16c12992da4f12` / `190303695af19f90f6d29f12ec5db552cff9c971`) are not byte-identical to the #341 port. The new child is a separately reviewed port candidate, not a byte-identical import.
+
+No complete import is established. No destination staging, copy, move, overwrite, cherry-pick, rebase, retarget or COE edit occurred. No route promotion is proposed. COE #26 remains FROZEN.
+
