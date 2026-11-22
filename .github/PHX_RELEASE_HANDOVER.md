@@ -2335,7 +2335,7 @@ Arduino CLI creates a \`build/\` directory inside the staged sketch directory fo
 - Test fixture uses the actual Git tree listing: [6857bff](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/6857bff9a2c9a979cc5a679bbc7f13af1d963fd9).
 - Initial tree/blob and staged-copy implementation: [4fe4c6c](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/4fe4c6cac786a8a47b783ea3928b43beb8d8ab5a).
 - Generated compiler-output regression (expected RED): [507070d](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/507070db13780745f46468355ab204ace6538ff0).
-- Final generated-output separation fix: [1851f1d](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/1851f1d06648beed70695528f2799d57154a69237).
+- Final generated-output separation fix: [1851f1d](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/185f1d06648beed70695528f2799d57154a69237).
 
 Only RELEASE-owned \`.github/scripts/write_build_provenance.py\` and \`.github/scripts/test_build_provenance.py\` were changed for source/test work. No CORE, RENTAL, PISONET, HARDWARE, QA or MASTER implementation was changed.
 
@@ -2352,7 +2352,7 @@ The CI-generated ESP32/ESP8266 artifacts and synthetic fixture tests are not app
 
 ### Live ownership and integration snapshot
 
-- PR #291 branch \`phoenix/release-publisher-isolation-20261115\`, source/test HEAD \`1851f1d06648beed70695528f2799d57154a69237\`, base #242 \`734b89d9e7792247e8376335c3f3685500ab3f89\`; PR remains OPEN/DRAFT/UNMERGED with zero independent submitted reviews. Its 26 accumulated changed paths remain mixed-owner (21 RELEASE / 3 CORE / 2 PISONET); this task changed only the two RELEASE-owned provenance files.
+- PR #291 branch \`phoenix/release-publisher-isolation-20261115\`, source/test HEAD \`185f1d06648beed70695528f2799d57154a69237\`, base #242 \`734b89d9e7792247e8376335c3f3685500ab3f89\`; PR remains OPEN/DRAFT/UNMERGED with zero independent submitted reviews. Its 26 accumulated changed paths remain mixed-owner (21 RELEASE / 3 CORE / 2 PISONET); this task changed only the two RELEASE-owned provenance files.
 - MASTER #288 live head \`783c97ce997b6bfd0706f4d11e1b97fff588140e\`; ownership manifest \`e4db324315a1b3543fec17a148fbf960170fcb29\` remains \`DRAFT_REVIEW_ONLY\`. The RELEASE route \`.github/workflows/blazepwifi-build.yml\` → \`.github/workflows/pisowifi-ci.yml\` remains \`reimplementation-review\`; no migration authorization.
 - COE #26 remains frozen at \`b382d233ff06c8791b1028bed3c617cc7b670d12\` with five queued workflows and zero executed jobs.
 - COE parent #31 remains draft at \`59ed44d0b911e176f1a95b9cf5585ef811ffd31b\`; child #35 remains draft at \`d28271a35776543bf558c90e3a117957829ee61c\`. The #35 packaging suite last passed 125 tests, while all ten profile admissions still fail closed without approved site-scoped ULA /48 authority and its mandatory sandbox remains blocked by Bubblewrap availability.
@@ -2370,3 +2370,59 @@ The CI-generated ESP32/ESP8266 artifacts and synthetic fixture tests are not app
 5. Registry custodian: restore authorized access to canonical private Drive registry v11.
 
 No merge, signer operation, real-key signing, tag, publication, hardware flash, payment migration or customer deployment occurred. **PRODUCTION NO-GO remains in force.**
+
+
+---
+
+## PHX-RELEASE UTC19 — exact release source and COE head reconciliation
+
+**Activation:** 2026-11-22T19:07Z onward. This is a RELEASE-owned provenance correction on the existing draft #291 branch. It does not change product firmware, shared interfaces, other roles' files, ownership routes, signer policy or release gates.
+
+### Exact source identity
+
+- Experiments PR #291 branch: \`phoenix/release-publisher-isolation-20261115\`.
+- PR #291 starting docs HEAD before this UTC19 test guard: \`42797e2f3d65c30a1070caf49c93aebec149d897\`.
+- PR #291 base (#242): \`734b89d9e7792247e8376335c3f3685500ab3f89\`.
+- Verified source-fix commit for the Arduino generated-output separation: [\`185f1d\`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/185f1d06648beed70695528f2799d57154a69237). The older handover contained a transposed SHA; the corrected link resolves to the actual commit and the transposed value does not resolve (GitHub 422).
+- Test-first UTC19 commit: [\`8ffe392\`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/8ffe39276b955aae8e97352a3b7532c53035609a). It adds only this RELEASE-owned ref regression and wires it into CI-0701. The source handover correction follows in this activation.
+- Current PR #291 accumulated diff remains 26 paths with mixed ownership (21 RELEASE / 3 CORE / 2 PISONET). No inherited CORE/PISONET path was edited. PR remains OPEN / DRAFT / UNMERGED; no independent reviews or review threads were present at this refresh.
+
+### Exact current cross-repository refs
+
+- MASTER PR #288: \`f6fc375e02d63afd34f00bad3cbbb989d1474c18\`, OPEN / DRAFT. \`OWNERSHIP_ROUTES.json\` blob \`e4db324315a1b3543fec17a148fbf960170fcb29\` remains \`DRAFT_REVIEW_ONLY\`; RELEASE's \`.github/workflows/blazepwifi-build.yml\` route to COE \`.github/workflows/pisowifi-ci.yml\` remains \`reimplementation-review\`. No migration authorization.
+- Experiments PR #242: \`734b89d9e7792247e8376335c3f3685500ab3f89\`, OPEN / DRAFT. Windows run [#40882814472](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/40882814472) succeeded; this is not signing or publication acceptance.
+- Experiments PR #291: starting head \`42797e2f3d65c30a1070caf49c93aebec149d897\`, base #242 \`734b89d9e7792247e8376335c3f3685500ab3f89\`.
+- COE integration PR #26: \`b382d233ff06c8791b1028bed3c617cc7b670d12\`, OPEN / DRAFT / FROZEN; five workflows queued, zero jobs executed.
+- COE release-packager parent PR #31: \`59ed44d0b911e176f1a95b9cf5585ef811ffd31b\`, OPEN / DRAFT.
+- COE release-packager child PR #35: current exact head \`edb4eb482dfa94bbad2dcf29b90b8463a2165fa5\`; base #31 \`59ed44d0b911e176f1a95b9cf5585ef811ffd31b\`. This supersedes older #35 heads embedded in earlier handover snapshots.
+
+### Exact-head CI reconciliation before the UTC19 correction
+
+**Experiments #291 at \`42797e2f\`:**
+- ESP32 compatibility [#44894604453](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44894604453): SUCCESS; provenance regression suite and both ESP32 core 3.3.13 / 4.0.0 jobs passed.
+- Full BlazePwifi [#44894604464](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44894604464): FAILURE at the CORE-owned BlazePwifi handover freshness gate. ESP32, ESP8266, Android and 11 OpenWrt target jobs (14 target/platform jobs total) completed SUCCESS. Update bundle, simulations, candidate gate, production sign handoff and publication were SKIPPED.
+- Windows [#44894604466](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44894604466): FAILURE at the same CORE-owned BlazePwifi handover freshness gate; Windows build and publisher were SKIPPED. The PISONET negative self-test was not reached by this run.
+
+**COE #35 at exact head \`edb4eb482dfa94bbad2dcf29b90b8463a2165fa5\`:**
+- Sandbox [#45054914749](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45054914749): 37/37 host-preflight tests PASS, then FAILED CLOSED because Bubblewrap is not installed (exit 125). Namespace verification and mandatory sandbox packaging tests were SKIPPED.
+- Shared/firmware [#45054914752](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45054914752): 190 tests PASS / 2 intentional skips; manifest durability marker PASS. Overall workflow FAILURE because all ten profiles fail closed without approved site-scoped RFC 4193 ULA /48 authority. ESP32/ESP8266 compilation SKIPPED.
+- Case-collision [#45054914784](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45054914784): PASS.
+
+These are hosted CI results only. No actual Bubblewrap namespace run or ImageBuilder output was produced by the blocked sandbox job. The profile gate remains fail-closed; RELEASE did not invent or set a ULA prefix.
+
+### UTC19 test-first evidence
+
+- The four new handover-ref tests were added to CI-0701 and executed at test-only commit \`8ffe39276b955aae8e97352a3b7532c53035609a\`.
+- Expected RED PR run [#45059662114](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45059662114): CI-0701 FAILED with all four new tests failing because the UTC19 current-ref section was not yet present and the old handover still contained the transposed source reference. Downstream build/validation/sign/publish jobs were SKIPPED.
+- Expected RED push run [#45059659684](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45059659684): CI-0701 reproduced the same four expected failures; downstream jobs SKIPPED.
+- Windows run [#45059662097](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45059662097): the separate CORE-owned handover freshness gate FAILED; Windows build and publisher SKIPPED.
+- Compatibility matrix run [#45059662069](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45059662069) was still in progress at the last read; no result is claimed here.
+
+### Cleanup, provenance and release gate
+
+- Cleanup-first issue #266 remains OPEN, 0/7 tracks complete. This one RELEASE handover correction does not complete the seven-role cleanup checklist.
+- The canonical private Drive project registry v11 and newer corrections were not directly accessible through the authorized Library/connector surface. Older snapshots were not substituted; no private registry contents or identifiers were copied to GitHub.
+- Independent QA/MASTER reviews remain required. The route manifest is still review-only; no source migration, rebase, retarget, merge or publication was performed.
+- No real-key signing, release tag, hardware flash, real payment migration or customer deployment occurred. Protected signer and independent freshness witness, durable financial accounting/migration, independent QA/MASTER approval, approved production binaries, 150 physical power cuts and the 30-device/24-hour soak remain unproven or NOT TESTED.
+
+**Disposition: PRODUCTION NO-GO.** This UTC19 work is a provenance/documentation correction with a CI regression guard, not a release candidate or production acceptance.
