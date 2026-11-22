@@ -3783,3 +3783,44 @@ Sketch blobs — ESP8266: main bfb94920eb0a189ca01d52e5443954fa133f5423; #339 71
 Test identities diverge: #339 source v05_firmware_hardening_test.sh 41211b2c110ab409f6d9d1812ef12fda73b13211; #340 source same path dc20a6ce1a1828c9cba9631fc67193840de5c224; COE Hardware/tests/test_firmware_hardening.sh f921c56cecc19cab1989507b9b4ade1f45dac54e. No byte-identical test import is established.
 
 Only BlazePwifi/LICENSE ↔ Pisowifi/LICENSE is byte-identical (1ee55b94183417be977ca287cd7391f9a6f7e721). Source root NOTICE.md exists (f6d92cd21465312be5993631fe26977219be0fb9); COE root NOTICE.md and COE Hardware/LICENSE / Hardware/NOTICE.md are absent. No destination staging or write occurred.
+
+## UTC05 exact recursive-tree, firmware/test identity and license refresh — 2026-11-22T05:38Z
+
+All recursive trees were complete (`truncated=false`): Experiments main 2,340 entries; HARDWARE #339 2,479; separate HARDWARE #340 2,363; COE #26 286.
+
+| Source candidate | Route | Source files | COE #26 files | Identical | Divergent | Source-only | Destination-only |
+|---|---|---:|---:|---:|---:|---:|---:|
+| Experiments main | ESP32 | 3 | 1 | 0 | 1 | 2 | 0 |
+| Experiments main | ESP8266 | 3 | 1 | 0 | 1 | 2 | 0 |
+| Experiments main | QA/Pisowifi tests | 38 | 19 | 1 | 3 | 34 | 15 |
+| HARDWARE #339 | ESP32 | 18 | 1 | 0 | 1 | 17 | 0 |
+| HARDWARE #339 | ESP8266 | 30 | 1 | 0 | 1 | 29 | 0 |
+| HARDWARE #339 | QA/Pisowifi tests | 47 | 19 | 1 | 3 | 43 | 15 |
+| HARDWARE #340 | ESP32 | 9 | 1 | 0 | 1 | 8 | 0 |
+| HARDWARE #340 | ESP8266 | 4 | 1 | 0 | 1 | 3 | 0 |
+| HARDWARE #340 | QA/Pisowifi tests | 39 | 19 | 1 | 3 | 35 | 15 |
+
+### Exact firmware and test blobs
+
+| Artifact | Exact path | Git blob |
+|---|---|---|
+| Main ESP32 | `experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino` | `117c6e937e8f12f3890ace2ae23b3a23ff1c3df0` |
+| #339 ESP32 | same source path | `53b27aa80fa4a91aabac71de57f550a8eef2cb61` |
+| #340 ESP32 | same source path | `6a6b1c826872af9f21721fb82cbc5754785c7888` |
+| COE ESP32 | `Hardware/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino` | `3cc7ec54b476943dc04a8d1af5e2df5fe054e422` |
+| Main ESP8266 | `experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/BlazePwifiVendo.ino` | `bfb94920eb0a189ca01d52e5443954fa133f5423` |
+| #339 ESP8266 | same source path | `71160ac8ebd5163b19a56d6c9e229a5429975fc8` |
+| #340 ESP8266 | same source path | `fdd4e45b2346957ce5f55ae529734854e4c78c7f` |
+| COE ESP8266 | `Hardware/esp8266/BlazePwifiVendo/BlazePwifiVendo.ino` | `c8be98f72596681e36a3ad1f8939bf8046c96887` |
+
+Host-lab Python helpers: #339 has 36, #340 has 7, COE Hardware has 0.
+
+Firmware-hardening test identities are not equivalent: #339 `experiment/openwrt/BlazePwifi/tests/v05_firmware_hardening_test.sh` = `41211b2c110ab409f6d9d1812ef12fda73b13211`; #340 same path = `dc20a6ce1a1828c9cba9631fc67193840de5c224`; COE `Hardware/tests/test_firmware_hardening.sh` = `f921c56cecc19cab1989507b9b4ade1f45dac54e`. No byte-identical test import is established.
+
+### License / NOTICE
+
+- Experiments `experiment/openwrt/BlazePwifi/LICENSE` and COE `Pisowifi/LICENSE` are byte-identical: `1ee55b94183417be977ca287cd7391f9a6f7e721`.
+- Experiments root `NOTICE.md` exists: `f6d92cd21465312be5993631fe26977219be0fb9`; COE root `NOTICE.md` is absent.
+- COE `Hardware/LICENSE` and `Hardware/NOTICE.md` are absent.
+
+These are exact tree/blob comparisons, not test execution or migration approval. No COE destination file was staged, copied, moved, overwritten, rebased, cherry-picked or edited. COE #26 remains FROZEN.

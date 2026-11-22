@@ -558,3 +558,12 @@ Current coordination snapshot: Master PR #288 audit-start head `e2a6934cd2dba8e7
 - REPOSITORY_ROUTING.md confirms the 11-route manifest remains DRAFT_REVIEW_ONLY and PHX-MASTER target null; no migration was staged.
 - AUDIT_SUMMARY.md records the actual named development branch, Master test/DNS blocker, private Drive registry blocker, branch-protection unknown and cleanup #266 0/7.
 - PR #288 remains OPEN / DRAFT / UNMERGED; COE #26 remains FROZEN; PRODUCTION NO-GO. No subsystem source or COE destination was modified.
+
+## Latest live PHX-MASTER refresh — UTC05, 2026-11-22
+
+- [UTC05 live owner CI, Hardware candidate split and COE #26 exact-tree provenance report](PHX_MASTER_UTC05_20261122_LIVE_ROLE_CI_HARDWARE_CANDIDATES_AND_COE26_PROVENANCE.md).
+- [ROLE_ASSIGNMENTS.md](ROLE_ASSIGNMENTS.md) pins current owner PR heads and exact CI; #339 fails at the inherited QA poll-signature marker while separate #340 has candidate CI PASS with signing/publication skipped.
+- [INTEGRATION_MATRIX.md](INTEGRATION_MATRIX.md) records complete main/#339/#340/COE #26 trees, exact firmware/test blobs, host-lab import gaps and license/NOTICE differences.
+- [REPOSITORY_ROUTING.md](REPOSITORY_ROUTING.md) confirms the 11-route manifest remains DRAFT_REVIEW_ONLY and PHX-MASTER destination null; no migration was staged.
+- [AUDIT_SUMMARY.md](AUDIT_SUMMARY.md) records 13/13 bounded metadata assertions, full Master tests NOT RUN after GitHub DNS failure, private Drive v11/newer corrections BLOCKED, and cleanup #266 at 0/7.
+- PR #288 remains OPEN / DRAFT / UNMERGED; COE #26 remains FROZEN; PRODUCTION NO-GO. No subsystem source or COE destination was modified.
