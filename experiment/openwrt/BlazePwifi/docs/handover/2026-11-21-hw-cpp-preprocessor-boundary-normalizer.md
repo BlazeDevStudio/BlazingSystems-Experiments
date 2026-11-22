@@ -96,3 +96,43 @@ At this activation:
 - Private \`BLAZE_PROJECT_REGISTRY_v11_20261027.json\`: not accessible through the available Google Drive connector surface; exhaustive Library listing found only v3–v7 snapshots. No older registry was substituted.
 
 No physical flash/reset, live coin or money operation, production migration, signing, merge, release tag or deployment occurred. **HARDWARE ACCEPTED: NO. PRODUCTION READY: NO-GO.**
+
+
+## UTC00 follow-up — phase-2 spliced comment delimiters
+
+**Source/test commit:** \`e570d74848e80f06986b37b90dc439e1ed67a2dd\`  
+**PR branch:** \`phoenix/hardware-cpp-preprocessor-boundary-20261121-utc23\`  
+**Parent #338:** \`1a6a7cacf95722a78330d70de057e858143520f2\`
+
+### Additional defect reproduced
+
+C++ translation phase 2 removes backslash-newline pairs before comment token recognition. The prior normalizer did not recognize comment openers/terminators when a splice occurred between delimiter characters. This caused a split block-comment opener to be tokenized as ordinary code, collapsing meaningful double spaces inside a comment and producing a false-equivalence. A split terminator could be reported as an unterminated block comment.
+
+The test-only commit \`1f73829347860367739bde3090f5957309682730\` added three regressions:
+- block-comment opener split by a splice;
+- block-comment terminator split by a splice;
+- line-comment opener split by a splice.
+
+The corrected test-only exact-head Quarantine run [#44968171894](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44968171894), job \`137041798295\`, failed at \`block-comment-opener-splice-preserves-content\` as expected. An earlier malformed fixture-placement commit \`109ae4b1b0d204a76faff8e8bdc4a4c15af34db7\` produced a Python \`IndentationError\` in run [#44968099982](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44968099982), job \`137041589116\`; that was corrected in \`1f738293...\` before the valid RED run and was not a source failure.
+
+### Source correction
+
+The normalizer now has shared \`splice_end()\` / \`skip_splices()\` helpers. It recognizes \`//\` and \`/*\` delimiters across phase-2 splices, scans block-comment terminators across splices, and preserves the original comment bytes for parity comparison. The same splice helper is used for ordinary code outside literals/comments/directives.
+
+### Exact-source verification
+
+Focused Quarantine [#44968280056](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44968280056), job \`137042139146\`, **SUCCESS** on source/test SHA \`e570d74848e80f06986b37b90dc439e1ed67a2dd\`:
+- C++ normalizer: **17/17 PASS**.
+- Existing ESP32/ESP8266 parity, quarantine, poll, pending journal, coin-gate and failure-injection suites completed successfully.
+- Workflow output explicitly retains \`SIMULATED_ONLY=1\` and physical coin/relay/power-cut acceptance flags = 0.
+
+Full BlazePwifi build [#44968280055](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44968280055) validation job \`137042209695\` **FAILED** at inherited QA-owned \`Missing poll signature check\` in the ESP8266 controller sketch. Target jobs were still running at the time of this handover update; no aggregate target-build conclusion is made here. Downstream simulation/signing/publication remain gated. Do not add a guessed \`response_sig\` or weaken default-deny.
+
+### Live coordination
+
+- #339 remains OPEN / DRAFT / UNMERGED; no firmware sketch/runtime or controller/financial API changed.
+- #239 remains OPEN/DRAFT Phase-A deny; #254 remains OPEN/DRAFT ControllerAuthV1Lab; #283 remains OPEN/DRAFT main-based. At the current #283 head, append failure returns before \`clearPending()\`, but \`quarantinePending()\` has no active callsite and register/poll still lack an approved \`response_sig\`.
+- Master PR #288 remains OPEN/DRAFT at \`0fdb43c20fc6b68699e229b5cdc8a7e7a4efbe93\`. Its latest UTC23 role table includes #338 but not this #339 follow-up; Master must refresh its own exact-head inventory. Hardware did not edit Master-owned coordination files.
+- Private \`BLAZE_PROJECT_REGISTRY_v11_20261027.json\` remains inaccessible through the available Google Drive/Library surface; no older registry was substituted.
+
+**Disposition:** host-lab correction CI VERIFIED; SIMULATED ONLY; physical acceptance NOT TESTED; HARDWARE ACCEPTED NO; PRODUCTION NO-GO.
