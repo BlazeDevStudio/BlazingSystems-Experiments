@@ -900,8 +900,11 @@ void applyRemoteConfig(const String&r){
   maxWifiRetries=constrain(jsonInt(r,"max_wifi_retries",6),1,60);
   if(nextPinsSafe){
     runCoinActiveLow=nextCoinActiveLow;
-    configureRuntimePins(nextCoin,nextRelay,nextLed);
+    // Publish the already-validated map before configureRuntimePins(): ESP8266
+    // intentionally refuses to enable output drivers while pinConfigSafe is false.
+    // The helper may still revoke this flag if local polarity or ingress checks fail.
     pinConfigSafe=true;
+    configureRuntimePins(nextCoin,nextRelay,nextLed);
   } else {
     pinConfigSafe=false;
     Serial.println("CRITICAL: unsafe or colliding GPIO assignment rejected; outputs disabled.");
