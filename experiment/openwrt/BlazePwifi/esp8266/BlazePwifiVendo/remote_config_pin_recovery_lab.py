@@ -132,6 +132,21 @@ int main(){
   if(pinConfigSafe || runCoinPin!=4 || runRelayPin!=5 || runLedPin!=14) return 6;
   if(pinModes[runRelayPin]==OUTPUT || pinModes[runLedPin]==OUTPUT) return 7;
   std::cout<<"ESP8266_REMOTE_CONFIG_UNSAFE_PIN_DENY_PASS\n";
+
+  // A stale revision must not roll back a newer accepted configuration.
+  resetState();
+  remoteRevision=5;
+  pinConfigSafe=true;
+  runCoinPin=3; runRelayPin=12; runLedPin=13;
+  runCoinActiveLow=false;
+  controllerEnabled=false; coinEnabled=false; relayEnabled=false; ledEnabled=false;
+  runDebounceMs=80; runPulseGroupMs=900; maxWifiRetries=9;
+  pinModes[runRelayPin]=OUTPUT; pinModes[runLedPin]=OUTPUT;
+  applyRemoteConfig(String("{\"config_revision\":4,\"enabled\":1,\"coin_enabled\":1,\"relay_enabled\":1,\"led_enabled\":1,\"coin_pin\":2,\"relay_pin\":14,\"led_pin\":15,\"coin_active_low\":1,\"coin_debounce_ms\":100,\"pulse_group_ms\":1200,\"max_wifi_retries\":20}"));
+  if(remoteRevision!=5 || runCoinPin!=3 || runRelayPin!=12 || runLedPin!=13 ||
+     runCoinActiveLow || controllerEnabled || coinEnabled || relayEnabled || ledEnabled ||
+     runDebounceMs!=80 || runPulseGroupMs!=900 || maxWifiRetries!=9 || !pinConfigSafe) return 8;
+  std::cout<<"ESP8266_REMOTE_CONFIG_STALE_REVISION_DENY_PASS\n";
   return 0;
 }
 """
