@@ -11,6 +11,83 @@ from firmware_lab_source import extract_block, extract_function, mask_non_code
 
 __all__ = ["constants", "harness"]
 
+
+def _literal_preprocessor_condition(expression: str):
+    """Return a boolean only for literal #if/#elif 0 or 1 conditions."""
+    value = expression.strip()
+    if value in ("0", "(0)"):
+        return False
+    if value in ("1", "(1)"):
+        return True
+    return None
+
+
+def _mask_inactive_preprocessor_branches(code_source: str) -> str:
+    """Mask branches known inactive from literal #if/#elif 0/1 directives.
+
+    Unknown macro expressions are kept conservatively visible: this helper is
+    not a C preprocessor and must not hide code whose build condition is unknown.
+    The returned mask preserves every source offset and newline.
+    """
+    masked = list(code_source)
+    frames = []
+    active = True
+    offset = 0
+
+    for line in code_source.splitlines(keepends=True):
+        physical_line = line.rstrip("\\r\\n")
+        directive = re.match(
+            r"^[ \\t]*#[ \\t]*(if|ifdef|ifndef|elif|else|endif)\\b(.*)$",
+            physical_line,
+        )
+        if directive:
+            command = directive.group(1)
+            expression = directive.group(2).strip()
+
+            if command in ("if", "ifdef", "ifndef"):
+                condition = (
+                    _literal_preprocessor_condition(expression)
+                    if command == "if" else None
+                )
+                parent_active = active
+                frames.append({
+                    "parent_active": parent_active,
+                    "branch_taken": condition,
+                })
+                active = parent_active and condition is not False
+
+            elif command == "elif" and frames:
+                frame = frames[-1]
+                if not frame["parent_active"] or frame["branch_taken"] is True:
+                    active = False
+                elif frame["branch_taken"] is None:
+                    # A preceding unknown macro branch may already be active.
+                    # Keep this branch visible rather than guessing.
+                    active = True
+                else:
+                    condition = _literal_preprocessor_condition(expression)
+                    active = condition is not False
+                    if condition is True:
+                        frame["branch_taken"] = True
+
+            elif command == "else" and frames:
+                frame = frames[-1]
+                active = frame["parent_active"] and frame["branch_taken"] is not True
+                frame["branch_taken"] = True
+
+            elif command == "endif" and frames:
+                active = frames.pop()["parent_active"]
+
+        elif not active:
+            for index in range(offset, offset + len(line)):
+                if code_source[index] not in "\\r\\n":
+                    masked[index] = " "
+
+        offset += len(line)
+
+    return "".join(masked)
+
+
 def constants(source: str, names):
     """Extract one-line static const declarations from active C++ code only.
 
@@ -23,7 +100,13 @@ def constants(source: str, names):
         return ""
 
     original_lines = source.splitlines()
-    code_lines = mask_non_code(source).splitlines()
+    code_mask = mask_non_code(source)
+    active_code_mask = _mask_inactive_preprocessor_branches(code_mask)
+    if (len(active_code_mask) != len(source) or
+            active_code_mask.count("\\n") != source.count("\\n") or
+            active_code_mask.count("\\r") != source.count("\\r")):
+        raise RuntimeError("constant extraction masks changed source offsets or newlines")
+    code_lines = active_code_mask.splitlines()
     if len(original_lines) != len(code_lines):
         raise RuntimeError("constant extraction mask changed source line count")
 
