@@ -5,15 +5,164 @@ This module owns the extracted C++ model and board-specific fault scenarios.
 Keep fixture bodies here so persistence behavior can be reviewed separately
 from Python orchestration.
 """
-from firmware_lab_source import extract_block, extract_function
+import re
+
+from firmware_lab_source import extract_block, extract_function, mask_non_code
 
 __all__ = ["constants", "harness"]
 
+def _literal_preprocessor_condition(expression: str):
+    """Return a boolean only for literal #if/#elif 0 or 1 conditions."""
+    value = expression.strip()
+    if value in ("0", "(0)"):
+        return False
+    if value in ("1", "(1)"):
+        return True
+    return None
+
+
+def _logical_preprocessor_lines(source: str):
+    """Yield phase-2 logical lines with their original physical source ranges.
+
+    C/C++ removes backslash-newline pairs before recognizing # and %: preprocessing
+    directives. Keep the physical range so later masking can preserve every
+    original offset and newline without building a full preprocessor.
+    """
+    start = 0
+    index = 0
+    logical = []
+
+    while index < len(source):
+        if source[index] == "\\" and index + 1 < len(source):
+            if source[index + 1] == "\n":
+                index += 2
+                continue
+            if source[index + 1] == "\r":
+                index += 2
+                if index < len(source) and source[index] == "\n":
+                    index += 1
+                continue
+
+        if source[index] == "\r":
+            end = index + 1
+            if end < len(source) and source[end] == "\n":
+                end += 1
+            yield "".join(logical), start, end
+            logical = []
+            index = end
+            start = end
+            continue
+
+        if source[index] == "\n":
+            end = index + 1
+            yield "".join(logical), start, end
+            logical = []
+            index = end
+            start = end
+            continue
+
+        logical.append(source[index])
+        index += 1
+
+    if start < len(source) or logical:
+        yield "".join(logical), start, len(source)
+
+
+def _mask_inactive_preprocessor_branches(code_source: str) -> str:
+    """Mask branches known inactive from literal #if/#elif 0/1 directives.
+
+    Directive recognition follows C/C++ phase-2 line splicing, including
+    splices inside directive keywords and expressions. Unknown macro
+    expressions remain conservatively visible; this is not a full C
+    preprocessor. The returned mask preserves every source offset and newline.
+    """
+    masked = list(code_source)
+    frames = []
+    active = True
+
+    for logical_line, start, end in _logical_preprocessor_lines(code_source):
+        directive = re.match(
+            r"^[ \t]*(?:#|%:)[ \t]*(if|ifdef|ifndef|elif|else|endif)\b(.*)$",
+            logical_line,
+        )
+        if directive:
+            command = directive.group(1)
+            expression = directive.group(2).strip()
+
+            if command in ("if", "ifdef", "ifndef"):
+                condition = (
+                    _literal_preprocessor_condition(expression)
+                    if command == "if" else None
+                )
+                parent_active = active
+                frames.append({
+                    "parent_active": parent_active,
+                    "branch_taken": condition,
+                })
+                active = parent_active and condition is not False
+
+            elif command == "elif" and frames:
+                frame = frames[-1]
+                if not frame["parent_active"] or frame["branch_taken"] is True:
+                    active = False
+                elif frame["branch_taken"] is None:
+                    # A preceding unknown macro branch may already be active,
+                    # but a literal #elif 0 is still definitely inactive.
+                    condition = _literal_preprocessor_condition(expression)
+                    active = condition is not False
+                else:
+                    condition = _literal_preprocessor_condition(expression)
+                    active = condition is not False
+                    if condition is True:
+                        frame["branch_taken"] = True
+
+            elif command == "else" and frames:
+                frame = frames[-1]
+                active = frame["parent_active"] and frame["branch_taken"] is not True
+                frame["branch_taken"] = True
+
+            elif command == "endif" and frames:
+                active = frames.pop()["parent_active"]
+
+        elif not active:
+            for index in range(start, end):
+                if code_source[index] not in "\r\n":
+                    masked[index] = " "
+
+    return "".join(masked)
+
 def constants(source: str, names):
+    """Extract one-line static const declarations from known-active C++ code.
+
+    The lexical mask preserves offsets and newlines while blanking comments and
+    literals. Literal inactive preprocessor branches are also excluded. Unknown
+    macro conditions remain conservatively visible; this is not a full C
+    preprocessor. Return original source lines, but never let a known-inactive
+    branch, non-code decoy or identifier substring satisfy a requested constant.
+    """
+    if not names:
+        return ""
+
+    original_lines = source.splitlines()
+    code_mask = mask_non_code(source)
+    active_code_mask = _mask_inactive_preprocessor_branches(code_mask)
+    if len(active_code_mask) != len(source):
+        raise RuntimeError("constant extraction mask changed source offsets")
+    code_lines = active_code_mask.splitlines()
+    if len(original_lines) != len(code_lines):
+        raise RuntimeError("constant extraction mask changed source line count")
+
+    name_patterns = tuple(
+        re.compile(rf"\b{re.escape(name)}\b")
+        for name in names
+    )
     selected = []
-    for line in source.splitlines():
-        if line.lstrip().startswith("static const ") and any(name in line for name in names):
-            selected.append(line)
+    for original_line, code_line in zip(original_lines, code_lines):
+        active = code_line.lstrip()
+        if not active.startswith("static const "):
+            continue
+        if any(pattern.search(active) for pattern in name_patterns):
+            selected.append(original_line)
     return "\n".join(selected)
 
 def harness(board: str, source: str) -> str:
