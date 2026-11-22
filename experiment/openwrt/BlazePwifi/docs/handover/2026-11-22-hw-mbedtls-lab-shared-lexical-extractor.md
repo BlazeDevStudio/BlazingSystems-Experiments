@@ -42,7 +42,7 @@ Full BlazePwifi build run [#45031682054](https://github.com/BlazeDevStudio/Blazi
 Missing poll signature check in .../esp8266/BlazePwifiVendo.ino
 ```
 
-Other target jobs were still completing when this handover was written. The source change does not add a poll signature or positive admission path. CORE owns the response contract; QA owns the independent parity fixture. No bypass was made.
+The run is terminal **CANCELLED** after the validation failure: 12 jobs SUCCESS, 1 validation FAILURE, 8 CANCELLED, 6 SKIPPED. ESP32 and Android jobs were cancelled; signing, candidate and release jobs did not complete. The focused Mbed TLS 3/4 stub tests are not an ESP32 target build. The source change does not add a poll signature or positive admission path. CORE owns the response contract; QA owns the independent parity fixture. No bypass was made.
 
 ## Scope and safety
 
