@@ -262,4 +262,19 @@ return true;
         actual_equal = normalize_cpp_function_body(left) == normalize_cpp_function_body(right)
         if actual_equal != expected_equal:
             raise SystemExit(f"POLL_SAFETY_CPP_PARITY_NORMALIZER_FAIL: {label}")
+    spliced_prefix_cases = 0
+    for newline in ("\n", "\r\n", "\r"):
+        splice = "\\" + newline
+        for prefix in ("u8R", "uR", "UR", "LR", "R"):
+            for split in range(1, len(prefix) + 1):
+                physical_prefix = prefix[:split] + splice + prefix[split:]
+                label = f"{prefix} split={split} newline={newline!r}"
+                left = "void f(){ auto s=" + physical_prefix + '"tag(first" x  y "rest)tag"; }'
+                right = "void f(){ auto s=" + physical_prefix + '"tag(first" x y "rest)tag"; }'
+                if normalize_cpp_function_body(left) == normalize_cpp_function_body(right):
+                    raise SystemExit(
+                        f"POLL_SAFETY_CPP_PARITY_NORMALIZER_FAIL: raw-string-spliced-prefix-{label}"
+                    )
+                spliced_prefix_cases += 1
+    print(f"POLL_SAFETY_CPP_RAW_PREFIX_SPLICE_PASS {spliced_prefix_cases}/{spliced_prefix_cases}")
     print(f"POLL_SAFETY_CPP_PARITY_NORMALIZER_PASS {len(cases)}/{len(cases)}")
