@@ -1400,3 +1400,12 @@ The ownership manifest remains unchanged at `e4db324315a1b3543fec17a148fbf960170
 CORE #252's current producer uses nested deny-only `config_auth` under `blazepwifi-controller-response-v1`. Hardware #327/#340 remain deny-only. COE #26's staged firmware/test still expects legacy top-level `response_sig` and `|poll|`; it is not byte- or interface-compatible with the current producer and has five queued workflows / zero jobs. COE #45 is a separate event-bound `blazepwifi-coin-receipt-v1` contract candidate with golden vectors only; it does not authorize a poll response or migration.
 
 No source/destination staging, copy, move, overwrite, cherry-pick, rebase, merge, destination edit, route promotion or release proposal is authorized or performed. Keep COE #26 FROZEN and all routes review-only until CORE publishes the producer contract, HARDWARE implements it, QA independently verifies exact golden vectors, and each destination file has owner-approved blob/license/test/CI provenance.
+
+
+## UTC12 poll-auth compatibility route hold — 2026-11-22T12:03Z
+
+The unchanged machine-readable manifest `OWNERSHIP_ROUTES.json` remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`, schema `phoenix/ownership-routes/v1`, 11 routes, `DRAFT_REVIEW_ONLY`; PHX-MASTER remains coordination-only with target `null`. Experiments main is `f4e8a891...`; COE #26 remains at `b382d233...`.
+
+Current source evidence reinforces the hold: #327's inherited hardening test requires a legacy poll `response_sig` tuple, while the current Hardware sketches deliberately return false for poll acceptance and coin disposition; CORE #252 emits nested `config_auth` for register/poll and keeps member `response_sig` separate. COE #26 still tests the legacy poll format. COE #45 is a separate receipt-contract candidate only. This is an interface mismatch, not permission to weaken fail-closed behavior or to copy source into COE.
+
+No route promotion, staging, copy, move, overwrite, cherry-pick, rebase, retarget, destination edit or integration proposal occurred. Broad Rental remains manual-file-mapping-required with `copy_permitted=false`. COE #26 remains FROZEN with five queued workflows / zero jobs. Keep all destination routes review-only until CORE publishes the versioned producer contract, HARDWARE implements it under owner control, QA approves exact golden/negative vectors, and every destination file has owner-reviewed blob/license/import/test/CI provenance.

@@ -592,3 +592,13 @@ Current coordination snapshot: Master PR #288 audit-start head `e2a6934cd2dba8e7
 - [UTC11 CORE poll-auth and coin-receipt contract boundary audit](PHX_MASTER_UTC11_20261122_CORE_POLL_AUTH_AND_RECEIPT_CONTRACT_BOUNDARY_AUDIT.md).
 - Exact producer/consumer blobs show CORE #252 nested deny-only `config_auth`, Hardware #327/#340 fail-closed consumers, and legacy COE #26 `response_sig` expectations. COE #45 receipt vectors pass as a contract-only test; no runtime acceptance.
 - 12/12 bounded static assertions PASS; no product test or full Master suite executed. PR #288 remains OPEN / DRAFT / UNMERGED. COE #26 remains frozen; no route promotion or migration. PRODUCTION NO-GO.
+
+
+## Latest PHX-MASTER refresh — UTC12, 2026-11-22
+
+- [UTC12 poll-fixture / producer boundary and live role CI audit](PHX_MASTER_UTC12_20261122_POLL_FIXTURE_PRODUCER_BOUNDARY_AND_LIVE_ROLE_CI.md).
+- [ROLE_ASSIGNMENTS.md](ROLE_ASSIGNMENTS.md) pins current role PR heads and exact-head CI, including #327's latest 14339cb host-lab-only commit and Full failure at the inherited poll-signature assertion; #35 profile and sandbox gates remain blocked.
+- [INTEGRATION_MATRIX.md](INTEGRATION_MATRIX.md) records exact test/sketch/producer/destination blobs. The inherited test still requires legacy `|poll|`; current Hardware consumers remain deny-only and CORE emits nested `config_auth`. COE #26 remains incompatible and frozen.
+- [REPOSITORY_ROUTING.md](REPOSITORY_ROUTING.md) confirms the 11-route manifest remains DRAFT_REVIEW_ONLY and PHX-MASTER target null; no migration staging or destination write.
+- [AUDIT_SUMMARY.md](AUDIT_SUMMARY.md) records 15/15 bounded static assertions (not product tests), Master suite NOT RUN after GitHub DNS failure, private Drive v11/newer corrections BLOCKED, and cleanup #266 OPEN / 0/7.
+- PR #288 remains OPEN / DRAFT / UNMERGED; no subsystem source or COE destination changed. **PRODUCTION NO-GO.**

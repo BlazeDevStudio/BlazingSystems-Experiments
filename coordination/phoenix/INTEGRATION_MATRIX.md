@@ -3897,3 +3897,26 @@ No complete import is established. No destination staging, copy, move, overwrite
 | COE #45 receipt candidate | `9d76a134...`; contract `cadc8057...`; golden `ff4c7be5...`; test `20458f79...` | Separate `blazepwifi-coin-receipt-v1` HMAC-SHA256 domain and event-bound receipt. Explicitly runtime-deny. Golden vectors executed in #44295049727. | Contract test PASS only; not a register/poll response and not runtime integration. |
 
 The legacy `response_sig` member-operation fields in CORE are not poll authorization. The controller response and coin receipt are separate contracts and must not share domains/keys by assumption. COE #26 remains FROZEN; no migration staging or route promotion.\n
+
+## UTC12 exact poll-fixture / producer compatibility audit — 2026-11-22T12:03Z
+
+The current HARDWARE #327 Full failure is a source-grounded test-contract mismatch, not evidence that poll admission should be enabled.
+
+| Boundary | Exact ref / blob | Observed behavior | Result |
+|---|---|---|---|
+| Inherited Experiments hardening test | #327 `tests/v05_firmware_hardening_test.sh` blob `41211b2c110ab409f6d9d1812ef12fda73b13211` | Requires `response_sig`, `|register|`, and `|poll|` strings in both sketches and models the legacy SHA-256 `key|poll|...` tuple. | The positive poll-signature assertion is stale against the current deny-only interface. |
+| ESP8266 sketch | #327 `BlazePwifiVendo.ino` blob `c2aa71963eaa0288721f0bb13cff771aaaabc42f` | Retains register response authentication, but contains no legacy `|poll|` canonical string. `acceptPollResponse()` returns false; `coinPostDispositionVerified()` returns false. | Poll and coin disposition remain default-deny. |
+| ESP32 sketch | #327 `BlazePwifiVendo32.ino` blob `7ffb7b534c7163678726902946a17b04992950a0` | Same boundary: register authentication is distinct; no legacy poll tuple; both poll acceptance and coin disposition return false. | Poll and coin disposition remain default-deny. |
+| CORE producer | #252 Vendo CGI blob `16eb4105c15569dfd77b19a276ee05a25768083e` | Builds nested `config_auth` via `bp_controller_lab_response_v1` for register/poll. Separate member snapshot/mutation endpoints still use `response_sig`. | Member `response_sig` is not poll authorization. |
+| COE #26 destination test | `Hardware/tests/test_firmware_hardening.sh` blob `f921c56cecc19cab1989507b9b4ade1f45dac54e` | Still expects legacy `response_sig` and `|poll|` behavior. | Destination is not compatible with current CORE producer; keep #26 frozen. |
+| COE CORE #45 receipt contract | #45 head `9d76a134c1f6512aa40c20ec4d247306a71a8cce` | Separate `blazepwifi-coin-receipt-v1` event-bound receipt candidate; golden vectors pass, runtime remains deny. | Not a register/poll response and not a substitute for controller auth. |
+
+### Current #327 change and exact CI
+
+- Latest #327 commit `14339cb7a22c75d4bc80a8bc1eb5208ee86559e7`, message `fix(hw): reject inactive debounce callsite decoys`, parent `743c2e394403d7242870ccdbdab92035ce5d82c5`, changes only the host-lab `poll_response_failclosed_lab.py` fixture. It does not modify either production sketch or the inherited QA shell test.
+- Focused Quarantine [#45019896729](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45019896729) and Relay [#45019896769](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45019896769) PASS.
+- Full [#45019896838](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45019896838) fails in `Controller protocol parity` at the exact log line `Missing poll signature check` for the ESP8266 sketch. The failure is the inherited test's `grep -q '|poll|'`, not a reason to weaken the default-deny consumer.
+
+A bounded static source audit ran 15 assertions against the exact blobs above: **15/15 PASS**. These assertions validate source/test identity and contract separation; they are NOT product tests, compilation, QA acceptance or hardware evidence. No subsystem source, test, destination or ownership route was changed.
+
+**Migration disposition: NO MIGRATION.** OWNERSHIP_ROUTES.json remains unchanged at `e4db324315a1b3543fec17a148fbf960170fcb29`, 11 routes, `DRAFT_REVIEW_ONLY`, PHX-MASTER destination null. COE #26 remains FROZEN with five queued workflows / zero jobs. No staging, copy, move, overwrite, rebase, cherry-pick, route promotion or destination edit occurred.
