@@ -39,6 +39,17 @@ def normalize_cpp_function_body(body):
             position = end
         return position
 
+    def match_spliced_token(position, token):
+        """Match a token while skipping phase-2 splices between its characters."""
+        cursor = position
+        for offset, expected in enumerate(token):
+            if offset:
+                cursor = skip_splices(cursor)
+            if cursor >= len(body) or body[cursor] != expected:
+                return None
+            cursor += 1
+        return cursor
+
     def has_unspliced_newline(text):
         cursor = 0
         while cursor < len(text):
@@ -61,10 +72,17 @@ def normalize_cpp_function_body(body):
             i += 1
             continue
 
-        raw_prefix = next((prefix for prefix in raw_prefixes if body.startswith(prefix, i)), None)
-        if raw_prefix is not None:
+        raw_prefix_end = None
+        for prefix in raw_prefixes:
+            candidate_end = match_spliced_token(i, prefix)
+            if candidate_end is not None:
+                raw_prefix_end = candidate_end
+                break
+        if raw_prefix_end is not None:
+            # Phase-2 splices may join the encoding prefix to its opening quote.
+            # The raw literal contents remain byte-significant below.
             flush_space()
-            quote_index = i + len(raw_prefix) - 1
+            quote_index = raw_prefix_end - 1
             open_paren = body.find("(", quote_index + 1)
             if open_paren < 0:
                 raise ValueError("unterminated C++ raw-string delimiter")
