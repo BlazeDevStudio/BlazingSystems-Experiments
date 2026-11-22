@@ -148,3 +148,47 @@ These results are CI/build and simulation evidence only. The focused source guar
 ### Next exact action
 
 PHX-MASTER refreshes its role/integration pins to #340 final head `4eefce64719f40fd30621296db7c3fa764a44f1a` and confirms whether the Mbed TLS selector should be ported to #254. PHX-HARDWARE's next scoped task is an exact-head ESP32 core 3.3.13 compile for #340, preserving the #283 ancestry and all deny-only behavior.
+
+
+## UTC03 continuation — pinned Arduino ESP32 core 3.3.13 compile
+
+**Final workflow commit:** `e4af707ee6774441c17b53eb4d1e6ec6fbc21f0e`  
+**Final PR #340 head:** `e4af707ee6774441c17b53eb4d1e6ec6fbc21f0e`  
+**PR:** #340 OPEN / DRAFT / UNMERGED; base remains #283 at `88581eef6bce0dbaa4ac0de43e1239ee1afc2e9d`.  
+**Branch:** `phoenix/hardware-prepoll-intake-deny-20261122-utc01`.
+
+### Added exact-version compile workflow
+
+Added `.github/workflows/phx-hw-esp32-core-3.3.13-compile.yml`. It:
+- verifies the checked-out commit equals the event SHA;
+- installs exactly `esp32:esp32@3.3.13` (the package index reported 4.0.0 as latest, but 3.3.13 was installed);
+- runs the existing Mbed TLS 3/4 fail-closed source and mutation guard;
+- compiles the actual ESP32 Vendo sketch for `esp32:esp32:esp32`;
+- requires a nonempty `.bin` and prints its SHA-256;
+- retains read-only contents permissions and does not upload or publish a release artifact.
+
+Two early workflow attempts failed before compilation because the optional version-header probe assumed a package filesystem path/format that was not portable:
+- `87cc5677b421deda8721a118961138659b48feb7`, run [#44979951013](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44979951013), job `137078057356`: header-path/version probe failed; compile skipped.
+- `d1f7f1936b0e7d2f85a00f14af9b193b1f4ea199`, run [#44980120953](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44980120953), job `137078587110`: same brittle probe failed; compile skipped.
+
+These were workflow-probe failures, not firmware compile failures. The path-specific probe was removed; the exact core install, existing dual-provider source guard, and real sketch compile remain.
+
+### Final exact-head compile evidence
+
+[Arduino ESP32 core 3.3.13 run #44980286970](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44980286970), job `137079089915`, **SUCCESS** on exact workflow/PR head `e4af707ee6774441c17b53eb4d1e6ec6fbc21f0e`.
+
+- Exact checkout SHA check: PASS.
+- `esp32:esp32@3.3.13` installation and installed-version assertion: PASS.
+- Existing provider/failure-injection guard: PASS; mutations rejected for missing PSA status/length check, missing legacy status check, missing invalid-digest denial, and missing empty-request denial.
+- Actual ESP32 Vendo sketch compile against core 3.3.13: PASS.
+- Compiler size: 1,028,936 bytes (78% of 1,310,720-byte program storage); global variables 49,456 bytes (15% of 327,680-byte RAM).
+- Generated CI binary SHA-256: `e1c531a7ad914f1250b509f3aa5f9d875fd7b9ba7d334cf2a005b5a4c8daab52`.
+- Workflow log explicitly prints `SIMULATED_ONLY=1` and `PHYSICAL_ACCEPTANCE=0`.
+
+The optional header-path probe was removed, so this run does **not** independently report the bundled Mbed TLS major. It does prove the current sketch compiles under the pinned Arduino ESP32 core 3.3.13. The existing static source guard checks both Mbed TLS 3 and 4 code paths; this is not a substitute for a separate real provider test or physical board acceptance.
+
+The last completed Full integration run for the firmware source/test head `4eefce64719f40fd30621296db7c3fa764a44f1a` remains [#44978514967](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44978514967): 26 jobs successful, with four production import/sign/publish jobs skipped. A later Full run on workflow-only commit `87cc5677...` was cancelled during subsequent branch updates; no new Full integration conclusion is claimed for `e4af707...`.
+
+### UTC03 disposition
+
+The exact Arduino ESP32 core 3.3.13 build is **CI VERIFIED**. No firmware source, controller API, poll contract, coin admission, finance, signer/witness, QA-owned test or Release-owned workflow was changed. PR #340 remains DRAFT and unmerged. Physical coin/relay/electrical acceptance, 150 power cuts and 30-device/24-hour soak remain **NOT TESTED**; HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
