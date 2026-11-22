@@ -51,26 +51,43 @@ void lexicalFixture() {
 
 
 def verify_spliced_raw_string_prefix():
-    fixture = (
-        "void splicedRawStringFixture() {\n"
-        "  const char *raw = u8R\\\n"
-        "\"PHX(\n"
-        "    \"quoted } // not a comment\"\n"
-        "    #if 0\n"
-        "    }\n"
-        ")PHX\";\n"
-        "  if (true) { return; }\n"
-        "}\n"
+    fixtures = (
+        ("R-quote", r'''
+void splicedRawStringFixture() {
+  const char *raw = R\
+"PHX(
+    "quoted } // not a comment"
+    }
+)PHX";
+  if (true) { return; }
+}
+'''),
+        ("u8-R", r'''
+void splicedRawStringFixture() {
+  const char *raw = u8\
+R"PHX(
+    "quoted } // not a comment"
+    }
+)PHX";
+  if (true) { return; }
+}
+'''),
     )
-    extracted = extract(fixture, "splicedRawStringFixture")
-    if "if (true) { return; }" not in extracted:
-        raise AssertionError(
-            "source extractor truncated a raw string whose R-quote prefix "
-            "is joined by C++ phase-2 splicing"
-        )
-    if extracted.count("return;") != 1 or not extracted.rstrip().endswith("}"):
-        raise AssertionError("source extractor returned an incomplete spliced raw-string function")
-    print("FIRMWARE_LAB_PHASE2_SPLICED_RAW_PREFIX_PASS")
+    for label, fixture in fixtures:
+        extracted = extract(fixture, "splicedRawStringFixture")
+        if "if (true) { return; }" not in extracted:
+            raise AssertionError(
+                f"{label}: source extractor truncated a raw string whose prefix "
+                "is joined by C++ phase-2 splicing"
+            )
+        if extracted.count("return;") != 1 or not extracted.rstrip().endswith("}"):
+            raise AssertionError(f"{label}: source extractor returned an incomplete function")
+        masked = mask_non_code(fixture)
+        if "quoted }" in masked or "PHX(" in masked:
+            raise AssertionError(f"{label}: raw-string body or delimiter remained visible")
+        if label == "u8-R" and "u8" in masked:
+            raise AssertionError("encoding prefix was not masked with the raw string")
+    print("FIRMWARE_LAB_PHASE2_SPLICED_RAW_PREFIX_PASS 2/2")
 
 
 def verify_debounce_clamp_callsite_count(source, board, minimum_calls):

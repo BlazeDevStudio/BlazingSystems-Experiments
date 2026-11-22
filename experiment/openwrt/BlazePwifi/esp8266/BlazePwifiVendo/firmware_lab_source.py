@@ -44,22 +44,63 @@ def _comment_delimiter_end(
     return None
 
 
-def _raw_string_literal_end(source: str, index: int):
-    """Return the end of a C++ raw string, including any encoding prefix.
+def _previous_non_spliced_character(source: str, index: int) -> str:
+    """Return the preceding character after undoing adjacent phase-2 splices."""
+    cursor = index - 1
+    while cursor >= 0:
+        if source[cursor] == "\n":
+            newline_start = (
+                cursor - 1
+                if cursor > 0 and source[cursor - 1] == "\r"
+                else cursor
+            )
+        elif source[cursor] == "\r":
+            newline_start = cursor
+        else:
+            break
 
-    C++ permits R, u8R, uR, UR and LR string-literal prefixes. The prefix is
-    part of the literal and must be masked with its body so quotes, braces and
-    comment markers inside the raw text never become source syntax.
+        backslash = newline_start - 1
+        if backslash < 0 or source[backslash] != "\\":
+            break
+        cursor = backslash - 1
+
+    return source[cursor] if cursor >= 0 else ""
+
+
+def _match_spliced_prefix(source: str, index: int, prefix: str):
+    """Match a raw-string prefix while skipping phase-2 splices between chars."""
+    cursor = index
+    for position, character in enumerate(prefix):
+        if position:
+            cursor = _skip_line_splices(source, cursor)
+        if cursor >= len(source) or source[cursor] != character:
+            return None
+        cursor += 1
+    return cursor
+
+
+def _raw_string_literal_end(source: str, index: int):
+    """Return the end of a C++ raw string, including a phase-2-spliced prefix.
+
+    C++ permits R, u8R, uR, UR and LR string-literal prefixes. Translation
+    phase 2 can join physical lines inside that prefix before tokenization.
+    The original physical offsets are retained for the caller's mask.
     """
-    if index and (source[index - 1].isalnum() or source[index - 1] == "_"):
+    previous = _previous_non_spliced_character(source, index)
+    if previous.isalnum() or previous == "_":
         return None
 
     prefixes = ('u8R"', 'uR"', 'UR"', 'LR"', 'R"')
-    prefix = next((item for item in prefixes if source.startswith(item, index)), None)
-    if prefix is None:
+    prefix_end = None
+    for prefix in prefixes:
+        candidate = _match_spliced_prefix(source, index, prefix)
+        if candidate is not None:
+            prefix_end = candidate
+            break
+    if prefix_end is None:
         return None
 
-    delimiter_start = index + len(prefix)
+    delimiter_start = prefix_end
     paren = source.find("(", delimiter_start)
     if paren < 0 or paren - delimiter_start > 16:
         return None
