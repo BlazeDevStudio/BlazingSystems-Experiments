@@ -89,25 +89,6 @@ int runDisabledIngressCase(bool disableController, bool disableCoin, bool disabl
   return 0;
 }
 int main(){
-  // Disabled controller/coin/relay configurations must quarantine sampled edges.
-  int disabledIngressResult=runDisabledIngressCase(false,false,true,false,60,
-      "POLL_EDGE_WHILE_RELAY_DISABLED_DENY_PASS");
-  if(disabledIngressResult) return disabledIngressResult;
-  disabledIngressResult=runDisabledIngressCase(false,false,true,true,61,
-      "POLL_ISR_EDGE_WHILE_RELAY_DISABLED_DENY_PASS");
-  if(disabledIngressResult) return disabledIngressResult;
-  disabledIngressResult=runDisabledIngressCase(false,true,false,false,62,
-      "POLL_EDGE_WHILE_COIN_DISABLED_DENY_PASS");
-  if(disabledIngressResult) return disabledIngressResult;
-  disabledIngressResult=runDisabledIngressCase(false,true,false,true,63,
-      "POLL_ISR_EDGE_WHILE_COIN_DISABLED_DENY_PASS");
-  if(disabledIngressResult) return disabledIngressResult;
-  disabledIngressResult=runDisabledIngressCase(true,false,false,false,64,
-      "POLL_EDGE_WHILE_CONTROLLER_DISABLED_DENY_PASS");
-  if(disabledIngressResult) return disabledIngressResult;
-  disabledIngressResult=runDisabledIngressCase(true,false,false,true,65,
-      "POLL_ISR_EDGE_WHILE_CONTROLLER_DISABLED_DENY_PASS");
-  if(disabledIngressResult) return disabledIngressResult;
 
   // A prior persistent journal fault must abort even with an idle line and no new ISR edge.
   resetState();
@@ -349,6 +330,25 @@ int main(){
 
   std::cout<<"POLL_BLOCKED_EDGE_FAULT_PASS 8/8 fault-marker scenarios; existing poll-loop guards 7/7\n";
   std::cout<<"SIMULATED_ONLY=1 PHYSICAL_COIN_ACCEPTOR_VERIFIED=0 PHYSICAL_POWER_CUT_VERIFIED=0\n";
+  // Disabled controller/coin/relay configurations must quarantine sampled edges.
+  int disabledIngressResult=runDisabledIngressCase(false,false,true,false,60,
+      "POLL_EDGE_WHILE_RELAY_DISABLED_DENY_PASS");
+  if(disabledIngressResult) return disabledIngressResult;
+  disabledIngressResult=runDisabledIngressCase(false,false,true,true,61,
+      "POLL_ISR_EDGE_WHILE_RELAY_DISABLED_DENY_PASS");
+  if(disabledIngressResult) return disabledIngressResult;
+  disabledIngressResult=runDisabledIngressCase(false,true,false,false,62,
+      "POLL_EDGE_WHILE_COIN_DISABLED_DENY_PASS");
+  if(disabledIngressResult) return disabledIngressResult;
+  disabledIngressResult=runDisabledIngressCase(false,true,false,true,63,
+      "POLL_ISR_EDGE_WHILE_COIN_DISABLED_DENY_PASS");
+  if(disabledIngressResult) return disabledIngressResult;
+  disabledIngressResult=runDisabledIngressCase(true,false,false,false,64,
+      "POLL_EDGE_WHILE_CONTROLLER_DISABLED_DENY_PASS");
+  if(disabledIngressResult) return disabledIngressResult;
+  disabledIngressResult=runDisabledIngressCase(true,false,false,true,65,
+      "POLL_ISR_EDGE_WHILE_CONTROLLER_DISABLED_DENY_PASS");
+  if(disabledIngressResult) return disabledIngressResult;
   return 0;
 }
 """
