@@ -292,7 +292,26 @@ def reject_unsupported(cxx: str, root: Path, major: int, selector: str) -> None:
     print(f"MBEDTLS_UNSUPPORTED_MAJOR_{major}_REJECTED")
 
 
+
+def verify_braced_extractor():
+    fixture = (
+        'String lexicalProbe(){\\n'
+        '  const char *ordinary = "}";\\n'
+        '  const char *raw = R"tag({ })tag";\\n'
+        '  // } line-comment decoy\\n'
+        '  /* { block-comment decoy */\\n'
+        '  return ordinary;\\n'
+        '}'
+    )
+    extracted = extract_braced_function(fixture, "String lexicalProbe(")
+    if extracted != fixture:
+        raise RuntimeError(
+            "braces inside C++ comments/literals truncated the extracted function"
+        )
+
+
 def main() -> int:
+    verify_braced_extractor()
     cxx = shutil.which("c++") or shutil.which("g++")
     if not cxx:
         raise RuntimeError("C++ compiler unavailable; refusing to skip selector test")
