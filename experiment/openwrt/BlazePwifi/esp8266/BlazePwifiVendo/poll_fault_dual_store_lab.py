@@ -246,6 +246,42 @@ bool selected(int value) {
 
 
 
+def test_constants_extract_only_active_declarations():
+    sample = r"""
+/*
+static const uint32_t POLL_FAULT_RECORD_MAGIC = 0xBAD;
+static const uint32_t POLL_FAULT_EEPROM_OFFSET = 1;
+*/
+const char *raw = R"phx(
+static const uint32_t POLL_FAULT_RECORD_VERSION = 0xBAD;
+static const uint32_t POLL_FAULT_EEPROM_BYTES = 2;
+)phx";
+static const uint32_t POLL_FAULT_RECORD_MAGIC = 0x1234;
+static const uint32_t POLL_FAULT_RECORD_VERSION = 1;
+static const uint32_t NOT_POLL_FAULT_EEPROM_OFFSET_ALIAS = 9;
+static const uint32_t POLL_FAULT_EEPROM_OFFSET = 64;
+static const uint32_t POLL_FAULT_EEPROM_BYTES = 32;
+"""
+    selected = constants(sample, (
+        "POLL_FAULT_RECORD_MAGIC",
+        "POLL_FAULT_RECORD_VERSION",
+        "POLL_FAULT_EEPROM_OFFSET",
+        "POLL_FAULT_EEPROM_BYTES",
+    ))
+    expected = [
+        "static const uint32_t POLL_FAULT_RECORD_MAGIC = 0x1234;",
+        "static const uint32_t POLL_FAULT_RECORD_VERSION = 1;",
+        "static const uint32_t POLL_FAULT_EEPROM_OFFSET = 64;",
+        "static const uint32_t POLL_FAULT_EEPROM_BYTES = 32;",
+    ]
+    if selected.splitlines() != expected:
+        raise AssertionError(
+            "constant extraction must ignore comment/raw-string decoys and "
+            f"identifier substrings; got={selected.splitlines()!r}"
+        )
+    print("POLL_FAULT_CONSTANT_EXTRACTION_NON_CODE_DECOYS_REJECTED 4/4")
+
+
 def run(board: str, path: Path):
     source = path.read_text(encoding="utf-8")
     program = harness(board, source)
@@ -341,6 +377,7 @@ if __name__ == "__main__":
     test_external_cwd_invocation()
     test_repo_root_requires_both_board_sentinels()
     test_extractors()
+    test_constants_extract_only_active_declarations()
     test_unknown_board_identifier_fails_closed()
     print("POLL_FAULT_EXTRACTOR_SELFTEST=PASS", flush=True)
     run("ESP32", ESP32)
