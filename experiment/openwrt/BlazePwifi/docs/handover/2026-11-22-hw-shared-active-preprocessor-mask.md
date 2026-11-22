@@ -82,3 +82,23 @@ The previous helper docstring called its offsets “byte offsets”. That was im
 - Logs retain `SIMULATED_ONLY=1`, `PHYSICAL_POWER_CUT_VERIFIED=0`, and `FINANCIAL_PRODUCTION_AUTHORIZED=0`.
 
 This is a host-test contract/documentation correction only. No ESP sketch or runtime behavior changed.
+
+
+## UTC22 follow-up — reject malformed conditional structure in the shared source mask
+
+**Disposition:** exact-source Quarantine CI VERIFIED; Full integration validation FAILED at the inherited QA-owned poll-signature assertion; SIMULATED ONLY; HARDWARE ACCEPTED NO; PRODUCTION NO-GO.
+
+- Test-only RED commit: 5abc300f5998cacc602a645615c869bb9586f47d.
+- Corrected physical-newline fixtures after an initial escaped-newline draft; Quarantine run #45080270000, job 137386621656: EXPECTED FAILURE at "shared active-C++ mask must reject malformed conditional structure: orphan #elif".
+- Implementation commit / exact source-test SHA: 7aea96679043a38924765cccd2efea965cc44256.
+- Quarantine run #45080463303, job 137387232032: SUCCESS. New markers:
+  - POLL_FAULT_SHARED_ACTIVE_MASK_MALFORMED_DIRECTIVE_STRUCTURE_REJECTED 6/6
+  - POLL_FAULT_SHARED_ACTIVE_MASK_NESTED_UNKNOWN_BRANCH_CONSERVATIVE_PASS 1/1
+  - Earlier newline 3/3, unknown-macro 1/1, inactive-mask mutation 1/1 and Unicode string-index 1/1 also passed.
+- Full run #45080463292: FAILURE at validation job 137387307139, inherited QA-owned "Missing poll signature check" in tests/controllers.sh. All 15 configured firmware target jobs and Android completed SUCCESS; browser/device simulations, update bundle, candidate gate, signing handoff and publication were skipped.
+
+The shared helper now rejects unmatched #elif, #else and #endif, unterminated conditional stacks, duplicate #else, #elif after #else, missing #if/#elif expressions and unexpected tokens after #else/#endif. Diagnostics include the physical source line. Unknown macro branches remain conservatively visible; this is still a bounded source-analysis helper, not a full C/C++ preprocessor.
+
+This increment changes only the Hardware-owned Python source-analysis helper, its Hardware host-lab regression, and this handover. No ESP32/ESP8266 production sketch, runtime GPIO, relay, coin admission, pending journal, shared API, finance, migration, signer, witness, QA-owned assertion, Release workflow or COE destination file changed.
+
+The #344 cleanup lineage remains #338 → #339 → #341 → #344 and separate from #327 → #342 → #343. Keep #239 Phase-A deny, #254 ControllerAuthV1Lab and parallel #283 fail-closed sketches open and unmerged. No rebase, retarget, force-push, merge, flashing, device reset, financial migration, signer provisioning, release tag, deployment or cutover occurred.
