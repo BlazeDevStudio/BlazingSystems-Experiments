@@ -9,6 +9,9 @@ import subprocess
 import tempfile
 import sys
 
+import firmware_lab_source as source_helpers
+import poll_fault_dual_store_lab_fixtures as fixture_module
+
 from firmware_lab_source import extract_block, extract_function, extract_functions, find_repo_root, mask_non_code
 from poll_fault_dual_store_lab_fixtures import constants, harness
 
@@ -377,6 +380,62 @@ static const uint32_t POLL_FAULT_EEPROM_BYTES = 32;
             f"got={selected_spliced_digraph.splitlines()!r}"
         )
     print("POLL_FAULT_CONSTANT_EXTRACTION_PHASE2_DIGRAPH_SPLICE_REJECTED 1/1")
+
+    # The shared C/C++ source helper must own active-preprocessor masking.
+    newline_cases = 0
+    source = ""
+    for newline in ("\n", "\r\n", "\r"):
+        sample = (
+            "#if 0" + newline
+            + "static const uint32_t SHARED_MASK_SENTINEL = 0xBAD;" + newline
+            + "#else" + newline
+            + "static const uint32_t SHARED_MASK_SENTINEL = 0x1234;" + newline
+            + "#endif" + newline
+        )
+        active_mask = source_helpers.mask_active_cpp_code(sample)
+        source_newlines = [i for i, char in enumerate(sample) if char in "\r\n"]
+        masked_newlines = [i for i, char in enumerate(active_mask) if char in "\r\n"]
+        if len(active_mask) != len(sample) or masked_newlines != source_newlines:
+            raise AssertionError("shared active-C++ mask must preserve offsets and exact newline positions")
+        selected_shared = constants(sample, ("SHARED_MASK_SENTINEL",))
+        if selected_shared.splitlines() != [
+            "static const uint32_t SHARED_MASK_SENTINEL = 0x1234;"
+        ]:
+            raise AssertionError(
+                "shared active-C++ mask must retain only the known-active declaration; "
+                f"got={selected_shared.splitlines()!r}"
+            )
+        source = sample
+        newline_cases += 1
+    print(f"POLL_FAULT_SHARED_ACTIVE_MASK_NEWLINE_PRESERVATION_PASS {newline_cases}/3")
+
+    # Unknown macro branches must remain visible; this is deliberately not a full preprocessor.
+    unknown_macro = (
+        "#if BUILD_FEATURE_X\n"
+        "static const uint32_t UNKNOWN_MACRO_SENTINEL = 7;\n"
+        "#endif\n"
+    )
+    selected_unknown = constants(unknown_macro, ("UNKNOWN_MACRO_SENTINEL",))
+    if selected_unknown.splitlines() != [
+        "static const uint32_t UNKNOWN_MACRO_SENTINEL = 7;"
+    ]:
+        raise AssertionError("unknown macro branches must remain conservative, not be masked")
+    print("POLL_FAULT_SHARED_ACTIVE_MASK_UNKNOWN_MACRO_CONSERVATIVE_PASS 1/1")
+
+    # Failure injection: replacing the shared active mask with the lexical-only mask
+    # must re-expose the known-inactive declaration and fail the expected result.
+    original_active_mask = fixture_module.mask_active_cpp_code
+    try:
+        fixture_module.mask_active_cpp_code = source_helpers.mask_non_code
+        mutated = constants(source, ("SHARED_MASK_SENTINEL",))
+    finally:
+        fixture_module.mask_active_cpp_code = original_active_mask
+    if mutated.splitlines() == [
+        "static const uint32_t SHARED_MASK_SENTINEL = 0x1234;"
+    ]:
+        raise AssertionError("removing inactive-branch filtering was not detected")
+    print("POLL_FAULT_SHARED_ACTIVE_MASK_MUTATION_REJECTED 1/1")
+
 
 def run(board: str, path: Path):
     source = path.read_text(encoding="utf-8")
