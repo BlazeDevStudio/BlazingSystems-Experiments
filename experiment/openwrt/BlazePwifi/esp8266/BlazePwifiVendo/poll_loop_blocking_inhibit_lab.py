@@ -234,16 +234,16 @@ def verify_drain_abort_polarity_fixture_is_shared():
     # it does not compile or execute the fixture fragment.
     inactive_branch_cases = (
         (
-            "#if 0\\nrunDrainAbortWithoutIsr(\\n"
-            "    true, 34, 35, \"inactive-low-capture\", \"inactive-low-release\");\\n"
-            "#endif\\n",
+            "#if 0\nrunDrainAbortWithoutIsr(\n"
+            "    true, 34, 35, \"inactive-low-capture\", \"inactive-low-release\");\n"
+            "#endif\n",
             calls[0],
             "active-low",
         ),
         (
-            "#if 0\\nrunDrainAbortWithoutIsr(\\n"
-            "    false, 36, 37, \"inactive-high-capture\", \"inactive-high-release\");\\n"
-            "#endif\\n",
+            "#if 0\nrunDrainAbortWithoutIsr(\n"
+            "    false, 36, 37, \"inactive-high-capture\", \"inactive-high-release\");\n"
+            "#endif\n",
             calls[1],
             "active-high",
         ),
