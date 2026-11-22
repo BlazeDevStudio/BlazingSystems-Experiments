@@ -10,7 +10,7 @@ import re
 import subprocess
 import tempfile
 
-from firmware_lab_source import extract_function
+from firmware_lab_source import extract_function, mask_active_cpp_code, mask_non_code
 
 ROOT = Path(__file__).resolve().parents[2]
 SKETCHES = {
@@ -26,6 +26,46 @@ FUNCTIONS = (
     "configureRuntimePins",
     "applyRemoteConfig",
 )
+
+
+def _remote_config_dormancy_violation(source: str) -> bool:
+    """Return true if an active callsite can apply unverified register/poll config."""
+    active = mask_active_cpp_code(source)
+    code = mask_non_code(active)
+    definitions = re.findall(r"\bvoid\s+applyRemoteConfig\s*\(", code)
+    references = re.findall(r"\bapplyRemoteConfig\s*\(", code)
+    return len(definitions) != 1 or len(references) != 1
+
+
+def _assert_remote_config_consumer_dormant(source: str, board: str) -> None:
+    if _remote_config_dormancy_violation(source):
+        raise AssertionError(
+            f"{board}: applyRemoteConfig must remain definition-only until "
+            "the authenticated configuration envelope is approved"
+        )
+
+    # Failure-inject forbidden callsites into both network entry points. The
+    # active-code scanner must reject them while ignoring comments/literals
+    # and inactive preprocessor branches.
+    for function_name in ("connectSta", "loop"):
+        match = re.search(
+            rf"\bvoid\s+{function_name}\s*\([^)]*\)\s*\{{",
+            source,
+        )
+        if not match:
+            raise AssertionError(f"{board}: missing {function_name} injection anchor")
+        injected = (
+            source[:match.end()]
+            + '\n  applyRemoteConfig(String("{}"));'
+            + source[match.end():]
+        )
+        if not _remote_config_dormancy_violation(injected):
+            raise AssertionError(
+                f"{board}: dormant-consumer guard accepted injected {function_name} callsite"
+            )
+
+    print(f"{board} REMOTE_CONFIG_CONSUMER_DORMANT_PASS")
+    print(f"{board} REMOTE_CONFIG_CALLSITE_MUTATIONS_REJECTED 2/2")
 
 
 def _program(sketch: Path, board: str, mutate_guard: bool = False):
@@ -222,6 +262,9 @@ def run_remote_config_revision_lab():
     for board, sketch in SKETCHES.items():
         if not sketch.is_file():
             raise RuntimeError(f"{board}: missing sketch {sketch}")
+        _assert_remote_config_consumer_dormant(
+            sketch.read_text(encoding="utf-8"), board
+        )
         try:
             output = _compile_and_run(_program(sketch, board), board, 0, "exact-source")
             print(f"{board} REMOTE_CONFIG_REVISION_GUARD_PASS 5/5")
