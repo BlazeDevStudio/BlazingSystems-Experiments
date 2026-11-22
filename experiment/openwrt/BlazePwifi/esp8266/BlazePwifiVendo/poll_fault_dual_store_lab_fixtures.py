@@ -9,7 +9,8 @@ import re
 
 from firmware_lab_source import extract_block, extract_function, mask_active_cpp_code
 
-__all__ = ["constants", "harnsked)
+__all__ = ["constants", "harness"]
+
 
 def constants(source: str, names):
     """Extract one-line static const declarations from known-active C++ code.
