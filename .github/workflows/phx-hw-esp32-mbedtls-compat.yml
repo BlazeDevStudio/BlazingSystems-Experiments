@@ -1,5 +1,12 @@
 name: PHX-HARDWARE ESP32 Mbed TLS SHA256 compatibility guard
 on:
+  push:
+    branches:
+      - phoenix/hardware-prepoll-intake-deny-20261122-utc01
+    paths:
+      - 'experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino'
+      - 'experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/mbedtls_sha256_compat_lab.py'
+      - '.github/workflows/phx-hw-esp32-mbedtls-compat.yml'
   pull_request:
     paths:
       - 'experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino'
