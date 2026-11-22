@@ -1460,3 +1460,11 @@ The machine-readable `OWNERSHIP_ROUTES.json` remains blob `e4db324315a1b3543fec1
 A fresh exact-tree comparison confirms the old intake pin `6d4c9b...` is not current main. Of 61 runtime rows, 33 source blobs match current main, 20 differ and 8 are absent; all 61 destination blobs match their recorded map. The actual classifications are 46 identical / 15 derived, not the summary's 47 / 14. Source Hardware candidate #343 contains 34 board-local Python helpers; COE #26 contains zero corresponding Hardware Python helpers. Firmware/test identities diverge; PisoWiFi MIT LICENSE matches, but source root NOTICE has no COE root counterpart. Five COE #26 workflows remain queued with zero jobs.
 
 No staging, copy, move, overwrite, route promotion, cherry-pick, rebase, retarget or destination edit. The COE integration owner must reconcile source pin, counts, imports, tests, licenses/NOTICE and exact terminal CI before any staging request.
+
+## PHX-MASTER UTC22 — shared-path ownership review
+
+Exact changed-filename intersections show shared handover/test surfaces rather than exclusive subsystem source. The three BlazePwifi handover files (`PROJECT_HANDOVER.md`, `docs/handover/CHANGE_LEDGER.md`, `docs/handover/CURRENT_STATE.md`) appear in CORE #252, PISONET #255, QA #290 and RELEASE #291. RELEASE #291 also contains 3 CORE and 2 PISONET paths among 27 changed files; do not treat it as isolated RELEASE scope until those owners review.
+
+QA #290 overlaps PISONET #255 in `NativePulseCaptureCases.cs` and `Program.cs`; current Windows CI does not execute the native lab. Hardware #283/#327/#343 touch the same two ESP sketches on separate bases. Hardware #327 overlaps #341/#344 in dual-store lab files; #344 is a child of #341, while #327 is a separate stack. COE #26 overlaps #35 in ImageBuilder workflow/tool/tests and #45 in PisoWiFi map/intake/focus test. COE #49 has no changed-path overlap with #26 in the current inventory.
+
+See [the UTC22 exact path-set report](PHX_MASTER_UTC22_20261122_CROSS_OWNER_PATH_OVERLAP_AND_LIVE_CI_AUDIT.md). Preserve ownership; no route promotion, file movement or merge is implied. The manifest remains `DRAFT_REVIEW_ONLY`, PHX-MASTER target `null`.

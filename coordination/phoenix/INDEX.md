@@ -704,3 +704,5 @@ At the exact starting tree, 89 `PHX_MASTER_*.md` reports were present but INDEX 
 
 
 - [PHX_MASTER_UTC21_20261122_LIVE_HEAD_CI_COE26_EXACT_TREE_RECONCILIATION.md](PHX_MASTER_UTC21_20261122_LIVE_HEAD_CI_COE26_EXACT_TREE_RECONCILIATION.md) — live exact role heads/CI, non-truncated tree audit, and frozen COE #26 source/destination provenance reconciliation.
+
+- [PHX-MASTER UTC22 cross-owner path-overlap and live exact-head CI audit](PHX_MASTER_UTC22_20261122_CROSS_OWNER_PATH_OVERLAP_AND_LIVE_CI_AUDIT.md) — 16-PR exact filename-set comparison, owner CI, shared handover/test paths, Hardware lineage overlaps, COE candidate overlaps and current blockers.

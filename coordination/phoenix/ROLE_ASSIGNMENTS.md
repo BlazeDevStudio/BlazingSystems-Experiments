@@ -2864,3 +2864,27 @@ This snapshot supersedes the UTC20 role/CI rows above for current refs; it does 
 | COE Stage 5.1 | #49 `aeb8ff11...` | Case guard #44646341992 and Stage 5.1 #44646341873 PASS; shared #44646341922 FAIL at ESP32 compile. | Separate sidecar; no replacement of canonical CORE contract or frozen #26. |
 
 No owner branch or implementation scope changed.
+
+## PHX-MASTER UTC22 live role heads, CI and ownership overlap — 2026-11-22T22:38:20Z
+
+| Owner | Exact PR head | Current exact-head result |
+|---|---|---|
+| CORE #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | #42698139210 PASS, scoped |
+| RENTAL #328 | `0e0da62acd47c6a1ce287f8a30fc700d603fa070` | #44782114390 FAIL: handover freshness + missing `mbedtls/sha256.h`; APK identity and API21/API23 smoke pass |
+| PISONET #255 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | #42462978704 Windows Release PASS; physical adapter acceptance not established |
+| HARDWARE #283 | `4dd0b01bf04cf80aec6d4dd6fc93b2fdc633da30` | Quarantine #45057637178 PASS; Full #45057637196 FAIL at missing `mbedtls/sha256.h` |
+| HARDWARE #327 | `fadac4ed3bc837cf729753264b9427fa3fd312b9` | Quarantine/Relay PASS; Full #45029851959 FAIL at Controller protocol parity |
+| HARDWARE #343 | `dfeff7d5f63e699de7bc296c7641f2493f1e0e13` | Quarantine/Relay PASS; Full #45062595995 FAIL at inherited poll assertion |
+| HARDWARE #341 | `4368435ad762d507a907e72a9c739c7bddbc3a81` | Quarantine #45060591705 PASS; Full #45060591630 FAIL at inherited poll assertion |
+| HARDWARE #344 | `accac7b383d2819ba13af43cb699ec5081cd9e4a` | Quarantine #45074396465 PASS; Full #45074396411 FAIL at inherited poll assertion |
+| QA #290 | `5c29d15994cee1279058f1eca12f2a3180704292` | Windows #43633486963 PASS; native lab not invoked |
+| QA #292 | `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | No workflow runs; base `b1ca02e2...` stale vs Master `1675fe82b12b5309f12df12ec1a4ab2d979d6ac4` |
+| RELEASE #291 | `cb5e5450a4fc2afc7f38cf426e51b390859a1dd0` | Windows/Full fail handover freshness; ESP32 compatibility passes |
+| COE #26 | `b382d233ff06c8791b1028bed3c617cc7b670d12` | Five queued workflows, zero jobs/statuses; FROZEN |
+| COE RELEASE #35 | `ed2ada0dfd2ac84669bbd84edee91aa873bbeb32` | Case guard PASS; sandbox FAIL (Bubblewrap absent); shared validation FAIL closed on all 10 profiles without site ULA /48 |
+| COE CORE #45 | `9d76a134c1f6512aa40c20ec4d247306a71a8cce` | Overlay/shell + case guard scoped PASS |
+| COE Stage 5.1 #49 | `aeb8ff11b2f5db9a5f86280ab62ab988245f3919` | Stage 5.1 + case guard PASS; shared CI fails ESP32 compile |
+
+The exact path-set audit found 14 pairwise overlaps across the selected open PRs. Master #288 remains 176/176 paths under `coordination/phoenix/`, with zero overlap against the selected owner PRs. Shared handovers, PISONET QA tests, Hardware lineage overlaps and COE candidate overlaps are detailed in [the UTC22 report](PHX_MASTER_UTC22_20261122_CROSS_OWNER_PATH_OVERLAP_AND_LIVE_CI_AUDIT.md). These are owner-review/stacking signals, not merge permission.
+
+COE #26 remains FROZEN; private Drive v11/newer corrections remain inaccessible; Master tests are NOT RUN; cleanup #266 remains OPEN with Master only partially addressed. **PRODUCTION NO-GO.**
