@@ -57,7 +57,7 @@ No production .ino, GPIO, relay, poll/coin API, financial code, signer/witness, 
 
 Missing poll signature check in experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/BlazePwifiVendo.ino.
 
-All 14 target/platform jobs completed successfully, but validation failed and downstream simulations, candidate, signing and publication jobs were skipped. Full PR run [#45006590525](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45006590525) was still in progress at the last readback. No Full integration acceptance is claimed.
+All 14 target/platform jobs completed successfully, but validation failed and downstream simulations, candidate, signing and publication jobs were skipped. Full PR run [#45006590525](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45006590525) also completed FAILURE at validation job 137160298554 with the same Missing poll signature check. Full push run #45006585689 failed at validation job 137159504894 with the same message. No Full integration acceptance is claimed.
 
 The poll signature blocker remains a shared CORE/QA contract issue. Hardware must not invent response_sig, add positive coin admission or weaken default-deny.
 
