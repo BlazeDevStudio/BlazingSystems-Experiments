@@ -1339,3 +1339,13 @@ The machine-readable manifest is unchanged at blob `e4db324315a1b3543fec17a148fb
 Exact route counts, current Hardware #339 candidate blobs, license/NOTICE identities, test-import gaps and current owner CI are recorded in the UTC00 supersession in `INTEGRATION_MATRIX.md`. The current Hardware child #339 is an unmerged source candidate, not a destination authorization. Its host-lab helper has no COE equivalent; firmware sketches differ; QA import completeness is insufficient; source root NOTICE and Hardware route-local license/notice scope are incomplete; destination workflows have not executed.
 
 No route was promoted. No source/destination file was staged, copied, moved, overwritten, cherry-picked, rebased or edited. COE #26 remains FROZEN; retain owner approvals and exact-SHA CI as prerequisites before any future move.
+
+
+## UTC01 migration route disposition — 2026-11-22T01:56:13.205Z
+
+- `OWNERSHIP_ROUTES.json` is unchanged at blob `e4db324315a1b3543fec17a148fbf960170fcb29`: 11 routes, schema `phoenix/ownership-routes/v1`, `DRAFT_REVIEW_ONLY`; PHX-MASTER remains coordination-only with target null.
+- The current #327→#339 Hardware stack and the separate #283→#340 pre-poll deny candidate are not one linear stack. #340's handover itself identifies it as a defense-in-depth deny-only child of #283, not a replacement for #327→#339 poll/edge reconciliation. Keep both drafts separate pending owner sequencing/review.
+- Exact #339/#340 source sketch blobs differ from each other, Experiments main, and COE #26 Hardware blobs. Their host-lab files are source-only. COE #26's firmware and QA/test identities remain divergent/incomplete.
+- Source root NOTICE and COE Hardware LICENSE/NOTICE parity remain incomplete; only BlazePwifi/LICENSE ↔ Pisowifi/LICENSE is byte-identical.
+- Rental standalone remains manual-file-mapping-only. No destination staging, recursive copy, cherry-pick, move, overwrite, rebase, or COE write is authorized or performed.
+- COE #26 remains FROZEN; exact-head CI is incomplete (five queued workflows, zero jobs). No route promotion.

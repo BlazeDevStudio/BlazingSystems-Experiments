@@ -2027,3 +2027,19 @@ No subsystem source, ownership manifest or COE destination was changed. No merge
 4. Site ULA authority and infrastructure: provide the approved site-scoped /48 and a trusted Bubblewrap-capable runner.
 5. PHX-RENTAL / PHX-RELEASE: refresh canonical handover and resolve the exact compiler/handover failures.
 6. Repository administrator: provide effective branch-protection evidence.
+
+
+## PHX-MASTER UTC01 live exact-head supersession — 2026-11-22T01:56:13.205Z
+
+Master-only reconciliation of the current Hardware candidate graph, exact owner CI, and COE #26 migration provenance.
+
+- Master audit-start branch HEAD `f4e375ffca2bd0a17160d1fd41ead7c50274cdab`; PR #288 OPEN / DRAFT / UNMERGED against `main@f4e8a891aed8af86d5fd315d28750a0ac3a7372b`. Existing 160 paths are all under `coordination/phoenix/`; no out-of-scope path.
+- Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; v0.6 audit-foundation `2fbd2475e9f54878c316fa7cea2f228386b0e859`; v0.5.3 development `aad3aade72c1156eecba1fed30907c6d0283b2c5`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`.
+- Routing manifest remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`, 11 routes, `DRAFT_REVIEW_ONLY`, PHX-MASTER destination null.
+- The #327→#339 primary poll/edge stack and #283→#340 separate deny-only candidate are distinct. #339 current docs-head focused Quarantine passes; Full validation remains blocked at the QA-owned Missing poll signature assertion. #340 focused pre-poll deny passes, but Full fails ESP32 compile on missing `mbedtls/sha256.h`.
+- COE #35 exact-head CI: 169 host tests PASS / 2 skips, then ten profile admissions fail closed for missing approved site ULA /48; 31/31 sandbox host tests PASS, but Bubblewrap is absent (exit 125). COE #26 has five queued workflows / zero jobs.
+- 13/13 Master static assertions PASS; four recursive tree reads complete with `truncated=false`. Full Master coordination unittest suite NOT RUN: ordinary `git ls-remote` still fails DNS (`Could not resolve host: github.com`); no PR-triggered Master Actions run exists.
+- Private `BLAZE_PROJECT_REGISTRY_v11_20261027.json` and newer corrections are not available through the exposed connector surface. Library search returned older v3–v7 snapshots only; none was substituted. No Google Drive connector is exposed.
+- Experiments main, v0.6 and v0.5.3 branches report `protected=false`; COE main reports `protected=false`; effective Master branch protection remains UNKNOWN. Cleanup #266 remains OPEN / 0 of 7, and its MASTER checkbox remains unchecked.
+
+**PRODUCTION NO-GO.** No subsystem source, COE destination, ownership manifest, merge, release, signing, secret, payment system, firmware flash or physical test was changed or used.

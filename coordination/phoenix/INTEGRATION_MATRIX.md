@@ -3638,3 +3638,53 @@ The current #339 candidate tree compared separately with COE #26 contains 18 ESP
 - QA identity remains incomplete: only 1 of 47 canonical source tests is identical; 3 diverge, 43 are source-only and 15 destination-only.
 
 **Disposition: COE #26 FROZEN / NO MIGRATION.** The manifest remains `DRAFT_REVIEW_ONLY`; no staging, copy, move, overwrite, cherry-pick, rebase, destination edit, route promotion or test-import acceptance occurred. Five #26 workflows remain QUEUED with zero jobs.
+
+
+## UTC01 exact-tree provenance refresh — 2026-11-22T01:56:13.205Z
+
+All four recursive Git trees were complete (`truncated=false`). Counts below are blob/file counts unless noted.
+
+| Exact tree | Entries | Blobs |
+|---|---:|---:|
+| Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b` | 2,340 | 1,764 |
+| HARDWARE #339 docs head `5777b432...` | 2,479 | 1,900 |
+| HARDWARE #340 docs head `b0d3688c...` | 2,359 | 1,780 |
+| COE #26 `b382d233...` | 286 | 207 |
+
+### Canonical main-to-COE #26 route comparison
+
+| Route | Source | Destination | Identical | Divergent | Source-only | Destination-only |
+|---|---:|---:|---:|---:|---:|---:|
+| CORE runtime | 15 | 20 | 6 | 9 | 0 | 5 |
+| CORE CGI | 1 | 1 | 0 | 1 | 0 | 0 |
+| RENTAL Android | 983 | 8 | 0 | 0 | 983 | 8 |
+| RENTAL server | 7 | 4 | 0 | 1 | 6 | 3 |
+| PISONET | 32 | 47 | 13 | 11 | 8 | 23 |
+| HARDWARE ESP32 | 3 | 1 | 0 | 1 | 2 | 0 |
+| HARDWARE ESP8266 | 3 | 1 | 0 | 1 | 2 | 0 |
+| QA tests | 38 | 19 | 1 | 3 | 34 | 15 |
+| RELEASE workflow | 1 | 1 | 0 | 1 | 0 | 0 |
+
+RENTAL standalone remains `manual-file-mapping-required` and is not treated as a recursive copy route.
+
+### Current HARDWARE candidates vs COE #26
+
+| Candidate | Route | Source | Destination | Identical | Divergent | Source-only |
+|---|---|---:|---:|---:|---:|---:|
+| #339 | ESP32 | 18 | 1 | 0 | 1 | 17 |
+| #339 | ESP8266 | 30 | 1 | 0 | 1 | 29 |
+| #340 | ESP32 | 8 | 1 | 0 | 1 | 7 |
+| #340 | ESP8266 | 4 | 1 | 0 | 1 | 3 |
+
+Exact sketch blob SHAs (source main / #339 / #340 / COE #26):
+- ESP32: `117c6e937e8f12f3890ace2ae23b3a23ff1c3df0` / `53b27aa80fa4a91aabac71de57f550a8eef2cb61` / `b102a79656690fbd49d7268092ab1980579c1cfd` / `3cc7ec54b476943dc04a8d1af5e2df5fe054e422`.
+- ESP8266: `bfb94920eb0a189ca01d52e5443954fa133f5423` / `71160ac8ebd5163b19a56d6c9e229a5429975fc8` / `fdd4e45b2346957ce5f55ae529734854e4c78c7f` / `c8be98f72596681e36a3ad1f8939bf8046c96887`.
+
+The #339 host normalizer lab blob `ef4da32716411e8e556e0b0c3df0df4fedf9aca8` and #340 pre-poll lab blob `56452f06bd0c335de4ceedf4de063b358d3da3bb` have no COE #26 equivalent. QA test identity remains incomplete: 38 source files vs 19 destination, 1 identical, 3 divergent, 34 source-only and 15 destination-only.
+
+### License / notice provenance
+- Source `experiment/openwrt/BlazePwifi/LICENSE` and COE `Pisowifi/LICENSE` are byte-identical: `1ee55b94183417be977ca287cd7391f9a6f7e721`.
+- Source root `NOTICE.md` exists at `f6d92cd21465312be5993631fe26977219be0fb9`; COE #26 root `NOTICE.md` is absent.
+- COE #26 `Hardware/LICENSE` and `Hardware/NOTICE.md` are absent.
+
+No candidate was staged or copied. COE #26 remains FROZEN; all exact source/destination differences require owner review and complete import/license/test evidence.
