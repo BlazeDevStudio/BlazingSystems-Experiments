@@ -3989,3 +3989,23 @@ COE #26 remains OPEN / DRAFT / FROZEN at `b382d233ff06c8791b1028bed3c617cc7b670d
 - COE RELEASE #35 at `edb4eb482dfa94bbad2dcf29b90b8463a2165fa5` passes case-collision checks but shared appliance validation fails closed for all ten profiles without approved site-scoped ULA /48 authority; the mandatory sandbox exits 125 because Bubblewrap is unavailable. No actual ImageBuilder output is admitted.
 - COE integration #26 remains pinned to `b382d233ff06c8791b1028bed3c617cc7b670d12`, OPEN / DRAFT / FROZEN, with five queued workflow entries and zero jobs. The previously verified source-pin drift, 46/15 vs 47/14 summary discrepancy, firmware/test blob divergence, missing board-local Python helpers, and NOTICE/Hardware licence-scope gaps remain blocking. No staging, copy, move, rebase, cherry-pick or destination edit.
 - `OWNERSHIP_ROUTES.json` remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`, 11 routes, `DRAFT_REVIEW_ONLY`; PHX-MASTER remains `coordination-only` with `target: null`.
+
+
+---
+
+## UTC20 — exact role CI and COE #26 staging provenance revalidation (2026-11-22T20:36Z)
+
+Experiments main `f4e8a891...`, development `aad3aade...`, audit foundation `2fbd2475...`, Master start HEAD `48d1d3af...`; COE main `a6513ab4...`, integration #26 `b382d233...`. Master PR #288 had 174 paths at audit start, all under `coordination/phoenix/`; no Master CI runs or combined statuses were returned.
+
+Current owner evidence:
+- CORE #252 `c82705f2...`: build 42698139210 PASS (separate CORE automation owns implementation).
+- RENTAL #328 `0e0da62a...`: APK/API21/API23 pass; ESP32 build 44782114390 fails on missing `mbedtls/sha256.h`.
+- PISONET #255 `d01fd164...`: Windows synthetic release 42462978704 PASS; native COM acceptance untested.
+- HARDWARE #327 → #342 → #343: current #343 docs head `dfeff7d5...`; focused Quarantine/Relay 45062595339/45062595335 PASS; Full 45062595995 fails at inherited QA poll-signature assertion. No default-deny weakening.
+- QA #290 `5c29d159...` Windows 43633486963 PASS; QA #292 `75a3f66d...` has no PR-triggered run.
+- RELEASE #291 `6d4a95ed...`: Windows and BlazePwifi runs 45065978523/45065978506 fail at stale handover freshness; ESP32 compatibility 45065978550 passes. Its 27 changed paths include 22 RELEASE, 3 CORE, 2 PISONET.
+- COE #35: all ten profiles fail closed for missing approved site ULA /48; sandbox unavailable without Bubblewrap. COE #45 scoped Pi overlay/shell tests pass. COE #49 Stage 5.1/case guard pass but Shared Contracts fails. COE #26 five workflows queued / zero jobs.
+
+Migration facts at exact source/destination trees are recorded in [the UTC20 report](PHX_MASTER_UTC20_20261122_LIVE_ROLE_CI_COE26_PROVENANCE_REVALIDATION.md): source pin 6d4c9b differs from routed main f4e8; 33/61 source blobs unchanged, 20 changed, 8 absent; all 61 destination blobs match their recorded destination SHAs; intake/map summary classification differs by one row; #343 has 34 board-local Python helpers versus zero Hardware Python files in COE #26; firmware and hardening-test blobs differ; 11/15 derived tests are marked NOT_RUN. Pisowifi LICENSE matches, while Hardware-local LICENSE and COE root NOTICE are absent. No migration or staging change.
+
+Private Drive registry v11/newer corrections remain inaccessible; older snapshots were not substituted. COE #26 remains FROZEN. Production NO-GO.
