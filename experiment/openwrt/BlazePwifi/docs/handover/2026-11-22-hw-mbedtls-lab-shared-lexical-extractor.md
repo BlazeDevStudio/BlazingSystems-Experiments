@@ -99,7 +99,7 @@ Full build run [#45034442014](https://github.com/BlazeDevStudio/BlazingSystems-E
 Missing poll signature check in .../esp8266/BlazePwifiVendo.ino
 ```
 
-At this handover update, the remaining platform jobs were still running; the validation gate had already failed. No Full integration, candidate, signing or release PASS is claimed.
+The Full run is terminal CANCELLED after validation failure: 12 jobs SUCCESS, 1 validation FAILURE, 8 CANCELLED, 6 SKIPPED. ESP32 and Android jobs were cancelled; downstream simulations, candidate, signing and publication did not complete. No Full integration PASS is claimed.
 
 ### Scope and readiness
 
