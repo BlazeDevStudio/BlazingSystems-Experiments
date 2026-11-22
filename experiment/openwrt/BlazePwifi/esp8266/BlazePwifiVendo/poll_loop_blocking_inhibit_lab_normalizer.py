@@ -153,9 +153,16 @@ def normalize_cpp_function_body(body):
             line_has_token = True
             continue
 
-        if ch == "#" and not line_has_token:
+        is_directive_prefix = not line_has_token and (
+            ch == "#" or (
+                body.startswith("%:", i) and not body.startswith("%:%:", i)
+            )
+        )
+        if is_directive_prefix:
+            # The C++ digraph %: is the alternative preprocessing token for #.
+            # Exclude %:%:, the longer ## digraph, from directive recognition.
             # Keep the directive on its own logical line; indentation is harmless,
-            # but moving '#' after a code token changes preprocessing semantics.
+            # but moving the marker after a code token changes preprocessing semantics.
             pending_space = False
             if output and output[-1] != "\n":
                 output.append("\n")
