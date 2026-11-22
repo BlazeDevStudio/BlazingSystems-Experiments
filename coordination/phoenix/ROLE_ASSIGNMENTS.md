@@ -2736,3 +2736,10 @@ See [PHX_MASTER_UTC13_20261122_LIVE_ROLE_CI_COE_STAGE51_EXACT_PROVENANCE_AUDIT.m
 - **RELEASE #291:** `42797e2f...`; ESP32 compatibility PASS; Full/Windows FAIL handover/build gates.
 - **COE RELEASE #35:** `b01c8d44...`; case guard PASS, ten profiles fail closed without approved ULA /48, Bubblewrap absent (exit 125).
 - Cleanup #266 remains OPEN, 0/7. Private Drive v11/newer corrections remain unavailable; no older snapshot substituted. Master suite NOT RUN because local GitHub DNS fails. PRODUCTION NO-GO.
+
+ 
+## PHX-MASTER UTC15 live owner/CI refresh — 2026-11-22
+
+See [UTC15 exact owner CI, route-mapped COE #26 provenance and cleanup inventory audit](PHX_MASTER_UTC15_20261122_EXACT_OWNER_CI_ROUTE_MAPPED_COE26_AND_CLEANUP_INVENTORY_AUDIT.md). Live exact heads: CORE #252 `c82705f2...`; RENTAL #328 `0e0da62a...`; PISONET #255 `d01fd164...`; HARDWARE #327 `fadac4ed...`, #339 `b3e15588...`, #340 `20c5889f...`, #341 `a655d0b5...`, #342 `047925b6...`; QA #290 `5c29d159...` / #292 `75a3f66d...`; RELEASE #291 `42797e2f...`; COE #35 `a8b95f81...`, #45 `9d76a134...`, #49 `aeb8ff11...`, and frozen #26 `b382d233...`.
+
+Latest exact-head changes: #342 Quarantine PASS / aggregate build FAIL at Controller protocol parity despite 14 target/platform jobs passing; #35 case guard PASS, shared validation executes 186 tests then fails closed on all ten site-ULA profiles, and sandbox preflight passes 33 tests before Bubblewrap exit 125. #26 has eight queued run entries across five workflow names and zero jobs. CORE remains separately owned by the active Blaze Production Continuation; MASTER made no CORE source change.

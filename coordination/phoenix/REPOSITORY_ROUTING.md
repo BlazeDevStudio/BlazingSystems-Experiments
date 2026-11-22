@@ -1413,3 +1413,12 @@ No route promotion, staging, copy, move, overwrite, cherry-pick, rebase, retarge
 ## UTC13 destination routing hold — 2026-11-22
 
 OWNERSHIP_ROUTES.json remains blob e4db324315a1b3543fec17a148fbf960170fcb29, 11 routes, DRAFT_REVIEW_ONLY, PHX-MASTER target null. COE #26 remains FROZEN at b382d233ff06c8791b1028bed3c617cc7b670d12. COE #49 Stage 5.1 is a separate stacked draft based on #48 and has not changed #26's ESP32 sketch or Hardware hardening test. The source/destination sketch, test, helper-import and NOTICE/license differences are recorded in [PHX_MASTER_UTC13_20261122_LIVE_ROLE_CI_COE_STAGE51_EXACT_PROVENANCE_AUDIT.md](PHX_MASTER_UTC13_20261122_LIVE_ROLE_CI_COE_STAGE51_EXACT_PROVENANCE_AUDIT.md). No destination staging, copy, move, overwrite, cherry-pick, rebase, retarget, route promotion or edit occurred.
+
+ 
+## UTC15 route-mapped destination provenance — 2026-11-22
+
+See [UTC15 exact route-mapped provenance report](PHX_MASTER_UTC15_20261122_EXACT_OWNER_CI_ROUTE_MAPPED_COE26_AND_CLEANUP_INVENTORY_AUDIT.md). The 11-route manifest remains unchanged at `e4db324315a1b3543fec17a148fbf960170fcb29`, `DRAFT_REVIEW_ONLY`, PHX-MASTER destination `null`.
+
+Route-prefix comparison at HARDWARE #342 / COE #26 exact heads confirms that ESP32/ESP8266 sketches are divergent and most source host-lab files are not imported; QA test, CORE library and PISONET mappings contain both identical and divergent blobs; Rental Android needs an explicit path map because the source `BlazeRental/` nesting does not match the destination layout. Source QA and COE Hardware hardening tests are distinct and both assert legacy poll signatures. The source/destination LICENSE match does not resolve root NOTICE or Hardware-local license/notice scope.
+
+No staging, copy, move, overwrite, route promotion, cherry-pick, rebase or COE destination edit occurred. COE #26 remains FROZEN.

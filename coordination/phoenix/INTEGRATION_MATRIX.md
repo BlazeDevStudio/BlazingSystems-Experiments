@@ -3933,3 +3933,10 @@ The new [PHX-MASTER UTC14 exact-tree report](PHX_MASTER_UTC14_20261122_HW342_MBE
 #342 is a Hardware-owned host-lab refactor reusing `firmware_lab_source.py`; focused Quarantine CI passes, while Full is cancelled after the inherited QA-owned `Missing poll signature check`. Keep firmware deny-only. COE #49 Stage 5.1 is a separate router-side bridge candidate, not a port of #342 or CORE `config_auth`; its stage-specific CI passes but shared hardware CI fails. COE #26 remains FROZEN with five queued workflows and zero jobs.
 
 COE #35 latest release CI remains blocked by missing approved site ULA /48 and missing trusted Bubblewrap. Experiments main/v0.6/v0.5.3 and COE main report `protected=false`; Master branch protection remains unverified. Private Drive v11/newer corrections and full Master local tests remain BLOCKED.
+
+ 
+## UTC15 exact route-mapped COE #26 provenance — 2026-11-22
+
+The current route-aware comparison is in [the UTC15 audit](PHX_MASTER_UTC15_20261122_EXACT_OWNER_CI_ROUTE_MAPPED_COE26_AND_CLEANUP_INVENTORY_AUDIT.md). Both recursive trees are complete: HARDWARE #342 source 2,478 entries / 1,899 blobs; COE #26 destination 286 / 207. Mapping by `OWNERSHIP_ROUTES.json` prefixes shows Hardware ESP32 16/1 (one divergent sketch), ESP8266 28/1 (one divergent sketch), QA tests 47/19 (1 identical, 3 divergent, 43 source-only, 15 destination-only), CORE library 15/20 (6 identical, 9 divergent, 5 destination-only), PISONET 32/47 (13 identical, 11 divergent, 8 source-only, 23 destination-only), and Rental standalone 7/4 (one divergent install script). Rental Android's source/destination layout is not prefix-preserving (`BlazeRental/` versus flattened `app/`); do not treat the 983 source files as a missing-file count without an explicit per-file map.
+
+The source QA hardening test and COE Hardware test are distinct blobs and both retain legacy positive poll-signature assertions. BlazePwifi/Pisowifi LICENSE blobs match; source root NOTICE and COE Hardware-local LICENSE/NOTICE scope remain unresolved. COE #26 stays FROZEN; no migration staging or destination edit.
