@@ -8,7 +8,7 @@ import sys
 import tempfile
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from firmware_lab_source import extract_function as _extract_function
+from firmware_lab_source import extract_function as _extract_function, mask_non_code
 
 import poll_response_failclosed_lab_structure_guard  # noqa: F401
 from poll_response_failclosed_lab_fixtures import (
@@ -51,7 +51,7 @@ void lexicalFixture() {
 
 
 def verify_debounce_clamp_callsite_count(source, board, minimum_calls):
-    count = source.count("boundedCoinDebounceMs(")
+    count = mask_non_code(source).count("boundedCoinDebounceMs(")
     if count < minimum_calls:
         raise RuntimeError(
             f"{board}: not all debounce configuration paths use the 20 ms clamp "
