@@ -88,3 +88,37 @@ The revision lab now extracts the actual production \`writeLogical()\`, GPIO val
 ### Disposition
 
 This is a source-extracted host/CI correction for a dormant helper, **SIMULATED / CI VERIFIED only**. It does not authorize remote configuration, relay actuation, coin admission, physical testing, finance, migration, release, or deployment. Hardware acceptance remains NOT TESTED; production remains NO-GO.
+
+
+## Follow-up — protect the dormant remote-configuration trust boundary (2026-11-22 UTC19)
+
+**Exact source/test commit:** `fae8398946fcb2c35c1d831620128f2777bc05d5`  
+**PR:** [#343](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/343), still OPEN / DRAFT / UNMERGED.  
+**Scope:** test infrastructure only; no ESP sketch or controller API behavior changed.
+
+### Gap closed
+
+Master Architecture Contract §6.4 requires `applyRemoteConfig()` to remain uncalled from register/ping or poll responses until CORE publishes a separately authenticated configuration envelope and QA approves exact positive/negative vectors. Both sketches currently have the helper definition but no active callsite. The revision lab previously tested revision monotonicity and GPIO safety but did not protect that dormant state against a future callsite regression.
+
+### Regression and failure injection
+
+`remote_config_revision_lab.py` now imports the shared `mask_active_cpp_code()` and `mask_non_code()` helpers. For each board it requires exactly one active `applyRemoteConfig()` occurrence (the function definition), ignoring comments, literals and inactive preprocessor branches.
+
+The test then injects forbidden calls into both `connectSta()` and `loop()`. The guard must reject both mutations. This prevents a future unauthenticated register/poll path from silently activating remote configuration.
+
+### Exact-source evidence
+
+- Source/test SHA: `fae8398946fcb2c35c1d831620128f2777bc05d5`.
+- Relay/output workflow [#45062314769](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45062314769), job `137330746787`: **SUCCESS**. Logs show for ESP8266 and ESP32:
+  - `REMOTE_CONFIG_CONSUMER_DORMANT_PASS`
+  - `REMOTE_CONFIG_CALLSITE_MUTATIONS_REJECTED 2/2`
+  - revision guard `5/5`, stale/equal/zero denial, newer-revision control, unknown-polarity denial
+  - poll-window, ISR-edge, pulse-capture and relay-output regression/mutation checks pass.
+- Quarantine workflow [#45062314763](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45062314763), job `137330746755`: **SUCCESS**. Exact-source fake-LittleFS, EEPROM/config-read recovery, poll-drain pulse capture and cold-boot polarity checks pass. Logs explicitly retain `SIMULATED_ONLY=1`, `PHYSICAL_POWER_CUT_VERIFIED=0`, and `FINANCIAL_PRODUCTION_AUTHORIZED=0`.
+- Full PR build [#45062314768](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45062314768), validation job `137330748316`: **FAILURE**, inherited `Missing poll signature check` in the ESP8266 sketch. This is the QA-owned legacy positive fixture; no signature was invented and no default-deny behavior was weakened. Platform jobs were still running when this handover was written; no Full pass is claimed.
+
+### Disposition
+
+The remote-config consumer remains dormant. This is host source-analysis / CI evidence only, not authenticated configuration acceptance or physical hardware acceptance. No finance, coin admission, relay authorization, signer/witness, migration, device, production deployment or release state changed.
+
+**Next exact action:** PHX-CORE publishes the canonical authenticated configuration envelope and canonical bytes; PHX-QA independently approves positive/negative golden vectors; PHX-HARDWARE keeps the consumer definition-only until both are accepted.
