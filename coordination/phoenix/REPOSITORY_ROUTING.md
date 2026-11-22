@@ -1367,3 +1367,12 @@ The unchanged manifest `OWNERSHIP_ROUTES.json@e4db324315a1b3543fec17a148fbf96017
 Hardware candidate #339 (`5777b432...`, child of #338) and separate #340 (`9099bbb8...`, child of #283) remain distinct. Their ESP32/ESP8266 trees contain respectively 18/30 and 9/4 files; COE #26 has one sketch per route and zero Python host-lab files. All four candidate firmware sketch blobs differ from the destination. #340's exact-head compile/lab CI passes, but signing/publication are skipped and physical acceptance is NOT TESTED; #339 Full fails at Missing poll signature check.
 
 Only BlazePwifi LICENSE ↔ Pisowifi LICENSE is byte-identical. Source root NOTICE is absent from COE root; COE Hardware LICENSE/NOTICE are absent. No route promotion, copy plan, staging, move, overwrite, rebase, cherry-pick or destination edit is authorized or performed. The broad RENTAL standalone route remains manual-file-mapping-only with `copy_permitted=false`. COE #26 remains FROZEN.
+
+
+## UTC04 route disposition — 2026-11-22T04:39Z
+
+OWNERSHIP_ROUTES.json remains unchanged at blob e4db324315a1b3543fec17a148fbf960170fcb29, schema phoenix/ownership-routes/v1, 11 routes, DRAFT_REVIEW_ONLY. PHX-MASTER remains coordination-only with target null. Experiments main is f4e8a891...; the actual branch named development is blazepwifi-v0.5.3-development at aad3aade...; v0.6.0-audit-foundation at 2fbd2475... is a separate ref.
+
+Hardware #339 at 155af6d5... and separate #340 at 20c5889... remain distinct owner-controlled candidates (#339 child of #338; #340 child of #283). Current sketches and test blobs differ from COE #26; board-lab Python helpers have no destination equivalents. COE Hardware has two sketches and one shell test; source root NOTICE and destination Hardware LICENSE/NOTICE parity remain incomplete.
+
+COE #26 remains FROZEN with five queued workflows / zero jobs. No route promotion, staging, copy, move, overwrite, cherry-pick, rebase or destination edit is authorized or performed. Broad Rental remains manual-file-mapping-required with copy_permitted=false.

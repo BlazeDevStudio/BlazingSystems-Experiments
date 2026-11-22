@@ -2605,3 +2605,20 @@ The following exact PR heads and terminal runs supersede older role pins above; 
 | COE integration | #26 `b382d233ff06c8791b1028bed3c617cc7b670d12` | Five workflows remain QUEUED with zero jobs; FROZEN. |
 
 COE scoped owner candidates also rechecked: #45 head `9d76a134c1f6512aa40c20ec4d247306a71a8cce` overlay/case-guard PASS; #30 head `4897348d94a0cf7884ecd53244bfcd59e7bf2fbc` synthetic Windows PASS; #32 head `29b6fe08b10688182d981a66745f482758bd6630` synthetic Windows PASS. These do not establish combined COE #26 acceptance.
+
+
+## UTC04 live role/CI reconciliation — 2026-11-22T04:39Z
+
+Exact current heads supersede UTC03 pins. All PRs remain owner-controlled; Master changed no subsystem source.
+
+| Role | Current exact PR head(s) | Exact-head evidence / status |
+|---|---|---|
+| CORE | Experiments #252 c82705f2...; COE #45 9d76a134... | #252 build #42698139210 PASS (scoped); #45 overlay #44295049727 and case #44295049903 PASS. Separate CORE owner/automation retains implementation. |
+| RENTAL | #328 0e0da62acd47c6a1ce287f8a30fc700d603fa070 | APK identity #44782114384 and API21/API23 #44782114393 PASS; build #44782114390 FAIL at stale handover and mbedtls/sha256.h. |
+| PISONET | #255 d01fd1642c105b3b0f6cd3343d1c9b67291f6e09; COE #30 4897348d... | Experiments Windows synthetic #42462978704 PASS; COE #30 #43653415598 PASS. Native COM acceptance NOT TESTED. |
+| HARDWARE #339 | 155af6d58f8a666c178946ae3e2e00855e0635af, base #338 1a6a7acf... | Quarantine #44985602488 PASS; Full #44985602493 FAILS at inherited QA-owned Missing poll signature check; 14/14 target builds PASS; downstream gates skipped. |
+| HARDWARE #340 | 20c5889fc4ceeb95ab0b05c7c11952704caff36b, base #283 88581eef... | Five focused workflows and Full #44983396262 PASS, including 14/14 targets, simulations, update bundle and candidate gate; signed import/signing/publication skipped. Physical acceptance NOT TESTED. |
+| QA | #290 5c29d159...; #292 75a3f66d... | #290 Windows CI #43633486963 PASS; #292 has zero PR-triggered runs and stale Master base b1ca02e2... |
+| RELEASE | #291 42797e2f...; COE #35 a09b014c... | #291 ESP32 compatibility PASS but Windows and BlazePwifi builds fail handover freshness. COE #35 has 172 host tests PASS / 2 skips, then 10/10 profiles fail closed without approved ULA /48; sandbox 31/31 host tests PASS but Bubblewrap absent / exit 125; case guard PASS. |
+
+COE #26 remains FROZEN with five queued workflows / zero jobs. COE #32 synthetic CI #43653540607 PASS, not native acceptance.

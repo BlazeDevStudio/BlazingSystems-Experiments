@@ -548,3 +548,13 @@ Current coordination snapshot: Master PR #288 audit-start head `e2a6934cd2dba8e7
 - [Migration route disposition](REPOSITORY_ROUTING.md) confirms the 11-route manifest remains DRAFT_REVIEW_ONLY and PHX-MASTER target null.
 - [Execution and registry blockers](AUDIT_SUMMARY.md): Master suite NOT RUN after GitHub DNS failure; private Drive v11/newer corrections unavailable; cleanup #266 remains 0/7.
 - PR #288 remains OPEN / DRAFT / UNMERGED; COE #26 remains FROZEN; PRODUCTION NO-GO. No subsystem source or destination path was modified.
+
+
+## Latest PHX-MASTER refresh — UTC04, 2026-11-22
+
+- [UTC04 live role CI, Hardware candidate and COE #26 exact-tree provenance report](PHX_MASTER_UTC04_20261122_LIVE_ROLE_CI_HARDWARE_CANDIDATES_AND_COE26_PROVENANCE.md).
+- ROLE_ASSIGNMENTS.md pins exact live owner PR heads and CI, including #339 current Full failure and separate #340 candidate CI pass.
+- INTEGRATION_MATRIX.md records complete source/destination trees, exact firmware/test blobs and license/NOTICE gaps.
+- REPOSITORY_ROUTING.md confirms the 11-route manifest remains DRAFT_REVIEW_ONLY and PHX-MASTER target null; no migration was staged.
+- AUDIT_SUMMARY.md records the actual named development branch, Master test/DNS blocker, private Drive registry blocker, branch-protection unknown and cleanup #266 0/7.
+- PR #288 remains OPEN / DRAFT / UNMERGED; COE #26 remains FROZEN; PRODUCTION NO-GO. No subsystem source or COE destination was modified.

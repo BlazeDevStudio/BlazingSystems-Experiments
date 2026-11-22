@@ -3766,3 +3766,20 @@ No candidate sketch is byte-identical to COE. #339 and #340 are distinct source 
 #340's current five exact-head runs all pass, including the pinned Arduino ESP32 core 3.3.13 compile and source-lab build; production signing/publication are skipped and physical acceptance is NOT TESTED. #339's current Full run fails at the inherited QA poll-signature check despite target builds passing. These are CI/source-candidate facts only, not migration authority.
 
 COE #26 remains FROZEN, with five queued workflows and zero jobs. No destination file was staged, copied, moved, overwritten, rebased, cherry-picked or edited.
+
+
+## UTC04 exact recursive-tree, test identity and license/NOTICE refresh — 2026-11-22T04:39Z
+
+Complete recursive trees (truncated=false): Experiments main 2,340; Hardware #339 155af6d5... 2,479; separate #340 20c5889... 2,363; COE #26 b382d233... 286.
+
+- #339: 18 ESP32 files, 30 ESP8266 files, 36 Python board-lab helpers (11 ESP32, 25 ESP8266).
+- #340: 9 ESP32 files, 4 ESP8266 files, 7 Python board-lab helpers (6 ESP32, 1 ESP8266).
+- COE #26 Hardware: four files (README, two sketches, one shell test), zero Python helpers.
+
+Sketch blobs — ESP32: main 117c6e937e8f12f3890ace2ae23b3a23ff1c3df0; #339 53b27aa80fa4a91aabac71de57f550a8eef2cb61; #340 6a6b1c826872af9f21721fb82cbc5754785c7888; COE #26 3cc7ec54b476943dc04a8d1af5e2df5fe054e422.
+
+Sketch blobs — ESP8266: main bfb94920eb0a189ca01d52e5443954fa133f5423; #339 71160ac8ebd5163b19a56d6c9e229a5429975fc8; #340 fdd4e45b2346957ce5f55ae529734854e4c78c7f; COE #26 c8be98f72596681e36a3ad1f8939bf8046c96887.
+
+Test identities diverge: #339 source v05_firmware_hardening_test.sh 41211b2c110ab409f6d9d1812ef12fda73b13211; #340 source same path dc20a6ce1a1828c9cba9631fc67193840de5c224; COE Hardware/tests/test_firmware_hardening.sh f921c56cecc19cab1989507b9b4ade1f45dac54e. No byte-identical test import is established.
+
+Only BlazePwifi/LICENSE ↔ Pisowifi/LICENSE is byte-identical (1ee55b94183417be977ca287cd7391f9a6f7e721). Source root NOTICE.md exists (f6d92cd21465312be5993631fe26977219be0fb9); COE root NOTICE.md and COE Hardware/LICENSE / Hardware/NOTICE.md are absent. No destination staging or write occurred.
