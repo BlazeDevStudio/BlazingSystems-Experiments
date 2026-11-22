@@ -2831,3 +2831,15 @@ This is a same-hour factual snapshot; it does not reassign ownership.
 COE role candidates re-read: #35 `edb4eb48...` (case guard PASS; 10 profiles fail closed without approved ULA /48; sandbox exits 125 without Bubblewrap), #45 `9d76a134...` (scoped Pi overlay/shell and case-guard PASS), and #49 `aeb8ff11...` (case guard/Stage 5.1 PASS; Shared Contracts FAIL). COE #26 `b382d233...` remains five queued workflows / zero jobs.
 
 No subsystem ownership or branch assignment changed.
+
+
+### UTC20 post-checkpoint Hardware stack delta — 2026-11-22T20:45Z
+
+PHX-HARDWARE reported a second, separate stack; do not collapse it into #327→#342→#343.
+
+| Hardware line | Exact ancestry / head | CI at exact heads | Boundary |
+|---|---|---|---|
+| Firmware safety stack | #327 `fadac4ed...` → #342 `e7815297...` → #343 `dfeff7d5...` | #343 Quarantine 45062595339 and Relay 45062595335 PASS; Full 45062595995 FAIL at QA-owned `Missing poll signature check`. | Firmware/pin recovery; preserve deny-only. |
+| Host-lab preprocessing stack | #338 `1a6a7cac...` → #339 `b3e15588...` → #341 `4368435a...` → #344 `f4c79335...` | #338 Relay/Quarantine 44958576604/44958576485 PASS, Full 44958576490 FAIL; #339 Quarantine 44986635350 PASS, Full 44986635417 FAIL; #341 Quarantine 45060591705 PASS, Full 45060591630 FAIL; #344 source/test Quarantine 45067887389 and docs-head Quarantine 45068112971 PASS, Full 45068113012 PENDING / no jobs at last read. | Four Hardware lab/handover paths only; no .ino/runtime/API/finance/release change. Full child result not yet available. |
+
+QA owns the inherited poll-signature fixture. Hardware retains both branches and their ancestry; Master performs no rebase, retarget, merge or source edit.
