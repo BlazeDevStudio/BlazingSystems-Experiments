@@ -5,15 +5,39 @@ This module owns the extracted C++ model and board-specific fault scenarios.
 Keep fixture bodies here so persistence behavior can be reviewed separately
 from Python orchestration.
 """
-from firmware_lab_source import extract_block, extract_function
+import re
+
+from firmware_lab_source import extract_block, extract_function, mask_non_code
 
 __all__ = ["constants", "harness"]
 
 def constants(source: str, names):
+    """Extract one-line static const declarations from active C++ code only.
+
+    The lexical mask preserves offsets and newlines while blanking comments and
+    literals. Return the original source lines so the generated fixture keeps
+    the exact declaration text, but never let a comment/string decoy or an
+    identifier substring satisfy a requested constant.
+    """
+    if not names:
+        return ""
+
+    original_lines = source.splitlines()
+    code_lines = mask_non_code(source).splitlines()
+    if len(original_lines) != len(code_lines):
+        raise RuntimeError("constant extraction mask changed source line count")
+
+    name_patterns = tuple(
+        re.compile(rf"\\b{re.escape(name)}\\b")
+        for name in names
+    )
     selected = []
-    for line in source.splitlines():
-        if line.lstrip().startswith("static const ") and any(name in line for name in names):
-            selected.append(line)
+    for original_line, code_line in zip(original_lines, code_lines):
+        active = code_line.lstrip()
+        if not active.startswith("static const "):
+            continue
+        if any(pattern.search(active) for pattern in name_patterns):
+            selected.append(original_line)
     return "\n".join(selected)
 
 def harness(board: str, source: str) -> str:
