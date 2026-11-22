@@ -147,3 +147,39 @@ Final PR/docs HEAD before this append: \`144aaf7eda1c34ae501b50236c7fed018f29510
 - Earlier source/test-head Full [#44968280055](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44968280055) was cancelled after the same validation failure while some target jobs were still in progress; the final docs-head run above is the complete 14/14 target-build evidence.
 
 No firmware runtime or shared controller contract was changed to satisfy the QA assertion. CORE/QA must resolve the exact authenticated register/poll response contract; firmware admission remains fail-closed. Physical acceptance and production readiness remain NOT TESTED / NO-GO.
+
+
+## UTC01 — C++ digraph preprocessor directive boundary
+
+**Source/test commit:** \`041f48cc5ea4fdb621cc3dd141dc51d0136542d4\`  
+**Test-only RED commit:** \`71440776079c3d26e433410334ffc8552a8bd5d0\`  
+**PR:** #339 OPEN / DRAFT / UNMERGED; base #338 at \`1a6a7cacf95722a78330d70de057e858143520f2\`.
+
+### Defect reproduced
+
+The C++ preprocessor accepts the digraph \`%:\` as the alternative preprocessing token for \`#\`. The parity normalizer only recognized \`#\` at a logical-line start, so it could collapse a real \`%:if\` directive and an invalid mid-line \`%:if\` sequence to the same normalized text. This was a false-equivalence risk for board-specific conditional compilation.
+
+The test-only commit added:
+- \`digraph-directive-line-boundary\` — expected RED when a \`%:if\` moved after a code token.
+- \`digraph-directive-leading-whitespace\` — harmless indentation remains equivalent.
+- \`digraph-directive-crlf-normalization\` — CRLF/LF directive formatting remains equivalent.
+
+Test-first Quarantine [#44972530105](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44972530105), job \`137055210962\`, failed at the intended \`digraph-directive-line-boundary\` assertion after the preceding source-extracted labs passed.
+
+### Correction and exact-source verification
+
+The normalizer now recognizes \`%:\` as a directive prefix only when no code token has appeared on the logical line. It explicitly excludes the longer \`%:%:\` token-paste digraph.
+
+Exact-source Quarantine [#44972640271](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44972640271), job \`137055542026\`, **SUCCESS** at source/test SHA \`041f48cc5ea4fdb621cc3dd141dc51d0136542d4\`:
+- C++ parity normalizer: **20/20 PASS**.
+- ESP8266 coin pulse capture: **17/17 PASS**.
+- ESP32 coin pulse capture: **17/17 PASS**.
+- Existing journal, pending-marker, readback, coin POST gate, poll-drain, config-read, boot-polarity and mutation-rejection labs completed successfully.
+- Log explicitly retains \`SIMULATED_ONLY=1\`, \`PHYSICAL_COIN_PULSE_ACCEPTANCE=0\`, \`PHYSICAL_RELAY_ACCEPTANCE=0\`, and \`PHYSICAL_POWER_CUT_ACCEPTANCE=0\`.
+
+Full build [#44972640290](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44972640290):
+- Validation job \`137055610304\`: **FAILURE** at inherited \`tests/controllers.sh\` assertion \`Missing poll signature check\`.
+- All **14/14** ESP8266, ESP32, Android, Ruijie, x86_64 and Orange Pi target/platform jobs completed **SUCCESS**.
+- Browser/device simulations, candidate gate, update bundle, signing and publication were **SKIPPED** after validation failed.
+
+No ESP sketch, runtime firmware, GPIO/relay behavior, controller API, finance, signer/witness, QA-owned assertion or Release workflow was changed. This is source-extracted host-lab evidence only. Physical acceptance remains **NOT TESTED**; HARDWARE ACCEPTED **NO**; PRODUCTION **NO-GO**.
