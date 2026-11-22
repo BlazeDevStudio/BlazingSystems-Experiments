@@ -136,3 +136,14 @@ Full BlazePwifi build [#44968280055](https://github.com/BlazeDevStudio/BlazingSy
 - Private \`BLAZE_PROJECT_REGISTRY_v11_20261027.json\` remains inaccessible through the available Google Drive/Library surface; no older registry was substituted.
 
 **Disposition:** host-lab correction CI VERIFIED; SIMULATED ONLY; physical acceptance NOT TESTED; HARDWARE ACCEPTED NO; PRODUCTION NO-GO.
+
+
+## UTC00 final terminal refresh — exact docs-head runs
+
+Final PR/docs HEAD before this append: \`144aaf7eda1c34ae501b50236c7fed018f295104\`.
+
+- Focused Quarantine [#44968506768](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44968506768), job \`137042853925\`: **SUCCESS** at the exact docs head. Logs show C++ normalizer **17/17**, shared ESP32/ESP8266 helper parity **23/23**, quarantine helper parity **6/6**, plus the existing host poll, pending journal, coin-gate, boot-polarity and mutation-rejection suites. The workflow explicitly reports SIMULATED ONLY and physical coin/relay/power-cut acceptance = 0.
+- Full BlazePwifi build [#44968506775](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44968506775): terminal **FAILURE** at validation job \`137042920620\`, exact error \`Missing poll signature check\` in the ESP8266 controller. All **14/14** ESP8266, ESP32, Android, x86_64, Ruijie and returned Orange Pi target jobs completed **SUCCESS**. Browser simulations, candidate gate, update bundle, signing handoff and publication were **SKIPPED** after validation failure.
+- Earlier source/test-head Full [#44968280055](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44968280055) was cancelled after the same validation failure while some target jobs were still in progress; the final docs-head run above is the complete 14/14 target-build evidence.
+
+No firmware runtime or shared controller contract was changed to satisfy the QA assertion. CORE/QA must resolve the exact authenticated register/poll response contract; firmware admission remains fail-closed. Physical acceptance and production readiness remain NOT TESTED / NO-GO.
