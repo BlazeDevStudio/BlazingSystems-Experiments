@@ -336,8 +336,7 @@ def verify_selector_extraction_ignores_comment_decoys() -> None:
     newline = chr(10)
     inactive_decoy_selector = selector.replace(
         "#include <psa/crypto.h>" + newline,
-        "#define PHX_SELECTOR_INACTIVE_DECOY 1" + newline
-        "#include <psa/crypto.h>" + newline,
+        "#define PHX_SELECTOR_INACTIVE_DECOY 1" + newline + "#include <psa/crypto.h>" + newline,
         1,
     )
     inactive_decoy = "#if 0" + newline + inactive_decoy_selector + "#endif" + newline
