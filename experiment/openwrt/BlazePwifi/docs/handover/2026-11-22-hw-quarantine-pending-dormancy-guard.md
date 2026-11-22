@@ -69,3 +69,12 @@ No production `.ino`, shared API, QA-owned assertion, Release workflow, financia
 - PRODUCTION READY: **NO-GO**.
 
 **Next exact action:** PHX-CORE publishes the versioned authenticated register/poll and event-bound receipt/disposition contract; PHX-QA independently verifies golden positive/negative vectors; PHX-MASTER selects the integration lineage. Until those reviews are recorded, PHX-HARDWARE keeps `quarantinePending()` dormant and coin/relay admission deny-only.
+
+
+## Follow-up after handover creation — Full-build status and parallel Mbed TLS candidate
+
+- Full run [#45057300435](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45057300435), triggered for the source/test commit, was cancelled while its target/validation matrix was still running after the subsequent documentation-only commit. It is not a Full PASS or FAIL for the new guard.
+- The prior #283 Full run [#44936835327](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44936835327) at the unchanged firmware source head failed its ESP32 job under Arduino ESP32 core 4.0.0: `fatal error: mbedtls/sha256.h: No such file or directory`. Other completed target jobs were not enough to establish the matrix.
+- Separate child [#340](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/340), exact head `20c5889fc4ceeb95ab0b05c7c11952704caff36b`, carries the version-gated PSA SHA-256 compatibility path and pre-poll deny. Its synthetic Full run [#44983396262](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44983396262) passed 14/14 target/platform builds, simulations and candidate metadata gate; signing/publication remained skipped. This is a separate DRAFT candidate, not a merge or promotion authorization.
+- Do not transplant or cherry-pick #340 into #283 without PHX-MASTER stack selection. Keep #283's quarantine callsite dormant and preserve the parallel ancestry.
+
