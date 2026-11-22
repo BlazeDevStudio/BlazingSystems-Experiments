@@ -1,0 +1,22 @@
+name: PHX-HARDWARE ESP32 Mbed TLS SHA256 compatibility guard
+on:
+  pull_request:
+    paths:
+      - 'experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino'
+      - 'experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/mbedtls_sha256_compat_lab.py'
+      - '.github/workflows/phx-hw-esp32-mbedtls-compat.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  exact-source:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Verify exact checkout
+        run: test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
+      - name: Verify version-gated SHA256 and failure-injection guards
+        run: python3 experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/mbedtls_sha256_compat_lab.py
