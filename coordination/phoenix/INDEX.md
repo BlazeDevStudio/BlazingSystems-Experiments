@@ -201,7 +201,6 @@ The linked UTC07 audit report is an immutable snapshot at its recorded #327 docs
 
 ## PHX-MASTER UTC18 post-checkpoint exact-head revalidation — 2026-11-20
 
-- [Live role/CI and COE #26 revalidation report](PHX_MASTER_UTC18_20261120_EXACT_HEAD_ROLE_CI_AND_COE26_PROVENANCE.md)
 - Master base head before this coordination-only update: `3f4596adbebcccfc225de05ca46483fa231b32dc`; PR #288 remains OPEN / DRAFT / UNMERGED and all existing paths remain under `coordination/phoenix/`.
 - RELEASE #291 current docs head `3370424619098eeae8ddd0190857f4a98f4f26da`, source/test head `7382f22d8ced1e552d0ebb1fa1b2f8d0e1fa3231`; docs-head Full is CANCELLED, compatibility PASS is pinned to historical Hardware source `dc02efea6590`, Windows FAIL remains PISONET-owned.
 - COE #26 remains FROZEN; exact-tree review confirms firmware/test blob divergence and incomplete Hardware import. PRODUCTION NO-GO.
@@ -694,3 +693,11 @@ Inventory basis: complete recursive Git tree at `b8f708d8243b894e66e2004e6a2c109
 - [PHX_MASTER_UTC23_HW327_LIVE_HEAD_ROLE_ASSIGNMENT_AND_COE48_OWNERSHIP_AUDIT_20261119.md](PHX_MASTER_UTC23_HW327_LIVE_HEAD_ROLE_ASSIGNMENT_AND_COE48_OWNERSHIP_AUDIT_20261119.md) — historical audit report retained for traceability.
 
 Future cleanup passes should rerun this inventory at the then-current Master HEAD before considering any archival or deletion.
+
+
+## UTC20 report-index integrity correction — 2026-11-22T20:36Z
+
+At the exact starting tree, 89 `PHX_MASTER_*.md` reports were present but INDEX contained 90 links: two duplicate target groups and one unindexed historical report. This correction removes the duplicate references, adds the missing historical link, and indexes the new UTC20 report. No historical report file was deleted or rewritten.
+
+- [Previously unindexed UTC17 exact-head/source-main provenance report](PHX_MASTER_UTC17_20261121_EXACT_HEAD_ROLE_CI_COE26_SOURCE_MAIN_PROVENANCE_AUDIT.md).
+- [UTC20 live role-head, CI and COE #26 provenance revalidation](PHX_MASTER_UTC20_20261122_LIVE_ROLE_CI_COE26_PROVENANCE_REVALIDATION.md).
