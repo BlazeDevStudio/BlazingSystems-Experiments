@@ -113,6 +113,21 @@ def verify_debounce_clamp_callsite_decoys(source, board, minimum_calls):
         f"{board}: POLL_RESPONSE_DEBOUNCE_INACTIVE_BRANCH_DECOY_REJECTED "
         f"{minimum_calls}/{minimum_calls}"
     )
+    branch_chain_decoys = (
+        "#if PHX_UNKNOWN\\n"
+        "runDebounceMs=boundedCoinDebounceMs(30);\\n"
+        "#elif 1\\n"
+        "runDebounceMs=boundedCoinDebounceMs(40);\\n"
+        "#else\\n"
+        "runDebounceMs=boundedCoinDebounceMs(50);\\n"
+        "#endif\\n"
+    )
+    branch_chain_mask = mask_active_cpp_code(branch_chain_decoys)
+    if branch_chain_mask.count("boundedCoinDebounceMs(") != 2:
+        raise SystemExit(
+            f"{board}: POLL_RESPONSE_DEBOUNCE_INACTIVE_ELSE_BRANCH_DECOY_SURVIVED"
+        )
+    print(f"{board}: POLL_RESPONSE_DEBOUNCE_ELIF_CHAIN_REJECTED 1/1")
     print(f"{board}: POLL_RESPONSE_DEBOUNCE_CALLSITE_DECOY_REJECTED 2/2")
 
 
