@@ -3972,3 +3972,11 @@ Current exact source/CI status is intentionally distinct from hardware acceptanc
 - COE #45 remains a contract-only receipt candidate with exact-head contract [#44295049727](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44295049727) and case guard [#44295049903](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44295049903) SUCCESS; runtime remains DENY. COE #49 Stage 5.1 suite [#44646341873](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44646341873) passes, but shared [#44646341922](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44646341922) fails ESP32 compilation at missing `mbedtls/sha256.h`.
 
 COE #26 remains OPEN / DRAFT / FROZEN at `b382d233ff06c8791b1028bed3c617cc7b670d12`, with five queued workflows and zero jobs. No destination file was staged, copied, moved, overwritten or edited.
+
+
+## PHX-MASTER UTC19 exact-head integration snapshot — 2026-11-22
+
+- CORE #252 focused build PASS; RENTAL #328 build FAIL (ESP32 Mbed TLS header missing); PISONET #255 Windows workflow PASS; HARDWARE #327/#342/#343 focused labs PASS but Full validation fails at the QA-owned legacy poll-signature assertion.
+- QA #290 has a scoped Windows workflow pass; QA #292 has no PR-triggered runs. RELEASE #291 current Full and Windows workflows fail at handover/current-ref gates; its ESP32 compatibility run was still in progress at last read.
+- COE #26 five candidate workflows remain queued with zero jobs. COE #35 remains blocked by missing site-scoped ULA /48 authority and Bubblewrap. COE #45 focused suites pass; COE #49 Stage 5.1 suite passes but shared validation fails.
+- Exact run IDs, heads, log findings and source/destination hashes are recorded in [the UTC19 audit](PHX_MASTER_UTC19_20261122_EXACT_ROLE_HEAD_CI_BRANCH_PROTECTION_AND_COE26_PROVENANCE.md). These are scoped CI results, not integrated or physical acceptance.

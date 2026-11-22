@@ -1390,3 +1390,8 @@ HARDWARE #343 tests the actual production `jsonInt()` parser with a non-default 
 Do not add a positive `response_sig` to either firmware sketch merely to satisfy the legacy test. PHX-CORE owns the canonical producer contract and golden vectors; PHX-HARDWARE owns the consumer; PHX-QA owns the stale fixture and independent negative/default-deny tests. COE #26 remains frozen until its own integration owner reconciles the derived producer, test identity, source pins, imports, licenses/NOTICE and exact CI.
 
 **Disposition:** current poll/coin admission remains deny-only. No schema approval, route promotion, migration, merge, release, signer provisioning, hardware flash or physical acceptance is granted by this appendix.
+
+
+## 6.75 Cross-repository migration evidence is snapshot-scoped, not current integration approval
+
+A migration manifest proves only the identities it explicitly pins. Before any destination staging proposal, compare each mapped source blob against (1) its pinned historical source tree, (2) the current source default/development refs and active owner candidate, and (3) the destination candidate tree. Separately reconcile test identities, imported lab/helpers, Git modes, LICENSE/NOTICE scope and terminal CI at the exact destination SHA. A destination that matches an old snapshot is not necessarily current-source complete. Summary counters must be recomputed from the actual table, not copied from the manifest summary. Any source drift, absent path, divergent test, missing notice, incomplete import or nonterminal/failed CI keeps the destination FROZEN. A `DRAFT_REVIEW_ONLY` route cannot authorize copy/move; PHX-MASTER remains coordination-only with `target: null`.

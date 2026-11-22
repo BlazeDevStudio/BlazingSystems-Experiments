@@ -2174,3 +2174,12 @@ PR #288 at pre-update head `0cbd4628d623a5ff358704be049a92e6f3d16ef2` has 172 ch
 Experiments main `f4e8a891...`, v0.5.3 development `aad3aade...`, v0.6 audit-foundation `2fbd2475...`, and COE main `a6513ab4...` report `protected=false`; Master branch protection remains unverified. Cleanup #266 is OPEN with all 7 role tracks unchecked; Hardware's recent #342 cleanup increments do not complete the Master inventory. The canonical private Drive `BLAZE_PROJECT_REGISTRY_v11_20261027.json` and newer corrections were not found in Library search, and no Google Drive connector is exposed. Older snapshots are not substitutes and no private registry data/IDs were published.
 
 No subsystem source, COE destination, private registry, signer, secret, payment system or hardware was changed. Production remains NO-GO.
+
+
+## PHX-MASTER UTC19 — governance and integration blockers (2026-11-22)
+
+Experiments main, active development, Master coordination and COE main all returned `protected=false` with status-check enforcement off. Treat branch protection as an open P0 governance blocker; no settings were changed.
+
+COE #26 remains frozen: its 61-row map matches its old pinned source and destination blobs, but the recorded summary is off by one (47/14 versus 46/15), current Experiments main differs on 20 rows and lacks 8, Hardware/test imports diverge, and five COE workflows are queued with zero jobs. No migration was staged.
+
+Full Master tests were not run; Master PR Actions returned no runs. Canonical private Drive registry v11/newer corrections were not available in the authorized Library search and no Drive connector was exposed. **PRODUCTION NO-GO.** See [UTC19 audit](PHX_MASTER_UTC19_20261122_EXACT_ROLE_HEAD_CI_BRANCH_PROTECTION_AND_COE26_PROVENANCE.md).
