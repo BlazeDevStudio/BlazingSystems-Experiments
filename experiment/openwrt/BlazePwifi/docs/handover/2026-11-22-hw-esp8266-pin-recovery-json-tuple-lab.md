@@ -53,3 +53,38 @@ The test also fails if the `pinConfigSafe` publication is moved back after `conf
 ## Next exact action
 
 PHX-CORE must publish the approved authenticated configuration envelope and event-bound response contract; PHX-QA must independently validate exact positive/negative vectors. Until that contract is accepted, keep the remote-config consumer dormant. PHX-HARDWARE should revalidate this child and its parent heads before any further source change.
+
+
+## Follow-up — ESP32 unknown-polarity revocation must survive caller return (2026-11-22 UTC18)
+
+**Exact branch before this follow-up:** \`90f3c8044acd4f140091d1a9ef3461278ba8d5f5\`  
+**Parent stack:** #327 \`fadac4ed3bc837cf729753264b9427fa3fd312b9\` → #342 \`e7815297b1a8780b7868bc9b28f45011ec419dce\` → #343.
+
+### Defect and expected RED
+
+The new dual-board revision lab initially stubbed \`configureRuntimePins()\`, so it could not observe a safety flag being revoked by the real helper.
+
+The actual ESP32 \`configureRuntimePins()\` sets \`pinConfigSafe=false\` and leaves relay/LED pins in INPUT when \`outputPolarityKnown=false\`. Its caller then set \`pinConfigSafe=true\` **after** the helper returned, overwriting that fail-closed result. ESP8266 already published the validated map before calling its helper, allowing the helper to revoke the flag.
+
+- Test-only commit: \`1425f82519767fd763bce10877303ab73c4493a2\`.
+- Expected RED: Quarantine [run #45054586349](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45054586349), job \`137306878468\`; exact failure \`ESP32 exact-source: expected exit 0, got 14\`. ESP8266 passed the new 5/5 cases; ESP32 failed the unknown-polarity postcondition as intended.
+
+### Correction
+
+Source commit: \`90f3c8044acd4f140091d1a9ef3461278ba8d5f5\`.
+
+The ESP32 \`applyRemoteConfig()\` helper now sets \`pinConfigSafe=true\` **before** \`configureRuntimePins()\`. The helper can therefore revoke it when local output polarity is unknown. This matches the ESP8266 ordering. No register/poll authentication, remote-config callsite, coin admission, relay authorization, or shared contract was enabled or changed.
+
+The revision lab now extracts the actual production \`writeLogical()\`, GPIO validators, \`runtimePinsSafe()\`, \`configureRuntimePins()\`, \`jsonInt()\`, and \`applyRemoteConfig()\`; it no longer stubs the safety-critical pin helper.
+
+### Exact-source evidence
+
+- Quarantine [run #45054895869](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45054895869), job \`137307832284\`, **SUCCESS** at source/test SHA \`90f3c8044acd4f140091d1a9ef3461278ba8d5f5\`.
+- Both boards: \`REMOTE_CONFIG_REVISION_GUARD_PASS 5/5\`, including stale/equal/zero revision denial, newer revision control, and \`REMOTE_CONFIG_UNKNOWN_POLARITY_DENY_PASS\`.
+- Existing poll-edge/fault, EEPROM/NVS, quarantine, pulse-capture and cold-boot polarity labs also passed in that focused job.
+- The job explicitly reports \`REMOTE_CONFIG_AUTHORIZATION_ENABLED=0\`, \`PHYSICAL_HARDWARE_ACCEPTANCE=0\`, \`PHYSICAL_POWER_CUT_VERIFIED=0\`.
+- Full PR run [#45054895849](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45054895849) has validation job \`137307908217\` **FAILED** at the inherited QA-owned \`Controller protocol parity / Missing poll signature check\`; target jobs were still running when this handover was prepared. No Full PASS is claimed.
+
+### Disposition
+
+This is a source-extracted host/CI correction for a dormant helper, **SIMULATED / CI VERIFIED only**. It does not authorize remote configuration, relay actuation, coin admission, physical testing, finance, migration, release, or deployment. Hardware acceptance remains NOT TESTED; production remains NO-GO.
