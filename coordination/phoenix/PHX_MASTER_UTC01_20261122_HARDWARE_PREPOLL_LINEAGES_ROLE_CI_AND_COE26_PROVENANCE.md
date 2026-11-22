@@ -115,3 +115,8 @@ License/notice evidence: source `experiment/openwrt/BlazePwifi/LICENSE` and COE 
 ## 8. Safety decision
 
 **PRODUCTION NO-GO.** Independent protected signing/anti-rollback witness, crash-atomic durable financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized release gates remain unverified. No merge, release, signer provisioning, secrets, firmware flash, real payment operation, physical test or customer deployment was performed.
+
+
+## UTC01 CI completion correction — 2026-11-22T02:01:01.691Z
+
+The final-docs-head HARDWARE #339 Full run [#44972910569](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44972910569) is now terminal **FAILURE**. Validation job `137056371116` fails at the inherited QA-owned `Missing poll signature check`. All **14/14 target/platform jobs completed SUCCESS** (ESP8266, ESP32, Android, Ruijie, x86_64 and Orange Pi variants). Browser/device simulations, candidate gate, update bundle, signing handoff and publication were skipped after validation failure. This supersedes the earlier readback note that 12/14 targets had completed and two remained in progress. Final-docs-head Quarantine [#44972910501](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44972910501) remains SUCCESS. No positive response signature was invented and default-deny was not weakened.

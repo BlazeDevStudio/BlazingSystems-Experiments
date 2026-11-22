@@ -2563,3 +2563,8 @@ This append-only snapshot supersedes older role/CI pins for this audit. It does 
 | COE integration | #26 `b382d233ff06c8791b1028bed3c617cc7b670d12` | Five workflows remain QUEUED / zero jobs; no combined acceptance. FROZEN. |
 
 CORE, RENTAL, PISONET, HARDWARE, QA and RELEASE source branches remain owner-controlled. PHX-MASTER changed no subsystem source path.
+
+
+## UTC01 CI completion correction — 2026-11-22T02:01:01.691Z
+
+The exact final-docs-head HARDWARE #339 Full run [#44972910569](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44972910569) is now terminal **FAILURE**. Validation job `137056371116` fails at the inherited QA-owned `Missing poll signature check`; **all 14/14 target/platform jobs completed SUCCESS** (ESP8266, ESP32, Android, Ruijie, x86_64 and Orange Pi variants). Browser/device simulations, candidate gate, update bundle, signing handoff and publication were skipped after validation failure. This supersedes the earlier in-progress matrix count above. The final-docs-head Quarantine run [#44972910501](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44972910501) remains SUCCESS.
