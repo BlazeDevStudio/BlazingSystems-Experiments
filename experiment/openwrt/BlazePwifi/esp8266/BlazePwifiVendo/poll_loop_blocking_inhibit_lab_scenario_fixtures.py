@@ -70,17 +70,44 @@ int runDrainAbortWithoutIsr(bool activeLow, int holdFailureCode, int releaseFail
   std::cout<<releasedMarker<<"\\n";
   return 0;
 }
-int main(){
-  // RED: a sampled coin GPIO transition while the acceptor relay is disabled
-  // must not be converted into a pending credit.
+int runDisabledIngressCase(bool disableController, bool disableCoin, bool disableRelay,
+                           bool injectIsrEdge, int failureCode, const char *passMarker){
   resetState();
-  relayEnabled=false;
+  if(disableController) controllerEnabled=false;
+  if(disableCoin) coinEnabled=false;
+  if(disableRelay) relayEnabled=false;
   applyOutputs();
+  if(injectIsrEdge) coinEdgeSequence=1U;
   sampleCoinPulseEdge(true);
   if(!journalRecoveryRequired || pendingPulses!=0U || saveCalls!=0 ||
      !LittleFS.exists("/pollpulse.fault") || relayOn || ledOn ||
-     insertMode || !activeTarget.empty()) return 60;
-  std::cout<<"POLL_EDGE_WHILE_RELAY_DISABLED_DENY_PASS\\n";
+     insertMode || !activeTarget.empty()) return failureCode;
+  const std::string fault=LittleFS.files["/pollpulse.fault"];
+  if(fault.find("COIN_INGRESS_UNRESOLVED")==std::string::npos ||
+     fault.find("pulses=1")==std::string::npos) return failureCode;
+  std::cout<<passMarker<<"\\n";
+  return 0;
+}
+int main(){
+  // Disabled controller/coin/relay configurations must quarantine sampled edges.
+  int disabledIngressResult=runDisabledIngressCase(false,false,true,false,60,
+      "POLL_EDGE_WHILE_RELAY_DISABLED_DENY_PASS");
+  if(disabledIngressResult) return disabledIngressResult;
+  disabledIngressResult=runDisabledIngressCase(false,false,true,true,61,
+      "POLL_ISR_EDGE_WHILE_RELAY_DISABLED_DENY_PASS");
+  if(disabledIngressResult) return disabledIngressResult;
+  disabledIngressResult=runDisabledIngressCase(false,true,false,false,62,
+      "POLL_EDGE_WHILE_COIN_DISABLED_DENY_PASS");
+  if(disabledIngressResult) return disabledIngressResult;
+  disabledIngressResult=runDisabledIngressCase(false,true,false,true,63,
+      "POLL_ISR_EDGE_WHILE_COIN_DISABLED_DENY_PASS");
+  if(disabledIngressResult) return disabledIngressResult;
+  disabledIngressResult=runDisabledIngressCase(true,false,false,false,64,
+      "POLL_EDGE_WHILE_CONTROLLER_DISABLED_DENY_PASS");
+  if(disabledIngressResult) return disabledIngressResult;
+  disabledIngressResult=runDisabledIngressCase(true,false,false,true,65,
+      "POLL_ISR_EDGE_WHILE_CONTROLLER_DISABLED_DENY_PASS");
+  if(disabledIngressResult) return disabledIngressResult;
 
   // A prior persistent journal fault must abort even with an idle line and no new ISR edge.
   resetState();
