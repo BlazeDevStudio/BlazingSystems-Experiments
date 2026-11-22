@@ -170,9 +170,12 @@ struct FakeEEPROM {
   std::vector<uint8_t> buffer;
   size_t size=0;
   bool ready=true, failCommit=false, failCommitAfterWrite=false, failRead=false, failReadAfterCommit=false;
-  unsigned commitCalls=0;
+  bool failEnd=false;
+  unsigned commitCalls=0, beginCalls=0;
+  unsigned failBeginOnCall=0;
   bool begin(size_t n) {
-    if(!ready) return false;
+    ++beginCalls;
+    if(!ready || (failBeginOnCall!=0 && beginCalls==failBeginOnCall)) return false;
     size=n;
     if(flash.size()<n) flash.resize(n,0xFF);
     // ESP8266 core 3.1.2 ignores flashRead's return value in EEPROM.begin().
@@ -181,7 +184,7 @@ struct FakeEEPROM {
     (void)fakeFlashRead((uint32_t)(EEPROM_start-0x40200000UL),buffer.data(),n);
     return true;
   }
-  bool end(){ size=0; buffer.clear(); return true; }
+  bool end(){ size=0; buffer.clear(); return !failEnd; }
   bool commit(){
     ++commitCalls;
     if(failCommit) return false;
@@ -244,7 +247,7 @@ void corruptStorage(){
         fail_write = "EEPROM.failCommit=true;"
         fail_read = "EEPROM.failReadAfterCommit=true;"
         ambiguous_commit_setup = "EEPROM.failCommitAfterWrite=true;"
-        clear_fail = "EEPROM.failCommit=false; EEPROM.failCommitAfterWrite=false; EEPROM.failRead=false; EEPROM.failReadAfterCommit=false; rawFlashReadFailure=false;"
+        clear_fail = "EEPROM.failCommit=false; EEPROM.failCommitAfterWrite=false; EEPROM.failRead=false; EEPROM.failReadAfterCommit=false; EEPROM.failEnd=false; EEPROM.failBeginOnCall=0; rawFlashReadFailure=false;"
         no_marker = "FakeEEPROM::flash.clear(); rebootStorage();"
         nvs_read_error = ""
 
@@ -456,6 +459,40 @@ int main(){
     return 42;
   }
   std::cout<<"COMMIT_FAILURE_BEFORE_PERSISTENCE_REBOOT_LIMITATION=REPRODUCED board=BOARD_NAME"<<std::endl;
+
+  // EEPROM.end() failure after a successful commit must remain ambiguous and deny.
+  resetStorage();
+  resetRuntime();
+  LittleFS.marker=false;
+  fsMarkerWriteResult=false;
+  EEPROM.failEnd=true;
+  latchPollPulseFault(10);
+  if(!journalRecoveryRequired || insertMode || !outputsInhibited ||
+     !pollFaultBackupWriteFailed || pollFaultBackupReady ||
+     !pollFaultBackupPresentOrCorrupt()) return 62;
+  const unsigned endFailureCommits=backupCommitCalls();
+  EEPROM.failEnd=false;
+  if(writePollFaultBackup(10) || backupCommitCalls()!=endFailureCommits) return 63;
+  rebootStorage();
+  assertBootDenied();
+  std::cout<<"ESP8266_EEPROM_END_FAILURE_REBOOT_DENY_PASS\n";
+
+  // A failed EEPROM.begin() on the post-commit reopen must not count as readback.
+  resetStorage();
+  resetRuntime();
+  LittleFS.marker=false;
+  fsMarkerWriteResult=false;
+  EEPROM.failBeginOnCall=2;
+  latchPollPulseFault(11);
+  if(!journalRecoveryRequired || insertMode || !outputsInhibited ||
+     !pollFaultBackupWriteFailed || pollFaultBackupReady ||
+     !pollFaultBackupPresentOrCorrupt()) return 64;
+  const unsigned reopenFailureCommits=backupCommitCalls();
+  EEPROM.failBeginOnCall=0;
+  if(writePollFaultBackup(11) || backupCommitCalls()!=reopenFailureCommits) return 65;
+  rebootStorage();
+  assertBootDenied();
+  std::cout<<"ESP8266_EEPROM_REOPEN_FAILURE_REBOOT_DENY_PASS\n";
 
   std::cout << "POLL_FAULT_DUAL_STORE_LAB=PASS board=BOARD_NAME\n";
 }
