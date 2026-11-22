@@ -4015,6 +4015,6 @@ Private Drive registry v11/newer corrections remain inaccessible; older snapshot
 
 Register two separate Hardware candidate lines:
 1. Firmware safety: #327 `fadac4ed...` → #342 `e7815297...` → #343 `dfeff7d5...`. Current #343 focused Quarantine/Relay pass; Full fails at QA-owned `Missing poll signature check`.
-2. Host-lab preprocessing: #338 `1a6a7cac...` → #339 `b3e15588...` → #341 `4368435a...` → #344 `f4c79335...`. #344 exact source/test `f9a18ea3...` Quarantine pass; docs-head Quarantine pass; Full 45068113012 pending with no jobs returned. Four changed files are Hardware lab/handover only; no runtime sketch or shared API change.
+2. Host-lab preprocessing: #338 `1a6a7cac...` → #339 `b3e15588...` → #341 `4368435a...` → #344 `f4c79335...`. #344 exact source/test `f9a18ea3...` Quarantine pass; docs-head Quarantine pass; Full 45068113012 QUEUED with no jobs returned. Four changed files are Hardware lab/handover only; no runtime sketch or shared API change.
 
 Do not combine the two lines or transfer Hardware/QA ownership. #344 pending Full must remain PENDING, not PASS/FAIL. Physical acceptance remains NOT TESTED.
