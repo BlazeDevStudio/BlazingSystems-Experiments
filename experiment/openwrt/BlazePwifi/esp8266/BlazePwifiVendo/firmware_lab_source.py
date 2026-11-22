@@ -246,10 +246,13 @@ def _mask_inactive_preprocessor_branches(code_source: str) -> str:
                 if not frame["parent_active"] or frame["branch_taken"] is True:
                     active = False
                 elif frame["branch_taken"] is None:
-                    # A preceding unknown macro branch may already be active,
-                    # but a literal #elif 0 is still definitely inactive.
+                    # A preceding unknown macro branch may already be active.
+                    # A literal #elif 0 is definitely inactive; a literal
+                    # #elif 1 makes every following #elif/#else unreachable.
                     condition = _literal_preprocessor_condition(expression)
                     active = condition is not False
+                    if condition is True:
+                        frame["branch_taken"] = True
                 else:
                     condition = _literal_preprocessor_condition(expression)
                     active = condition is not False
