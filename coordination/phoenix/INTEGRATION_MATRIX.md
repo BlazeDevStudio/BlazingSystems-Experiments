@@ -4018,3 +4018,22 @@ Register two separate Hardware candidate lines:
 2. Host-lab preprocessing: #338 `1a6a7cac...` → #339 `b3e15588...` → #341 `4368435a...` → #344 `f4c79335...`. #344 exact source/test `f9a18ea3...` Quarantine pass; docs-head Quarantine pass; Full 45068113012 FAIL at QA-owned `Missing poll signature check`; all 14 target/platform jobs plus Android PASS, downstream simulation/signing/publication skipped. Four changed files are Hardware lab/handover only; no runtime sketch or shared API change.
 
 Do not combine the two lines or transfer Hardware/QA ownership. #344 pending Full must remain PENDING, not PASS/FAIL. Physical acceptance remains NOT TESTED.
+
+
+---
+
+## UTC21 — exact recursive-tree, owner-CI and COE #26 provenance revalidation (2026-11-22T21:42:03Z)
+
+Exact non-truncated tree counts: Experiments main 2,340; Hardware #343 2,481; Master 2,517; COE #26 286. Master has 90 reports and 90 unique INDEX links before the new UTC21 report.
+
+Exact owner refs/CI superseding UTC20: CORE #252 c82705f2 build PASS; RENTAL #328 0e0da62a APK/API21/API23 PASS but Build FAIL (handover freshness and missing Mbed TLS header); PISONET #255 d01fd164 Windows PASS, physical COM NOT TESTED; Hardware #343 dfeff7d5 focused Quarantine/Relay PASS and Full FAIL at QA-owned poll assertion; separate Hardware #344 f4c79335 Quarantine PASS and Full FAIL at the same assertion; QA #290 5c29d159 Windows PASS but does not execute NativeComInterfaceHandleLab, QA #292 75a3f66d has no run; RELEASE #291 cb5e5450 Windows and Full FAIL at handover freshness while ESP32 compatibility passes; COE #26 b382d233 five queued workflows/zero jobs; COE #35 edb4eb48 shared and sandbox fail; COE #45 9d76a134 scoped overlay/case guard pass; COE #49 aeb8ff11 stage suite passes but shared ESP32 compile fails.
+
+### COE #26 migration gate — exact refs, no staging
+
+The 61-row source intake/map pins Experiments `6d4c9b487af4d768c4d7627654d119417fcc6e00`, while the ownership manifest source is current main `f4e8a891...`. Current-main comparison is 33 unchanged / 20 changed / 8 absent; every recorded destination blob matches the 61-row map (61/61). Row classifications compute 46 identical / 15 derived, while SOURCE_INTAKE summary claims 47 / 14. Hardware #343 has 34 board-local Python helpers versus zero COE Hardware Python helpers. Source/destination hardening tests and both ESP sketches have distinct blobs. PisoWiFi LICENSE matches; source root NOTICE exists, destination root NOTICE and Hardware-local license/notice are absent. COE #26 remains FROZEN.
+
+No destination staging, copy, move, overwrite, cherry-pick, rebase, route promotion or edit. Master remains coordination-only; ownership manifest remains DRAFT_REVIEW_ONLY and Master target null.
+
+### Verification boundary
+
+Master PR #288 has no workflow runs and no combined statuses. Full Master unittest discovery and verify_coordination.py NOT RUN. Branch objects report protected=false, rulesets list empty, classic branch-protection detail 403; admin verification required. Private Drive v11/newer corrections unavailable; older registry snapshots not substituted. Cleanup #266 OPEN, 0/7. PRODUCTION NO-GO.
