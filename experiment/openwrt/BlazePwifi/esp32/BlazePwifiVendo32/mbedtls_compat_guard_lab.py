@@ -14,7 +14,7 @@ import sys
 
 BLAZEPWIFI_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(BLAZEPWIFI_ROOT / "esp8266/BlazePwifiVendo"))
-from firmware_lab_source import extract_function, mask_active_cpp_code
+from firmware_lab_source import extract_function, mask_active_cpp_code, mask_non_code
 
 SKETCH = Path(__file__).with_name("BlazePwifiVendo32.ino")
 UNSUPPORTED_ERROR = (
@@ -357,8 +357,57 @@ def verify_selector_extraction_ignores_comment_decoys() -> None:
     print("MBEDTLS_SELECTOR_INACTIVE_BRANCH_DECOY_REJECTED 1/1")
 
 
+def verify_prefixed_literals_are_masked() -> None:
+    splice = chr(92) + chr(10)
+    fixture = (
+        'const char *utf8 = u8"/* { #if 0 } */";\n'
+        'const char16_t *utf16 = u"// { #if 0 }";\n'
+        'const char32_t *utf32 = U"/* #if 0 */";\n'
+        'const wchar_t *wide = L"// #if 0";\n'
+        "const char16_t char16 = u'x';\n"
+        "const char32_t char32 = U'y';\n"
+        "const wchar_t wide_char = L'z';\n"
+        'const char *spliced_prefix = u' + splice + '8"phase2";\n'
+        'const char *spliced_quote = u8' + splice + '"phase2";\n'
+        "int u8_identifier = 1;\n"
+    )
+    masked = mask_non_code(fixture)
+    if len(masked) != len(fixture) or masked.count("\n") != fixture.count("\n"):
+        raise AssertionError("prefixed-literal mask changed source offsets or line count")
+
+    literal_spans = (
+        'u8"/* { #if 0 } */"',
+        'u"// { #if 0 }"',
+        'U"/* #if 0 */"',
+        'L"// #if 0"',
+        "u'x'",
+        "U'y'",
+        "L'z'",
+        "u" + splice + '8"phase2"',
+        "u8" + splice + '"phase2"',
+    )
+    for literal in literal_spans:
+        start = fixture.index(literal)
+        end = start + len(literal)
+        expected = "".join(
+            character if character in "\r\n" else " "
+            for character in fixture[start:end]
+        )
+        if masked[start:end] != expected:
+            raise AssertionError(
+                f"prefixed ordinary literal survived lexical masking: {literal!r}"
+            )
+
+    identifier = "u8_identifier"
+    start = fixture.index(identifier)
+    if masked[start:start + len(identifier)] != identifier:
+        raise AssertionError("ordinary identifier beginning with u8 was incorrectly masked")
+    print("MBEDTLS_PREFIXED_ORDINARY_LITERALS_MASKED 9/9")
+
+
 def main() -> int:
     verify_selector_extraction_ignores_comment_decoys()
+    verify_prefixed_literals_are_masked()
     verify_shared_lexical_extractor()
     cxx = shutil.which("c++") or shutil.which("g++")
     if not cxx:
