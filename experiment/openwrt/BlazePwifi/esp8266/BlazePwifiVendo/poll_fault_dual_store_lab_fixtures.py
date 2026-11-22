@@ -22,23 +22,69 @@ def _literal_preprocessor_condition(expression: str):
     return None
 
 
+def _logical_preprocessor_lines(source: str):
+    """Yield phase-2 logical lines with their original physical source ranges.
+
+    C/C++ removes backslash-newline pairs before recognizing preprocessing
+    directives. Keep the physical range so later masking can preserve every
+    original offset and newline without building a full preprocessor.
+    """
+    start = 0
+    index = 0
+    logical = []
+
+    while index < len(source):
+        if source[index] == "\\" and index + 1 < len(source):
+            if source[index + 1] == "\n":
+                index += 2
+                continue
+            if source[index + 1] == "\r":
+                index += 2
+                if index < len(source) and source[index] == "\n":
+                    index += 1
+                continue
+
+        if source[index] == "\r":
+            end = index + 1
+            if end < len(source) and source[end] == "\n":
+                end += 1
+            yield "".join(logical), start, end
+            logical = []
+            index = end
+            start = end
+            continue
+
+        if source[index] == "\n":
+            end = index + 1
+            yield "".join(logical), start, end
+            logical = []
+            index = end
+            start = end
+            continue
+
+        logical.append(source[index])
+        index += 1
+
+    if start < len(source) or logical:
+        yield "".join(logical), start, len(source)
+
+
 def _mask_inactive_preprocessor_branches(code_source: str) -> str:
     """Mask branches known inactive from literal #if/#elif 0/1 directives.
 
-    Unknown macro expressions are kept conservatively visible: this helper is
-    not a C preprocessor and must not hide code whose build condition is unknown.
-    The returned mask preserves every source offset and newline.
+    Directive recognition follows C/C++ phase-2 line splicing, including
+    splices inside directive keywords and expressions. Unknown macro
+    expressions remain conservatively visible; this is not a full C
+    preprocessor. The returned mask preserves every source offset and newline.
     """
     masked = list(code_source)
     frames = []
     active = True
-    offset = 0
 
-    for line in code_source.splitlines(keepends=True):
-        physical_line = line.rstrip("\r\n")
+    for logical_line, start, end in _logical_preprocessor_lines(code_source):
         directive = re.match(
             r"^[ \t]*#[ \t]*(if|ifdef|ifndef|elif|else|endif)\b(.*)$",
-            physical_line,
+            logical_line,
         )
         if directive:
             command = directive.group(1)
@@ -80,14 +126,11 @@ def _mask_inactive_preprocessor_branches(code_source: str) -> str:
                 active = frames.pop()["parent_active"]
 
         elif not active:
-            for index in range(offset, offset + len(line)):
+            for index in range(start, end):
                 if code_source[index] not in "\r\n":
                     masked[index] = " "
 
-        offset += len(line)
-
     return "".join(masked)
-
 
 def constants(source: str, names):
     """Extract one-line static const declarations from known-active C++ code.
