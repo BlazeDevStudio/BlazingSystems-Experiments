@@ -139,7 +139,7 @@ Verified markers:
 - `MBEDTLS_MAJOR_4_SELECTOR_AND_DIGEST_PASS`
 - `MBEDTLS_COMPATIBILITY_GUARD_LAB_PASS`
 
-Full workflow [#45041154971](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45041154971) has validation job `137265763547` FAILED at the inherited QA-owned `Missing poll signature check` in the ESP8266 sketch. Firmware target jobs were still running at last readback; this host-lab correction does not resolve controller protocol parity.
+Full workflow [#45041154971](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45041154971) is terminal **CANCELLED** after validation job `137265763547` FAILED at the inherited QA-owned `Missing poll signature check` in the ESP8266 sketch. Exact terminal matrix: 11 jobs SUCCESS, 1 FAILURE, 12 CANCELLED, 3 SKIPPED. ESP8266 and several Orange Pi/Ruijie target jobs passed; ESP32, Android, x86-64 and downstream simulations/signing/release jobs did not complete. This host-lab correction does not resolve controller protocol parity.
 
 **Scope:** host-test parser only. No production firmware sketch, poll/register API, coin admission, relay, crypto, financial behavior, signer, migration, or hardware configuration changed.
 
