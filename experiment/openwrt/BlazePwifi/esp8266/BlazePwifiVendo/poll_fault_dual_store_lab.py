@@ -466,12 +466,12 @@ static const uint32_t POLL_FAULT_EEPROM_BYTES = 32;
 
     # Malformed conditional stacks must not be silently interpreted as valid source.
     malformed_directives = (
-        ("orphan #elif", "#elif 1\\nstatic const int ORPHAN_ELIF = 1;\\n"),
-        ("orphan #else", "#else\\nstatic const int ORPHAN_ELSE = 1;\\n"),
-        ("orphan #endif", "#endif\\n"),
-        ("unterminated #if", "#if 0\\nstatic const int HIDDEN = 1;\\n"),
-        ("duplicate #else", "#if 0\\n#else\\nint first = 1;\\n#else\\nint second = 2;\\n#endif\\n"),
-        ("#elif after #else", "#if 0\\n#else\\nint first = 1;\\n#elif 1\\nint second = 2;\\n#endif\\n"),
+        ("orphan #elif", "#elif 1\nstatic const int ORPHAN_ELIF = 1;\n"),
+        ("orphan #else", "#else\nstatic const int ORPHAN_ELSE = 1;\n"),
+        ("orphan #endif", "#endif\n"),
+        ("unterminated #if", "#if 0\nstatic const int HIDDEN = 1;\n"),
+        ("duplicate #else", "#if 0\n#else\nint first = 1;\n#else\nint second = 2;\n#endif\n"),
+        ("#elif after #else", "#if 0\n#else\nint first = 1;\n#elif 1\nint second = 2;\n#endif\n"),
     )
     for label, malformed_source in malformed_directives:
         try:
@@ -486,17 +486,17 @@ static const uint32_t POLL_FAULT_EEPROM_BYTES = 32;
     # Unknown outer branches remain conservative while nested literal branches
     # still hide only the provably inactive code.
     nested_unknown = (
-        "#if BUILD_FEATURE_X\\n"
-        "#if 0\\n"
-        "static const uint32_t NESTED_INACTIVE_SENTINEL = 1;\\n"
-        "#else\\n"
-        "static const uint32_t NESTED_UNKNOWN_VISIBLE_SENTINEL = 2;\\n"
-        "#endif\\n"
-        "#elif 0\\n"
-        "static const uint32_t NESTED_ELIF_INACTIVE_SENTINEL = 3;\\n"
-        "#else\\n"
-        "static const uint32_t NESTED_FALLBACK_VISIBLE_SENTINEL = 4;\\n"
-        "#endif\\n"
+        "#if BUILD_FEATURE_X\n"
+        "#if 0\n"
+        "static const uint32_t NESTED_INACTIVE_SENTINEL = 1;\n"
+        "#else\n"
+        "static const uint32_t NESTED_UNKNOWN_VISIBLE_SENTINEL = 2;\n"
+        "#endif\n"
+        "#elif 0\n"
+        "static const uint32_t NESTED_ELIF_INACTIVE_SENTINEL = 3;\n"
+        "#else\n"
+        "static const uint32_t NESTED_FALLBACK_VISIBLE_SENTINEL = 4;\n"
+        "#endif\n"
     )
     selected_nested = constants(
         nested_unknown,
