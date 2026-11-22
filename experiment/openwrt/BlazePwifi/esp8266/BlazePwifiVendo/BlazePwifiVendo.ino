@@ -888,7 +888,9 @@ void configureRuntimePins(int coinPin,int relayPin,int ledPin){
 // config envelope and QA verifies its exact positive/negative golden vectors.
 void applyRemoteConfig(const String&r){
   int rev=jsonInt(r,"config_revision",remoteRevision);
-  if(rev==remoteRevision && remoteRevision!=0)return;
+  // Master §6.4 requires a strictly increasing configuration revision.
+  // Reject stale, duplicate, and zero initial revisions before mutating any field.
+  if(rev<=remoteRevision) return;
   controllerEnabled=jsonInt(r,"enabled",1)!=0; coinEnabled=jsonInt(r,"coin_enabled",1)!=0;
   relayEnabled=jsonInt(r,"relay_enabled",1)!=0; ledEnabled=jsonInt(r,"led_enabled",1)!=0;
   int cp=jsonInt(r,"coin_pin",-1),rp=jsonInt(r,"relay_pin",-1),lp=jsonInt(r,"led_pin",-1);
