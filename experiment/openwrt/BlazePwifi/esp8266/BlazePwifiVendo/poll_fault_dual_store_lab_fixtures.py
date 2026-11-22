@@ -90,12 +90,13 @@ def _mask_inactive_preprocessor_branches(code_source: str) -> str:
 
 
 def constants(source: str, names):
-    """Extract one-line static const declarations from active C++ code only.
+    """Extract one-line static const declarations from known-active C++ code.
 
     The lexical mask preserves offsets and newlines while blanking comments and
-    literals. Literal inactive preprocessor branches are also excluded. Return
-    original source lines so the fixture keeps exact declaration text, but never
-    let a non-code or identifier-substring decoy satisfy a requested constant.
+    literals. Literal inactive preprocessor branches are also excluded. Unknown
+    macro conditions remain conservatively visible; this is not a full C
+    preprocessor. Return original source lines, but never let a known-inactive
+    branch, non-code decoy or identifier substring satisfy a requested constant.
     """
     if not names:
         return ""
