@@ -194,7 +194,7 @@ def verify_drain_abort_polarity_fixture_is_shared():
         raise SystemExit(
             "POLL_DRAIN_ABORT_POLARITY_BUILDER_MISSING: expected one shared C++ helper"
         )
-    normalized_main = " ".join(MAIN.split())
+    normalized_main = normalized_cpp_fixture(MAIN)
     calls = (
         "runDrainAbortWithoutIsr( true, 34, 35,",
         "runDrainAbortWithoutIsr( false, 36, 37,",
@@ -209,14 +209,14 @@ def verify_drain_abort_polarity_fixture_is_shared():
     # the active-low/active-high C++ callsites.
     decoy_cases = (
         (
-            "const int activeLowDrainResult=runDrainAbortWithoutIsr(\\n      true, 34, 35,",
-            "const int activeLowDrainResult=0;\\n  // runDrainAbortWithoutIsr( true, 34, 35,",
+            'const int activeLowDrainResult=runDrainAbortWithoutIsr(\n      true, 34, 35,',
+            'const int activeLowDrainResult=0;\n  // runDrainAbortWithoutIsr( true, 34, 35,',
             calls[0],
             "comment",
         ),
         (
-            "const int activeHighDrainResult=runDrainAbortWithoutIsr(\\n      false, 36, 37,",
-            "const int activeHighDrainResult=0;\\n  std::cout << \\"runDrainAbortWithoutIsr( false, 36, 37,\\";",
+            'const int activeHighDrainResult=runDrainAbortWithoutIsr(\n      false, 36, 37,',
+            'const int activeHighDrainResult=0;\n  std::cout << "runDrainAbortWithoutIsr( false, 36, 37,";',
             calls[1],
             "string",
         ),
