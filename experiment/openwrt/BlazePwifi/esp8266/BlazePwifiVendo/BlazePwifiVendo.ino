@@ -554,6 +554,9 @@ void loop(){
 
   if(WiFi.status()==WL_CONNECTED && millis()-lastPoll>1500){
     wifiFailures=0;
+    // HW-P0: de-energize the coin acceptor before the synchronous HTTP wait.
+    // Keep this deny-only until CORE's authenticated poll contract is approved.
+    denyRemoteControl();
     // Current main poll replies have no response_sig. The derived |poll|
     // candidate is not an approved producer/consumer contract; ignore all fields.
     (void)post("poll");
