@@ -252,10 +252,16 @@ def _mask_inactive_preprocessor_branches(code_source: str) -> str:
     splices inside directive keywords and expressions. Unknown macro
     expressions remain conservatively visible; this is not a full C
     preprocessor. The returned mask preserves every source offset and newline.
+    Malformed conditional nesting is rejected instead of silently producing
+    a potentially misleading source mask.
     """
     masked = list(code_source)
     frames = []
     active = True
+
+    def malformed(message: str, offset: int) -> None:
+        line_number = len(re.findall(r"\r\n|\r|\n", code_source[:offset])) + 1
+        raise RuntimeError(f"{message} at line {line_number}")
 
     for logical_line, start, end in _logical_preprocessor_lines(code_source):
         directive = re.match(
@@ -267,6 +273,8 @@ def _mask_inactive_preprocessor_branches(code_source: str) -> str:
             expression = directive.group(2).strip()
 
             if command in ("if", "ifdef", "ifndef"):
+                if not expression:
+                    malformed(f"missing expression after #{command}", start)
                 condition = (
                     _literal_preprocessor_condition(expression)
                     if command == "if" else None
@@ -275,11 +283,19 @@ def _mask_inactive_preprocessor_branches(code_source: str) -> str:
                 frames.append({
                     "parent_active": parent_active,
                     "branch_taken": condition,
+                    "else_seen": False,
+                    "start": start,
                 })
                 active = parent_active and condition is not False
 
-            elif command == "elif" and frames:
+            elif command == "elif":
+                if not frames:
+                    malformed("unmatched #elif", start)
                 frame = frames[-1]
+                if frame["else_seen"]:
+                    malformed("#elif after #else", start)
+                if not expression:
+                    malformed("missing expression after #elif", start)
                 if not frame["parent_active"] or frame["branch_taken"] is True:
                     active = False
                 elif frame["branch_taken"] is None:
@@ -287,24 +303,40 @@ def _mask_inactive_preprocessor_branches(code_source: str) -> str:
                     # but a literal #elif 0 is still definitely inactive.
                     condition = _literal_preprocessor_condition(expression)
                     active = condition is not False
+                    if condition is True:
+                        frame["branch_taken"] = True
                 else:
                     condition = _literal_preprocessor_condition(expression)
                     active = condition is not False
                     if condition is True:
                         frame["branch_taken"] = True
 
-            elif command == "else" and frames:
+            elif command == "else":
+                if not frames:
+                    malformed("unmatched #else", start)
                 frame = frames[-1]
+                if frame["else_seen"]:
+                    malformed("duplicate #else", start)
+                if expression:
+                    malformed("unexpected tokens after #else", start)
+                frame["else_seen"] = True
                 active = frame["parent_active"] and frame["branch_taken"] is not True
                 frame["branch_taken"] = True
 
-            elif command == "endif" and frames:
+            elif command == "endif":
+                if not frames:
+                    malformed("unmatched #endif", start)
+                if expression:
+                    malformed("unexpected tokens after #endif", start)
                 active = frames.pop()["parent_active"]
 
         elif not active:
             for index in range(start, end):
                 if code_source[index] not in "\r\n":
                     masked[index] = " "
+
+    if frames:
+        malformed("unterminated conditional directive", frames[-1]["start"])
 
     return "".join(masked)
 
