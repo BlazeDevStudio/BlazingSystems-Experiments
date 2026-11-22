@@ -464,6 +464,59 @@ static const uint32_t POLL_FAULT_EEPROM_BYTES = 32;
         )
     print("POLL_FAULT_SHARED_ACTIVE_MASK_UNICODE_STRING_INDEX_PRESERVATION_PASS 1/1")
 
+    # Malformed conditional stacks must not be silently interpreted as valid source.
+    malformed_directives = (
+        ("orphan #elif", "#elif 1\\nstatic const int ORPHAN_ELIF = 1;\\n"),
+        ("orphan #else", "#else\\nstatic const int ORPHAN_ELSE = 1;\\n"),
+        ("orphan #endif", "#endif\\n"),
+        ("unterminated #if", "#if 0\\nstatic const int HIDDEN = 1;\\n"),
+        ("duplicate #else", "#if 0\\n#else\\nint first = 1;\\n#else\\nint second = 2;\\n#endif\\n"),
+        ("#elif after #else", "#if 0\\n#else\\nint first = 1;\\n#elif 1\\nint second = 2;\\n#endif\\n"),
+    )
+    for label, malformed_source in malformed_directives:
+        try:
+            source_helpers.mask_active_cpp_code(malformed_source)
+        except RuntimeError:
+            continue
+        raise AssertionError(
+            f"shared active-C++ mask must reject malformed conditional structure: {label}"
+        )
+    print("POLL_FAULT_SHARED_ACTIVE_MASK_MALFORMED_DIRECTIVE_STRUCTURE_REJECTED 6/6")
+
+    # Unknown outer branches remain conservative while nested literal branches
+    # still hide only the provably inactive code.
+    nested_unknown = (
+        "#if BUILD_FEATURE_X\\n"
+        "#if 0\\n"
+        "static const uint32_t NESTED_INACTIVE_SENTINEL = 1;\\n"
+        "#else\\n"
+        "static const uint32_t NESTED_UNKNOWN_VISIBLE_SENTINEL = 2;\\n"
+        "#endif\\n"
+        "#elif 0\\n"
+        "static const uint32_t NESTED_ELIF_INACTIVE_SENTINEL = 3;\\n"
+        "#else\\n"
+        "static const uint32_t NESTED_FALLBACK_VISIBLE_SENTINEL = 4;\\n"
+        "#endif\\n"
+    )
+    selected_nested = constants(
+        nested_unknown,
+        (
+            "NESTED_INACTIVE_SENTINEL",
+            "NESTED_UNKNOWN_VISIBLE_SENTINEL",
+            "NESTED_ELIF_INACTIVE_SENTINEL",
+            "NESTED_FALLBACK_VISIBLE_SENTINEL",
+        ),
+    )
+    if selected_nested.splitlines() != [
+        "static const uint32_t NESTED_UNKNOWN_VISIBLE_SENTINEL = 2;",
+        "static const uint32_t NESTED_FALLBACK_VISIBLE_SENTINEL = 4;",
+    ]:
+        raise AssertionError(
+            "nested unknown/literal branch handling must remain conservative; "
+            f"got={selected_nested.splitlines()!r}"
+        )
+    print("POLL_FAULT_SHARED_ACTIVE_MASK_NESTED_UNKNOWN_BRANCH_CONSERVATIVE_PASS 1/1")
+
 
 def run(board: str, path: Path):
     source = path.read_text(encoding="utf-8")
