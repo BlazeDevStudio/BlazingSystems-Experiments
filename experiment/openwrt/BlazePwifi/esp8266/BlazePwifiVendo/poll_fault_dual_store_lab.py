@@ -436,6 +436,34 @@ static const uint32_t POLL_FAULT_EEPROM_BYTES = 32;
         raise AssertionError("removing inactive-branch filtering was not detected")
     print("POLL_FAULT_SHARED_ACTIVE_MASK_MUTATION_REJECTED 1/1")
 
+    # Python source slicing uses Unicode string indices, not UTF-8 byte offsets.
+    unicode_sample = (
+        "// café 🔧 before the directive\\n"
+        "#if 0\\n"
+        "static const uint32_t UNICODE_INACTIVE_SENTINEL = 8;\\n"
+        "#endif\\n"
+        "static const uint32_t UNICODE_ACTIVE_SENTINEL = 9;\\n"
+    )
+    unicode_mask = source_helpers.mask_active_cpp_code(unicode_sample)
+    source_newlines = [i for i, char in enumerate(unicode_sample) if char in "\\r\\n"]
+    masked_newlines = [i for i, char in enumerate(unicode_mask) if char in "\\r\\n"]
+    if len(unicode_sample.encode("utf-8")) <= len(unicode_sample):
+        raise AssertionError("Unicode offset fixture must contain multibyte UTF-8 characters")
+    if len(unicode_mask) != len(unicode_sample) or masked_newlines != source_newlines:
+        raise AssertionError("shared active-C++ mask must preserve Python string indices across Unicode")
+    selected_unicode = constants(
+        unicode_sample,
+        ("UNICODE_ACTIVE_SENTINEL", "UNICODE_INACTIVE_SENTINEL"),
+    )
+    if selected_unicode.splitlines() != [
+        "static const uint32_t UNICODE_ACTIVE_SENTINEL = 9;"
+    ]:
+        raise AssertionError(
+            "Unicode prefix must not shift extraction indices or expose inactive declarations; "
+            f"got={selected_unicode.splitlines()!r}"
+        )
+    print("POLL_FAULT_SHARED_ACTIVE_MASK_UNICODE_STRING_INDEX_PRESERVATION_PASS 1/1")
+
 
 def run(board: str, path: Path):
     source = path.read_text(encoding="utf-8")
