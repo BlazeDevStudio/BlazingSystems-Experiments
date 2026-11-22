@@ -36,7 +36,7 @@ jobs:
           set -euo pipefail
           expected="${{ github.event.pull_request.head.sha || github.sha }}"
           actual="$(git rev-parse HEAD)"
-          printf 'EXPECTED_SHA=%s\\nACTUAL_SHA=%s\\n' "$expected" "$actual"
+          printf 'EXPECTED_SHA=%s\nACTUAL_SHA=%s\n' "$expected" "$actual"
           test "$actual" = "$expected"
 
       - uses: arduino/setup-arduino-cli@v2
@@ -50,7 +50,7 @@ jobs:
           arduino-cli core update-index
           arduino-cli core install esp8266:esp8266@3.1.2
           arduino-cli core list
-          arduino-cli core list | grep -E '^esp8266:esp8266[[:space:]]+3\\.1\\.2([[:space:]]|$)'
+          arduino-cli core list | grep -E '^esp8266:esp8266[[:space:]]+3\.1\.2([[:space:]]|$)'
 
       - name: Run source-extracted pre-poll deny and failure-injection guards
         run: python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_preflight_inhibit_lab.py
@@ -61,11 +61,11 @@ jobs:
           set -euo pipefail
           output="$RUNNER_TEMP/esp8266-core-3.1.2"
           mkdir -p "$output"
-          arduino-cli compile --warnings all --fqbn esp8266:esp8266:nodemcuv2 \\
-            --output-dir "$output" \\
+          arduino-cli compile --warnings all --fqbn esp8266:esp8266:nodemcuv2 \
+            --output-dir "$output" \
             experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo
           binary="$(find "$output" -type f -name '*.bin' -print -quit)"
           test -n "$binary"
           test -s "$binary"
           sha256sum "$binary"
-          printf 'ARDUINO_ESP8266_CORE=3.1.2\\nSIMULATED_ONLY=1\\nPHYSICAL_ACCEPTANCE=0\\n'
+          printf 'ARDUINO_ESP8266_CORE=3.1.2\nSIMULATED_ONLY=1\nPHYSICAL_ACCEPTANCE=0\n'
