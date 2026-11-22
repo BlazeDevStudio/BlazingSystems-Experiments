@@ -1468,3 +1468,10 @@ Exact changed-filename intersections show shared handover/test surfaces rather t
 QA #290 overlaps PISONET #255 in `NativePulseCaptureCases.cs` and `Program.cs`; current Windows CI does not execute the native lab. Hardware #283/#327/#343 touch the same two ESP sketches on separate bases. Hardware #327 overlaps #341/#344 in dual-store lab files; #344 is a child of #341, while #327 is a separate stack. COE #26 overlaps #35 in ImageBuilder workflow/tool/tests and #45 in PisoWiFi map/intake/focus test. COE #49 has no changed-path overlap with #26 in the current inventory.
 
 See [the UTC22 exact path-set report](PHX_MASTER_UTC22_20261122_CROSS_OWNER_PATH_OVERLAP_AND_LIVE_CI_AUDIT.md). Preserve ownership; no route promotion, file movement or merge is implied. The manifest remains `DRAFT_REVIEW_ONLY`, PHX-MASTER target `null`.
+
+
+## UTC23 Hardware #345 routing hold — 2026-11-22
+
+Hardware PR #345 is a one-file, test-only child of Hardware #343. Its only changed path is the Hardware-owned poll-loop lab fixture; the ESP32/ESP8266 sketches are unchanged at this test head. This is not a new route or destination migration. PHX-HARDWARE retains both sketch paths, PHX-QA retains independent test ownership, and PHX-MASTER remains coordination-only.
+
+The exact-source RED in #345 identifies a provisional relay-disabled coin-edge denial invariant. Do not copy this test fixture into COE #26 or promote any Hardware route based on it. Reconcile the owner implementation, both board sketches, source/test blobs, licensing, imports, and exact CI before any later destination staging review. OWNERSHIP_ROUTES.json remains blob e4db324315a1b3543fec17a148fbf960170fcb29, 11 routes, DRAFT_REVIEW_ONLY, PHX-MASTER target null.

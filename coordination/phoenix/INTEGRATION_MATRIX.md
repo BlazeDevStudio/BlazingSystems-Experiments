@@ -4045,3 +4045,44 @@ Static exact changed-filename comparison covered 16 open PRs and found 14 pairwi
 Exact heads and CI are recorded in [the UTC22 report](PHX_MASTER_UTC22_20261122_CROSS_OWNER_PATH_OVERLAP_AND_LIVE_CI_AUDIT.md). These overlaps require explicit owner review and stack reconciliation; they do not establish merge permission. Hardware default-deny remains unchanged. COE #26 stays FROZEN.
 
 Master #288 has zero workflow runs and zero combined statuses. Full Master unittest discovery and `verify_coordination.py` are NOT RUN. Private Drive v11/newer corrections remain unavailable; no older registry was substituted. Cleanup #266 remains OPEN; PRODUCTION NO-GO.
+
+
+## UTC23 — relay-disabled coin-edge gate and exact-tree migration revalidation (2026-11-22T23:34:12Z)
+
+### Hardware #345 — test-first RED, not a source fix
+
+- #345 is OPEN / DRAFT / UNMERGED, one changed path, child of #343 at parent dfeff7d5f63e699de7bc296c7641f2493f1e0e13; test head 834738d2e82b6857779935b988c4046cbcb6c89f.
+- The new exact-source scenario disables the acceptor relay, samples an active coin edge, and requires a sticky fault marker, zero pending pulses, zero save calls, and outputs/insertion state OFF.
+- Quarantine run 45083252631 fails on ESP8266 exact-source with expected exit 0, got 60. This is the intended RED proving the current source does not satisfy the new invariant; it is not a passing regression.
+- Full run 45083252628 fails at the inherited QA-owned Missing poll signature check. ESP8266, ESP32, target firmware jobs, and Android compile jobs pass; downstream simulation/signing/publication are skipped.
+- The ESP8266 source blob is 01fe33404d51653515e64833038d23d080ff80b2 and ESP32 source blob is 9011029ea05bb6160bc326598e6d25cbe953c4c2. Neither sketch changed in #345. Hardware owns implementation; QA owns independent verification; Master records the provisional cross-role invariant in Architecture Contracts §6.76.
+
+### Current COE #26 migration evidence — exact recursive trees
+
+| Exact ref | Recursive tree entries |
+|---|---:|
+| Experiments main f4e8a891aed8af86d5fd315d28750a0ac3a7372b | 2,340 |
+| Experiments development aad3aade72c1156eecba1fed30907c6d0283b2c5 | 2,079 |
+| Hardware #343 dfeff7d5f63e699de7bc296c7641f2493f1e0e13 | 2,481 |
+| Master start 72f1c39a951229ba3c9d5337c0e28ff5eb01d852 | 2,519 |
+| COE main a6513ab4412b4c014eee2863e45cbe32d06cb243 | 3 |
+| COE #26 b382d233ff06c8791b1028bed3c617cc7b670d12 | 286 |
+
+All six tree responses were non-truncated. Master contained 177 coordination/phoenix blobs and 92 PHX_MASTER reports before this report; INDEX contained 92 unique report links with no duplicates.
+
+The COE PisoWiFi intake still pins historical source 6d4c9b487af4d768c4d7627654d119417fcc6e00, not current Experiments main f4e8a891aed8af86d5fd315d28750a0ac3a7372b. The 61-row runtime table computes 46 byte-identical / 15 derived, while its summary claims 47 / 14. Current Hardware #343 contains 34 board-local Python helpers; COE #26 contains zero corresponding Hardware Python helpers.
+
+| Hardware identity | Source #343 | COE #26 |
+|---|---|---|
+| ESP32 sketch | 9011029ea05bb6160bc326598e6d25cbe953c4c2 | 3cc7ec54b476943dc04a8d1af5e2df5fe054e422 |
+| ESP8266 sketch | 01fe33404d51653515e64833038d23d080ff80b2 | c8be98f72596681e36a3ad1f8939bf8046c96887 |
+| Hardening test | 41211b2c110ab409f6d9d1812ef12fda73b13211 | f921c56cecc19cab1989507b9b4ade1f45dac54e |
+
+PisoWiFi LICENSE matches exactly at 1ee55b94183417be977ca287cd7391f9a6f7e721. Experiments root NOTICE exists at f6d92cd21465312be5993631fe26977219be0fb9; COE #26 root NOTICE is absent and Hardware-local LICENSE/NOTICE are absent. COE #26 remains FROZEN with five queued workflows and zero jobs. No staging, copy, move, overwrite, rebase, cherry-pick, route promotion, or destination edit.
+
+### Governance and test boundary
+
+- Classic branch-protection detail remains HTTP 403 for Experiments main/development/Master and COE main; rulesets endpoints return empty arrays. Effective required-check enforcement is NOT independently readable; repository administrators must verify it in an authorized admin context.
+- The private canonical BLAZE_PROJECT_REGISTRY_v11_20261027.json and newer corrections are not surfaced by Library search; only older v3-v7 registry snapshots/addenda appeared. No Google Drive connector is exposed. No older registry was substituted and no private IDs/content were published.
+- Full Master unittest discovery and verify_coordination.py remain NOT RUN. The static tree/blob/count assertions are inventory checks, not a Master test-suite result.
+- Cleanup #266 remains OPEN; the Master inventory is still partial. PRODUCTION NO-GO.

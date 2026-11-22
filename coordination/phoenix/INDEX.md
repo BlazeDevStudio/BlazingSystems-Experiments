@@ -1,6 +1,6 @@
 # Project Phoenix — Coordination Index
 
-**Updated:** 2026-11-22T14:45:38Z
+**Updated:** 2026-11-22T23:34:12Z
 **Role:** PHX-MASTER — coordination / architecture / integration provenance only  
 **Safety:** DRAFT REVIEW ONLY · PRODUCTION NO-GO
 
@@ -706,3 +706,10 @@ At the exact starting tree, 89 `PHX_MASTER_*.md` reports were present but INDEX 
 - [PHX_MASTER_UTC21_20261122_LIVE_HEAD_CI_COE26_EXACT_TREE_RECONCILIATION.md](PHX_MASTER_UTC21_20261122_LIVE_HEAD_CI_COE26_EXACT_TREE_RECONCILIATION.md) — live exact role heads/CI, non-truncated tree audit, and frozen COE #26 source/destination provenance reconciliation.
 
 - [PHX-MASTER UTC22 cross-owner path-overlap and live exact-head CI audit](PHX_MASTER_UTC22_20261122_CROSS_OWNER_PATH_OVERLAP_AND_LIVE_CI_AUDIT.md) — 16-PR exact filename-set comparison, owner CI, shared handover/test paths, Hardware lineage overlaps, COE candidate overlaps and current blockers.
+
+
+## UTC23 relay-disabled coin-edge gate and live exact-head reconciliation
+
+- [PHX_MASTER_UTC23_20261122_RELAY_DISABLED_COIN_EDGE_DENY_AND_LIVE_CI_RECONCILIATION.md](PHX_MASTER_UTC23_20261122_RELAY_DISABLED_COIN_EDGE_DENY_AND_LIVE_CI_RECONCILIATION.md) — Hardware #345 exact-source RED, provisional relay-disabled coin-edge invariant, exact owner CI, COE #26 tree/blob/licence/import reconciliation, and current governance/test blockers.
+
+**Post-update index coverage:** 93/93 PHX-MASTER reports linked at this commit; historical reports remain immutable.

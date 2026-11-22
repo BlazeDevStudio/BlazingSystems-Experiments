@@ -2888,3 +2888,26 @@ No owner branch or implementation scope changed.
 The exact path-set audit found 14 pairwise overlaps across the selected open PRs. Master #288 remains 176/176 paths under `coordination/phoenix/`, with zero overlap against the selected owner PRs. Shared handovers, PISONET QA tests, Hardware lineage overlaps and COE candidate overlaps are detailed in [the UTC22 report](PHX_MASTER_UTC22_20261122_CROSS_OWNER_PATH_OVERLAP_AND_LIVE_CI_AUDIT.md). These are owner-review/stacking signals, not merge permission.
 
 COE #26 remains FROZEN; private Drive v11/newer corrections remain inaccessible; Master tests are NOT RUN; cleanup #266 remains OPEN with Master only partially addressed. **PRODUCTION NO-GO.**
+
+
+## PHX-MASTER UTC23 exact-head role/CI update — 2026-11-22T23:34:12Z
+
+This append supersedes UTC22 for the live refs below; it does not reassign ownership or change any worker branch.
+
+| Role / PR | Exact head | Exact-head evidence | Owner boundary / next action |
+|---|---|---|---|
+| CORE #252 | c82705f2de865c89ab733b10efa84f26f56a5cc4 | Build 42698139210 PASS (scoped). | Separate CORE-owned hourly automation retains implementation; Master made no CORE source changes. |
+| RENTAL #328 | 0e0da62acd47c6a1ce287f8a30fc700d603fa070 | APK identity 44782114384 PASS; API21/API23 44782114393 PASS; build 44782114390 FAIL at stale handover and missing mbedtls/sha256.h. | RENTAL/CORE owners reconcile the exact toolchain/header and handover. |
+| PISONET #255 | d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | Windows 42462978704 PASS (synthetic only). | Native COM/device acceptance remains NOT TESTED; QA #290 Windows run does not invoke NativeComInterfaceHandleLab. |
+| HARDWARE #283 | 4dd0b01bf04cf80aec6d4dd6fc93b2fdc633da30 | Quarantine 45057637178 PASS; Full 45057637196 FAIL at ESP32 Mbed TLS header. | Hardware owns source; no Master edits. |
+| HARDWARE firmware #327 → #342 → #343 | fadac4ed... → e7815297... → dfeff7d5f63e699de7bc296c7641f2493f1e0e13 | #343 Quarantine 45062595339 and Relay 45062595335 PASS; Full 45062595995 FAIL at QA-owned poll-signature assertion. | Preserve default-deny; QA owns independent fixture correction. |
+| HARDWARE host-lab #338 → #339 → #341 → #344 | 1a6a7cac... → b3e15588... → 4368435ad762d507a907e72a9c739c7bddbc3a81 → 3bfa530c94a929191d7b3335c085dbd7f99e1e18 | #344 Quarantine 45080942944 PASS; Full 45080942789 FAIL at inherited QA assertion. | Separate host-lab lineage; do not merge or rebase across the firmware stack. |
+| HARDWARE new child #345 | 834738d2e82b6857779935b988c4046cbcb6c89f (base #343 dfeff7d5...) | Test-only one-file RED: Quarantine 45083252631 fails exact-source ESP8266 exit 60 as expected; Full 45083252628 fails at inherited Missing poll signature check. | Hardware implements both board sketches after RED; QA independently verifies; no source fix is claimed yet. |
+| QA #290 / #292 | 5c29d15994cee1279058f1eca12f2a3180704292 / 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | #290 Windows 43633486963 PASS but native lab not invoked; #292 has no workflow runs. | QA owns independent negative/default-deny tests and exact-base reconciliation. |
+| RELEASE #291 | cb5e5450a4fc2afc7f38cf426e51b390859a1dd0 | Windows 45071305811 and Full 45071305854 FAIL; handover gate identifies source/workflow changes newer than PROJECT_HANDOVER.md; ESP32 compatibility 45071305891 PASS. | RELEASE owner refreshes its handover after source changes; 27-path mixed-owner review remains. |
+| COE integration #26 | b382d233ff06c8791b1028bed3c617cc7b670d12 | Five workflows queued, zero jobs. | FROZEN; no staging or destination writes. |
+| COE RELEASE #35 | 16c0e140cbfd52d4cb572b7121189866763c77b2 | Case guard 45082913966 PASS; shared validation 45082913844 fails closed on all ten profiles without approved site ULA /48; sandbox 45082913881 exits 125 because Bubblewrap is absent. | RELEASE owner needs approved site-scoped authority and a supported sandbox runner. |
+| COE CORE #45 | 9d76a134c1f6512aa40c20ec4d247306a71a8cce | Overlay/shell 44295049727 and case guard 44295049903 PASS. | Scoped candidate only; no financial acceptance. |
+| COE Stage 5.1 #49 | aeb8ff11b2f5db9a5f86280ab62ab988245f3919 | Stage 5.1 44646341873 and case guard 44646341992 PASS; shared ESP32 compile in 44646341922 FAILS on missing mbedtls/sha256.h under core 4.0.0. | Separate sidecar; not a replacement for CORE contract or frozen #26. |
+
+No owner branch, subsystem source, route, or release assignment changed.

@@ -2229,3 +2229,14 @@ At 2026-11-22T22:38:20Z, Master re-read live issue #172/#266, branch refs, PR #2
 Review items: shared CORE/PISONET/QA/RELEASE handover paths; PISONET native-lab QA overlay not executed by current Windows CI; separate Hardware sketch and dual-store lab stacks; COE #26/#35 ImageBuilder and #26/#45 PisoWiFi intake overlaps. Keep #26 frozen. Exact paths, heads, run IDs and failure causes are in [the UTC22 report](PHX_MASTER_UTC22_20261122_CROSS_OWNER_PATH_OVERLAP_AND_LIVE_CI_AUDIT.md).
 
 No subsystem source, destination, route manifest, license, secret, artifact or payment system changed. Full Master tests and `verify_coordination.py` remain NOT RUN. Private Drive v11/newer corrections are unavailable. Cleanup #266 remains OPEN and partially addressed. **PRODUCTION NO-GO.**
+
+
+## PHX-MASTER UTC23 — relay-disabled coin-edge safety finding and current blockers (2026-11-22T23:34:12Z)
+
+Master re-read live #172/#266, root AGENTS.md, README_FIRST, BLAZE-COMMS/1, current main/development/Master refs, PR #288, routing manifest, role PRs/CI, COE main/#26, and current coordination documents. The new Hardware #345 is a test-only RED on an exact source gap: sampleCoinPulseEdge() does not gate pending pulse admission on relayEnabled in either board sketch, while applyOutputs() uses relayEnabled only to force the physical relay OFF. The new test requires sticky deny, no pending credit, and outputs/insertion state OFF.
+
+Exact Quarantine #45083252631 fails at ESP8266 exact-source exit 60 as expected; Full #45083252628 fails at inherited QA-owned Missing poll signature check. This is not a customer incident, not a source fix, and not a hardware acceptance result. Provisional cross-role invariant recorded in Architecture Contracts §6.76; Hardware owns implementation and QA owns independent verification.
+
+Exact role CI and COE migration facts are appended in ROLE_ASSIGNMENTS.md and INTEGRATION_MATRIX.md. COE #26 remains frozen after fresh non-truncated tree and blob comparisons: 61-row intake summary mismatch, 34 missing Hardware helper imports, divergent ESP32/ESP8266 and hardening-test identities, root NOTICE and Hardware-local license/notice gaps, five queued workflows/zero jobs.
+
+Private v11/newer registry corrections remain inaccessible; no older registry was substituted. Branch-protection details remain 403 with empty rulesets; administrator verification required. Full Master tests and verify_coordination.py NOT RUN. No subsystem source or COE destination changed. Cleanup #266 remains open and partial. PRODUCTION NO-GO.

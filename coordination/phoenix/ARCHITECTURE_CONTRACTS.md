@@ -1395,3 +1395,18 @@ Do not add a positive `response_sig` to either firmware sketch merely to satisfy
 ## 6.75 Cross-repository migration evidence is snapshot-scoped, not current integration approval
 
 A migration manifest proves only the identities it explicitly pins. Before any destination staging proposal, compare each mapped source blob against (1) its pinned historical source tree, (2) the current source default/development refs and active owner candidate, and (3) the destination candidate tree. Separately reconcile test identities, imported lab/helpers, Git modes, LICENSE/NOTICE scope and terminal CI at the exact destination SHA. A destination that matches an old snapshot is not necessarily current-source complete. Summary counters must be recomputed from the actual table, not copied from the manifest summary. Any source drift, absent path, divergent test, missing notice, incomplete import or nonterminal/failed CI keeps the destination FROZEN. A `DRAFT_REVIEW_ONLY` route cannot authorize copy/move; PHX-MASTER remains coordination-only with `target: null`.
+
+
+## 6.76 — Relay-disabled coin edge is non-crediting (provisional; Hardware #345 test-first RED, 2026-11-22T23:26Z)
+
+**Status: PROVISIONAL / OWNER REVIEW REQUIRED.** At the exact Hardware #343/#345 source, both ESP8266 and ESP32 sketches use relayEnabled in applyOutputs() to force the relay output OFF, but sampleCoinPulseEdge() does not include relayEnabled in its sampled-edge eligibility conditions. With insertMode and activeTarget still set, a sampled active GPIO edge can enter the normal pending-pulse path even though the acceptor relay is disabled. This is a source-level gap reproduced by the Hardware #345 test-first RED; it is not evidence of a customer incident.
+
+**Required invariant:** When relayEnabled is false, a sampled GPIO transition must not increment pendingPulses, create or refresh a normal pending record, or become coin-POST eligible. Fail closed: keep relay and LED OFF, clear insertion mode and active target, latch a boot-visible sticky ingress fault using the established dual-store/fault-marker semantics, and require operator reconciliation. No credit, receipt, lease, or customer balance is created. Apply consistently to both board sketches; do not bypass canAttemptCoinPost or weaken poll authentication.
+
+**Exact evidence:**
+- ESP8266 sketch blob: 01fe33404d51653515e64833038d23d080ff80b2.
+- ESP32 sketch blob: 9011029ea05bb6160bc326598e6d25cbe953c4c2.
+- Hardware #345 is a test-only child of #343, pinned parent dfeff7d5f63e699de7bc296c7641f2493f1e0e13; test head 834738d2e82b6857779935b988c4046cbcb6c89f. Its only changed path is poll_loop_blocking_inhibit_lab_scenario_fixtures.py.
+- Exact-source Quarantine run 45083252631 fails at ESP8266 with expected exit 0, got 60 (RED). Full run 45083252628 fails at the inherited QA-owned Missing poll signature check; target firmware builds and Android pass, downstream simulation/signing/publication are skipped.
+
+**Ownership and acceptance:** PHX-HARDWARE owns both sketch changes; PHX-QA owns independent source-linked negative/default-deny verification; PHX-MASTER owns this provisional cross-role invariant only. Keep #345 draft until the exact-source RED is followed by a source fix and exact-head Quarantine/Relay/Full evidence on both boards. Physical acceptance remains NOT TESTED. This appendix grants no release authority.
