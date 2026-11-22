@@ -2441,3 +2441,53 @@ These are hosted CI results only. No actual Bubblewrap namespace run or ImageBui
 - The current branch head before this handover follow-through is \`9277cbe0f308531fc8f2fc5e6aa73f90eeada9b9\`. This append-only handover commit will advance the PR docs head; the next exact-head run must be read independently.
 
 The new CI-0701 guard checks the recorded PR #291 start/base, the verified source-fix commit, and the exact COE #35 head/base. It is a pinned snapshot freshness guard and must be refreshed if those referenced branches advance. No product firmware, CORE/PISONET files, MASTER routes, signer policy or release permissions changed.
+
+---
+
+## PHX-RELEASE UTC20 — exact live refs and CI reconciliation
+
+**Activation:** 2026-11-22T20Z. This is one RELEASE-owned handover-ref refresh and regression guard on existing draft PR #291. No application, CORE, RENTAL, PISONET, HARDWARE, QA or MASTER source was changed. No shared interface or ownership route was modified.
+
+### Exact branch identity observed before this update
+
+- Experiments PR #242: head `734b89d9e7792247e8376335c3f3685500ab3f89`, base `blazepwifi-v0.6.0-audit-foundation@6d4c9b487af4d768c4d7627654d119417fcc6e00`, OPEN / DRAFT.
+- Experiments PR #291: branch `phoenix/release-publisher-isolation-20261115`; observed pre-update head `11063a5bd5c744aef1f8dc6ca5fb4e06d6aa7882`; base #242 `734b89d9e7792247e8376335c3f3685500ab3f89`; OPEN / DRAFT / UNMERGED.
+- COE integration PR #26: head `b382d233ff06c8791b1028bed3c617cc7b670d12`, base main `a6513ab4412b4c014eee2863e45cbe32d06cb243`, OPEN / DRAFT / FROZEN.
+- COE release-packager parent PR #31: head `59ed44d0b911e176f1a95b9cf5585ef811ffd31b`, base #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`, OPEN / DRAFT.
+- COE release-packager child PR #35: observed head `edb4eb482dfa94bbad2dcf29b90b8463a2165fa5`, base #31 `59ed44d0b911e176f1a95b9cf5585ef811ffd31b`, OPEN / DRAFT / UNMERGED.
+- MASTER PR #288: head `48d1d3afeb012d4b6fd466a4d6061bfd36210728`, base Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`, OPEN / DRAFT.
+- MASTER `coordination/phoenix/OWNERSHIP_ROUTES.json` exact blob: `e4db324315a1b3543fec17a148fbf960170fcb29`. It remains `DRAFT_REVIEW_ONLY`; the RELEASE workflow route `.github/workflows/blazepwifi-build.yml` → COE `.github/workflows/pisowifi-ci.yml` remains `reimplementation-review`. This is not migration or copy authorization.
+
+PR #291 currently has 27 accumulated changed paths: 22 RELEASE, 3 CORE and 2 PISONET. No inherited CORE/PISONET path was edited. Independent PR reviews: 0; review threads: 0.
+
+### Test-first UTC20 handover-ref guard
+
+- Initial test commit: [`9da48db0`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/9da48db0a70066cdf97044e3e49a80d60ceea3c4) added five checks for the new UTC20 snapshot.
+- The first CI run [#45065650586](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45065650586) showed the pre-existing four handover tests passing, but did not collect the new tests: they had been appended below the script's `unittest.main()` call. This was a test-harness placement defect, not a RED result.
+- Harness correction: [`52334296`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/52334296f3b8c06eda7b29d6381a81f0cbf4d714) moves the `unittest.main()` call after the new test class so all tests are collected.
+- Expected RED at exact test head [#45065774679](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45065774679), CI-0701 job `137341544292`: **FAILURE as expected**. The handover-ref suite ran 9 tests; the four pre-existing tests passed and all five new UTC20 tests failed because the UTC20 section had not yet been appended. Earlier action-pin, concurrency and provenance steps passed; subsequent CI-0701 steps were skipped after the failure.
+
+### Exact-source CI observed at pre-update PR #291 head `11063a5b`
+
+- ESP32 compatibility [#45060420366](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45060420366): **SUCCESS, 3/3 jobs** — provenance regression suite plus ESP32 core 3.3.13 and 4.0.0 jobs.
+- Full BlazePwifi [#45060420488](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45060420488): **OVERALL FAILURE**. CI-0701 passed; mandatory `validate` failed at the CORE-owned `experiment/openwrt/BlazePwifi/PROJECT_HANDOVER.md` freshness gate. Thirteen of fourteen target/platform jobs passed; Android failed at `:lintVitalAospRelease` because Maven Central timed out resolving `org.jetbrains.trove4j:trove4j:20160824`. Update bundle, simulations, candidate gate, production sign handoff and publication were skipped.
+- Windows [#45060420347](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45060420347): **FAILURE** at the same CORE-owned handover freshness gate; Windows build and publisher skipped. The PISONET negative self-test was not reached.
+- These failures are separate from the new handover-ref guard. RELEASE did not edit CORE's freshness records or PISONET's test.
+
+### Exact COE #35 child CI at observed head `edb4eb48`
+
+- Sandbox [#45054914749](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45054914749): **37/37 host-preflight tests PASS**, then failed closed because Bubblewrap is not installed (exit 125). Namespace verification and mandatory sandbox packaging tests were skipped, not passed.
+- Shared/firmware [#45054914752](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45054914752): **190 tests PASS / 2 intentional skips** and manifest durability marker PASS; overall workflow FAILURE because all ten profiles fail closed without approved site-scoped RFC 4193 ULA /48 authority. ESP32/ESP8266 compile jobs skipped.
+- Case-collision [#45054914784](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45054914784): **PASS**.
+- COE #26 remains frozen with five workflow entries queued and zero jobs executed. Parent #31 remains the exact base of #35; parent evidence does not override child exact-head blockers.
+
+### Cleanup, registry provenance and next owners
+
+- Cleanup-first issue #266 remains OPEN, **0/7 tracks complete**. This bounded RELEASE handover update does not complete the seven-role cleanup gate.
+- Authorized Library search surfaced a private production-checkpoint metadata record that references canonical Drive registry v11 and its historical 55-project count, but the canonical registry file itself was not surfaced. No older registry snapshot was substituted; no private contents or identifiers were copied to GitHub.
+- The live #172 control-plane body still contains older embedded #291 / COE #35 role-head pins. PHX-MASTER owns that index and should reconcile it against the exact live refs above; RELEASE did not edit MASTER-owned coordination.
+- PHX-CORE must refresh its own project handover before Full validation can pass. PHX-INFRA must provide the approved disposable Bubblewrap-capable runner with working unprivileged namespaces. PHX-CORE / MASTER must establish approved site-scoped ULA /48 authority. PHX-QA and PHX-MASTER reviews remain pending.
+
+No migration, merge, rebase, retarget, signer operation, real-key signing, release tag, publication, hardware flash, payment migration or customer deployment occurred. Protected signer and independent freshness witness, durable financial accounting/migration, independent QA/MASTER approval, approved production binaries, 150 physical power cuts and 30-device/24-hour soak remain unproven or NOT TESTED.
+
+**Disposition: PRODUCTION NO-GO.**
