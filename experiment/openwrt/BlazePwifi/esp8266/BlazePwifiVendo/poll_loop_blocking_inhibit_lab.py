@@ -10,7 +10,7 @@ from pathlib import Path
 import subprocess
 import tempfile
 
-from firmware_lab_source import extract_function, mask_non_code
+from firmware_lab_source import extract_function, mask_active_cpp_code
 from firmware_lab_source_lab import run_source_extractor_regressions
 
 run_source_extractor_regressions()
@@ -185,7 +185,7 @@ def verify_poll_safety_board_parity():
 
 def normalized_cpp_fixture(source: str) -> str:
     """Normalize only C++ code; comments and literal contents are not callsites."""
-    return " ".join(mask_non_code(source).split())
+    return " ".join(mask_active_cpp_code(source).split())
 
 
 def verify_drain_abort_polarity_fixture_is_shared():
