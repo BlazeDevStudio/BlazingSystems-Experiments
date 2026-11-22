@@ -14,7 +14,7 @@ import sys
 
 BLAZEPWIFI_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(BLAZEPWIFI_ROOT / "esp8266/BlazePwifiVendo"))
-from firmware_lab_source import extract_function
+from firmware_lab_source import extract_function, mask_non_code
 
 SKETCH = Path(__file__).with_name("BlazePwifiVendo32.ino")
 UNSUPPORTED_ERROR = (
@@ -24,17 +24,27 @@ UNSUPPORTED_ERROR = (
 
 
 def extract_selector(source: str) -> str:
+    # Ignore directive-shaped text in comments and literals while keeping the
+    # original source lines available for the returned selector block.
+    masked_source = mask_non_code(source)
+    if len(masked_source) != len(source):
+        raise RuntimeError("selector lexical mask changed source offsets")
+
     lines = source.splitlines()
+    code_lines = masked_source.splitlines()
+    if len(code_lines) != len(lines):
+        raise RuntimeError("selector lexical mask changed source line count")
+
     starts = [
-        i for i, line in enumerate(lines)
+        i for i, line in enumerate(code_lines)
         if line.strip() == "#if MBEDTLS_VERSION_MAJOR == 4"
     ]
     if len(starts) < 2:
         raise RuntimeError("expected header selector and hexDigest version branch")
     start = starts[0]
     depth = 0
-    for i in range(start, len(lines)):
-        stripped = lines[i].strip()
+    for i in range(start, len(code_lines)):
+        stripped = code_lines[i].strip()
         if stripped.startswith(("#if ", "#ifdef ", "#ifndef ")):
             depth += 1
         elif stripped == "#endif":
