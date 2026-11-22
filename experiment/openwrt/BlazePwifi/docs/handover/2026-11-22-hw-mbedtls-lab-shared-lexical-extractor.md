@@ -108,3 +108,39 @@ Only this Hardware-owned ESP32 host lab and this handover changed. No production
 **Focused CI: VERIFIED. Host behavior: SIMULATED. Physical acceptance: NOT TESTED. HARDWARE ACCEPTED: NO. PRODUCTION READY: NO-GO.**
 
 **Next exact action:** PHX-MASTER pin #342 and reconcile current #327/#339 ancestry; PHX-CORE and PHX-QA resolve the authenticated poll/register contract and stale positive poll-signature fixture. PHX-HARDWARE keeps the consumer deny-only and waits for the next unblocked Hardware-owned task.
+
+
+## UTC15 follow-up — reject inactive Mbed TLS selector decoys
+
+**Current branch:** `phoenix/hw-mbedtls-lexer-reuse-20261122-utc14`  
+**Parent #327:** `fadac4ed3bc837cf729753264b9427fa3fd312b9`  
+**Source/test commit:** `cd66403e6e40d819cbee48598b87069caba67009`  
+**PR:** [#342](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/342)
+
+A second selector-extraction weakness was reproduced: `extract_selector()` used `mask_non_code()`, which ignored comments/literals but did not exclude a complete selector-shaped block inside literal `#if 0`. The extractor chose that inactive block before the real active header selector.
+
+### Test-first evidence
+
+- Two early fixture-authoring attempts were invalid and are **not** counted as defect evidence: `edaa4b26bf21dfa3748616af35eef22ab066f55c` encoded literal backslash-n separators; `da5c9f804428a9ef539467eaa3121d8f0d6b02f1` had a Python string-concatenation syntax error.
+- Corrected test-only commit `e9b423497695b2ff2ffc28168e3c5004e75b5825`: [Quarantine run #45040788820](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45040788820), job `137264538107`, expected RED: `selector extractor accepted a literal #if 0 decoy`.
+- A first source-edit attempt `a42bb1705fca1a98d7bfefc4719c4a575036fd92` had an offset-splice syntax error and is not counted as a source result.
+- Corrected source/test commit `cd66403e6e40d819cbee48598b87069caba67009`: [Quarantine run #45041154939](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45041154939), job `137265690895`, SUCCESS.
+
+### Correction
+
+- Reused the shared `mask_active_cpp_code()` helper from `firmware_lab_source.py`.
+- Candidate selector blocks are accepted only when their required include/directive tokens remain visible in the active-code mask and the original source retains the exact reviewed `#error` diagnostic.
+- The extractor now requires exactly one active selector candidate; literal-inactive candidates are skipped, unknown macro expressions remain conservative, and original source offsets/lines are preserved.
+
+Verified markers:
+- `MBEDTLS_SELECTOR_COMMENT_DECOY_REJECTED 1/1`
+- `MBEDTLS_SELECTOR_INACTIVE_BRANCH_DECOY_REJECTED 1/1`
+- `MBEDTLS_MAJOR_3_SELECTOR_AND_DIGEST_PASS`
+- `MBEDTLS_MAJOR_4_SELECTOR_AND_DIGEST_PASS`
+- `MBEDTLS_COMPATIBILITY_GUARD_LAB_PASS`
+
+Full workflow [#45041154971](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45041154971) has validation job `137265763547` FAILED at the inherited QA-owned `Missing poll signature check` in the ESP8266 sketch. Firmware target jobs were still running at last readback; this host-lab correction does not resolve controller protocol parity.
+
+**Scope:** host-test parser only. No production firmware sketch, poll/register API, coin admission, relay, crypto, financial behavior, signer, migration, or hardware configuration changed.
+
+**Classification:** focused CI VERIFIED; full integration BLOCKED; physical acceptance NOT TESTED; production NO-GO.
