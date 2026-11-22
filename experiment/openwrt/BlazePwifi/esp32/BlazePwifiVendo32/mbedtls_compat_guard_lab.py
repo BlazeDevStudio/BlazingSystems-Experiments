@@ -281,12 +281,12 @@ def reject_unsupported(cxx: str, root: Path, major: int, selector: str) -> None:
 
 def verify_shared_lexical_extractor():
     fixture = (
-        'String lexicalProbe(){\\n'
-        '  const char *ordinary = "}";\\n'
-        '  const char *raw = R"tag({ })tag";\\n'
-        '  // } line-comment decoy\\n'
-        '  /* { block-comment decoy */\\n'
-        '  return ordinary;\\n'
+        'String lexicalProbe(){\n'
+        '  const char *ordinary = "}";\n'
+        '  const char *raw = R"tag({ })tag";\n'
+        '  // } line-comment decoy\n'
+        '  /* { block-comment decoy */\n'
+        '  return ordinary;\n'
         '}'
     )
     extracted = extract_function(fixture, "lexicalProbe")
