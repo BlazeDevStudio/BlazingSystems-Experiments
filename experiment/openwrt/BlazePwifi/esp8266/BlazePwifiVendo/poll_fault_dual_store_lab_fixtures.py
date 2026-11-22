@@ -28,7 +28,7 @@ def constants(source: str, names):
         raise RuntimeError("constant extraction mask changed source line count")
 
     name_patterns = tuple(
-        re.compile(rf"\\b{re.escape(name)}\\b")
+        re.compile(rf"\b{re.escape(name)}\b")
         for name in names
     )
     selected = []
