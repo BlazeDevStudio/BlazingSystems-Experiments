@@ -87,6 +87,7 @@ def verify_debounce_clamp_callsite_decoys(source, board, minimum_calls):
             "POLL_RESPONSE_DEBOUNCE_CALLSITE_DECOY_SURVIVED: "
             + board + ":" + ",".join(survivors)
         )
+    print(f"{board}: POLL_RESPONSE_DEBOUNCE_CALLSITE_DECOY_REJECTED 2/2")
 
 
 verify_lexical_extractor()
