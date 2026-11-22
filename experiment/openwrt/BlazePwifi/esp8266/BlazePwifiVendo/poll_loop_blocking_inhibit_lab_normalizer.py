@@ -22,6 +22,23 @@ def normalize_cpp_function_body(body):
             return position + 2
         return position + 1
 
+    def splice_end(position):
+        if position >= len(body) or body[position] != "\\" or position + 1 >= len(body):
+            return None
+        if body[position + 1] == "\n":
+            return position + 2
+        if body[position + 1] == "\r":
+            return position + 3 if position + 2 < len(body) and body[position + 2] == "\n" else position + 2
+        return None
+
+    def skip_splices(position):
+        while position < len(body):
+            end = splice_end(position)
+            if end is None:
+                break
+            position = end
+        return position
+
     def has_unspliced_newline(text):
         cursor = 0
         while cursor < len(text):
@@ -65,42 +82,54 @@ def normalize_cpp_function_body(body):
             line_has_token = True
             continue
 
-        if body.startswith("//", i):
-            start = i
-            cursor = i + 2
-            while cursor < len(body):
-                if body[cursor] not in "\r\n":
+        if ch == "/":
+            delimiter = skip_splices(i + 1)
+            if delimiter < len(body) and body[delimiter] == "/":
+                start = i
+                cursor = delimiter + 1
+                while cursor < len(body):
+                    spliced = splice_end(cursor)
+                    if spliced is not None:
+                        cursor = spliced
+                        continue
+                    if body[cursor] in "\r\n":
+                        break
                     cursor += 1
-                    continue
-                next_line = newline_end(cursor)
-                # C++ phase 2 splices backslash-newline before // comment parsing.
-                if cursor > start and body[cursor - 1] == "\\":
-                    cursor = next_line
-                    continue
-                break
-            end = cursor
-            comment = body[start:end].replace("\r\n", "\n").replace("\r", "\n")
-            if output and output[-1] not in (" ", "\n"):
-                output.append(" ")
-            output.append(comment)
-            i = end
-            pending_space = True
-            continue
+                end = cursor
+                comment = body[start:end].replace("\r\n", "\n").replace("\r", "\n")
+                if output and output[-1] not in (" ", "\n"):
+                    output.append(" ")
+                output.append(comment)
+                i = end
+                pending_space = True
+                continue
 
-        if body.startswith("/*", i):
-            end = body.find("*/", i + 2)
-            if end < 0:
-                raise ValueError("unterminated C++ block comment")
-            end += 2
-            comment = body[i:end].replace("\r\n", "\n").replace("\r", "\n")
-            if output and output[-1] not in (" ", "\n"):
-                output.append(" ")
-            output.append(comment)
-            if has_unspliced_newline(comment):
-                line_has_token = False
-            i = end
-            pending_space = True
-            continue
+            if delimiter < len(body) and body[delimiter] == "*":
+                start = i
+                cursor = delimiter + 1
+                end = None
+                while cursor < len(body):
+                    spliced = splice_end(cursor)
+                    if spliced is not None:
+                        cursor = spliced
+                        continue
+                    if body[cursor] == "*":
+                        closing_slash = skip_splices(cursor + 1)
+                        if closing_slash < len(body) and body[closing_slash] == "/":
+                            end = closing_slash + 1
+                            break
+                    cursor += 1
+                if end is None:
+                    raise ValueError("unterminated C++ block comment")
+                comment = body[start:end].replace("\r\n", "\n").replace("\r", "\n")
+                if output and output[-1] not in (" ", "\n"):
+                    output.append(" ")
+                output.append(comment)
+                if has_unspliced_newline(comment):
+                    line_has_token = False
+                i = end
+                pending_space = True
+                continue
 
         if ch in ('"', "'"):
             flush_space()
@@ -152,10 +181,11 @@ def normalize_cpp_function_body(body):
             line_has_token = False
             continue
 
-        if ch == "\\" and i + 1 < len(body) and body[i + 1] in "\r\n":
+        spliced = splice_end(i)
+        if spliced is not None:
             # Phase-2 splice outside literals, comments and directives.
             # It does not begin a new logical line for directive recognition.
-            i = newline_end(i + 1)
+            i = spliced
             continue
 
         flush_space()
