@@ -888,7 +888,9 @@ void configureRuntimePins(int coinPin,int relayPin,int ledPin){
 // config envelope and QA verifies its exact positive/negative golden vectors.
 void applyRemoteConfig(const String&r){
   int rev=jsonInt(r,"config_revision",remoteRevision);
-  if(rev==remoteRevision && remoteRevision!=0)return;
+  // Master §6.4 requires a strictly increasing configuration revision.
+  // Reject stale, duplicate, and zero initial revisions before mutating any field.
+  if(rev<=remoteRevision) return;
   controllerEnabled=jsonInt(r,"enabled",1)!=0; coinEnabled=jsonInt(r,"coin_enabled",1)!=0;
   relayEnabled=jsonInt(r,"relay_enabled",1)!=0; ledEnabled=jsonInt(r,"led_enabled",1)!=0;
   int cp=jsonInt(r,"coin_pin",-1),rp=jsonInt(r,"relay_pin",-1),lp=jsonInt(r,"led_pin",-1);
@@ -900,8 +902,11 @@ void applyRemoteConfig(const String&r){
   maxWifiRetries=constrain(jsonInt(r,"max_wifi_retries",6),1,60);
   if(nextPinsSafe){
     runCoinActiveLow=nextCoinActiveLow;
-    configureRuntimePins(nextCoin,nextRelay,nextLed);
+    // Publish the already-validated map before configureRuntimePins(): ESP8266
+    // intentionally refuses to enable output drivers while pinConfigSafe is false.
+    // The helper may still revoke this flag if local polarity or ingress checks fail.
     pinConfigSafe=true;
+    configureRuntimePins(nextCoin,nextRelay,nextLed);
   } else {
     pinConfigSafe=false;
     Serial.println("CRITICAL: unsafe or colliding GPIO assignment rejected; outputs disabled.");

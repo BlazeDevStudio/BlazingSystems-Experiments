@@ -1128,7 +1128,9 @@ void configureRuntimePins(int coinPin,int relayPin,int ledPin){
 // config envelope and QA verifies its exact positive/negative golden vectors.
 void applyRemoteConfig(const String &r){
   int rev=jsonInt(r,"config_revision",remoteRevision);
-  if(rev==remoteRevision && remoteRevision!=0) return;
+  // Master §6.4 requires a strictly increasing configuration revision.
+  // Reject stale, duplicate, and zero initial revisions before mutating any field.
+  if(rev<=remoteRevision) return;
   controllerEnabled=jsonInt(r,"enabled",1)!=0;
   coinEnabled=jsonInt(r,"coin_enabled",1)!=0;
   relayEnabled=jsonInt(r,"relay_enabled",1)!=0;
@@ -1143,8 +1145,10 @@ void applyRemoteConfig(const String &r){
   runDebounceMs=boundedCoinDebounceMs(db); runPulseGroupMs=(uint16_t)constrain(pg,10,10000); maxWifiRetries=constrain(mr,1,60);
   if(nextPinsSafe){
     runCoinActiveLow=nextCoinActiveLow;
-    configureRuntimePins(nextCoin,nextRelay,nextLed);
+    // Publish the validated map before configureRuntimePins(): its local
+    // polarity guard must be able to revoke pinConfigSafe when polarity is unknown.
     pinConfigSafe=true;
+    configureRuntimePins(nextCoin,nextRelay,nextLed);
   } else {
     pinConfigSafe=false;
     Serial.println("CRITICAL: unsafe or colliding GPIO assignment rejected; outputs disabled.");
