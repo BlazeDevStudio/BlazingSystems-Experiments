@@ -2491,3 +2491,75 @@ PR #291 currently has 27 accumulated changed paths: 22 RELEASE, 3 CORE and 2 PIS
 No migration, merge, rebase, retarget, signer operation, real-key signing, release tag, publication, hardware flash, payment migration or customer deployment occurred. Protected signer and independent freshness witness, durable financial accounting/migration, independent QA/MASTER approval, approved production binaries, 150 physical power cuts and 30-device/24-hour soak remain unproven or NOT TESTED.
 
 **Disposition: PRODUCTION NO-GO.**
+
+
+---
+
+## PHX-RELEASE UTC21 — exact live refs, CI and handover parser integrity
+
+**Activation:** 2026-11-22T21Z. One bounded RELEASE-owned test/handover integrity correction on existing draft PR #291. No product firmware, application, CORE, RENTAL, PISONET, HARDWARE, QA or MASTER source was changed. No shared interface, ownership route, signer permission or release authorization was changed. Strict NO Codex.
+
+### Finding: current-reference tests could read past their Markdown section
+
+The UTC20 helper _utc20_section() used a literal backslash-n heading separator ("\\n## ") instead of an actual newline ("\n## "). That meant a current-section assertion could inspect later historical sections and accept a reference from the wrong checkpoint. The first UTC21 boundary fixture also used literal escaped separators and did not model real Markdown newlines. This was a RELEASE test-harness integrity defect, not a firmware/package behavior defect.
+
+### Test-first and parser correction
+
+- Test-only UTC21 guard: [1a88220a](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/1a88220a94a17819b3bfb17c5b1db96a0818362d). Added current-ref, exact-CI, mixed-ownership, NO-GO and section-boundary assertions.
+- Initial expected RED [#45070583960](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45070583960), exact test head 1a88220a: CI-0701 ran 17 tests and failed because the UTC21 section had not yet been appended. The failure was expected; no downstream build, signing or publication job was accepted.
+- Real-newline fixture correction: [493e229a](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/493e229afbaf5875c03e89b2679f3b2e91d6a21c). Expected RED [#45070687671](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45070687671): 17 tests; test_utc20_section_stops_at_next_heading failed because the old parser returned the next heading and leaked-sentinel as part of UTC20. This reproduced the actual section-boundary defect.
+- Parser/test correction: [2a5aef6d](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/2a5aef6d0265b58a28cc86a7288a0339593dd629). Added one shared _section_after_marker() helper that stops at a real newline heading; both UTC20 and UTC21 section readers use it, and both boundary fixtures use real newline escapes.
+- Intermediate expected RED [#45070756231](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45070756231), exact parser/test head 2a5aef6d: 17 tests ran; the two section-boundary tests passed. CI-0701 still failed on the UTC21 reference assertions because this handover section had not yet been appended. That is the expected test-first state, not a final validation result.
+
+### Exact branch identity observed before this UTC21 handover update
+
+- Experiments PR #242: branch draft/softtimer-future-release-signing-pipeline-20261029; head 734b89d9e7792247e8376335c3f3685500ab3f89; base blazepwifi-v0.6.0-audit-foundation@6d4c9b487af4d768c4d7627654d119417fcc6e00; OPEN / DRAFT / UNMERGED.
+- Experiments PR #291: branch phoenix/release-publisher-isolation-20261115; observed pre-UTC21 head 6d4a95edeeaa57c47ea6c897ad53f17b9fb4396a; base #242 734b89d9e7792247e8376335c3f3685500ab3f89; OPEN / DRAFT / UNMERGED. UTC21 source/test head before this handover append: 2a5aef6d0265b58a28cc86a7288a0339593dd629.
+- COE integration PR #26: branch integration/ecosystem-nonproprietary-candidate-20261111; head b382d233ff06c8791b1028bed3c617cc7b670d12; base main a6513ab4412b4c014eee2863e45cbe32d06cb243; OPEN / DRAFT / FROZEN.
+- COE release-packager parent PR #31: branch phoenix/release-imagebuilder-failclosed-20261115; head 59ed44d0b911e176f1a95b9cf5585ef811ffd31b; base #26 b382d233ff06c8791b1028bed3c617cc7b670d12; OPEN / DRAFT.
+- COE release-packager child PR #35: branch phoenix/release-build-script-publication-safety-20261117; head edb4eb482dfa94bbad2dcf29b90b8463a2165fa5; base #31 59ed44d0b911e176f1a95b9cf5585ef811ffd31b; OPEN / DRAFT / UNMERGED.
+- MASTER PR #288: branch phoenix/master-coordination; head 5c5988e43d3f392c31117fa34bf7bb49bcc02fc3; base Experiments main f4e8a891aed8af86d5fd315d28750a0ac3a7372b; OPEN / DRAFT / UNMERGED. No PR-triggered Actions were returned for this exact head.
+- MASTER coordination/phoenix/OWNERSHIP_ROUTES.json exact blob e4db324315a1b3543fec17a148fbf960170fcb29 remains DRAFT_REVIEW_ONLY. The RELEASE route .github/workflows/blazepwifi-build.yml → COE .github/workflows/pisowifi-ci.yml remains reimplementation-review, not copy/move/migration authorization.
+
+PR #291 has 27 accumulated changed paths: **22 RELEASE / 3 CORE / 2 PISONET**. No inherited CORE/PISONET path was edited. Submitted independent reviews: 0; inline review threads: 0.
+
+### Exact-source CI observed before the UTC21 test/handover changes
+
+**Experiments #291 at pre-UTC21 head 6d4a95ed:**
+
+- ESP32 compatibility [#45065978550](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45065978550): **SUCCESS, 3/3 jobs** — release provenance suite plus ESP32 core 3.3.13 and 4.0.0 compile/reproducibility jobs.
+- Full BlazePwifi [#45065978506](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45065978506): **OVERALL FAILURE**. CI-0701 docs-only sync proof passed. All 14 target/platform jobs passed. Mandatory validate failed at the CORE-owned experiment/openwrt/BlazePwifi/PROJECT_HANDOVER.md freshness gate; all later simulations, update-bundle, signing handoff and publication jobs were skipped.
+- Windows [#45065978523](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45065978523): **FAILURE** at the CORE-owned shared handover freshness gate; Windows build and publisher were skipped.
+- These mandatory-gate failures are not RELEASE test failures. PHX-RELEASE did not edit CORE's project handover.
+
+**COE #35 child at exact head edb4eb48:**
+
+- Sandbox [#45054914749](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45054914749): **37/37 host-preflight tests PASS**, then FAILED CLOSED because Bubblewrap is not installed (exit 125). Namespace verification and mandatory sandbox packaging regressions were SKIPPED.
+- Shared/firmware [#45054914752](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45054914752): **190 PASS / 2 intentional skips** for firmware-hardening/shared-contract/packaging checks. All **10/10 appliance profiles** failed closed because approved site-scoped RFC 4193 ULA /48 authority is undefined; ESP32/ESP8266 compilation jobs were SKIPPED. Overall workflow FAILURE, not green.
+- Case-collision [#45054914784](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45054914784): **PASS**.
+- The inherited hardware-ci.yml path in #35 remains untouched and requires MASTER/HARDWARE ownership reconciliation.
+
+**COE #31 parent at exact head 59ed44d0:**
+
+- Shared contracts/packaging [#44222517238](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44222517238): **SUCCESS**; shared/profile validation, packaging tools, ESP8266 compile/upload and ESP32 compile/upload passed.
+- Case-collision [#44222517258](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44222517258): **PASS**.
+- Sandbox [#44222517263](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44222517263): Bubblewrap installed and eight host-preflight tests passed, but the unprivileged namespace probe failed with bwrap: setting up uid map: Permission denied; exit 125. Mandatory sandbox packaging regressions were SKIPPED. Parent success does not override child #35 blockers.
+
+**Experiments #242 and COE #26:**
+
+- #242 Windows [#40882814472](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/40882814472): **SUCCESS**; handover and Windows build passed. Portable/Setup signing and release publication were SKIPPED.
+- COE #26 remains OPEN / DRAFT / FROZEN at b382d233; five workflow entries are QUEUED, zero jobs executed. No integration acceptance.
+
+### Cleanup, registry provenance and next owners
+
+- Cleanup-first issue #266 remains OPEN, **0/7 tracks complete**. This one RELEASE-owned guard/handover correction does not complete the seven-role cleanup checklist.
+- The canonical private Drive project registry v11 is **not available** through the authorized Library/connector surface. Search surfaced historical v3–v7 snapshots only; none was substituted. No private registry contents or identifiers were copied to GitHub.
+- The live #172 control-plane body still contains older embedded #291 / COE #35 role-head pins. PHX-MASTER owns that index; RELEASE did not edit MASTER coordination.
+- PHX-CORE must refresh its own PROJECT_HANDOVER.md before Full/Windows validation can pass.
+- PHX-INFRA must provide an authorized disposable, no-secret Bubblewrap runner with working unprivileged namespaces; do not weaken fail-closed policy.
+- PHX-CORE / MASTER must establish approved site-scoped RFC 4193 ULA /48 authority; RELEASE must not invent a prefix.
+- PHX-QA and PHX-MASTER independent reviews remain required. Registry custodian must restore authorized provenance-only access to canonical v11.
+
+No merge, rebase, retarget, signer operation, real-key signing, release tag, publication, hardware flash, real payment migration or customer deployment occurred. Protected signer and independent freshness witness, durable financial accounting/migration, independent QA/MASTER approval, approved production binaries, **150 physical power cuts** and the **30-device/24-hour soak** remain unproven or NOT TESTED.
+
+**Disposition: PRODUCTION NO-GO.**
