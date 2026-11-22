@@ -63,6 +63,8 @@ jobs:
         run: python3 .github/scripts/test_release_workflow_concurrency.py
       - name: RELEASE-PROVENANCE manifest and checksum negative controls
         run: python3 .github/scripts/test_build_provenance.py
+      - name: RELEASE-HANDOVER exact source and cross-repository refs
+        run: python3 .github/scripts/test_phx_release_handover_current_refs.py
       - name: RELEASE-TOOLCHAIN Arduino CLI archive verifier negative controls
         run: python3 .github/scripts/test_arduino_cli_archive_verifier.py
       - name: RELEASE-TOOLCHAIN exact ESP32 core compatibility workflow contract
