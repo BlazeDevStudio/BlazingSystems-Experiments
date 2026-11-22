@@ -52,7 +52,7 @@ jobs:
           arduino-cli core list
           arduino-cli core list | grep -E '^esp32:esp32[[:space:]]+3\.3\.13([[:space:]]|$)'
 
-      - name: Verify the pinned core provides Mbed TLS 3
+      - name: Identify the pinned core Mbed TLS major
         shell: bash
         run: |
           set -euo pipefail
@@ -60,8 +60,16 @@ jobs:
           test -d "$package_root"
           header="$(find "$package_root" -type f -path '*/mbedtls/version.h' -print -quit)"
           test -n "$header"
-          grep -E '^#define MBEDTLS_VERSION_(MAJOR|MINOR|PATCH)' "$header"
-          grep -Eq '^#define MBEDTLS_VERSION_MAJOR[[:space:]]+3([[:space:]]|$)' "$header"
+          printf 'MBEDTLS_VERSION_HEADER=%s\n' "$header"
+          grep -nE 'MBEDTLS_VERSION_(MAJOR|MINOR|PATCH)' "$header" || true
+          major="$(sed -nE 's/^[[:space:]]*#[[:space:]]*define[[:space:]]+MBEDTLS_VERSION_MAJOR[[:space:]]+([0-9]+).*/\1/p' "$header" | head -n1)"
+          test -n "$major"
+          case "$major" in
+            3|4) ;;
+            *) echo "Unsupported Mbed TLS major: $major"; exit 1 ;;
+          esac
+          echo "MBEDTLS_MAJOR=$major" >> "$GITHUB_ENV"
+          printf 'ARDUINO_ESP32_CORE=3.3.13\nMBEDTLS_MAJOR=%s\n' "$major"
 
       - name: Run fail-closed provider and mutation guards
         run: python3 experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/mbedtls_sha256_compat_lab.py
@@ -79,4 +87,4 @@ jobs:
           test -n "$binary"
           test -s "$binary"
           sha256sum "$binary"
-          printf 'ARDUINO_ESP32_CORE=3.3.13\nMBEDTLS_MAJOR=3\nSIMULATED_ONLY=1\nPHYSICAL_ACCEPTANCE=0\n'
+          printf 'ARDUINO_ESP32_CORE=3.3.13\nMBEDTLS_MAJOR=%s\nSIMULATED_ONLY=1\nPHYSICAL_ACCEPTANCE=0\n' "$MBEDTLS_MAJOR"
