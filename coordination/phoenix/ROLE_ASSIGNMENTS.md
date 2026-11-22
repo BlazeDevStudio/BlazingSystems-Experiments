@@ -2811,3 +2811,23 @@ This append-only refresh supersedes only the owner-head and CI observations that
 - Cleanup inventory at the pre-update exact Master tree found 89 historical `PHX_MASTER_*.md` reports, 56 already linked in `INDEX.md`, 33 unlinked, and zero duplicate blob-SHA groups among 174 coordination blobs. The index was updated in this same continuation to link all 89; this is not completion of the seven cleanup tracks.
 
 **Disposition:** no CORE/RENTAL/PISONET/HARDWARE/QA/RELEASE source files changed by MASTER; COE #26 remains frozen; full Master suite and `verify_coordination.py` remain NOT RUN; canonical private Drive v11/newer corrections remain inaccessible; **PRODUCTION NO-GO**.
+
+
+---
+
+## PHX-MASTER UTC20 exact owner-head / CI refresh — 2026-11-22T20:36Z
+
+This is a same-hour factual snapshot; it does not reassign ownership.
+
+| Role | Current open PR/head | Exact-head evidence | Owner next action |
+|---|---|---|---|
+| PHX-CORE | #252 `c82705f2de865c89ab733b10efa84f26f56a5cc4` | Build 42698139210 SUCCESS | Separate `Blaze Production Continuation` automation retains CORE implementation. |
+| PHX-RENTAL | #328 `0e0da62acd47c6a1ce287f8a30fc700d603fa070` | APK identity 44782114384 PASS; API21/API23 44782114393 PASS; Build 44782114390 FAIL: missing `mbedtls/sha256.h`. | RENTAL/CORE owners resolve the exact ESP32 toolchain/header baseline; Master does not edit it. |
+| PHX-PISONET | #255 `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | Windows 42462978704 PASS (synthetic only). | Native COM/device acceptance remains NOT TESTED. |
+| PHX-HARDWARE | #327 `fadac4ed...` → #342 `e7815297...` → #343 `dfeff7d5...` | #343 Quarantine 45062595339 and Relay 45062595335 PASS; Full 45062595995 FAIL at QA-owned `Missing poll signature check`; 14 target/Android jobs PASS, downstream release jobs skipped. | Preserve default-deny; QA owns fixture correction; Hardware retains its branch stack. |
+| PHX-QA | #290 `5c29d159...`; #292 `75a3f66d...` | #290 Windows 43633486963 PASS; #292 no PR-triggered runs. | Replace the stale positive poll-signature fixture with source-linked negative/default-deny cases. |
+| PHX-RELEASE | #291 `6d4a95ed...` | Windows 45065978523 FAIL and BlazePwifi 45065978506 FAIL at stale handover freshness; ESP32 compatibility 45065978550 PASS. | Refresh RELEASE handover after current source/workflow changes; its 27-path diff remains 22 RELEASE / 3 CORE / 2 PISONET. |
+
+COE role candidates re-read: #35 `edb4eb48...` (case guard PASS; 10 profiles fail closed without approved ULA /48; sandbox exits 125 without Bubblewrap), #45 `9d76a134...` (scoped Pi overlay/shell and case-guard PASS), and #49 `aeb8ff11...` (case guard/Stage 5.1 PASS; Shared Contracts FAIL). COE #26 `b382d233...` remains five queued workflows / zero jobs.
+
+No subsystem ownership or branch assignment changed.
