@@ -2,7 +2,7 @@
 
 **Protocol Specification:** BLAZE-COMMS/1  
 **Master Auditor:** `PHX-MASTER`  
-**Original matrix date:** 2026-11-13 · **Latest bounded correction:** 2026-11-21 UTC19  
+**Original matrix date:** 2026-11-13 · **Latest bounded correction:** 2026-11-22 UTC00  
 **Overall Commercial / Production Status:** **STRICT NO-GO**
 
 ---
@@ -3608,3 +3608,33 @@ This is a **current owner-candidate** comparison, not a replacement for the mani
 - Manifest baseline remains Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b` to COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`; this #338 candidate comparison must not silently rewrite the pinned source_ref.
 
 **Disposition: FROZEN / NO MIGRATION.** No staging, copy, move, overwrite, cherry-pick, rebase, destination edit or route promotion occurred. #26's five workflows remain queued with zero jobs; no combined import/test/CI acceptance exists.
+
+
+
+## PHX-MASTER UTC00 exact-tree migration revalidation — 2026-11-22T00:51Z
+
+All three recursive Git trees were complete (`truncated=false`): Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b` = 2,340 entries; current HARDWARE #339 candidate `144aaf7eda1c34ae501b50236c7fed018f295104` = 2,479 entries; COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12` = 286 entries. Canonical route comparisons below use manifest source_ref main → COE #26; #339 is separately identified as an unmerged Hardware candidate.
+
+| Manifest route | Source files | Destination files | Identical | Divergent | Source-only | Destination-only |
+|---|---:|---:|---:|---:|---:|---:|
+| CORE runtime | 15 | 20 | 6 | 9 | 0 | 5 |
+| CORE CGI | 1 | 1 | 0 | 1 | 0 | 0 |
+| RENTAL Android | 983 | 8 | 0 | 0 | 983 | 8 |
+| RENTAL standalone | manual mapping | — | — | — | — | — |
+| RENTAL server | 7 | 4 | 0 | 1 | 6 | 3 |
+| PISONET | 32 | 47 | 13 | 11 | 8 | 23 |
+| HARDWARE ESP32 (canonical main) | 3 | 1 | 0 | 1 | 2 | 0 |
+| HARDWARE ESP8266 (canonical main) | 3 | 1 | 0 | 1 | 2 | 0 |
+| QA tests | 47 | 19 | 1 | 3 | 43 | 15 |
+| RELEASE workflow | 1 | 1 | 0 | 1 | 0 | 0 |
+
+The current #339 candidate tree compared separately with COE #26 contains 18 ESP32 files vs 1 destination (0 identical, 1 divergent, 17 source-only) and 30 ESP8266 files vs 1 destination (0 identical, 1 divergent, 29 source-only). The new host-lab normalizer `experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_loop_blocking_inhibit_lab_normalizer.py` is blob `3f462215657259ea7cb3d75824d661e3b653690f`; no destination equivalent exists.
+
+### Exact license, notice and firmware identities
+- `experiment/openwrt/BlazePwifi/LICENSE` and `Pisowifi/LICENSE` are byte-identical at blob `1ee55b94183417be977ca287cd7391f9a6f7e721`.
+- Source root `NOTICE.md` exists at blob `f6d92cd21465312be5993631fe26977219be0fb9`; COE root `NOTICE.md` is absent. COE `Hardware/LICENSE` and `Hardware/NOTICE.md` are also absent.
+- Current #339 ESP32 sketch blob `53b27aa80fa4a91aabac71de57f550a8eef2cb61` differs from destination `3cc7ec54b476943dc04a8d1af5e2df5fe054e422`.
+- Current #339 ESP8266 sketch blob `71160ac8ebd5163b19a56d6c9e229a5429975fc8` differs from destination `c8be98f72596681e36a3ad1f8939bf8046c96887`.
+- QA identity remains incomplete: only 1 of 47 canonical source tests is identical; 3 diverge, 43 are source-only and 15 destination-only.
+
+**Disposition: COE #26 FROZEN / NO MIGRATION.** The manifest remains `DRAFT_REVIEW_ONLY`; no staging, copy, move, overwrite, cherry-pick, rebase, destination edit, route promotion or test-import acceptance occurred. Five #26 workflows remain QUEUED with zero jobs.
