@@ -94,14 +94,13 @@ static void resetState(){
 }
 
 int main(){
-  // A previously rejected mapping is repaired with a locally known polarity
-  // and a new valid pin tuple. Drivers must be configured before the safe flag
-  // is published to applyOutputs().
+  // A previously denied map recovers to a distinct, valid pin tuple.
   resetState();
-  applyRemoteConfig(String("{}"));
+  applyRemoteConfig(String("{\"config_revision\":1,\"coin_pin\":3,\"relay_pin\":12,\"led_pin\":13,\"coin_active_low\":1}"));
   if(!pinConfigSafe) return 1;
-  if(pinModes[runRelayPin]!=OUTPUT || pinModes[runLedPin]!=OUTPUT) return 2;
-  if(pinLevels[runRelayPin]!=HIGH || pinLevels[runLedPin]!=HIGH) return 3;
+  if(runCoinPin!=3 || runRelayPin!=12 || runLedPin!=13) return 2;
+  if(pinModes[runRelayPin]!=OUTPUT || pinModes[runLedPin]!=OUTPUT) return 3;
+  if(pinLevels[runRelayPin]!=HIGH || pinLevels[runLedPin]!=HIGH) return 4;
   std::cout<<"ESP8266_REMOTE_CONFIG_VALID_PIN_RECOVERY_PASS\n";
 
   // A valid pin tuple cannot override unknown physical output polarity.
