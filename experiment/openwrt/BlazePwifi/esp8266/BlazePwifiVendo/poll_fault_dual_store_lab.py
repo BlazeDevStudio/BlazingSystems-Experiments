@@ -337,6 +337,47 @@ static const uint32_t POLL_FAULT_EEPROM_BYTES = 32;
         )
     print("POLL_FAULT_CONSTANT_EXTRACTION_PHASE2_ELIF_SPLICE_REJECTED 1/1")
 
+    # C++ digraph %: is an alternative preprocessing token for #.
+    # A literal-zero digraph branch must not expose its constant to the harness.
+    digraph_if_zero = (
+        "%:if 0\n"
+        "static const uint32_t POLL_FAULT_RECORD_MAGIC = 0xBAD;\n"
+        "%:else\n"
+        "static const uint32_t POLL_FAULT_RECORD_MAGIC = 0x1234;\n"
+        "%:endif\n"
+    )
+    selected_digraph = constants(digraph_if_zero, ("POLL_FAULT_RECORD_MAGIC",))
+    expected_digraph = ["static const uint32_t POLL_FAULT_RECORD_MAGIC = 0x1234;"]
+    if selected_digraph.splitlines() != expected_digraph:
+        raise AssertionError(
+            "C++ %: digraph #if/#else directives must hide inactive constants; "
+            f"got={selected_digraph.splitlines()!r}"
+        )
+    print("POLL_FAULT_CONSTANT_EXTRACTION_DIGRAPH_INACTIVE_REJECTED 1/1")
+
+    # The directive keyword may also be formed across a phase-2 splice.
+    spliced_digraph_elif = (
+        "%:if 1\n"
+        "static const uint32_t POLL_FAULT_RECORD_VERSION = 1;\n"
+        "%:el" + "\\" + "\r\n" + "if 0\r\n"
+        "static const uint32_t POLL_FAULT_RECORD_VERSION = 0xBAD;\r\n"
+        "%:else\r\n"
+        "static const uint32_t POLL_FAULT_RECORD_VERSION = 2;\r\n"
+        "%:endif\r\n"
+    )
+    selected_spliced_digraph = constants(
+        spliced_digraph_elif, ("POLL_FAULT_RECORD_VERSION",)
+    )
+    expected_spliced_digraph = [
+        "static const uint32_t POLL_FAULT_RECORD_VERSION = 1;"
+    ]
+    if selected_spliced_digraph.splitlines() != expected_spliced_digraph:
+        raise AssertionError(
+            "phase-2-spliced %:elif 0 must remain inactive after %:if 1; "
+            f"got={selected_spliced_digraph.splitlines()!r}"
+        )
+    print("POLL_FAULT_CONSTANT_EXTRACTION_PHASE2_DIGRAPH_SPLICE_REJECTED 1/1")
+
 def run(board: str, path: Path):
     source = path.read_text(encoding="utf-8")
     program = harness(board, source)
