@@ -183,6 +183,11 @@ def verify_poll_safety_board_parity():
         print(f"POLL_COIN_AUTHORITY_PARITY_MUTATION_REJECTED ESP32_{name}")
 
 
+def normalized_cpp_fixture(source: str) -> str:
+    """Normalize whitespace for fixture checks (comments/literals handled in the fix)."""
+    return " ".join(source.split())
+
+
 def verify_drain_abort_polarity_fixture_is_shared():
     helper = "int runDrainAbortWithoutIsr(bool activeLow, int holdFailureCode, int releaseFailureCode,"
     if MAIN.count(helper) != 1:
@@ -199,6 +204,32 @@ def verify_drain_abort_polarity_fixture_is_shared():
             raise SystemExit(
                 "POLL_DRAIN_ABORT_POLARITY_BUILDER_CALL_MISSING: " + call
             )
+
+    # Failure injection: a call-shaped comment/string must not stand in for
+    # the active-low/active-high C++ callsites.
+    decoy_cases = (
+        (
+            "const int activeLowDrainResult=runDrainAbortWithoutIsr(\\n      true, 34, 35,",
+            "const int activeLowDrainResult=0;\\n  // runDrainAbortWithoutIsr( true, 34, 35,",
+            calls[0],
+            "comment",
+        ),
+        (
+            "const int activeHighDrainResult=runDrainAbortWithoutIsr(\\n      false, 36, 37,",
+            "const int activeHighDrainResult=0;\\n  std::cout << \\"runDrainAbortWithoutIsr( false, 36, 37,\\";",
+            calls[1],
+            "string",
+        ),
+    )
+    for original, decoy, marker, label in decoy_cases:
+        mutated = MAIN.replace(original, decoy, 1)
+        if mutated == MAIN:
+            raise AssertionError(f"could not construct {label} decoy mutation")
+        if normalized_cpp_fixture(mutated).count(marker) != 0:
+            raise SystemExit(
+                f"POLL_DRAIN_ABORT_POLARITY_{label.upper()}_DECOY_SURVIVED"
+            )
+    print("POLL_DRAIN_ABORT_POLARITY_DECOY_REJECTED 2/2")
     print("POLL_DRAIN_ABORT_POLARITY_BUILDER_PASS 2/2")
 
 
