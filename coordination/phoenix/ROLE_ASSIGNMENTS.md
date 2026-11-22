@@ -2843,3 +2843,24 @@ PHX-HARDWARE reported a second, separate stack; do not collapse it into #327→#
 | Host-lab preprocessing stack | #338 `1a6a7cac...` → #339 `b3e15588...` → #341 `4368435a...` → #344 `f4c79335...` | #338 Relay/Quarantine 44958576604/44958576485 PASS, Full 44958576490 FAIL; #339 Quarantine 44986635350 PASS, Full 44986635417 FAIL; #341 Quarantine 45060591705 PASS, Full 45060591630 FAIL; #344 source/test Quarantine 45067887389 and docs-head Quarantine 45068112971 PASS, Full 45068113012 FAIL at QA-owned `Missing poll signature check`; all 14 target/platform jobs plus Android PASS, downstream simulation/signing/publication skipped. | Four Hardware lab/handover paths only; no .ino/runtime/API/finance/release change. Full child result not yet available. |
 
 QA owns the inherited poll-signature fixture. Hardware retains both branches and their ancestry; Master performs no rebase, retarget, merge or source edit.
+
+
+## PHX-MASTER UTC21 live exact owner-head / CI reconciliation — 2026-11-22T21:42:03Z
+
+This snapshot supersedes the UTC20 role/CI rows above for current refs; it does not reassign ownership.
+
+| Role | Exact current PR/head | Exact-head evidence | Owner boundary / next action |
+|---|---|---|---|
+| CORE | #252 `c82705f2de865c89ab733b10efa84f26f56a5cc4` | Build [#42698139210](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42698139210) SUCCESS | Separate Blaze Production Continuation retains CORE implementation; Master did not modify CORE. |
+| RENTAL | #328 `0e0da62acd47c6a1ce287f8a30fc700d603fa070` | APK identity #44782114384 PASS; API21/API23 #44782114393 PASS; Build #44782114390 FAIL at handover freshness and ESP32 compile (`mbedtls/sha256.h` missing). | RENTAL/CORE owners resolve the exact toolchain/header and handover; Master does not edit it. |
+| PISONET | #255 `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | Windows #42462978704 PASS. | Host/synthetic only; real USB-RS232/COM acceptance NOT TESTED. |
+| HARDWARE firmware | #327 `fadac4ed...` → #342 `e7815297...` → #343 `dfeff7d5...` | #343 Quarantine #45062595339 and Relay #45062595335 PASS; Full #45062595995 FAIL at `Controller protocol parity`. | Firmware stack remains separate; preserve poll/coin default-deny. |
+| HARDWARE host lab | #338 `1a6a7cac...` → #339 `b3e15588...` → #341 `4368435a...` → #344 `f4c79335...` | #344 Quarantine #45068112971 PASS; Full #45068113012 FAIL at `Controller protocol parity`. | Host-lab preprocessing stack only; no runtime sketch or shared API change. |
+| QA | #290 `5c29d159...`; #292 `75a3f66d...` | #290 Windows #43633486963 PASS but does not invoke NativeComInterfaceHandleLab; #292 has no PR-triggered run. | QA owns stale poll fixture and independent negative/default-deny tests; #292 needs current-base reconciliation. |
+| RELEASE | #291 `cb5e5450a4fc2afc7f38cf426e51b390859a1dd0` | Windows #45071305811 FAIL; Full #45071305854 FAIL at mandatory handover freshness; ESP32 compatibility #45071305891 PASS for 3.3.13 and 4.0.0. | Handover parser suite reported 17/17 PASS; aggregate release remains blocked. 27 paths = 22 RELEASE / 3 CORE / 2 PISONET. |
+| COE integration | #26 `b382d233...` | Five workflows QUEUED, zero jobs. | FROZEN; no migration staging. |
+| COE RELEASE | #35 `edb4eb48...` | Case guard #45054914784 PASS; shared #45054914752 FAIL; sandbox #45054914749 FAIL (Bubblewrap unavailable). | Missing site-scoped ULA /48 authority and sandbox runner remain blockers. |
+| COE CORE | #45 `9d76a134...` | Overlay/shell #44295049727 and case guard #44295049903 PASS. | Scoped candidate only; no financial acceptance. |
+| COE Stage 5.1 | #49 `aeb8ff11...` | Case guard #44646341992 and Stage 5.1 #44646341873 PASS; shared #44646341922 FAIL at ESP32 compile. | Separate sidecar; no replacement of canonical CORE contract or frozen #26. |
+
+No owner branch or implementation scope changed.
