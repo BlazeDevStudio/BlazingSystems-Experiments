@@ -71,6 +71,17 @@ int runDrainAbortWithoutIsr(bool activeLow, int holdFailureCode, int releaseFail
   return 0;
 }
 int main(){
+  // RED: a sampled coin GPIO transition while the acceptor relay is disabled
+  // must not be converted into a pending credit.
+  resetState();
+  relayEnabled=false;
+  applyOutputs();
+  sampleCoinPulseEdge(true);
+  if(!journalRecoveryRequired || pendingPulses!=0U || saveCalls!=0 ||
+     !LittleFS.exists("/pollpulse.fault") || relayOn || ledOn ||
+     insertMode || !activeTarget.empty()) return 60;
+  std::cout<<"POLL_EDGE_WHILE_RELAY_DISABLED_DENY_PASS\\n";
+
   // A prior persistent journal fault must abort even with an idle line and no new ISR edge.
   resetState();
   journalRecoveryRequired=true;
