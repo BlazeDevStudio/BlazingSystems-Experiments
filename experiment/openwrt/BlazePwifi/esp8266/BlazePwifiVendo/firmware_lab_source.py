@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Shared C/C++ source extraction helpers for ESP firmware host labs.
 
-The mask preserves byte offsets and newline positions so matches against the
+The mask preserves Python string indices and newline positions so matches against the
 masked source can safely slice the original source. Comments, ordinary
 literals, and C++ raw strings are ignored when locating blocks and functions.
 """
@@ -313,7 +313,7 @@ def mask_active_cpp_code(source: str) -> str:
 
     Unknown macro expressions remain visible. This is a bounded source-analysis
     helper, not a replacement for the compiler's complete preprocessor.
-    The returned text preserves every original byte offset and CR/LF position.
+    The returned text preserves Python string indices and CR/LF positions.
     """
     code_source = mask_non_code(source)
     active_source = _mask_inactive_preprocessor_branches(code_source)
