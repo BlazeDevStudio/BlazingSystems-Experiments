@@ -111,6 +111,16 @@ class MigrationMapVerificationTests(unittest.TestCase):
         self.assertTrue(any("recovered_byte_identical_count=47" in error and "compute 46" in error for error in errors))
         self.assertTrue(any("locally_derived_files=14" in error and "compute 15" in error for error in errors))
 
+    def test_status_label_must_be_leading_classification(self) -> None:
+        rows = [("a.sh", "Pisowifi/a.sh", SHA_A, SHA_A, "note: copied unchanged; source retained")]
+        _, errors = verify_documents(manifest(1, 1, 0), migration_map(rows))
+        self.assertTrue(any("must begin with" in error for error in errors), errors)
+
+    def test_conflicting_status_labels_are_rejected_as_ambiguous(self) -> None:
+        rows = [("a.sh", "Pisowifi/a.sh", SHA_A, SHA_A, "copied unchanged; intentionally edited")]
+        _, errors = verify_documents(manifest(1, 1, 0), migration_map(rows))
+        self.assertTrue(any("ambiguous migration status" in error for error in errors), errors)
+
 
 if __name__ == "__main__":
     unittest.main()

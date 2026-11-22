@@ -118,12 +118,23 @@ def verify_documents(manifest_text: str, migration_map: str) -> tuple[dict[str, 
         else:
             derived += 1
 
-        status = entry.status.lower()
-        if not any(token in status for token in _KNOWN_STATUS):
+        status = entry.status.strip().lower()
+        matched_statuses = [
+            token for token in _KNOWN_STATUS
+            if token in status
+        ]
+        if not matched_statuses:
             errors.append(f"{prefix}: unrecognized migration status for {entry.source_path}: {entry.status!r}")
-        elif "copied unchanged" in status and not same_blob:
+        elif len(matched_statuses) != 1 or status.count(matched_statuses[0]) != 1:
+            errors.append(f"{prefix}: ambiguous migration status for {entry.source_path}: {entry.status!r}")
+        elif not status.startswith(matched_statuses[0]):
+            errors.append(
+                f"{prefix}: migration status must begin with one recognized classification "
+                f"for {entry.source_path}: {entry.status!r}"
+            )
+        elif matched_statuses[0] == "copied unchanged" and not same_blob:
             errors.append(f"{prefix}: marked copied unchanged but source/destination blobs differ: {entry.source_path}")
-        elif ("intentionally edited" in status or "locally derived" in status) and same_blob:
+        elif matched_statuses[0] in ("intentionally edited", "locally derived") and same_blob:
             errors.append(f"{prefix}: marked derived but source/destination blobs are identical: {entry.source_path}")
 
     computed = {"rootfs_rows": len(entries), "byte_identical": identical, "derived": derived}

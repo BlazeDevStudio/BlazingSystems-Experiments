@@ -1422,3 +1422,7 @@ See [UTC15 exact route-mapped provenance report](PHX_MASTER_UTC15_20261122_EXACT
 Route-prefix comparison at HARDWARE #342 / COE #26 exact heads confirms that ESP32/ESP8266 sketches are divergent and most source host-lab files are not imported; QA test, CORE library and PISONET mappings contain both identical and divergent blobs; Rental Android needs an explicit path map because the source `BlazeRental/` nesting does not match the destination layout. Source QA and COE Hardware hardening tests are distinct and both assert legacy poll signatures. The source/destination LICENSE match does not resolve root NOTICE or Hardware-local license/notice scope.
 
 No staging, copy, move, overwrite, route promotion, cherry-pick, rebase or COE destination edit occurred. COE #26 remains FROZEN.
+
+## UTC16 route hold — candidate source pin differs from current route source (2026-11-22)
+
+`OWNERSHIP_ROUTES.json` remains unchanged at `e4db324315a1b3543fec17a148fbf960170fcb29`, 11 routes, `DRAFT_REVIEW_ONLY`, source ref `f4e8a891...`, COE candidate `b382d233...`, PHX-MASTER target null. COE #26's `Pisowifi/SOURCE_INTAKE.json` and `MIGRATION_MAP.md` pin source commit `6d4c9b...`; the 61 mapped destination blobs still match that old pin, but only 33 source blobs match current main f4e8 (20 changed, 8 absent). The candidate's table computes 46/15 while its summary claims 47/14. No route promotion, staging, copy, move, overwrite, cherry-pick, rebase, retarget or COE destination edit. Keep #26 FROZEN.

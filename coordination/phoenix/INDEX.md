@@ -624,3 +624,7 @@ Current coordination snapshot: Master PR #288 audit-start head `e2a6934cd2dba8e7
 - Current #342 aggregate build fails at Controller protocol parity while 14 target/platform jobs pass; #35's shared profile gate and mandatory Bubblewrap sandbox remain blocked.
 - Coordination subtree inventory: 170 files, zero exact duplicate blob SHAs; 32 of 85 historical PHX_MASTER reports are not linked from INDEX and are retained for review, not deletion.
 - Master suite NOT RUN after GitHub DNS failure; private Drive v11/newer corrections remain inaccessible. Cleanup #266 remains OPEN, 0/7. PRODUCTION NO-GO.
+
+## PHX-MASTER UTC16 — COE #26 source-pin drift and validator hardening (2026-11-22)
+
+[Exact source-pin reconciliation and migration-status validator report](PHX_MASTER_UTC16_20261122_COE26_SOURCE_PIN_DRIFT_AND_MIGRATION_STATUS_VALIDATOR.md). The 61-row destination map/intake blob records agree, but their summary says 47/14 while actual blob equality computes 46/15. The candidate pins 6d4c9b, while the routing manifest points to current main f4e8; only 33/61 recorded source blobs still match current main (20 changed, 8 absent). COE #26 remains FROZEN; no destination edit.
