@@ -1329,3 +1329,13 @@ No route is copy-ready. No copy, move, staging, overwrite, rebase, cherry-pick, 
 - COE #26 remains OPEN / DRAFT / FROZEN at `b382d233ff06c8791b1028bed3c617cc7b670d12`; five workflows queued / zero jobs. No destination staging, copy, move, overwrite, rebase, cherry-pick, merge or route promotion occurred.
 
 Private Drive registry v11/newer corrections remain unavailable, so no new migration artifact or folder was created. Human next action: registry custodian restores authorized private v11 access, then owners provide exact file-level import/test/license approvals before any staging proposal.
+
+
+
+## UTC00 exact routing and migration hold — 2026-11-22T00:51Z
+
+The machine-readable manifest is unchanged at blob `e4db324315a1b3543fec17a148fbf960170fcb29`: source `main@f4e8a891aed8af86d5fd315d28750a0ac3a7372b`, destination candidate COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`, 11 routes, `DRAFT_REVIEW_ONLY`. PHX-MASTER remains `coordination-only` with destination `null`. The broad RENTAL route remains `manual-file-mapping-required` with `copy_permitted=false`.
+
+Exact route counts, current Hardware #339 candidate blobs, license/NOTICE identities, test-import gaps and current owner CI are recorded in the UTC00 supersession in `INTEGRATION_MATRIX.md`. The current Hardware child #339 is an unmerged source candidate, not a destination authorization. Its host-lab helper has no COE equivalent; firmware sketches differ; QA import completeness is insufficient; source root NOTICE and Hardware route-local license/notice scope are incomplete; destination workflows have not executed.
+
+No route was promoted. No source/destination file was staged, copied, moved, overwritten, cherry-picked, rebased or edited. COE #26 remains FROZEN; retain owner approvals and exact-SHA CI as prerequisites before any future move.
