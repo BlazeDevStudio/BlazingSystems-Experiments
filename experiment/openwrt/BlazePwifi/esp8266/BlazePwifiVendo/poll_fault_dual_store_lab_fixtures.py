@@ -24,7 +24,7 @@ def _literal_preprocessor_condition(expression: str):
 def _logical_preprocessor_lines(source: str):
     """Yield phase-2 logical lines with their original physical source ranges.
 
-    C/C++ removes backslash-newline pairs before recognizing preprocessing
+    C/C++ removes backslash-newline pairs before recognizing # and %: preprocessing
     directives. Keep the physical range so later masking can preserve every
     original offset and newline without building a full preprocessor.
     """
@@ -82,7 +82,7 @@ def _mask_inactive_preprocessor_branches(code_source: str) -> str:
 
     for logical_line, start, end in _logical_preprocessor_lines(code_source):
         directive = re.match(
-            r"^[ \t]*#[ \t]*(if|ifdef|ifndef|elif|else|endif)\b(.*)$",
+            r"^[ \t]*(?:#|%:)[ \t]*(if|ifdef|ifndef|elif|else|endif)\b(.*)$",
             logical_line,
         )
         if directive:
