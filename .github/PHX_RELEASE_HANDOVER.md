@@ -2426,3 +2426,18 @@ These are hosted CI results only. No actual Bubblewrap namespace run or ImageBui
 - No real-key signing, release tag, hardware flash, real payment migration or customer deployment occurred. Protected signer and independent freshness witness, durable financial accounting/migration, independent QA/MASTER approval, approved production binaries, 150 physical power cuts and the 30-device/24-hour soak remain unproven or NOT TESTED.
 
 **Disposition: PRODUCTION NO-GO.** This UTC19 work is a provenance/documentation correction with a CI regression guard, not a release candidate or production acceptance.
+
+
+### UTC19 exact-head follow-through — test harness and Actions readback
+
+- Handover correction commit: [\`0eefd884\`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/0eefd884e03acb2455e5d0b9c171ac14322a3f70). It corrected both occurrences of the transposed source SHA and added the current #291/#35 provenance snapshot.
+- First post-fix PR run [#45059877900](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45059877900) exposed one test-harness assertion defect: the helper intentionally sliced the section body after its heading, while one assertion incorrectly expected the heading text inside that body. Three of four new tests passed; one failed. This was a test assertion defect, not a release/source behavior failure. The run's downstream jobs were skipped.
+- Test-harness correction: [\`9277cbe0\`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/9277cbe0f308531fc8f2fc5e6aa73f90eeada9b9) now checks a body-local activation marker.
+- Exact-head CI-0701 push [#45059934179](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45059934179), job \`137323367051\`: **PASS**, all four new handover-ref tests passed.
+- Exact-head CI-0701 PR [#45059939710](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45059939710), job \`137323384665\`: **PASS**, all four new handover-ref tests passed.
+- Exact-head ESP32 compatibility matrix [#45059939713](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45059939713): **SUCCESS, 3/3 jobs** — provenance regression suite plus ESP32 core 3.3.13 and 4.0.0.
+- Windows [#45059939706](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45059939706): **FAILURE** at the CORE-owned BlazePwifi handover freshness gate; Windows build and publisher SKIPPED.
+- Full BlazePwifi PR [#45059939710](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45059939710) and push [#45059934179](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45059934179): both have CI-0701 PASS but mandatory \`validate\` FAILED at the CORE-owned handover freshness gate (last recorded checkpoint \`adcae8141e673dc2147fcad50521ef3a23084d71\`). At this read, several platform/target builds had passed and remaining jobs were still queued/in progress; these overall runs are **NOT TERMINAL** and no complete target matrix is claimed. Update-bundle, simulations and production sign/publish jobs were skipped after validation failure.
+- The current branch head before this handover follow-through is \`9277cbe0f308531fc8f2fc5e6aa73f90eeada9b9\`. This append-only handover commit will advance the PR docs head; the next exact-head run must be read independently.
+
+The new CI-0701 guard checks the recorded PR #291 start/base, the verified source-fix commit, and the exact COE #35 head/base. It is a pinned snapshot freshness guard and must be refreshed if those referenced branches advance. No product firmware, CORE/PISONET files, MASTER routes, signer policy or release permissions changed.
