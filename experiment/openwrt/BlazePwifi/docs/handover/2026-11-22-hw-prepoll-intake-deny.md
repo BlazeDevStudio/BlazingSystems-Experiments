@@ -192,3 +192,45 @@ The last completed Full integration run for the firmware source/test head `4eefc
 ### UTC03 disposition
 
 The exact Arduino ESP32 core 3.3.13 build is **CI VERIFIED**. No firmware source, controller API, poll contract, coin admission, finance, signer/witness, QA-owned test or Release-owned workflow was changed. PR #340 remains DRAFT and unmerged. Physical coin/relay/electrical acceptance, 150 power cuts and 30-device/24-hour soak remain **NOT TESTED**; HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+
+
+## UTC03 continuation — pinned ESP8266 Arduino core 3.1.2 compile
+
+**Updated:** 2026-11-22T03:48:56.350Z  
+**PR #340 branch HEAD at source/test verification:** `e03c2347edeb2627862f9477da9db656768e9ce1`  
+**PR #340 base:** #283 at `88581eef6bce0dbaa4ac0de43e1239ee1afc2e9d`
+
+### Added workflow
+
+`.github/workflows/phx-hw-esp8266-core-3.1.2-compile.yml` pins the ESP8266 Arduino core to 3.1.2, verifies the exact PR checkout SHA, runs the source-extracted pre-poll deny/failure-injection lab for both board sketches, compiles the actual ESP8266 Vendo sketch for `esp8266:esp8266:nodemcuv2`, requires a nonempty binary, and prints its SHA-256. It has `contents: read` only and does not upload or publish artifacts. The pinned version matches the upstream ESP8266 Arduino Core 3.1.2 documentation: https://arduino-esp8266.readthedocs.io/en/3.1.2/.
+
+An initial workflow draft contained over-escaped shell continuations; source readback caught it before a passing run was claimed. The shell escaping was corrected in the final workflow commit below.
+
+### Exact-head CI evidence
+
+- Workflow/source commit: `e03c2347edeb2627862f9477da9db656768e9ce1`.
+- [ESP8266 core 3.1.2 run #44982146103](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44982146103), job `137084756167`: **SUCCESS**.
+- Exact checkout assertion: PASS.
+- Pinned `esp8266:esp8266@3.1.2` installation and version assertion: PASS.
+- Source-extracted pre-poll deny lab: PASS for ESP8266 and ESP32; deny-removal and pre-poll-order mutations rejected on both boards.
+- Actual ESP8266 Vendo compile: PASS.
+- RAM: 31,368 / 80,192 bytes (39%).
+- IRAM+reserved instruction cache: 60,535 / 65,536 bytes (92% total report; 27,767 bytes IRAM code plus 32,768 bytes cache reservation).
+- Flash code: 313,872 / 1,048,576 bytes (29%).
+- CI binary SHA-256: `1712b6235c7b8b96813dfc1ea49750f4c4d904b0c15fbb98ff39379fd637ddf0`.
+- Log flags: `SIMULATED_ONLY=1`, `PHYSICAL_ACCEPTANCE=0`.
+
+The core's bundled `elf2bin.py` emitted Python invalid-escape SyntaxWarnings; the build still completed successfully. No firmware source/runtime, controller contract, coin admission, finance, signer/witness, QA-owned tests, or Release-owned workflow was changed.
+
+### Same-head companion runs
+
+- [Poll preflight inhibit #44982146089](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44982146089): SUCCESS.
+- [Mbed TLS provider guard #44982146096](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44982146096): SUCCESS.
+- [ESP32 core 3.3.13 compile #44982146100](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44982146100): pending at this checkpoint.
+- [Full BlazePwifi build #44982146097](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44982146097): in progress at this checkpoint; no aggregate result claimed.
+
+### Remaining boundaries
+
+This establishes a reproducible ESP8266 core compile, not physical board acceptance. Physical coin/relay polarity, electrical pulse/recovery, LittleFS power-loss durability, 150 power cuts, 30-device/24-hour soak, protected anti-rollback signer/witness, v1-to-v2 migration, durable accounting/replay, and independent QA/Release acceptance remain NOT TESTED or NOT ESTABLISHED. The main controller register/poll response contract remains CORE-owned and unresolved; coin admission remains deny-only.
+
+**Next exact action:** PHX-HARDWARE checks the terminal state of #44982146100 and #44982146097 on the same source SHA; PHX-MASTER refreshes the role/integration matrix to include the current #340 child of #283 without conflating it with #327→#339.
