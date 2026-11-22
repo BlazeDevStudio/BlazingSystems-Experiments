@@ -8,7 +8,7 @@ import sys
 import tempfile
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from firmware_lab_source import extract_function as _extract_function, mask_non_code
+from firmware_lab_source import extract_function as _extract_function, mask_active_cpp_code, mask_non_code
 
 import poll_response_failclosed_lab_structure_guard  # noqa: F401
 from poll_response_failclosed_lab_fixtures import (
@@ -51,7 +51,7 @@ void lexicalFixture() {
 
 
 def verify_debounce_clamp_callsite_count(source, board, minimum_calls):
-    count = mask_non_code(source).count("boundedCoinDebounceMs(")
+    count = mask_active_cpp_code(source).count("boundedCoinDebounceMs(")
     if count < minimum_calls:
         raise RuntimeError(
             f"{board}: not all debounce configuration paths use the 20 ms clamp "
@@ -87,6 +87,32 @@ def verify_debounce_clamp_callsite_decoys(source, board, minimum_calls):
             "POLL_RESPONSE_DEBOUNCE_CALLSITE_DECOY_SURVIVED: "
             + board + ":" + ",".join(survivors)
         )
+    inactive_decoys = (
+        "#if 0\n"
+        + "\n".join(
+            "runDebounceMs=boundedCoinDebounceMs(40);"
+            for _ in range(minimum_calls)
+        )
+        + "\n#endif\n"
+    )
+    legacy_inactive_count = mask_non_code(inactive_decoys).count("boundedCoinDebounceMs(")
+    if legacy_inactive_count != minimum_calls:
+        raise AssertionError(
+            f"{board}: legacy mask did not expose all inactive debounce decoys "
+            f"({legacy_inactive_count} != {minimum_calls})"
+        )
+    try:
+        verify_debounce_clamp_callsite_count(inactive_decoys, board, minimum_calls)
+    except RuntimeError:
+        pass
+    else:
+        raise SystemExit(
+            f"{board}: POLL_RESPONSE_DEBOUNCE_INACTIVE_BRANCH_DECOY_SURVIVED"
+        )
+    print(
+        f"{board}: POLL_RESPONSE_DEBOUNCE_INACTIVE_BRANCH_DECOY_REJECTED "
+        f"{minimum_calls}/{minimum_calls}"
+    )
     print(f"{board}: POLL_RESPONSE_DEBOUNCE_CALLSITE_DECOY_REJECTED 2/2")
 
 
