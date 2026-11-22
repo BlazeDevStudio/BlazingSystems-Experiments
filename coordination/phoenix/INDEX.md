@@ -701,3 +701,6 @@ At the exact starting tree, 89 `PHX_MASTER_*.md` reports were present but INDEX 
 
 - [Previously unindexed UTC17 exact-head/source-main provenance report](PHX_MASTER_UTC17_20261121_EXACT_HEAD_ROLE_CI_COE26_SOURCE_MAIN_PROVENANCE_AUDIT.md).
 - [UTC20 live role-head, CI and COE #26 provenance revalidation](PHX_MASTER_UTC20_20261122_LIVE_ROLE_CI_COE26_PROVENANCE_REVALIDATION.md).
+
+
+- [PHX_MASTER_UTC21_20261122_LIVE_HEAD_CI_COE26_EXACT_TREE_RECONCILIATION.md](PHX_MASTER_UTC21_20261122_LIVE_HEAD_CI_COE26_EXACT_TREE_RECONCILIATION.md) — live exact role heads/CI, non-truncated tree audit, and frozen COE #26 source/destination provenance reconciliation.
