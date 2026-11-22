@@ -295,7 +295,37 @@ def verify_shared_lexical_extractor():
             "shared lexical extractor did not preserve a function with comment/literal brace decoys"
         )
 
+def verify_selector_extraction_ignores_comment_decoys() -> None:
+    selector = (
+        "#if MBEDTLS_VERSION_MAJOR == 4\\n"
+        "#include <psa/crypto.h>\\n"
+        "#elif MBEDTLS_VERSION_MAJOR == 3\\n"
+        "#include <mbedtls/sha256.h>\\n"
+        "#else\\n"
+        f'#error "{UNSUPPORTED_ERROR}"\\n'
+        "#endif\\n"
+    )
+    # This complete but inactive selector-shaped block is deliberately placed
+    # inside a comment. A line-only directive scan must not accept it.
+    decoy_selector = selector.replace(
+        "#include <psa/crypto.h>\\n",
+        "#define PHX_SELECTOR_COMMENT_DECOY 1\\n"
+        "#include <psa/crypto.h>\\n",
+        1,
+    )
+    comment_decoy = "/*\\n" + decoy_selector + "*/\\n"
+    digest_branch = "#if MBEDTLS_VERSION_MAJOR == 4\\n#endif\\n"
+
+    extracted = extract_selector(comment_decoy + selector + digest_branch)
+    if "PHX_SELECTOR_COMMENT_DECOY" in extracted:
+        raise AssertionError("selector extractor accepted a comment-only preprocessor decoy")
+    if extracted != selector.rstrip("\\n"):
+        raise AssertionError("selector extractor did not return the first active selector block")
+    print("MBEDTLS_SELECTOR_COMMENT_DECOY_REJECTED 1/1")
+
+
 def main() -> int:
+    verify_selector_extraction_ignores_comment_decoys()
     verify_shared_lexical_extractor()
     cxx = shutil.which("c++") or shutil.which("g++")
     if not cxx:
