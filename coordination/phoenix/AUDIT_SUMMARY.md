@@ -2211,3 +2211,13 @@ Full Master tests were not run; Master PR Actions returned no runs. Canonical pr
 ### UTC20 post-checkpoint Hardware #344 delta
 
 A separate Hardware host-lab stack #338→#339→#341→#344 was discovered after the initial UTC20 snapshot. #344 is OPEN/DRAFT at `f4c79335...`, based on #341 `4368435a...`; its four paths are Hardware lab/handover only. Exact-source Quarantine 45067887389 and docs-head Quarantine 45068112971 pass; Full 45068113012 completed FAIL at QA-owned `Missing poll signature check`; all 14 target/platform jobs plus Android PASS, downstream simulation/signing/publication skipped. Parent #341 Full 45060591630 failed at the inherited QA poll-signature fixture. Keep this line distinct from #327→#342→#343; do not claim a current-child Full failure or success. No Master or subsystem source change was made.
+
+
+## PHX-MASTER UTC21 — exact-tree and live CI checkpoint (2026-11-22T21:42:03Z)
+
+- Master #288 start HEAD `5c5988e43d3f392c31117fa34bf7bb49bcc02fc3`, OPEN/DRAFT/UNMERGED, 175/175 paths under coordination/phoenix, zero Master CI runs/statuses.
+- Current owner CI reconciled: #343 and #344 Full builds both fail at the QA-owned poll assertion despite focused Quarantine passing; RELEASE #291 Full/Windows fail freshness while ESP32 compatibility passes; RENTAL #328 build fails freshness/Mbed TLS; COE #26 remains five queued workflows/zero jobs.
+- Exact COE #26 provenance: 61 rows; 33 current-source matches, 20 changed, 8 absent; 61/61 destination blobs match the old map; 46/15 actual classifications vs 47/14 summary; 34 source Hardware Python helpers vs zero destination; source/destination hardening tests and sketches diverge; PisoWiFi LICENSE matches but root NOTICE is missing in COE.
+- No migration staging or destination mutation. Manifest remains DRAFT_REVIEW_ONLY with Master target null.
+- Branch metadata protected=false, rulesets empty, classic protection detail 403; admin verification required. Private Drive v11/newer corrections unavailable; no older registry substituted.
+- Static tree/blob audit only. Full Master unittest discovery and verify_coordination.py NOT RUN. Cleanup #266 OPEN, 0/7. **PRODUCTION NO-GO.**
