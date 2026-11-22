@@ -50,6 +50,45 @@ void lexicalFixture() {
     print("POLL_RESPONSE_LEXICAL_EXTRACTOR_PASS")
 
 
+def verify_debounce_clamp_callsite_count(source, board, minimum_calls):
+    count = source.count("boundedCoinDebounceMs(")
+    if count < minimum_calls:
+        raise RuntimeError(
+            f"{board}: not all debounce configuration paths use the 20 ms clamp "
+            f"({count} < {minimum_calls})"
+        )
+    return count
+
+
+def verify_debounce_clamp_callsite_decoys(source, board, minimum_calls):
+    marker = "runDebounceMs=boundedCoinDebounceMs("
+    if source.count(marker) != 1:
+        raise RuntimeError(f"{board}: expected one shared run-debounce callsite anchor")
+    without_call = source.replace(marker, "runDebounceMs=(uint16_t)", 1)
+    comment_mutant = without_call.replace(
+        "runDebounceMs=(uint16_t)",
+        "// boundedCoinDebounceMs(...) decoy\\n  runDebounceMs=(uint16_t)",
+        1,
+    )
+    string_mutant = without_call.replace(
+        "runDebounceMs=(uint16_t)",
+        'static const char *phxDebounceDecoy = "boundedCoinDebounceMs(";\\n  runDebounceMs=(uint16_t)',
+        1,
+    )
+    survivors = []
+    for label, mutant in (("comment", comment_mutant), ("string", string_mutant)):
+        try:
+            verify_debounce_clamp_callsite_count(mutant, board, minimum_calls)
+        except RuntimeError:
+            continue
+        survivors.append(label)
+    if survivors:
+        raise SystemExit(
+            "POLL_RESPONSE_DEBOUNCE_CALLSITE_DECOY_SURVIVED: "
+            + board + ":" + ",".join(survivors)
+        )
+
+
 verify_lexical_extractor()
 
 
@@ -123,8 +162,8 @@ print("PRODUCTION_FINANCIAL_AUTHORIZED=0")
 for board, path in BOARDS.items():
     source = path.read_text(encoding="utf-8")
     minimum_calls = 2 if board == "ESP8266" else 4
-    if source.count("boundedCoinDebounceMs(") < minimum_calls:
-        raise RuntimeError(f"{board}: not all debounce configuration paths use the 20 ms clamp")
+    verify_debounce_clamp_callsite_count(source, board, minimum_calls)
+    verify_debounce_clamp_callsite_decoys(source, board, minimum_calls)
     loop = extract(source, "loop")
     begin = loop.find("beginPollWindow()")
     pre_poll_guard = loop.find("if(pollEdgeAfterDrain!=pollEdgeStart)")
