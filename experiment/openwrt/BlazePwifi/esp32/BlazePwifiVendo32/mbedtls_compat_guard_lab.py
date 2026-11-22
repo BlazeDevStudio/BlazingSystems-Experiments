@@ -333,6 +333,20 @@ def verify_selector_extraction_ignores_comment_decoys() -> None:
         raise AssertionError("selector extractor did not return the first active selector block")
     print("MBEDTLS_SELECTOR_COMMENT_DECOY_REJECTED 1/1")
 
+    inactive_decoy_selector = selector.replace(
+        "#include <psa/crypto.h>\\n",
+        "#define PHX_SELECTOR_INACTIVE_DECOY 1\\n"
+        "#include <psa/crypto.h>\\n",
+        1,
+    )
+    inactive_decoy = "#if 0\\n" + inactive_decoy_selector + "#endif\\n"
+    extracted_inactive = extract_selector(inactive_decoy + selector + digest_branch)
+    if "PHX_SELECTOR_INACTIVE_DECOY" in extracted_inactive:
+        raise AssertionError("selector extractor accepted a literal #if 0 decoy")
+    if extracted_inactive != selector.rstrip("\\n"):
+        raise AssertionError("selector extractor did not skip the inactive decoy")
+    print("MBEDTLS_SELECTOR_INACTIVE_BRANCH_DECOY_REJECTED 1/1")
+
 
 def main() -> int:
     verify_selector_extraction_ignores_comment_decoys()
