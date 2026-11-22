@@ -10,6 +10,7 @@ import subprocess
 import tempfile
 
 from firmware_lab_source import extract_function
+from remote_config_revision_lab import run_remote_config_revision_lab
 
 SKETCH = Path(__file__).with_name("BlazePwifiVendo.ino")
 FUNCTIONS = (
@@ -154,6 +155,7 @@ int main(){
 
 
 def run_remote_config_pin_recovery_lab():
+    run_remote_config_revision_lab()
     program = _program()
     with tempfile.TemporaryDirectory(prefix="phx-esp8266-pin-recovery-") as folder:
         cpp = Path(folder) / "remote_config_pin_recovery.cpp"
