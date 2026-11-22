@@ -1426,3 +1426,12 @@ No staging, copy, move, overwrite, route promotion, cherry-pick, rebase or COE d
 ## UTC16 route hold — candidate source pin differs from current route source (2026-11-22)
 
 `OWNERSHIP_ROUTES.json` remains unchanged at `e4db324315a1b3543fec17a148fbf960170fcb29`, 11 routes, `DRAFT_REVIEW_ONLY`, source ref `f4e8a891...`, COE candidate `b382d233...`, PHX-MASTER target null. COE #26's `Pisowifi/SOURCE_INTAKE.json` and `MIGRATION_MAP.md` pin source commit `6d4c9b...`; the 61 mapped destination blobs still match that old pin, but only 33 source blobs match current main f4e8 (20 changed, 8 absent). The candidate's table computes 46/15 while its summary claims 47/14. No route promotion, staging, copy, move, overwrite, cherry-pick, rebase, retarget or COE destination edit. Keep #26 FROZEN.
+
+ 
+## UTC17 destination route hold — 2026-11-22
+
+`OWNERSHIP_ROUTES.json` remains unchanged at blob `e4db324315a1b3543fec17a148fbf960170fcb29`, schema `phoenix/ownership-routes/v1`, 11 routes, `DRAFT_REVIEW_ONLY`, source ref `f4e8a891...`, COE candidate PR #26 at `b382d233...`; PHX-MASTER target remains `null`. The manifest is a review map, not a copy/move command.
+
+At exact COE #26 head, the 61 rootfs destination blobs match the candidate's old map, but the map source commit is `6d4c9b...` and only 33/61 mapped source blobs match current manifest source main `f4e8...`. The intake/map count mismatch (47/14 vs 46/15) remains unresolved. Firmware sketches, hardening tests and several owner routes are not byte-identical; license/NOTICE scope is incomplete. No path is promoted.
+
+Keep #26 FROZEN. The COE integration owner must reconcile the source pin, all 20 changed and 8 absent source paths, summary counters, per-file test identity/import completeness, exact CI and license/NOTICE decisions before requesting any destination staging. PHX-MASTER does not take over the destination or any subsystem source branch. No copy, move, overwrite, rebase, cherry-pick, route promotion, destination edit or merge occurred.

@@ -3944,3 +3944,18 @@ The source QA hardening test and COE Hardware test are distinct blobs and both r
 ## UTC16 — COE #26 source baseline and summary counter gate (2026-11-22)
 
 The candidate's `SOURCE_INTAKE.json` and `MIGRATION_MAP.md` are internally path/blob aligned for 61/61 rootfs entries and match their pinned 2026-10-28 source commit 61/61. However, the current ownership manifest source ref is Experiments main f4e8, while the candidate still pins 6d4c9b; only 33/61 recorded source blobs match f4e8 (20 changed, 8 absent). The migration table computes 46 identical / 15 divergent, while the summary claims 47 / 14. The validator unit fixture already covers the off-by-one count; new tests now reject non-leading/ambiguous status labels. COE #26 stays FROZEN until owner-reviewed per-file refresh, license/NOTICE decisions, test identity, import completeness and exact-head CI.
+
+ 
+## UTC17 — exact COE #26 migration-source and firmware/test provenance revalidation
+
+Exact complete recursive trees: Experiments main `f4e8a891...` = 2,340 entries; separate HARDWARE #327 candidate `fadac4ed...` = 2,477 entries; COE #26 destination `b382d233...` = 286 entries. All three tree responses were non-truncated.
+
+The 61-row `Pisowifi/MIGRATION_MAP.md` rootfs table and `SOURCE_INTAKE.json` were read at exact COE #26 head. The intake pins source commit `6d4c9b487af4d768c4d7627654d119417fcc6e00`, while `OWNERSHIP_ROUTES.json` still names current Experiments main `f4e8a891...`. Exact current-main comparison: 33/61 source blobs match, 20/61 changed, 8/61 absent. All 61 destination blobs match their recorded map identities. The map computes 46 identical / 15 divergent rootfs rows, while SOURCE_INTAKE claims 47 identical / 14 locally derived. This is a one-row summary discrepancy and a source-baseline drift; it is not permission to overwrite or delete anything. Four separately mapped original-test rows contain 2 identical / 2 divergent blobs.
+
+Exact firmware/test identities:
+- HARDWARE #327 ESP32 sketch `7ffb7b534c7163678726902946a17b04992950a0` vs COE #26 ESP32 `3cc7ec54b476943dc04a8d1af5e2df5fe054e422`.
+- HARDWARE #327 ESP8266 sketch `c2aa71963eaa0288721f0bb13cff771aaaabc42f` vs COE #26 ESP8266 `c8be98f72596681e36a3ad1f8939bf8046c96887`.
+- HARDWARE #327 source hardening test `41211b2c110ab409f6d9d1812ef12fda73b13211` vs COE Hardware test `f921c56cecc19cab1989507b9b4ade1f45dac54e`. Both test files contain legacy positive `response_sig`, `|register|` and `|poll|` assertions. The source test is a #327 candidate file; it is not part of the manifest's main baseline. The COE test is not byte-identical and is not a substitute.
+- Source `BlazePwifi/LICENSE` and COE `Pisowifi/LICENSE` are byte-identical at `1ee55b94183417be977ca287cd7391f9a6f7e721`. Source root `NOTICE.md` (`f6d92cd21465312be5993631fe26977219be0fb9`) is absent at COE root; COE `Hardware/LICENSE` and `Hardware/NOTICE.md` are absent.
+
+The current candidate therefore fails source-pin freshness, summary-count consistency, firmware blob equivalence, test identity, and notice/license-scope completeness. COE #26 stays FROZEN. No staging, copy, move, overwrite, rebase, cherry-pick, route promotion or destination edit occurred.
