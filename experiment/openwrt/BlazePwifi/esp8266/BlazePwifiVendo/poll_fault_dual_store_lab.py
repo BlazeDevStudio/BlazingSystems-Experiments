@@ -264,6 +264,17 @@ def run(board: str, path: Path):
             print(exc.stderr or "", file=sys.stderr, end="")
             raise
         print(result.stdout, end="")
+        if board == "ESP8266":
+            required_markers = (
+                "ESP8266_EEPROM_END_FAILURE_REBOOT_DENY_PASS",
+                "ESP8266_EEPROM_REOPEN_FAILURE_REBOOT_DENY_PASS",
+            )
+            missing_markers = [marker for marker in required_markers if marker not in result.stdout]
+            if missing_markers:
+                raise AssertionError(
+                    "POLL_FAULT_EEPROM_LIFECYCLE_FAILURE_INJECTION_MISSING "
+                    f"board={board} markers={','.join(missing_markers)}"
+                )
 
 def run_esp32_missing_commit_mutation(path: Path):
     source = path.read_text(encoding="utf-8")
