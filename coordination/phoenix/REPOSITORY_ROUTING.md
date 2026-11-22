@@ -1393,3 +1393,10 @@ HARDWARE #341 is a separate child of #339 at exact parent `b3e1558845ae2cd508e42
 
 The exact #341 helper/runner, firmware sketch and test blobs differ from COE #26; COE Hardware has no Python helper equivalents and has root NOTICE plus Hardware LICENSE/NOTICE gaps. Only BlazePwifi LICENSE ↔ Pisowifi LICENSE is byte-identical. No source staging, copy, move, overwrite, cherry-pick, rebase, destination edit, route promotion or integration proposal occurred. Broad RENTAL remains manual-file-mapping-required with `copy_permitted=false`.
 
+## UTC11 controller-auth and receipt route hold — 2026-11-22
+
+The ownership manifest remains unchanged at `e4db324315a1b3543fec17a148fbf960170fcb29`, schema `phoenix/ownership-routes/v1`, 11 routes, `DRAFT_REVIEW_ONLY`; PHX-MASTER remains coordination-only with destination `null`.
+
+CORE #252's current producer uses nested deny-only `config_auth` under `blazepwifi-controller-response-v1`. Hardware #327/#340 remain deny-only. COE #26's staged firmware/test still expects legacy top-level `response_sig` and `|poll|`; it is not byte- or interface-compatible with the current producer and has five queued workflows / zero jobs. COE #45 is a separate event-bound `blazepwifi-coin-receipt-v1` contract candidate with golden vectors only; it does not authorize a poll response or migration.
+
+No source/destination staging, copy, move, overwrite, cherry-pick, rebase, merge, destination edit, route promotion or release proposal is authorized or performed. Keep COE #26 FROZEN and all routes review-only until CORE publishes the producer contract, HARDWARE implements it, QA independently verifies exact golden vectors, and each destination file has owner-approved blob/license/test/CI provenance.

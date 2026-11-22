@@ -587,3 +587,8 @@ Current coordination snapshot: Master PR #288 audit-start head `e2a6934cd2dba8e7
 - [AUDIT_SUMMARY.md](AUDIT_SUMMARY.md) records Master suite NOT RUN after GitHub DNS failure, private Drive v11/newer corrections BLOCKED, and cleanup #266 OPEN / 0/7.
 - PR #288 remains OPEN / DRAFT / UNMERGED; COE #26 remains FROZEN; PRODUCTION NO-GO.
 
+## Latest PHX-MASTER refresh — UTC11, 2026-11-22
+
+- [UTC11 CORE poll-auth and coin-receipt contract boundary audit](PHX_MASTER_UTC11_20261122_CORE_POLL_AUTH_AND_RECEIPT_CONTRACT_BOUNDARY_AUDIT.md).
+- Exact producer/consumer blobs show CORE #252 nested deny-only `config_auth`, Hardware #327/#340 fail-closed consumers, and legacy COE #26 `response_sig` expectations. COE #45 receipt vectors pass as a contract-only test; no runtime acceptance.
+- 12/12 bounded static assertions PASS; no product test or full Master suite executed. PR #288 remains OPEN / DRAFT / UNMERGED. COE #26 remains frozen; no route promotion or migration. PRODUCTION NO-GO.

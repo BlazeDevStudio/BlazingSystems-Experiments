@@ -3887,3 +3887,13 @@ COE #26 PR changed-file inventory is 205 paths and contains zero `Hardware/**/*.
 
 No complete import is established. No destination staging, copy, move, overwrite, cherry-pick, rebase, retarget or COE edit occurred. No route promotion is proposed. COE #26 remains FROZEN.
 
+## UTC11 exact producer/consumer compatibility matrix — 2026-11-22
+
+| Boundary | Exact source | Observed contract | Compatibility result |
+|---|---|---|---|
+| CORE register/poll producer | #252 `c82705f2...`; controller blob `1a820416...`; Vendo blob `16eb4105...` | Nested `config_auth`, domain `blazepwifi-controller-response-v1`, HMAC canonical tuple, `admission_allowed:false`; legacy `insert` is explicitly non-authoritative. | Current deny-only producer; no positive poll authorization. |
+| Hardware consumer | #327 `21315a8a...`; #340 `20c5889f...` | #327 `acceptPollResponse()` and `coinPostDispositionVerified()` return false; #340 ignores poll fields and reasserts `denyRemoteControl()`. | Deliberately fail-closed; do not weaken. |
+| COE #26 destination | `b382d233...`; ESP8266 `c8be98f7...`; ESP32 `3cc7ec54...`; test `f921c56c...` | Top-level `response_sig`, legacy `|register|` / `|poll|` digest; test requires those legacy strings. | Incompatible with current CORE #252 nested `config_auth`; no destination CI jobs have run. |
+| COE #45 receipt candidate | `9d76a134...`; contract `cadc8057...`; golden `ff4c7be5...`; test `20458f79...` | Separate `blazepwifi-coin-receipt-v1` HMAC-SHA256 domain and event-bound receipt. Explicitly runtime-deny. Golden vectors executed in #44295049727. | Contract test PASS only; not a register/poll response and not runtime integration. |
+
+The legacy `response_sig` member-operation fields in CORE are not poll authorization. The controller response and coin receipt are separate contracts and must not share domains/keys by assumption. COE #26 remains FROZEN; no migration staging or route promotion.\n

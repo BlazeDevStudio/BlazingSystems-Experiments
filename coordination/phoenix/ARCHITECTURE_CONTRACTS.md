@@ -1356,3 +1356,14 @@ The source ref in OWNERSHIP_ROUTES.json is a pinned repository baseline, not a w
 5. The current #336 candidate contains 33 Python lab/helper files absent from COE Hardware; the ESP32 and ESP8266 sketch blobs diverge from COE #26, and the QA test trees are not equivalent. The manifest baseline and owner-candidate route counts are intentionally recorded separately in the UTC20 Master audit report.
 
 This is a provenance and coordination contract only. It does not authorize route promotion, staging, copy, move, merge, release, signer provisioning, firmware flash, payment operation or production acceptance. COE #26 remains frozen and PRODUCTION NO-GO.
+## Appendix — current CORE poll-auth versus coin-receipt boundary (2026-11-22 UTC11)
+
+This appendix updates the source detail behind §2.2 without approving a positive response schema or changing any runtime contract. The current CORE #252 producer no longer needs to be described only as “no response signature”: register/ping and poll now carry a nested `config_auth` object under `blazepwifi-controller-response-v1`. The object is HMAC-authenticated but deliberately sets `admission_allowed:false`. The poll body retains legacy `insert` for compatibility only; CORE's source comment says new hardware must ignore it as authority.
+
+The Hardware #327 consumer remains fail-closed: `acceptPollResponse()` clears the active target and returns false; `coinPostDispositionVerified()` also returns false. Hardware #340 ignores register/poll fields and reasserts `denyRemoteControl()`. Neither branch implements positive poll admission.
+
+COE #26 still expects a top-level `response_sig` and derives legacy `|register|` / `|poll|` tuples. Its test enforces those legacy strings. This does not match CORE #252's nested `config_auth`; the destination remains frozen and has no completed CI jobs. Do not restore the legacy assertion by weakening firmware default-deny.
+
+COE #45 defines a separate `blazepwifi-coin-receipt-v1` HMAC-SHA256 event-bound receipt contract. It is explicitly `CONTRACT CANDIDATE / TEST VECTORS ONLY / RUNTIME DENY`; its golden-vector test passed at exact head #45, but it is not the controller register/poll contract and does not prove firmware runtime acceptance. Do not reuse the member-operation `response_sig` or controller-response key/domain for the receipt MAC.
+
+**Owner sequence:** CORE publishes the canonical versioned register/poll producer contract and separate coin-receipt semantics; HARDWARE implements only after that contract is approved; QA independently verifies exact producer/consumer golden vectors and replaces the inherited positive legacy fixture with negative/default-deny tests in the interim; COE integration owner reimplements destination consumer/tests under its own branch after per-file provenance and exact CI review. Until then, poll and coin disposition remain deny-only. This appendix is coordination evidence, not release authorization.\n

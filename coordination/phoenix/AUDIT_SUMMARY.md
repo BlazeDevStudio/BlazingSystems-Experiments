@@ -2127,3 +2127,10 @@ No subsystem source, private record, COE destination, secret, signer, hardware d
 
 **PRODUCTION NO-GO.** Protected signing/anti-rollback witness, crash-atomic durable financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized release gates remain mandatory.
 
+## Latest PHX-MASTER audit — UTC11, 2026-11-22
+
+- [CORE poll-auth and coin-receipt contract boundary audit](PHX_MASTER_UTC11_20261122_CORE_POLL_AUTH_AND_RECEIPT_CONTRACT_BOUNDARY_AUDIT.md).
+- CORE #252 now emits nested deny-only `config_auth` for register/poll; the current Hardware #327/#340 consumers remain fail-closed. COE #26 still expects legacy top-level `response_sig` / `|poll|` and is not compatible with the current producer. COE #45 is a separate receipt contract candidate, not runtime acceptance.
+- Exact remote source audit assertions: 12/12 PASS. These are static blob assertions, not product tests. CORE #252 general build #42698139210 PASS, but its dedicated response-auth test marker is absent from exact-head CI. COE #45 golden-vector test #44295049727 PASS. HARDWARE #327/#339/#341 Full remains blocked at the inherited QA poll-signature fixture; #340 candidate CI passes while remaining deny-only.
+- COE #26 remains FROZEN with five queued workflows / zero jobs. COE #35 remains blocked by missing approved site ULA /48 and unavailable Bubblewrap. Master PR #288 has no PR-triggered workflows or combined status entries; full Master suite NOT RUN.
+- Private Drive v11/newer corrections remain BLOCKED (no canonical v11 in Library search and no Google Drive connector exposed). Cleanup #266 remains OPEN / 0/7. No subsystem source, destination, manifest or release state changed; PRODUCTION NO-GO.

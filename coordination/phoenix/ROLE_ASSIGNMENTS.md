@@ -2683,3 +2683,15 @@ The following exact refs supersede the UTC09 pins. Source/test SHAs are separate
 
 #341 is a separate child port, not a rewrite of #327/#339 ancestry. CORE #252 remains outside PHX-MASTER implementation scope. No owner branch was rebased, retargeted, force-pushed, merged or modified by Master.
 
+## PHX-MASTER UTC11 — exact poll-auth and receipt-contract ownership reconciliation (2026-11-22)
+
+| Owner | Exact candidate | Current source-grounded disposition | Next action (owner retains implementation) |
+|---|---|---|---|
+| PHX-CORE | #252 `c82705f2de865c89ab733b10efa84f26f56a5cc4` | Register/poll now emits nested `config_auth` under `blazepwifi-controller-response-v1`, with `admission_allowed:false`; it is not a top-level legacy `response_sig`. General build #42698139210 passes, but no exact-head `PHX-CORE-G` run/test marker was returned. | Publish the versioned producer schema/golden vectors and ensure the dedicated response-auth workflow executes at the exact head. Keep coin receipt disposition separate. |
+| PHX-HARDWARE | #327 `21315a8ad024b1e5341bf3e2b3998c67d23d5f34`; #340 `20c5889fc4ceeb95ab0b05c7c11952704caff36b`; #341 `a655d0b5c144535a3ad8e48009fc4498318ff5e3` | #327/#340 consumers remain deny-only; #341 is a host-lab lexical fixture port. #327/#341 Full fail at inherited poll-signature fixture; #340 Full candidate CI passes but does not admit polls. | Preserve default-deny. Do not add a positive consumer until CORE's producer contract and QA vectors are approved. |
+| PHX-QA | #290 `5c29d15994cee1279058f1eca12f2a3180704292`; #292 `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | #290 Windows scoped pass; #292 has no PR-triggered runs and stale Master base. The inherited positive `response_sig` assertion conflicts with the current deny-only producer/consumer state. | Own the negative/default-deny fixture correction and current-base replay; defer positive vectors until CORE contract approval. |
+| COE-CORE | #45 `9d76a134c1f6512aa40c20ec4d247306a71a8cce` | Separate `blazepwifi-coin-receipt-v1` HMAC receipt contract, explicitly candidate/test-vectors-only/runtime-deny. Exact golden-vector test passed in #44295049727. | Keep contract-only; runtime, key custody and durable receipt acceptance require separate implementation and independent QA. |
+| COE-INTEGRATION | #26 `b382d233ff06c8791b1028bed3c617cc7b670d12` | Destination firmware/test still expects top-level legacy `response_sig` and `|poll|`; five workflows queued / zero jobs. It is not compatible with CORE #252's nested `config_auth`. | Keep frozen; owner-reviewed reimplementation and exact CI/provenance review required before staging. |
+| PHX-RELEASE / COE-RELEASE | Experiments #291 `42797e2f3d65c30a1070caf49c93aebec149d897`; COE #35 `736fd3f283990e11acecd8725d1134ca1c5c74e6` | #291 handover freshness failures; #35 lacks approved site ULA /48 and trusted Bubblewrap runner. | Owners resolve their own handovers and infrastructure authority; no release. |
+
+Master made no subsystem source changes. CORE remains owned by its separate continuation; this audit only records the cross-role contract boundary.\n
