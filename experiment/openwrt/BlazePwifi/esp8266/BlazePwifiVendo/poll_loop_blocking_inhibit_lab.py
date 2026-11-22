@@ -10,7 +10,7 @@ from pathlib import Path
 import subprocess
 import tempfile
 
-from firmware_lab_source import extract_function
+from firmware_lab_source import extract_function, mask_non_code
 from firmware_lab_source_lab import run_source_extractor_regressions
 
 run_source_extractor_regressions()
@@ -184,13 +184,13 @@ def verify_poll_safety_board_parity():
 
 
 def normalized_cpp_fixture(source: str) -> str:
-    """Normalize whitespace for fixture checks (comments/literals handled in the fix)."""
-    return " ".join(source.split())
+    """Normalize only C++ code; comments and literal contents are not callsites."""
+    return " ".join(mask_non_code(source).split())
 
 
 def verify_drain_abort_polarity_fixture_is_shared():
     helper = "int runDrainAbortWithoutIsr(bool activeLow, int holdFailureCode, int releaseFailureCode,"
-    if MAIN.count(helper) != 1:
+    if normalized_cpp_fixture(MAIN).count(helper) != 1:
         raise SystemExit(
             "POLL_DRAIN_ABORT_POLARITY_BUILDER_MISSING: expected one shared C++ helper"
         )
