@@ -12,29 +12,15 @@ import tempfile
 import textwrap
 import sys
 
+BLAZEPWIFI_ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(BLAZEPWIFI_ROOT / "esp8266/BlazePwifiVendo"))
+from firmware_lab_source import extract_function
+
 SKETCH = Path(__file__).with_name("BlazePwifiVendo32.ino")
 UNSUPPORTED_ERROR = (
     "Unsupported Mbed TLS major version: "
     "BlazePwifi ESP32 supports 3.x and 4.x only"
 )
-
-
-def extract_braced_function(source: str, signature: str) -> str:
-    start = source.find(signature)
-    if start < 0:
-        raise RuntimeError(f"missing production function: {signature}")
-    opening = source.find("{", start)
-    if opening < 0:
-        raise RuntimeError(f"missing function body: {signature}")
-    depth = 0
-    for index in range(opening, len(source)):
-        if source[index] == "{":
-            depth += 1
-        elif source[index] == "}":
-            depth -= 1
-            if depth == 0:
-                return source[start:index + 1]
-    raise RuntimeError(f"unterminated production function: {signature}")
 
 
 def extract_selector(source: str) -> str:
@@ -293,7 +279,7 @@ def reject_unsupported(cxx: str, root: Path, major: int, selector: str) -> None:
 
 
 
-def verify_braced_extractor():
+def verify_shared_lexical_extractor():
     fixture = (
         'String lexicalProbe(){\\n'
         '  const char *ordinary = "}";\\n'
@@ -303,21 +289,20 @@ def verify_braced_extractor():
         '  return ordinary;\\n'
         '}'
     )
-    extracted = extract_braced_function(fixture, "String lexicalProbe(")
+    extracted = extract_function(fixture, "lexicalProbe")
     if extracted != fixture:
         raise RuntimeError(
-            "braces inside C++ comments/literals truncated the extracted function"
+            "shared lexical extractor did not preserve a function with comment/literal brace decoys"
         )
 
-
 def main() -> int:
-    verify_braced_extractor()
+    verify_shared_lexical_extractor()
     cxx = shutil.which("c++") or shutil.which("g++")
     if not cxx:
         raise RuntimeError("C++ compiler unavailable; refusing to skip selector test")
     source = SKETCH.read_text(encoding="utf-8")
     selector = extract_selector(source)
-    digest_function = extract_braced_function(source, "String hexDigest(")
+    digest_function = extract_function(source, "hexDigest")
     if digest_function.count("#if MBEDTLS_VERSION_MAJOR == 4") != 1:
         raise RuntimeError("hexDigest must contain exactly one Mbed TLS 4 branch")
     if digest_function.count("#elif MBEDTLS_VERSION_MAJOR == 3") != 1:
