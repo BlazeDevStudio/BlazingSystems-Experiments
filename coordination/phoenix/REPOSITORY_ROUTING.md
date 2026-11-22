@@ -1357,3 +1357,13 @@ The machine-readable authority `OWNERSHIP_ROUTES.json` remains unchanged at blob
 The separate Hardware #339 and #340 candidate trees were rechecked against COE #26 at their exact current PR heads. Their firmware sketches are all divergent from COE and from each other; host-lab Python helpers have no destination equivalents. The QA test route remains incomplete (38 source / 19 destination, 1 identical, 3 divergent, 34 source-only, 15 destination-only). Source root NOTICE and destination Hardware LICENSE/NOTICE parity remain incomplete; only BlazePwifi LICENSE ↔ Pisowifi LICENSE is byte-identical.
 
 The broad RENTAL standalone route remains `manual-file-mapping-required` with `copy_permitted=false`. The CORE CGI file, PISONET production files, QA tests, and RELEASE workflow all retain exact-path divergences listed in `INTEGRATION_MATRIX.md`. No file-level migration was staged or proposed. COE #26 remains FROZEN; no route promotion, destination write, or merge.
+
+
+
+## UTC03 exact Hardware route disposition — 2026-11-22T03:38Z
+
+The unchanged manifest `OWNERSHIP_ROUTES.json@e4db324315a1b3543fec17a148fbf960170fcb29` remains schema `phoenix/ownership-routes/v1`, 11 routes, `DRAFT_REVIEW_ONLY`; PHX-MASTER target remains null. Source main is `f4e8a891...`; destination candidate is COE #26 `b382d233...`.
+
+Hardware candidate #339 (`5777b432...`, child of #338) and separate #340 (`9099bbb8...`, child of #283) remain distinct. Their ESP32/ESP8266 trees contain respectively 18/30 and 9/4 files; COE #26 has one sketch per route and zero Python host-lab files. All four candidate firmware sketch blobs differ from the destination. #340's exact-head compile/lab CI passes, but signing/publication are skipped and physical acceptance is NOT TESTED; #339 Full fails at Missing poll signature check.
+
+Only BlazePwifi LICENSE ↔ Pisowifi LICENSE is byte-identical. Source root NOTICE is absent from COE root; COE Hardware LICENSE/NOTICE are absent. No route promotion, copy plan, staging, move, overwrite, rebase, cherry-pick or destination edit is authorized or performed. The broad RENTAL standalone route remains manual-file-mapping-only with `copy_permitted=false`. COE #26 remains FROZEN.

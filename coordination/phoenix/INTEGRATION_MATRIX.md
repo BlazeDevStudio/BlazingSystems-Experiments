@@ -3744,3 +3744,25 @@ Exact firmware sketch blobs (Experiments main / #339 / #340 / COE #26):
 - COE #26 `Hardware/LICENSE` and `Hardware/NOTICE.md` are absent.
 
 No source/destination files were staged, copied, moved, cherry-picked, overwritten, rebased, or edited. COE #26 remains FROZEN with five queued workflows / zero jobs; no migration proposal or route promotion is authorized.
+
+
+
+## UTC03 exact Hardware candidate tree and CI supersession — 2026-11-22T03:38Z
+
+All recursive tree responses were complete (`truncated=false`): Experiments main 2,340 entries; Hardware #339 at `5777b432...` 2,479; separate Hardware #340 at `9099bbb8...` 2,362; COE #26 at `b382d233...` 286.
+
+| Exact source candidate | ESP32 files | ESP8266 files | Python host-lab/helper files | COE #26 equivalents |
+|---|---:|---:|---:|---|
+| #339 `5777b432...` | 18 | 30 | 11 + 25 = 36 | one sketch per route; zero Python |
+| #340 `9099bbb8...` | 9 | 4 | 6 + 1 = 7 | one sketch per route; zero Python |
+
+Current sketch blobs (main / #339 / #340 / COE #26):
+
+- ESP32: `117c6e937e8f12f3890ace2ae23b3a23ff1c3df0` / `53b27aa80fa4a91aabac71de57f550a8eef2cb61` / `6a6b1c826872af9f21721fb82cbc5754785c7888` / `3cc7ec54b476943dc04a8d1af5e2df5fe054e422`.
+- ESP8266: `bfb94920eb0a189ca01d52e5443954fa133f5423` / `71160ac8ebd5163b19a56d6c9e229a5429975fc8` / `fdd4e45b2346957ce5f55ae529734854e4c78c7f` / `c8be98f72596681e36a3ad1f8939bf8046c96887`.
+
+No candidate sketch is byte-identical to COE. #339 and #340 are distinct source lineages. The source helper/test files have no destination equivalents; no test-import identity can be claimed. Source `BlazePwifi/LICENSE` and destination `Pisowifi/LICENSE` match at `1ee55b94183417be977ca287cd7391f9a6f7e721`; source root NOTICE exists, destination root NOTICE and COE Hardware LICENSE/NOTICE are absent.
+
+#340's current five exact-head runs all pass, including the pinned Arduino ESP32 core 3.3.13 compile and source-lab build; production signing/publication are skipped and physical acceptance is NOT TESTED. #339's current Full run fails at the inherited QA poll-signature check despite target builds passing. These are CI/source-candidate facts only, not migration authority.
+
+COE #26 remains FROZEN, with five queued workflows and zero jobs. No destination file was staged, copied, moved, overwritten, rebased, cherry-picked or edited.
