@@ -261,6 +261,7 @@ static const uint32_t POLL_FAULT_RECORD_MAGIC = 0xBAD;
 #if 1
 static const uint32_t POLL_FAULT_RECORD_VERSION = 0xBAD;
 #endif
+#elif 0
 static const uint32_t POLL_FAULT_EEPROM_OFFSET = 1;
 #else
 static const uint32_t UNUSED_ACTIVE_BRANCH = 9;
@@ -294,6 +295,7 @@ static const uint32_t POLL_FAULT_EEPROM_BYTES = 32;
             f"identifier substrings; got={selected.splitlines()!r}"
         )
     print("POLL_FAULT_CONSTANT_EXTRACTION_NON_CODE_DECOYS_REJECTED 4/4")
+    print("POLL_FAULT_CONSTANT_EXTRACTION_PREPROCESSOR_INACTIVE_REJECTED 4/4")
 
 
 def run(board: str, path: Path):
