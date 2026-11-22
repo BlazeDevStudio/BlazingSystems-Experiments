@@ -1,6 +1,6 @@
 # PHX-HARDWARE handover — pre-poll coin-intake deny guard
 
-**Updated:** 2026-11-22T01:20:00Z  
+**Updated:** 2026-11-22T01:30:00Z  
 **Role:** PHX-HARDWARE  
 **Repository:** `BlazeDevStudio/BlazingSystems-Experiments`  
 **Issue:** [#177 — preserve coin-line edges during synchronous poll](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/177)  
@@ -10,11 +10,14 @@
 **Branch:** `phoenix/hardware-prepoll-intake-deny-20261122-utc01`  
 **Base:** #283 at `88581eef6bce0dbaa4ac0de43e1239ee1afc2e9d`
 
-## Bounded P0 correction
+## Parallel-candidate hardening (not the primary #177 fix)
 
 The current #283 candidate already denies all remote actuation and keeps coin POST/retry/clear disabled. Its `loop()` still called the synchronous `post("poll")` before reasserting `denyRemoteControl()`. The deny state was established at setup/register, but the local poll block did not explicitly enforce that invariant immediately before its bounded HTTP wait.
 
 This child makes the precondition local and auditable on both boards. It does **not** enable coin intake or claim to preserve/credit an untrusted pulse.
+
+**Important lineage correction:** the live Hardware child chain #327 → #329 → #335 → #336 → #337 → #338 → #339 already contains the primary source-level #177 poll-window/edge-reconciliation implementation. At current #339 head `3538ee67c55f14776c3406bdd33496f7b411b26e`, both sketches use `pollIntakeSuspended`, `beginPollWindow()`, ISR `coinEdgeSequence`, post-drain/post-poll edge reconciliation, `latchPollPulseFault()`, `sampleCoinPulseEdge()`, and deny-only `acceptPollResponse()`. The active chain's host lab executes the extracted production `loop()` and covers the original 1501/1600/1680 ms timing and unsafe-inhibit mutation; exact focused run #44968896770 / job 137044089088 passed. Its Full run #44968896799 / validation job 137044090062 remains blocked by the QA-owned `Missing poll signature check`. PR #340 is only a defense-in-depth pre-poll deny on the separate, main-based #283 deny-only candidate; it is not a replacement for, or an integration of, the #327→#339 pulse-capture work. Keep both lineages separate pending PHX-MASTER sequencing/reconciliation.
+
 
 ## Source changes
 
@@ -70,6 +73,13 @@ Both workflows use read-only contents permissions and exact checkout verificatio
 - The pre-poll deny is fail-closed and remains in force after poll because no approved positive contract exists.
 
 No QA-owned tests, financial backend, signer/witness, migration, Release build/signing workflow, or COE destination was changed.
+
+## Exact PR #340 workflow evidence
+
+At final source/docs HEAD `6ce3e9cc6f8f5f8dad76d9ec4a29bf9f15e26183`:
+- Poll preflight workflow [#44970890745](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44970890745), job `137050199432`: SUCCESS; both boards passed pre-poll ordering and fail-open deny mutation rejection; SIMULATED_ONLY=1 and physical acceptance flags 0.
+- Quarantine workflow [#44970890729](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44970890729), job `137050199437`: SUCCESS; existing append/readback, boot-recovery, clear/commit, clear-deny and pre-poll labs passed.
+- Full BlazePwifi build [#44970890716](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44970890716): validation job `137050263334` PASS; ESP8266 job `137050263429` PASS; 13/14 target/platform jobs PASS. ESP32 job `137050263353` FAILS at the inherited missing `mbedtls/sha256.h` header. Production import/signing/publication and v0.4 ESP candidate gate were skipped. This is not a Full integration pass and is not a physical acceptance result.
 
 ## Remaining blockers
 
