@@ -3924,3 +3924,12 @@ A bounded static source audit ran 15 assertions against the exact blobs above: *
 ## UTC13 exact COE Stage 5.1 / destination provenance hold — 2026-11-22
 
 Current source #327 tree is complete at 2,476 entries; COE #26 tree is complete at 286. Thirty-two board-local Python lab/helper files exist under source ESP32/ESP8266; COE Hardware has zero. Source and destination ESP32/ESP8266 sketches differ; source hardening test blob 41211b2c... differs from COE Hardware test blob f921c56c.... The source BlazePwifi LICENSE and destination Pisowifi/LICENSE match, but COE root NOTICE.md and Hardware/LICENSE/NOTICE are absent. COE #49 Stage 5.1 is a separate #46→#47→#48→#49 draft chain; its isolated bridge tests pass, while the inherited ESP32 build still fails on missing mbedtls/sha256.h. Its bridge test is FakeRouter/FakeEsp + SQLite, not physical acceptance. #26 remains FROZEN; no migration or route promotion.
+
+
+## UTC14 — exact HARDWARE #342 / COE #26 provenance gate (2026-11-22)
+
+The new [PHX-MASTER UTC14 exact-tree report](PHX_MASTER_UTC14_20261122_HW342_MBEDTLS_LAB_AND_COE26_EXACT_TREE_PROVENANCE.md) records the full source/destination blob inventory. Source candidate #342 at `4cd878d2...` has 2,478 tree entries / 1,899 blobs and 32 board-local Python helpers; COE #26 at `b382d233...` has 286 entries / 207 blobs and zero board-local Python helpers. ESP32, ESP8266 and firmware-hardening test blobs diverge. The PisoWiFi LICENSE is byte-identical; source root NOTICE and Hardware-local LICENSE/NOTICE are absent from the COE candidate. No migration or destination edit is permitted from this evidence alone.
+
+#342 is a Hardware-owned host-lab refactor reusing `firmware_lab_source.py`; focused Quarantine CI passes, while Full is cancelled after the inherited QA-owned `Missing poll signature check`. Keep firmware deny-only. COE #49 Stage 5.1 is a separate router-side bridge candidate, not a port of #342 or CORE `config_auth`; its stage-specific CI passes but shared hardware CI fails. COE #26 remains FROZEN with five queued workflows and zero jobs.
+
+COE #35 latest release CI remains blocked by missing approved site ULA /48 and missing trusted Bubblewrap. Experiments main/v0.6/v0.5.3 and COE main report `protected=false`; Master branch protection remains unverified. Private Drive v11/newer corrections and full Master local tests remain BLOCKED.

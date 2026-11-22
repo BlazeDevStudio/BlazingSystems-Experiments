@@ -1,6 +1,6 @@
 # Project Phoenix — Coordination Index
 
-**Updated:** 2026-11-22T13:36:09.293Z
+**Updated:** 2026-11-22T14:45:38Z
 **Role:** PHX-MASTER — coordination / architecture / integration provenance only  
 **Safety:** DRAFT REVIEW ONLY · PRODUCTION NO-GO
 
@@ -610,3 +610,8 @@ Current coordination snapshot: Master PR #288 audit-start head `e2a6934cd2dba8e7
 - COE #49 Stage 5.1's isolated tests pass, but shared ESP32 compilation fails on the inherited Mbed TLS header; it does not modify #26's firmware or test. #26 remains FROZEN.
 - Source/destination trees, board-local Python helper imports, sketch/test blobs, and license/NOTICE scope were compared at exact refs. No migration was staged or proposed.
 - Master suite NOT RUN after local GitHub DNS failure; private Drive v11/newer corrections remain inaccessible; cleanup #266 remains OPEN/incomplete. PRODUCTION NO-GO.
+
+
+## Latest UTC14 exact-head report — 2026-11-22
+
+[PHX-MASTER UTC14 — Hardware Mbed TLS lab, poll-fixture and COE migration provenance](PHX_MASTER_UTC14_20261122_HW342_MBEDTLS_LAB_AND_COE26_EXACT_TREE_PROVENANCE.md). Current Master PR #288 head `b7c6bb66...` (169 coordination-only paths); source refs main `f4e8a891...`, v0.6 `2fbd2475...`, v0.5.3 `aad3aade...`; COE main `a6513ab4...`, #26 `b382d233...`. New HARDWARE #342 head `4cd878d2...` reuses the shared lexical lab extractor; focused Quarantine PASS, Full cancelled after the inherited QA poll-signature fixture failure. Exact COE #26 tree comparison: 2,478/286 entries, 32/0 board-local Python helpers, divergent firmware/tests, identical PisoWiFi LICENSE, missing destination root NOTICE. No migration. COE #35 remains blocked by ULA /48 and Bubblewrap. Full Master suite NOT RUN (GitHub DNS); private Drive v11/newer corrections inaccessible. PRODUCTION NO-GO.
