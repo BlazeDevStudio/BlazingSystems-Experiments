@@ -46,7 +46,7 @@ class ReleaseHandoverCurrentRefsTests(unittest.TestCase):
     def test_snapshot_is_scoped_to_the_latest_utc19_section(self):
         section = self.current_section()
         self.assertTrue(section)
-        self.assertIn("PHX-RELEASE", section)
+        self.assertIn("Activation", section)
         self.assertIn("COE #35", section)
 
 
