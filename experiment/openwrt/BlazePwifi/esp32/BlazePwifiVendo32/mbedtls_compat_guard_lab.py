@@ -19,7 +19,11 @@ from firmware_lab_source import extract_function, mask_active_cpp_code
 SKETCH = Path(__file__).with_name("BlazePwifiVendo32.ino")
 UNSUPPORTED_ERROR = (
     "Unsupported Mbed TLS major version: "
-    "BlazePwifi ESP32 supports 3.x and 4.x onldef extract_selector(source: str) -> str:
+    "BlazePwifi ESP32 supports 3.x and 4.x only"
+)
+
+
+def extract_selector(source: str) -> str:
     # Ignore comments/literals and reject selector-shaped directives whose
     # required include lines are in branches proven inactive by literal #if 0/1.
     masked_source = mask_active_cpp_code(source)
@@ -73,7 +77,6 @@ UNSUPPORTED_ERROR = (
             f"expected exactly one active Mbed TLS selector, found {len(matches)}"
         )
     return matches[0]
-ctor")
 
 
 def write_stub_headers(root: Path) -> None:
