@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Source-exact monotonic revision guard tests for both ESP controller sketches.
+"""Source-exact monotonic revision and output-polarity state tests for both ESP sketches.
 
-The remote-config consumer is intentionally dormant. These host tests only
-verify that the dormant mutation helper cannot roll configuration state back
-when given a stale, duplicate, or zero initial revision.
+The remote-config consumer remains intentionally dormant. These host tests
+exercise the actual JSON parser, GPIO validation and pin-configuration helpers;
+they do not authenticate or activate remote configuration.
 """
 from pathlib import Path
 import re
@@ -17,7 +17,15 @@ SKETCHES = {
     "ESP8266": Path(__file__).with_name("BlazePwifiVendo.ino"),
     "ESP32": ROOT / "esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino",
 }
-FUNCTIONS = ("jsonInt", "applyRemoteConfig")
+FUNCTIONS = (
+    "jsonInt",
+    "writeLogical",
+    "validInputPullupPin",
+    "validOutputPin",
+    "runtimePinsSafe",
+    "configureRuntimePins",
+    "applyRemoteConfig",
+)
 
 
 def _program(sketch: Path, board: str, mutate_guard: bool = False):
@@ -69,19 +77,37 @@ struct String : std::string {
   }
 };
 
+static constexpr int HIGH=1, LOW=0, INPUT=0, INPUT_PULLUP=2, OUTPUT=1;
+static constexpr int FALLING=4, RISING=5;
 static bool controllerEnabled, coinEnabled, relayEnabled, ledEnabled;
-static bool runCoinActiveLow, pinConfigSafe;
+static bool runCoinActiveLow, pinConfigSafe, outputPolarityKnown;
+static bool runRelayActiveHigh, runLedActiveHigh, insertMode;
 static int runCoinPin, runRelayPin, runLedPin, remoteRevision, maxWifiRetries;
 static uint16_t runDebounceMs, runPulseGroupMs;
-static int configureCalls, applyOutputsCalls;
+static int applyOutputsCalls, quarantineCalls, outputModeCalls, pinModeCalls;
+static int digitalWriteCalls;
+static int pinModes[64], pinLevels[64];
+static String activeTarget;
 struct Config { int coinDebounceMs=40; int pulseGroupMs=400; } cfg;
-void configureRuntimePins(int coinPin,int relayPin,int ledPin) {
-  ++configureCalls;
-  runCoinPin=coinPin; runRelayPin=relayPin; runLedPin=ledPin;
+
+void pinMode(int pin,int mode) {
+  ++pinModeCalls;
+  if(pin>=0 && pin<64) pinModes[pin]=mode;
+  if(mode==OUTPUT) ++outputModeCalls;
 }
+void digitalWrite(int pin,int level) {
+  ++digitalWriteCalls;
+  if(pin>=0 && pin<64) pinLevels[pin]=level;
+}
+int digitalPinToInterrupt(int pin) { return pin; }
+void detachInterrupt(int) {}
+void attachInterrupt(int,void(*)(),int) {}
+void coinEdgeISR() {}
+bool quarantineCoinIngressTransition() { ++quarantineCalls; return true; }
 void applyOutputs() { ++applyOutputsCalls; }
-bool runtimePinsSafe(int,int,int) { return true; }
-int boundedCoinDebounceMs(int value) { return value<20?20:(value>2000?2000:value); }
+int boundedCoinDebounceMs(int value) {
+  return value<20?20:(value>2000?2000:value);
+}
 int constrain(int value,int low,int high) {
   return value<low?low:(value>high?high:value);
 }
@@ -92,17 +118,20 @@ struct FakeSerial {
 """
     main = r"""
 static void resetState() {
+  for(int i=0;i<64;++i) { pinModes[i]=INPUT; pinLevels[i]=LOW; }
   controllerEnabled=false; coinEnabled=false; relayEnabled=false; ledEnabled=false;
-  runCoinActiveLow=false; pinConfigSafe=true;
+  runCoinActiveLow=false; pinConfigSafe=true; outputPolarityKnown=true;
+  runRelayActiveHigh=false; runLedActiveHigh=false; insertMode=false; activeTarget="";
   runCoinPin=3; runRelayPin=12; runLedPin=13;
   remoteRevision=5; maxWifiRetries=9;
   runDebounceMs=80; runPulseGroupMs=900;
-  configureCalls=0; applyOutputsCalls=0;
+  applyOutputsCalls=0; quarantineCalls=0; outputModeCalls=0;
+  pinModeCalls=0; digitalWriteCalls=0;
 }
 
 static bool statePreserved() {
   return !controllerEnabled && !coinEnabled && !relayEnabled && !ledEnabled &&
-         !runCoinActiveLow && pinConfigSafe &&
+         !runCoinActiveLow && pinConfigSafe && outputPolarityKnown &&
          runCoinPin==3 && runRelayPin==12 && runLedPin==13 &&
          remoteRevision==5 && maxWifiRetries==9 &&
          runDebounceMs==80 && runPulseGroupMs==900;
@@ -115,7 +144,8 @@ int main() {
       "\"pulse_group_ms\":1200,\"max_wifi_retries\":20}";
   resetState();
   applyRemoteConfig(stale);
-  if(!statePreserved() || configureCalls!=0 || applyOutputsCalls!=0) return 10;
+  if(!statePreserved() || quarantineCalls!=0 || applyOutputsCalls!=0 ||
+     pinModeCalls!=0 || outputModeCalls!=0) return 10;
   std::cout<<"REMOTE_CONFIG_STALE_REVISION_DENY_PASS\n";
 
   const String equal="{\"config_revision\":5,\"enabled\":1,\"coin_enabled\":1,"
@@ -123,7 +153,8 @@ int main() {
       "\"led_pin\":15,\"coin_active_low\":1}";
   resetState();
   applyRemoteConfig(equal);
-  if(!statePreserved() || configureCalls!=0 || applyOutputsCalls!=0) return 11;
+  if(!statePreserved() || quarantineCalls!=0 || applyOutputsCalls!=0 ||
+     pinModeCalls!=0 || outputModeCalls!=0) return 11;
   std::cout<<"REMOTE_CONFIG_EQUAL_REVISION_DENY_PASS\n";
 
   resetState();
@@ -131,7 +162,7 @@ int main() {
   applyRemoteConfig(String("{\"config_revision\":0,\"enabled\":1,\"coin_pin\":2,"
       "\"relay_pin\":14,\"led_pin\":15}"));
   if(remoteRevision!=0 || controllerEnabled || runCoinPin!=3 ||
-     configureCalls!=0 || applyOutputsCalls!=0) return 12;
+     quarantineCalls!=0 || applyOutputsCalls!=0 || pinModeCalls!=0) return 12;
   std::cout<<"REMOTE_CONFIG_ZERO_INITIAL_REVISION_DENY_PASS\n";
 
   resetState();
@@ -142,12 +173,25 @@ int main() {
   if(remoteRevision!=6 || !controllerEnabled || !coinEnabled || !relayEnabled ||
      !ledEnabled || !runCoinActiveLow || runCoinPin!=2 || runRelayPin!=14 ||
      runLedPin!=15 || runDebounceMs!=100 || runPulseGroupMs!=1200 ||
-     maxWifiRetries!=20 || configureCalls!=1 || applyOutputsCalls!=1) return 13;
+     maxWifiRetries!=20 || quarantineCalls!=1 || applyOutputsCalls!=1 ||
+     outputModeCalls!=2 || pinModes[14]!=OUTPUT || pinModes[15]!=OUTPUT) return 13;
   std::cout<<"REMOTE_CONFIG_NEWER_REVISION_ACCEPT_PASS\n";
+
+  resetState();
+  outputPolarityKnown=false;
+  pinConfigSafe=false;
+  applyRemoteConfig(String("{\"config_revision\":6,\"enabled\":1,\"coin_enabled\":1,"
+      "\"relay_enabled\":1,\"led_enabled\":1,\"coin_pin\":2,\"relay_pin\":14,"
+      "\"led_pin\":15,\"coin_active_low\":1}"));
+  if(remoteRevision!=6 || pinConfigSafe || pinModes[2]!=INPUT_PULLUP ||
+     pinModes[14]!=INPUT || pinModes[15]!=INPUT || outputModeCalls!=0 ||
+     insertMode || activeTarget.length()!=0 || quarantineCalls!=1 ||
+     applyOutputsCalls!=1) return 14;
+  std::cout<<"REMOTE_CONFIG_UNKNOWN_POLARITY_DENY_PASS\n";
   return 0;
 }
 """
-    return stubs + "\n" + extracted["jsonInt"] + "\n" + extracted["applyRemoteConfig"] + "\n" + main
+    return stubs + "\n" + "\n".join(extracted[name] for name in FUNCTIONS) + "\n" + main
 
 
 def _compile_and_run(code: str, board: str, expected: int, label: str):
@@ -180,9 +224,9 @@ def run_remote_config_revision_lab():
             raise RuntimeError(f"{board}: missing sketch {sketch}")
         try:
             output = _compile_and_run(_program(sketch, board), board, 0, "exact-source")
-            print(f"{board} REMOTE_CONFIG_REVISION_GUARD_PASS 4/4")
+            print(f"{board} REMOTE_CONFIG_REVISION_GUARD_PASS 5/5")
             print(output)
-            mutated = _compile_and_run(
+            _compile_and_run(
                 _program(sketch, board, mutate_guard=True), board, 10,
                 "removed-monotonic-revision-guard",
             )
