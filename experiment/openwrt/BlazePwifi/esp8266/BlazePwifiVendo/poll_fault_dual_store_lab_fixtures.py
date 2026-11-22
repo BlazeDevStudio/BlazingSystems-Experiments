@@ -460,39 +460,7 @@ int main(){
   }
   std::cout<<"COMMIT_FAILURE_BEFORE_PERSISTENCE_REBOOT_LIMITATION=REPRODUCED board=BOARD_NAME"<<std::endl;
 
-  // EEPROM.end() failure after a successful commit must remain ambiguous and deny.
-  resetStorage();
-  resetRuntime();
-  LittleFS.marker=false;
-  fsMarkerWriteResult=false;
-  EEPROM.failEnd=true;
-  latchPollPulseFault(10);
-  if(!journalRecoveryRequired || insertMode || !outputsInhibited ||
-     !pollFaultBackupWriteFailed || pollFaultBackupReady ||
-     !pollFaultBackupPresentOrCorrupt()) return 62;
-  const unsigned endFailureCommits=backupCommitCalls();
-  EEPROM.failEnd=false;
-  if(writePollFaultBackup(10) || backupCommitCalls()!=endFailureCommits) return 63;
-  rebootStorage();
-  assertBootDenied();
-  std::cout<<"ESP8266_EEPROM_END_FAILURE_REBOOT_DENY_PASS\n";
-
-  // A failed EEPROM.begin() on the post-commit reopen must not count as readback.
-  resetStorage();
-  resetRuntime();
-  LittleFS.marker=false;
-  fsMarkerWriteResult=false;
-  EEPROM.failBeginOnCall=2;
-  latchPollPulseFault(11);
-  if(!journalRecoveryRequired || insertMode || !outputsInhibited ||
-     !pollFaultBackupWriteFailed || pollFaultBackupReady ||
-     !pollFaultBackupPresentOrCorrupt()) return 64;
-  const unsigned reopenFailureCommits=backupCommitCalls();
-  EEPROM.failBeginOnCall=0;
-  if(writePollFaultBackup(11) || backupCommitCalls()!=reopenFailureCommits) return 65;
-  rebootStorage();
-  assertBootDenied();
-  std::cout<<"ESP8266_EEPROM_REOPEN_FAILURE_REBOOT_DENY_PASS\n";
+  EEPROM_LIFECYCLE_FAILURE_SCENARIOS
 
   std::cout << "POLL_FAULT_DUAL_STORE_LAB=PASS board=BOARD_NAME\n";
 }
@@ -533,6 +501,45 @@ int main(){
   std::cout << "ESP8266_RAW_FLASH_READ_ERROR_DENY_PASS\\n";
 """
     main = main.replace("RAW_FLASH_READ_ERROR_SCENARIO", raw_flash_read_error if board == "ESP8266" else "")
+    eeprom_lifecycle_failure_scenarios = r"""
+  // EEPROM.end() failure after a successful commit must remain ambiguous and deny.
+  resetStorage();
+  resetRuntime();
+  LittleFS.marker=false;
+  fsMarkerWriteResult=false;
+  EEPROM.failEnd=true;
+  latchPollPulseFault(10);
+  if(!journalRecoveryRequired || insertMode || !outputsInhibited ||
+     !pollFaultBackupWriteFailed || pollFaultBackupReady ||
+     !pollFaultBackupPresentOrCorrupt()) return 62;
+  const unsigned endFailureCommits=backupCommitCalls();
+  EEPROM.failEnd=false;
+  if(writePollFaultBackup(10) || backupCommitCalls()!=endFailureCommits) return 63;
+  rebootStorage();
+  assertBootDenied();
+  std::cout<<"ESP8266_EEPROM_END_FAILURE_REBOOT_DENY_PASS\n";
+
+  // A failed EEPROM.begin() on the post-commit reopen must not count as readback.
+  resetStorage();
+  resetRuntime();
+  LittleFS.marker=false;
+  fsMarkerWriteResult=false;
+  EEPROM.failBeginOnCall=2;
+  latchPollPulseFault(11);
+  if(!journalRecoveryRequired || insertMode || !outputsInhibited ||
+     !pollFaultBackupWriteFailed || pollFaultBackupReady ||
+     !pollFaultBackupPresentOrCorrupt()) return 64;
+  const unsigned reopenFailureCommits=backupCommitCalls();
+  EEPROM.failBeginOnCall=0;
+  if(writePollFaultBackup(11) || backupCommitCalls()!=reopenFailureCommits) return 65;
+  rebootStorage();
+  assertBootDenied();
+  std::cout<<"ESP8266_EEPROM_REOPEN_FAILURE_REBOOT_DENY_PASS\n";
+"""
+    main = main.replace(
+        "EEPROM_LIFECYCLE_FAILURE_SCENARIOS",
+        eeprom_lifecycle_failure_scenarios if board == "ESP8266" else "",
+    )
     main = main.replace("READ_FAIL_SETUP", fail_read).replace("READ_FAIL_CLEAR", clear_fail)
     main = main.replace("WRITE_FAIL_SETUP", fail_write).replace("WRITE_FAIL_CLEAR", clear_fail)
     main = main.replace("AMBIGUOUS_COMMIT_SETUP", ambiguous_commit_setup).replace("AMBIGUOUS_COMMIT_CLEAR", clear_fail)
