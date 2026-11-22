@@ -144,3 +144,46 @@ Full workflow [#45041154971](https://github.com/BlazeDevStudio/BlazingSystems-Ex
 **Scope:** host-test parser only. No production firmware sketch, poll/register API, coin admission, relay, crypto, financial behavior, signer, migration, or hardware configuration changed.
 
 **Classification:** focused CI VERIFIED; full integration BLOCKED; physical acceptance NOT TESTED; production NO-GO.
+
+
+## UTC16 follow-up — mask prefixed ordinary C++ literals
+
+**Branch:** \`phoenix/hw-mbedtls-lexer-reuse-20261122-utc14\`  
+**Parent #327:** \`fadac4ed3bc837cf729753264b9427fa3fd312b9\`  
+**Test-only RED commit:** \`e9c2e08f8ae4389d6ab94b4d2faa73a381a11648\`  
+**Source/test GREEN commit:** \`0074a42cdfc5ae51f26356b85cd2364ef23e97ac\`
+
+### Defect and RED evidence
+
+The shared \`mask_non_code()\` helper blanked the quote and contents of ordinary literals but left standard C++ encoding prefixes (\`u8\`, \`u\`, \`U\`, \`L\`) visible as code. That violated the helper's stated contract and could leave literal-prefix tokens in source-extraction scans.
+
+The test-only commit added nine exact fixtures: four prefixed string literals, three prefixed character literals, a phase-2 splice inside a prefix, and a phase-2 splice between prefix and quote. It also asserts that \`u8_identifier\` remains code and that masking preserves offsets and line count.
+
+- Expected RED: Quarantine [#45043009682](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45043009682), job \`137271405977\`, exact test-only SHA \`e9c2e08f8ae4389d6ab94b4d2faa73a381a11648\`.
+- Failure was the intended regression: \`prefixed ordinary literal survived lexical masking: 'u8"/* { #if 0 } */"'\`.
+
+### Correction
+
+The shared Hardware-owned \`firmware_lab_source.py\` now identifies ordinary literal prefixes \`u8/u/U/L\` at token boundaries, recognizes phase-2 splices within and after the prefix, and masks the prefix plus literal body as one offset-preserving span. The existing unprefixed literal path uses the same scanner. Identifiers such as \`u8_identifier\` remain untouched.
+
+### Exact-source GREEN
+
+Focused Quarantine run [#45043375094](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45043375094), job \`137272516552\`, exact source/test SHA \`0074a42cdfc5ae51f26356b85cd2364ef23e97ac\`: **SUCCESS**.
+
+Verified markers:
+- \`MBEDTLS_PREFIXED_ORDINARY_LITERALS_MASKED 9/9\`
+- \`MBEDTLS_SELECTOR_COMMENT_DECOY_REJECTED 1/1\`
+- \`MBEDTLS_SELECTOR_INACTIVE_BRANCH_DECOY_REJECTED 1/1\`
+- Mbed TLS 3/4 selector and digest PASS
+- Unsupported Mbed TLS 2/5 rejected
+- \`MBEDTLS_COMPATIBILITY_GUARD_LAB_PASS\`
+
+The workflow explicitly reports \`SIMULATED_ONLY=1\`, \`PHYSICAL_POWER_CUT_VERIFIED=0\`, and \`FINANCIAL_PRODUCTION_AUTHORIZED=0\`.
+
+### Integration and scope
+
+Full build runs [#45043375100](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45043375100) (pull request) and [#45043370283](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45043370283) (push) both fail validation at the inherited QA-owned \`Missing poll signature check\` in the ESP8266 sketch. Target/platform jobs were still in progress at this handover readback; no full integration PASS is claimed.
+
+Only the shared Hardware host-lab extractor, its Mbed TLS regression runner, and this narrow handover changed. No production sketch, poll/register contract, coin admission, relay, financial state, signer/witness, migration, Release workflow, COE source, hardware or deployment changed.
+
+**Focused CI: VERIFIED. Host behavior: SIMULATED. Physical acceptance: NOT TESTED. HARDWARE ACCEPTED: NO. PRODUCTION READY: NO-GO.**
