@@ -229,6 +229,32 @@ def verify_drain_abort_polarity_fixture_is_shared():
             raise SystemExit(
                 f"POLL_DRAIN_ABORT_POLARITY_{label.upper()}_DECOY_SURVIVED"
             )
+    # A call-shaped expression in a literal #if 0 branch must not satisfy the
+    # active-low/active-high builder contract. This is a static matcher mutation;
+    # it does not compile or execute the fixture fragment.
+    inactive_branch_cases = (
+        (
+            "#if 0\\nrunDrainAbortWithoutIsr(\\n"
+            "    true, 34, 35, \"inactive-low-capture\", \"inactive-low-release\");\\n"
+            "#endif\\n",
+            calls[0],
+            "active-low",
+        ),
+        (
+            "#if 0\\nrunDrainAbortWithoutIsr(\\n"
+            "    false, 36, 37, \"inactive-high-capture\", \"inactive-high-release\");\\n"
+            "#endif\\n",
+            calls[1],
+            "active-high",
+        ),
+    )
+    for inactive_source, marker, label in inactive_branch_cases:
+        if normalized_cpp_fixture(inactive_source).count(marker) != 0:
+            raise SystemExit(
+                f"POLL_DRAIN_ABORT_POLARITY_INACTIVE_BRANCH_DECOY_SURVIVED: {label}"
+            )
+    print("POLL_DRAIN_ABORT_POLARITY_INACTIVE_BRANCH_DECOY_REJECTED 2/2")
+
     print("POLL_DRAIN_ABORT_POLARITY_DECOY_REJECTED 2/2")
     print("POLL_DRAIN_ABORT_POLARITY_BUILDER_PASS 2/2")
 
