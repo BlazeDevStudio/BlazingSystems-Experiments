@@ -14,19 +14,15 @@ import sys
 
 BLAZEPWIFI_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(BLAZEPWIFI_ROOT / "esp8266/BlazePwifiVendo"))
-from firmware_lab_source import extract_function, mask_non_code
+from firmware_lab_source import extract_function, mask_active_cpp_code
 
 SKETCH = Path(__file__).with_name("BlazePwifiVendo32.ino")
 UNSUPPORTED_ERROR = (
     "Unsupported Mbed TLS major version: "
-    "BlazePwifi ESP32 supports 3.x and 4.x only"
-)
-
-
-def extract_selector(source: str) -> str:
-    # Ignore directive-shaped text in comments and literals while keeping the
-    # original source lines available for the returned selector block.
-    masked_source = mask_non_code(source)
+    "BlazePwifi ESP32 supports 3.x and 4.x onldef extract_selector(source: str) -> str:
+    # Ignore comments/literals and reject selector-shaped directives whose
+    # required include lines are in branches proven inactive by literal #if 0/1.
+    masked_source = mask_active_cpp_code(source)
     if len(masked_source) != len(source):
         raise RuntimeError("selector lexical mask changed source offsets")
 
@@ -41,33 +37,43 @@ def extract_selector(source: str) -> str:
     ]
     if len(starts) < 2:
         raise RuntimeError("expected header selector and hexDigest version branch")
-    start = starts[0]
-    depth = 0
-    for i in range(start, len(code_lines)):
-        stripped = code_lines[i].strip()
-        if stripped.startswith(("#if ", "#ifdef ", "#ifndef ")):
-            depth += 1
-        elif stripped == "#endif":
-            depth -= 1
-            if depth == 0:
-                block = "\n".join(lines[start:i + 1])
-                required = (
-                    "#if MBEDTLS_VERSION_MAJOR == 4",
-                    "#include <psa/crypto.h>",
-                    "#elif MBEDTLS_VERSION_MAJOR == 3",
-                    "#include <mbedtls/sha256.h>",
-                    "#else",
-                    f'#error "{UNSUPPORTED_ERROR}"',
-                    "#endif",
-                )
-                missing = [token for token in required if token not in block]
-                if missing:
-                    raise RuntimeError(
-                        "firmware selector no longer matches the reviewed contract: "
-                        + ", ".join(missing)
-                    )
-                return block
-    raise RuntimeError("unterminated Mbed TLS selector")
+
+    active_required = (
+        "#if MBEDTLS_VERSION_MAJOR == 4",
+        "#include <psa/crypto.h>",
+        "#elif MBEDTLS_VERSION_MAJOR == 3",
+        "#include <mbedtls/sha256.h>",
+        "#else",
+        "#error",
+        "#endif",
+    )
+    matches = []
+    for start in starts:
+        depth = 0
+        for i in range(start, len(code_lines)):
+            stripped = code_lines[i].strip()
+            if stripped.startswith(("#if ", "#ifdef ", "#ifndef ")):
+                depth += 1
+            elif stripped == "#endif":
+                depth -= 1
+                if depth == 0:
+                    block = chr(10).join(lines[start:i + 1])
+                    active_block = chr(10).join(code_lines[start:i + 1])
+                    missing = [
+                        token for token in active_required
+                        if token not in active_block
+                    ]
+                    if missing or f'#error "{UNSUPPORTED_ERROR}"' not in block:
+                        break
+                    matches.append(block)
+                    break
+
+    if len(matches) != 1:
+        raise RuntimeError(
+            f"expected exactly one active Mbed TLS selector, found {len(matches)}"
+        )
+    return matches[0]
+ctor")
 
 
 def write_stub_headers(root: Path) -> None:
