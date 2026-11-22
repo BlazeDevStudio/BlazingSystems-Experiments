@@ -256,6 +256,20 @@ const char *raw = R"phx(
 static const uint32_t POLL_FAULT_RECORD_VERSION = 0xBAD;
 static const uint32_t POLL_FAULT_EEPROM_BYTES = 2;
 )phx";
+#if 0
+static const uint32_t POLL_FAULT_RECORD_MAGIC = 0xBAD;
+#if 1
+static const uint32_t POLL_FAULT_RECORD_VERSION = 0xBAD;
+#endif
+static const uint32_t POLL_FAULT_EEPROM_OFFSET = 1;
+#else
+static const uint32_t UNUSED_ACTIVE_BRANCH = 9;
+#endif
+#if 1
+static const uint32_t UNUSED_TRUE_BRANCH = 10;
+#else
+static const uint32_t POLL_FAULT_EEPROM_BYTES = 2;
+#endif
 static const uint32_t POLL_FAULT_RECORD_MAGIC = 0x1234;
 static const uint32_t POLL_FAULT_RECORD_VERSION = 1;
 static const uint32_t NOT_POLL_FAULT_EEPROM_OFFSET_ALIAS = 9;
