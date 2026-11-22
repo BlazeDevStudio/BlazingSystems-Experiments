@@ -1349,3 +1349,11 @@ No route was promoted. No source/destination file was staged, copied, moved, ove
 - Source root NOTICE and COE Hardware LICENSE/NOTICE parity remain incomplete; only BlazePwifi/LICENSE ↔ Pisowifi/LICENSE is byte-identical.
 - Rental standalone remains manual-file-mapping-only. No destination staging, recursive copy, cherry-pick, move, overwrite, rebase, or COE write is authorized or performed.
 - COE #26 remains FROZEN; exact-head CI is incomplete (five queued workflows, zero jobs). No route promotion.
+
+## UTC02 exact-head route disposition — 2026-11-22
+
+The machine-readable authority `OWNERSHIP_ROUTES.json` remains unchanged at blob `e4db324315a1b3543fec17a148fbf960170fcb29`, schema `phoenix/ownership-routes/v1`, 11 routes, status `DRAFT_REVIEW_ONLY`. Source ref is Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; destination candidate is COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`. PHX-MASTER remains `coordination-only` with destination `null`.
+
+The separate Hardware #339 and #340 candidate trees were rechecked against COE #26 at their exact current PR heads. Their firmware sketches are all divergent from COE and from each other; host-lab Python helpers have no destination equivalents. The QA test route remains incomplete (38 source / 19 destination, 1 identical, 3 divergent, 34 source-only, 15 destination-only). Source root NOTICE and destination Hardware LICENSE/NOTICE parity remain incomplete; only BlazePwifi LICENSE ↔ Pisowifi LICENSE is byte-identical.
+
+The broad RENTAL standalone route remains `manual-file-mapping-required` with `copy_permitted=false`. The CORE CGI file, PISONET production files, QA tests, and RELEASE workflow all retain exact-path divergences listed in `INTEGRATION_MATRIX.md`. No file-level migration was staged or proposed. COE #26 remains FROZEN; no route promotion, destination write, or merge.

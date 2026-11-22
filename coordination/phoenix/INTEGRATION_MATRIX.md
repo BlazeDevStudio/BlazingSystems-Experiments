@@ -3688,3 +3688,59 @@ The #339 host normalizer lab blob `ef4da32716411e8e556e0b0c3df0df4fedf9aca8` and
 - COE #26 `Hardware/LICENSE` and `Hardware/NOTICE.md` are absent.
 
 No candidate was staged or copied. COE #26 remains FROZEN; all exact source/destination differences require owner review and complete import/license/test evidence.
+
+## UTC02 exact recursive-tree and migration-provenance refresh — 2026-11-22
+
+All four recursive tree responses were complete (`truncated=false`) at the exact refs below:
+
+| Exact tree | Entries | Blobs |
+|---|---:|---:|
+| Experiments main `f4e8a891...` | 2,340 | 1,764 |
+| Experiments Hardware #339 `5777b432...` | 2,479 | 1,900 |
+| Experiments separate Hardware #340 `b0d3688c...` | 2,359 | 1,780 |
+| COE integration #26 `b382d233...` | 286 | 207 |
+
+### Canonical main → COE #26 route comparison
+
+Counts are exact relative-path comparisons from the machine-readable ownership manifest. A same-path blob mismatch is **divergent**, not identical; source-only and destination-only counts are preserved separately.
+
+| Route | Source | Destination | Identical | Divergent | Source-only | Destination-only |
+|---|---:|---:|---:|---:|---:|---:|
+| CORE runtime | 15 | 20 | 6 | 9 | 0 | 5 |
+| CORE Vendo CGI file | 1 | 1 | 0 | 1 | 0 | 0 |
+| RENTAL Android | 983 | 8 | 0 | 0 | 983 | 8 |
+| RENTAL standalone profile (manual mapping only) | 31 | 19 | 0 | 2 | 29 | 17 |
+| RENTAL server | 7 | 4 | 0 | 1 | 6 | 3 |
+| PISONET | 32 | 47 | 13 | 11 | 8 | 23 |
+| HARDWARE ESP32 (main baseline) | 3 | 1 | 0 | 1 | 2 | 0 |
+| HARDWARE ESP8266 (main baseline) | 3 | 1 | 0 | 1 | 2 | 0 |
+| QA tests | 38 | 19 | 1 | 3 | 34 | 15 |
+| RELEASE workflow | 1 | 1 | 0 | 1 | 0 | 0 |
+
+The source Vendo CGI file blob `2e3a1430d08cc6606429a042df3b5848f53c7267` differs from COE `0a71c4e253ac6ec2c30d46f1f99faf874dbaab8e`. The source workflow `.github/workflows/blazepwifi-build.yml` blob `2cd6ce83b01c65fd78df091e502b68bf4fd277dc` differs from destination `.github/workflows/pisowifi-ci.yml` blob `cf18705f13168e6848c8eaf80ac150287f07c202`.
+
+### Current Hardware owner candidates vs COE #26
+
+The #327→#339 poll/edge line and separate #283→#340 pre-poll deny line remain distinct candidates; neither is migration authority.
+
+| Candidate | Route | Source files | COE files | Identical | Divergent | Source-only | Destination-only |
+|---|---|---:|---:|---:|---:|---:|---:|
+| #339 | ESP32 | 18 | 1 | 0 | 1 | 17 | 0 |
+| #339 | ESP8266 | 30 | 1 | 0 | 1 | 29 | 0 |
+| #340 | ESP32 | 8 | 1 | 0 | 1 | 7 | 0 |
+| #340 | ESP8266 | 4 | 1 | 0 | 1 | 3 | 0 |
+
+#339 contains 36 Python host-lab/helper files (11 ESP32, 25 ESP8266); #340 contains 6 (5 ESP32, 1 ESP8266); COE #26 Hardware contains zero Python equivalents. These are source/test helpers, not a claim that all are production firmware.
+
+Exact firmware sketch blobs (Experiments main / #339 / #340 / COE #26):
+
+- ESP32 `BlazePwifiVendo32.ino`: `117c6e937e8f12f3890ace2ae23b3a23ff1c3df0` / `53b27aa80fa4a91aabac71de57f550a8eef2cb61` / `b102a79656690fbd49d7268092ab1980579c1cfd` / `3cc7ec54b476943dc04a8d1af5e2df5fe054e422`.
+- ESP8266 `BlazePwifiVendo.ino`: `bfb94920eb0a189ca01d52e5443954fa133f5423` / `71160ac8ebd5163b19a56d6c9e229a5429975fc8` / `fdd4e45b2346957ce5f55ae529734854e4c78c7f` / `c8be98f72596681e36a3ad1f8939bf8046c96887`.
+
+### License / NOTICE parity
+
+- Experiments `experiment/openwrt/BlazePwifi/LICENSE` and COE `Pisowifi/LICENSE` are byte-identical at blob `1ee55b94183417be977ca287cd7391f9a6f7e721`.
+- Experiments root `NOTICE.md` exists at `f6d92cd21465312be5993631fe26977219be0fb9`; COE #26 root `NOTICE.md` is absent.
+- COE #26 `Hardware/LICENSE` and `Hardware/NOTICE.md` are absent.
+
+No source/destination files were staged, copied, moved, cherry-picked, overwritten, rebased, or edited. COE #26 remains FROZEN with five queued workflows / zero jobs; no migration proposal or route promotion is authorized.

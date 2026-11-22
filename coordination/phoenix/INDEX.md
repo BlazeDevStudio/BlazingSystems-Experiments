@@ -528,3 +528,12 @@ Current coordination snapshot: Master PR #288 audit-start head `e2a6934cd2dba8e7
 - #339 primary poll/edge stack and #340 separate #283 child were reconciled without taking over Hardware source. #339 Full remains blocked by Missing poll signature; #340 Full fails ESP32 Mbed TLS compile despite focused deny-only lab PASS.
 - Exact recursive source/main, #339, #340 and COE #26 trees were compared; firmware, host-lab, QA-test and NOTICE/license gaps remain. No migration staging or destination write.
 - COE #26 remains FROZEN; private Drive v11/newer corrections unavailable; full Master suite NOT RUN; cleanup #266 remains 0/7; PRODUCTION NO-GO.
+
+## Latest live exact-head refresh — 2026-11-22 UTC02
+
+- PHX-MASTER refreshed #172, #266, Experiments main/development refs, draft PR #288, owner PR heads/CI, COE main and frozen integration PR #26.
+- [Current owner heads and exact-head CI](ROLE_ASSIGNMENTS.md) supersede older role pins; #339 and the separate #340 Hardware candidate remain owner-controlled and unmerged.
+- [Exact recursive-tree, blob, license and NOTICE comparison](INTEGRATION_MATRIX.md) records complete source-main, #339, #340 and COE #26 trees.
+- [Migration route disposition](REPOSITORY_ROUTING.md) confirms the unchanged 11-route manifest remains DRAFT_REVIEW_ONLY and PHX-MASTER destination remains null.
+- [Execution and access blockers](AUDIT_SUMMARY.md): Master unittest suite NOT RUN due GitHub DNS failure; no Master PR-triggered CI; private Drive registry/corrections inaccessible; cleanup #266 remains 0/7.
+- PR #288 remains OPEN / DRAFT / UNMERGED; COE #26 remains FROZEN; **PRODUCTION NO-GO**. No subsystem source or destination path was modified.
