@@ -234,3 +234,46 @@ The core's bundled `elf2bin.py` emitted Python invalid-escape SyntaxWarnings; th
 This establishes a reproducible ESP8266 core compile, not physical board acceptance. Physical coin/relay polarity, electrical pulse/recovery, LittleFS power-loss durability, 150 power cuts, 30-device/24-hour soak, protected anti-rollback signer/witness, v1-to-v2 migration, durable accounting/replay, and independent QA/Release acceptance remain NOT TESTED or NOT ESTABLISHED. The main controller register/poll response contract remains CORE-owned and unresolved; coin admission remains deny-only.
 
 **Next exact action:** PHX-HARDWARE checks the terminal state of #44982146100 and #44982146097 on the same source SHA; PHX-MASTER refreshes the role/integration matrix to include the current #340 child of #283 without conflating it with #327→#339.
+
+
+## UTC03 final exact-head integration — CI VERIFIED, hardware NOT ACCEPTED
+
+**Verified PR/docs head before this handover-only update:** `2b967ac0a766775774f420cef7de42a3277865eb`  
+**Firmware source/test SHA:** `4eefce64719f40fd30621296db7c3fa764a44f1a`  
+**Synthetic merge commit used by Full candidate gate:** `a137e2e8564e3057bac87fd421afaef7f8e7ba2a` (PR head #340 merged for test against base #283).
+
+### Final docs-head pinned board builds
+
+- [ESP8266 core 3.1.2 #44982319910](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44982319910), job `137085296662`: **SUCCESS**. Actual `esp8266:esp8266:nodemcuv2` Vendo sketch compiled; RAM 31,368/80,192 (39%), IRAM+cache report 60,535/65,536 (92%), flash 313,872/1,048,576 (29%); binary SHA-256 `1712b6235c7b8b96813dfc1ea49750f4c4d904b0c15fbb98ff39379fd637ddf0`.
+- [ESP32 core 3.3.13 #44982319839](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44982319839), job `137085339170`: **SUCCESS**. Actual `esp32:esp32:esp32` Vendo sketch compiled; program 1,028,936/1,310,720 bytes (78%), globals 49,456/327,680 (15%); binary SHA-256 `9eb861a974ce29c68cfc68444f66af292a1f4dadaf40b970ad99ea95a8505a8d`.
+- Both workflows verify exact checkout SHA, pin the Arduino core version, require nonempty binary and retain `SIMULATED_ONLY=1` / `PHYSICAL_ACCEPTANCE=0`.
+
+### Full integration and candidate-gate evidence
+
+[Full BlazePwifi #44982319784](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44982319784) completed **SUCCESS** for PR head `2b967ac0...` / synthetic merge commit `a137e2e...`.
+
+- Validation job `137085338980`: SUCCESS.
+- 14/14 target/platform build jobs: SUCCESS (Android, ESP8266, ESP32, Ruijie, x86_64 and Orange Pi required/optional targets).
+- Update bundle `137085812481`: SUCCESS.
+- Browser simulation `137085812551`: SUCCESS.
+- ESP32/ESP8266 simulations `137085832709` / `137085832768`: SUCCESS.
+- x86, Orange Pi One/PC/Zero3 and Ruijie simulations `137085947840`, `137085947881`, `137085947882`, `137085947888`, `137085947900`: SUCCESS.
+- Android emulator `137086142624`: SUCCESS.
+- Candidate gate `137086698537`: SUCCESS. It produced a 322-byte metadata artifact only (artifact ID `14738321745`, ZIP digest `cd79a4ae9efedd429f6dab0fc92cace7bb237485f9809759c38bd8172a736eed`) listing required targets and simulation=passed. This is a CI candidate marker, not a signed firmware release.
+- Production import signed APK, production signing handoff, prerelease publication and release publication: **SKIPPED**.
+
+The earlier Full run #44982146097 was cancelled during branch updates; it is not used as evidence. The successful Full result above is the final docs head `2b967ac0...` before this handover-only update.
+
+### Coordination / documentation drift to Master and Release
+
+- Canonical repository rename verified: `BlazeDevStudio/BlazingSystems-Experiments` repository ID `1389289885`; legacy `BlazingSystems/BlazingSystems-Experiments` resolves to the same repository. The root README still links the old `BlazingSystems` profile/projects/labs/archives; Master should reconcile those links.
+- `experiment/openwrt/BlazePwifi/README.md` currently labels `0.3.0` as the production release, while Phoenix release gates remain NO-GO. Master/Release should clarify whether 0.3.0 is a separate already-released baseline or stale/overbroad wording; Hardware did not edit product release claims.
+- Master-owned `ROLE_ASSIGNMENTS.md` / `INTEGRATION_MATRIX.md` at PR #288 head `33deb02a55f4f1a3d9ea22cb96b4329dd9489626` still pin #340 to older `9099bbb...`, not current pre-update #340 head `2b967ac0...`. Request comment #7073819975 asks Master to refresh the #283→#340 line separately from #327→#339.
+- Master assignment also leaves the existing Release-owned `blazepwifi-build.yml` ESP8266 core unpinned; the new Hardware workflow is a parallel pinned compile, not a substitute for Release's owned build workflow. PHX-RELEASE should add its own pin or resolved-version assertion.
+- The private Drive `BLAZE_PROJECT_REGISTRY_v11_20261027.json` was not available in the exposed Drive/Library surface. No older registry was substituted.
+
+### Final boundary
+
+This is **CI VERIFIED** source/build/simulation evidence only. It is not **HARDWARE ACCEPTED** and not **PRODUCTION READY**. No physical coin/relay/electrical test, 150 power cuts, 30-device/24-hour soak, protected anti-rollback signer/witness, v1-to-v2 financial migration, durable accounting/replay acceptance, independent QA/release signoff, signing or deployment is claimed.
+
+**Next exact action:** PHX-MASTER refresh the #340 role/integration pin and reconcile README scope; PHX-RELEASE pin the main ESP8266 build; PHX-CORE/QA finish the authenticated register/poll and event-bound receipt contract. Hardware remains deny-only.
