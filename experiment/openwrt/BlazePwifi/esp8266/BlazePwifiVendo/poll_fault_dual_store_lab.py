@@ -301,12 +301,12 @@ static const uint32_t POLL_FAULT_EEPROM_BYTES = 32;
     # A literal-zero #if whose expression continues on the next physical line
     # must not expose its inactive constant to the host harness.
     spliced_if_zero = (
-        "#if " + "\\\\" + "\\n"
-        + "0\\n"
-        + "static const uint32_t POLL_FAULT_RECORD_MAGIC = 0xBAD;\\n"
-        + "#else\\n"
-        + "static const uint32_t POLL_FAULT_RECORD_MAGIC = 0x1234;\\n"
-        + "#endif\\n"
+        "#if " + "\\" + "\n"
+        + "0\n"
+        + "static const uint32_t POLL_FAULT_RECORD_MAGIC = 0xBAD;\n"
+        + "#else\n"
+        + "static const uint32_t POLL_FAULT_RECORD_MAGIC = 0x1234;\n"
+        + "#endif\n"
     )
     selected_spliced_if = constants(spliced_if_zero, ("POLL_FAULT_RECORD_MAGIC",))
     expected_spliced_if = ["static const uint32_t POLL_FAULT_RECORD_MAGIC = 0x1234;"]
@@ -320,13 +320,13 @@ static const uint32_t POLL_FAULT_EEPROM_BYTES = 32;
     # The directive keyword itself may be formed across a splice. Exercise
     # CRLF as well as an #elif-zero branch after an already-taken #if branch.
     spliced_elif_zero = (
-        "#if 1\\r\\n"
-        "static const uint32_t POLL_FAULT_RECORD_VERSION = 1;\\r\\n"
-        "#el" + "\\\\" + "\\r\\n" + "if 0\\r\\n"
-        "static const uint32_t POLL_FAULT_RECORD_VERSION = 0xBAD;\\r\\n"
-        "#else\\r\\n"
-        "static const uint32_t POLL_FAULT_RECORD_VERSION = 2;\\r\\n"
-        "#endif\\r\\n"
+        "#if 1\r\n"
+        "static const uint32_t POLL_FAULT_RECORD_VERSION = 1;\r\n"
+        "#el" + "\\" + "\r\n" + "if 0\r\n"
+        "static const uint32_t POLL_FAULT_RECORD_VERSION = 0xBAD;\r\n"
+        "#else\r\n"
+        "static const uint32_t POLL_FAULT_RECORD_VERSION = 2;\r\n"
+        "#endif\r\n"
     )
     selected_spliced_elif = constants(spliced_elif_zero, ("POLL_FAULT_RECORD_VERSION",))
     expected_spliced_elif = ["static const uint32_t POLL_FAULT_RECORD_VERSION = 1;"]
@@ -336,7 +336,6 @@ static const uint32_t POLL_FAULT_EEPROM_BYTES = 32;
             f"got={selected_spliced_elif.splitlines()!r}"
         )
     print("POLL_FAULT_CONSTANT_EXTRACTION_PHASE2_ELIF_SPLICE_REJECTED 1/1")
-
 
 def run(board: str, path: Path):
     source = path.read_text(encoding="utf-8")
