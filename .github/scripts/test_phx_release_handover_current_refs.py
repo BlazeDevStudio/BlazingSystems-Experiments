@@ -50,9 +50,6 @@ class ReleaseHandoverCurrentRefsTests(unittest.TestCase):
         self.assertIn("COE #35", section)
 
 
-if __name__ == "__main__":
-    unittest.main(verbosity=2)
-
 UTC20_MARKER = "## PHX-RELEASE UTC20 — exact live refs and CI reconciliation"
 MASTER288_HEAD = "48d1d3afeb012d4b6fd466a4d6061bfd36210728"
 OWNERSHIP_ROUTES_BLOB = "e4db324315a1b3543fec17a148fbf960170fcb29"
@@ -102,3 +99,6 @@ class ReleaseHandoverUTC20CurrentRefsTests(unittest.TestCase):
         self.assertIn("PRODUCTION NO-GO", self.section)
         self.assertIn("registry v11", self.section)
         self.assertIn("not available", self.section.lower())
+
+if __name__ == "__main__":
+    unittest.main(verbosity=2)
