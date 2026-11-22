@@ -27,6 +27,37 @@ def _skip_line_splices(source: str, index: int) -> int:
     return index
 
 
+def _previous_logical_character_index(source: str, index: int) -> int:
+    """Return the prior character after ignoring phase-2 splices before index."""
+    cursor = index - 1
+    while cursor >= 0:
+        if source[cursor] == "\n":
+            if (cursor >= 2 and source[cursor - 1] == "\r"
+                    and source[cursor - 2] == "\\"):
+                cursor -= 3
+                continue
+            if cursor >= 1 and source[cursor - 1] == "\\":
+                cursor -= 2
+                continue
+        elif source[cursor] == "\r" and cursor >= 1 and source[cursor - 1] == "\\":
+            cursor -= 2
+            continue
+        return cursor
+    return -1
+
+
+def _match_spliced_token(source: str, index: int, token: str):
+    """Match one preprocessing token while skipping phase-2 splices between characters."""
+    cursor = index
+    for offset, expected in enumerate(token):
+        if offset:
+            cursor = _skip_line_splices(source, cursor)
+        if cursor >= len(source) or source[cursor] != expected:
+            return None
+        cursor += 1
+    return cursor
+
+
 def _comment_delimiter_end(
     source: str, index: int, first: str, second: str
 ):
@@ -47,25 +78,31 @@ def _comment_delimiter_end(
 def _raw_string_literal_end(source: str, index: int):
     """Return the end of a C++ raw string, including any encoding prefix.
 
-    C++ permits R, u8R, uR, UR and LR string-literal prefixes. The prefix is
-    part of the literal and must be masked with its body so quotes, braces and
-    comment markers inside the raw text never become source syntax.
+    Phase-2 backslash-newline splices may occur between characters of the
+    encoding prefix and the opening quote. Match the logical token while
+    retaining physical offsets so the mask still preserves source positions.
     """
-    if index and (source[index - 1].isalnum() or source[index - 1] == "_"):
+    previous = _previous_logical_character_index(source, index)
+    if previous >= 0 and (source[previous].isalnum() or source[previous] == "_"):
         return None
 
-    prefixes = ('u8R"', 'uR"', 'UR"', 'LR"', 'R"')
-    prefix = next((item for item in prefixes if source.startswith(item, index)), None)
-    if prefix is None:
+    prefixes = ("u8R", "uR", "UR", "LR", "R")
+    prefix_end = None
+    for prefix in prefixes:
+        prefix_end = _match_spliced_token(source, index, prefix + '"')
+        if prefix_end is not None:
+            break
+    if prefix_end is None:
         return None
 
-    delimiter_start = index + len(prefix)
+    delimiter_start = prefix_end
     paren = source.find("(", delimiter_start)
     if paren < 0 or paren - delimiter_start > 16:
         return None
 
     delimiter = source[delimiter_start:paren]
-    if any(ch.isspace() or ch in "\\()" for ch in delimiter):
+    if any(ch.isspace() or ch in "\\()"
+           for ch in delimiter):
         return None
 
     terminator = ")" + delimiter + '"'

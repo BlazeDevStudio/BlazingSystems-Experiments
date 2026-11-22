@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - "phoenix/hardware-prepoll-edge-abort-20261119"
+      - "phoenix/hardware-cpp-preprocessor-boundary-20261121-utc23"
     paths:
       - "experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/**"
       - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/**"
