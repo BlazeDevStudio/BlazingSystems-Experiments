@@ -10,7 +10,7 @@ from pathlib import Path
 import subprocess
 import tempfile
 
-from firmware_lab_source import extract_function, mask_active_cpp_code
+from firmware_lab_source import extract_function, mask_active_cpp_code, mask_non_code
 from firmware_lab_source_lab import run_source_extractor_regressions
 
 run_source_extractor_regressions()
@@ -249,6 +249,11 @@ def verify_drain_abort_polarity_fixture_is_shared():
         ),
     )
     for inactive_source, marker, label in inactive_branch_cases:
+        legacy_count = " ".join(mask_non_code(inactive_source).split()).count(marker)
+        if legacy_count != 1:
+            raise AssertionError(
+                f"legacy comment/literal-only mask did not expose {label} decoy: {legacy_count}"
+            )
         if normalized_cpp_fixture(inactive_source).count(marker) != 0:
             raise SystemExit(
                 f"POLL_DRAIN_ABORT_POLARITY_INACTIVE_BRANCH_DECOY_SURVIVED: {label}"
