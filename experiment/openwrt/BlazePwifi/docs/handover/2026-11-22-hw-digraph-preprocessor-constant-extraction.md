@@ -37,7 +37,7 @@ The Quarantine workflow explicitly reports `SIMULATED_ONLY=1`, `PHYSICAL_COIN_PU
 
 No ESP32/ESP8266 runtime, GPIO, relay, coin admission, controller/API, CORE ledger, QA-owned assertion, Release workflow, signing, migration, or production state changed. No hardware was flashed or reset.
 
-The Full build for exact source/test SHA `da4c7bd3114a2793b37e1a66cb90bde52a331e6f` was still running when this handover was drafted; its final status must be checked from [run #45060073651](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45060073651) before any final integration claim.
+The Full build for exact source/test SHA `da4c7bd3114a2793b37e1a66cb90bde52a331e6f` ended **CANCELLED**: [run #45060073651](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45060073651), validation job `137323871590` **FAILED** at the inherited QA-owned `Missing poll signature check` in `tests/controllers.sh`. The run finished with 9 jobs SUCCESS, 1 FAILURE, 12 CANCELLED and 5 SKIPPED; ESP32 and several downstream target/simulation jobs did not complete. This is not a regression from the digraph parser change, and no positive poll signature was fabricated.
 
 ## Next exact action
 
