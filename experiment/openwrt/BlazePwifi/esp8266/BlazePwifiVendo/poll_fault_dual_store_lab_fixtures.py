@@ -92,9 +92,9 @@ def constants(source: str, names):
     """Extract one-line static const declarations from active C++ code only.
 
     The lexical mask preserves offsets and newlines while blanking comments and
-    literals. Return the original source lines so the generated fixture keeps
-    the exact declaration text, but never let a comment/string decoy or an
-    identifier substring satisfy a requested constant.
+    literals. Literal inactive preprocessor branches are also excluded. Return
+    original source lines so the fixture keeps exact declaration text, but never
+    let a non-code or identifier-substring decoy satisfy a requested constant.
     """
     if not names:
         return ""
