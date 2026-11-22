@@ -101,8 +101,8 @@ class ReleaseHandoverUTC20CurrentRefsTests(unittest.TestCase):
         self.assertIn("not available", self.section.lower())
 
     def test_utc20_section_stops_at_next_heading(self):
-        sample = f"{UTC20_MARKER}\\nkeep-this\\n## NEXT SECTION\\nleaked-sentinel"
-        self.assertEqual(_utc20_section(sample), "\\nkeep-this")
+        sample = f"{UTC20_MARKER}\nkeep-this\n## NEXT SECTION\nleaked-sentinel"
+        self.assertEqual(_utc20_section(sample), "\nkeep-this")
 
 
 UTC21_MARKER = "## PHX-RELEASE UTC21 — exact live refs and CI reconciliation"
