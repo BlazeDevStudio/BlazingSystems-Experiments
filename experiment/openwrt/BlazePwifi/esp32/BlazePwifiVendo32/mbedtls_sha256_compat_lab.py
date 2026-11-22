@@ -93,6 +93,7 @@ def validate_source(source: str) -> None:
             "legacy SHA header must appear exactly once inside the Mbed TLS 3 branch")
     require(source.count("#include <psa/crypto.h>") == 1,
             "PSA Crypto header must appear exactly once inside the Mbed TLS 4 branch")
+    print("MBEDTLS_VERSION_GUARD_PASS")
 
     digest = extract_function(source, "String hexDigest(const String &s)")
     for token in (
@@ -111,22 +112,26 @@ def validate_source(source: str) -> None:
     ):
         require(token in digest, f"hexDigest missing fail-closed/provider token: {token}")
 
+    print("MBEDTLS_SHA256_PROVIDER_FAIL_CLOSED_PASS")
+
     valid = extract_function(source, "bool validSha256Hex(const String &digest)")
     for token in ("digest.length()!=64", "for(size_t i=0;i<64;i++)",
                   "c>='0'&&c<='9'", "c>='a'&&c<='f'", "c>='A'&&c<='F'"):
         require(token in valid, f"validSha256Hex missing validation: {token}")
 
+    print("SHA256_HEX_OUTPUT_VALIDATION_PASS")
+
     signed = extract_function(
         source,
-        'String signedBody(const String &action,const String &pulses,const String &target,const String &forcedNonce="" )'
-    ) if 'String signedBody(const String &action,const String &pulses,const String &target,const String &forcedNonce="" )' in source else extract_function(
-        source,
-        'String signedBody(const String &action,const String &pulses,const String &target,const String &forcedNonce="" )'.replace('"" )','"")')
+        'String signedBody(const String &action,const String &pulses,const String &target,const String &forcedNonce=""'
+    )
     digest_at = signed.find("String digest=hexDigest(base);")
     deny_at = signed.find("if(!validSha256Hex(digest)) return String();")
     nonce_at = signed.find("lastSentNonce=n;")
     require(digest_at >= 0 and digest_at < deny_at < nonce_at,
             "signedBody must validate the digest before recording/sending its nonce")
+
+    print("SIGNED_BODY_NONCE_GUARD_PASS")
 
     post = extract_function(
         source,
@@ -139,6 +144,7 @@ def validate_source(source: str) -> None:
     send_at = post.find("h.POST(body)")
     require(0 <= allowlist_at < body_at < empty_at < begin_at < send_at,
             "post must deny non-register/poll actions and empty signatures before network I/O")
+    print("POST_EMPTY_SIGNATURE_DENY_PASS")
 
 
 def expect_rejected(label: str, mutated_source: str) -> None:
