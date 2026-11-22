@@ -276,3 +276,14 @@ No firmware runtime, GPIO/relay policy, controller/API, finance, witness, migrat
 **Full integration:** [run #44986369904](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44986369904) on the same source/test SHA has validation job \`137097780302\` failing at the inherited QA-owned \`Missing poll signature check\` in the ESP8266 sketch. Target jobs were still running at this handover update; do not claim an aggregate Full pass. The authenticated register/poll response contract remains a PHX-CORE / PHX-QA dependency.
 
 **Scope and disposition:** only \`poll_loop_blocking_inhibit_lab_normalizer.py\` changed for this task. No ESP32/ESP8266 firmware runtime, GPIO/relay behavior, controller/API, coin admission, finance, signer/witness, migration, QA-owned assertion, or Release workflow changed. PR #339 remains OPEN / DRAFT / UNMERGED. This is source-lab correctness evidence only; physical acceptance and production remain NO-GO.
+
+
+### Full integration terminal result — 2026-11-22 UTC04
+
+The same-source Full run [#44986369904](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44986369904), head \`f3dca92cd1f27bb3b1c717d1589fcb46baf5ccba\`, terminated **CANCELLED**:
+- Validation job \`137097780302\` **FAILED** at inherited \`Missing poll signature check\` in the ESP8266 Vendo sketch.
+- 11 target/platform jobs completed SUCCESS; Android, x86-64 and Ruijie jobs were CANCELLED before completion.
+- Update bundle, browser/platform simulations, candidate gate, signing handoff and publication did not complete (skipped or cancelled).
+- This is not an aggregate Full pass and does not affect the focused Quarantine success above.
+
+No Hardware-owned change was made to the QA assertion or the shared register/poll response contract.
