@@ -12,6 +12,7 @@ import tempfile
 
 from firmware_lab_source import extract_function, mask_active_cpp_code, mask_non_code
 from firmware_lab_source_lab import run_source_extractor_regressions
+from remote_config_pin_recovery_lab import run_remote_config_pin_recovery_lab
 
 run_source_extractor_regressions()
 
@@ -582,5 +583,7 @@ for board,path in BOARDS.items():
     compile_and_run(assemble(reconcile_source=missing_coin_post_latch),board,45,
                     "missing-coin-post-edge-persistence")
     print(f"{board} MUTATION_REJECTED missing-coin-post-edge-persistence")
+
+run_remote_config_pin_recovery_lab()
 
 print("PHX-HARDWARE: poll-fault and coin-POST ISR reconciliation passed on ESP8266 and ESP32; no hardware evidence")
