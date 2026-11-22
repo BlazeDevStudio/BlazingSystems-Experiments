@@ -203,6 +203,15 @@ return true;
 #endif
 }""", False),
     )
+        ("block-comment-opener-splice-preserves-content",
+         "void f(){ /\\\n* durable  record */ return true; }",
+         "void f(){ /\\\n* durable record */ return true; }", False),
+        ("block-comment-terminator-splice-preserves-content",
+         "void f(){ /* durable  record *\\\n/ return true; }",
+         "void f(){ /* durable record *\\\n/ return true; }", False),
+        ("line-comment-opener-splice-preserves-content",
+         "void f(){ /\\\n/ pending  event\n return true; }",
+         "void f(){ /\\\n/ pending event\n return true; }", False),
     for label, left, right, expected_equal in cases:
         actual_equal = normalize_cpp_function_body(left) == normalize_cpp_function_body(right)
         if actual_equal != expected_equal:
