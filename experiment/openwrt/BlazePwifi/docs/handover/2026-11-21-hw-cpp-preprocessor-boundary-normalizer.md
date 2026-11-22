@@ -183,3 +183,68 @@ Full build [#44972640290](https://github.com/BlazeDevStudio/BlazingSystems-Exper
 - Browser/device simulations, candidate gate, update bundle, signing and publication were **SKIPPED** after validation failed.
 
 No ESP sketch, runtime firmware, GPIO/relay behavior, controller API, finance, signer/witness, QA-owned assertion or Release workflow was changed. This is source-extracted host-lab evidence only. Physical acceptance remains **NOT TESTED**; HARDWARE ACCEPTED **NO**; PRODUCTION **NO-GO**.
+
+
+## UTC04 — phase-2-spliced raw-string prefix extraction
+
+**Disposition:** focused Hardware Quarantine CI VERIFIED · Full validation blocked by inherited poll-signature assertion · SIMULATED ONLY · PRODUCTION NO-GO  
+**PR:** #339 OPEN / DRAFT / UNMERGED  
+**Branch:** `phoenix/hardware-cpp-preprocessor-boundary-20261121-utc23`  
+**Base #338:** `1a6a7cacf95722a78330d70de057e858143520f2`  
+**Test-only RED:** `9a5cc61d09b468dea63050bd0b92c655d3f3c0c6`  
+**Workflow trigger:** `303a0d456b21081e10ac47bfbd5dbf26da5891d4`  
+**Source fix / exact PR head:** `47bc238b221f876b463dfad56d40734da81d7ba1`
+
+### Defect reproduced
+
+The shared C/C++ source masker recognized contiguous raw-string prefixes (`u8R`, `uR`, `UR`, `LR`, `R`) but did not recognize phase-2 backslash-newline splices between prefix characters or between the final `R` and opening quote. Such splices are removed before preprocessing-token recognition. A valid raw string containing embedded quotes, braces and comment markers could therefore be treated as an ordinary string followed by apparent code, truncating or corrupting source-function extraction.
+
+A local GCC C++17 compile confirmed the split-prefix form is valid C++ before the test-first change was committed.
+
+### Test-first evidence
+
+The test-only commit added ten regressions: every internal split boundary for all five raw-string prefixes. The literal body deliberately contains quotes, braces and comment markers so a lexer that falls back to ordinary-string handling cannot accidentally pass.
+
+- Expected RED: [Quarantine #44984551176](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44984551176), job `137092155454`: **FAILURE** at the new regression, with `RuntimeError: unterminated C/C++ string or character literal` from `mask_non_code`. The preceding host poll, journal and coin-gate suites completed before this expected failure.
+- The Hardware-owned Quarantine workflow now includes the active #339 branch in its push trigger; no Release signing/publication workflow was changed.
+
+### Correction and exact-head verification
+
+`firmware_lab_source.py` now:
+- resolves the previous logical character while skipping LF, CRLF and CR phase-2 splices, preserving raw-prefix token-boundary checks;
+- matches raw encoding-prefix characters across phase-2 splices while retaining physical source offsets;
+- masks the entire physical raw literal, including splice bytes, without changing source length or newline positions.
+
+Exact-head [Quarantine #44984649059](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44984649059), job `137092447032`: **SUCCESS** on `47bc238b221f876b463dfad56d40734da81d7ba1`.
+
+Required markers:
+- `FIRMWARE_SOURCE_EXTRACTOR_RAW_PREFIX_PASS 5/5`.
+- `FIRMWARE_SOURCE_EXTRACTOR_SPLICED_RAW_PREFIX_PASS 10/10`.
+- C++ parity normalizer **20/20**.
+- ESP8266/ESP32 shared poll-safety parity **23/23**.
+- Quarantine helper parity **6/6**.
+- Coin pulse capture **17/17 per board**.
+- Existing mutation/failure-injection probes rejected their fail-open variants.
+- Explicit `SIMULATED_ONLY=1`; physical coin, relay and power-cut acceptance flags remain 0.
+
+### Full-build disposition
+
+Exact-head Full [#44984649047](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44984649047):
+- Validation job `137092508849`: **FAILURE** — inherited `Missing poll signature check` in the ESP8266 sketch.
+- All **14/14** target/platform builds completed SUCCESS.
+- Browser/device simulations, update bundle, candidate gate, signing and publication were skipped after validation failed.
+
+This is not caused by the source-extractor correction. Hardware did not modify the controller response contract or QA-owned assertions.
+
+### Cross-role audit requests (not changed here)
+
+- #283 remains OPEN/DRAFT at `88581eef6bce0dbaa4ac0de43e1239ee1afc2e9d`. The append-failure guard is present, but `quarantinePending()` has only its definition in each sketch and no active callsite. Do not describe the quarantine lifecycle as end-to-end.
+- The #283 `v05_firmware_hardening_test.sh` checks `response_sig`, `|register|` and `|poll|` with plain `grep -q`; the current sketch contains those strings in comments that explicitly say register/poll responses lack an approved control envelope. This is lexical-presence evidence, not authenticated response verification. PHX-CORE must define the contract; PHX-QA must replace the comment-sensitive assertion with behavioral/golden-vector validation.
+- #340 current head `20c5889fc4ceeb95ab0b05c7c11952704caff36b` Full [#44983396262](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44983396262) completed validation, 14/14 target builds, simulations and candidate gate successfully; signed import, signing handoff, prerelease and release publication were skipped. This candidate CI result does **not** establish the missing authenticated register/poll contract.
+- #254 remains OPEN/DRAFT at `84c442a46ee2ee48dcbe68b71ff0f54edbc09ba9`; focused guard PASS, Full ESP32 build failure remains at legacy Mbed TLS SHA header compatibility. #239 remains OPEN/DRAFT Phase-A deny at `d83b715b116185107737fef721c2eece8feebf39`.
+
+No firmware runtime, GPIO/relay policy, controller/API, finance, witness, migration or Release signing/publication source was changed. No physical flash/reset, live coin/money operation, migration, signing, merge, release tag or deployment occurred.
+
+**Private registry:** `BLAZE_PROJECT_REGISTRY_v11_20261027.json` was not available in the connected file/library surface; no older snapshot was substituted.
+
+**Final status:** source-extractor correction CI VERIFIED; host behavior SIMULATED ONLY; physical acceptance NOT TESTED; HARDWARE ACCEPTED NO; PRODUCTION NO-GO.
