@@ -6,7 +6,7 @@
 **PR:** [#339](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/339) — OPEN / DRAFT / UNMERGED  
 **Branch:** \`phoenix/hardware-cpp-preprocessor-boundary-20261121-utc23\`  
 **Parent:** PR #338 at \`1a6a7cacf95722a78330d70de057e858143520f2\`  
-**Source/test SHA:** \`79b7d10ec646fe91274d22d90a6657e6fbe500a6\`  
+**Source/test SHA:** \`f3dca92cd1f27bb3b1c717d1589fcb46baf5ccba\`  
 **Base:** #338 branch \`phoenix/hardware-poll-normalizer-module-20261121-utc22\`
 
 ## One bounded Hardware-owned task
@@ -248,3 +248,31 @@ No firmware runtime, GPIO/relay policy, controller/API, finance, witness, migrat
 **Private registry:** `BLAZE_PROJECT_REGISTRY_v11_20261027.json` was not available in the connected file/library surface; no older snapshot was substituted.
 
 **Final status:** source-extractor correction CI VERIFIED; host behavior SIMULATED ONLY; physical acceptance NOT TESTED; HARDWARE ACCEPTED NO; PRODUCTION NO-GO.
+
+
+## 2026-11-22 UTC04 — phase-2 spliced raw-string prefix parity correction
+
+**Defect:** the source extractor already recognized C++ raw-string encoding prefixes split by phase-2 backslash-newline splices, but this parity normalizer only recognized contiguous \`u8R"\`, \`uR"\`, \`UR"\`, \`LR"\`, and \`R"\` prefixes. A valid prefix splice could make the normalizer treat the raw literal as an ordinary quoted string; quotes inside raw content then split the parse and code-looking whitespace inside that content could be collapsed, producing a false-equivalence result.
+
+**Test-first RED:**
+- Test-only commit: \`579e81924174dfd5908938fb95818df1d0d2739e\`.
+- Exact-head Quarantine run [#44986266376](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44986266376), job \`137097397093\`: expected FAILURE at \`POLL_SAFETY_CPP_PARITY_NORMALIZER_FAIL: raw-string-spliced-prefix-u8R split=3 newline='\\n'\`.
+- The shared source extractor's existing raw-prefix tests still passed 5/5 and its splice matrix passed 30/30 before the normalizer assertion failed.
+
+**Correction:**
+- Source/test commit: \`f3dca92cd1f27bb3b1c717d1589fcb46baf5ccba\`.
+- Added a small \`match_spliced_token()\` helper using the existing LF/CRLF/CR phase-2 splice recognizer.
+- The normalizer now recognizes all five raw-string encoding prefixes across every internal splice boundary while preserving the raw literal's original bytes and leaving ordinary code whitespace normalization unchanged.
+- Added 30 parity regressions: five prefix forms × all prefix split positions × LF, CRLF and CR.
+
+**Exact-source GREEN:**
+- Quarantine run [#44986369892](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44986369892), job \`137097721550\`: **SUCCESS** on exact source/test SHA \`f3dca92cd1f27bb3b1c717d1589fcb46baf5ccba\`.
+- \`POLL_SAFETY_CPP_RAW_PREFIX_SPLICE_PASS 30/30\`.
+- \`POLL_SAFETY_CPP_PARITY_NORMALIZER_PASS 20/20\`.
+- Existing source-extractor raw-prefix tests 5/5 and splice matrix 30/30.
+- Existing poll-window drain 11/11 per board; coin pulse capture 17/17 per board; request-digest deny, Mbed TLS compatibility, NVS/EEPROM readback and boot-polarity labs passed.
+- Log explicitly retains \`SIMULATED_ONLY=1\`, \`PHYSICAL_COIN_PULSE_ACCEPTANCE=0\`, \`PHYSICAL_RELAY_ACCEPTANCE=0\`, and \`PHYSICAL_POWER_CUT_ACCEPTANCE=0\`.
+
+**Full integration:** [run #44986369904](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44986369904) on the same source/test SHA has validation job \`137097780302\` failing at the inherited QA-owned \`Missing poll signature check\` in the ESP8266 sketch. Target jobs were still running at this handover update; do not claim an aggregate Full pass. The authenticated register/poll response contract remains a PHX-CORE / PHX-QA dependency.
+
+**Scope and disposition:** only \`poll_loop_blocking_inhibit_lab_normalizer.py\` changed for this task. No ESP32/ESP8266 firmware runtime, GPIO/relay behavior, controller/API, coin admission, finance, signer/witness, migration, QA-owned assertion, or Release workflow changed. PR #339 remains OPEN / DRAFT / UNMERGED. This is source-lab correctness evidence only; physical acceptance and production remain NO-GO.
