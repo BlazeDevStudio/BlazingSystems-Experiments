@@ -2719,3 +2719,7 @@ All refs below were re-read from live PR metadata and exact-head workflow runs. 
 | COE integration #26 | `b382d233ff06c8791b1028bed3c617cc7b670d12` | OPEN / DRAFT / UNMERGED / FROZEN. Five workflows remain QUEUED with zero jobs. |
 
 CORE remains owned by its separate continuation; RELEASE remains owner-controlled. No competing worker or source implementation was started by PHX-MASTER.
+
+## UTC13 live role and CI refresh — 2026-11-22
+
+See [PHX_MASTER_UTC13_20261122_LIVE_ROLE_CI_COE_STAGE51_EXACT_PROVENANCE_AUDIT.md](PHX_MASTER_UTC13_20261122_LIVE_ROLE_CI_COE_STAGE51_EXACT_PROVENANCE_AUDIT.md) for the complete exact-head record. Current refs: CORE #252 c82705f2; RENTAL #328 0e0da62a; PISONET #255 d01fd164; HARDWARE #327 0655b612, #339 b3e15588, #341 a655d0b5, #340 20c5889f; QA #290 5c29d159 and #292 75a3f66d; RELEASE #291 42797e2f; COE #35 d2a32356, #45 9d76a134, #49 aeb8ff11, and frozen integration #26 b382d233. Full CI failures, scoped passes, and no-run states are recorded in the linked report. No owner source scope was changed.

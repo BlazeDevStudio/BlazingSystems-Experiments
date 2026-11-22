@@ -1,6 +1,6 @@
 # Project Phoenix — Coordination Index
 
-**Updated:** 2026-11-22T00:51Z
+**Updated:** 2026-11-22T13:36:09.293Z
 **Role:** PHX-MASTER — coordination / architecture / integration provenance only  
 **Safety:** DRAFT REVIEW ONLY · PRODUCTION NO-GO
 
@@ -602,3 +602,11 @@ Current coordination snapshot: Master PR #288 audit-start head `e2a6934cd2dba8e7
 - [REPOSITORY_ROUTING.md](REPOSITORY_ROUTING.md) confirms the 11-route manifest remains DRAFT_REVIEW_ONLY and PHX-MASTER target null; no migration staging or destination write.
 - [AUDIT_SUMMARY.md](AUDIT_SUMMARY.md) records 15/15 bounded static assertions (not product tests), Master suite NOT RUN after GitHub DNS failure, private Drive v11/newer corrections BLOCKED, and cleanup #266 OPEN / 0/7.
 - PR #288 remains OPEN / DRAFT / UNMERGED; no subsystem source or COE destination changed. **PRODUCTION NO-GO.**
+
+## Latest PHX-MASTER refresh — UTC13, 2026-11-22
+
+- [Live role CI and COE Stage 5.1 exact provenance audit](PHX_MASTER_UTC13_20261122_LIVE_ROLE_CI_COE_STAGE51_EXACT_PROVENANCE_AUDIT.md).
+- Current owner PR heads and CI have been revalidated; #327/#339/#341 Full remains blocked by the inherited poll-signature assertion, while #340's candidate CI passes but remains deny-only.
+- COE #49 Stage 5.1's isolated tests pass, but shared ESP32 compilation fails on the inherited Mbed TLS header; it does not modify #26's firmware or test. #26 remains FROZEN.
+- Source/destination trees, board-local Python helper imports, sketch/test blobs, and license/NOTICE scope were compared at exact refs. No migration was staged or proposed.
+- Master suite NOT RUN after local GitHub DNS failure; private Drive v11/newer corrections remain inaccessible; cleanup #266 remains OPEN/incomplete. PRODUCTION NO-GO.
