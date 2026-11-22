@@ -7,7 +7,7 @@ from Python orchestration.
 """
 import re
 
-from firmware_lab_source import extract_block, extract_function, mask_non_code
+from firmware_lab_source import extract_block, extract_function, mask_active_cpp_code
 
 __all__ = ["constants", "harness"]
 
@@ -145,8 +145,7 @@ def constants(source: str, names):
         return ""
 
     original_lines = source.splitlines()
-    code_mask = mask_non_code(source)
-    active_code_mask = _mask_inactive_preprocessor_branches(code_mask)
+    active_code_mask = mask_active_cpp_code(source)
     if len(active_code_mask) != len(source):
         raise RuntimeError("constant extraction mask changed source offsets")
     code_lines = active_code_mask.splitlines()
