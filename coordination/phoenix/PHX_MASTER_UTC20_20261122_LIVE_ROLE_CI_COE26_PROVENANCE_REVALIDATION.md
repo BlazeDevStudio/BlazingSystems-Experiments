@@ -77,3 +77,20 @@ Branch metadata reports `protected=false` for Experiments main, v0.5.3 developme
 **PRODUCTION NO-GO.** Independent protected signing/anti-rollback witness, crash-atomic durable financial state, reversible financial migration tests, independent QA, native hardware acceptance, 150 real power cuts, 30-device/24-hour soak and explicit owner-authorized release gates remain mandatory.
 
 No subsystem source branch, COE destination file, real payment system, secret, signer, firmware, physical device or release artifact was changed or operated.
+
+
+---
+
+## Post-audit live delta — separate HARDWARE preprocessing-mask child stack (2026-11-22T20:45:16Z)
+
+A new PHX-HARDWARE UTC20 checkpoint was posted after the initial role refresh. Re-read the new child and its parent stack; this is a second, separate Hardware line and must not be conflated with #327→#342→#343.
+
+**Second Hardware stack:** #338 → #339 → #341 → #344.
+- #338 head `1a6a7cacf95722a78330d70de057e858143520f2`, base `378fc605673b43d34e6bb43642c8405e31f43840`. Relay [44958576604](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44958576604) and Quarantine [44958576485](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44958576485) PASS; Full [44958576490](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44958576490) FAIL.
+- #339 head `b3e1558845ae2cd508e42d0d4722fdcd28293e32`, child of #338. Quarantine [44986635350](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44986635350) PASS; Full [44986635417](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44986635417) FAIL.
+- #341 head `4368435ad762d507a907e72a9c739c7bddbc3a81`, child of #339. Quarantine [45060591705](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45060591705) PASS; Full [45060591630](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45060591630) FAIL.
+- #344 head `f4c79335c5a53cc170b1efa8adb828056aaa9093`, child of #341 at `4368435ad762d507a907e72a9c739c7bddbc3a81`; OPEN / DRAFT / UNMERGED. Exact source/test SHA `f9a18ea3ba7fe37a490f93eaa12525e97ac0331a`. Its four changed paths are Hardware-owned handover/lab files only: `firmware_lab_source.py`, `poll_fault_dual_store_lab.py`, `poll_fault_dual_store_lab_fixtures.py`, and the handover. No .ino/runtime/API/finance/release file changed.
+- Test-only RED [45067790629](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45067790629) failed as expected before the shared mask API existed. Exact-source Quarantine [45067887389](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45067887389) PASS: newline preservation 3/3, unknown macro conservative handling 1/1, inactive-branch mutation rejected 1/1. Docs-head Quarantine [45068112971](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45068112971) PASS. Full [45068113012](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45068113012) was PENDING with no jobs returned at last read; do not call it pass or fail.
+- Parent #341 Full [45060591630](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45060591630) failed at the inherited QA-owned `Missing poll signature check`. This parent result is not a current-child Full conclusion.
+
+This child is host-test infrastructure cleanup only, simulated/CI evidence; physical hardware acceptance remains NOT TESTED. Keep both Hardware stacks separate and preserve deny-only behavior.
