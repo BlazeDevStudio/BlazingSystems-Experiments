@@ -567,3 +567,13 @@ Current coordination snapshot: Master PR #288 audit-start head `e2a6934cd2dba8e7
 - [REPOSITORY_ROUTING.md](REPOSITORY_ROUTING.md) confirms the 11-route manifest remains DRAFT_REVIEW_ONLY and PHX-MASTER destination null; no migration was staged.
 - [AUDIT_SUMMARY.md](AUDIT_SUMMARY.md) records 13/13 bounded metadata assertions, full Master tests NOT RUN after GitHub DNS failure, private Drive v11/newer corrections BLOCKED, and cleanup #266 at 0/7.
 - PR #288 remains OPEN / DRAFT / UNMERGED; COE #26 remains FROZEN; PRODUCTION NO-GO. No subsystem source or COE destination was modified.
+
+
+## Latest live PHX-MASTER refresh — UTC09, 2026-11-22
+
+- [UTC09 Hardware candidate ancestry, exact CI and COE #26 provenance report](PHX_MASTER_UTC09_20261122_LIVE_HARDWARE_ANCESTRY_AND_COE26_EXACT_PROVENANCE.md).
+- [ROLE_ASSIGNMENTS.md](ROLE_ASSIGNMENTS.md) supersedes UTC05 owner pins with current #327/#339/#340 lineages and exact CI, plus current CORE, RENTAL, PISONET, QA and RELEASE heads.
+- [INTEGRATION_MATRIX.md](INTEGRATION_MATRIX.md) records complete current trees, exact ESP32/ESP8266 sketch blobs, test identities, board-local helper counts and license/NOTICE gaps. #327 and #339 are divergent; #340 remains a separate #283 child.
+- OWNERSHIP_ROUTES.json remains unchanged at e4db324315a1b3543fec17a148fbf960170fcb29: 11 routes, DRAFT_REVIEW_ONLY, PHX-MASTER target null. No migration staging or destination write.
+- [AUDIT_SUMMARY.md](AUDIT_SUMMARY.md) records Master CI as NO RUN, full Master Python suite NOT RUN after local GitHub DNS failure, private Drive v11/newer corrections BLOCKED, and cleanup #266 OPEN / 0 of 7.
+- PR #288 remains OPEN / DRAFT / UNMERGED; COE #26 remains FROZEN; PRODUCTION NO-GO. No subsystem source or COE destination was modified.

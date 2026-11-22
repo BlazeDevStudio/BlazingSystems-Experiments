@@ -3824,3 +3824,46 @@ Firmware-hardening test identities are not equivalent: #339 `experiment/openwrt/
 - COE `Hardware/LICENSE` and `Hardware/NOTICE.md` are absent.
 
 These are exact tree/blob comparisons, not test execution or migration approval. No COE destination file was staged, copied, moved, overwritten, rebased, cherry-picked or edited. COE #26 remains FROZEN.
+
+
+## UTC09 exact Hardware ancestry and COE #26 provenance — 2026-11-22T09:40Z
+
+All five recursive trees were complete (truncated=false). Counts are total Git tree entries / blob entries:
+
+| Exact source ref | Tree entries | Blobs | Board-local Python lab/helper modules |
+|---|---:|---:|---:|
+| Experiments main f4e8a891... | 2,340 | 1,764 | baseline |
+| HARDWARE #327 final 21315a8... | 2,475 | 1,896 | 32 |
+| HARDWARE #339 final b3e15588... | 2,479 | 1,900 | 36 |
+| HARDWARE #340 final 20c5889... | 2,363 | 1,784 | 7 |
+| COE #26 b382d233... | 286 | 207 | 0 |
+
+Board-local helper counts include Python files under the source ESP32 and ESP8266 board directories; COE Hardware has no equivalent Python board-lab modules. They are not a count of all repository tests.
+
+### Exact firmware sketch blobs
+
+| Ref | ESP32 sketch blob | ESP8266 sketch blob |
+|---|---|---|
+| Experiments main | 117c6e937e8f12f3890ace2ae23b3a23ff1c3df0 | bfb94920eb0a189ca01d52e5443954fa133f5423 |
+| HARDWARE #327 | 7ffb7b534c7163678726902946a17b04992950a0 | c2aa71963eaa0288721f0bb13cff771aaaabc42f |
+| HARDWARE #339 | 53b27aa80fa4a91aabac71de57f550a8eef2cb61 | 71160ac8ebd5163b19a56d6c9e229a5429975fc8 |
+| HARDWARE #340 | 6a6b1c826872af9f21721fb82cbc5754785c7888 | fdd4e45b2346957ce5f55ae529734854e4c78c7f |
+| COE #26 | 3cc7ec54b476943dc04a8d1af5e2df5fe054e422 | c8be98f72596681e36a3ad1f8939bf8046c96887 |
+
+No candidate sketch is byte-identical to COE #26, and #327/#339/#340 are not byte-identical to one another.
+
+### Exact test and helper identities
+
+- HARDWARE #327 and #339 source path experiment/openwrt/BlazePwifi/tests/v05_firmware_hardening_test.sh: blob 41211b2c110ab409f6d9d1812ef12fda73b13211.
+- HARDWARE #340 same source test path: blob dc20a6ce1a1828c9cba9631fc67193840de5c224.
+- COE #26 Hardware/tests/test_firmware_hardening.sh: blob f921c56cecc19cab1989507b9b4ade1f45dac54e.
+- The #327 dual-store fixture helper blob is 894589c45500f76c0728ffa1ce16c12992da4f12; #339 carries older blob ab18b709de2fdf7a2acc4432c1b902007e538caf. The #339 source tree therefore does not inherit the #327 fixture hardening merely because both PRs share an earlier ancestor.
+- #327 and #339 each have three PHX Hardware workflows; #339's quarantine workflow blob differs from #327. #340 has two separate pre-poll/quarantine workflows. COE #26 has one generic Hardware workflow.
+
+### Exact ancestry and license/NOTICE
+
+GitHub compare #327...#339 returns DIVERGED: 64 commits ahead, 32 behind, merge base 827fa75fa4e56ff3033076cc2f9b7ebb0cddf1a8. #327 is based on #326; #339 is based on #338. #340 is a separate child of #283. These are distinct candidate lineages, not a merge-ready stack.
+
+Experiments experiment/openwrt/BlazePwifi/LICENSE and COE Pisowifi/LICENSE are byte-identical at blob 1ee55b94183417be977ca287cd7391f9a6f7e721. Experiments root NOTICE.md exists at f6d92cd21465312be5993631fe26977219be0fb9; COE root NOTICE.md is absent; COE Hardware/LICENSE and Hardware/NOTICE.md are absent.
+
+**Disposition: NO MIGRATION.** No file staging, copy, move, overwrite, cherry-pick, rebase, retarget, destination edit or route promotion occurred. The unchanged OWNERSHIP_ROUTES.json remains 11 routes, DRAFT_REVIEW_ONLY, PHX-MASTER target null. COE #26 remains FROZEN.
