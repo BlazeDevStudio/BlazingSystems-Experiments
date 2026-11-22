@@ -102,9 +102,8 @@ def constants(source: str, names):
     original_lines = source.splitlines()
     code_mask = mask_non_code(source)
     active_code_mask = _mask_inactive_preprocessor_branches(code_mask)
-    if (len(active_code_mask) != len(source) or
-            active_code_mask.count("\\n") != source.count("\\n") or
-            active_code_mask.count("\\r") != source.count("\\r")):
+    if len(active_code_mask) != len(source):
+        raise RuntimeError("constant extraction mask changed source offsets")
         raise RuntimeError("constant extraction masks changed source offsets or newlines")
     code_lines = active_code_mask.splitlines()
     if len(original_lines) != len(code_lines):
