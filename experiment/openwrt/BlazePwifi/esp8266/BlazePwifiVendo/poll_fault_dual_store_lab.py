@@ -438,15 +438,15 @@ static const uint32_t POLL_FAULT_EEPROM_BYTES = 32;
 
     # Python source slicing uses Unicode string indices, not UTF-8 byte offsets.
     unicode_sample = (
-        "// café 🔧 before the directive\\n"
-        "#if 0\\n"
-        "static const uint32_t UNICODE_INACTIVE_SENTINEL = 8;\\n"
-        "#endif\\n"
-        "static const uint32_t UNICODE_ACTIVE_SENTINEL = 9;\\n"
+        "// café 🔧 before the directive\n"
+        "#if 0\n"
+        "static const uint32_t UNICODE_INACTIVE_SENTINEL = 8;\n"
+        "#endif\n"
+        "static const uint32_t UNICODE_ACTIVE_SENTINEL = 9;\n"
     )
     unicode_mask = source_helpers.mask_active_cpp_code(unicode_sample)
-    source_newlines = [i for i, char in enumerate(unicode_sample) if char in "\\r\\n"]
-    masked_newlines = [i for i, char in enumerate(unicode_mask) if char in "\\r\\n"]
+    source_newlines = [i for i, char in enumerate(unicode_sample) if char in "\r\n"]
+    masked_newlines = [i for i, char in enumerate(unicode_mask) if char in "\r\n"]
     if len(unicode_sample.encode("utf-8")) <= len(unicode_sample):
         raise AssertionError("Unicode offset fixture must contain multibyte UTF-8 characters")
     if len(unicode_mask) != len(unicode_sample) or masked_newlines != source_newlines:
