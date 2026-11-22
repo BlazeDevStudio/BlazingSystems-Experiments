@@ -1145,8 +1145,10 @@ void applyRemoteConfig(const String &r){
   runDebounceMs=boundedCoinDebounceMs(db); runPulseGroupMs=(uint16_t)constrain(pg,10,10000); maxWifiRetries=constrain(mr,1,60);
   if(nextPinsSafe){
     runCoinActiveLow=nextCoinActiveLow;
-    configureRuntimePins(nextCoin,nextRelay,nextLed);
+    // Publish the validated map before configureRuntimePins(): its local
+    // polarity guard must be able to revoke pinConfigSafe when polarity is unknown.
     pinConfigSafe=true;
+    configureRuntimePins(nextCoin,nextRelay,nextLed);
   } else {
     pinConfigSafe=false;
     Serial.println("CRITICAL: unsafe or colliding GPIO assignment rejected; outputs disabled.");
