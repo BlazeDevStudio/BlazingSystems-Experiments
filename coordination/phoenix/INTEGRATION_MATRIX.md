@@ -3959,3 +3959,16 @@ Exact firmware/test identities:
 - Source `BlazePwifi/LICENSE` and COE `Pisowifi/LICENSE` are byte-identical at `1ee55b94183417be977ca287cd7391f9a6f7e721`. Source root `NOTICE.md` (`f6d92cd21465312be5993631fe26977219be0fb9`) is absent at COE root; COE `Hardware/LICENSE` and `Hardware/NOTICE.md` are absent.
 
 The current candidate therefore fails source-pin freshness, summary-count consistency, firmware blob equivalence, test identity, and notice/license-scope completeness. COE #26 stays FROZEN. No staging, copy, move, overwrite, rebase, cherry-pick, route promotion or destination edit occurred.
+
+
+## UTC17 same-hour integration evidence — Hardware #343 / COE #35
+
+Current exact source/CI status is intentionally distinct from hardware acceptance:
+
+- HARDWARE #343 branch `phoenix/hw-esp8266-pin-recovery-20261122-utc16` is a child of #342 at `e7815297...`; final head `bd25c330...`. Its four changed paths include the ESP8266 production sketch, pin-recovery lab, blocking-inhibit lab and handover.
+- The source/test commit `ea437956...` exercises the actual production `jsonInt()` parser with a non-default GPIO tuple. Test-first RED [#45048415916](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45048415916) was expected; source/test GREEN [#45048644447](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45048644447) passed 3/3 valid/negative cases. Final-head Quarantine and Relay pass. Full validation still fails at the inherited QA assertion; downstream signing/candidate/publishing jobs skip.
+- The #343 ESP8266 consumer still clears `insertMode` and `activeTarget` and returns false from `acceptPollResponse()`. The #327 ESP32 consumer does the same. This parser/GPIO improvement does not approve poll authentication or coin admission.
+- COE RELEASE #35 current head `7c1496778c9809d7b13ad27fc2dd98dd3272b81f`: case guard [#45049104274](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45049104274) SUCCESS; shared [#45049104305](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45049104305) runs 189 tests with 2 intentional skips, then fails all 10 appliance profiles closed because approved site-scoped ULA /48 authority is missing; sandbox [#45049104266](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45049104266) runs 36 host tests successfully, then exits 125 because Bubblewrap is unavailable.
+- COE #45 remains a contract-only receipt candidate with exact-head contract [#44295049727](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44295049727) and case guard [#44295049903](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44295049903) SUCCESS; runtime remains DENY. COE #49 Stage 5.1 suite [#44646341873](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44646341873) passes, but shared [#44646341922](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44646341922) fails ESP32 compilation at missing `mbedtls/sha256.h`.
+
+COE #26 remains OPEN / DRAFT / FROZEN at `b382d233ff06c8791b1028bed3c617cc7b670d12`, with five queued workflows and zero jobs. No destination file was staged, copied, moved, overwritten or edited.

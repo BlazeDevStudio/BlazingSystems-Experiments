@@ -1371,3 +1371,22 @@ COE #45 defines a separate `blazepwifi-coin-receipt-v1` HMAC-SHA256 event-bound 
 ## Appendix — COE INTERCON Stage 5.1 router bridge boundary (2026-11-22 UTC13)
 
 COE #49 Stage 5.1 is a separate experimental sidecar candidate, not a replacement for the canonical CORE controller-response contract or the frozen COE #26 destination. Its adapter documentation describes the existing router v1 request digest as SHA256(secret|action|id|nonce|pulses|target|secret), explicitly not HMAC; the ESP command channel uses a separate HMAC protocol. Do not collapse these into one cryptographic contract or describe the router v1 digest as HMAC. The Stage 5.1 bridge tests use FakeRouter/FakeEsp and SQLite and are explicitly not real OpenWrt/ESP hardware tests. Its stage-specific suite passes, but the shared COE workflow still fails ESP32 compilation because the staged sketch includes mbedtls/sha256.h, while current source #327 has an Mbed TLS 3/4 guard. No positive financial or hardware admission follows from the isolated bridge test. Keep the candidate review-only until CORE, HARDWARE, QA and COE owners approve the exact producer/consumer contract, build parity and migration provenance.
+
+
+## 6.74 — Hardware #343 GPIO parser lab does not approve poll authentication (2026-11-22T17:40Z)
+
+This appendix reconciles the current exact owner refs. It does not approve a positive poll response or change any runtime contract.
+
+### Exact producer and consumer evidence
+
+- CORE #252 `vendo` blob `16eb4105c15569dfd77b19a276ee05a25768083e` emits a nested `config_auth` object for register/poll. Its helper in `controller.sh` blob `1a820416051a7af5462841b191b02630aa87781f` uses the versioned domain `blazepwifi-controller-response-v1`, includes the requested policy/nonce/window and an explicit `DENY` bit, and serializes `admission_allowed:false`. The separate member-operation `response_sig` values are not the poll contract.
+- HARDWARE #343 ESP8266 sketch blob `ac7712ef9e41c396d87b6a336e82a8335c7e9b2f` and HARDWARE #327 ESP32 sketch blob `7ffb7b534c7163678726902946a17b04992950a0` both keep `acceptPollResponse()` deny-only: clear `insertMode` and `activeTarget`, then return false.
+- COE #26 `vendo` blob `0a71c4e253ac6ec2c30d46f1f99faf874dbaab8e` still uses `vendo_poll_sig()` and a top-level poll `response_sig`. It is a separate derived candidate and is not byte- or interface-equivalent to the current CORE producer.
+
+### Ownership and acceptance boundary
+
+HARDWARE #343 tests the actual production `jsonInt()` parser with a non-default GPIO tuple (3/12/13) plus unknown-polarity and invalid-pin deny cases. Its focused Quarantine and Relay CI passes, but its Full workflow still fails the inherited QA assertion `Missing poll signature check`. That parser/GPIO work does not establish authenticated poll admission, coin-post disposition, physical relay acceptance or production readiness.
+
+Do not add a positive `response_sig` to either firmware sketch merely to satisfy the legacy test. PHX-CORE owns the canonical producer contract and golden vectors; PHX-HARDWARE owns the consumer; PHX-QA owns the stale fixture and independent negative/default-deny tests. COE #26 remains frozen until its own integration owner reconciles the derived producer, test identity, source pins, imports, licenses/NOTICE and exact CI.
+
+**Disposition:** current poll/coin admission remains deny-only. No schema approval, route promotion, migration, merge, release, signer provisioning, hardware flash or physical acceptance is granted by this appendix.

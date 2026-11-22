@@ -1435,3 +1435,14 @@ No staging, copy, move, overwrite, route promotion, cherry-pick, rebase or COE d
 At exact COE #26 head, the 61 rootfs destination blobs match the candidate's old map, but the map source commit is `6d4c9b...` and only 33/61 mapped source blobs match current manifest source main `f4e8...`. The intake/map count mismatch (47/14 vs 46/15) remains unresolved. Firmware sketches, hardening tests and several owner routes are not byte-identical; license/NOTICE scope is incomplete. No path is promoted.
 
 Keep #26 FROZEN. The COE integration owner must reconcile the source pin, all 20 changed and 8 absent source paths, summary counters, per-file test identity/import completeness, exact CI and license/NOTICE decisions before requesting any destination staging. PHX-MASTER does not take over the destination or any subsystem source branch. No copy, move, overwrite, rebase, cherry-pick, route promotion, destination edit or merge occurred.
+
+
+## UTC17 same-hour route and provenance hold — 2026-11-22
+
+The machine-readable `OWNERSHIP_ROUTES.json` remains unchanged at `e4db324315a1b3543fec17a148fbf960170fcb29`, 11 routes, `DRAFT_REVIEW_ONLY`; PHX-MASTER target remains `null`. The source baseline remains Experiments main `f4e8a891...`; COE candidate remains #26 `b382d233...`.
+
+At the exact #343 candidate tree, Experiments contains 2,480 entries and 33 board-local Python helpers under ESP32/ESP8266. COE #26 has a complete 286-entry tree and zero matching Hardware board-local Python helpers. Exact source/destination identities remain divergent: current #343 ESP8266 `ac7712ef9e41c396d87b6a336e82a8335c7e9b2f` vs COE #26 `c8be98f72596681e36a3ad1f8939bf8046c96887`; #327 ESP32 `7ffb7b534c7163678726902946a17b04992950a0` vs COE #26 `3cc7ec54b476943dc04a8d1af5e2df5fe054e422`; source hardening test `41211b2c110ab409f6d9d1812ef12fda73b13211` vs destination test `f921c56cecc19cab1989507b9b4ade1f45dac54e`.
+
+COE #26 `SOURCE_INTAKE.json` still pins source commit `6d4c9b487af4d768c4d7627654d119417fcc6e00`, while the route manifest points to main `f4e8a891...`. The 61-row map has 33 current-main source blobs matching, 20 changed and 8 absent; all 61 destination blobs match their old map entries. The map computes 46 identical / 15 divergent, while intake summary claims 47 / 14. Source `BlazePwifi/LICENSE` and destination `Pisowifi/LICENSE` are byte-identical; source root `NOTICE.md` exists but COE root NOTICE and Hardware-local LICENSE/NOTICE are absent. This is not complete licensing/import parity.
+
+COE #26 stays FROZEN. The COE integration owner must reconcile source pin, 20 changed and 8 absent paths, summary counters, per-file provenance, test identities, helper imports, exact CI and license/NOTICE scope before any staging proposal. No route promotion or destination edit.

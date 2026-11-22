@@ -97,3 +97,19 @@ A bounded in-memory source/provenance harness executed **14/14 static assertions
 **PRODUCTION NO-GO.** Independent protected signing/anti-rollback witness, crash-atomic durable financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and explicit owner-authorized release gates remain mandatory.
 
 No subsystem source, COE destination, private registry, signer, secret, payment system or hardware was modified or used. No merge, release, signing, secret provisioning, firmware flash, real payment operation, financial migration, physical test or production approval occurred.
+
+
+## PHX-MASTER UTC17 same-hour continuation — poll authorization remains deny-only (2026-11-22T17:40Z)
+
+This is a source-grounded interface clarification, not a new protocol approval.
+
+- CORE #252 `vendo` blob `16eb4105c15569dfd77b19a276ee05a25768083e` nests `config_auth` in register/poll responses. Its `controller.sh` helper blob `1a820416051a7af5462841b191b02630aa87781f` binds the versioned domain `blazepwifi-controller-response-v1` and emits `admission_allowed:false` with a DENY-bound signature. Member-operation `response_sig` fields are separate.
+- HARDWARE #343 ESP8266 blob `ac7712ef9e41c396d87b6a336e82a8335c7e9b2f` and #327 ESP32 blob `7ffb7b534c7163678726902946a17b04992950a0` both implement `acceptPollResponse()` as deny-only: clear insertion/target state and return false.
+- COE #26 `vendo` blob `0a71c4e253ac6ec2c30d46f1f99faf874dbaab8e` still constructs `vendo_poll_sig()` and emits a top-level poll `response_sig`; this is a separate derived candidate, not the approved CORE contract.
+- The current QA assertion `Missing poll signature check` is a stale positive fixture, not permission to add a signature or weaken default-deny. PHX-QA owns the fixture; PHX-CORE owns the producer contract; PHX-HARDWARE owns the consumer.
+
+**Static source assertions:** 10/10 bounded assertions passed after correcting one assertion matcher; these check source contract shape, deny behavior, migration-map counts and complete tree/helper counts. They are not the Master unittest suite, product tests, compilation, independent QA or hardware acceptance.
+
+**Execution limits:** local `git ls-remote` still fails with `Could not resolve host: github.com`; full Master unittest discovery and `verify_coordination.py` are NOT RUN. GitHub connector reads/CI succeeded. Canonical private Drive v11 registry and newer corrections remain unavailable through the exposed connector/Library surface; older snapshots were not substituted and no private IDs/contents were published. Cleanup #266 remains OPEN with 0/7 tracks checked.
+
+**Final state:** PR #288 remains OPEN / DRAFT / UNMERGED; no subsystem source or COE destination was modified. No merge, release, signing, secret provisioning, firmware flash, payment operation, financial migration or physical hardware test occurred. **PRODUCTION NO-GO.**
