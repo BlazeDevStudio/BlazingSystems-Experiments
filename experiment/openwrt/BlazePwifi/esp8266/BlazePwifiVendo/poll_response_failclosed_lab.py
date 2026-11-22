@@ -50,6 +50,29 @@ void lexicalFixture() {
     print("POLL_RESPONSE_LEXICAL_EXTRACTOR_PASS")
 
 
+def verify_spliced_raw_string_prefix():
+    fixture = (
+        "void splicedRawStringFixture() {\n"
+        "  const char *raw = u8R\\\n"
+        "\"PHX(\n"
+        "    \"quoted } // not a comment\"\n"
+        "    #if 0\n"
+        "    }\n"
+        ")PHX\";\n"
+        "  if (true) { return; }\n"
+        "}\n"
+    )
+    extracted = extract(fixture, "splicedRawStringFixture")
+    if "if (true) { return; }" not in extracted:
+        raise AssertionError(
+            "source extractor truncated a raw string whose R-quote prefix "
+            "is joined by C++ phase-2 splicing"
+        )
+    if extracted.count("return;") != 1 or not extracted.rstrip().endswith("}"):
+        raise AssertionError("source extractor returned an incomplete spliced raw-string function")
+    print("FIRMWARE_LAB_PHASE2_SPLICED_RAW_PREFIX_PASS")
+
+
 def verify_debounce_clamp_callsite_count(source, board, minimum_calls):
     count = mask_active_cpp_code(source).count("boundedCoinDebounceMs(")
     if count < minimum_calls:
@@ -132,7 +155,7 @@ def verify_debounce_clamp_callsite_decoys(source, board, minimum_calls):
 
 
 verify_lexical_extractor()
-
+verify_spliced_raw_string_prefix()
 
 
 failed=[]
