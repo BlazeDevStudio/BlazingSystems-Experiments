@@ -114,13 +114,13 @@ def verify_debounce_clamp_callsite_decoys(source, board, minimum_calls):
         f"{minimum_calls}/{minimum_calls}"
     )
     branch_chain_decoys = (
-        "#if PHX_UNKNOWN\\n"
-        "runDebounceMs=boundedCoinDebounceMs(30);\\n"
-        "#elif 1\\n"
-        "runDebounceMs=boundedCoinDebounceMs(40);\\n"
-        "#else\\n"
-        "runDebounceMs=boundedCoinDebounceMs(50);\\n"
-        "#endif\\n"
+        "#if PHX_UNKNOWN\n"
+        "runDebounceMs=boundedCoinDebounceMs(30);\n"
+        "#elif 1\n"
+        "runDebounceMs=boundedCoinDebounceMs(40);\n"
+        "#else\n"
+        "runDebounceMs=boundedCoinDebounceMs(50);\n"
+        "#endif\n"
     )
     branch_chain_mask = mask_active_cpp_code(branch_chain_decoys)
     if branch_chain_mask.count("boundedCoinDebounceMs(") != 2:
