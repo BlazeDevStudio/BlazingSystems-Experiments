@@ -1,6 +1,6 @@
 # PHX-HARDWARE — shared active C++ preprocessing mask (UTC20)
 
-**Disposition:** focused Quarantine CI VERIFIED at the exact source/test SHA; Full integration run is queued/pending with no jobs returned; SIMULATED ONLY; HARDWARE ACCEPTED NO; PRODUCTION NO-GO.
+**Disposition:** focused Quarantine CI VERIFIED at exact source/test SHA `07ef70b73dba128c71b2bd735a7370333a600293`; Full integration validation FAILED at the inherited QA-owned `Missing poll signature check`; SIMULATED ONLY; HARDWARE ACCEPTED NO; PRODUCTION NO-GO.
 
 - Role: PHX-HARDWARE
 - Repository: `BlazeDevStudio/BlazingSystems-Experiments` (repository ID `1389289885`)
@@ -30,14 +30,14 @@ No ESP32/ESP8266 sketch, runtime GPIO, relay, coin admission, pending journal, c
 
 The shared module now owns:
 - `_literal_preprocessor_condition()` for literal `#if/#elif 0/1` recognition;
-- `_logical_preprocessor_lines()` for LF, CRLF and CR phase-2 line-splicing while retaining physical offsets;
+- `_logical_preprocessor_lines()` for LF, CRLF and CR phase-2 line-splicing while retaining original Python string-index ranges;
 - `_mask_inactive_preprocessor_branches()` for known-inactive literal branches;
-- public `mask_active_cpp_code()`, which composes `mask_non_code()` with the bounded preprocessor mask and verifies exact source offsets and newline positions.
+- public `mask_active_cpp_code()`, which composes `mask_non_code()` with the bounded preprocessor mask and verifies Python string-index and newline-position preservation.
 
 The fixture module now imports `mask_active_cpp_code()` and no longer carries a second copy of the preprocessor parser. Unknown macro expressions remain conservatively visible; this helper is not a complete C/C++ compiler preprocessor.
 
 The dual-store runner adds direct checks for:
-- exact offset/newline preservation across LF, CRLF and CR: 3/3;
+- Python string-index/newline preservation across LF, CRLF and CR: 3/3;
 - conservative visibility of unknown macro branches: 1/1;
 - failure injection replacing the shared active mask with the lexical-only mask, which must re-expose an inactive declaration: mutation rejected 1/1.
 
@@ -52,7 +52,7 @@ The dual-store runner adds direct checks for:
   - existing comment/raw-string/identifier/inactive-branch/phase-2/digraph extraction checks also passed.
 - The same job completed the existing quarantine, EEPROM/NVS, poll-window, pulse-capture and boot-polarity source-extracted suites. Its explicit end markers remain `SIMULATED_ONLY=1`, `PHYSICAL_POWER_CUT_VERIFIED=0`, and `FINANCIAL_PRODUCTION_AUTHORIZED=0`.
 
-Full integration run [#45067887363](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45067887363) was still pending with no jobs returned at handover time. Do not claim a current-head Full result from the parent #341 run; the parent Full run [#45060591630](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45060591630) failed its QA-owned `Missing poll signature check` validation assertion.
+At the earlier handover, Full run [#45067887363](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45067887363) had no jobs returned. The later final-docs-head Full run [#45068113012](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45068113012) completed with validation job `137349513473` **FAILURE** at the inherited QA-owned `Missing poll signature check`; its 14 configured target/platform jobs and Android build passed, while downstream simulation/signing/publication stages were skipped.
 
 ## Ownership and safety boundaries
 
@@ -68,3 +68,17 @@ Full integration run [#45067887363](https://github.com/BlazeDevStudio/BlazingSys
 3. PHX-CORE to publish the canonical authenticated register/poll/configuration and event-bound receipt contract.
 4. PHX-HARDWARE keeps coin admission and remote configuration deny-only; continue only after revalidating current heads and role assignments.
 5. Hardware acceptance remains NOT TESTED: 150 physical power cuts, 30-device/24-hour soak, electrical pulse/recovery and independent monotonic witness remain outstanding.
+
+## UTC21 follow-up — Unicode-safe source-index contract
+
+The previous helper docstring called its offsets “byte offsets”. That was imprecise: the implementation operates on Python `str` indices (Unicode code-point positions), which are the correct indices for its source-string slicing API; they are not UTF-8 byte offsets.
+
+- Helper documentation correction commit: [`5020ae0786609d6b70114cabc0b799a74d4e4d1e`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/5020ae0786609d6b70114cabc0b799a74d4e4d1e).
+- Unicode regression test commit: [`faa81d31b8f374332667ff523ba462add0e5f37b`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/faa81d31b8f374332667ff523ba462add0e5f37b).
+- Corrected real-LF fixture commit / exact source-test head: [`07ef70b73dba128c71b2bd735a7370333a600293`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/07ef70b73dba128c71b2bd735a7370333a600293).
+- The new fixture places multibyte UTF-8 text (`café 🔧`) before a literal inactive branch, then checks Python string length, exact CR/LF positions and active-only constant extraction.
+- Exact-source Quarantine run [#45074086697](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45074086697), job `137367313779`: **SUCCESS**. Log marker: `POLL_FAULT_SHARED_ACTIVE_MASK_UNICODE_STRING_INDEX_PRESERVATION_PASS 1/1`; prior 3/3 newline, 1/1 unknown-macro and 1/1 mutation checks also pass.
+- Full run [#45074086696](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45074086696): validation job `137367388911` **FAILURE** at the same inherited `Missing poll signature check`. At last read, ESP32 and Android jobs were still running; other target jobs had passed. Candidate/signing/publication remain skipped.
+- Logs retain `SIMULATED_ONLY=1`, `PHYSICAL_POWER_CUT_VERIFIED=0`, and `FINANCIAL_PRODUCTION_AUTHORIZED=0`.
+
+This is a host-test contract/documentation correction only. No ESP sketch or runtime behavior changed.
