@@ -55,8 +55,8 @@ def _check_quarantine_pending_definition_only(source: str, board: str) -> None:
     append without an approved event-bound server disposition. Count source
     references conservatively: even a comment reference requires review.
     """
-    references = len(re.findall(r"\\bquarantinePending\\s*\\(", source))
-    definitions = len(re.findall(r"\\bbool\\s+quarantinePending\\s*\\(", source))
+    references = len(re.findall(r"\bquarantinePending\s*\(", source))
+    definitions = len(re.findall(r"\bbool\s+quarantinePending\s*\(", source))
     if references != 1 or definitions != 1:
         raise RuntimeError(
             f"{board}: quarantinePending must remain definition-only until "
@@ -69,8 +69,8 @@ def assert_quarantine_pending_definition_only(source: str, board: str) -> None:
     _check_quarantine_pending_definition_only(source, board)
     injected = (
         source
-        + "\\nvoid injected_unapproved_quarantine_callsite() { "
-        + 'quarantinePending(String("unapproved")); }\\n'
+        + "\nvoid injected_unapproved_quarantine_callsite() { "
+        + 'quarantinePending(String("unapproved")); }\n'
     )
     try:
         _check_quarantine_pending_definition_only(injected, board)
