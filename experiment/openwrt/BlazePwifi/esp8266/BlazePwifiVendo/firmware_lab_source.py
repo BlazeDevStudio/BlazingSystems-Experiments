@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Shared C/C++ source extraction helpers for ESP firmware host labs.
 
-The mask preserves byte offsets and newline positions so matches against the
+The mask preserves Python string indices and newline positions so matches against the
 masked source can safely slice the original source. Comments, ordinary
 literals, and C++ raw strings are ignored when locating blocks and functions.
 """
@@ -187,6 +187,176 @@ def mask_non_code(source: str) -> str:
         index += 1
 
     return "".join(masked)
+
+def _literal_preprocessor_condition(expression: str):
+    """Return a boolean only for literal #if/#elif 0 or 1 conditions."""
+    value = expression.strip()
+    if value in ("0", "(0)"):
+        return False
+    if value in ("1", "(1)"):
+        return True
+    return None
+
+
+def _logical_preprocessor_lines(source: str):
+    """Yield phase-2 logical lines with their original physical source ranges.
+
+    C/C++ removes backslash-newline pairs before recognizing # and %: preprocessing
+    directives. Keep the physical range so later masking can preserve every
+    original offset and newline without building a full preprocessor.
+    """
+    start = 0
+    index = 0
+    logical = []
+
+    while index < len(source):
+        if source[index] == "\\" and index + 1 < len(source):
+            if source[index + 1] == "\n":
+                index += 2
+                continue
+            if source[index + 1] == "\r":
+                index += 2
+                if index < len(source) and source[index] == "\n":
+                    index += 1
+                continue
+
+        if source[index] == "\r":
+            end = index + 1
+            if end < len(source) and source[end] == "\n":
+                end += 1
+            yield "".join(logical), start, end
+            logical = []
+            index = end
+            start = end
+            continue
+
+        if source[index] == "\n":
+            end = index + 1
+            yield "".join(logical), start, end
+            logical = []
+            index = end
+            start = end
+            continue
+
+        logical.append(source[index])
+        index += 1
+
+    if start < len(source) or logical:
+        yield "".join(logical), start, len(source)
+
+
+def _mask_inactive_preprocessor_branches(code_source: str) -> str:
+    """Mask branches known inactive from literal #if/#elif 0/1 directives.
+
+    Directive recognition follows C/C++ phase-2 line splicing, including
+    splices inside directive keywords and expressions. Unknown macro
+    expressions remain conservatively visible; this is not a full C
+    preprocessor. The returned mask preserves every source offset and newline.
+    Malformed conditional nesting is rejected instead of silently producing
+    a potentially misleading source mask.
+    """
+    masked = list(code_source)
+    frames = []
+    active = True
+
+    def malformed(message: str, offset: int) -> None:
+        line_number = len(re.findall(r"\r\n|\r|\n", code_source[:offset])) + 1
+        raise RuntimeError(f"{message} at line {line_number}")
+
+    for logical_line, start, end in _logical_preprocessor_lines(code_source):
+        directive = re.match(
+            r"^[ \t]*(?:#|%:)[ \t]*(if|ifdef|ifndef|elif|else|endif)\b(.*)$",
+            logical_line,
+        )
+        if directive:
+            command = directive.group(1)
+            expression = directive.group(2).strip()
+
+            if command in ("if", "ifdef", "ifndef"):
+                if not expression:
+                    malformed(f"missing expression after #{command}", start)
+                condition = (
+                    _literal_preprocessor_condition(expression)
+                    if command == "if" else None
+                )
+                parent_active = active
+                frames.append({
+                    "parent_active": parent_active,
+                    "branch_taken": condition,
+                    "else_seen": False,
+                    "start": start,
+                })
+                active = parent_active and condition is not False
+
+            elif command == "elif":
+                if not frames:
+                    malformed("unmatched #elif", start)
+                frame = frames[-1]
+                if frame["else_seen"]:
+                    malformed("#elif after #else", start)
+                if not expression:
+                    malformed("missing expression after #elif", start)
+                if not frame["parent_active"] or frame["branch_taken"] is True:
+                    active = False
+                elif frame["branch_taken"] is None:
+                    # A preceding unknown macro branch may already be active,
+                    # but a literal #elif 0 is still definitely inactive.
+                    condition = _literal_preprocessor_condition(expression)
+                    active = condition is not False
+                    if condition is True:
+                        frame["branch_taken"] = True
+                else:
+                    condition = _literal_preprocessor_condition(expression)
+                    active = condition is not False
+                    if condition is True:
+                        frame["branch_taken"] = True
+
+            elif command == "else":
+                if not frames:
+                    malformed("unmatched #else", start)
+                frame = frames[-1]
+                if frame["else_seen"]:
+                    malformed("duplicate #else", start)
+                if expression:
+                    malformed("unexpected tokens after #else", start)
+                frame["else_seen"] = True
+                active = frame["parent_active"] and frame["branch_taken"] is not True
+                frame["branch_taken"] = True
+
+            elif command == "endif":
+                if not frames:
+                    malformed("unmatched #endif", start)
+                if expression:
+                    malformed("unexpected tokens after #endif", start)
+                active = frames.pop()["parent_active"]
+
+        elif not active:
+            for index in range(start, end):
+                if code_source[index] not in "\r\n":
+                    masked[index] = " "
+
+    if frames:
+        malformed("unterminated conditional directive", frames[-1]["start"])
+
+    return "".join(masked)
+
+def mask_active_cpp_code(source: str) -> str:
+    """Mask comments, literals, and provably inactive literal preprocessor branches.
+
+    Unknown macro expressions remain visible. This is a bounded source-analysis
+    helper, not a replacement for the compiler's complete preprocessor.
+    The returned text preserves Python string indices and CR/LF positions.
+    """
+    code_source = mask_non_code(source)
+    active_source = _mask_inactive_preprocessor_branches(code_source)
+    if len(active_source) != len(source):
+        raise RuntimeError("active C++ mask changed source offsets")
+    source_newlines = [index for index, char in enumerate(source) if char in "\r\n"]
+    active_newlines = [index for index, char in enumerate(active_source) if char in "\r\n"]
+    if active_newlines != source_newlines:
+        raise RuntimeError("active C++ mask changed newline positions")
+    return active_source
+
 
 def _matching_brace_masked(masked: str, opening: int) -> int:
     """Return the closing brace for an opening brace in masked source."""

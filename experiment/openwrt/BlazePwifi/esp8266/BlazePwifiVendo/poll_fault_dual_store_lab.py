@@ -9,6 +9,9 @@ import subprocess
 import tempfile
 import sys
 
+import firmware_lab_source as source_helpers
+import poll_fault_dual_store_lab_fixtures as fixture_module
+
 from firmware_lab_source import extract_block, extract_function, extract_functions, find_repo_root, mask_non_code
 from poll_fault_dual_store_lab_fixtures import constants, harness
 
@@ -377,6 +380,143 @@ static const uint32_t POLL_FAULT_EEPROM_BYTES = 32;
             f"got={selected_spliced_digraph.splitlines()!r}"
         )
     print("POLL_FAULT_CONSTANT_EXTRACTION_PHASE2_DIGRAPH_SPLICE_REJECTED 1/1")
+
+    # The shared C/C++ source helper must own active-preprocessor masking.
+    newline_cases = 0
+    source = ""
+    for newline in ("\n", "\r\n", "\r"):
+        sample = (
+            "#if 0" + newline
+            + "static const uint32_t SHARED_MASK_SENTINEL = 0xBAD;" + newline
+            + "#else" + newline
+            + "static const uint32_t SHARED_MASK_SENTINEL = 0x1234;" + newline
+            + "#endif" + newline
+        )
+        active_mask = source_helpers.mask_active_cpp_code(sample)
+        source_newlines = [i for i, char in enumerate(sample) if char in "\r\n"]
+        masked_newlines = [i for i, char in enumerate(active_mask) if char in "\r\n"]
+        if len(active_mask) != len(sample) or masked_newlines != source_newlines:
+            raise AssertionError("shared active-C++ mask must preserve offsets and exact newline positions")
+        selected_shared = constants(sample, ("SHARED_MASK_SENTINEL",))
+        if selected_shared.splitlines() != [
+            "static const uint32_t SHARED_MASK_SENTINEL = 0x1234;"
+        ]:
+            raise AssertionError(
+                "shared active-C++ mask must retain only the known-active declaration; "
+                f"got={selected_shared.splitlines()!r}"
+            )
+        source = sample
+        newline_cases += 1
+    print(f"POLL_FAULT_SHARED_ACTIVE_MASK_NEWLINE_PRESERVATION_PASS {newline_cases}/3")
+
+    # Unknown macro branches must remain visible; this is deliberately not a full preprocessor.
+    unknown_macro = (
+        "#if BUILD_FEATURE_X\n"
+        "static const uint32_t UNKNOWN_MACRO_SENTINEL = 7;\n"
+        "#endif\n"
+    )
+    selected_unknown = constants(unknown_macro, ("UNKNOWN_MACRO_SENTINEL",))
+    if selected_unknown.splitlines() != [
+        "static const uint32_t UNKNOWN_MACRO_SENTINEL = 7;"
+    ]:
+        raise AssertionError("unknown macro branches must remain conservative, not be masked")
+    print("POLL_FAULT_SHARED_ACTIVE_MASK_UNKNOWN_MACRO_CONSERVATIVE_PASS 1/1")
+
+    # Failure injection: replacing the shared active mask with the lexical-only mask
+    # must re-expose the known-inactive declaration and fail the expected result.
+    original_active_mask = fixture_module.mask_active_cpp_code
+    try:
+        fixture_module.mask_active_cpp_code = source_helpers.mask_non_code
+        mutated = constants(source, ("SHARED_MASK_SENTINEL",))
+    finally:
+        fixture_module.mask_active_cpp_code = original_active_mask
+    if mutated.splitlines() == [
+        "static const uint32_t SHARED_MASK_SENTINEL = 0x1234;"
+    ]:
+        raise AssertionError("removing inactive-branch filtering was not detected")
+    print("POLL_FAULT_SHARED_ACTIVE_MASK_MUTATION_REJECTED 1/1")
+
+    # Python source slicing uses Unicode string indices, not UTF-8 byte offsets.
+    unicode_sample = (
+        "// café 🔧 before the directive\n"
+        "#if 0\n"
+        "static const uint32_t UNICODE_INACTIVE_SENTINEL = 8;\n"
+        "#endif\n"
+        "static const uint32_t UNICODE_ACTIVE_SENTINEL = 9;\n"
+    )
+    unicode_mask = source_helpers.mask_active_cpp_code(unicode_sample)
+    source_newlines = [i for i, char in enumerate(unicode_sample) if char in "\r\n"]
+    masked_newlines = [i for i, char in enumerate(unicode_mask) if char in "\r\n"]
+    if len(unicode_sample.encode("utf-8")) <= len(unicode_sample):
+        raise AssertionError("Unicode offset fixture must contain multibyte UTF-8 characters")
+    if len(unicode_mask) != len(unicode_sample) or masked_newlines != source_newlines:
+        raise AssertionError("shared active-C++ mask must preserve Python string indices across Unicode")
+    selected_unicode = constants(
+        unicode_sample,
+        ("UNICODE_ACTIVE_SENTINEL", "UNICODE_INACTIVE_SENTINEL"),
+    )
+    if selected_unicode.splitlines() != [
+        "static const uint32_t UNICODE_ACTIVE_SENTINEL = 9;"
+    ]:
+        raise AssertionError(
+            "Unicode prefix must not shift extraction indices or expose inactive declarations; "
+            f"got={selected_unicode.splitlines()!r}"
+        )
+    print("POLL_FAULT_SHARED_ACTIVE_MASK_UNICODE_STRING_INDEX_PRESERVATION_PASS 1/1")
+
+    # Malformed conditional stacks must not be silently interpreted as valid source.
+    malformed_directives = (
+        ("orphan #elif", "#elif 1\nstatic const int ORPHAN_ELIF = 1;\n"),
+        ("orphan #else", "#else\nstatic const int ORPHAN_ELSE = 1;\n"),
+        ("orphan #endif", "#endif\n"),
+        ("unterminated #if", "#if 0\nstatic const int HIDDEN = 1;\n"),
+        ("duplicate #else", "#if 0\n#else\nint first = 1;\n#else\nint second = 2;\n#endif\n"),
+        ("#elif after #else", "#if 0\n#else\nint first = 1;\n#elif 1\nint second = 2;\n#endif\n"),
+    )
+    for label, malformed_source in malformed_directives:
+        try:
+            source_helpers.mask_active_cpp_code(malformed_source)
+        except RuntimeError:
+            continue
+        raise AssertionError(
+            f"shared active-C++ mask must reject malformed conditional structure: {label}"
+        )
+    print("POLL_FAULT_SHARED_ACTIVE_MASK_MALFORMED_DIRECTIVE_STRUCTURE_REJECTED 6/6")
+
+    # Unknown outer branches remain conservative while nested literal branches
+    # still hide only the provably inactive code.
+    nested_unknown = (
+        "#if BUILD_FEATURE_X\n"
+        "#if 0\n"
+        "static const uint32_t NESTED_INACTIVE_SENTINEL = 1;\n"
+        "#else\n"
+        "static const uint32_t NESTED_UNKNOWN_VISIBLE_SENTINEL = 2;\n"
+        "#endif\n"
+        "#elif 0\n"
+        "static const uint32_t NESTED_ELIF_INACTIVE_SENTINEL = 3;\n"
+        "#else\n"
+        "static const uint32_t NESTED_FALLBACK_VISIBLE_SENTINEL = 4;\n"
+        "#endif\n"
+    )
+    selected_nested = constants(
+        nested_unknown,
+        (
+            "NESTED_INACTIVE_SENTINEL",
+            "NESTED_UNKNOWN_VISIBLE_SENTINEL",
+            "NESTED_ELIF_INACTIVE_SENTINEL",
+            "NESTED_FALLBACK_VISIBLE_SENTINEL",
+        ),
+    )
+    if selected_nested.splitlines() != [
+        "static const uint32_t NESTED_UNKNOWN_VISIBLE_SENTINEL = 2;",
+        "static const uint32_t NESTED_FALLBACK_VISIBLE_SENTINEL = 4;",
+    ]:
+        raise AssertionError(
+            "nested unknown/literal branch handling must remain conservative; "
+            f"got={selected_nested.splitlines()!r}"
+        )
+    print("POLL_FAULT_SHARED_ACTIVE_MASK_NESTED_UNKNOWN_BRANCH_CONSERVATIVE_PASS 1/1")
+
 
 def run(board: str, path: Path):
     source = path.read_text(encoding="utf-8")
