@@ -35,9 +35,9 @@ def _mask_inactive_preprocessor_branches(code_source: str) -> str:
     offset = 0
 
     for line in code_source.splitlines(keepends=True):
-        physical_line = line.rstrip("\\r\\n")
+        physical_line = line.rstrip("\r\n")
         directive = re.match(
-            r"^[ \\t]*#[ \\t]*(if|ifdef|ifndef|elif|else|endif)\\b(.*)$",
+            r"^[ \t]*#[ \t]*(if|ifdef|ifndef|elif|else|endif)\b(.*)$",
             physical_line,
         )
         if directive:
@@ -80,7 +80,7 @@ def _mask_inactive_preprocessor_branches(code_source: str) -> str:
 
         elif not active:
             for index in range(offset, offset + len(line)):
-                if code_source[index] not in "\\r\\n":
+                if code_source[index] not in "\r\n":
                     masked[index] = " "
 
         offset += len(line)
