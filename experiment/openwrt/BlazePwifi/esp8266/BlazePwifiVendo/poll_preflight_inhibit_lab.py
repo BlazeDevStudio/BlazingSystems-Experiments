@@ -104,7 +104,7 @@ def poll_guard_locations(source: str):
         raise AssertionError("coin intake is not denied before blocking poll")
     if post_guard < 0:
         raise AssertionError("post-poll deny guard is missing")
-    global_poll = condition.start() + brace + 1 + poll_at
+    global_poll = brace + 1 + poll_at
     sample = loop.find("digitalRead(runCoinPin)")
     if sample < 0 or sample <= global_poll:
         raise AssertionError("coin input sampling moved before/inside blocking poll")
