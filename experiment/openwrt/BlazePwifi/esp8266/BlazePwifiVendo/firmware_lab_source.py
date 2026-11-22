@@ -68,7 +68,7 @@ def _previous_non_spliced_character(source: str, index: int) -> str:
 
 
 def _match_spliced_prefix(source: str, index: int, prefix: str):
-    """Match a raw-string prefix while skipping phase-2 splices between chars."""
+    """Match a literal prefix while skipping phase-2 splices between chars."""
     cursor = index
     for position, character in enumerate(prefix):
         if position:
@@ -114,6 +114,22 @@ def _raw_string_literal_end(source: str, index: int):
     if end < 0:
         raise RuntimeError("unterminated C/C++ raw string")
     return end + len(terminator)
+
+
+def _ordinary_literal_quote_index(source: str, index: int):
+    """Return the quote offset for a prefixed ordinary literal at index."""
+    previous = _previous_non_spliced_character(source, index)
+    if previous.isalnum() or previous == "_":
+        return None
+
+    for prefix in ("u8", "u", "U", "L"):
+        prefix_end = _match_spliced_prefix(source, index, prefix)
+        if prefix_end is None:
+            continue
+        quote_index = _skip_line_splices(source, prefix_end)
+        if quote_index < len(source) and source[quote_index] in ('"', "'"):
+            return quote_index
+    return None
 
 
 def mask_non_code(source: str) -> str:
@@ -171,10 +187,13 @@ def mask_non_code(source: str) -> str:
             index = raw_end
             continue
 
-        if source[index] in ('"', "'"):
-            quote = source[index]
+        literal_quote = _ordinary_literal_quote_index(source, index)
+        if literal_quote is None and source[index] in ('"', "'"):
+            literal_quote = index
+        if literal_quote is not None:
+            quote = source[literal_quote]
             start = index
-            index += 1
+            index = literal_quote + 1
             while index < len(source):
                 if source[index] == "\\":
                     index += 2
