@@ -1451,3 +1451,12 @@ COE #26 stays FROZEN. The COE integration owner must reconcile source pin, 20 ch
 ## PHX-MASTER UTC19 — COE #26 source-pin and route revalidation (2026-11-22)
 
 The ownership manifest remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`, `DRAFT_REVIEW_ONLY`; PHX-MASTER source is `coordination/phoenix/`, target remains null. The historical PisoWiFi source pin is `6d4c9b487af4d768c4d7627654d119417fcc6e00`, while current Experiments main is `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`. The 61-row destination map is exact against the historical source and COE #26, not current main (33 same / 20 changed / 8 absent). Summary counters, firmware/test identities, 34 helper imports, and NOTICE scope remain unresolved. No staging or destination mutation is permitted. Exact blob evidence is in [UTC19 audit](PHX_MASTER_UTC19_20261122_EXACT_ROLE_HEAD_CI_BRANCH_PROTECTION_AND_COE26_PROVENANCE.md).
+
+
+## UTC21 exact route and destination provenance — 2026-11-22T21:42:03Z
+
+The machine-readable `OWNERSHIP_ROUTES.json` remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`, 11 routes, `DRAFT_REVIEW_ONLY`, source ref `f4e8a891...`; PHX-MASTER target remains null. The live COE #26 head remains `b382d233ff06c8791b1028bed3c617cc7b670d12`.
+
+A fresh exact-tree comparison confirms the old intake pin `6d4c9b...` is not current main. Of 61 runtime rows, 33 source blobs match current main, 20 differ and 8 are absent; all 61 destination blobs match their recorded map. The actual classifications are 46 identical / 15 derived, not the summary's 47 / 14. Source Hardware candidate #343 contains 34 board-local Python helpers; COE #26 contains zero corresponding Hardware Python helpers. Firmware/test identities diverge; PisoWiFi MIT LICENSE matches, but source root NOTICE has no COE root counterpart. Five COE #26 workflows remain queued with zero jobs.
+
+No staging, copy, move, overwrite, route promotion, cherry-pick, rebase, retarget or destination edit. The COE integration owner must reconcile source pin, counts, imports, tests, licenses/NOTICE and exact terminal CI before any staging request.
