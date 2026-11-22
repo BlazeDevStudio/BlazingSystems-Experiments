@@ -29,7 +29,40 @@ def run_source_extractor_regressions():
         if "return;" not in extracted or not extracted.rstrip().endswith("}"):
             raise AssertionError(f"{prefix}: raw literal truncated the containing function")
 
+    spliced_cases = 0
+    for prefix in _RAW_PREFIXES:
+        # Phase 2 removes a backslash-newline between any two raw-prefix
+        # characters, including the final R/quote boundary, before tokenization.
+        for split in range(1, len(prefix) + 1):
+            physical_prefix = prefix[:split] + "\\\n" + prefix[split:] + '"'
+            source = (
+                "void selected() {\n"
+                f'  const auto *payload = {physical_prefix}tag({{ " }} /* not a comment */ {{ )tag";\n'
+                "  return;\n"
+                "}\n"
+            )
+            masked = mask_non_code(source)
+            if len(masked) != len(source):
+                raise AssertionError(f"{prefix} split={split}: lexer changed source offsets")
+            if masked.count("\n") != source.count("\n"):
+                raise AssertionError(f"{prefix} split={split}: lexer changed newline positions")
+
+            literal_start = source.index("payload = ") + len("payload = ")
+            literal_end = source.index(')tag"', literal_start) + len(')tag"')
+            if any(masked[index] not in " \r\n" for index in range(literal_start, literal_end)):
+                raise AssertionError(
+                    f"{prefix} split={split}: phase-2-spliced raw literal was not fully masked"
+                )
+
+            extracted = extract_function(source, "selected")
+            if "return;" not in extracted or not extracted.rstrip().endswith("}"):
+                raise AssertionError(
+                    f"{prefix} split={split}: spliced raw literal truncated the containing function"
+                )
+            spliced_cases += 1
+
     print("FIRMWARE_SOURCE_EXTRACTOR_RAW_PREFIX_PASS 5/5")
+    print(f"FIRMWARE_SOURCE_EXTRACTOR_SPLICED_RAW_PREFIX_PASS {spliced_cases}/{spliced_cases}")
 
 
 if __name__ == "__main__":
