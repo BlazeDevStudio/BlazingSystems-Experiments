@@ -2576,3 +2576,20 @@ The first UTC21 pass could not read the AGENTS.md cloud-policy links under their
 The policy confirms that the canonical private registry and sync ledger must be consulted before creating mirror folders or artifacts, and explicitly requires workers to report BLOCKED when the Drive connector is unavailable. The public handover is a 2026-10-26 **partial verified foundation**; it records that full Git-history bundles remain blocked and storage quota is unverified. It is not the requested private v11 registry or a current registry readback.
 
 The exact private `BLAZE_PROJECT_REGISTRY_v11_20261027.json` and newer corrections remain absent from the connected Library listing; no Google Drive connector is exposed in this run. No new report, folder, or Drive artifact was created.
+
+## PHX-MASTER UTC22 exact Hardware / COE migration audit — 2026-11-23
+
+The current Hardware owner PR #347 is OPEN / DRAFT / UNMERGED at `e69a3d715aca6724dd0390e925e48a7510009ab1`, based on #345 `ca72497ed386c9ac4e50d3f811827bef51e296ad`. Exact-head Quarantine #45281321173 and Relay #45281321207 pass; Full #45281321180 fails at QA-owned `Missing poll signature check`. Target builds complete successfully, but dependent integration/signing/publication stages are skipped. This is focused CI evidence only; physical acceptance is NOT TESTED.
+
+The frozen COE #26 candidate remains `b382d233ff06c8791b1028bed3c617cc7b670d12` on COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`. Exact Git blob comparison confirms:
+- ESP8266 source `fa8ed828026396db89aab2889bf6a61d6cf6bbac` vs destination `c8be98f72596681e36a3ad1f8939bf8046c96887`.
+- ESP32 source `717336b84d434d51eb24beac1ed8efce8e719f69` vs destination `3cc7ec54b476943dc04a8d1af5e2df5fe054e422`.
+- The source tree contains 38 board-local Python files; COE #26 contains zero board-local Python files under Hardware/esp32 and Hardware/esp8266. Its one generic Hardware shell test is a different blob from the source test and retains positive poll-signature expectations.
+
+COE RELEASE #35 current head `697d07857b9e44532a157c04f02bc3d54dc8b94c`: 208 packaging/tool tests pass / 2 intentional skips, then all 10 profiles fail closed for missing approved site-scoped ULA /48; sandbox host preflight passes but Bubblewrap is absent (exit 125); case-collision passes. No sandbox ImageBuilder run or appliance binary exists. COE INTERCON #49 is a separate candidate; its Shared ESP32 compile fails at missing `mbedtls/sha256.h` under ESP32 core 4.0.0. Do not treat either candidate's scoped CI as COE #26 acceptance.
+
+The root Experiments `NOTICE.md` exists; COE #26 has no root `NOTICE.md`. COE has PisoWiFi, QRCode and TailAdmin license/notice files, but complete dependency/license provenance remains unverified. Ownership manifest blob `e4db324315a1b3543fec17a148fbf960170fcb29` remains 11 routes / `DRAFT_REVIEW_ONLY` / PHX-MASTER target null.
+
+Experiments main `f4e8a891...`, development `aad3aade...`, Master starting HEAD `c5a685903470a1e140c08452d934c2834a655d74`, and COE main `a6513ab4...` were re-read. All four branch refs report `protected=false`; effective enforcement still requires repository-admin verification. Issue #266 remains OPEN / 0-of-7. The canonical private Drive registry v11 and newer corrections are not available in the Library/connector surface; the public storage policy requires BLOCKED status when Drive is unavailable, so no mirror folder or Drive artifact was created. Master Python suite and `verify_coordination.py` remain NOT RUN without an authenticated local checkout.
+
+**Disposition:** COE #26 stays FROZEN. No source/destination files were staged, copied, moved, overwritten, rebased, retargeted or promoted. No subsystem source ownership changed. **PRODUCTION NO-GO.**
