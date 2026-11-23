@@ -77,3 +77,40 @@ No flashing, physical device, live coin, live money, production migration, signi
 3. PHX-MASTER should refresh `ROLE_ASSIGNMENTS.md` and `INTEGRATION_MATRIX.md` to record #343 → #345 as a separate Hardware child lineage, without collapsing it into #338 → #344 or other open stacks.
 4. Preserve #239 (Phase A deny), #254 (ControllerAuthV1Lab) and #283 (both sketches) as independent OPEN / DRAFT / UNMERGED branches; revalidate their heads before any future integration.
 5. Physical acceptance remains NOT TESTED: 150 noncustomer power cuts, 30-device/24-hour soak, electrical pulse/recovery, protected anti-rollback witness, durable accounting/replay, v1→v2 migration and independent release signoff remain outstanding.
+
+## 2026-11-23 UTC00 follow-up — preserve an already-pending event identity
+
+This follow-up changes only the Hardware-owned source-extraction lab. The ESP8266/ESP32 production sketch blobs are unchanged from the configured-intake correction above.
+
+### Added source-exact cases
+
+The new runDisabledIngressPendingCase() seeds an existing pending batch (pendingPulses=2, target and nonce populated, pendingReady=false) before a later sampled edge is observed with one configured gate OFF. It exercises all three gates (controller, coin feature, acceptor relay), with and without an ISR sequence: **6 cases per board**.
+
+Each case requires:
+- the existing pending pulse count remains 2 and the target/nonce identity remains unchanged;
+- pendingReady is raised for operator reconciliation;
+- no POST attempt or pending save is created;
+- the sticky /pollpulse.fault marker records the unresolved total (pulses=3);
+- relay/LED stay OFF, insertion mode is OFF, and active target is cleared.
+
+Two negative controls prove the new checks are sensitive:
+- removing the pendingReady preservation assignment is rejected with expected exit 66;
+- clearing pendingTarget and pendingNonce in the fault helper is rejected with expected exit 66.
+
+### Intermediate harness failure and correction
+
+- Intermediate test commit 8cf3f8317230138e33c34c781846faeb1aa185fd had a Python triple-quote delimiter error in the new fixture constant. Quarantine [#45090746935](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45090746935), job 137419485846, and Relay [#45090746965](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45090746965), job 137419960068, failed at fixture import. This was a test-harness defect, not a firmware result.
+- Correction commit 6eb3e9ba82fdbdcfe4fb6dc8ab1c38c9ffdc3043 removed the duplicate delimiter. The exact-head jobs below compile and execute the expanded fixture.
+
+### Final exact-source/test evidence
+
+- Exact source/test SHA: 6eb3e9ba82fdbdcfe4fb6dc8ab1c38c9ffdc3043.
+- Quarantine [#45090899038](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45090899038), job 137419959248: **SUCCESS**. Both boards report all six pending-identity cases PASS, POLL_DISABLED_INGRESS_PENDING_IDENTITY_PRESERVATION_PASS 6/6, and both mutations rejected.
+- Relay [#45090899225](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45090899225): job 137419960068 source-output-polarity **SUCCESS**; job 137419960333 ESP32 boot-polarity **SUCCESS**.
+- Full [#45090899167](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45090899167), PR merge commit 98e86dfadbba7f5478aba7b6f66a5fd0f8c51847: validation job 137420042013 **FAILURE** at the inherited QA-owned Missing poll signature check. All 14 target/platform jobs (ESP8266, ESP32, Android, x86_64, Ruijie and configured Orange Pi targets) completed **SUCCESS**. Downstream simulations, update bundle, candidate, signing and publication were skipped after validation failed.
+
+All logs continue to declare SIMULATED_ONLY=1, physical coin/relay/power-cut acceptance = 0. These tests establish host-lab behavior only; they do not establish durable storage across real power loss or physical hardware acceptance.
+
+## Follow-up ownership boundary
+
+The follow-up adds only the Hardware-owned runner, fixture-export module, scenario fixture, and this handover. It does not edit QA-owned tests/controllers.sh, the register/poll producer, shared API, finance backend, ledger, migration, signer, witness, Release workflow or COE destination. Keep the stale poll-signature assertion with PHX-QA and do not synthesize a response_sig.
