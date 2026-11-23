@@ -120,7 +120,7 @@ int main(){{
      pendingTarget!="target-01" || pendingNonce!="nonce12345678" ||
      saveCalls!=1 || journalRecoveryRequired || !lastCoin ||
      !relayOn || !ledOn || pollIntakeSuspended ||
-     pollDrainAbortedOnActiveLine){
+     pollDrainAbortedOnActiveLine){{
     std::cerr<<"PRESTART_FIRST_STATE_FAIL poll="<<pollCalls
              <<" coinPost="<<coinPostCalls<<" edges="<<coinEdgeSequence
              <<" handled="<<lastHandledCoinEdgeSequence
@@ -130,14 +130,14 @@ int main(){{
              <<" suspended="<<pollIntakeSuspended
              <<" abort="<<pollDrainAbortedOnActiveLine<<"\\n";
     return {failure_code};
-  }
+  }}
   fakeNow=(uint32_t)pulseEnd;
   loop();
   if(pollCalls!=0 || coinPostCalls!=0 || pendingPulses!=1U ||
      pendingReady || pendingTarget!="target-01" ||
      pendingNonce!="nonce12345678" || saveCalls!=1 ||
      journalRecoveryRequired || lastCoin || !relayOn || !ledOn ||
-     pollIntakeSuspended || pollDrainAbortedOnActiveLine){
+     pollIntakeSuspended || pollDrainAbortedOnActiveLine){{
     std::cerr<<"PRESTART_RELEASE_STATE_FAIL poll="<<pollCalls
              <<" coinPost="<<coinPostCalls<<" pending="<<(unsigned)pendingPulses
              <<" ready="<<pendingReady<<" save="<<saveCalls
@@ -146,7 +146,7 @@ int main(){{
              <<" suspended="<<pollIntakeSuspended
              <<" abort="<<pollDrainAbortedOnActiveLine<<"\\n";
     return {failure_code};
-  }
+  }}
   std::cout<<"POLL_PRESTART_{label}_NO_ISR_CAPTURED_ONCE_PASS\\n";
   return 0;
 }}
