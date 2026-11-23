@@ -484,14 +484,9 @@ for board,path in BOARDS.items():
         ("relay", "controllerEnabled && coinEnabled && true", 60),
     )
     original_coin_ingress_gate = "return controllerEnabled && coinEnabled && relayEnabled;"
-    # Isolate sample-path admission: bypass only the output call so each
-    # helper mutation must be rejected by pending-credit protection, not by
-    # the separate relay-output interlock tested above.
-    output_gate_bypassed_for_sample_mutation = output.replace(
-        "coinIngressConfigurationAllows()", "true", 1
-    )
-    if output_gate_bypassed_for_sample_mutation == output:
-        raise AssertionError(f"{board}: output gate bypass mutation anchor missing")
+    # Isolate sample-path admission with an output-OFF stub. The separate
+    # output-gate mutation above already exercises the real applyOutputs().
+    output_off_stub = "void applyOutputs(){ relayOn=false; ledOn=false; }"
     for gate_name, mutated_gate, expected_exit in coin_ingress_gate_mutations:
         coin_ingress_gate_mutation = coin_ingress_config.replace(
             original_coin_ingress_gate,
@@ -503,7 +498,7 @@ for board,path in BOARDS.items():
                 f"{board}: configured {gate_name} coin-ingress gate mutation anchor missing"
             )
         compile_and_run(
-            assemble(output_source=output_gate_bypassed_for_sample_mutation,
+            assemble(output_source=output_off_stub,
                      coin_ingress_config_source=coin_ingress_gate_mutation, main_source=MAIN),
             board,
             expected_exit,
