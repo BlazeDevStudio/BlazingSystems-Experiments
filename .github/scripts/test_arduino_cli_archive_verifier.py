@@ -4,15 +4,22 @@ from __future__ import annotations
 
 import hashlib
 import io
+import os
 import tarfile
+import tempfile
 import unittest
+from pathlib import Path
+from unittest.mock import patch
 
+import verify_arduino_cli_archive as verifier
 from verify_arduino_cli_archive import (
     ARCHIVE_SHA256,
     ARCHIVE_SIZE,
     ARCHIVE_URL,
+    MAX_BINARY_SIZE,
     VerificationError,
     verify_archive_payload,
+    verify_downloaded_binary,
 )
 
 
@@ -126,6 +133,53 @@ class ArduinoCliArchiveVerifierTests(unittest.TestCase):
                 expected_size=len(archive),
             )
 
+
+    def test_rejects_oversized_installed_binary_before_network_or_unbounded_read(self):
+        with tempfile.TemporaryDirectory() as directory:
+            binary = Path(directory) / "arduino-cli"
+            with binary.open("wb") as stream:
+                stream.truncate(MAX_BINARY_SIZE + 1)
+            binary.chmod(0o755)
+
+            with patch.object(verifier, "urlopen") as download, patch.object(
+                Path, "read_bytes", return_value=b"synthetic"
+            ) as read_bytes:
+                with self.assertRaisesRegex(
+                    VerificationError,
+                    "installed Arduino CLI binary size is outside the allowed range",
+                ):
+                    verify_downloaded_binary(binary)
+
+            download.assert_not_called()
+            read_bytes.assert_not_called()
+
+    def test_rejects_installed_binary_changed_during_descriptor_read(self):
+        with tempfile.TemporaryDirectory() as directory:
+            binary = Path(directory) / "arduino-cli"
+            binary.write_bytes(b"synthetic executable bytes")
+            binary.chmod(0o755)
+
+            real_read = os.read
+            changed = False
+
+            def mutate_after_first_read(fd, size):
+                nonlocal changed
+                data = real_read(fd, size)
+                if not changed:
+                    changed = True
+                    binary.write_bytes(b"replacement bytes with a different length")
+                return data
+
+            with patch.object(verifier, "urlopen") as download, patch.object(
+                verifier, "verify_archive_payload", return_value="a" * 64
+            ), patch.object(verifier.os, "read", side_effect=mutate_after_first_read):
+                with self.assertRaisesRegex(
+                    VerificationError,
+                    "installed Arduino CLI binary changed while reading",
+                ):
+                    verify_downloaded_binary(binary)
+
+            download.assert_not_called()
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
