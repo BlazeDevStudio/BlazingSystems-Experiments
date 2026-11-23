@@ -2564,3 +2564,15 @@ The ownership manifest remains 11 routes / `DRAFT_REVIEW_ONLY` / PHX-MASTER dest
 - The linked cloud policy/storage handover in AGENTS.md could not be read from the referenced paths. Master Python suite and `verify_coordination.py` remain NOT RUN because no authenticated local checkout/runtime was available. Master Actions at starting HEAD: zero runs.
 
 **Disposition:** PR #288 remains DRAFT / UNMERGED. No subsystem source or COE destination files changed. **PRODUCTION NO-GO.**
+
+
+## PHX-MASTER UTC21 storage-policy access correction — 2026-11-23
+
+The first UTC21 pass could not read the AGENTS.md cloud-policy links under their legacy owner path. A follow-up read succeeded from the current public repository `BlazeDevStudio/BlazingSystems`:
+
+- [BLAZE_CLOUD_ARTIFACT_POLICY.md](https://github.com/BlazeDevStudio/BlazingSystems/blob/main/BLAZE_CLOUD_ARTIFACT_POLICY.md), blob `5e503925750c4e511314e4b7624579d82f60aae2`.
+- [BLAZE_CLOUD_STORAGE_HANDOVER.md](https://github.com/BlazeDevStudio/BlazingSystems/blob/main/BLAZE_CLOUD_STORAGE_HANDOVER.md), blob `a15f14cb3baf46424b820e1a921462794422f06b`.
+
+The policy confirms that the canonical private registry and sync ledger must be consulted before creating mirror folders or artifacts, and explicitly requires workers to report BLOCKED when the Drive connector is unavailable. The public handover is a 2026-10-26 **partial verified foundation**; it records that full Git-history bundles remain blocked and storage quota is unverified. It is not the requested private v11 registry or a current registry readback.
+
+The exact private `BLAZE_PROJECT_REGISTRY_v11_20261027.json` and newer corrections remain absent from the connected Library listing; no Google Drive connector is exposed in this run. No new report, folder, or Drive artifact was created.
