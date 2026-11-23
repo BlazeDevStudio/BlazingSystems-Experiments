@@ -339,6 +339,19 @@ for board,path in BOARDS.items():
         board,66,"disabled-intake-pending-identity"
     )
     print(f"{board} MUTATION_REJECTED disabled-intake-pending-identity expected_exit=66")
+
+    pending_edge_delta_mutation = sample.replace(
+        "latchPollPulseFault((uint32_t)pendingPulses+unseenEdges);",
+        "latchPollPulseFault((uint32_t)pendingPulses+1U);",
+        1,
+    )
+    if pending_edge_delta_mutation == sample:
+        raise AssertionError(f"{board}: pending multi-edge delta mutation anchor missing")
+    compile_and_run(
+        assemble(sample_source=pending_edge_delta_mutation,main_source=PENDING_PRESERVATION_MAIN),
+        board,72,"disabled-intake-pending-edge-delta"
+    )
+    print(f"{board} MUTATION_REJECTED disabled-intake-pending-edge-delta expected_exit=72")
     print(board,compile_and_run(assemble(main_source=RELEASE_EDGE_MAIN),board,0,
                                 "poll-release-output-interlock"))
     timing_output=compile_and_run(assemble(main_source=TIMING_MAIN),board,0,
