@@ -4138,3 +4138,35 @@ The following is the current observation, not a claim that scoped CI equals full
 COE #26 migration remains blocked: prior exact audit still shows 61 mapped rows (46 byte-identical / 15 derived vs 47/14 summary), 34 source Hardware helpers / zero destination, divergent firmware/test identities, and incomplete NOTICE/Hardware license scope. No staging or destination write.
 
 Branch objects report protected=false and no required contexts for Experiments main/development/Master and COE main. Administrator configuration/verification is required. Private Drive v11/newer corrections remain inaccessible; no older snapshot substituted. Production remains NO-GO.
+
+
+## UTC04 live exact-head and destination provenance refresh — 2026-11-23T04:41:02Z
+
+Exact refs: Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; development `blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5`; Master branch / PR #288 `e3e1f642d5a4129f81300ce927c0c78ce250b7c4`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`. Both repositories default to `main`. COE main remains a three-entry scaffold; candidate #26 is a 286-entry tree and 205-file draft diff.
+
+| Role | Exact current head | Current CI |
+|---|---|---|
+| CORE #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | Build [42698139210](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42698139210) PASS, scoped. |
+| RENTAL #328 | `0e0da62acd47c6a1ce287f8a30fc700d603fa070` | APK identity + API21/API23 smoke PASS; build [44782114390](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44782114390) FAIL at handover freshness and missing ESP32 `mbedtls/sha256.h`. |
+| PISONET #255 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | Windows synthetic [42462978704](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42462978704) PASS; physical COM acceptance NOT TESTED. |
+| HARDWARE #345 | docs `ee1a9fee188942ad0fc21b0f01dda5b343e7b4cc`; source/test `e95b1109141f8c3377aff055946c3fdd78965c73` | Quarantine/Relay [45107994891](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45107994891) / [45107994845](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45107994845) PASS; Full [45107994895](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45107994895) FAIL at QA poll-signature parity. |
+| QA #290 / #292 | `5c29d159...` / `75a3f66d...` | #290 Windows PASS; #292 no runs. |
+| RELEASE #291 | `ed73974472b5162e7d283211b3bb7ab8e208380e` | Compatibility [45111939876](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45111939876) PASS; Windows [45111939904](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45111939904) and Full [45111939890](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45111939890) FAIL at CORE handover freshness. |
+| COE #26 | `b382d233ff06c8791b1028bed3c617cc7b670d12` | Five exact-head workflows queued, zero jobs; FROZEN. |
+
+### Exact COE #26 source/staging comparison
+
+The candidate tree is non-truncated. Comparisons use current owner PR heads and exact COE #26 head; historical intake is checked separately.
+
+- **PisoWiFi rootfs:** current CORE #252 source 61 blobs vs COE 62; 45 identical, 16 different, zero missing, one destination-only `usr/sbin/blaze-appliance-diag`. The 16 different files include init scripts, UCI defaults, auth/capabilities/common/config/controller/member/rental helpers, core/remote-admin/remote-guard binaries, and admin/API/vendo CGI. Do not overwrite the staged tree.
+- **Historical intake audit:** `Pisowifi/SOURCE_INTAKE.json` blob `1b9018ff944f7f673934d0fc2a97e0a0090d3f5f` pins source commit `6d4c9b487af4d768c4d7627654d119417fcc6e00`; its 61 historical source blobs and 61 destination blobs match the manifest. The per-row statuses are 46 `byte_identical` + 15 `derived_cleanup_review_required_real_router_test`, but the summary says 47 + 14. This one-file summary mismatch must be corrected by the COE owner; do not silently edit the destination intake from Master. Current CORE #252 has 16 differing blobs relative to the candidate, so the historical source pin is not current-owner equivalence.
+- **QA tests:** Experiments main has 38 files under the routed tests path; COE has 19. One file is identical, three differ (`config.sh`, `integration.sh`, `security.sh`), 34 source files are absent and 15 destination files are extra/derived.
+- **RENTAL Android:** current #328 source has 991 blobs; COE has 8, with no exact path/blob matches. Source includes `BlazeRentalLauncher/LICENSE` and `assets/license.html`; destination has no corresponding license files.
+- **Standalone RENTAL:** 12 source / 4 destination; 1 different, 11 missing, 3 destination-only.
+- **PISONET:** 68 source / 47 destination; 27 identical, 11 different, 30 missing, 9 destination-only.
+- **HARDWARE:** ESP32 16 source / 1 destination (15 missing, 1 different); ESP8266 30 / 1 (29 missing, 1 different).
+- **RELEASE:** source workflow and destination workflow both exist but are different blobs; route is explicitly `reimplementation-review`, not a copy.
+
+Licensing: source `BlazePwifi/LICENSE` and destination `Pisowifi/LICENSE` match blob `1ee55b94183417be977ca287cd7391f9a6f7e721`. Experiments root `NOTICE.md` exists; COE root NOTICE is absent. Hardware-local LICENSE/NOTICE files are absent at checked locations. Preserve third-party vendor notices already present in the PisoWiFi overlay.
+
+**Disposition:** COE #26 remains FROZEN. No staging, copy, move, overwrite, cherry-pick, rebase or destination write. No migration proposal until each divergent file, test identity, license, import and current owner SHA is reconciled by its source owner and independently reviewed by QA.

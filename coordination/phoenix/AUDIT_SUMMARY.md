@@ -2278,3 +2278,20 @@ Master re-read the live control plane #172, cleanup gate #266, default/developme
 ### RELEASE #291 exact-head supersession — 2026-11-23T03:19:26.449Z
 
 During final readback, PR #291 advanced to `29bd31bcd8e4a120a8d23de041c1494a84e19f8d`. Its exact-head compatibility run #45104926749 and BlazePwifi build #45104926718 are IN_PROGRESS; Windows #45104926685 FAILED at the CORE-owned handover freshness gate, with build/publisher skipped. The UTC03 report, role assignments and integration matrix now use the latest head. No RELEASE source or handover file was touched.
+
+
+## PHX-MASTER UTC04 — live owner/CI and exact COE intake reconciliation (2026-11-23T04:41:02Z)
+
+Master re-read live #172/#266, default/development/Master/COE refs, #288, ownership routes, current owner PRs/CI, COE #26 and the required governance documents. The exact report is [PHX-MASTER UTC04 live owner/CI and COE #26 source-intake reconciliation](${reportName}).
+
+**Master branch:** starting HEAD `e3e1f642d5a4129f81300ce927c0c78ce250b7c4`, base main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`. PR #288 is OPEN/DRAFT/UNMERGED; 181 changed paths are all under `coordination/phoenix/`; no Master Actions runs or combined statuses exist. This activation is coordination-only.
+
+**Index cleanup:** current tree had 96 PHX-MASTER reports but only 94 unique links; two historical reports were unindexed, with zero duplicate links and zero dangling links. Both historical links are restored in INDEX; the new UTC04 report is added. Post-commit static tree/index verification is recorded in the report.
+
+**Owner blockers:** #345 focused Quarantine/Relay pass but Full fails at QA-owned Missing poll signature check; #291 compatibility passes but Windows/Full fail at CORE-owned handover freshness; #328 build fails at freshness and missing Mbed TLS header. Owners retain all source branches.
+
+**COE migration hold:** current CORE #252 rootfs differs from COE #26 in 16 of 61 files, with one destination-only diagnostic tool. Historical intake row statuses count 46 identical / 15 derived, while its summary claims 47 / 14. QA tests are 38 source / 19 destination with only one identical, three changed, 34 missing and 15 destination-only. Rental, Pisonet, Hardware and Release routes also retain missing/different blobs and license/import review gaps. No destination change.
+
+**Governance:** cleanup #266 remains OPEN, 0/7; main, development, Master and COE main all report `protected=false`, required checks enforcement off, and repository rulesets empty. Canonical private Drive v11/newer corrections remain unavailable; no older registry was substituted. Full Master tests and `verify_coordination.py` NOT RUN because the execution container cannot resolve `github.com`.
+
+No subsystem source, COE destination, payment, secret, signer, release, flash or physical test changed. **PRODUCTION NO-GO.**

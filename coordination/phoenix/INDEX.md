@@ -731,3 +731,14 @@ At the exact starting tree, 89 `PHX_MASTER_*.md` reports were present but INDEX 
 ## Latest exact-head reconciliation — 2026-11-23 UTC03
 
 - [PHX-MASTER UTC03 live-head, cleanup inventory and migration-hold audit](PHX_MASTER_UTC03_20261123_LIVE_HEAD_CLEANUP_AND_MIGRATION_HOLD_AUDIT.md) — exact branch refs and owner CI, current Master tree/index/architecture audit, branch-protection metadata, private registry access limitation, and frozen COE #26 provenance. No subsystem or destination writes.
+
+## Restored historical report links — 2026-11-23 UTC04
+
+- [PHX_MASTER_UTC17_20261121_EXACT_HEAD_ROLE_CI_COE26_SOURCE_MAIN_PROVENANCE_AUDIT.md](PHX_MASTER_UTC17_20261121_EXACT_HEAD_ROLE_CI_COE26_SOURCE_MAIN_PROVENANCE_AUDIT.md) — historical exact-head source-main and COE #26 provenance audit, restored to the index without changing the report.
+- [PHX_MASTER_UTC20_20261121_EXACT_HEAD_ROLE_CI_COE26_MANIFEST_BASELINE_CANDIDATE_AUDIT.md](PHX_MASTER_UTC20_20261121_EXACT_HEAD_ROLE_CI_COE26_MANIFEST_BASELINE_CANDIDATE_AUDIT.md) — historical routing-manifest and baseline-candidate audit, restored to the index without changing the report.
+
+## Latest exact-head reconciliation — 2026-11-23 UTC04
+
+- [${reportName}](${reportName}) — current exact role heads/CI, index recovery, branch protection, private registry access limitation, and route-by-route COE #26 blob/license/test provenance comparison.
+
+**Post-update index coverage target:** 97/97 PHX-MASTER reports; no duplicate links, dangling targets or unindexed reports (to be verified against the resulting commit).
