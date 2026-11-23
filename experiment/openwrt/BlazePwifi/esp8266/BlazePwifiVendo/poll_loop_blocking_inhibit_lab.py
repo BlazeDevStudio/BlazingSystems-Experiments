@@ -315,6 +315,10 @@ for board,path in BOARDS.items():
                 load_fault_source+latch_fault_source+quarantine_source+configure_source+accept_source+reconcile_source+init_store_source+SUPPORT+handle_source+sample_source+drain_abort_source+loop_source+main_source)
 
     print(board,compile_and_run(assemble(),board,0,"exact-source"))
+    # Execute the focused pending-identity matrix on the unmutated exact source;
+    # mutation-only execution is not a substitute for a green baseline run.
+    print(board,compile_and_run(assemble(main_source=PENDING_PRESERVATION_MAIN),
+                                board,0,"disabled-intake-pending-identity"))
     pending_ready_mutation = sample.replace(
         "if(pendingPulses>0U) pendingReady=true;",
         "if(false) pendingReady=true;",
