@@ -480,6 +480,7 @@ SIGNATURES = (
     "bool coinLineIdle(){",
     "bool canStartPoll(){",
     "bool canAttemptCoinPost(){",
+    "bool coinIngressConfigurationAllows(){",
     "void applyOutputs(){",
     "bool coinLineQuietAfterInhibit(){",
     "bool beginPollWindow(){",
