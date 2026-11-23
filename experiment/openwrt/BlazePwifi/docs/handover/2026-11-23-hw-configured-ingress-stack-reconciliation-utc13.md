@@ -177,3 +177,16 @@ No ESP8266/ESP32 production sketch, CORE/QA shared contract, finance path, workf
 **Disposition:** focused Quarantine/Relay **CI VERIFIED**; Full integration **FAILED / BLOCKED** by CORE/QA response-contract mismatch; physical pulse/relay/LittleFS acceptance **NOT TESTED**; 150 power cuts and 30-device soak **NOT TESTED**; HARDWARE ACCEPTED **NO**; PRODUCTION READY **NO-GO**.
 
 **Next exact action:** CORE must publish the authenticated register/poll response contract and golden vectors; QA must reconcile the inherited poll-signature assertion independently; Master must refresh its #347 head pin. Then PHX-HARDWARE reruns Full against the approved exact head. No positive response signature or admission path will be fabricated.
+
+
+## UTC16 — Full workflow terminal inventory
+
+**Final docs head audited:** `0c6b7d98b12840a9058b072f9a53eec2ed047dd7`
+
+The Full BlazePwifi workflow [#45220718744](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45220718744) has now reached a terminal result:
+- Validation job `137853894840`: **FAIL** at the inherited QA-owned `Missing poll signature check` in the ESP8266 sketch.
+- Target/platform builds: **14/14 SUCCESS**, including ESP32, ESP8266, Android, Ruijie, Orange Pi and x86_64.
+- Validation-dependent browser/Orange Pi/Ruijie/x86/ESP simulations, update bundle, signing handoff, candidate gate and publication stages: **SKIPPED**.
+- The earlier source/test-head Full [#45220006841](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45220006841) also ended with the same validation failure and 14/14 target builds successful.
+
+The Full workflow is therefore **FAILED / BLOCKED**, not a Full integration pass. The test-only drain mutation is independently green in both focused workflows on the source/test and docs heads. No positive poll signature was introduced and no QA-owned assertion or CORE producer was changed.
