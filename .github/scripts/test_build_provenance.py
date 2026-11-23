@@ -925,6 +925,57 @@ class BuildProvenanceTests(unittest.TestCase):
         self.assertEqual(source_tree["generated_build_output_file_count"], 1)
 
 
+    def test_new_provenance_json_removes_temp_after_keyboard_interrupt_before_publish(self):
+        directory_fd = os.open(
+            self.artifact,
+            os.O_RDONLY | getattr(os, "O_DIRECTORY", 0),
+        )
+        target = self.artifact / "BUILD-PROVENANCE.json"
+        try:
+            with patch.object(provenance.os, "fsync", side_effect=KeyboardInterrupt):
+                with self.assertRaises(KeyboardInterrupt):
+                    provenance._write_new_json(
+                        target,
+                        {"schema": "blaze.phx-release.build-provenance/test"},
+                        directory_fd=directory_fd,
+                    )
+            self.assertFalse(target.exists())
+            self.assertEqual(
+                list(self.artifact.glob(".BUILD-PROVENANCE.*")),
+                [],
+                "KeyboardInterrupt before publication must not leave an untracked sidecar",
+            )
+        finally:
+            os.close(directory_fd)
+
+    def test_checksum_writer_removes_temp_after_system_exit_before_replace(self):
+        target = self.artifact / "SHA256SUMS"
+        original = b"old-digest  old-payload.bin\\n"
+        target.write_bytes(original)
+        directory_fd = os.open(
+            self.artifact,
+            os.O_RDONLY | getattr(os, "O_DIRECTORY", 0),
+        )
+        try:
+            with patch.object(provenance.os, "fsync", side_effect=SystemExit(23)):
+                with self.assertRaises(SystemExit) as raised:
+                    provenance._write_checksums(
+                        target,
+                        self.artifact,
+                        {"new-payload.bin": {"sha256": "a" * 64}},
+                        directory_fd=directory_fd,
+                    )
+            self.assertEqual(raised.exception.code, 23)
+            self.assertEqual(target.read_bytes(), original)
+            self.assertEqual(
+                list(self.artifact.glob(".SHA256SUMS.*")),
+                [],
+                "SystemExit before replacement must not leave an untracked sidecar",
+            )
+        finally:
+            os.close(directory_fd)
+
+
 
 if __name__ == "__main__":
     suite = unittest.defaultTestLoader.loadTestsFromTestCase(BuildProvenanceTests)
