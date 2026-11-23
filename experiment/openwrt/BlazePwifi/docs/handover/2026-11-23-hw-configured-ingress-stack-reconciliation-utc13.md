@@ -190,3 +190,32 @@ The Full BlazePwifi workflow [#45220718744](https://github.com/BlazeDevStudio/Bl
 - The earlier source/test-head Full [#45220006841](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45220006841) also ended with the same validation failure and 14/14 target builds successful.
 
 The Full workflow is therefore **FAILED / BLOCKED**, not a Full integration pass. The test-only drain mutation is independently green in both focused workflows on the source/test and docs heads. No positive poll signature was introduced and no QA-owned assertion or CORE producer was changed.
+
+
+## UTC17 — generated C++ diagnostic brace escaping and exact-head revalidation
+
+**Updated:** 2026-11-23T17:32:19Z  
+**Role:** PHX-HARDWARE · **Task:** #177 · **PR:** #347 OPEN / DRAFT / UNMERGED  
+**Branch:** `phoenix/hw-coin-ingress-config-helper-reconciled-20261123-utc13`  
+**Parent:** #345 `ca72497ed386c9ac4e50d3f811827bef51e296ad`  
+**Pre-handover source/test head:** `865d56f58e22e8a44dc45f15ea350ecb6ca035af`
+
+### Bounded test-harness correction
+
+Commit `865d56f` changes only `experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_loop_blocking_inhibit_lab.py`. Literal C++ braces inside the Python f-string that generates the pre-poll diagnostic fixture are now escaped as doubled braces. This prevents Python from interpreting the generated C++ block delimiters as f-string replacement fields. No ESP8266/ESP32 production sketch, shared API, financial code, signer, witness, migration, or workflow permission changed.
+
+### Exact-head GitHub Actions
+
+Each focused workflow checked out the literal PR head and passed its explicit SHA verification:
+
+- Quarantine Byte Readback [run #45227564058](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45227564058), job `137878041172`: **PASS**. The run includes the exact-source pending/quarantine failure labs, poll-drain and pulse-capture labs, and `coin_post_gate_lab.py`.
+- Relay Output Polarity [run #45227564121](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45227564121), jobs `137878040962` and `137878041469`: **PASS**. ESP32 boot-polarity and both-board output, poll-drain and source-extracted regressions pass.
+- Full BlazePwifi [run #45227564043](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45227564043), validation job `137878217287`: **FAIL** at Controller protocol parity / inherited QA-owned `Missing poll signature check`. All 14 target/platform jobs succeeded, including ESP8266, ESP32, Ruijie, Orange Pi Zero 3 and x86_64. Validation-dependent simulations, update bundle, signing, candidate and publication stages were skipped.
+
+The Full failure is not repaired by adding a legacy signature to firmware. Current main register/poll responses still lack the approved event-bound authenticated response contract. CORE owns the producer/golden vectors; QA owns the independent assertion; Master owns the cross-role contract and integration decision. Hardware remains default-deny.
+
+### Evidence classification and next action
+
+Focused results are **SIMULATED / CI VERIFIED** only. Physical coin acceptor, relay/electrical pulse, LittleFS power-loss durability, 150 controlled power cuts, 30-device 24-hour soak and electrical recovery remain **NOT TESTED**. HARDWARE ACCEPTED: **NO**. PRODUCTION READY: **NO-GO**.
+
+**Next exact action:** PHX-CORE publishes the approved authenticated register/poll response contract and golden vectors; PHX-QA reconciles the inherited assertion independently; PHX-MASTER refreshes its #347 exact-head pin. PHX-HARDWARE then reruns Full on the approved exact head. No flashing, live coin, migration, signer provisioning, merge, release or deployment.
