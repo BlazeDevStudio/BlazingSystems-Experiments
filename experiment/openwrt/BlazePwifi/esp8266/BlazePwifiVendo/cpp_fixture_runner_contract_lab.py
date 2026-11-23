@@ -11,6 +11,7 @@ from unittest.mock import patch
 from cpp_fixture_runner import (
     DEFAULT_COMPILE_TIMEOUT_SECONDS,
     DEFAULT_RUN_TIMEOUT_SECONDS,
+    MAX_DIAGNOSTIC_TAIL_CHARS,
     run_cpp_fixture,
 )
 
@@ -128,6 +129,62 @@ class CppFixtureRunnerContractTests(unittest.TestCase):
                     context="execution-timeout-probe",
                 )
 
+    def test_timeout_diagnostics_preserve_bounded_stdout_and_stderr(self):
+        cases = (
+            (
+                "compile",
+                subprocess.TimeoutExpired(
+                    cmd=["g++"],
+                    timeout=30,
+                    output="COMPILE-STDOUT-HEAD" + ("x" * 3100) + "COMPILE-STDOUT-TAIL",
+                    stderr=b"COMPILE-STDERR-HEAD" + (b"y" * 3100) + b"COMPILE-STDERR-TAIL",
+                ),
+                "compile-timeout-diagnostics",
+            ),
+            (
+                "execution",
+                subprocess.TimeoutExpired(
+                    cmd=["fixture"],
+                    timeout=10,
+                    output=b"EXEC-STDOUT-HEAD" + (b"x" * 3100) + b"EXEC-STDOUT-TAIL",
+                    stderr="EXEC-STDERR-HEAD" + ("y" * 3100) + "EXEC-STDERR-TAIL",
+                ),
+                "execution-timeout-diagnostics",
+            ),
+        )
+        for phase, timeout, context in cases:
+            with self.subTest(phase=phase):
+                side_effect = (
+                    [timeout] if phase == "compile" else [completed(), timeout]
+                )
+                with patch(
+                    "cpp_fixture_runner.subprocess.run",
+                    side_effect=side_effect,
+                ):
+                    with self.assertRaises(RuntimeError) as caught:
+                        run_cpp_fixture(
+                            "int main() { return 0; }",
+                            prefix="phx-runner-contract-",
+                            stem="fixture",
+                            context=context,
+                        )
+
+                message = str(caught.exception)
+                self.assertIn(f"{context}: {phase} timed out", message)
+                for stream in ("stdout", "stderr"):
+                    marker = f"{stream} tail:\n"
+                    self.assertIn(marker, message)
+                    tail = message.split(marker, 1)[1].split("\n", 1)[0]
+                    self.assertLessEqual(
+                        len(tail),
+                        MAX_DIAGNOSTIC_TAIL_CHARS,
+                    )
+
+                prefix = "COMPILE" if phase == "compile" else "EXEC"
+                for stream in ("STDOUT", "STDERR"):
+                    self.assertNotIn(f"{prefix}-{stream}-HEAD", message)
+                    self.assertIn(f"{prefix}-{stream}-TAIL", message)
+
     def test_compile_failure_keeps_context_and_bounded_diagnostic_tail(self):
         diagnostic = "EARLY-MARKER\n" + ("x" * 3500) + "\nTAIL-MARKER"
         with patch(
@@ -146,7 +203,7 @@ class CppFixtureRunnerContractTests(unittest.TestCase):
         self.assertIn("compile-failure-probe: compile failed", message)
         self.assertIn("TAIL-MARKER", message)
         self.assertNotIn("EARLY-MARKER", message)
-        self.assertLessEqual(len(message.split("compile failed:\n", 1)[1]), 3000)
+        self.assertLessEqual(len(message.split("compile failed:\n", 1)[1]), MAX_DIAGNOSTIC_TAIL_CHARS)
 
 
 def verify():
@@ -156,7 +213,7 @@ def verify():
     result = unittest.TextTestRunner(verbosity=1).run(suite)
     if not result.wasSuccessful():
         raise SystemExit(1)
-    print("CPP_FIXTURE_RUNNER_CONTRACT_PASS 6/6")
+    print("CPP_FIXTURE_RUNNER_CONTRACT_PASS 7/7")
 
 
 if __name__ == "__main__":
