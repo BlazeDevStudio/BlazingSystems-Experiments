@@ -967,9 +967,13 @@ bool canStartPoll(){
          !pendingReady && pendingPulses==0 && coinLineIdle();
 }
 
+bool coinIngressConfigured(){
+  return controllerEnabled && coinEnabled && relayEnabled;
+}
+
 void applyOutputs(){
   if(!outputPolarityKnown) return;
-  bool accepting=pinConfigSafe && controllerEnabled && coinEnabled && insertMode && activeTarget.length()>0 && fsReady &&
+  bool accepting=pinConfigSafe && coinIngressConfigured() && insertMode && activeTarget.length()>0 && fsReady &&
                  !journalRecoveryRequired && !pendingReady && !pollIntakeSuspended &&
                  snapshotCoinEdgeSequence()==lastHandledCoinEdgeSequence;
   if(ledEnabled) writeLogical(runLedPin,accepting,runLedActiveHigh); else writeLogical(runLedPin,false,runLedActiveHigh);
@@ -1086,9 +1090,9 @@ void sampleCoinPulseEdge(bool active){
   // A coin edge is credit-eligible only while the controller, coin feature and
   // acceptor relay are configured ON. Poll-time relay suspension is separate:
   // relayEnabled stays true while pollIntakeSuspended temporarily deasserts output.
-  const bool coinIngressConfigured=controllerEnabled && coinEnabled && relayEnabled;
+  const bool ingressConfigured=coinIngressConfigured();
   const bool sampledSingleEdge=exactlyOneUnseenEdge && active && !lastCoin &&
-      coinIngressConfigured && fsReady && !journalRecoveryRequired && !pendingReady &&
+      ingressConfigured && fsReady && !journalRecoveryRequired && !pendingReady &&
       insertMode && activeTarget.length()>0 &&
       millis()-lastEdge>runDebounceMs;
   if(unseenEdges>0U && !sampledSingleEdge){
@@ -1104,7 +1108,7 @@ void sampleCoinPulseEdge(bool active){
   }
   if(fsReady && !journalRecoveryRequired && active && !lastCoin &&
      millis()-lastEdge>runDebounceMs){
-    if(!coinIngressConfigured){
+    if(!ingressConfigured){
       if(pendingPulses>0U) pendingReady=true;
       latchPollPulseFault((uint32_t)pendingPulses+1U);
       applyOutputs();
