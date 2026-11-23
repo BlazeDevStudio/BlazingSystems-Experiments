@@ -63,7 +63,6 @@ POLL_SAFETY_PARITY = (
     "snapshotCoinEdgeSequence",
     "boundedCoinDebounceMs",
     "canStartPoll",
-    "coinIngressConfigured",
     "applyOutputs",
     "beginPollWindow",
     "sampleCoinPulseEdge",
@@ -285,7 +284,6 @@ for board,path in BOARDS.items():
         raise AssertionError(f"{board}: coinEdgeSequence must be declared before coinEdgeISR")
     loop=extract_function(source, "loop")
     write=extract_function(source, "writeLogical")
-    ingress_configured=extract_function(source, "coinIngressConfigured")
     output=extract_function(source, "applyOutputs")
     idle=extract_function(source, "coinLineIdle")
     can_start=extract_function(source, "canStartPoll")
@@ -306,13 +304,13 @@ for board,path in BOARDS.items():
     handle=extract_function(source, "handleCoinPostResponse")
 
     def assemble(loop_source=loop,output_source=output,quiet_source=quiet,accept_source=accept,
-                 ingress_configured_source=ingress_configured,configure_source=configure,isr_source=isr,write_fault_source=write_fault,
+                 configure_source=configure,isr_source=isr,write_fault_source=write_fault,
                  load_fault_source=load_fault,latch_fault_source=latch_fault,init_store_source=init_store,
                  begin_source=begin,sample_source=sample,main_source=MAIN,reconcile_source=reconcile,
                  handle_source=handle,drain_abort_source=drain_abort,quarantine_source=quarantine,
                  idle_source=idle):
         board_define = "#define TARGET_ESP32\n" if board=="ESP32" else "#define ESP8266\n"
-        return (board_define+STUBS+isr_source+snapshot+write+ingress_configured_source+output_source+idle_source+can_start+
+        return (board_define+STUBS+isr_source+snapshot+write+output_source+idle_source+can_start+
                 quiet_source+begin_source+write_fault_source+
                 load_fault_source+latch_fault_source+quarantine_source+configure_source+accept_source+reconcile_source+init_store_source+SUPPORT+handle_source+sample_source+drain_abort_source+loop_source+main_source)
 
@@ -359,16 +357,15 @@ for board,path in BOARDS.items():
     )
     print(f"{board} MUTATION_REJECTED disabled-intake-pending-edge-delta expected_exit=72")
 
-    relay_gate_mutation = ingress_configured.replace(
-        "return controllerEnabled && coinEnabled && relayEnabled;",
-        "return controllerEnabled && coinEnabled;",
+    relay_gate_mutation = output.replace(
+        "bool accepting=pinConfigSafe && controllerEnabled && coinEnabled && relayEnabled && insertMode",
+        "bool accepting=pinConfigSafe && controllerEnabled && coinEnabled && insertMode",
         1,
     )
-    if relay_gate_mutation == ingress_configured:
-        raise AssertionError(f"{board}: configured relay gate mutation anchor missing")
+    if relay_gate_mutation == output:
+        raise AssertionError(f"{board}: configured relay output gate mutation anchor missing")
     compile_and_run(
-        assemble(ingress_configured_source=relay_gate_mutation,
-                 main_source=PENDING_PRESERVATION_MAIN),
+        assemble(output_source=relay_gate_mutation,main_source=PENDING_PRESERVATION_MAIN),
         board,80,"disabled-intake-relay-output-gate"
     )
     print(f"{board} MUTATION_REJECTED disabled-intake-relay-output-gate expected_exit=80")
