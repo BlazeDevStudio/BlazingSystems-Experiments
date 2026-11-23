@@ -7,8 +7,7 @@ NVS/EEPROM helpers are stubbed here; poll_fault_dual_store_lab.py tests them
 separately. This is SIMULATED control-flow evidence, not physical coin proof.
 """
 from pathlib import Path
-import subprocess
-import tempfile
+from cpp_fixture_runner import run_cpp_fixture
 
 from firmware_lab_source import extract_function, mask_active_cpp_code, mask_non_code
 from firmware_lab_source_lab import run_source_extractor_regressions
@@ -156,68 +155,21 @@ int main(){{
 
 
 def compile_and_run(code, board, expected=0, label="normal"):
-    with tempfile.TemporaryDirectory(prefix="phx-poll-loop-") as folder:
-        cpp=Path(folder)/"poll_loop.cpp"
-        binary=Path(folder)/"poll_loop"
-        cpp.write_text(code,encoding="utf-8")
-        built=subprocess.run(
-            ["g++","-std=c++17","-Wall","-Wextra","-Werror",
-             "-Wno-unused-parameter",str(cpp),"-o",str(binary)],
-            capture_output=True,text=True,timeout=30
-        )
-        if built.returncode:
-            raise RuntimeError(f"{board} {label}: compile failed:\n{built.stderr[-3000:]}")
-        ran=subprocess.run([str(binary)],capture_output=True,text=True,timeout=10)
-        if ran.returncode!=expected:
-            raise RuntimeError(
-                f"{board} {label}: expected exit {expected}, got {ran.returncode}\n"
-                f"stdout={ran.stdout}\nstderr={ran.stderr}"
-            )
-        return ran.stdout.strip()
-
-POLL_SAFETY_PARITY = (
-    "coinEdgeISR",
-    "snapshotCoinEdgeSequence",
-    "boundedCoinDebounceMs",
-    "canStartPoll",
-    "applyOutputs",
-    "coinIngressConfigurationAllows",
-    "beginPollWindow",
-    "sampleCoinPulseEdge",
-    "latchPollPulseFault",
-    "quarantineCoinIngressTransition",
-    "handlePollDrainAbortAfterSample",
-    "reconcileUnobservedCoinEdges",
-    # Shared trust, receipt and pending-evidence authority must not drift by board.
-    "acceptPollResponse",
-    "coinPostDispositionVerified",
-    "canAttemptCoinPost",
-    "markPendingPostAttempt",
-    "pendingAttemptMarkerMatches",
-    "clearPending",
-    "quarantinePending",
-)
-
-
-REQUIRED_COIN_AUTHORITY_PARITY = (
-    "acceptPollResponse",
-    "coinPostDispositionVerified",
-    "canAttemptCoinPost",
-    "markPendingPostAttempt",
-    "pendingAttemptMarkerMatches",
-    "clearPending",
-    "quarantinePending",
-)
-missing_coin_authority_helpers = [
-    name for name in REQUIRED_COIN_AUTHORITY_PARITY
-    if name not in POLL_SAFETY_PARITY
-]
-if missing_coin_authority_helpers:
-    raise SystemExit(
-        "POLL_COIN_AUTHORITY_PARITY_REQUIRED_HELPERS_MISSING: "
-        + ", ".join(missing_coin_authority_helpers)
+    ran = run_cpp_fixture(
+        code,
+        prefix="phx-poll-loop-",
+        stem="poll_loop",
+        extra_flags=("-Wno-unused-parameter",),
+        compile_timeout=30,
+        run_timeout=10,
+        context=f"{board} {label}",
     )
-
+    if ran.returncode != expected:
+        raise RuntimeError(
+            f"{board} {label}: expected exit {expected}, got {ran.returncode}\n"
+            f"stdout={ran.stdout}\nstderr={ran.stderr}"
+        )
+    return ran.stdout.strip()
 
 def poll_safety_helpers():
     helpers = {}
