@@ -2924,3 +2924,12 @@ No owner branch, subsystem source, route, or release assignment changed.
 - **COE integration owner:** #26 `b382d233ff06c8791b1028bed3c617cc7b670d12` remains FROZEN; five workflows queued / zero jobs. No migration staging until 61-row intake counts, 20 changed/8 absent current source paths, 34 missing Hardware helpers, sketch/test identities and NOTICE/license scope reconcile.
 
 No assignment transfer, branch merge, destination edit or release authority is implied. Cleanup #266 remains OPEN; Master inventory is partial. PRODUCTION NO-GO.
+
+
+## UTC00 follow-up — PHX-HARDWARE #345 current head and PHX-QA acceptance (2026-11-23)
+
+- **PHX-HARDWARE:** current #345 head `01916c89ae6718d3991c778b676d06718155d6a2`, latest source/test `6eb3e9ba82fdbdcfe4fb6dc8ab1c38c9ffdc3043`. Six additional pending-identity scenarios per board source pass Quarantine [45090899038](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45090899038); Relay [45090899225](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45090899225) passes. At current PR HEAD, Quarantine [45091417124](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45091417124) and Relay [45091417060](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45091417060) pass; Full [45091417147](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45091417147) is IN_PROGRESS at last read. Hardware owns all six changed paths.
+- **PHX-QA:** owns independent review of both board sources, disabled-gate and existing-pending identity scenarios, NVS/EEPROM + LittleFS partial/dual-store failure, reboot durability limits, and replacement of the stale positive poll-signature assertion. Do not change firmware to satisfy the stale assertion.
+- **PHX-MASTER:** owns only the architecture invariant and cross-role status. No Hardware source path was changed by Master.
+
+No assignment transfer, merge or release authority is implied. Cleanup #266 remains OPEN / incomplete. PRODUCTION NO-GO.
