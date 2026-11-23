@@ -1551,3 +1551,21 @@ No source/destination file move, copy, staging, overwrite, cherry-pick, rebase o
 - COE #26 source/destination trees remain 2,340 / 286 entries. Exact route comparisons and intake/test/license discrepancies are recorded in the UTC11 report. Source NOTICE exists; destination root NOTICE is absent. PisoWiFi LICENSE matches.
 - COE #35 d975 exact-head CI is blocked by missing Bubblewrap and approved ULA /48; ten profiles fail closed. No sandbox bypass or invented network prefix.
 - No source/destination path is staged, copied, moved, overwritten, rebased, cherry-picked or promoted. The broad Rental parent target remains manual-file-mapping-only. Private registry v11 is not available through this runtime.
+
+
+## UTC12 exact routing and migration hold — 2026-11-23T12:30:40.280Z
+
+**Observed:** 2026-11-23T12:30:40.280Z  
+**Experiments main:** `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`  
+**Experiments development:** `blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5`  
+**Master starting HEAD:** `502d64727c0967566a9d45eabffa561ee2009591`  
+**COE main:** `a6513ab4412b4c014eee2863e45cbe32d06cb243`  
+**COE #26:** `b382d233ff06c8791b1028bed3c617cc7b670d12`  
+**Ownership manifest:** `OWNERSHIP_ROUTES.json@e4db324315a1b3543fec17a148fbf960170fcb29` — 11 routes, `DRAFT_REVIEW_ONLY`, PHX-MASTER target `null`.
+
+- COE main remains a three-entry scaffold; integration PR #26 remains OPEN / DRAFT at `b382d233ff06c8791b1028bed3c617cc7b670d12`, 205 changed paths, 286-entry tree, five queued workflows / zero jobs.
+- The route manifest's 11 ownership rows are review-only; broad Rental parent mapping remains manual-file-mapping-only, and PHX-MASTER has no runtime destination.
+- SOURCE_INTAKE / MIGRATION_MAP discrepancies and license/NOTICE gaps remain as recorded in the UTC11 exact-tree audit. Because Experiments main and COE #26 refs remain unchanged, that blob-level comparison is still the applicable baseline; no route is promoted by this refresh.
+- Hardware #346 is not migration-ready: its base is four commits behind parent #345, it overlaps four parent paths, and it omits parent-only `pending_clear_failure_lab.py`. Parent CI cannot be inherited by the child. Hardware must reconcile the stack in its own branch and run CI at its final exact head.
+- COE #35 at `4234ee00...` is blocked by missing approved site ULA /48 (ten profiles fail closed) and unavailable Bubblewrap (exit 125); no fallback or fabricated network prefix.
+- No source/destination path was staged, copied, moved, overwritten, cherry-picked, rebased, retargeted, or promoted. COE #26 remains FROZEN pending exact provenance, licensing, import, test and terminal CI evidence plus owner authorization.

@@ -1482,3 +1482,18 @@ HARDWARE child PR #346 at bd3fd6e85717395f768aae26a310b647cdd72a7e centralizes t
 The child has no Quarantine/Relay run at its final head. Its base is 797dece76c18d464a7c0580658b5db9351cb8e15; parent #345 is now ca72497ed386c9ac4e50d3f811827bef51e296ad (four commits ahead). Parent changed the same poll-loop lab and added pending_clear_failure_lab.py, which child #346 does not include. Keep the stack blocked until PHX-HARDWARE reconciles it and runs focused CI at the final exact head.
 
 Parent #345 current-head Quarantine #45165015610 and Relay #45165015665 pass; Full #45165015859 fails at QA's inherited Missing poll signature check. No positive response_sig is synthesized. Hardware owns firmware and labs; QA owns the inherited assertion and independent review; CORE owns producer authority; Master records the cross-role boundary only. Physical coin/relay, flash durability, power-cut and soak acceptance remain NOT TESTED.
+
+
+## 6.84 Stacked owner PR freshness and exact-head acceptance contract — 2026-11-23 UTC12
+
+A stacked child PR is not a current cumulative candidate merely because its base branch name still points at its parent. Before any cross-role review or migration:
+
+1. Resolve the child's live `base.sha` and the parent's live `head.sha`. If they differ, classify the child as **STALE / OWNER-RECONCILIATION-REQUIRED**; do not infer it contains the parent's latest changes.
+2. Compare the parent commits since the child's base and compare changed path/blob identities. Shared paths require explicit owner reconciliation; parent-only safety tests, fixtures and handovers must be preserved in the child before cumulative review.
+3. CI is commit-scoped. Parent CI, child CI from an earlier child commit, and runs from the child's old base do not validate the child's current head. Require focused and full workflows on the final exact child SHA.
+4. Only the owning role may rebase, retarget, resolve conflicts or update its source branch. PHX-MASTER records the gate and requests owner action; it does not rewrite subsystem branches.
+5. A failing inherited QA assertion is not permission to weaken default-deny, invent a positive `response_sig`, bypass missing validation, or skip parent-only failure-injection coverage.
+
+**Current evidence:** HARDWARE #346 is at `bd3fd6e85717395f768aae26a310b647cdd72a7e`, based on `797dece76c18d464a7c0580658b5db9351cb8e15`; current parent #345 is `ca72497ed386c9ac4e50d3f811827bef51e296ad`, four commits ahead and zero behind. Four changed paths overlap between the PRs; parent #345 adds `pending_clear_failure_lab.py`, which is absent from child #346, and both branches change the poll-loop lab. No Quarantine/Relay/Full workflow run exists at the current #346 head. Parent #345 exact-head Quarantine `45165015610` and Relay `45165015665` pass; Full `45165015859` fails at QA-owned `Missing poll signature check`, while all 14 target/platform jobs pass and 12 downstream jobs are skipped.
+
+**Ownership and limit:** PHX-HARDWARE owns #345/#346 firmware and labs; PHX-QA owns the inherited assertion and independent verification; PHX-CORE owns authenticated producer authority; PHX-MASTER owns only this cross-role acceptance rule. Hardware acceptance remains NOT TESTED. No merge or release authority is granted.

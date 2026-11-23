@@ -4399,3 +4399,38 @@ The source main tree f4e8 has 2,340 entries; COE #26 b382 has 286; both are comp
 SOURCE_INTAKE schema 8 remains blob 1b9018ff944f7f673934d0fc2a97e0a0090d3f5f: 61 runtime rows actually classify 46 identical / 15 derived while summary claims 47 / 14. All 61 pinned historical source blobs and all 61 destination blobs match the intake records; 28 pinned source blobs have drifted from current main. Derived tests are 15 in the intake but 14 in MIGRATION_MAP; voucher journal is omitted, and run_focus/member journal map IDs are stale. PisoWiFi LICENSE matches; source root NOTICE has no COE root counterpart. Five #26 workflows remain queued / zero jobs.
 
 Disposition: keep #26 FROZEN. No copy, move, staging, overwrite, cherry-pick, rebase, retarget or destination write.
+
+
+## UTC12 exact-head integration snapshot — 2026-11-23T12:30:40.280Z
+
+**Observed:** 2026-11-23T12:30:40.280Z  
+**Experiments main:** `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`  
+**Experiments development:** `blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5`  
+**Master starting HEAD:** `502d64727c0967566a9d45eabffa561ee2009591`  
+**COE main:** `a6513ab4412b4c014eee2863e45cbe32d06cb243`  
+**COE #26:** `b382d233ff06c8791b1028bed3c617cc7b670d12`  
+**Ownership manifest:** `OWNERSHIP_ROUTES.json@e4db324315a1b3543fec17a148fbf960170fcb29` — 11 routes, `DRAFT_REVIEW_ONLY`, PHX-MASTER target `null`.
+
+### Hardware stacked candidate gate
+
+- PR #345 current head is `ca72497ed386c9ac4e50d3f811827bef51e296ad`; exact-head Quarantine #45165015610 and Relay #45165015665 pass, while Full #45165015859 fails at Controller protocol parity / `Missing poll signature check`. All 14 target/platform jobs pass; 12 validation-dependent downstream jobs are skipped.
+- Child PR #346 is `bd3fd6e85717395f768aae26a310b647cdd72a7e`, based on `797dece76c18d464a7c0580658b5db9351cb8e15`. GitHub compare reports parent #345 four commits ahead, zero behind. Four changed paths overlap; the parent adds `pending_clear_failure_lab.py` and changes the same poll-loop lab, but the child does not contain the parent-only failure lab. No current-head Quarantine/Relay/Full run exists for #346.
+- Integration disposition: #346 is STALE / OWNER-RECONCILIATION-REQUIRED, not a cumulative accepted candidate. The Hardware owner must reconcile its branch and preserve parent-only tests; QA owns the inherited poll-signature assertion; CORE owns the authenticated producer contract. Master must not rebase or retarget owner branches.
+
+### COE candidate and current release gate
+
+| Candidate | Exact head / tree | Current exact-head CI | Disposition |
+|---|---|---|---|
+| COE main | `a6513ab4412b4c014eee2863e45cbe32d06cb243`, 3 entries | N/A | Scaffold only. |
+| COE #26 | `b382d233ff06c8791b1028bed3c617cc7b670d12`, 286 entries, 205 changed paths | Five workflows QUEUED / zero jobs | FROZEN; no staging or promotion. |
+| COE #35 | `4234ee00b1fbb02167a977383a737fe5f3917e3a` | Shared #45174042588 fails on missing approved ULA /48; Sandbox #45174042599 fails because Bubblewrap is unavailable (exit 125); case collision #45174042568 passes. | BLOCKED; no sandbox bypass, no invented ULA. |
+| COE #45 | `9d76a134c1f6512aa40c20ec4d247306a71a8cce` | Overlay/Shell and case-collision scoped checks pass. | Contract vectors only. |
+| COE #49 | `aeb8ff11b2f5db9a5f86280ab62ab988245f3919` | Stage 5.1 and case-collision pass; Shared Contracts ESP32 compile fails. | BLOCKED. |
+
+### Frozen #26 provenance carried forward at unchanged exact refs
+
+- The 11-route manifest remains `DRAFT_REVIEW_ONLY`; PHX-MASTER target is null.
+- `Pisowifi/SOURCE_INTAKE.json` has 61 runtime rows classified 46 byte-identical / 15 derived, while its summary says 47 / 14. The derived-test list has 15 entries but the migration map has 14; `voucher_txn_journal.sh` is omitted and two migration-map test blob IDs are stale.
+- The prior exact audit at source main `f4e8a891...` and destination #26 `b382d233...` found all 61 recorded destination blobs match the intake, but only 33/61 historical source blobs still match current main; 28 have drifted. These exact refs have not moved, so the previous blob/mode comparison remains the current provenance baseline.
+- PisoWiFi LICENSE matches; source root NOTICE is absent from COE #26; Android Launcher/Tabler coverage is missing at checked destination paths; QRCode/TailAdmin license/notice blobs match; no Hardware-local LICENSE/NOTICE was found at the checked paths.
+- Keep #26 FROZEN until per-file source/destination blobs, modes, licenses, imports, test identities, terminal exact-head CI and independent owner review are reconciled. No staging, copy, move, overwrite, cherry-pick, rebase, or destination write.

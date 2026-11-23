@@ -1,5 +1,5 @@
 # Project Phoenix — Coordination Index
-**Updated:** 2026-11-23T10:48:16Z
+**Updated:** 2026-11-23T12:30:40.280Z
 **Updated:** 2026-11-22T23:34:12Z
 **Role:** PHX-MASTER — coordination / architecture / integration provenance only  
 **Safety:** DRAFT REVIEW ONLY · PRODUCTION NO-GO
@@ -784,3 +784,13 @@ Both historical reports were already indexed in the earlier sections above; UTC0
 
 - [PHX-MASTER UTC11 Hardware #346 stack reconciliation, COE #35 exact-head CI and COE #26 provenance audit](PHX_MASTER_UTC11_20261123_HARDWARE346_STACK_RECONCILIATION_COE35_AND_COE26_PROVENANCE_AUDIT.md) — current role heads/CI, parent-child stack drift and overlapping Hardware lab, exact COE #35 sandbox/ULA failures, 11-route source/destination comparison, SOURCE_INTAKE/MIGRATION_MAP/test-blob/license/NOTICE revalidation, registry and Master-suite access blockers.
 - The report is added exactly once; previous historical reports and links are preserved. PR #288 remains coordination-only.
+
+
+## Latest live state — PHX-MASTER UTC12 (2026-11-23T12:30:40.280Z)
+
+- Current Master branch at audit start: `phoenix/master-coordination@502d64727c0967566a9d45eabffa561ee2009591`; PR #288 OPEN / DRAFT / UNMERGED, 188 coordination-only changed paths, zero PR-triggered Actions runs and zero combined statuses.
+- Current owner stack: Hardware #345 `ca72497...` focused Quarantine/Relay PASS and Full FAIL at QA's inherited `Missing poll signature check`; child #346 `bd3fd6e...` is based on `797dece...`, four commits behind parent, four path overlaps, parent-only pending-clear failure lab missing, and no exact-head CI.
+- COE #35 current head `4234ee00...`: case-collision PASS; Shared/firmware fails closed on missing approved ULA /48; sandbox blocks because Bubblewrap is unavailable (exit 125).
+- COE #26 remains FROZEN at `b382d233...`; five workflows queued / zero jobs; SOURCE_INTAKE 46/15 vs summary 47/14 and derived-test map/test/license/NOTICE discrepancies remain.
+- Master tree/index verification: 2,530 tree entries, 103 reports / 103 unique links, zero duplicate, dangling or unindexed targets. No new timestamped report was added; the existing [UTC11 stack/provenance report](PHX_MASTER_UTC11_20261123_HARDWARE346_STACK_RECONCILIATION_COE35_AND_COE26_PROVENANCE_AUDIT.md) remains historical evidence, while this live refresh is recorded in the canonical documents and control-plane checkpoint.
+- Cleanup #266 remains OPEN / 0/7; private Drive v11/newer corrections and full Master test execution remain BLOCKED. PRODUCTION NO-GO.
