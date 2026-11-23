@@ -331,10 +331,11 @@ for board,path in BOARDS.items():
     reconcile=extract_function(source, "reconcileUnobservedCoinEdges")
     handle=extract_function(source, "handleCoinPostResponse")
     clear_pending=extract_function(source, "clearPending")
+    load_pending=extract_function(source, "loadPending")
     same_pending_record=extract_function(source, "samePendingRecord")
     pending_attempt_marker_matches=extract_function(source, "pendingAttemptMarkerMatches")
-    if not clear_pending or not same_pending_record or not pending_attempt_marker_matches:
-        raise AssertionError(f"{board}: missing source-exact pending-clear helper set")
+    if not clear_pending or not load_pending or not same_pending_record or not pending_attempt_marker_matches:
+        raise AssertionError(f"{board}: missing source-exact pending-clear/recovery helper set")
 
     def assemble(loop_source=loop,output_source=output,quiet_source=quiet,accept_source=accept,
                  configure_source=configure,isr_source=isr,write_fault_source=write_fault,
@@ -367,7 +368,7 @@ for board,path in BOARDS.items():
         board,54,"coin-post-clear-window-isr-recheck"
     )
     print(f"{board} MUTATION_REJECTED coin-post-clear-window-isr-recheck expected_exit=54")
-    run_pending_clear_failure_lab(board,clear_pending,same_pending_record,
+    run_pending_clear_failure_lab(board,clear_pending,same_pending_record,load_pending,
                                    pending_attempt_marker_matches,compile_and_run)
     # Execute the focused pending-identity matrix on the unmutated exact source;
     # mutation-only execution is not a substitute for a green baseline run.
