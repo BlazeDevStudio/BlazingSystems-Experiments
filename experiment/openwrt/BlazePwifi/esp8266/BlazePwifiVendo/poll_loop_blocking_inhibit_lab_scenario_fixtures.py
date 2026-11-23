@@ -88,6 +88,35 @@ int runDisabledIngressCase(bool disableController, bool disableCoin, bool disabl
   std::cout<<passMarker<<"\\n";
   return 0;
 }
+
+int runDisabledIngressPendingCase(bool disableController, bool disableCoin, bool disableRelay,
+                                  bool injectIsrEdge, int failureCode, const char *passMarker){
+  resetState();
+  // Model an already-journaled paid batch whose identity must survive a later
+  // edge observed while one configured intake gate is OFF.
+  pendingPulses=2U;
+  pendingReady=false;
+  pendingTarget="pending-target";
+  pendingNonce="pending-nonce";
+  pendingPostAttempted=false;
+  if(disableController) controllerEnabled=false;
+  if(disableCoin) coinEnabled=false;
+  if(disableRelay) relayEnabled=false;
+  applyOutputs();
+  if(injectIsrEdge) coinEdgeSequence=1U;
+  sampleCoinPulseEdge(true);
+  if(!journalRecoveryRequired || pendingPulses!=2U || !pendingReady ||
+     pendingTarget!="pending-target" || pendingNonce!="pending-nonce" ||
+     pendingPostAttempted || saveCalls!=0 ||
+     !LittleFS.exists("/pollpulse.fault") || relayOn || ledOn ||
+     insertMode || !activeTarget.empty()) return failureCode;
+  const std::string fault=LittleFS.files["/pollpulse.fault"];
+  if(fault.find("COIN_INGRESS_UNRESOLVED")==std::string::npos ||
+     fault.find("pulses=3")==std::string::npos) return failureCode;
+  std::cout<<passMarker<<std::endl;
+  return 0;
+}
+
 int main(){
 
   // A prior persistent journal fault must abort even with an idle line and no new ISR edge.
@@ -349,8 +378,55 @@ int main(){
   disabledIngressResult=runDisabledIngressCase(true,false,false,true,65,
       "POLL_ISR_EDGE_WHILE_CONTROLLER_DISABLED_DENY_PASS");
   if(disabledIngressResult) return disabledIngressResult;
+  disabledIngressResult=runDisabledIngressPendingCase(false,false,true,false,66,
+      "POLL_DISABLED_RELAY_PENDING_IDENTITY_PRESERVED_PASS");
+  if(disabledIngressResult) return disabledIngressResult;
+  disabledIngressResult=runDisabledIngressPendingCase(false,false,true,true,67,
+      "POLL_DISABLED_RELAY_ISR_PENDING_IDENTITY_PRESERVED_PASS");
+  if(disabledIngressResult) return disabledIngressResult;
+  disabledIngressResult=runDisabledIngressPendingCase(false,true,false,false,68,
+      "POLL_DISABLED_COIN_PENDING_IDENTITY_PRESERVED_PASS");
+  if(disabledIngressResult) return disabledIngressResult;
+  disabledIngressResult=runDisabledIngressPendingCase(false,true,false,true,69,
+      "POLL_DISABLED_COIN_ISR_PENDING_IDENTITY_PRESERVED_PASS");
+  if(disabledIngressResult) return disabledIngressResult;
+  disabledIngressResult=runDisabledIngressPendingCase(true,false,false,false,70,
+      "POLL_DISABLED_CONTROLLER_PENDING_IDENTITY_PRESERVED_PASS");
+  if(disabledIngressResult) return disabledIngressResult;
+  disabledIngressResult=runDisabledIngressPendingCase(true,false,false,true,71,
+      "POLL_DISABLED_CONTROLLER_ISR_PENDING_IDENTITY_PRESERVED_PASS");
+  if(disabledIngressResult) return disabledIngressResult;
+  std::cout<<"POLL_DISABLED_INGRESS_PENDING_IDENTITY_PRESERVATION_PASS 6/6"<<std::endl;
   return 0;
 }
+
+"""
+
+PENDING_PRESERVATION_MAIN = MAIN[:MAIN.index("int main(){")] + r"""
+int main(){
+  int result=runDisabledIngressPendingCase(false,false,true,false,66,
+      "POLL_DISABLED_RELAY_PENDING_IDENTITY_PRESERVED_PASS");
+  if(result) return result;
+  result=runDisabledIngressPendingCase(false,false,true,true,67,
+      "POLL_DISABLED_RELAY_ISR_PENDING_IDENTITY_PRESERVED_PASS");
+  if(result) return result;
+  result=runDisabledIngressPendingCase(false,true,false,false,68,
+      "POLL_DISABLED_COIN_PENDING_IDENTITY_PRESERVED_PASS");
+  if(result) return result;
+  result=runDisabledIngressPendingCase(false,true,false,true,69,
+      "POLL_DISABLED_COIN_ISR_PENDING_IDENTITY_PRESERVED_PASS");
+  if(result) return result;
+  result=runDisabledIngressPendingCase(true,false,false,false,70,
+      "POLL_DISABLED_CONTROLLER_PENDING_IDENTITY_PRESERVED_PASS");
+  if(result) return result;
+  result=runDisabledIngressPendingCase(true,false,false,true,71,
+      "POLL_DISABLED_CONTROLLER_ISR_PENDING_IDENTITY_PRESERVED_PASS");
+  if(result) return result;
+  std::cout<<"POLL_DISABLED_INGRESS_PENDING_IDENTITY_PRESERVATION_PASS 6/6"<<std::endl;
+  return 0;
+}
+"""
+
 """
 
 RACE_MAIN = MAIN.replace(
