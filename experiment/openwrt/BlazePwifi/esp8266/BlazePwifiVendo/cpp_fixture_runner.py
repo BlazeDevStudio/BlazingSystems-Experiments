@@ -6,12 +6,25 @@ execution so those mechanics remain consistent and easy to debug.
 """
 
 from pathlib import Path
+import math
+from numbers import Real
 import subprocess
 import tempfile
 
 
 DEFAULT_COMPILE_TIMEOUT_SECONDS = 30
 DEFAULT_RUN_TIMEOUT_SECONDS = 10
+
+
+def _validate_timeout(name, value):
+    if isinstance(value, bool) or not isinstance(value, Real):
+        raise ValueError(f"{name} must be a finite positive number of seconds")
+    try:
+        valid = value > 0 and math.isfinite(value)
+    except (OverflowError, TypeError, ValueError):
+        valid = False
+    if not valid:
+        raise ValueError(f"{name} must be a finite positive number of seconds")
 
 
 def run_cpp_fixture(
@@ -26,9 +39,12 @@ def run_cpp_fixture(
 ):
     """Compile and execute one fixture, returning its CompletedProcess result.
 
-    Every caller gets bounded compile/execution time by default. A lab may
-    choose a different positive timeout for a known slower fixture.
+    Every caller gets bounded compile/execution time. A lab may choose a
+    different finite positive timeout for a known slower fixture.
     """
+    _validate_timeout("compile_timeout", compile_timeout)
+    _validate_timeout("run_timeout", run_timeout)
+
     with tempfile.TemporaryDirectory(prefix=prefix) as folder:
         cpp = Path(folder) / f"{stem}.cpp"
         binary = Path(folder) / stem

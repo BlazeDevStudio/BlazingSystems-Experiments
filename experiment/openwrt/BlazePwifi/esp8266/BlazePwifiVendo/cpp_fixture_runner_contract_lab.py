@@ -70,6 +70,33 @@ class CppFixtureRunnerContractTests(unittest.TestCase):
         self.assertEqual(run.call_args_list[0].kwargs["timeout"], 7)
         self.assertEqual(run.call_args_list[1].kwargs["timeout"], 3)
 
+    def test_invalid_timeout_overrides_are_rejected_before_process_launch(self):
+        invalid_values = (
+            None,
+            0,
+            -1,
+            float("inf"),
+            float("-inf"),
+            float("nan"),
+            True,
+            "10",
+        )
+        for parameter in ("compile_timeout", "run_timeout"):
+            for value in invalid_values:
+                with self.subTest(parameter=parameter, value=value):
+                    with patch("cpp_fixture_runner.subprocess.run") as run:
+                        with self.assertRaisesRegex(
+                            ValueError,
+                            f"{parameter} must be a finite positive number of seconds",
+                        ):
+                            run_cpp_fixture(
+                                "int main() { return 0; }",
+                                prefix="phx-runner-contract-",
+                                stem="fixture",
+                                **{parameter: value},
+                            )
+                    run.assert_not_called()
+
     def test_compile_timeout_is_reported_with_context(self):
         timeout = subprocess.TimeoutExpired(cmd=["g++"], timeout=30)
         with patch("cpp_fixture_runner.subprocess.run", side_effect=timeout):
@@ -129,7 +156,7 @@ def verify():
     result = unittest.TextTestRunner(verbosity=1).run(suite)
     if not result.wasSuccessful():
         raise SystemExit(1)
-    print("CPP_FIXTURE_RUNNER_CONTRACT_PASS 5/5")
+    print("CPP_FIXTURE_RUNNER_CONTRACT_PASS 6/6")
 
 
 if __name__ == "__main__":
