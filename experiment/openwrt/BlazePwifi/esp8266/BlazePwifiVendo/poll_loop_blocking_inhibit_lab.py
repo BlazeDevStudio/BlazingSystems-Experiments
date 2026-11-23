@@ -461,7 +461,7 @@ for board,path in BOARDS.items():
 
     # Re-run the same blocked-poll ISR case with the empty response returned by
     # post() when HTTPClient reports a transport timeout or other non-positive code.
-    timeout_response_anchor = r'return String("{\"ok\":true,\"insert\":true,\"target\":\"spoof-target\"}");'
+    timeout_response_anchor = r'    return String("{\"ok\":true,\"insert\":true,\"target\":\"spoof-target\"}");'
     if POLL_HTTP_ISR_MAIN.count(timeout_response_anchor) != 1:
         raise AssertionError(f"{board}: blocked-poll hostile response anchor is not unique")
     poll_http_timeout_main = POLL_HTTP_ISR_MAIN.replace(
