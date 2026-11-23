@@ -26,6 +26,7 @@ from poll_loop_blocking_inhibit_lab_fixtures import (
     STUBS,
     SUPPORT,
     MAIN,
+    PENDING_PRESERVATION_MAIN,
     RACE_MAIN,
     post_drain_rollover_main,
     missed_sample_main,
@@ -314,6 +315,30 @@ for board,path in BOARDS.items():
                 load_fault_source+latch_fault_source+quarantine_source+configure_source+accept_source+reconcile_source+init_store_source+SUPPORT+handle_source+sample_source+drain_abort_source+loop_source+main_source)
 
     print(board,compile_and_run(assemble(),board,0,"exact-source"))
+    pending_ready_mutation = sample.replace(
+        "if(pendingPulses>0U) pendingReady=true;",
+        "if(false) pendingReady=true;",
+        1,
+    )
+    if pending_ready_mutation == sample:
+        raise AssertionError(f"{board}: disabled-intake pendingReady mutation anchor missing")
+    compile_and_run(
+        assemble(sample_source=pending_ready_mutation,main_source=PENDING_PRESERVATION_MAIN),
+        board,66,"disabled-intake-pending-ready-preservation"
+    )
+    print(f"{board} MUTATION_REJECTED disabled-intake-pending-ready-preservation expected_exit=66")
+    pending_identity_mutation = latch_fault.replace(
+        'activeTarget="";',
+        'activeTarget=""; pendingTarget=""; pendingNonce="";',
+        1,
+    )
+    if pending_identity_mutation == latch_fault:
+        raise AssertionError(f"{board}: pending-identity mutation anchor missing")
+    compile_and_run(
+        assemble(latch_fault_source=pending_identity_mutation,main_source=PENDING_PRESERVATION_MAIN),
+        board,66,"disabled-intake-pending-identity"
+    )
+    print(f"{board} MUTATION_REJECTED disabled-intake-pending-identity expected_exit=66")
     print(board,compile_and_run(assemble(main_source=RELEASE_EDGE_MAIN),board,0,
                                 "poll-release-output-interlock"))
     timing_output=compile_and_run(assemble(main_source=TIMING_MAIN),board,0,
