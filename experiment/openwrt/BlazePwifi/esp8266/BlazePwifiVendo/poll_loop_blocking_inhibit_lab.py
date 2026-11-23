@@ -108,8 +108,9 @@ int main(){{
   resetState();
   runCoinActiveLow={polarity};
   configureRuntimePins(runCoinPin,runRelayPin,runLedPin);
-  // The line is already active before loop() checks poll admission. No ISR
-  // transition is injected; the sampled-level fallback must preserve it.
+  // Re-establish the normal accepting output state after the helper's
+  // safe-pin initialization, then make the line active without an ISR edge.
+  applyOutputs();
   pulseStart=(int)fakeNow;
   pulseEnd=(int)fakeNow+80;
   loop();
@@ -119,14 +120,33 @@ int main(){{
      pendingTarget!="target-01" || pendingNonce!="nonce12345678" ||
      saveCalls!=1 || journalRecoveryRequired || !lastCoin ||
      !relayOn || !ledOn || pollIntakeSuspended ||
-     pollDrainAbortedOnActiveLine) return {failure_code};
+     pollDrainAbortedOnActiveLine){
+    std::cerr<<"PRESTART_FIRST_STATE_FAIL poll="<<pollCalls
+             <<" coinPost="<<coinPostCalls<<" edges="<<coinEdgeSequence
+             <<" handled="<<lastHandledCoinEdgeSequence
+             <<" pending="<<(unsigned)pendingPulses<<" ready="<<pendingReady
+             <<" save="<<saveCalls<<" fault="<<journalRecoveryRequired
+             <<" lastCoin="<<lastCoin<<" relay="<<relayOn<<" led="<<ledOn
+             <<" suspended="<<pollIntakeSuspended
+             <<" abort="<<pollDrainAbortedOnActiveLine<<"\\n";
+    return {failure_code};
+  }
   fakeNow=(uint32_t)pulseEnd;
   loop();
   if(pollCalls!=0 || coinPostCalls!=0 || pendingPulses!=1U ||
      pendingReady || pendingTarget!="target-01" ||
      pendingNonce!="nonce12345678" || saveCalls!=1 ||
      journalRecoveryRequired || lastCoin || !relayOn || !ledOn ||
-     pollIntakeSuspended || pollDrainAbortedOnActiveLine) return {failure_code};
+     pollIntakeSuspended || pollDrainAbortedOnActiveLine){
+    std::cerr<<"PRESTART_RELEASE_STATE_FAIL poll="<<pollCalls
+             <<" coinPost="<<coinPostCalls<<" pending="<<(unsigned)pendingPulses
+             <<" ready="<<pendingReady<<" save="<<saveCalls
+             <<" fault="<<journalRecoveryRequired<<" lastCoin="<<lastCoin
+             <<" relay="<<relayOn<<" led="<<ledOn
+             <<" suspended="<<pollIntakeSuspended
+             <<" abort="<<pollDrainAbortedOnActiveLine<<"\\n";
+    return {failure_code};
+  }
   std::cout<<"POLL_PRESTART_{label}_NO_ISR_CAPTURED_ONCE_PASS\\n";
   return 0;
 }}
