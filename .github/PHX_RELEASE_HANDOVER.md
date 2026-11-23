@@ -2799,3 +2799,61 @@ The _write_new_json() helper fsynced the temporary file, hard-linked it to BUILD
 - Rollback is limited to the UTC03 test/source commits on this existing draft branch; do not revert inherited CORE/PISONET paths or coordination files.
 - PHX-CORE must refresh its own handover; PHX-QA must independently review the post-publication cleanup and identity guard; PHX-MASTER retains ownership routing and cross-repository integration decisions.
 - No merge, signing, release tag, publication, hardware flash, real payment migration or customer deployment occurred. Protected signer/freshness witness, durable financial accounting/migration, independent QA/MASTER approval, approved production binaries, 150 physical power cuts and 30-device/24-hour soak remain unproven or NOT TESTED. **PRODUCTION NO-GO.**
+
+## PHX-RELEASE UTC04 — bounded installed Arduino CLI verification reads (2026-11-23T04Z)
+
+**Disposition:** one RELEASE-owned verifier defect was reproduced test-first and corrected. The exact source/test compatibility workflow is green: provenance 39/39, archive verifier 10/10, immutable action pins 62/62, and both ESP32 core matrix jobs PASS. The broader Full workflow remains blocked at the CORE-owned freshness gate; Windows build/publisher remain skipped at the same gate. PR #291 remains OPEN / DRAFT / UNMERGED. **PRODUCTION NO-GO.**
+
+### Finding and bounded scope
+
+`verify_downloaded_binary()` previously read the installed Arduino CLI executable with `Path.read_bytes()` after a single `stat()`. The archive member parser already caps the extracted CLI member at `MAX_BINARY_SIZE` (200,000,000 bytes), but the installed executable read had no corresponding size bound and did not verify that the opened file was the same stable file observed by the initial stat. An unexpectedly large or concurrently replaced executable could therefore cause unbounded memory use or make the verifier hash bytes from a changing path.
+
+Only these RELEASE-owned files changed in this increment:
+- `.github/scripts/test_arduino_cli_archive_verifier.py`
+- `.github/scripts/verify_arduino_cli_archive.py`
+- `.github/PHX_RELEASE_HANDOVER.md`
+
+### Test-first history
+
+- Initial test-only commit: [`365103cd`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/365103cdc8ab6235e3a420012022e7098ee8a2a3). Its first fixture used a fake `Content-Length` of 1 rather than the pinned 20,111,675 bytes; [run #45110885055](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45110885055) failed at that fixture mismatch before exercising the intended installed-binary cases. This was a test-harness setup error, not product RED.
+- Corrected test-fixture commit: [`8a533464`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/8a533464425d1786476838dc19ac2cdda8c76b38).
+- Expected RED, exact corrected test-only head: [compatibility run #45110977023](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45110977023), provenance job `137483711331`. Ten tests ran; exactly the two new regressions failed: an oversized installed executable was not rejected before network/read, and a file changed during read was not detected. The eight existing archive-verifier tests passed. Both independent ESP32 matrix build jobs in that expected-RED run completed successfully.
+
+### Source correction
+
+- Source fix: [`ec15efb4`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/ec15efb4497b767cdd9e8b045be20992281852e7).
+- Added `_read_installed_binary()` using `O_NOFOLLOW` and `O_CLOEXEC`, descriptor `fstat()` checks against the original `stat()`, a 200,000,000-byte ceiling, bounded 1 MiB reads with a one-byte overflow probe, and post-read descriptor/path identity and size checks.
+- The installed executable is validated before downloading the reference archive, so an oversized file is rejected before network access. Platforms without `O_NOFOLLOW` fail closed. The upstream Arduino CLI v1.6.0 URL, pinned archive size and SHA-256, tar-member rules, and binary digest comparison were not changed.
+
+### Exact-source GitHub Actions at `ec15efb4`
+
+- Exact source/test compatibility run [#45111308239](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45111308239): **SUCCESS**. Provenance job `137484633823` passed with `RELEASE-PROVENANCE-PASS: 39 tests`; archive verifier **10/10 PASS**; immutable action pin checks **62/62 invocations PASS**.
+- ESP32 core 3.3.13 job `137484634117`: **SUCCESS**.
+- ESP32 core 4.0.0 job `137484634161`: **SUCCESS**.
+- The matrix checked out HARDWARE source `6eb3e9ba82fdbdcfe4fb6dc8ab1c38c9ffdc3043` and sketch blob `2a5bad5904a1f6afabdcac95e762482975ebd886`; both core builds completed their reproducibility checks. This is hosted CI evidence, not physical device acceptance.
+- Broader BlazePwifi run [#45111308267](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45111308267): CI-0701 **SUCCESS**; mandatory `validate` **FAILED** at CORE-owned `experiment/openwrt/BlazePwifi/PROJECT_HANDOVER.md` freshness, whose gate reports checkpoint `adcae8141e673dc2147fcad50521ef3a23084d71`. All **14/14 target/platform jobs PASS**; update bundle, simulations, candidate gate, signing handoff and publication **SKIPPED**.
+- Windows run [#45111308682](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45111308682): handover freshness **FAILED** at the same CORE-owned gate; Windows build and publisher **SKIPPED**.
+- Test-only full workflow [#45110977078](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45110977078) failed at the two expected RED regressions in CI-0701; its downstream jobs were skipped. Windows test-only run [#45110977005](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45110977005) failed at the CORE-owned freshness gate; build and publisher were skipped.
+
+### Cross-repository reconciliation
+
+- MASTER PR #288: live HEAD `e3e1f642d5a4129f81300ce927c0c78ce250b7c4`, OPEN / DRAFT / UNMERGED, 181 coordination-only paths. `OWNERSHIP_ROUTES.json` blob `e4db324315a1b3543fec17a148fbf960170fcb29` remains `DRAFT_REVIEW_ONLY`; PHX-RELEASE workflow route remains `reimplementation-review`, not migration authorization.
+- The #172 control-plane body still embeds the earlier MASTER head `8750d615cbb39aa70c1b12847479acb594fe5e3c`; the live #288 PR head is now `e3e1f642d5a4129f81300ce927c0c78ce250b7c4`. This stale control-plane reference is MASTER-owned; RELEASE did not edit it.
+- RELEASE PR #242: HEAD/base snapshot `734b89d9e7792247e8376335c3f3685500ab3f89` / base branch `blazepwifi-v0.6.0-audit-foundation` at `6d4c9b487af4d768c4d7627654d119417fcc6e00`.
+- RELEASE PR #291: branch `phoenix/release-publisher-isolation-20261115`, base #242 `734b89d9e7792247e8376335c3f3685500ab3f89`; source/test HEAD before this handover commit `ec15efb4497b767cdd9e8b045be20992281852e7`. The PR retains 27 accumulated mixed-owner paths (22 RELEASE / 3 CORE / 2 PISONET); this increment changed only the two RELEASE-owned verifier/test paths plus this RELEASE handover.
+- COE integration #26: HEAD `b382d233ff06c8791b1028bed3c617cc7b670d12`, OPEN / DRAFT / FROZEN; five workflows remain QUEUED with zero jobs.
+- COE release-packager #31: HEAD `59ed44d0b911e176f1a95b9cf5585ef811ffd31b`. Shared/firmware run [#44222517238](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44222517238) and case-collision run [#44222517258](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44222517258) passed, including ESP8266/ESP32 compile and 10/10 appliance-profile validation. Mandatory sandbox [#44222517263](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44222517263) failed closed at unprivileged Bubblewrap preflight: `bwrap: setting up uid map: Permission denied`, exit 125.
+- Cleanup-first #266 remains OPEN; the seven-role cleanup gate is not complete (last control-plane checkpoint reports 0/7).
+- Canonical private Drive `BLAZE_PROJECT_REGISTRY_v11_20261027.json` was not surfaced by the authorized Library search. Older v3–v7 snapshots were not substituted; no private registry contents or identifiers were copied into GitHub.
+
+### Review, rollback and next owners
+
+- Independent PR #291 submitted reviews and review threads: none at the last live query. PHX-QA review remains required.
+- Rollback is limited to this increment's test/source commits on the existing draft branch; do not revert inherited CORE/PISONET paths, earlier RELEASE work, or MASTER coordination files.
+- **PHX-QA:** independently review the bounded reader, `O_NOFOLLOW` fail-closed behavior, size ceiling and mutation regression at the post-handover exact HEAD.
+- **PHX-CORE:** refresh its own `PROJECT_HANDOVER.md` and rerun Full/Windows validation; RELEASE must not edit or bypass the CORE freshness gate.
+- **PHX-MASTER:** refresh the stale #172 embedded #288 head and approve/reject the release-workflow reimplementation route; retain coordination-only ownership.
+- **PHX-INFRA / COE owner / MASTER:** provide a runner with working unprivileged Bubblewrap user namespaces and resolve approved site-scoped ULA /48 authority before appliance admission.
+- **Registry custodian:** restore authorized access to canonical private registry v11.
+
+No merge, signing, release tag, publication, hardware flash, real payment migration or customer deployment occurred. Protected signer and independent freshness witness, durable financial accounting/migration, independent QA/MASTER approval, approved production binaries, 150 physical power cuts and 30-device/24-hour soak remain unproven or NOT TESTED. **PRODUCTION NO-GO.**
