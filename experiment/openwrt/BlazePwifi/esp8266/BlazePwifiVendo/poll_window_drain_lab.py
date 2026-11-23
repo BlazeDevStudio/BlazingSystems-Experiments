@@ -182,10 +182,10 @@ def main():
             # short pulse that ends before the 250 ms window closes is missed.
             mutated = list(functions)
             active_line_guard = (
-                "    if(!coinLineIdle()){\\n"
-                "      pollDrainAbortedOnActiveLine=true;\\n"
-                "      return false;\\n"
-                "    }\\n"
+                "    if(!coinLineIdle()){\n"
+                "      pollDrainAbortedOnActiveLine=true;\n"
+                "      return false;\n"
+                "    }\n"
             )
             if active_line_guard not in mutated[quiet_index]:
                 failures.append(f"{board} missing active-line abort guard for mutation test")
