@@ -131,3 +131,15 @@ Hardware has already refreshed this PR's own body and handover at docs head `546
 - Private `BLAZE_PROJECT_REGISTRY_v11_20261027.json` remains unavailable in the connected Library; no Google Drive connector is exposed and no older registry was substituted.
 
 **Current disposition remains:** #347 OPEN / DRAFT / UNMERGED; focused Quarantine/Relay CI VERIFIED at source/test SHA `275057aa`; Full integration FAILS at the QA-owned poll-signature assertion; physical acceptance NOT TESTED; PRODUCTION NO-GO.
+
+
+## UTC15 — single-source coin-pulse helper extraction map
+
+**Updated:** 2026-11-23T15:13:21.003Z  
+**Scope:** Hardware-owned host regression only; no production sketch, shared CORE contract, QA-owned test, finance, signer, migration, workflow permission, or device changed.
+
+The coin-pulse lab previously maintained separate manual `FUNCTION_NAMES` and `SIGNATURES` tuples. The earlier exact-head Relay failure (run #45182191910) demonstrated that adding a helper to one list but not the other shifted mutation indexes and caused a harness failure before the intended assertion.
+
+This increment replaces both lists with one ordered `FUNCTION_SPECS` table containing each helper name and expected declaration. The lab derives the mutation index map from helper names, rejects duplicate helper names/signatures, verifies every extracted declaration against its expected signature, and reports unknown mutation targets explicitly. Mutation scenarios and firmware behavior are unchanged.
+
+The exact-head Relay Output Polarity and Quarantine Byte Readback workflows both execute this coin-pulse lab; the Full BlazePwifi workflow independently checks the controller-protocol gate. Terminal run/job results are recorded in the PR #347 UTC15 checkpoint. All host and CI results remain SIMULATED / CI VERIFIED only; physical coin, relay, LittleFS power-cut, 150-cut and 30-device soak acceptance remain NOT TESTED.
