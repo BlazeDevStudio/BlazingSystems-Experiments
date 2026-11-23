@@ -1199,11 +1199,17 @@ def _write_new_json(
         )
         os.unlink(temporary_name, dir_fd=directory_fd)
         os.fsync(directory_fd)
-    except Exception:
+    except BaseException as primary_error:
         try:
             os.unlink(temporary_name, dir_fd=directory_fd)
         except FileNotFoundError:
             pass
+        except BaseException as cleanup_error:
+            add_note = getattr(primary_error, "add_note", None)
+            if callable(add_note):
+                add_note(
+                    f"temporary sidecar cleanup failed for {temporary_name}: {cleanup_error}"
+                )
         raise
 
 
@@ -1236,11 +1242,17 @@ def _write_checksums(
             dst_dir_fd=directory_fd,
         )
         os.fsync(directory_fd)
-    except Exception:
+    except BaseException as primary_error:
         try:
             os.unlink(temporary_name, dir_fd=directory_fd)
         except FileNotFoundError:
             pass
+        except BaseException as cleanup_error:
+            add_note = getattr(primary_error, "add_note", None)
+            if callable(add_note):
+                add_note(
+                    f"temporary sidecar cleanup failed for {temporary_name}: {cleanup_error}"
+                )
         raise
 
 
