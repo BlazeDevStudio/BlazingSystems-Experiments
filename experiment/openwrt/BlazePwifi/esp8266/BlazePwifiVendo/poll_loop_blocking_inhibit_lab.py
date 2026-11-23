@@ -344,6 +344,19 @@ for board,path in BOARDS.items():
     )
     print(f"{board} MUTATION_REJECTED disabled-intake-pending-identity expected_exit=66")
 
+    pending_journal_mutation = latch_fault.replace(
+        'activeTarget="";',
+        'activeTarget=""; LittleFS.files.erase("/pending.dat");',
+        1,
+    )
+    if pending_journal_mutation == latch_fault:
+        raise AssertionError(f"{board}: pending journal deletion mutation anchor missing")
+    compile_and_run(
+        assemble(latch_fault_source=pending_journal_mutation,main_source=PENDING_PRESERVATION_MAIN),
+        board,66,"disabled-intake-pending-journal-preservation"
+    )
+    print(f"{board} MUTATION_REJECTED disabled-intake-pending-journal-preservation expected_exit=66")
+
     pending_edge_delta_mutation = sample.replace(
         "latchPollPulseFault((uint32_t)pendingPulses+unseenEdges);",
         "latchPollPulseFault((uint32_t)pendingPulses+1U);",

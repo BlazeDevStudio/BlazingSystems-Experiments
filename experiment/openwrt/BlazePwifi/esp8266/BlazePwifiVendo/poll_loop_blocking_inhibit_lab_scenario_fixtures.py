@@ -93,11 +93,25 @@ int runDisabledIngressCase(bool disableController, bool disableCoin, bool disabl
   return 0;
 }
 
+const std::string PENDING_JOURNAL_FIXTURE_BYTES =
+    "PHX-PENDING-JOURNAL-OPAQUE-v1|pulses=2|target=pending-target|nonce=pending-nonce";
+
+std::string seedPendingJournalFixture() {
+  LittleFS.files["/pending.dat"] = PENDING_JOURNAL_FIXTURE_BYTES;
+  return PENDING_JOURNAL_FIXTURE_BYTES;
+}
+
+bool pendingJournalFixturePreserved(const std::string &expectedBytes) {
+  const auto found = LittleFS.files.find("/pending.dat");
+  return found != LittleFS.files.end() && found->second == expectedBytes;
+}
+
 int runDisabledIngressPendingCase(bool disableController, bool disableCoin, bool disableRelay,
                                   bool injectIsrEdge, int failureCode, const char *passMarker){
   resetState();
-  // Model an already-journaled paid batch whose identity must survive a later
-  // edge observed while one configured intake gate is OFF.
+  // Model the existing RAM identity plus opaque pending-journal bytes. This
+  // loop lab checks byte preservation; it does not parse the on-disk record format.
+  const std::string pendingJournalBytes=seedPendingJournalFixture();
   pendingPulses=2U;
   pendingReady=false;
   pendingTarget="pending-target";
@@ -114,6 +128,7 @@ int runDisabledIngressPendingCase(bool disableController, bool disableCoin, bool
   if(!journalRecoveryRequired || pendingPulses!=2U || !pendingReady ||
      pendingTarget!="pending-target" || pendingNonce!="pending-nonce" ||
      pendingPostAttempted || saveCalls!=0 ||
+     !pendingJournalFixturePreserved(pendingJournalBytes) ||
      !LittleFS.exists("/pollpulse.fault") || relayOn || ledOn ||
      insertMode || !activeTarget.empty()) return failureCode;
   const std::string fault=LittleFS.files["/pollpulse.fault"];
@@ -129,7 +144,9 @@ int runDisabledIngressPendingMultiEdgeCase(bool disableController, bool disableC
                                            uint32_t expectedFaultPulses, int failureCode,
                                            const char *passMarker){
   resetState();
-  // Existing journal identity must survive a multi-edge delta, including uint32 rollover.
+  // RAM identity and opaque pending-journal bytes must survive a multi-edge
+  // delta, including uint32 rollover; the journal's serialized format is not parsed here.
+  const std::string pendingJournalBytes=seedPendingJournalFixture();
   pendingPulses=2U;
   pendingReady=false;
   pendingTarget="pending-target";
@@ -147,6 +164,7 @@ int runDisabledIngressPendingMultiEdgeCase(bool disableController, bool disableC
   if(!journalRecoveryRequired || pendingPulses!=2U || !pendingReady ||
      pendingTarget!="pending-target" || pendingNonce!="pending-nonce" ||
      pendingPostAttempted || saveCalls!=0 ||
+     !pendingJournalFixturePreserved(pendingJournalBytes) ||
      lastHandledCoinEdgeSequence!=coinEdgeSequence || !lastCoin ||
      !LittleFS.exists("/pollpulse.fault") || relayOn || ledOn ||
      insertMode || !activeTarget.empty()) return failureCode;
