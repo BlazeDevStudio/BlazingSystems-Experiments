@@ -132,7 +132,7 @@ int main() {
   if(clearPending() || !journalRecoveryRequired ||
      !pendingRamIdentityPreserved() ||
      !pendingAndAttemptBytesPreserved()) return 90;
-  std::cout << "PENDING_CLEAR_JOURNAL_REMOVE_FAILURE_PRESERVED_PASS\\n";
+  std::cout << "PENDING_CLEAR_JOURNAL_REMOVE_FAILURE_PRESERVED_PASS\n";
 
   resetState();
   LittleFS.failRemovePath = "/pending.attempt";
@@ -140,52 +140,52 @@ int main() {
      !pendingRamIdentityPreserved() ||
      LittleFS.exists("/pending.dat") ||
      !attemptMarkerBytesPreserved()) return 91;
-  std::cout << "PENDING_CLEAR_ATTEMPT_MARKER_REMOVE_FAILURE_PRESERVED_PASS\\n";
+  std::cout << "PENDING_CLEAR_ATTEMPT_MARKER_REMOVE_FAILURE_PRESERVED_PASS\n";
 
   resetState();
   LittleFS.retainRemovePath = "/pending.dat";
   if(clearPending() || !journalRecoveryRequired ||
      !pendingRamIdentityPreserved() ||
      !pendingAndAttemptBytesPreserved()) return 92;
-  std::cout << "PENDING_CLEAR_REMOVE_READBACK_FAILURE_PRESERVED_PASS\\n";
+  std::cout << "PENDING_CLEAR_REMOVE_READBACK_FAILURE_PRESERVED_PASS\n";
 
   resetState();
   if(!clearPending() || journalRecoveryRequired ||
      pendingPulses != 0U || pendingReady || pendingPostAttempted ||
      !pendingNonce.empty() || !pendingTarget.empty() || lastSend != 0U ||
      LittleFS.exists("/pending.dat") || LittleFS.exists("/pending.attempt")) return 93;
-  std::cout << "PENDING_CLEAR_SUCCESS_CONTROL_PASS\\n";
-  std::cout << "PENDING_CLEAR_REMOVE_FAILURE_INJECTION_PASS 3/3 plus success control\\n";
+  std::cout << "PENDING_CLEAR_SUCCESS_CONTROL_PASS\n";
+  std::cout << "PENDING_CLEAR_REMOVE_FAILURE_INJECTION_PASS 3/3 plus success control\n";
 
   resetState();
   mismatchAttemptRecord = true;
   if(clearPending() || !journalRecoveryRequired ||
      !pendingRamIdentityPreserved() || !pendingAndAttemptBytesPreserved()) return 94;
-  std::cout << "PENDING_CLEAR_ATTEMPT_IDENTITY_MISMATCH_PRESERVED_PASS\\n";
+  std::cout << "PENDING_CLEAR_ATTEMPT_IDENTITY_MISMATCH_PRESERVED_PASS\n";
 
   resetState();
   failReadPath = "/pending.attempt";
   if(clearPending() || !journalRecoveryRequired ||
      !pendingRamIdentityPreserved() || !pendingAndAttemptBytesPreserved()) return 95;
-  std::cout << "PENDING_CLEAR_ATTEMPT_READ_FAILURE_PRESERVED_PASS\\n";
+  std::cout << "PENDING_CLEAR_ATTEMPT_READ_FAILURE_PRESERVED_PASS\n";
 
   resetState();
   changePersistedIdentityAfterFirstAttemptRead = true;
   if(clearPending() || !journalRecoveryRequired ||
      !pendingRamIdentityPreserved() || !pendingAndAttemptBytesPreserved()) return 96;
-  std::cout << "PENDING_CLEAR_ATTEMPT_RECHECK_IDENTITY_CHANGE_PRESERVED_PASS\\n";
+  std::cout << "PENDING_CLEAR_ATTEMPT_RECHECK_IDENTITY_CHANGE_PRESERVED_PASS\n";
 
   resetState();
   mismatchDurableRecord = true;
   if(clearPending() || !journalRecoveryRequired ||
      !pendingRamIdentityPreserved() || !pendingAndAttemptBytesPreserved()) return 97;
-  std::cout << "PENDING_CLEAR_DURABLE_RECORD_MISMATCH_PRESERVED_PASS\\n";
+  std::cout << "PENDING_CLEAR_DURABLE_RECORD_MISMATCH_PRESERVED_PASS\n";
 
   resetState();
   failReadPath = "/pending.dat";
   if(clearPending() || !journalRecoveryRequired ||
      !pendingRamIdentityPreserved() || !pendingAndAttemptBytesPreserved()) return 98;
-  std::cout << "PENDING_CLEAR_DURABLE_RECORD_READ_FAILURE_PRESERVED_PASS\\n";
+  std::cout << "PENDING_CLEAR_DURABLE_RECORD_READ_FAILURE_PRESERVED_PASS\n";
 
   resetState();
   LittleFS.files["/pending.new"] = "opaque-new-candidate";
@@ -194,15 +194,15 @@ int main() {
      !pendingRamIdentityPreserved() || !pendingAndAttemptBytesPreserved() ||
      LittleFS.files.find("/pending.new") == LittleFS.files.end() ||
      LittleFS.files.find("/pending.new")->second != extraCandidateBytes) return 99;
-  std::cout << "PENDING_CLEAR_AMBIGUOUS_CANDIDATES_PRESERVED_PASS\\n";
+  std::cout << "PENDING_CLEAR_AMBIGUOUS_CANDIDATES_PRESERVED_PASS\n";
 
   resetState();
   LittleFS.files.erase("/pending.dat");
   if(clearPending() || !journalRecoveryRequired ||
      !pendingRamIdentityPreserved() || LittleFS.exists("/pending.dat") ||
      !attemptMarkerBytesPreserved()) return 100;
-  std::cout << "PENDING_CLEAR_MISSING_CANDIDATE_PRESERVED_PASS\\n";
-  std::cout << "PENDING_CLEAR_PRECONDITION_FAILURE_INJECTION_PASS 7/7\\n";
+  std::cout << "PENDING_CLEAR_MISSING_CANDIDATE_PRESERVED_PASS\n";
+  std::cout << "PENDING_CLEAR_PRECONDITION_FAILURE_INJECTION_PASS 7/7\n";
   return 0;
 }
 """
@@ -235,11 +235,11 @@ def run_pending_clear_failure_lab(
         program = (
             CLEAR_PENDING_STUBS
             + selected_same
-            + "\\n"
+            + "\n"
             + pending_attempt_marker_matches_source
-            + "\\n"
+            + "\n"
             + selected_clear
-            + "\\n"
+            + "\n"
             + CLEAR_PENDING_MAIN
         )
         return compile_and_run(program, board, expected, label)
@@ -296,9 +296,9 @@ def run_pending_clear_failure_lab(
     )
 
     same_record_anchor = (
-        "return left.magic==right.magic && left.pulses==right.pulses &&\\n"
-        "         strcmp(left.nonce,right.nonce)==0 &&\\n"
-        "         strcmp(left.target,right.target)==0 &&\\n"
+        "return left.magic==right.magic && left.pulses==right.pulses &&\n"
+        "         strcmp(left.nonce,right.nonce)==0 &&\n"
+        "         strcmp(left.target,right.target)==0 &&\n"
         "         left.checksum==right.checksum;"
     )
     same_record_mutation = same_pending_record_source.replace(
