@@ -3021,3 +3021,29 @@ The correction adds a one-shot descriptor cleanup helper. It pops ownership befo
 4. **PHX-RELEASE:** record terminal results of the exact-head 3.3.13/4.0.0 compatibility jobs before treating the matrix as complete.
 
 No merge, rebase, cross-repository migration, signing, release tag, publication, hardware flash, real payment migration or customer deployment occurred. CI evidence is synthetic/hosted only. Protected signer and independent freshness witness, durable financial accounting/migration, independent QA/MASTER approval, approved production binaries, 150 physical power cuts and 30-device/24-hour soak remain unproven or NOT TESTED. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC14 terminal exact-source CI reconciliation — 2026-11-23
+
+This supersedes the IN_PROGRESS matrix entries in the preceding UTC14 section for source/test HEAD `1efd329c5b43d12c22a077577e532381aecaff34`. It does not upgrade the separate docs-only successor HEAD `ecc214826aa3725e232a0268ab6f447b6bf14aa6` to full acceptance.
+
+### Source/test-head compatibility matrix
+
+- PR matrix [#45192373807](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45192373807): **3/3 SUCCESS** — provenance job `137754186760`, ESP32 core 3.3.13 job `137754187002`, ESP32 core 4.0.0 job `137754186355`.
+- Push matrix [#45192356025](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45192356025): **3/3 SUCCESS** — provenance job `137754140985`, ESP32 core 3.3.13 job `137754140876`, ESP32 core 4.0.0 job `137754140289`.
+- Both exact-head matrix runs completed successfully. They are hosted CI compilation/reproducibility evidence only; they do not constitute physical hardware acceptance or production binary approval.
+
+### Source/test-head integrated build and Windows outcomes
+
+- PR build [#45192373927](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45192373927): **OVERALL FAILURE**, not green. CI-0701 job `137753782618` SUCCESS; mandatory validation job `137753949853` FAILED at the inherited CORE-owned `experiment/openwrt/BlazePwifi/PROJECT_HANDOVER.md` freshness gate. ESP32 `137753949751`, ESP8266 `137753949501`, Android `137753949770`, and all 11 OpenWrt target jobs SUCCESS. Update bundle, v0.4 simulations, production sign handoff and publishers SKIPPED after the validation gate.
+- Push build [#45192355932](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45192355932): **OVERALL FAILURE**, not green. CI-0701 job `137753718005` SUCCESS; mandatory validation job `137753872708` FAILED at the same CORE-owned freshness gate. ESP32 `137753872806`, ESP8266 `137753872933`, Android `137753872924`, and all 11 OpenWrt target jobs SUCCESS. Update bundle, v0.4 simulations, sign handoff and publishers SKIPPED.
+- Windows [#45192374621](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45192374621): handover job `137753784401` FAILED at the same CORE-owned freshness gate; build-windows and publish-release SKIPPED. The PISONET-owned negative-selftest did not execute in this run.
+
+### Docs-only successor status
+
+- The handover commit `ecc214826aa3725e232a0268ab6f447b6bf14aa6` was read back as the current docs-only PR head.
+- Push build [#45193143653](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45193143653): CI-0701 job `137756478684` SUCCESS; the integrated validation/build matrix was still queued at last read.
+- Push compatibility [#45193143265](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45193143265): provenance job `137756482648` SUCCESS; ESP32 core 3.3.13 job `137756483303` and core 4.0.0 job `137756483267` were IN_PROGRESS at last read.
+- Do not transfer source/test-head matrix PASS to the docs-only successor; its own remaining jobs must be read at its exact SHA.
+
+The remaining build blocker is outside RELEASE ownership: **PHX-CORE must refresh its own PROJECT_HANDOVER.md and related state records** before the mandatory freshness gate can pass. RELEASE did not edit or bypass those files. No merge, signing, tagging, publication, hardware flash, payment migration or customer deployment occurred. PRODUCTION NO-GO.
