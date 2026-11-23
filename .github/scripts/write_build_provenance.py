@@ -127,6 +127,7 @@ def _open_regular(path: Path) -> tuple[int, os.stat_result, int, str]:
     file_flags = os.O_RDONLY | nofollow | cloexec
     parent_fd = -1
     fd = -1
+    next_fd = -1
     try:
         parent_fd = os.open(absolute.anchor, directory_flags)
         for component in parts[1:-1]:
@@ -134,11 +135,13 @@ def _open_regular(path: Path) -> tuple[int, os.stat_result, int, str]:
             metadata = os.fstat(next_fd)
             if not stat.S_ISDIR(metadata.st_mode):
                 os.close(next_fd)
+                next_fd = -1
                 raise ProvenanceError(
                     f"expected a real directory path component: {component}"
                 )
             os.close(parent_fd)
             parent_fd = next_fd
+            next_fd = -1
 
         leaf = parts[-1]
         before = os.stat(leaf, dir_fd=parent_fd, follow_symlinks=False)
@@ -153,16 +156,20 @@ def _open_regular(path: Path) -> tuple[int, os.stat_result, int, str]:
             raise ProvenanceError(f"file identity changed while opening: {path}")
         return fd, opened, parent_fd, leaf
     except OSError as exc:
-        if fd >= 0:
-            os.close(fd)
-        if parent_fd >= 0:
-            os.close(parent_fd)
+        for descriptor in (fd, next_fd, parent_fd):
+            if descriptor >= 0:
+                try:
+                    os.close(descriptor)
+                except OSError:
+                    pass
         raise ProvenanceError(f"cannot safely open {path}: {exc}") from exc
-    except Exception:
-        if fd >= 0:
-            os.close(fd)
-        if parent_fd >= 0:
-            os.close(parent_fd)
+    except BaseException:
+        for descriptor in (fd, next_fd, parent_fd):
+            if descriptor >= 0:
+                try:
+                    os.close(descriptor)
+                except OSError:
+                    pass
         raise
 
 
@@ -239,6 +246,7 @@ def _open_directory(path: Path, label: str) -> tuple[Path, int]:
 
     flags = os.O_RDONLY | directory | nofollow | getattr(os, "O_CLOEXEC", 0)
     current_fd = -1
+    next_fd = -1
     try:
         current_fd = os.open(absolute.anchor, flags)
         for component in absolute.parts[1:]:
@@ -246,21 +254,31 @@ def _open_directory(path: Path, label: str) -> tuple[Path, int]:
             metadata = os.fstat(next_fd)
             if not stat.S_ISDIR(metadata.st_mode):
                 os.close(next_fd)
+                next_fd = -1
                 raise ProvenanceError(
                     f"{label} path component must be a real directory: {component}"
                 )
             os.close(current_fd)
             current_fd = next_fd
+            next_fd = -1
         return absolute, current_fd
     except OSError as exc:
-        if current_fd >= 0:
-            os.close(current_fd)
+        for descriptor in (next_fd, current_fd):
+            if descriptor >= 0:
+                try:
+                    os.close(descriptor)
+                except OSError:
+                    pass
         raise ProvenanceError(
             f"{label} is unavailable or contains a symlink: {path}: {exc}"
         ) from exc
-    except Exception:
-        if current_fd >= 0:
-            os.close(current_fd)
+    except BaseException:
+        for descriptor in (next_fd, current_fd):
+            if descriptor >= 0:
+                try:
+                    os.close(descriptor)
+                except OSError:
+                    pass
         raise
 
 
