@@ -321,3 +321,47 @@ The constants were restored from the exact pre-refactor source anchor in commit 
 The runner refactor is **CI VERIFIED** as test infrastructure; the source-extracted hardware behaviors remain **SIMULATED**. Physical coin acceptor, relay/electrical pulse, LittleFS power-loss durability, 150 controlled power cuts, 30-device 24-hour soak, and electrical recovery remain **NOT TESTED**. HARDWARE ACCEPTED: **NO**. PRODUCTION READY: **NO-GO**.
 
 **Next exact action:** PHX-CORE publishes the approved authenticated register/poll response envelope and golden vectors; PHX-QA independently reconciles its poll-signature assertion against that producer contract; PHX-MASTER refreshes the #347 exact source/lab/docs pins. PHX-HARDWARE then reruns Full on the approved exact head. Keep all candidate PRs DRAFT and deny-only.
+
+
+## PHX-HARDWARE UTC20 — bound shared C++ fixture execution
+
+**Observed:** 2026-11-23T20:48:19Z  
+**Role:** PHX-HARDWARE  
+**Task:** #177 / cleanup-first #266  
+**PR:** [#347](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/347), OPEN / DRAFT / UNMERGED  
+**Branch:** `phoenix/hw-coin-ingress-config-helper-reconciled-20261123-utc13`  
+**Parent/base:** #345 at `ca72497ed386c9ac4e50d3f811827bef51e296ad`  
+**Source/test commit:** `d246390e4468235defdd9a6837bd16e7cb4d45c6`
+
+### Defect and bounded change
+
+The shared `run_cpp_fixture()` helper defaulted both `compile_timeout` and `run_timeout` to `None`. The poll-window and coin-pulse labs use the defaults, so a stalled compiler or generated fixture had no per-process deadline and could occupy a GitHub job until the outer workflow timeout. The poll-loop lab already passed explicit 30/10-second bounds, but that protection was not shared by all callers.
+
+The Hardware-owned test infrastructure now defines:
+- `DEFAULT_COMPILE_TIMEOUT_SECONDS = 30`
+- `DEFAULT_RUN_TIMEOUT_SECONDS = 10`
+
+Those are the default parameters for every caller; explicit per-lab overrides remain supported. Added `cpp_fixture_runner_contract_lab.py` with five mocked-process contract tests for default bounds, explicit overrides, compile timeout, execution timeout, compile diagnostic-tail bounding, and preserving a nonzero fixture exit for the caller. `poll_window_drain_lab.py` runs the contract suite before compiling either board's extracted source.
+
+Changed paths:
+- `experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/cpp_fixture_runner.py`
+- `experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/cpp_fixture_runner_contract_lab.py` (new)
+- `experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_window_drain_lab.py`
+
+No production `.ino` sketch, shared CORE API, financial path, signer, witness, or release workflow changed.
+
+### Exact-head CI
+
+At source/test head `d246390e4468235defdd9a6837bd16e7cb4d45c6`:
+
+- Quarantine [#45262310201](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45262310201), job `138000014771`: **SUCCESS**. Logs show `Ran 5 tests`, `CPP_FIXTURE_RUNNER_CONTRACT_PASS 5/5`, poll-window `11/11` on ESP8266 and ESP32, and all three timing/active-line mutations rejected on both boards.
+- Relay [#45262310174](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45262310174), jobs `138000015101` and `138000015712`: **SUCCESS**. The same 5/5 runner contract suite and both-board poll-window cases passed; relay and boot-polarity labs also completed successfully.
+- Full [#45262310273](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45262310273): **TERMINAL FAILURE**. Validation job `138000016294`, step `Controller protocol parity`, reports `Missing poll signature check` in the ESP8266 sketch. All 14 target/platform jobs (ESP32, ESP8266, Android, Orange Pi variants, Ruijie, x86-64) completed **SUCCESS**; 12 downstream simulation/update/signing/candidate/publication stages were **SKIPPED**. This is not a Full integration pass.
+
+### Evidence classification and remaining gates
+
+The runner contract is **CI VERIFIED**. Board-specific behavior in the host/source-extracted labs is **SIMULATED**. Physical coin acceptor, relay contacts, electrical pulse/recovery, LittleFS power-loss durability, 150 controlled power cuts, and 30-device/24-hour soak remain **NOT TESTED**. HARDWARE ACCEPTED: **NO**. PRODUCTION READY: **NO-GO**.
+
+This is a narrow test-harness safety improvement; it does not complete #266's Hardware requirement to keep the canonical bounded parser, signature binding and verification routines separate from actuation. The #266 Hardware track remains unchecked.
+
+**Next exact action:** PHX-CORE publishes the approved authenticated register/poll response envelope and canonical golden vectors; PHX-QA reconciles the poll-signature assertion against that contract; PHX-MASTER refreshes the #347 source/test/docs pins. Hardware then reruns Full on the approved exact source head. Keep all candidate PRs DRAFT and deny-only.
