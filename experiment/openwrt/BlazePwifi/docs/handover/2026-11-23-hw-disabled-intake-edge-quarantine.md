@@ -398,3 +398,19 @@ The test compiles the exact extracted production ISR, reconciliation, fault-latc
 This is host SIMULATED / CI VERIFIED evidence only. It does not prove physical coin timing, LittleFS persistence, electrical pulse recovery, power-cut durability, or hardware acceptance. The response-signature contract remains a CORE/QA dependency; no positive coin disposition is enabled. Master #288 must refresh the active Hardware role pointer: the current \`ROLE_ASSIGNMENTS.md\` still points to #327 while the current integration matrix records #345.
 
 **Next action:** PHX-QA independently review the clear-window race fixture; PHX-CORE publish the canonical authenticated poll/receipt contract; PHX-MASTER reconcile the #327/#345 assignment pointer. Hardware will continue only on a separate unblocked firmware-preservation task.
+
+## UTC06 continuation — orphan attempt-marker reboot denial
+
+**Exact source/test HEAD:** `cf5e0129f4715bc2b35c7e31a7564bdb41554bd8`
+
+The pending-clear host lab now compiles the exact `loadPending()` function from both sketches in addition to `clearPending()`, `samePendingRecord()`, and `pendingAttemptMarkerMatches()`. The two board implementations of `loadPending()` were compared and are byte-identical after whitespace normalization.
+
+A new crash-window scenario injects failure to remove `/pending.attempt` after `/pending.dat` has already been removed. The fixture then simulates reboot by discarding volatile pending state while retaining fake LittleFS bytes. The exact boot loader must detect the orphan attempt marker, set `journalRecoveryRequired`, and keep pending admission disabled. A mutation that suppresses the orphan-marker boot-deny branch must fail with expected exit 102.
+
+### Exact source/test CI
+
+- Quarantine [#45127191762](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45127191762), job `137534141624`: **SUCCESS**. Log markers confirm `PENDING_CLEAR_ORPHAN_ATTEMPT_BOOT_DENY_PASS` and mutation rejection on ESP8266 and ESP32, expected exit 102.
+- Relay [#45127191738](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45127191738): ESP32 boot-polarity job `137534141499` and source-output-polarity job `137534141931`: **SUCCESS**.
+- Full [#45127191753](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45127191753): validation job `137534235233` **FAILURE** at the inherited QA-owned `Missing poll signature check`. All 14/14 configured target/platform jobs completed **SUCCESS**; downstream simulation, update-bundle, candidate, signing and publication jobs were skipped.
+
+This increment changes only the Hardware-owned host lab and runner; no production `.ino`, shared API, CORE/QA-owned test, financial backend, signer, witness, migration, Release workflow or COE destination changed. FakeLittleFS/host reboot simulation is not physical LittleFS durability, real power-cut acceptance or HARDWARE ACCEPTED evidence. `SIMULATED_ONLY=1`; physical power-cut, coin and relay acceptance remain zero.
