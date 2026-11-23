@@ -163,3 +163,33 @@ The earlier run on the intermediate \`3489a17\` head is not used as 9/9 baseline
 - PR #283 remains a separate parallel branch. Its quarantine helper is definition-only on the checked head; no production callsite or authenticated poll response contract is claimed.
 
 **Next exact action:** PHX-QA / PHX-CORE to reconcile the positive poll-signature assertion against the live producer/consumer contract, and PHX-MASTER to refresh role/stack pins before any cross-branch integration. No merge, flash, device reset, money, migration, signer provisioning or release action.
+
+
+## PHX-HARDWARE UTC02 — restore configured-output mutation sensitivity
+
+**Task:** one bounded Hardware-owned test-integrity correction on the existing #345 child. No production firmware sketch, shared API, CORE ledger, QA-owned controller assertion, Release workflow, or COE destination was changed.
+
+### Defect reproduced
+
+The pending-identity scenario checked relay/LED outputs only *after* `sampleCoinPulseEdge()`. That call enters the fault path and calls `applyOutputs()` again, so it could hide a transient ready-LED assertion caused by removing `relayEnabled` from the initial `accepting` predicate. The physical relay still had a separate `if(relayEnabled)` write guard, but the test did not prove the ready indicator was denied before fault handling.
+
+- At head `6a00cf5e2f5967fc3b38c594b64cb6f36c2cfd58`, the relay-output mutation survived: Quarantine [#45100297925](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45100297925), job `137449361363`, and Relay [#45100297964](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45100297964), job `137449361476`, both failed because the mutation returned 0 instead of expected exit 80.
+- First correction at `90231e157a8b0f2d3dd3d0548ea01abef78aa5c8` added the pre-sample output assertion, correctly detected the mutation, but reused pending-case exit 66. Relay [#45101370466](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45101370466), job `137452740438`, failed expected 80 / got 66. This was a harness exit-code collision, not a firmware failure.
+
+### Final correction and exact-source evidence
+
+Source/test SHA: `6f1dc79b6d8f263655a0a385eb162d31972d3700`.
+
+The scenario fixture now checks relay and LED are OFF immediately after applying each disabled configuration and before any sampled edge or fault handler can mask the initial output state. The same assertion is present in single-edge pending-identity and multi-edge/rollover scenarios. Output-interlock mutation failures use a distinct `failureCode + 14` exit range; the relay-disabled first case therefore rejects with exit 80 without colliding with the 66–74 pending-identity checks.
+
+- Quarantine [#45101510839](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45101510839), job `137453194883`: **SUCCESS**. Both boards pass the 6/6 and 9/9 pending-identity matrices; pending-ready, identity-clear, edge-delta and relay-output-gate mutations are rejected. The new relay-output-gate mutation reports expected exit 80 on ESP8266 and ESP32.
+- Relay [#45101510916](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45101510916): source-output-polarity job `137453195996` **SUCCESS**; ESP32 boot-polarity job `137453195381` **SUCCESS**. Output polarity passes 48/48 scenarios per board; pending-identity matrices pass 6/6 and 9/9 per board; the relay-output-gate mutation is rejected with exit 80 on both boards.
+- Quarantine also reports pending write/readback 22/22, normalized poll-safety parity 17/17, and the existing dual-store fault lab. That lab still explicitly reproduces the current-boot-only limitation when both persistence stores fail; it does not establish an independent durable witness.
+
+### Full integration and boundaries
+
+Full build run [#45101505306](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45101505306), validation job `137453264998`, **FAILS** at inherited QA-owned Controller protocol parity: `Missing poll signature check` in the ESP8266 sketch. At this checkpoint 13/14 target/platform jobs had succeeded; Android was still running. The validation failure skips downstream simulations, bundle, candidate, signing and publication. The same source/test SHA is `6f1dc79b6d8f263655a0a385eb162d31972d3700`.
+
+All focused logs remain `SIMULATED_ONLY=1`; physical coin acceptor, relay voltage, power-cut and electrical recovery acceptance remain **NOT TESTED**. No physical flash, device reset, live money, migration, signer provisioning, merge or release occurred.
+
+**Next exact action:** PHX-QA / PHX-CORE resolve the authenticated register/poll contract and replace the stale positive signature assertion with source-linked negative/default-deny checks; PHX-MASTER refreshes #345's role/integration pin. Hardware keeps coin admission fail-closed.
