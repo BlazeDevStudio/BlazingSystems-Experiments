@@ -2756,3 +2756,46 @@ These tests are synthetic hosted CI. They prove cleanup for injected pre-publica
 - **PHX-RELEASE:** record the terminal exact-source matrix result when available; do not repeat this already-tested pre-publication cleanup case.
 
 Canonical private Drive registry v11 remains unavailable through the authorized Library surface; older v3–v7 snapshots were not substituted. Independent QA review remains pending. No merge, signing, tag, publication, hardware flash, real payment migration or customer deployment occurred. Protected signer/freshness witness, durable financial accounting/migration, independent QA/MASTER approval, approved production binaries, 150 physical power cuts and 30-device/24-hour soak remain unproven or NOT TESTED. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC03 — post-publication provenance fsync recovery (2026-11-23T03:15Z)
+
+**Disposition:** a distinct post-publication durability failure was reproduced test-first and corrected in RELEASE-owned provenance tooling. Exact-source CI-0701 passes 39/39. The ESP32 compatibility workflow was queued/pending with no jobs at this handover snapshot; broader Full/Windows integration remains blocked by CORE-owned freshness. PR #291 remains OPEN / DRAFT / UNMERGED. **PRODUCTION NO-GO.**
+
+### Finding
+
+The _write_new_json() helper fsynced the temporary file, hard-linked it to BUILD-PROVENANCE.json, removed the temporary name, and then fsynced the containing directory. If that directory fsync failed, the exception handler attempted to remove only the already-absent temporary name. The published manifest remained visible, so a retry failed closed on the existing manifest and required operator cleanup. This is separate from UTC02's pre-publication KeyboardInterrupt/SystemExit sidecar defect.
+
+### Test-first and correction
+
+- Test-only regression: [commit 9bd16c7a](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/9bd16c7afac345ceb9d7001c8761c4beed620079).
+- Expected RED: [run #45104510498](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45104510498), provenance job 137462589251: 39 tests executed; exactly one new failure. Injected directory fsync failure occurred after publication; BUILD-PROVENANCE.json remained present. This reproduced the stale-published-manifest defect.
+- Source correction: [commit 821ef3e9](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/821ef3e9272a747e09c5246525eabe45740a5df5).
+- The writer records the temporary sidecar's device/inode identity, marks publication only after the hard link succeeds, and on a later failure removes the destination only when it still identifies that same inode. It then attempts a directory fsync for the cleanup, preserves the original exception, and attaches cleanup diagnostics rather than replacing the primary failure. A different file at the destination is not removed.
+
+### Exact-source CI
+
+- Push Full run [#45104614511](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45104614511), CI-0701 job 137462921880: **SUCCESS**; provenance suite **39/39 PASS**.
+- PR Full run [#45104610328](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45104610328), CI-0701 job 137462907061: **SUCCESS**; provenance suite **39/39 PASS**.
+- Exact-source ESP32 compatibility runs [#45104614515](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45104614515) and [#45104610357](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45104610357): **QUEUED / PENDING, no jobs returned** at this handover snapshot; no compile or matrix result is claimed.
+- Push Full [#45104614511]: broader target workflow was still **IN_PROGRESS**; CI-0701 success does not make Full green.
+- PR Full [#45104610328]: mandatory validate **FAILED** at the CORE-owned experiment/openwrt/BlazePwifi/PROJECT_HANDOVER.md freshness gate; target jobs were still running at the last job read and downstream release stages were not accepted.
+- Windows [#45104614520]: handover freshness **FAILED** at the same CORE-owned gate; Windows build and publisher **SKIPPED**.
+
+### Cross-repository reconciliation
+
+- MASTER PR #288: 8750d615cbb39aa70c1b12847479acb594fe5e3c, OPEN / DRAFT / UNMERGED, 180 coordination-only paths. OWNERSHIP_ROUTES.json remains DRAFT_REVIEW_ONLY; RELEASE workflow route is reimplementation-review, not migration authorization.
+- RELEASE PR #242: 734b89d9e7792247e8376335c3f3685500ab3f89, OPEN / DRAFT; Windows run [#40882814472](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/40882814472) SUCCESS (scoped build/handover only).
+- RELEASE PR #291: branch phoenix/release-publisher-isolation-20261115; base #242 734b89d9e7792247e8376335c3f3685500ab3f89; current source/test head 821ef3e9272a747e09c5246525eabe45740a5df5 before this handover commit. The PR retains 27 accumulated mixed-owner paths (22 RELEASE, 3 CORE, 2 PISONET); this UTC03 increment changes only RELEASE-owned provenance test/source plus this handover.
+- COE integration #26: b382d233ff06c8791b1028bed3c617cc7b670d12, OPEN / DRAFT / FROZEN; five workflows QUEUED, zero jobs.
+- COE parent #31: 59ed44d0b911e176f1a95b9cf5585ef811ffd31b; shared/firmware run [#44222517238](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44222517238) SUCCESS including ESP8266/ESP32 compile jobs; case-collision [#44222517258](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44222517258) SUCCESS; mandatory Bubblewrap sandbox [#44222517263](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44222517263) FAILED closed at unprivileged namespace preflight.
+- COE child #35: 16c0e140cbfd52d4cb572b7121189866763c77b2; shared run [#45082913844](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45082913844) FAILED at 10/10 appliance-profile admission due undefined approved site-scoped ULA /48; ESP32/ESP8266 compiles SKIPPED. Sandbox [#45082913881](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45082913881) FAILED closed because Bubblewrap is unavailable; case-collision [#45082913966](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45082913966) SUCCESS.
+- Cleanup-first #266 remains OPEN, 0/7 tracks complete.
+- Canonical private Drive BLAZE_PROJECT_REGISTRY_v11_20261027.json was not surfaced by authorized Library search; older v3–v7 files are not substitutes and were not copied or exposed.
+
+### Review, rollback and release limits
+
+- Independent PR #291 reviews: none received at the last review query; PHX-QA review remains required.
+- Rollback is limited to the UTC03 test/source commits on this existing draft branch; do not revert inherited CORE/PISONET paths or coordination files.
+- PHX-CORE must refresh its own handover; PHX-QA must independently review the post-publication cleanup and identity guard; PHX-MASTER retains ownership routing and cross-repository integration decisions.
+- No merge, signing, release tag, publication, hardware flash, real payment migration or customer deployment occurred. Protected signer/freshness witness, durable financial accounting/migration, independent QA/MASTER approval, approved production binaries, 150 physical power cuts and 30-device/24-hour soak remain unproven or NOT TESTED. **PRODUCTION NO-GO.**
