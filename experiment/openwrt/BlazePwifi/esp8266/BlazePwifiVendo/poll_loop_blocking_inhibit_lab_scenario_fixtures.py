@@ -518,7 +518,7 @@ int main(){
 """
 
 
-COIN_POST_ISR_MAIN = r"""
+COIN_POST_ISR_MAIN = MAIN[:MAIN.index("int main(){")] + r"""
 int main(){
   resetState();
   allowCoinPost=true;
