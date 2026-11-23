@@ -522,3 +522,28 @@ The exact PR/docs head `1ca5aded3bcfce973ee664e4d6eb17d91dd28ee6` was tested aft
 This confirms the source/test SHA e69a3d and the docs-only successor 1ca5aded. It does not resolve the CORE authenticated producer / QA assertion dependency. The next handover commit is also documentation-only and leaves the verified source/test SHA unchanged; no new source/test claim is made for it.
 
 **Disposition:** Quarantine/Relay are **CI VERIFIED** for the source-extracted host labs; Full integration remains **FAILED**; physical acceptance remains **NOT TESTED**; **HARDWARE ACCEPTED: NO; PRODUCTION READY: NO-GO**.
+
+
+## UTC23 runner-contract CI wiring and timeout diagnostics — 2026-11-23
+
+**Exact source/test head:** `274f984d777ab5c5b9a5a27d8e7101fcc900e08c`  
+**Parent Hardware PR:** #345 at `ca72497ed386c9ac4e50d3f811827bef51e296ad`  
+**Firmware-source anchor:** `275057aa28375223a32da099420f52696d9b667c` (unchanged)
+
+### Changes
+
+- `cpp_fixture_runner.py` now preserves a bounded UTF-8-safe tail of both child stdout and stderr when compilation or fixture execution times out. The same 3000-character tail bound is shared with compiler-failure diagnostics.
+- `cpp_fixture_runner_contract_lab.py` adds compile-timeout and execution-timeout diagnostics coverage. It exercises both text and byte streams, confirms the tail survives, and confirms the earlier output is excluded.
+- `poll_loop_blocking_inhibit_lab.py` now imports and invokes the shared runner contract suite before source extraction. The existing focused Quarantine and Relay jobs already execute this poll-loop lab; no workflow file or Release-owned path was changed.
+
+### Exact-head CI evidence
+
+- Quarantine [#45291743498](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45291743498), job `138101941730`: **SUCCESS**. The runner contract suite ran twice, once for each board, with `CPP_FIXTURE_RUNNER_CONTRACT_PASS 7/7` both times. Existing pending-clear, poll HTTP-timeout ISR, and coin-pulse source-extracted cases also passed.
+- Relay/Output [#45291743499](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45291743499), job `138101941807`: **SUCCESS**. Runner contract suite ran twice at 7/7; ESP8266/ESP32 poll HTTP-timeout ISR and original #177 timing cases passed. ESP32 boot-polarity job `138101942196`: **SUCCESS**.
+- Full [#45291743633](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45291743633): **TERMINAL FAILURE**, 27/27 jobs terminal. Fourteen target/platform jobs **SUCCESS**; validation job `138101943628` **FAILS** at the inherited QA-owned `Missing poll signature check` in the ESP8266 sketch; twelve dependent simulation/update/signing/candidate/publication jobs **SKIPPED**.
+
+### Evidence boundary and next action
+
+The runner contract is **CI VERIFIED** and the firmware labs remain **SIMULATED** source-extracted host evidence. No production `.ino` sketch or shared CORE API changed in this increment. Physical coin acceptor, relay/electrical recovery, LittleFS power-loss durability, 150 controlled power cuts, 30-device/24-hour soak, protected signer/witness, financial migration/replay and independent QA/release acceptance remain **NOT TESTED / NOT ACCEPTED**.
+
+PHX-CORE must publish the approved authenticated register/poll response contract and golden vectors; PHX-QA must reconcile the legacy poll-signature assertion independently; PHX-MASTER must refresh the exact #347 source/test/docs pins. Do not add a positive legacy `response_sig` or weaken default-deny to make Full pass.
