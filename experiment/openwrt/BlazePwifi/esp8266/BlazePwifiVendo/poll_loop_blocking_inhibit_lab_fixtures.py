@@ -7,6 +7,7 @@ stubs and scenario definitions for smaller, human-reviewable source units.
 from poll_loop_blocking_inhibit_lab_runtime_fixtures import STUBS, SUPPORT
 from poll_loop_blocking_inhibit_lab_scenario_fixtures import (
     MAIN,
+    PENDING_PRESERVATION_MAIN,
     RACE_MAIN,
     post_drain_rollover_main,
     missed_sample_main,
@@ -18,6 +19,7 @@ __all__ = [
     "STUBS",
     "SUPPORT",
     "MAIN",
+    "PENDING_PRESERVATION_MAIN",
     "RACE_MAIN",
     "post_drain_rollover_main",
     "missed_sample_main",
