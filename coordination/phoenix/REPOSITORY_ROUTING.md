@@ -1626,3 +1626,16 @@ The machine-readable `OWNERSHIP_ROUTES.json` remains unchanged at blob `e4db3243
 COE #26 remains the frozen destination candidate at `b382d233ff06c8791b1028bed3c617cc7b670d12`; COE main remains the 3-entry scaffold at `a6513ab4412b4c014eee2863e45cbe32d06cb243`. The earlier exact row-level runtime/test/license comparison remains applicable because these refs are unchanged. No source/destination file was staged, copied, moved, overwritten, cherry-picked, rebased, or promoted.
 
 COE RELEASE #35 at docs head `a91b46c43222e328d7a195179d1c105b5811e548` is a separate release-packager child of #31, not a migration route or authorization for #26. Its `os.walk(onerror=...)` correction is source/test evidence only; ULA and Bubblewrap remain blocked. The RELEASE route remains `reimplementation-review`; no target is granted by this Master audit.
+
+
+## PHX-MASTER UTC21 route and source-authority revalidation — 2026-11-23
+
+The machine-readable OWNERSHIP_ROUTES.json remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`: 11 routes, `DRAFT_REVIEW_ONLY`, PHX-MASTER source `coordination/phoenix/`, destination `null`. The destination candidate remains COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12` on COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`. No route permission, destination target or owner changed.
+
+The latest Hardware #347 fixture-runner change is entirely under the Hardware-owned ESP8266 helper/lab paths. Master records its exact source/test SHA and CI only; no Hardware file was copied or edited by Master. COE RELEASE #35 is a separate release-packager child of #31, not a migration route or authorization for #26.
+
+The prior exact #26 61-row blob/mode/test/license comparison remains the applicable baseline because the Experiments source main, COE main and #26 candidate SHAs are unchanged. The 46/15 versus 47/14 classification mismatch, one omitted derived test, two stale test blob IDs and missing NOTICE/third-party license counterparts remain unresolved. Five workflows remain queued with zero jobs.
+
+**Branch authority:** issue #172 points to v0.5.3 development, while the main product handover points to v0.6.0; PR #30 is closed/unmerged and the v0.6 branch has advanced separately. CORE must select and document the canonical product development ref. MASTER does not change worker branches or handovers.
+
+**Review-before-move hold:** no source/destination file was staged, copied, moved, overwritten, cherry-picked, rebased, retargeted or promoted. The private Drive v11 registry was unavailable, so no new artifact or folder was created.
