@@ -216,6 +216,7 @@ int main() {
 
 def compile_and_run(board, source, variant):
     write_logical = extract(source, "writeLogical")
+    coin_ingress_config = extract(source, "coinIngressConfigurationAllows")
     apply_outputs = extract(source, "applyOutputs")
 
     if variant == "invert-write-logical":
@@ -231,7 +232,7 @@ def compile_and_run(board, source, variant):
             raise RuntimeError(board + ": poll inhibit expression changed; review lab")
         apply_outputs = apply_outputs.replace(expected, "", 1)
 
-    code = STUBS + "\n" + write_logical + "\n" + apply_outputs + "\n" + MAIN
+    code = STUBS + "\n" + write_logical + "\n" + coin_ingress_config + "\n" + apply_outputs + "\n" + MAIN
     with tempfile.TemporaryDirectory(prefix="phx-relay-polarity-") as folder:
         cpp = Path(folder) / "relay_output.cpp"
         binary = Path(folder) / "relay_output"

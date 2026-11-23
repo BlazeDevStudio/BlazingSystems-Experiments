@@ -92,6 +92,7 @@ POLL_SAFETY_PARITY = (
     "boundedCoinDebounceMs",
     "canStartPoll",
     "applyOutputs",
+    "coinIngressConfigurationAllows",
     "beginPollWindow",
     "sampleCoinPulseEdge",
     "latchPollPulseFault",
@@ -195,6 +196,7 @@ def verify_poll_safety_board_parity():
         ("markPendingPostAttempt", 'if(LittleFS.exists("/pending.attempt")){', "if(false){"),
         ("pendingAttemptMarkerMatches", "return attempt.pulses==pendingPulses &&", "return true;"),
         ("clearPending", "if(!pendingAttemptMarkerMatches()){", "if(false){"),
+        ("coinIngressConfigurationAllows", "return controllerEnabled && coinEnabled && relayEnabled;", "return true;"),
     )
     for name, anchor, replacement in authority_mutations:
         mutated = {
@@ -313,6 +315,9 @@ for board,path in BOARDS.items():
     loop=extract_function(source, "loop")
     write=extract_function(source, "writeLogical")
     output=extract_function(source, "applyOutputs")
+    coin_ingress_config=extract_function(source, "coinIngressConfigurationAllows")
+    if not coin_ingress_config:
+        raise AssertionError(f"{board}: missing configured coin-ingress predicate")
     idle=extract_function(source, "coinLineIdle")
     can_start=extract_function(source, "canStartPoll")
     quiet=extract_function(source, "coinLineQuietAfterInhibit")
@@ -342,9 +347,9 @@ for board,path in BOARDS.items():
                  load_fault_source=load_fault,latch_fault_source=latch_fault,init_store_source=init_store,
                  begin_source=begin,sample_source=sample,main_source=MAIN,reconcile_source=reconcile,
                  handle_source=handle,drain_abort_source=drain_abort,quarantine_source=quarantine,
-                 idle_source=idle):
+                 idle_source=idle,coin_ingress_config_source=coin_ingress_config):
         board_define = "#define TARGET_ESP32\n" if board=="ESP32" else "#define ESP8266\n"
-        return (board_define+STUBS+isr_source+snapshot+write+output_source+idle_source+can_start+
+        return (board_define+STUBS+isr_source+snapshot+write+coin_ingress_config_source+output_source+idle_source+can_start+
                 quiet_source+begin_source+write_fault_source+
                 load_fault_source+latch_fault_source+quarantine_source+configure_source+accept_source+reconcile_source+init_store_source+SUPPORT+handle_source+sample_source+drain_abort_source+loop_source+main_source)
 
@@ -458,8 +463,8 @@ for board,path in BOARDS.items():
     print(f"{board} MUTATION_REJECTED disabled-intake-pending-edge-delta expected_exit=72")
 
     relay_gate_mutation = output.replace(
-        "bool accepting=pinConfigSafe && controllerEnabled && coinEnabled && relayEnabled && insertMode",
-        "bool accepting=pinConfigSafe && controllerEnabled && coinEnabled && insertMode",
+        "bool accepting=pinConfigSafe && coinIngressConfigurationAllows() && insertMode",
+        "bool accepting=pinConfigSafe && true && insertMode",
         1,
     )
     if relay_gate_mutation == output:
@@ -478,19 +483,27 @@ for board,path in BOARDS.items():
         ("coin", "controllerEnabled && true && relayEnabled", 62),
         ("relay", "controllerEnabled && coinEnabled && true", 60),
     )
-    original_coin_ingress_gate = "const bool coinIngressConfigured=controllerEnabled && coinEnabled && relayEnabled;"
+    original_coin_ingress_gate = "return controllerEnabled && coinEnabled && relayEnabled;"
+    # Isolate sample-path admission while retaining the real output function's
+    # side effects: force only its configured-admission call false.
+    output_gate_for_sample_mutation = output.replace(
+        "coinIngressConfigurationAllows()", "false", 1
+    )
+    if output_gate_for_sample_mutation == output:
+        raise AssertionError(f"{board}: sample isolation output-gate anchor missing")
     for gate_name, mutated_gate, expected_exit in coin_ingress_gate_mutations:
-        coin_ingress_gate_mutation = sample.replace(
+        coin_ingress_gate_mutation = coin_ingress_config.replace(
             original_coin_ingress_gate,
-            f"const bool coinIngressConfigured={mutated_gate};",
+            f"return {mutated_gate};",
             1,
         )
-        if coin_ingress_gate_mutation == sample:
+        if coin_ingress_gate_mutation == coin_ingress_config:
             raise AssertionError(
                 f"{board}: configured {gate_name} coin-ingress gate mutation anchor missing"
             )
         compile_and_run(
-            assemble(sample_source=coin_ingress_gate_mutation, main_source=MAIN),
+            assemble(output_source=output_gate_for_sample_mutation,
+                     coin_ingress_config_source=coin_ingress_gate_mutation, main_source=MAIN),
             board,
             expected_exit,
             f"disabled-intake-{gate_name}-coin-ingress-gate",

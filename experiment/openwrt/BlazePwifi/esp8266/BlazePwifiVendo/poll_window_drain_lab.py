@@ -128,6 +128,7 @@ def main():
     function_names = (
         "coinLineIdle",
         "canStartPoll",
+        "coinIngressConfigurationAllows",
         "applyOutputs",
         "coinLineQuietAfterInhibit",
         "beginPollWindow",

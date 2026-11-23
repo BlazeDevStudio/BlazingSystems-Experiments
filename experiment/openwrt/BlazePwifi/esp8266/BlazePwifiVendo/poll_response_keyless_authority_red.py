@@ -128,7 +128,7 @@ reproduced = []
 for board, path in BOARDS.items():
     source = path.read_text(encoding="utf-8")
     code = ("#define TARGET_ESP32\n" if board == "ESP32" else "")
-    code += STUBS + extract(source, "acceptPollResponse") + extract(source, "applyOutputs") + MAIN
+    code += STUBS + extract(source, "acceptPollResponse") + extract(source, "coinIngressConfigurationAllows") + extract(source, "applyOutputs") + MAIN
     with tempfile.TemporaryDirectory(prefix="phx-keyless-poll-red-") as folder:
         cpp = Path(folder) / "probe.cpp"
         binary = Path(folder) / "probe"

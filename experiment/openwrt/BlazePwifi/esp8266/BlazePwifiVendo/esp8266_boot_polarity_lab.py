@@ -154,7 +154,7 @@ def main() -> None:
         "readFullEepromImage", "restoreEepromRamImage", "refreshVerifiedEepromImage",
         "makeSetupPassword", "defaults", "saveCfg", "latchConfigPersistenceFailure",
         "loadCfg", "writeLogical", "configureRuntimePins",
-        "applyOutputs", "coinLineIdle", "canStartPoll", "canAttemptCoinPost"
+        "coinIngressConfigurationAllows", "applyOutputs", "coinLineIdle", "canStartPoll", "canAttemptCoinPost"
     )
     functions_list = []
     for name in function_names:
