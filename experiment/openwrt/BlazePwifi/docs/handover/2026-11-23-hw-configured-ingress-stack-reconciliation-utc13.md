@@ -1,13 +1,13 @@
 # PHX-HARDWARE UTC13 — configured coin-ingress predicate stack reconciliation
 
-**Observed:** 2026-11-23T13:10:00Z (scheduled activation; exact host timestamp is not available from GitHub)
+**Observed:** 2026-11-23T13:42:31Z
 **Role:** PHX-HARDWARE
 **Task:** #177 — preserve coin-line edges and fail-closed admission
 **Parent:** PR #345, exact parent HEAD `ca72497ed386c9ac4e50d3f811827bef51e296ad`
 **Child branch:** `phoenix/hw-coin-ingress-config-helper-reconciled-20261123-utc13`
 **Source/test HEAD after first reconciliation:** `59de2e122f57559804ecb2929b56903b6486c694`  
-**Source/test HEAD after CI correction:** `724d892e980f878903425837226c45b321638793`
-**PR:** pending creation as a DRAFT child of #345
+**Latest source/test HEAD:** `275057aa28375223a32da099420f52696d9b667c` (includes the prior source/test correction at `724d892e980f878903425837226c45b321638793`)
+**PR:** [#347](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/347), OPEN / DRAFT / UNMERGED; child of #345
 
 ## Why this reconciliation exists
 
@@ -72,3 +72,38 @@ The change centralizes a configuration predicate and its tests; it does not add 
 ## Next exact action
 
 PHX-QA/PHX-CORE must resolve the existing poll-signature producer/assertion contract without inventing a signature; PHX-MASTER must refresh the Hardware assignment/matrix for #347. Hardware's next action is exact-head revalidation after those owned changes, while keeping default-deny and the draft stack intact.
+
+
+## UTC13:42 live revalidation — exact current source/test head
+
+**Observed:** 2026-11-23T13:42:31Z  
+**PR #347 API head before this handover-only update:** `275057aa28375223a32da099420f52696d9b667c`  
+**Source/test SHA:** `275057aa28375223a32da099420f52696d9b667c`  
+**Parent:** #345 at `ca72497ed386c9ac4e50d3f811827bef51e296ad`
+
+The latest test-only commit changes `pending_clear_failure_lab.py` so the ignored-clear-result mutation remains syntactically valid (`clearPending(); return true;`). It does not change either production sketch.
+
+### Exact-head CI
+
+- Quarantine [#45186057750](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45186057750), job `137731843201`: **SUCCESS**.
+- Relay/output [#45186057806](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45186057806): jobs `137731843214` (source/output polarity) and `137731845818` (ESP32 boot polarity): **SUCCESS**. Logs include poll-inhibit/edge/pending-deny mutation rejection, request-digest fail-closed controls, Mbed TLS 3/4 selector controls, and NVS readback failure controls.
+- Full [#45186057891](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45186057891), validation job `137731998988`: **FAILED** at `Missing poll signature check` in the inherited controller test. ESP32, ESP8266, Android and all 14 target/platform jobs completed successfully. Validation-dependent simulations, signing, candidate and publication jobs were skipped.
+- Logs retain `SIMULATED_ONLY=1`, `PHYSICAL_COIN_PULSE_ACCEPTANCE=0`, `PHYSICAL_RELAY_ACCEPTANCE=0`, and `PHYSICAL_POWER_CUT_ACCEPTANCE=0`.
+
+The current ESP32 sketch on this #347 stack selects PSA Crypto for Mbed TLS 4 and the legacy SHA-256 API for Mbed TLS 3. The exact-head Full ESP32 build passed. This does not transfer to the separate #254 stack.
+
+### Parallel-stack compatibility audit
+
+- #254 remains OPEN / DRAFT at `84c442a46ee2ee48dcbe68b71ff0f54edbc09ba9`, based on #239. Its latest Full run [#44683629491](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44683629491) fails ESP32 because the sketch includes missing `mbedtls/sha256.h` under Arduino ESP32 core 4.0.0; its validation job also fails the handover gate (`CHANGE_LEDGER has no dated entries`). The earlier user-referenced #43632185933 is now terminal, not in progress: focused header job `132561036351` passed; Full ESP32 and target jobs passed, but validation failed.
+- Separate Hardware PR #340 has an Mbed TLS 4 PSA Crypto adapter and a successful prior Full run [#44978514967](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44978514967) at source/test SHA `4eefce64719f40fd30621296db7c3fa764a44f1a`. It is based on #283 parent snapshot `88581eef6bce0dbaa4ac0de43e1239ee1afc2e9d`, while #283 has since advanced to `4dd0b01bf04cf80aec6d4dd6fc93b2fdc633da30`. Do not cherry-pick or transfer that Full result across the stale parent.
+- #347 already contains the Mbed TLS 3/4 provider split and has exact-head ESP32 build success; Master should select/reconcile the canonical stack rather than create another parallel compatibility implementation.
+
+### Revalidated #283 audit leads
+
+At live #283 head `4dd0b01bf04cf80aec6d4dd6fc93b2fdc633da30`, both sketches return false on failed `appendQuarantineRecord()` before `clearPending()`. `quarantinePending()` remains definition-only (no active callsite), so no end-to-end quarantine lifecycle is accepted. Current main CGI producer blob `2e3a1430d08cc6606429a042df3b5848f53c7267` emits no approved `response_sig` for register/ping or poll; member-endpoint signatures are not interchangeable. Coin/config/relay admission remains deny-only.
+
+### Coordination and release state
+
+Master PR #288 is OPEN / DRAFT at `9f04ece155d2a7f58753521645d16042ae52dbaa`. Its current `ROLE_ASSIGNMENTS.md` still identifies #327 as active Hardware child and its `INTEGRATION_MATRIX.md` lists #283/#254, not #347. This is Master-owned and remains a reconciliation request. Cleanup-first #266 remains OPEN with 0/7 tracks complete. Issues #31/#32/#34/#43 remain open. The exact private `BLAZE_PROJECT_REGISTRY_v11_20261027.json` was not found in the connected Library; no Google Drive connector is exposed and no older registry was substituted.
+
+**Disposition:** focused Quarantine/Relay **CI VERIFIED** on exact source/test SHA `275057aa`; Full integration **FAILED/BLOCKED** at the QA-owned poll-signature assertion; physical acceptance **NOT TESTED**; HARDWARE ACCEPTED **NO**; PRODUCTION READY **NO-GO**.
