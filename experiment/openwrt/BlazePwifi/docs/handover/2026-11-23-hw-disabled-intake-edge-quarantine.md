@@ -309,3 +309,55 @@ A failure-injection mutation that ignores the attempt-marker removal result must
 - Physical coin/relay/electrical acceptance, 150 power cuts, 30-device/24-hour soak, independent witness, protected signer, financial migration, durable accounting/replay and independent QA/release signoff remain outstanding.
 
 **Classification:** source-exact host regression **SIMULATED**; Quarantine and Relay **CI VERIFIED**; Full integration **FAILED/BLOCKED**; **HARDWARE ACCEPTED NO; PRODUCTION NO-GO.**
+
+
+## PHX-HARDWARE UTC05 follow-up — exact pending-clear identity and candidate guards
+
+**Task:** extend the existing #345 pending-journal reclamation lab so it executes the production identity helpers unchanged and proves fail-closed behavior for unreadable, mismatched, changed, missing, and ambiguous evidence. This is a test-fidelity improvement, not a newly discovered production deletion defect.
+
+### Source/test changes
+
+- Final source/test SHA: `96aee3acbbbf9a55ad959ae022dd6a1baf642a5d`.
+- Test expansion commit: `f7ca585b6d5292e702a0711c93420e58a0168ca7`.
+- Follow-up harness escaping correction: `96aee3acbbbf9a55ad959ae022dd6a1baf642a5d`.
+- Parent PR #345 HEAD before this increment: `7a4de0b8bfe207d199779a93204ff10f9e2e923a`.
+- PR #345 remains OPEN / DRAFT / UNMERGED, based on #343 at `dfeff7d5f63e699de7bc296c7641f2493f1e0e13`.
+
+The runner now extracts these exact production helpers from each board sketch and passes them to the dedicated lab:
+
+- `clearPending()`
+- `samePendingRecord()`
+- `pendingAttemptMarkerMatches()`
+
+The fake `readPendingFile()` adapter remains intentionally stubbed. It injects path-specific read failures, attempt-marker mismatch, a persisted-identity change between the initial match and the second read, and durable-record mismatch. The matrix also tests zero and multiple journal candidates. Opaque fake-file bytes and RAM identity must remain unchanged on every denied path.
+
+**Negative controls:** four fail-open mutations are rejected on both ESP8266 and ESP32:
+1. Ignore attempt-marker deletion failure — expected exit 91.
+2. Skip the second attempt identity check — expected exit 96.
+3. Ignore durable journal/attempt record equality — expected exit 97.
+4. Ignore the exactly-one-candidate guard — expected exit 99.
+
+The lab reports `PENDING_CLEAR_LAB_PASS 17/17` for each board. There was no separate expected-RED commit because the production guards already existed; the four source mutations prove the expanded tests detect their removal.
+
+### Exact-source CI
+
+- Quarantine [#45121211341](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45121211341), job `137515178556`: **SUCCESS**. Both ESP8266 and ESP32 source-extracted suites passed; the four new fail-open mutations were rejected on each board.
+- Relay [#45121211439](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45121211439): jobs `137515179302` and `137515179545`: **SUCCESS**.
+- Full [#45121211344](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45121211344), validation job `137515262590`: **FAILURE** at the inherited QA-owned `Controller protocol parity` assertion: `Missing poll signature check` in the ESP8266 sketch. All 14 configured target/platform jobs completed **SUCCESS**. Downstream simulation, update bundle, candidate, signing and publication stages were skipped.
+
+### Scope and limitations
+
+- Changed only the Hardware-owned host lab and its Hardware-owned runner.
+- No production `.ino`, shared API, CORE financial code, QA-owned assertion, Release workflow, COE destination, signer, witness, migration, or accounting source changed.
+- The fake reader does not parse serialized `PendingRecord` bytes or model LittleFS metadata/wear. No real flash, physical coin/relay, electrical pulse, power cut, or device was used.
+- `SIMULATED_ONLY=1`; physical power-cut, coin-acceptor, and relay acceptance remain 0.
+
+### Coordination and remaining blockers
+
+- Live Master PR #288 head is `dab1f42b93c258d00054a754bd85698e3ae38b82`; its `ROLE_ASSIGNMENTS.md` still lists #327 as the active Hardware child. Master must refresh its own assignment and integration pointers to the live #345 branch; Hardware did not edit Master-owned files.
+- Parallel drafts remain separate: #239 `d83b715b116185107737fef721c2eece8feebf39`, #254 `84c442a46ee2ee48dcbe68b71ff0f54edbc09ba9`, and #283 `4dd0b01bf04cf80aec6d4dd6fc93b2fdc633da30`.
+- CORE/QA must reconcile the actual register/poll producer with the authenticated response contract. Do not invent `response_sig` or relax the firmware default-deny consumer.
+- The private Drive registry v11 remains unavailable through the connected file surface; no older registry snapshot was substituted.
+- Physical acceptance, 150 power cuts, 30-device/24-hour soak, independent witness, protected signer, v1-to-v2 financial migration, durable accounting/replay, and independent QA/release signoff remain outstanding.
+
+**Classification:** source-exact host lab SIMULATED; focused Quarantine/Relay CI VERIFIED; Full integration FAILED/BLOCKED; HARDWARE ACCEPTED NO; PRODUCTION NO-GO.
