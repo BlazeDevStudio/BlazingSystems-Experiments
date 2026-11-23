@@ -281,6 +281,15 @@ int main() {
   std::cout << "QUARANTINE_APPEND_SUCCESS_CLEAR_CONTROL_PASS\n";
 
   resetState();
+  appendQuarantineShouldFail = false;
+  appendQuarantineCalls = 0U;
+  LittleFS.failRemovePath = "/pending.attempt";
+  if(quarantinePending("controller rejected") || !journalRecoveryRequired ||
+     !pendingRamIdentityPreserved() || LittleFS.exists("/pending.dat") ||
+     !attemptMarkerBytesPreserved() || appendQuarantineCalls != 1U) return 114;
+  std::cout << "QUARANTINE_CLEAR_FAILURE_PRESERVES_ATTEMPT_AND_RAM_PASS\n";
+
+  resetState();
   appendQuarantineShouldFail = true;
   appendQuarantineCalls = 0U;
   pendingPulses = 0U;
@@ -487,12 +496,13 @@ def run_pending_clear_failure_lab(
         "expected_exit=99"
     )
 
-    def compile_quarantine_case(label, expected=0, quarantine_source=None):
+    def compile_quarantine_case(label, expected=0, quarantine_source=None, main_source=None):
         selected_quarantine = (
             quarantine_source
             if quarantine_source is not None
             else quarantine_pending_source
         )
+        selected_main = main_source if main_source is not None else QUARANTINE_PENDING_MAIN
         program = (
             CLEAR_PENDING_STUBS
             + QUARANTINE_PENDING_STUBS
@@ -505,7 +515,7 @@ def run_pending_clear_failure_lab(
             + "\n"
             + selected_quarantine
             + "\n"
-            + QUARANTINE_PENDING_MAIN
+            + selected_main
         )
         return compile_and_run(program, board, expected, label)
 
@@ -515,6 +525,7 @@ def run_pending_clear_failure_lab(
     quarantine_markers = (
         "QUARANTINE_APPEND_FAILURE_PRESERVES_PENDING_AND_ATTEMPT_PASS",
         "QUARANTINE_APPEND_SUCCESS_CLEAR_CONTROL_PASS",
+        "QUARANTINE_CLEAR_FAILURE_PRESERVES_ATTEMPT_AND_RAM_PASS",
         "QUARANTINE_MISSING_PENDING_DENIED_PASS",
         "QUARANTINE_MISMATCHED_ATTEMPT_DENIED_PASS",
         "QUARANTINE_DISPOSITION_FAILURE_INJECTION_PASS 1/1",
@@ -582,4 +593,22 @@ def run_pending_clear_failure_lab(
     print(
         f"{board} MUTATION_REJECTED quarantine-without-matching-attempt-marker "
         "expected_exit=113"
+    )
+
+    clear_result_anchor = "  return clearPending();"
+    clear_result_mutation = quarantine_pending_source.replace(
+        clear_result_anchor,
+        "  clearPending();\\n  return true;",
+        1,
+    )
+    if clear_result_mutation == quarantine_pending_source:
+        raise AssertionError(f"{board}: quarantine clear-result propagation mutation anchor missing")
+    compile_quarantine_case(
+        "quarantine-ignores-clear-failure",
+        114,
+        quarantine_source=clear_result_mutation,
+    )
+    print(
+        f"{board} MUTATION_REJECTED quarantine-ignores-clear-failure "
+        "expected_exit=114"
     )
