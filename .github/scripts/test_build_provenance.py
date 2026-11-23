@@ -1074,6 +1074,103 @@ class BuildProvenanceTests(unittest.TestCase):
         )
 
 
+    def assert_regular_reader_cleanup_after_file_close_error(
+        self,
+        operation_name: str,
+        *,
+        fail_read: bool,
+    ) -> None:
+        target = self.root / f"{operation_name}-close-error.bin"
+        target.write_bytes(b"release-provenance-descriptor-cleanup")
+        fd, before, parent_fd, leaf = provenance._open_regular(target)
+        real_close = os.close
+        real_fstat = os.fstat
+        real_read = os.read
+        close_calls = []
+
+        def close_then_report_error(descriptor):
+            close_calls.append(descriptor)
+            real_close(descriptor)
+            if descriptor == fd:
+                raise OSError("injected file descriptor close failure")
+
+        def read_with_optional_failure(descriptor, size):
+            if fail_read and descriptor == fd:
+                raise OSError("injected provenance read failure")
+            return real_read(descriptor, size)
+
+        operation = getattr(provenance, operation_name)
+        primary_message = "cannot read" if operation_name == "_read_regular" else "cannot hash"
+        try:
+            with patch.object(
+                provenance, "_open_regular", return_value=(fd, before, parent_fd, leaf)
+            ), patch.object(
+                provenance.os, "close", side_effect=close_then_report_error
+            ), patch.object(
+                provenance.os, "read", side_effect=read_with_optional_failure
+            ):
+                if fail_read:
+                    with self.assertRaisesRegex(
+                        provenance.ProvenanceError, primary_message
+                    ) as raised:
+                        operation(target)
+                    self.assertTrue(
+                        any(
+                            "injected file descriptor close failure" in note
+                            for note in getattr(raised.exception, "__notes__", [])
+                        ),
+                        "the close failure must remain attached to the primary read/hash error",
+                    )
+                else:
+                    with self.assertRaisesRegex(
+                        provenance.ProvenanceError, "could not close"
+                    ) as raised:
+                        operation(target)
+                    self.assertIn(
+                        "injected file descriptor close failure",
+                        str(raised.exception),
+                    )
+        finally:
+            # A failing implementation may skip the parent close. Reap any
+            # descriptor still open so this regression never leaks test FDs.
+            for descriptor in (fd, parent_fd):
+                try:
+                    real_fstat(descriptor)
+                except OSError:
+                    continue
+                real_close(descriptor)
+
+        self.assertEqual(
+            close_calls,
+            [fd, parent_fd],
+            "both the file and pinned parent descriptors must receive one close attempt",
+        )
+        for descriptor in (fd, parent_fd):
+            with self.subTest(descriptor=descriptor):
+                with self.assertRaises(OSError):
+                    real_fstat(descriptor)
+
+    def test_regular_read_preserves_primary_error_and_closes_parent_after_close_failure(self):
+        self.assert_regular_reader_cleanup_after_file_close_error(
+            "_read_regular", fail_read=True
+        )
+
+    def test_regular_hash_preserves_primary_error_and_closes_parent_after_close_failure(self):
+        self.assert_regular_reader_cleanup_after_file_close_error(
+            "_hash_regular", fail_read=True
+        )
+
+    def test_regular_read_reports_close_only_failure_after_closing_parent(self):
+        self.assert_regular_reader_cleanup_after_file_close_error(
+            "_read_regular", fail_read=False
+        )
+
+    def test_regular_hash_reports_close_only_failure_after_closing_parent(self):
+        self.assert_regular_reader_cleanup_after_file_close_error(
+            "_hash_regular", fail_read=False
+        )
+
+
 if __name__ == "__main__":
     suite = unittest.defaultTestLoader.loadTestsFromTestCase(BuildProvenanceTests)
     result = unittest.TextTestRunner(verbosity=2).run(suite)
