@@ -188,8 +188,19 @@ The scenario fixture now checks relay and LED are OFF immediately after applying
 
 ### Full integration and boundaries
 
-Full build run [#45101505306](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45101505306), validation job `137453264998`, **FAILS** at inherited QA-owned Controller protocol parity: `Missing poll signature check` in the ESP8266 sketch. At this checkpoint 13/14 target/platform jobs had succeeded; Android was still running. The validation failure skips downstream simulations, bundle, candidate, signing and publication. The same source/test SHA is `6f1dc79b6d8f263655a0a385eb162d31972d3700`.
+Full build run [#45101505306](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45101505306), validation job `137453264998`, **FAILS** at inherited QA-owned Controller protocol parity: `Missing poll signature check` in the ESP8266 sketch. All 14/14 configured target/platform jobs, including Android, completed SUCCESS on this exact source/test SHA. The validation failure skips downstream simulations, bundle, candidate, signing and publication. The same source/test SHA is `6f1dc79b6d8f263655a0a385eb162d31972d3700`.
 
 All focused logs remain `SIMULATED_ONLY=1`; physical coin acceptor, relay voltage, power-cut and electrical recovery acceptance remain **NOT TESTED**. No physical flash, device reset, live money, migration, signer provisioning, merge or release occurred.
 
 **Next exact action:** PHX-QA / PHX-CORE resolve the authenticated register/poll contract and replace the stale positive signature assertion with source-linked negative/default-deny checks; PHX-MASTER refreshes #345's role/integration pin. Hardware keeps coin admission fail-closed.
+
+
+### Documentation-head revalidation (before this handover-only commit)
+
+The source/test SHA remains `6f1dc79b6d8f263655a0a385eb162d31972d3700`; the previous documentation head was `44685c183914cec840a0b7df09c74918126888bb`.
+
+- Quarantine [#45101895552](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45101895552), job `137454414127`: **SUCCESS**.
+- Relay [#45101895612](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45101895612): source-output-polarity job `137454414907` and ESP32 boot-polarity job `137454414681`: **SUCCESS**.
+- Full build [#45101889654](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45101889654), validation job `137454395798`: **FAILURE** at the inherited QA-owned `Missing poll signature check`. All 14/14 configured target/platform jobs (including Android, ESP32 and ESP8266) completed **SUCCESS**; 12 downstream simulation/bundle/candidate/signing/publication jobs were skipped.
+- This update changes only this handover. Firmware/test source remains at `6f1dc79b6d8f263655a0a385eb162d31972d3700`; the PR documentation head advances with this commit.
+
