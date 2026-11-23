@@ -2273,3 +2273,8 @@ Master re-read the live control plane #172, cleanup gate #266, default/developme
 **Master execution:** no PR-triggered Actions runs or combined statuses; full Master unittest discovery and `verify_coordination.py` NOT RUN. The static tree/index/architecture audit is not a test-suite pass. No subsystem source or COE destination files were changed. Cleanup #266 remains open/incomplete.
 
 **Disposition:** PRODUCTION NO-GO. Do not merge, migrate, release, sign, flash, provision secrets, touch real payments or claim physical acceptance.
+
+
+### RELEASE #291 exact-head supersession — 2026-11-23T03:19:26.449Z
+
+During final readback, PR #291 advanced to `29bd31bcd8e4a120a8d23de041c1494a84e19f8d`. Its exact-head compatibility run #45104926749 and BlazePwifi build #45104926718 are IN_PROGRESS; Windows #45104926685 FAILED at the CORE-owned handover freshness gate, with build/publisher skipped. The UTC03 report, role assignments and integration matrix now use the latest head. No RELEASE source or handover file was touched.

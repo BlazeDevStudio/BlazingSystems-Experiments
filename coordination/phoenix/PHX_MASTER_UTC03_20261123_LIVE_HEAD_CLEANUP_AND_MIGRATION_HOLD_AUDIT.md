@@ -49,7 +49,7 @@ The old INDEX inventory listed 116 files and stale collisions (§6.12/§6.32). I
 | HARDWARE #345 | `c69a69678a5074108eb7946352b1edb5382d9ce9` | Quarantine [#45102194088](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45102194088) and Relay [#45102194019](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45102194019) PASS; build [#45102194087](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45102194087) FAILS at the inherited QA-owned `Missing poll signature check` in `tests/controllers.sh`. All 14 target/platform jobs pass; downstream simulations, candidate, signing and publication jobs skip. This is CI/host-lab evidence, not physical acceptance. |
 | QA #290 | `5c29d15994cee1279058f1eca12f2a3180704292` | Windows synthetic CI [#43633486963](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43633486963) PASS. |
 | QA #292 | `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | No PR-triggered workflow runs returned. |
-| RELEASE #291 | `821ef3e9272a747e09c5246525eabe45740a5df5` | Compatibility [#45104614515](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45104614515) PENDING; Windows [#45104614520](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45104614520) FAILS at the CORE-owned handover freshness gate (last checkpoint `adcae8141e673dc2147fcad50521ef3a23084d71`); BlazePwifi build [#45104614511](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45104614511) QUEUED. RELEASE was active during this reconciliation; no RELEASE path was touched. |
+| RELEASE #291 | `29bd31bcd8e4a120a8d23de041c1494a84e19f8d` | Compatibility [#45104926749](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45104926749) IN PROGRESS; Windows [#45104926685](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45104926685) FAILS at the CORE-owned handover freshness gate; BlazePwifi build [#45104926718](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45104926718) IN PROGRESS. RELEASE was active during this reconciliation; no RELEASE path was touched. |
 
 ### COE candidates
 
@@ -89,3 +89,8 @@ No file was staged, copied, moved, overwritten, rebased, cherry-picked or promot
 5. Human test runner: run the full Master suite and `verify_coordination.py` from an authenticated checkout at the exact final commit.
 
 **Production:** **NO-GO**. Independent protected signing/anti-rollback witness, crash-atomic durable financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized release gates remain mandatory.
+
+
+### RELEASE head supersession observed before final checkpoint
+
+PR #291 advanced from the intermediate head `821ef3e9272a747e09c5246525eabe45740a5df5` to `29bd31bcd8e4a120a8d23de041c1494a84e19f8d` at 2026-11-23T03:15:43Z. The current exact-head runs are compatibility #45104926749 IN_PROGRESS, BlazePwifi build #45104926718 IN_PROGRESS, and Windows #45104926685 FAILED at the handover freshness gate; build and publisher are skipped. This supersedes the intermediate run IDs above. No RELEASE-owned file was modified by PHX-MASTER.
