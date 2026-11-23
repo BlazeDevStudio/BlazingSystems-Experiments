@@ -145,6 +145,14 @@ int main() {
   std::cout << "PENDING_CLEAR_ATTEMPT_MARKER_REMOVE_FAILURE_PRESERVED_PASS\n";
 
   resetState();
+  LittleFS.retainRemovePath = "/pending.attempt";
+  if(clearPending() || !journalRecoveryRequired ||
+     !pendingRamIdentityPreserved() ||
+     LittleFS.exists("/pending.dat") ||
+     !attemptMarkerBytesPreserved()) return 103;
+  std::cout << "PENDING_CLEAR_ATTEMPT_MARKER_REMOVE_READBACK_FAILURE_PRESERVED_PASS\\n";
+
+  resetState();
   LittleFS.retainRemovePath = "/pending.dat";
   if(clearPending() || !journalRecoveryRequired ||
      !pendingRamIdentityPreserved() ||
@@ -157,7 +165,7 @@ int main() {
      !pendingNonce.empty() || !pendingTarget.empty() || lastSend != 0U ||
      LittleFS.exists("/pending.dat") || LittleFS.exists("/pending.attempt")) return 93;
   std::cout << "PENDING_CLEAR_SUCCESS_CONTROL_PASS\n";
-  std::cout << "PENDING_CLEAR_REMOVE_FAILURE_INJECTION_PASS 3/3 plus success control\n";
+  std::cout << "PENDING_CLEAR_REMOVE_FAILURE_INJECTION_PASS 4/4 plus success control\n";
 
   resetState();
   mismatchAttemptRecord = true;
@@ -284,7 +292,7 @@ def run_pending_clear_failure_lab(
 
     baseline = compile_case("pending-clear-precondition-and-removal-failures")
     for marker in (
-        "PENDING_CLEAR_REMOVE_FAILURE_INJECTION_PASS 3/3 plus success control",
+        "PENDING_CLEAR_REMOVE_FAILURE_INJECTION_PASS 4/4 plus success control",
         "PENDING_CLEAR_PRECONDITION_FAILURE_INJECTION_PASS 7/7",
     ):
         if marker not in baseline:
@@ -335,6 +343,26 @@ def run_pending_clear_failure_lab(
     print(
         f"{board} MUTATION_REJECTED pending-clear-ignores-attempt-marker-removal-failure "
         "expected_exit=91"
+    )
+
+    attempt_remove_readback_anchor = (
+        'if(!LittleFS.remove("/pending.attempt") || LittleFS.exists("/pending.attempt")){'
+    )
+    attempt_remove_readback_mutation = clear_pending_source.replace(
+        attempt_remove_readback_anchor,
+        'if(!LittleFS.remove("/pending.attempt")){',
+        1,
+    )
+    if attempt_remove_readback_mutation == clear_pending_source:
+        raise AssertionError(f"{board}: attempt-marker remove-readback mutation anchor missing")
+    compile_case(
+        "pending-clear-ignores-attempt-marker-remove-readback-failure",
+        103,
+        clear_source=attempt_remove_readback_mutation,
+    )
+    print(
+        f"{board} MUTATION_REJECTED pending-clear-ignores-attempt-marker-remove-readback-failure "
+        "expected_exit=103"
     )
 
     attempt_recheck_anchor = (
