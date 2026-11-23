@@ -107,3 +107,23 @@ At live #283 head `4dd0b01bf04cf80aec6d4dd6fc93b2fdc633da30`, both sketches retu
 Master PR #288 is OPEN / DRAFT at `9f04ece155d2a7f58753521645d16042ae52dbaa`. Its current `ROLE_ASSIGNMENTS.md` still identifies #327 as active Hardware child and its `INTEGRATION_MATRIX.md` lists #283/#254, not #347. This is Master-owned and remains a reconciliation request. Cleanup-first #266 remains OPEN with 0/7 tracks complete. Issues #31/#32/#34/#43 remain open. The exact private `BLAZE_PROJECT_REGISTRY_v11_20261027.json` was not found in the connected Library; no Google Drive connector is exposed and no older registry was substituted.
 
 **Disposition:** focused Quarantine/Relay **CI VERIFIED** on exact source/test SHA `275057aa`; Full integration **FAILED/BLOCKED** at the QA-owned poll-signature assertion; physical acceptance **NOT TESTED**; HARDWARE ACCEPTED **NO**; PRODUCTION READY **NO-GO**.
+
+
+## Master UTC13 matrix reconciliation — supersedes earlier stale assignment read
+
+**Master PR #288 current head:** `2fd03816e3ab44c48fdcc81ec3c20ae13c0a2e0c`  
+**Master reconciliation commit:** [`2fd03816`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/2fd03816e3ab44c48fdcc81ec3c20ae13c0a2e0c)  
+**Master report:** [Hardware #347 final-head CI and role matrix reconciliation](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/blob/2fd03816e3ab44c48fdcc81ec3c20ae13c0a2e0c/coordination/phoenix/PHX_MASTER_UTC13_20261123_HARDWARE347_FINAL_HEAD_CI_AND_ROLE_MATRIX_RECONCILIATION.md)
+
+Master updated six coordination files: `ROLE_ASSIGNMENTS.md`, `INTEGRATION_MATRIX.md`, `AUDIT_SUMMARY.md`, `ARCHITECTURE_CONTRACTS.md`, `INDEX.md`, and the new report. The current role/matrix now records #345 as parent, #347 as the reconciled child candidate, and #346 as a stale sibling. This resolves the earlier assignment/matrix omission; it does not authorize merge, production integration, or release. The canonical integration candidate decision remains pending.
+
+Hardware has already refreshed this PR's own body and handover at docs head `546c63e490b4ef989721cb719450271059021eb1`; source/test SHA remains `275057aa28375223a32da099420f52696d9b667c`. Master report's statement that the PR body/handover is stale refers to the pre-refresh snapshot at `c7ab3601` and is superseded by the Hardware update. Master may refresh its report if it needs the latest docs-only head; no Master-owned file was edited by Hardware.
+
+### Additional documentation/provenance inconsistencies routed to Master
+
+- Experiments root README blob `feb909e3f74ffb7b5b22df50399ccd127ada3b95` still labels the repository “BlazingSystems — Experiments” and links the historical `BlazingSystems` owner, while live GitHub repository metadata confirms canonical owner `BlazeDevStudio`.
+- BlazePwifi README blob `7990e2ecbab06cafa5f8227050929e16fff1f4a1` says current production release `0.3.0`; the live `PROJECT_HANDOVER.md` blob `f86c0ae9b14853963b8a9b835e1100eb5178d1a6` says production is frozen at `v0.5.2`. These documentation claims need owner reconciliation; Hardware did not edit them.
+- COE #26 remains OPEN/DRAFT/FROZEN at `b382d233`; no destination files were copied or migrated. COE #35 and #49 remain separate drafts.
+- Private `BLAZE_PROJECT_REGISTRY_v11_20261027.json` remains unavailable in the connected Library; no Google Drive connector is exposed and no older registry was substituted.
+
+**Current disposition remains:** #347 OPEN / DRAFT / UNMERGED; focused Quarantine/Relay CI VERIFIED at source/test SHA `275057aa`; Full integration FAILS at the QA-owned poll-signature assertion; physical acceptance NOT TESTED; PRODUCTION NO-GO.
