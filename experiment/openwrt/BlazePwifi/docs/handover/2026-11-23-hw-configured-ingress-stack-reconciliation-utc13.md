@@ -365,3 +365,44 @@ The runner contract is **CI VERIFIED**. Board-specific behavior in the host/sour
 This is a narrow test-harness safety improvement; it does not complete #266's Hardware requirement to keep the canonical bounded parser, signature binding and verification routines separate from actuation. The #266 Hardware track remains unchecked.
 
 **Next exact action:** PHX-CORE publishes the approved authenticated register/poll response envelope and canonical golden vectors; PHX-QA reconciles the poll-signature assertion against that contract; PHX-MASTER refreshes the #347 source/test/docs pins. Hardware then reruns Full on the approved exact source head. Keep all candidate PRs DRAFT and deny-only.
+
+---
+
+## PHX-HARDWARE UTC21 — finite positive C++ fixture timeout contract
+
+**Observed:** 2026-11-23T21:34Z  
+**Task:** #177 / #347 — bounded, human-debuggable source-extracted coin-ingress laboratories  
+**Role branch:** `phoenix/hw-coin-ingress-config-helper-reconciled-20261123-utc13`  
+**Parent stack:** #345 at `ca72497ed386c9ac4e50d3f811827bef51e296ad`  
+**Source/test commit:** [`00fcd6a9ed80`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/00fcd6a9ed80a4ccccd429d3912e183ee2d4b3bd)  
+**PR #347:** OPEN / DRAFT / UNMERGED; no rebase, force-push, retarget or merge
+
+### Proven harness contract gap
+
+The shared `run_cpp_fixture()` helper supplied finite 30-second compile and 10-second execution defaults, but its documented “positive timeout” rule was not enforced. An explicit `None`, zero, negative, non-finite or non-numeric override could bypass the intended bounded-execution contract or fail later inside `subprocess.run`.
+
+### Change
+
+- Added one shared `_validate_timeout()` guard using `numbers.Real` and `math.isfinite()`.
+- Both compile and execution overrides must be finite, strictly positive real numbers; booleans are rejected despite Python's `bool` subclassing `int`.
+- Invalid overrides raise a path-independent `ValueError` before temporary-file creation or process launch.
+- Expanded `cpp_fixture_runner_contract_lab.py` with 16 negative override cases (8 values × 2 timeout parameters), asserting `subprocess.run` is never called.
+- Existing default timeout, explicit valid override, compile/run timeout and diagnostic-tail tests remain intact; contract marker is now `CPP_FIXTURE_RUNNER_CONTRACT_PASS 6/6`.
+
+### Scope
+
+Only these Hardware-owned files changed in the source/test commit:
+
+- `experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/cpp_fixture_runner.py`
+- `experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/cpp_fixture_runner_contract_lab.py`
+
+No production ESP sketch, shared CORE API, finance, signer, witness, QA-owned assertion, release workflow, or COE destination changed.
+
+### Validation status at this handover
+
+- New negative override cases: added; exact-head GitHub Actions pending.
+- Quarantine / Relay / Full exact-head workflows: pending terminal results for the updated PR head.
+- Local compiler execution: not claimed.
+- Physical relay, coin acceptor, LittleFS power-cut and device acceptance: NOT TESTED.
+
+**Next:** verify the new helper contract on exact PR head, inspect all three workflows to terminal state, and update the UTC21 role checkpoint with exact run/job IDs. Preserve Full integration's default-deny failure until CORE/QA publish and approve the authenticated poll-response contract.
