@@ -398,11 +398,62 @@ Only these Hardware-owned files changed in the source/test commit:
 
 No production ESP sketch, shared CORE API, finance, signer, witness, QA-owned assertion, release workflow, or COE destination changed.
 
-### Validation status at this handover
+### Validation status at source/test head `10abb8dc46dbcf5bd4a64a23a01358ade135ebce`
 
-- New negative override cases: added; exact-head GitHub Actions pending.
-- Quarantine / Relay / Full exact-head workflows: pending terminal results for the updated PR head.
-- Local compiler execution: not claimed.
-- Physical relay, coin acceptor, LittleFS power-cut and device acceptance: NOT TESTED.
+- C++ fixture contract: **6/6 PASS**; invalid `None`, zero, negative, non-finite, non-numeric and boolean timeout overrides are rejected before subprocess launch.
+- Quarantine [#45276833968](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45276833968), job `138050698561`: **SUCCESS**.
+- Relay [#45276834047](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45276834047), jobs `138050699362` and `138050700088`: **SUCCESS**.
+- Full [#45276833958](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45276833958), validation job `138050862282`: **FAILURE** at inherited `Missing poll signature check`. All 14 target/platform jobs passed; 12 downstream simulation/update/signing/candidate/publication jobs were skipped.
+- Local compiler execution: not claimed; validation is from GitHub Actions logs.
+- Physical relay, coin acceptor, LittleFS power-cut and device acceptance: **NOT TESTED**.
 
-**Next:** verify the new helper contract on exact PR head, inspect all three workflows to terminal state, and update the UTC21 role checkpoint with exact run/job IDs. Preserve Full integration's default-deny failure until CORE/QA publish and approve the authenticated poll-response contract.
+**Next:** PHX-CORE publishes the approved authenticated register/poll response envelope and canonical golden vectors; PHX-QA reconciles the poll-signature assertion against that contract; PHX-MASTER refreshes the #347 source/test/docs pins. Hardware then reruns Full on the approved exact source head. Preserve default-deny; do not synthesize a positive legacy signature.
+
+
+---
+
+## PHX-HARDWARE UTC21 follow-up — ISR edges during the synchronous poll HTTP window
+
+**Observed:** 2026-11-23T22:12Z  
+**Task:** #177 / #347 — prove the blocking poll path retains ISR evidence before the normal post-HTTP sample  
+**Role branch:** `phoenix/hw-coin-ingress-config-helper-reconciled-20261123-utc13`  
+**Parent stack:** #345 at `ca72497ed386c9ac4e50d3f811827bef51e296ad`  
+**Source/test head:** `10abb8dc46dbcf5bd4a64a23a01358ade135ebce`  
+**PR #347:** OPEN / DRAFT / UNMERGED; no rebase, force-push, retarget or merge
+
+### Test gap and correction
+
+The runtime fixture already supported injecting an ISR edge during the synchronous `post("poll")` call, but the poll-loop lab did not consume that hook. Existing tests covered pre-drain and coin-POST ISR edges, not the actual 3.5-second blocked poll response window. This left the post-response `pollEdgeEnd` reconciliation path without a direct scenario.
+
+Added a both-board scenario that:
+
+- starts with `coinEdgeSequence=0xFFFFFFFE` and injects two registered ISR edges during the 3.5-second poll HTTP stub, wrapping the sequence to zero;
+- asserts the relay and LED remain OFF and `pollIntakeSuspended` remains true throughout the blocked HTTP call;
+- records the first normal post-HTTP input sample and requires `journalRecoveryRequired` plus the durable `/pollpulse.fault` marker to already exist before that sample can provide a fallback latch;
+- verifies the marker records `pulses=2`, the edge sequence is acknowledged with unsigned rollover, no coin POST/clear occurs, and no pending coin is credited.
+
+Two fail-open mutations are rejected on both boards with expected exit `88`:
+
+1. remove the post-response poll-edge reconciliation branch;
+2. remove the `pollIntakeSuspended` condition from the relay/LED output admission gate.
+
+### Changed Hardware-owned test files
+
+- `poll_loop_blocking_inhibit_lab_runtime_fixtures.py` — pre-sample observation hook and reset state.
+- `poll_loop_blocking_inhibit_lab_scenario_fixtures.py` — two-edge blocked-poll rollover scenario.
+- `poll_loop_blocking_inhibit_lab_fixtures.py` — scenario export.
+- `poll_loop_blocking_inhibit_lab.py` — baseline plus both failure-injection mutations.
+
+No production ESP8266/ESP32 `.ino`, CORE producer/API, finance, signer, witness, QA-owned assertion, release workflow, or COE destination changed.
+
+### Exact source/test-head evidence
+
+- Quarantine [#45276833968](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45276833968), job `138050698561`: **SUCCESS**. Logs show `CPP_FIXTURE_RUNNER_CONTRACT_PASS 6/6`, ESP8266/ESP32 poll-window `11/11`, `POLL_HTTP_ISR_MULTI_EDGE_ROLLOVER_RETAINED_PASS` on both boards, and both expected-exit-88 mutations rejected on both boards.
+- Relay [#45276834047](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45276834047), jobs `138050699362` (ESP32 boot polarity) and `138050700088` (source/output polarity): **SUCCESS**.
+- Full [#45276833958](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45276833958): **TERMINAL FAILURE**. Validation job `138050862282` fails at `Missing poll signature check` in the ESP8266 sketch; all 14 target/platform jobs succeeded; 12 dependent simulation, update, signing, candidate and publication jobs were skipped.
+
+### Evidence boundary
+
+The new test is a source-extracted host simulation. CI VERIFIED means the simulated test and target build jobs passed; it does not establish physical coin-slot pulse capture, electrical relay de-energization, LittleFS durability under real power loss, or accounting acceptance. Physical coin/relay/power-cut flags remain zero. The #177 issue remains P0 and production NO-GO.
+
+**Next exact action:** PHX-CORE publishes the approved signed poll-response contract and golden vectors; PHX-QA independently reconciles the missing poll-signature assertion; PHX-MASTER refreshes the #347 matrix to the current source/test head. Hardware then reruns Full without weakening default-deny.
