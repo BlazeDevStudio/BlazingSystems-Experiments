@@ -4604,3 +4604,18 @@ The latest COE #35 source/test correction is independent of the #26 candidate. D
 | COE integration #26 | COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; PR #26 `b382d233ff06c8791b1028bed3c617cc7b670d12` | Five workflows QUEUED / zero jobs | FROZEN; previous 61-row blob/test/license audit remains applicable because both pins are unchanged. |
 
 The #347 Full failure is not a firmware acceptance pass. The #35 source/test pass is not an ImageBuilder sandbox run. COE #35 is not COE #26 migration CI.
+
+
+## PHX-MASTER UTC22 exact firmware/test provenance and live CI refresh — 2026-11-23
+
+| Workstream | Exact identity | Evidence | Integration disposition |
+|---|---|---|---|
+| Experiments source | main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; development `blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5`; Master start `c5a685903470a1e140c08452d934c2834a655d74` | Branch refs read from GitHub API; all report `protected=false` | v0.5.3 issue pointer vs v0.6 handover pointer remains unresolved; CORE must decide. |
+| HARDWARE #347 | source/test and PR head `e69a3d715aca6724dd0390e925e48a7510009ab1`; parent #345 `ca72497ed386c9ac4e50d3f811827bef51e296ad` | Quarantine #45281321173 PASS; Relay #45281321207 PASS; Full #45281321180 FAIL at QA `Missing poll signature check`; target jobs pass, dependent stages skip | Focused CI only; full integration blocked; physical acceptance NOT TESTED. |
+| COE #26 hardware source comparison | Source ESP8266 `fa8ed828...` vs destination `c8be98f7...`; source ESP32 `717336b8...` vs destination `3cc7ec54...` | Both pairs are different Git blobs; all four firmware modes are `100644`. Source tree has 38 board-local Python files; destination has zero; destination has one generic `Hardware/tests/test_firmware_hardening.sh` with a different blob from source test. | FROZEN. Do not copy or claim parity. Explicit test import map and owner review required. |
+| Poll-signature test | Source test `v05_firmware_hardening_test.sh` blob `41211b2c...`; COE generic test blob `f921c56c...` | Both contain positive `response_sig` and `|poll|` expectations; source Full CI fails at `Missing poll signature check`. | QA/CORE must reconcile the test against the approved producer/consumer contract; firmware default-deny remains. |
+| COE RELEASE #35 | head `697d0785...` | Shared 208 tests PASS / 2 skips then 10/10 ULA denials; sandbox host preflight passes then Bubblewrap missing / exit 125; case collision PASS. | No ImageBuilder sandbox run or appliance binary. |
+| COE INTERCON #49 | head `aeb8ff11...` | Stage 5.1/case PASS; Shared ESP32 compile fails at missing `mbedtls/sha256.h` under core 4.0.0. | Separate candidate; corroborates stale ESP32 API but is not #26 CI. |
+| COE integration #26 | `b382d233ff06c8791b1028bed3c617cc7b670d12` | Five workflows QUEUED / zero jobs; main remains three-entry scaffold `a6513ab4...`. | FROZEN; no staging, copy, move, overwrite, rebase, retarget or promotion. |
+
+Source Experiments root `NOTICE.md` exists (blob `f6d92cd2...`); COE #26 has no root `NOTICE.md`. The destination has PisoWiFi, QRCode and TailAdmin license/notice files, but that does not replace the missing repository-level notice or prove every dependency's license completeness. Exact private registry v11/newer corrections remain inaccessible; no older snapshot was substituted.
