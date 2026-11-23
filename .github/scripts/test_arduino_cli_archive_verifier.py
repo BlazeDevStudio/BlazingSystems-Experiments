@@ -41,6 +41,19 @@ def make_archive(entries: list[tuple[str, bytes, str]]) -> bytes:
     return output.getvalue()
 
 
+class FakeResponse:
+    headers = {"Content-Length": str(ARCHIVE_SIZE)}
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_args):
+        return False
+
+    def read(self, _limit):
+        return b"synthetic archive response"
+
+
 class ArduinoCliArchiveVerifierTests(unittest.TestCase):
     def test_release_asset_provenance_is_exactly_pinned(self):
         self.assertEqual(
@@ -141,9 +154,13 @@ class ArduinoCliArchiveVerifierTests(unittest.TestCase):
                 stream.truncate(MAX_BINARY_SIZE + 1)
             binary.chmod(0o755)
 
-            with patch.object(verifier, "urlopen") as download, patch.object(
+            with patch.object(
+                verifier, "urlopen", return_value=FakeResponse()
+            ) as download, patch.object(
                 Path, "read_bytes", return_value=b"synthetic"
-            ) as read_bytes:
+            ) as read_bytes, patch.object(
+                verifier, "verify_archive_payload", return_value="a" * 64
+            ):
                 with self.assertRaisesRegex(
                     VerificationError,
                     "installed Arduino CLI binary size is outside the allowed range",
@@ -170,7 +187,9 @@ class ArduinoCliArchiveVerifierTests(unittest.TestCase):
                     binary.write_bytes(b"replacement bytes with a different length")
                 return data
 
-            with patch.object(verifier, "urlopen") as download, patch.object(
+            with patch.object(
+                verifier, "urlopen", return_value=FakeResponse()
+            ) as download, patch.object(
                 verifier, "verify_archive_payload", return_value="a" * 64
             ), patch.object(verifier.os, "read", side_effect=mutate_after_first_read):
                 with self.assertRaisesRegex(
