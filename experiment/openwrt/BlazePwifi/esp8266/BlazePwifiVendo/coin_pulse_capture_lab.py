@@ -13,8 +13,7 @@ helpers. Host C++ uses fake GPIO/time/storage only; no physical acceptance is
 claimed.
 """
 from pathlib import Path
-import subprocess
-import tempfile
+from cpp_fixture_runner import run_cpp_fixture
 
 from firmware_lab_source import extract_function, mask_non_code
 
@@ -499,19 +498,13 @@ if len({signature for _, signature in FUNCTION_SPECS}) != len(FUNCTION_SPECS):
     raise RuntimeError("coin pulse helper spec contains duplicate signatures")
 def compile_and_run(functions):
     program = CPP.replace("@@FUNCTIONS@@", "\n\n".join(functions))
-    with tempfile.TemporaryDirectory(prefix="phx-coin-pulse-capture-") as temp:
-        cpp = Path(temp) / "coin_pulse_capture.cpp"
-        binary = Path(temp) / "coin_pulse_capture"
-        cpp.write_text(program, encoding="utf-8")
-        compiled = subprocess.run(
-            ["g++", "-std=c++17", "-Wall", "-Wextra", "-Werror", "-pedantic",
-             "-O2", str(cpp), "-o", str(binary)],
-            capture_output=True, text=True, check=False,
-        )
-        if compiled.returncode:
-            raise RuntimeError(compiled.stderr)
-        return subprocess.run([str(binary)], capture_output=True, text=True, check=False)
-
+    return run_cpp_fixture(
+        program,
+        prefix="phx-coin-pulse-capture-",
+        stem="coin_pulse_capture",
+        extra_flags=("-pedantic", "-O2"),
+        context="coin pulse capture lab",
+    )
 
 def verify_shared_extractor():
     probe = (
