@@ -131,6 +131,10 @@ static uint32_t pollStartAt=0, pollEndAt=0;
 static bool pollStartRelayOn=true, pollStartSuspended=false;
 static bool pollStartCoinIdle=false, pollEndRelayOn=true, pollEndSuspended=false;
 static bool pollPulseObservedDuringHttp=false, pollPulseRelayOff=false, pollPulseSuspended=false;
+static bool pollHttpReturned=false, pollPostHttpSampleObserved=false;
+static bool pollPostHttpFaultLatchedBeforeSample=false;
+static bool pollPostHttpMarkerPresentBeforeSample=false;
+static bool pollPostHttpOutputsOffBeforeSample=false;
 bool insertMode=true, lastCoin=false;
 bool pollIntakeSuspended=false, pollDrainAbortedOnActiveLine=false, pinConfigSafe=true;
 bool outputPolarityKnown=true;
@@ -153,6 +157,13 @@ struct ConfigStub {
 #endif
 } cfg;
 int digitalRead(int) {
+  // Capture fault durability before the ordinary post-HTTP sample can mask a missing poll-edge reconciliation.
+  if(pollHttpReturned && !pollPostHttpSampleObserved){
+    pollPostHttpSampleObserved=true;
+    pollPostHttpFaultLatchedBeforeSample=journalRecoveryRequired;
+    pollPostHttpMarkerPresentBeforeSample=LittleFS.exists("/pollpulse.fault");
+    pollPostHttpOutputsOffBeforeSample=!relayOn && !ledOn;
+  }
   if(injectDuringDrainAbort){
     ++drainAbortReadCount;
     if(drainAbortReadCount==2 && !drainAbortInjected){
@@ -280,6 +291,7 @@ String post(const String &action,const String &pulses=String("0"),
     pollEndAt=fakeNow;
     pollEndRelayOn=relayOn;
     pollEndSuspended=pollIntakeSuspended;
+    pollHttpReturned=true;
     // Deliberately hostile positive response: the extracted production
     // acceptPollResponse() must still deny it until CORE/QA approve the contract.
     return String("{\"ok\":true,\"insert\":true,\"target\":\"spoof-target\"}");
