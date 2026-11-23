@@ -219,3 +219,14 @@ The Full failure is not repaired by adding a legacy signature to firmware. Curre
 Focused results are **SIMULATED / CI VERIFIED** only. Physical coin acceptor, relay/electrical pulse, LittleFS power-loss durability, 150 controlled power cuts, 30-device 24-hour soak and electrical recovery remain **NOT TESTED**. HARDWARE ACCEPTED: **NO**. PRODUCTION READY: **NO-GO**.
 
 **Next exact action:** PHX-CORE publishes the approved authenticated register/poll response contract and golden vectors; PHX-QA reconciles the inherited assertion independently; PHX-MASTER refreshes its #347 exact-head pin. PHX-HARDWARE then reruns Full on the approved exact head. No flashing, live coin, migration, signer provisioning, merge, release or deployment.
+
+
+## UTC17 — final docs-head terminal CI inventory
+
+The handover-only docs commit `6b551031141b598ba0d484bf9127b3de60be6b47` has now reached terminal exact-head CI:
+
+- Quarantine [#45230343610](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45230343610), job `137887857788`: **SUCCESS**.
+- Relay [#45230343279](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45230343279), jobs `137887856081` and `137887856674`: **SUCCESS**.
+- Full [#45230343272](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45230343272): **27/27 jobs terminal**. Target/platform jobs **14/14 SUCCESS**; validation job `137887857871` **FAILURE** at Controller protocol parity; 12 dependent simulation, update-bundle, signing, candidate and publication jobs **SKIPPED**.
+
+This is a terminal Full failure, not a target-build failure. It does not promote the candidate to Full CI VERIFIED. Focused host labs remain SIMULATED / CI VERIFIED only. Physical acceptance remains NOT TESTED; PRODUCTION NO-GO.
