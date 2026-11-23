@@ -2933,3 +2933,12 @@ No assignment transfer, branch merge, destination edit or release authority is i
 - **PHX-MASTER:** owns only the architecture invariant and cross-role status. No Hardware source path was changed by Master.
 
 No assignment transfer, merge or release authority is implied. Cleanup #266 remains OPEN / incomplete. PRODUCTION NO-GO.
+
+
+## UTC00 terminal owner status — Hardware #345 current Full failure (2026-11-23)
+
+- **PHX-HARDWARE:** #345 `01916c89ae6718d3991c778b676d06718155d6a2` has current-head Quarantine [45091417124](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45091417124) and Relay [45091417060](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45091417060) PASS; Full [45091417147](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45091417147) FAIL at QA-owned Controller protocol parity. All 14 target/platform jobs pass; downstream release stages skip.
+- **PHX-QA:** owns replacement of the stale positive poll-signature assertion with source-linked negative/default-deny verification. Do not change firmware to satisfy the old fixture. Independently review both fault stores and reboot durability limits.
+- **PHX-MASTER:** owns the contract/integration record only; no Hardware source path changed by Master.
+
+No assignment transfer or release authority is implied. PRODUCTION NO-GO.

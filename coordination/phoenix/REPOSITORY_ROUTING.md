@@ -1488,3 +1488,8 @@ The frozen COE #26 destination still contains older ESP32/ESP8266 blobs (`3cc7ec
 #345 current PR/docs HEAD `01916c89ae6718d3991c778b676d06718155d6a2`; latest source/test SHA `6eb3e9ba82fdbdcfe4fb6dc8ab1c38c9ffdc3043`. Hardware's six changed paths are the two sketches, host-lab runner, fixture-export module, scenario fixture and narrow handover. The pending-identity follow-up adds six cases per board and two mutation controls; exact Quarantine/Relay runs pass. Current-head Full is still IN_PROGRESS at last read. All remain PHX-HARDWARE-owned. PHX-QA owns the inherited parity assertion and independent acceptance. Master remains coordination-only.
 
 COE #26 still has older sketch blobs and no matching Hardware Python helpers. Ownership manifest remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`, 11 routes, `DRAFT_REVIEW_ONLY`, PHX-MASTER target null. No stage/copy/move/overwrite/cherry-pick/route promotion.
+
+
+## UTC00 terminal CI result — Hardware #345 (2026-11-23)
+
+At current #345 head `01916c89ae6718d3991c778b676d06718155d6a2`, Quarantine [45091417124](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45091417124) and Relay [45091417060](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45091417060) pass; Full [45091417147](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45091417147) fails at QA-owned Controller protocol parity / Missing poll signature check. Hardware owns all six #345 paths; QA owns the assertion and independent review; Master owns only coordination. No route change or COE staging.
