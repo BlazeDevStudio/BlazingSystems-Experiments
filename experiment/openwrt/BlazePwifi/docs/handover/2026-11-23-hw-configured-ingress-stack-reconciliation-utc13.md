@@ -5,7 +5,8 @@
 **Task:** #177 — preserve coin-line edges and fail-closed admission
 **Parent:** PR #345, exact parent HEAD `ca72497ed386c9ac4e50d3f811827bef51e296ad`
 **Child branch:** `phoenix/hw-coin-ingress-config-helper-reconciled-20261123-utc13`
-**Source/test HEAD before this handover:** `59de2e122f57559804ecb2929b56903b6486c694`
+**Source/test HEAD after first reconciliation:** `59de2e122f57559804ecb2929b56903b6486c694`  
+**Source/test HEAD after CI correction:** `724d892e980f878903425837226c45b321638793`
 **PR:** pending creation as a DRAFT child of #345
 
 ## Why this reconciliation exists
@@ -52,7 +53,11 @@ The shared `poll_loop_blocking_inhibit_lab.py` was updated in-place on this new 
 ## Validation
 
 - Local shell/compiler execution: NOT AVAILABLE in this activation.
-- New child Quarantine/Relay/Full Actions: NOT RUN at handover creation; exact-head validation is required after the DRAFT PR is opened.
+- Exact-head Quarantine run [#45182191780](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45182191780) was in progress at the first PR head.
+- Exact-head Relay/Output run [#45182191910](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45182191910) **FAILED** in `coin_pulse_capture_lab.py`: the child had inserted `coinIngressConfigurationAllows` into `FUNCTION_NAMES` but not the parallel `SIGNATURES` tuple, so mutation indexes shifted and the `missing-edge-latch` anchor was not found. The 17/17 positive coin-pulse markers still printed, but the job exited 1. This was a proven test-harness defect, not a firmware failure.
+- Correction commit `724d892e980f878903425837226c45b321638793` adds the helper signature in the matching position, restoring positional parity. The failed run is retained as evidence; it is not relabeled PASS.
+- Full run [#45182191977](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45182191977) validation job `137718519049` **FAILED** at the inherited QA-owned `Missing poll signature check`; ESP8266 target build job `137718518772` passed. Other target jobs were still running when checked.
+- New exact-head Quarantine/Relay/Full runs after correction SHA `724d892` are pending and must be read separately.
 - Parent #345 exact-head Quarantine run #45165015610 and Relay run #45165015665: PASS.
 - Parent #345 Full run #45165015859: FAIL at inherited QA-owned poll-signature/controller protocol assertion; 14 target/platform jobs passed and validation-dependent stages did not pass.
 - #346 had no PR-triggered runs at its then-current head `bd3fd6e85717395f768aae26a310b647cdd72a7e`; it remains a stale, unreconciled sibling candidate.
