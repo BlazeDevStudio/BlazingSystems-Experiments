@@ -33,6 +33,7 @@ from poll_loop_blocking_inhibit_lab_fixtures import (
     missed_sample_main,
     TIMING_MAIN,
     RELEASE_EDGE_MAIN,
+    CLEAR_WINDOW_ISR_MAIN,
 )
 
 ACTIVE_HIGH_MISSED_SAMPLE_MAIN = missed_sample_main(active_low=False, failure_code=57)
@@ -347,6 +348,25 @@ for board,path in BOARDS.items():
                 load_fault_source+latch_fault_source+quarantine_source+configure_source+accept_source+reconcile_source+init_store_source+SUPPORT+handle_source+sample_source+drain_abort_source+loop_source+main_source)
 
     print(board,compile_and_run(assemble(),board,0,"exact-source"))
+    print(board,compile_and_run(assemble(main_source=CLEAR_WINDOW_ISR_MAIN),
+                                board,0,"coin-post-clear-window-isr-edge"))
+    clear_recheck_anchor = (
+        "if(reconcileUnobservedCoinEdges()) clearPending();\n"
+        "    if(!reconcileUnobservedCoinEdges()) applyOutputs();"
+    )
+    clear_recheck_mutation = handle.replace(
+        clear_recheck_anchor,
+        "if(reconcileUnobservedCoinEdges()) clearPending();",
+        1,
+    )
+    if clear_recheck_mutation == handle:
+        raise AssertionError(f"{board}: clear-window reconciliation mutation anchor missing")
+    compile_and_run(
+        assemble(handle_source=clear_recheck_mutation,
+                 main_source=CLEAR_WINDOW_ISR_MAIN),
+        board,54,"coin-post-clear-window-isr-recheck"
+    )
+    print(f"{board} MUTATION_REJECTED coin-post-clear-window-isr-recheck expected_exit=54")
     run_pending_clear_failure_lab(board,clear_pending,same_pending_record,
                                    pending_attempt_marker_matches,compile_and_run)
     # Execute the focused pending-identity matrix on the unmutated exact source;

@@ -17,7 +17,7 @@ void resetState(){
   injectDuringPollRelease=false; injectDuringPollReleaseAtRelayWrite=false;
   pollReleaseEdgeInjected=false; pollReleaseEdgeSawRelayOff=false;
   pollReleaseRelayEnergizedBeforeLatch=false; pollReleaseRelayClearedBeforeLatch=false;
-  allowCoinPost=false; injectDuringCoinPost=false; coinPostCalls=0; clearCalls=0;
+  allowCoinPost=false; injectDuringCoinPost=false; injectDuringClear=false; coinPostCalls=0; clearCalls=0;
   drainAbortReadCount=0; drainAbortInjected=false; drainAbortSawRelayOn=false;
   drainAbortSampleSawRelayOn=false; drainAbortReenabledBeforeLatch=false;
   drainAbortActiveLineReenabled=false;
@@ -715,6 +715,31 @@ int main(){
      relayOn || ledOn || journalRecoveryRequired ||
      coinEdgeSequence==lastHandledCoinEdgeSequence) return 53;
   std::cout<<"POLL_RELEASE_RELAY_WRITE_ISR_EDGE_DEASSERTED_PASS\n";
+  return 0;
+}
+"""
+
+
+CLEAR_WINDOW_ISR_MAIN = MAIN[:MAIN.index("int main(){")] + r"""
+int main(){
+  resetState();
+  allowCoinPost=true;
+  pendingReady=true;
+  pendingPulses=4U;
+  pendingNonce="nonce-existing";
+  pendingTarget="target-01";
+  insertMode=false;
+  activeTarget="";
+  // Test-only disposition override reaches the otherwise deny-only response
+  // path. Inject the actual extracted ISR during the pending-clear window.
+  injectDuringClear=true;
+  loop();
+  if(coinPostCalls!=1 || clearCalls!=1 ||
+     !journalRecoveryRequired || !LittleFS.exists("/pollpulse.fault") ||
+     relayOn || ledOn || pendingPulses!=0U || pendingReady ||
+     coinEdgeSequence!=lastHandledCoinEdgeSequence ||
+     LittleFS.files["/pollpulse.fault"].find("pulses=1")==std::string::npos) return 54;
+  std::cout<<"COIN_POST_CLEAR_WINDOW_ISR_EDGE_LATCHED_PASS\n";
   return 0;
 }
 """

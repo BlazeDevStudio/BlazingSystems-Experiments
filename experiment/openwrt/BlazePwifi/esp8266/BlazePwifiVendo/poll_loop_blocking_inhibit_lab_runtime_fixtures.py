@@ -105,7 +105,7 @@ static bool relayLevelHigh=false, ledLevelHigh=false;
 static bool injectDuringHttp=false;
 static unsigned injectDuringHttpEdgeCount=1;
 static bool injectTimedPollPulse=false, timedPulseIsrInjected=false;
-static bool allowCoinPost=false, injectDuringCoinPost=false;
+static bool allowCoinPost=false, injectDuringCoinPost=false, injectDuringClear=false;
 static int coinPostCalls=0, clearCalls=0;
 static bool injectAfterDrainEdge=false;
 unsigned injectAfterDrainEdgeCount=1;
@@ -237,7 +237,16 @@ bool canAttemptCoinPost(){ return allowCoinPost && outputPolarityKnown && fsRead
 bool markPendingPostAttempt(){ if(!allowCoinPost) return false; pendingPostAttempted=true; return true; }
 bool coinPostDispositionVerified(const String&,const String&,const String&,uint8_t){ return allowCoinPost; }
 bool pollJsonTopLevelTrue(const String&,const char*){ return allowCoinPost; }
-bool clearPending(){ ++clearCalls; pendingPulses=0; pendingReady=false; pendingPostAttempted=false; pendingTarget.clear(); pendingNonce.clear(); return true; }
+bool clearPending(){
+  ++clearCalls;
+  pendingPulses=0;
+  pendingReady=false;
+  pendingPostAttempted=false;
+  pendingTarget.clear();
+  pendingNonce.clear();
+  if(injectDuringClear){ coinEdgeISR(); injectDuringClear=false; }
+  return true;
+}
 bool quarantinePending(const String&){ return false; }
 void startSetupAp(){}
 String post(const String &action,const String &pulses=String("0"),
