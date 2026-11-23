@@ -77,6 +77,10 @@ int runDisabledIngressCase(bool disableController, bool disableCoin, bool disabl
   if(disableCoin) coinEnabled=false;
   if(disableRelay) relayEnabled=false;
   applyOutputs();
+  if(relayOn || ledOn){
+    std::cout<<"POLL_DISABLED_INGRESS_OUTPUTS_OFF_FAIL\\n";
+    return failureCode+20;
+  }
   if(injectIsrEdge) coinEdgeSequence=1U;
   sampleCoinPulseEdge(true);
   if(!journalRecoveryRequired || pendingPulses!=0U || saveCalls!=0 ||
