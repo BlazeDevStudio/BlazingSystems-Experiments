@@ -99,6 +99,40 @@ int main(){{
 }}
 """
 
+def pre_poll_active_line_main(*, active_low: bool, failure_code: int) -> str:
+    """Prove a pre-existing active line is sampled and journaled before poll admission."""
+    polarity = "true" if active_low else "false"
+    label = "ACTIVE_LOW" if active_low else "ACTIVE_HIGH"
+    return MAIN[:MAIN.index("int main(){")] + rf"""
+int main(){{
+  resetState();
+  runCoinActiveLow={polarity};
+  configureRuntimePins(runCoinPin,runRelayPin,runLedPin);
+  // The line is already active before loop() checks poll admission. No ISR
+  // transition is injected; the sampled-level fallback must preserve it.
+  pulseStart=(int)fakeNow;
+  pulseEnd=(int)fakeNow+80;
+  loop();
+  if(pollCalls!=0 || coinPostCalls!=0 || pollStartAt!=0 ||
+     coinEdgeSequence!=0U || lastHandledCoinEdgeSequence!=0U ||
+     pendingPulses!=1U || pendingReady ||
+     pendingTarget!="target-01" || pendingNonce!="nonce12345678" ||
+     saveCalls!=1 || journalRecoveryRequired || !lastCoin ||
+     !relayOn || !ledOn || pollIntakeSuspended ||
+     pollDrainAbortedOnActiveLine) return {failure_code};
+  fakeNow=(uint32_t)pulseEnd;
+  loop();
+  if(pollCalls!=0 || coinPostCalls!=0 || pendingPulses!=1U ||
+     pendingReady || pendingTarget!="target-01" ||
+     pendingNonce!="nonce12345678" || saveCalls!=1 ||
+     journalRecoveryRequired || lastCoin || !relayOn || !ledOn ||
+     pollIntakeSuspended || pollDrainAbortedOnActiveLine) return {failure_code};
+  std::cout<<"POLL_PRESTART_{label}_NO_ISR_CAPTURED_ONCE_PASS\\n";
+  return 0;
+}}
+"""
+
+
 
 def compile_and_run(code, board, expected=0, label="normal"):
     with tempfile.TemporaryDirectory(prefix="phx-poll-loop-") as folder:
@@ -812,6 +846,46 @@ for board,path in BOARDS.items():
     compile_and_run(assemble(loop_source=missing_release_sample),board,29,
                     "skip-poll-release-edge-sample")
     print(f"{board} MUTATION_REJECTED skip-poll-release-edge-sample")
+
+
+    # A pulse already active before poll admission, with no ISR transition,
+    # must be sampled once and remain pending after the line returns idle.
+    for active_low, label, failure_code in (
+        (True, "active-low", 88),
+        (False, "active-high", 89),
+    ):
+        active_line_main = pre_poll_active_line_main(
+            active_low=active_low,
+            failure_code=failure_code,
+        )
+        active_line_output = compile_and_run(
+            assemble(main_source=active_line_main),
+            board,
+            0,
+            f"pre-poll-active-line-{label}",
+        )
+        marker = f"POLL_PRESTART_{label.upper().replace('-', '_')}_NO_ISR_CAPTURED_ONCE_PASS"
+        if marker not in active_line_output:
+            raise AssertionError(f"{board}: missing {label} pre-poll active-line marker")
+        print(f"{board} {marker}")
+
+        missing_active_sample = sample.replace(
+            "if(fsReady && !journalRecoveryRequired && active && !lastCoin &&",
+            "if(false && !journalRecoveryRequired && active && !lastCoin &&",
+            1,
+        )
+        if missing_active_sample == sample:
+            raise AssertionError(f"{board}: pre-poll active-line sample mutation anchor missing")
+        compile_and_run(
+            assemble(sample_source=missing_active_sample, main_source=active_line_main),
+            board,
+            failure_code,
+            f"pre-poll-active-line-missing-sample-{label}",
+        )
+        print(
+            f"{board} MUTATION_REJECTED pre-poll-active-line-missing-sample-{label} "
+            f"expected_exit={failure_code}"
+        )
 
     pre_poll_edge_guard_removed = loop.replace(
         "if(pollEdgeStart!=lastHandledCoinEdgeSequence){",
