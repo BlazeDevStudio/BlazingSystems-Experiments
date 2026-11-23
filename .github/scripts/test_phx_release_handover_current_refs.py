@@ -265,7 +265,7 @@ class ReleaseHandoverUTC00CurrentRefsTests(unittest.TestCase):
     def test_mixed_owner_paths_are_not_claimed_as_release_owned(self):
         self.assertIn("27 accumulated paths", self.section)
         self.assertIn("22 RELEASE / 3 CORE / 2 PISONET", self.section)
-        self.assertIn("No CORE or PISONET path was changed", self.section)
+        self.assertIn("No inherited CORE or PISONET path was changed by this task", self.section)
 
     def test_integration_and_provenance_blockers_remain_explicit(self):
         self.assertIn("five workflows queued", self.section)
