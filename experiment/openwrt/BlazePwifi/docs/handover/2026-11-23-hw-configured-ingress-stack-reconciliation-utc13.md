@@ -143,3 +143,37 @@ The coin-pulse lab previously maintained separate manual `FUNCTION_NAMES` and `S
 This increment replaces both lists with one ordered `FUNCTION_SPECS` table containing each helper name and expected declaration. The lab derives the mutation index map from helper names, rejects duplicate helper names/signatures, verifies every extracted declaration against its expected signature, and reports unknown mutation targets explicitly. Mutation scenarios and firmware behavior are unchanged.
 
 The exact-head Relay Output Polarity and Quarantine Byte Readback workflows both execute this coin-pulse lab; the Full BlazePwifi workflow independently checks the controller-protocol gate. Terminal run/job results are recorded in the PR #347 UTC15 checkpoint. All host and CI results remain SIMULATED / CI VERIFIED only; physical coin, relay, LittleFS power-cut, 150-cut and 30-device soak acceptance remain NOT TESTED.
+
+
+## UTC16 — poll-drain active-line abort mutation proof
+
+**Updated:** 2026-11-23T16:48:00Z  
+**Role:** PHX-HARDWARE · **Task:** #177 · **PR:** #347 OPEN / DRAFT / UNMERGED  
+**Branch:** `phoenix/hw-coin-ingress-config-helper-reconciled-20261123-utc13`  
+**Parent:** #345 `ca72497ed386c9ac4e50d3f811827bef51e296ad`  
+**Source/test head:** `506ec8df42542f58c4d9a04269fbce488492b765`
+
+### One bounded change
+
+Only `experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_window_drain_lab.py` changed. The source-extracted drain lab now removes the in-loop `if(!coinLineIdle())` abort guard in a negative mutation while deliberately retaining the final idle sample. A 30 ms pulse beginning at 100 ms then ends before the 250 ms drain closes; without the in-loop guard, the mutated helper would return idle and incorrectly permit the poll. The mutation must fail at `pulse-100ms-width30`.
+
+No ESP8266/ESP32 production sketch, CORE/QA shared contract, finance path, workflow permission, or device was changed.
+
+### Exact-head evidence
+
+- Quarantine Byte Readback [run #45220006814](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45220006814), job `137851401846`: **PASS**. Logs show baseline `POLL_WINDOW_DRAIN_PASS 11/11` and `missing-active-line-abort` mutation rejected on ESP8266 and ESP32.
+- Relay Output Polarity [run #45220006839](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45220006839), job `137851402806`: **PASS** with the same baseline and mutation rejection on both boards. ESP32 boot-polarity job `137851401866`: **PASS**.
+- Full BlazePwifi [run #45220006841](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45220006841), validation job `137851586096`: **FAIL** at inherited QA-owned `Missing poll signature check` in the ESP8266 sketch. At this checkpoint 10/14 target/platform jobs had completed successfully and 4 remained in progress; downstream validation-dependent stages were skipped. No Full success is claimed.
+
+### Live coordination revalidation
+
+- Master PR #288 is OPEN / DRAFT at `3d4226bbff276a26066b3cb04e520b6eba252110`; its current role matrix records #345 → #347 and #346 as stale sibling. Master-owned report/matrix may need the new #347 head `506ec8df`.
+- #239 `d83b715b`, #254 `84c442a4`, and #283 `4dd0b01b` remain OPEN / DRAFT / UNMERGED. No rebase, cherry-pick, merge or retarget occurred.
+- Experiments main remains `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; active v0.6.0 audit branch is `2fbd2475e9f54878c316fa7cea2f228386b0e859`. Canonical GitHub owner is `BlazeDevStudio`; historical README links still need Master-owned reconciliation.
+- Cleanup-first #266 remains OPEN, 0/7 tracks complete. Financial #31/#32, safety #34 and witness #43 remain OPEN.
+- COE main remains `a6513ab4412b4c014eee2863e45cbe32d06cb243`; PR #26 remains FROZEN / OPEN / DRAFT at `b382d233ff06c8791b1028bed3c617cc7b670d12`. No COE destination was edited.
+- The exact private `BLAZE_PROJECT_REGISTRY_v11_20261027.json` was not surfaced. Library search found older v7/v6 snapshots only; no Google Drive connector is exposed, and no older registry was substituted.
+
+**Disposition:** focused Quarantine/Relay **CI VERIFIED**; Full integration **FAILED / BLOCKED** by CORE/QA response-contract mismatch; physical pulse/relay/LittleFS acceptance **NOT TESTED**; 150 power cuts and 30-device soak **NOT TESTED**; HARDWARE ACCEPTED **NO**; PRODUCTION READY **NO-GO**.
+
+**Next exact action:** CORE must publish the authenticated register/poll response contract and golden vectors; QA must reconcile the inherited poll-signature assertion independently; Master must refresh its #347 head pin. Then PHX-HARDWARE reruns Full against the approved exact head. No positive response signature or admission path will be fabricated.
