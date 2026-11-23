@@ -14,6 +14,31 @@ import tempfile
 
 DEFAULT_COMPILE_TIMEOUT_SECONDS = 30
 DEFAULT_RUN_TIMEOUT_SECONDS = 10
+MAX_DIAGNOSTIC_TAIL_CHARS = 3000
+
+
+def _diagnostic_tail(value):
+    """Return a bounded UTF-8-safe tail for process diagnostics."""
+    if value is None:
+        return ""
+    if isinstance(value, bytes):
+        value = value.decode("utf-8", errors="replace")
+    else:
+        value = str(value)
+    return value[-MAX_DIAGNOSTIC_TAIL_CHARS:]
+
+
+def _timeout_error_message(context, phase, error):
+    """Keep the useful tail of output when a timed-out child emitted diagnostics."""
+    sections = []
+    for label, value in (("stdout", error.stdout), ("stderr", error.stderr)):
+        tail = _diagnostic_tail(value)
+        if tail:
+            sections.append(f"{label} tail:\n{tail}")
+    suffix = "\n" + "\n".join(sections) if sections else ""
+    return f"{context}: {phase} timed out{suffix}"
+
+
 
 
 def _validate_timeout(name, value):
@@ -70,11 +95,11 @@ def run_cpp_fixture(
                 timeout=compile_timeout,
             )
         except subprocess.TimeoutExpired as error:
-            raise RuntimeError(f"{context}: compile timed out") from error
+            raise RuntimeError(_timeout_error_message(context, "compile", error)) from error
 
         if compiled.returncode:
             raise RuntimeError(
-                f"{context}: compile failed:\n{compiled.stderr[-3000:]}"
+                f"{context}: compile failed:\n{_diagnostic_tail(compiled.stderr)}"
             )
 
         try:
@@ -86,4 +111,4 @@ def run_cpp_fixture(
                 timeout=run_timeout,
             )
         except subprocess.TimeoutExpired as error:
-            raise RuntimeError(f"{context}: execution timed out") from error
+            raise RuntimeError(_timeout_error_message(context, "execution", error)) from error
