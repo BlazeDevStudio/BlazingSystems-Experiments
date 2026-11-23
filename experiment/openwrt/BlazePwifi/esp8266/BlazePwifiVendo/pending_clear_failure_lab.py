@@ -150,7 +150,7 @@ int main() {
      !pendingRamIdentityPreserved() ||
      LittleFS.exists("/pending.dat") ||
      !attemptMarkerBytesPreserved()) return 103;
-  std::cout << "PENDING_CLEAR_ATTEMPT_MARKER_REMOVE_READBACK_FAILURE_PRESERVED_PASS\\n";
+  std::cout << "PENDING_CLEAR_ATTEMPT_MARKER_REMOVE_READBACK_FAILURE_PRESERVED_PASS\n";
 
   resetState();
   LittleFS.retainRemovePath = "/pending.dat";
