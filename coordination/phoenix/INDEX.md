@@ -778,3 +778,9 @@ Both historical reports were already indexed in the earlier sections above; UTC0
 
 - [PHX-MASTER UTC09 COE #35 exact-head CI and live coordination reconciliation](PHX_MASTER_UTC09_20261123_COE35_EXACT_HEAD_CI_AND_LIVE_HEAD_RECONCILIATION.md) — corrected current COE #35 head and exact hosted CI, revalidated all seven role PRs and COE candidates, preserved COE #26 freeze, and recorded Drive/branch-protection/full-test blockers.
 - Existing indexed PHX-MASTER report links were unique before this update; this new report is added exactly once. The full recursive repository tree was not enumerated through the available GitHub surface in this activation, so repository-wide dangling/unindexed counts are not claimed.
+
+
+## Latest exact-head reconciliation — 2026-11-23 UTC11
+
+- [PHX-MASTER UTC11 Hardware #346 stack reconciliation, COE #35 exact-head CI and COE #26 provenance audit](PHX_MASTER_UTC11_20261123_HARDWARE346_STACK_RECONCILIATION_COE35_AND_COE26_PROVENANCE_AUDIT.md) — current role heads/CI, parent-child stack drift and overlapping Hardware lab, exact COE #35 sandbox/ULA failures, 11-route source/destination comparison, SOURCE_INTAKE/MIGRATION_MAP/test-blob/license/NOTICE revalidation, registry and Master-suite access blockers.
+- The report is added exactly once; previous historical reports and links are preserved. PR #288 remains coordination-only.

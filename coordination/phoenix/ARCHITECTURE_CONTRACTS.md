@@ -1473,3 +1473,12 @@ Hardware #345's current source/test commit `ad0c6993e3cfdde4f1b11723c277488044b5
 **Scope and limits:** source/test commit `ad0c6993` changes only `poll_loop_blocking_inhibit_lab.py`; final documentation commit `797dece76c18d464a7c0580658b5db9351cb8e15` adds the Hardware handover. No production `.ino` changed in this mutation-coverage increment. This is source-extracted host-lab/CI evidence, not physical ISR timing, coin-acceptor, relay-electrical, flash durability, reboot, 150-power-cut or 30-device-soak acceptance.
 
 **Ownership:** PHX-HARDWARE owns the firmware and lab runner; PHX-QA owns the inherited positive poll-signature assertion and independent verification; PHX-CORE owns the authenticated producer contract; PHX-MASTER owns this cross-role invariant only. Do not synthesize `response_sig` or weaken default-deny. No route promotion, merge, release or production authority is granted.
+
+
+## 6.83 Shared configured coin-ingress predicate and stacked child verification — 2026-11-23 UTC11
+
+HARDWARE child PR #346 at bd3fd6e85717395f768aae26a310b647cdd72a7e centralizes the existing configured admission expression in both ESP sketches as coinIngressConfigurationAllows() returning controllerEnabled && coinEnabled && relayEnabled, reused by both sampleCoinPulseEdge() and applyOutputs(). Poll-time suspension remains a separate runtime condition. This is a source-level contract observation, not accepted integration or hardware evidence.
+
+The child has no Quarantine/Relay run at its final head. Its base is 797dece76c18d464a7c0580658b5db9351cb8e15; parent #345 is now ca72497ed386c9ac4e50d3f811827bef51e296ad (four commits ahead). Parent changed the same poll-loop lab and added pending_clear_failure_lab.py, which child #346 does not include. Keep the stack blocked until PHX-HARDWARE reconciles it and runs focused CI at the final exact head.
+
+Parent #345 current-head Quarantine #45165015610 and Relay #45165015665 pass; Full #45165015859 fails at QA's inherited Missing poll signature check. No positive response_sig is synthesized. Hardware owns firmware and labs; QA owns the inherited assertion and independent review; CORE owns producer authority; Master records the cross-role boundary only. Physical coin/relay, flash durability, power-cut and soak acceptance remain NOT TESTED.

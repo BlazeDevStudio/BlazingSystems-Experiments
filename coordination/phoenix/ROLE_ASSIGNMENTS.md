@@ -3123,3 +3123,20 @@ This append-only snapshot supersedes earlier live role/head tables only for the 
 **COE candidates:** integration [#26](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/pull/26) `b382d233ff06c8791b1028bed3c617cc7b670d12` remains OPEN/DRAFT/FROZEN with five queued workflows and zero jobs. RELEASE [#35](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/pull/35) `a0bb98d841182457c62b3c99853d4143a4a0550e`: Shared/firmware [#45153964200](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45153964200) reports 197 tests PASS / 2 skips but 10/10 appliance profiles fail closed without approved site-scoped ULA /48; Sandbox [#45153964199](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45153964199) reports 39/39 host tests PASS then fails closed because Bubblewrap is absent (exit 125); Case collision [#45153964123](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45153964123) PASS. COE #45 `9d76a134c1f6512aa40c20ec4d247306a71a8cce` has scoped checks PASS; COE #49 `aeb8ff11b2f5db9a5f86280ab62ab988245f3919` has Stage 5.1 and case-collision PASS but shared ESP32 compile FAILs on missing `mbedtls/sha256.h`.
 
 CORE source remains reserved to its separate owner; PHX-MASTER made no CORE/RENTAL/PISONET/HARDWARE/QA/RELEASE source changes.
+
+
+## PHX-MASTER live owner-head and CI reconciliation — 2026-11-23 UTC11
+
+| Role / candidate | Exact current PR head | Exact-head evidence |
+|---|---|---|
+| CORE #252 | c82705f2de865c89ab733b10efa84f26f56a5cc4 | Build #42698139210 PASS; CORE remains separately owned |
+| RENTAL #328 | 0e0da62acd47c6a1ce287f8a30fc700d603fa070 | APK identity #44782114384 PASS; API smoke #44782114393 PASS; build #44782114390 FAIL |
+| PISONET #255 | d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | Windows #42462978704 PASS |
+| HARDWARE #345 | ca72497ed386c9ac4e50d3f811827bef51e296ad | Quarantine #45165015610 PASS; Relay #45165015665 PASS; Full #45165015859 FAIL at QA poll-signature assertion |
+| HARDWARE child #346 | bd3fd6e85717395f768aae26a310b647cdd72a7e | No exact-head focused runs; base 797dece is four commits behind parent #345 ca72497; shared poll-lab overlap and missing parent pending-clear lab |
+| QA #290 / #292 | 5c29d15994cee1279058f1eca12f2a3180704292 / 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | #290 Windows #43633486963 PASS; #292 no PR-triggered runs |
+| RELEASE #291 | 886cabfc5080c3fbef03c2a3b1afe9d52dea6f60 | Compatibility #45117006790, Windows #45117006843, Full #45117006794: FAIL |
+| COE RELEASE #35 | d97501a1a325dd304afd1f1c227ccd5d28d2ae9f | Case collision #45164877481 PASS; sandbox #45164877476 FAIL: Bubblewrap unavailable; shared/firmware #45164877480 198 tests PASS / 2 skips then 10/10 profiles fail closed without approved ULA /48 |
+| COE CORE #45 / INTERCON #49 | 9d76a134c1f6512aa40c20ec4d247306a71a8cce / aeb8ff11b2f5db9a5f86280ab62ab988245f3919 | #45 scoped Overlay/Shell and case-collision PASS; #49 Stage 5.1 and case-collision PASS, Shared Contracts ESP32 compile FAIL |
+
+PR #345's description and COE #35's description still contain stale older head pins; each source owner must refresh its own handover. PHX-MASTER did not edit any subsystem branch.

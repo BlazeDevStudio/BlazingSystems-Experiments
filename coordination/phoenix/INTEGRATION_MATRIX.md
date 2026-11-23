@@ -4383,3 +4383,19 @@ The intake lists four original tests; all four source/destination blob identitie
 License/NOTICE: PisoWiFi `LICENSE` matches the source blob `1ee55b94183417be977ca287cd7391f9a6f7e721`; vendored QRCode and TailAdmin license/notice blobs match their source. Source root `NOTICE.md` blob `f6d92cd21465312be5993631fe26977219be0fb9` has no destination root counterpart. The intake snapshot's older source commit and the routing manifest's current-main baseline must remain separate; do not rewrite either pin to conceal drift.
 
 **Disposition:** no file copied, moved, staged, overwritten, rebased or cherry-picked. COE #26 remains FROZEN; all per-file provenance, test identity, licensing, and exact-head CI gaps must be resolved by the owning roles before any migration proposal.
+
+
+## UTC11 exact-head integration and destination revalidation — 2026-11-23
+
+### Hardware stack
+HARDWARE #346 is not integration-ready: its base is 797dece while parent #345 is ca72497 (four commits ahead); the child and parent both modify poll_loop_blocking_inhibit_lab.py, and the parent adds pending_clear_failure_lab.py absent from the child. No exact-head focused CI exists for #346 bd3. Parent #345 focused Quarantine/Relay pass, but Full remains blocked by QA's inherited poll-signature assertion. No Master source change or rebase.
+
+### COE #35 exact-head CI
+At d97501a1a325dd304afd1f1c227ccd5d28d2ae9f: sandbox fails because Bubblewrap is unavailable; shared/firmware executes 198 tests (2 intentional skips) then fails closed on all ten profiles due missing approved site ULA /48; case-collision passes. Compile jobs are skipped. No ULA or sandbox bypass is invented.
+
+### COE #26 frozen destination route matrix
+The source main tree f4e8 has 2,340 entries; COE #26 b382 has 286; both are complete. The 11-route manifest remains blob e4db324315a1b3543fec17a148fbf960170fcb29, DRAFT_REVIEW_ONLY, PHX-MASTER target null. Current route-by-route source/destination counts are recorded in the UTC11 report; no route is promoted.
+
+SOURCE_INTAKE schema 8 remains blob 1b9018ff944f7f673934d0fc2a97e0a0090d3f5f: 61 runtime rows actually classify 46 identical / 15 derived while summary claims 47 / 14. All 61 pinned historical source blobs and all 61 destination blobs match the intake records; 28 pinned source blobs have drifted from current main. Derived tests are 15 in the intake but 14 in MIGRATION_MAP; voucher journal is omitted, and run_focus/member journal map IDs are stale. PisoWiFi LICENSE matches; source root NOTICE has no COE root counterpart. Five #26 workflows remain queued / zero jobs.
+
+Disposition: keep #26 FROZEN. No copy, move, staging, overwrite, cherry-pick, rebase, retarget or destination write.

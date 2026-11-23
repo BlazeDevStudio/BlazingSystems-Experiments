@@ -1542,3 +1542,12 @@ The machine manifest remains unchanged at blob `e4db324315a1b3543fec17a148fbf960
 Exact prefix-level blob/mode comparison and SOURCE_INTAKE/MIGRATION_MAP discrepancies are recorded in `INTEGRATION_MATRIX.md` (UTC10 section). The intake's 6d4c9b source pin is historical and distinct from the manifest's f4e8 main baseline; 28 of its 61 runtime source blobs have drifted from current main. Root PisoWiFi LICENSE and vendored QRCode/TailAdmin notices match; source root NOTICE is absent from COE #26. Derived-test mapping omits voucher_txn_journal and contains two stale blob IDs. COE #26 has five queued workflows / zero jobs.
 
 No source/destination file move, copy, staging, overwrite, cherry-pick, rebase or ownership transfer is proposed. The broad Rental parent route remains manual-file-mapping-only and `copy_permitted: false`; PHX-MASTER remains coordination-only.
+
+
+## UTC11 — current stack and exact destination provenance hold
+
+- Manifest blob e4db324315a1b3543fec17a148fbf960170fcb29 remains 11 routes / DRAFT_REVIEW_ONLY / PHX-MASTER target null. Source baseline is Experiments main f4e8; candidate is COE #26 b382.
+- HARDWARE #346 bd3 is based on 797dece, while parent #345 is ca72497 (four commits ahead). Parent changes the same poll-loop lab and adds a pending-clear failure lab absent from the child. No exact-head focused CI at bd3. Keep the child out of integration until its owner reconciles the stack.
+- COE #26 source/destination trees remain 2,340 / 286 entries. Exact route comparisons and intake/test/license discrepancies are recorded in the UTC11 report. Source NOTICE exists; destination root NOTICE is absent. PisoWiFi LICENSE matches.
+- COE #35 d975 exact-head CI is blocked by missing Bubblewrap and approved ULA /48; ten profiles fail closed. No sandbox bypass or invented network prefix.
+- No source/destination path is staged, copied, moved, overwritten, rebased, cherry-picked or promoted. The broad Rental parent target remains manual-file-mapping-only. Private registry v11 is not available through this runtime.
