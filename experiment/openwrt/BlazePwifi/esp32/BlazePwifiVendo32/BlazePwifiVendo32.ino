@@ -1209,9 +1209,15 @@ bool canStartPoll(){
          pendingPulses==0 && coinLineIdle();
 }
 
+// Keep configured controller/coin/relay admission identical for sampling and
+// output gating. Poll-time suspension remains a separate runtime condition.
+bool coinIngressConfigurationAllows(){
+  return controllerEnabled && coinEnabled && relayEnabled;
+}
+
 void applyOutputs(){
   if(!outputPolarityKnown) return;
-  bool accepting=pinConfigSafe && controllerEnabled && coinEnabled && relayEnabled && insertMode && activeTarget.length()>0 && fsReady &&
+  bool accepting=pinConfigSafe && coinIngressConfigurationAllows() && insertMode && activeTarget.length()>0 && fsReady &&
                  !journalRecoveryRequired && !pendingReady && !pollIntakeSuspended &&
                  snapshotCoinEdgeSequence()==lastHandledCoinEdgeSequence;
   if(ledEnabled) writeLogical(runLedPin,accepting,runLedActiveHigh); else writeLogical(runLedPin,false,runLedActiveHigh);
@@ -1328,7 +1334,7 @@ void sampleCoinPulseEdge(bool active){
   // A coin edge is credit-eligible only while the controller, coin feature and
   // acceptor relay are configured ON. Poll-time relay suspension is separate:
   // relayEnabled stays true while pollIntakeSuspended temporarily deasserts output.
-  const bool coinIngressConfigured=controllerEnabled && coinEnabled && relayEnabled;
+  const bool coinIngressConfigured=coinIngressConfigurationAllows();
   const bool sampledSingleEdge=exactlyOneUnseenEdge && active && !lastCoin &&
       coinIngressConfigured && fsReady && !journalRecoveryRequired && !pendingReady &&
       insertMode && activeTarget.length()>0 &&
