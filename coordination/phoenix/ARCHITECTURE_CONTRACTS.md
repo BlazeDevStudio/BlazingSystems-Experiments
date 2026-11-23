@@ -1631,3 +1631,24 @@ HARDWARE #347 added a bounded-input contract to the shared ESP8266 C++ fixture r
 6. This is a test-harness reliability contract, not financial or hardware acceptance. HARDWARE owns the runner; CORE owns the authenticated poll producer contract; QA owns the independent assertion review; MASTER owns this cross-role evidence rule. Do not synthesize a signature or weaken default-deny.
 
 The result is **CI VERIFIED for the bounded runner contract only**. Physical compiler/relay/coin behavior, LittleFS durability, power cuts, native acceptance and soak remain NOT TESTED.
+
+
+## 6.94 Hardware firmware and migration-test identity are separate gates — 2026-11-23 UTC22
+
+The current source owner candidate is Experiments HARDWARE PR #347 at `e69a3d715aca6724dd0390e925e48a7510009ab1`, based on parent #345 `ca72497ed386c9ac4e50d3f811827bef51e296ad`. The frozen destination candidate is COE PR #26 at `b382d233ff06c8791b1028bed3c617cc7b670d12`. These are different source identities, not a byte-identical migration.
+
+| Artifact | Experiments #347 source blob | COE #26 destination blob | Result |
+|---|---|---|---|
+| ESP8266 sketch | `fa8ed828026396db89aab2889bf6a61d6cf6bbac` | `c8be98f72596681e36a3ad1f8939bf8046c96887` | Different |
+| ESP32 sketch | `717336b84d434d51eb24beac1ed8efce8e719f69` | `3cc7ec54b476943dc04a8d1af5e2df5fe054e422` | Different |
+| Source hardening test | `v05_firmware_hardening_test.sh`, blob `41211b2c110ab409f6d9d1812ef12fda73b13211` | `Hardware/tests/test_firmware_hardening.sh`, blob `f921c56cecc19cab1989507b9b4ade1f45dac54e` | Different |
+
+All four firmware entries are mode `100644`. The COE candidate has one generic executable shell test (mode `100755`), but it is not the same blob as the source test. Both test scripts contain positive `response_sig` and literal `|poll|` expectations. The current source CI still fails the QA-owned `Missing poll signature check`; do not fabricate a poll signature or weaken default-deny firmware to make the assertion green.
+
+The exact source tree at #347 contains 38 Python files beneath the ESP32/ESP8266 board directories; the COE #26 destination contains zero board-local Python files beneath `Hardware/esp32/` and `Hardware/esp8266/`. A directory-prefix route is not proof that its test helpers were imported. Each omitted, derived, or reimplemented test must be mapped explicitly and independently validated.
+
+The source ESP32 sketch selects the PSA API for Mbed TLS 4 and the checked legacy API for Mbed TLS 3. The COE #26 destination sketch still includes `mbedtls/sha256.h`; separate COE INTERCON #49 exact-head Shared CI [#44646341922](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44646341922) fails at that missing header under ESP32 core 4.0.0. This #49 result is a separate candidate's CI, not #26 integration CI.
+
+Before any destination move, the integration owner must reconcile every source/destination blob, file mode, test identity/import, dependency, license/NOTICE, and exact-head CI result. The ownership manifest remains `DRAFT_REVIEW_ONLY`; PHX-MASTER destination remains null. This contract authorizes no copy, migration, firmware edit, or release.
+
+HARDWARE owns firmware and board-local labs; QA owns the positive/negative assertion; CORE owns the authenticated poll producer contract; COE integration owns destination mapping. PHX-MASTER owns only this cross-role qualification rule.
