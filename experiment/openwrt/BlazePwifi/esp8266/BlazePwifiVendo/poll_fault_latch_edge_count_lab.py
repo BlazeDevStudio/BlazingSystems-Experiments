@@ -252,6 +252,7 @@ def check_board(board: str, sketch_path: Path):
     names = (
         "snapshotCoinEdgeSequence",
         "writeLogical",
+        "coinIngressConfigurationAllows",
         "applyOutputs",
         "latchPollPulseFault",
         "canAttemptCoinPost",
