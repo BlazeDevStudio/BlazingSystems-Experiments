@@ -2713,3 +2713,46 @@ No HARDWARE source, CORE, RENTAL, PISONET, QA, MASTER, shared interface, network
 5. **Registry custodian:** restore authorized provenance-only access to canonical private Drive registry v11.
 
 No merge, rebase, retarget, real-key signing, release tag, publication, hardware flash, payment migration or customer deployment occurred. Protected signer and independent freshness witness, durable financial accounting/migration, independent QA/MASTER approval, approved production binaries, **150 physical power cuts** and the **30-device/24-hour soak** remain unproven or NOT TESTED. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC02 — interruption-safe provenance sidecar cleanup (2026-11-23T02Z)
+
+**Disposition:** test-first regressions reproduced two stale-sidecar failures; the RELEASE-owned cleanup correction is committed and the exact source/test CI-0701 provenance suite passes. The compatibility matrix and broader Full workflow were still queued/in progress at the last run snapshot below. PR #291 remains OPEN / DRAFT / UNMERGED. **PRODUCTION NO-GO.**
+
+### Finding and bounded scope
+
+Both `_write_new_json()` and `_write_checksums()` created a private, descriptor-relative temporary sidecar and caught only `Exception`. A `KeyboardInterrupt` or `SystemExit` during the pre-publication file `fsync()` bypassed cleanup, leaving `.BUILD-PROVENANCE.*` or `.SHA256SUMS.*` inside the artifact directory. The inventory intentionally rejects unmanifested regular files, so the orphaned sidecar makes a later checksum/provenance admission fail until an operator intervenes.
+
+Only these RELEASE-owned files changed in this increment:
+- `.github/scripts/test_build_provenance.py`
+- `.github/scripts/write_build_provenance.py`
+- `.github/PHX_RELEASE_HANDOVER.md`
+
+### Test-first and source commits
+
+- Test-first regression commit: [`f45738fa`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/f45738fab35caf9b9b0ae2819f2bd71f04df320e).
+- Expected RED, exact test-only HEAD: [compatibility run #45099351008](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45099351008), provenance job `137446345441`. The suite ran 38 tests and failed exactly the two new interruption cases:
+  - KeyboardInterrupt left a `.BUILD-PROVENANCE.*` sidecar.
+  - SystemExit left a `.SHA256SUMS.*` sidecar.
+  Existing tests passed; this was a deterministic product cleanup regression, not a fixture/setup failure.
+- Source correction: [`a12d085a`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/a12d085a7d5a106d5f64981b8e601e1320aa0e38). Both temporary-file writers now catch `BaseException` only at their cleanup boundary, attempt descriptor-relative unlink, preserve the original interruption, and attach a cleanup diagnostic when supported rather than replacing the primary failure.
+
+### Exact-source Actions at `a12d085a`
+
+- CI-0701 / provenance validation: [run #45099438078](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45099438078), job `137446620696`: **SUCCESS**. The exact release provenance suite reports **38/38 PASS**; archive verifier **10/10 PASS**; current-ref handover guard **25/25 PASS**; compatibility contract **8/8 PASS**. The provenance marker is `RELEASE-PROVENANCE-PASS: 38 tests`.
+- Exact-source ESP32 matrix [#45099438123](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45099438123): **PENDING** at the last read; do not infer compile or reproducibility results from this status.
+- Broader BlazePwifi run [#45099438078](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45099438078): CI-0701 passed and the Full target workflow was queued/in progress at the last read; its final validation/target conclusions were not yet terminal.
+- Windows run [#45099438062](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45099438062): **FAILURE** at the CORE-owned BlazePwifi handover freshness gate; Windows build and publisher were **SKIPPED**. The gate reports the last checkpoint `adcae8141e673dc2147fcad50521ef3a23084d71`. PHX-RELEASE did not edit CORE's `PROJECT_HANDOVER.md` or bypass the gate.
+
+These tests are synthetic hosted CI. They prove cleanup for injected pre-publication interruptions; they are not a physical power-cut or filesystem crash-consistency acceptance test.
+
+### Ownership, rollback and next owners
+
+- The source fix is limited to two RELEASE-owned cleanup handlers; no artifact format, source identity, compiler, target, signer, financial state, network contract or production permission changed.
+- Revert only the test/source commits on this draft branch if rollback is required; do not revert inherited CORE/PISONET files or shared handovers.
+- **PHX-QA:** independently review the two interruption regressions and preservation of the original BaseException.
+- **PHX-MASTER:** retain the mixed-owner review route for PR #291 and reconcile its exact head; no migration authorization is implied.
+- **PHX-CORE / PHX-MASTER:** refresh the CORE-owned project handover so Full/Windows validation can pass its mandatory freshness gate.
+- **PHX-RELEASE:** record the terminal exact-source matrix result when available; do not repeat this already-tested pre-publication cleanup case.
+
+Canonical private Drive registry v11 remains unavailable through the authorized Library surface; older v3–v7 snapshots were not substituted. Independent QA review remains pending. No merge, signing, tag, publication, hardware flash, real payment migration or customer deployment occurred. Protected signer/freshness witness, durable financial accounting/migration, independent QA/MASTER approval, approved production binaries, 150 physical power cuts and 30-device/24-hour soak remain unproven or NOT TESTED. **PRODUCTION NO-GO.**
