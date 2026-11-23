@@ -469,6 +469,36 @@ for board,path in BOARDS.items():
         board,80,"disabled-intake-relay-output-gate"
     )
     print(f"{board} MUTATION_REJECTED disabled-intake-relay-output-gate expected_exit=80")
+    # The output-gate mutation above protects applyOutputs(), but that alone
+    # cannot prove that sampleCoinPulseEdge() refuses to create a pending credit.
+    # Independently remove each configured admission term and require the
+    # existing no-pending disabled-ingress scenarios to fail on that mutation.
+    coin_ingress_gate_mutations = (
+        ("controller", "true && coinEnabled && relayEnabled", 64),
+        ("coin", "controllerEnabled && true && relayEnabled", 62),
+        ("relay", "controllerEnabled && coinEnabled && true", 60),
+    )
+    original_coin_ingress_gate = "const bool coinIngressConfigured=controllerEnabled && coinEnabled && relayEnabled;"
+    for gate_name, mutated_gate, expected_exit in coin_ingress_gate_mutations:
+        coin_ingress_gate_mutation = sample.replace(
+            original_coin_ingress_gate,
+            f"const bool coinIngressConfigured={mutated_gate};",
+            1,
+        )
+        if coin_ingress_gate_mutation == sample:
+            raise AssertionError(
+                f"{board}: configured {gate_name} coin-ingress gate mutation anchor missing"
+            )
+        compile_and_run(
+            assemble(sample_source=coin_ingress_gate_mutation, main_source=MAIN),
+            board,
+            expected_exit,
+            f"disabled-intake-{gate_name}-coin-ingress-gate",
+        )
+        print(
+            f"{board} MUTATION_REJECTED disabled-intake-{gate_name}-coin-ingress-gate "
+            f"expected_exit={expected_exit}"
+        )
     print(board,compile_and_run(assemble(main_source=RELEASE_EDGE_MAIN),board,0,
                                 "poll-release-output-interlock"))
     timing_output=compile_and_run(assemble(main_source=TIMING_MAIN),board,0,
