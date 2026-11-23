@@ -3079,3 +3079,29 @@ This snapshot supersedes earlier live-head tables for the observed refs only. Hi
 | #49 INTERCON Stage 5.1 | `aeb8ff11b2f5db9a5f86280ab62ab988245f3919` | Stage 5.1 #44646341873 and case-collision #44646341992 PASS; Hardware & Shared Contracts #44646341922 FAIL at ESP32 compile. |
 
 The exact COE #35 head advanced after its earlier failing runs. Do not transfer prior CI conclusions to `ede91d43...`; its next action is a fresh exact-head run by the COE RELEASE owner.
+
+
+## PHX-MASTER UTC09 live owner PR and exact-head CI refresh — 2026-11-23T09:40:15Z
+
+This snapshot supersedes earlier current-head rows only for the observed refs. It does not change role ownership or promote any candidate.
+
+| Role | Current draft PR / exact head | Exact-head CI observed | Boundary |
+|---|---|---|---|
+| PHX-MASTER | #288 `876051f1b7c3c0a13a2c322c5a127306d0908b21` | 0 Actions runs; 0 combined statuses before this docs-only update. | `coordination/phoenix/` only; OPEN / DRAFT / UNMERGED. |
+| PHX-CORE | #252 `c82705f2de865c89ab733b10efa84f26f56a5cc4` | [Build #42698139210](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42698139210) PASS; scoped DENY-only evidence. | CORE owns financial/runtime source; no Master edits. |
+| PHX-RENTAL | #328 `0e0da62acd47c6a1ce287f8a30fc700d603fa070` | [APK identity #44782114384](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44782114384) PASS; [API21/23 smoke #44782114393](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44782114393) PASS; [build #44782114390](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44782114390) FAIL. | Owner retains APK/handover/build fixes. |
+| PHX-PISONET | #255 `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | [Windows #42462978704](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42462978704) PASS. | Synthetic Windows CI; native COM/physical pulse acceptance NOT TESTED. |
+| PHX-HARDWARE | #345 `deed0f49c04d8cd69dc4fda78d2a4d914aa4dd4d` | [Quarantine #45134012104](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45134012104) PASS; [Relay #45134012012](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45134012012) PASS; [Full #45134012436](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45134012436) FAIL at QA-owned `Missing poll signature check`; 14 target/platform jobs pass, downstream stages skip. | FakeLittleFS/host-lab only; physical acceptance NOT TESTED. Hardware owns its stale PR-description pin. |
+| PHX-QA | #290 `5c29d15994cee1279058f1eca12f2a3180704292`; #292 `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | [#290 Windows #43633486963](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43633486963) PASS; #292 has 0 workflow runs. | QA owns independent poll-signature assertion and current-source tests. |
+| PHX-RELEASE | #291 `886cabfc5080c3fbef03c2a3b1afe9d52dea6f60` | [ESP32 #45117006790](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45117006790): core 3.3.13 PASS / core 4.0.0 archive verification FAIL; [Windows #45117006843](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45117006843) FAIL at handover freshness; [build #45117006794](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45117006794) FAIL at freshness. | CORE owns shared handover; RELEASE owns reruns and archive fix. |
+
+### COE destination candidates
+
+| COE PR | Exact head | Exact-head CI |
+|---|---|---|
+| #26 integration | `b382d233ff06c8791b1028bed3c617cc7b670d12` | Five workflows QUEUED / zero jobs; 205 changed paths; 286-entry candidate tree. FROZEN. |
+| #35 release sandbox | `9b300ea18886c11447ff6f0891d4ed9147454881` | [Sandbox #45145590304](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45145590304): 39/39 host tests PASS, then Bubblewrap unavailable / exit 125; namespace and packaging steps skipped. [Shared/firmware #45145590011](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45145590011): 195 tests PASS / 2 intentional skips, then 10/10 appliance profiles fail closed because approved site-scoped RFC 4193 ULA /48 authority is absent; board compiles skipped. [Case-collision #45145590247](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45145590247) PASS. |
+| #45 receipt vectors | `9d76a134c1f6512aa40c20ec4d247306a71a8cce` | Overlay/shell #44295049727 and case-collision #44295049903 PASS; scoped only. |
+| #49 INTERCON Stage 5.1 | `aeb8ff11b2f5db9a5f86280ab62ab988245f3919` | Stage 5.1 #44646341873 and case-collision #44646341992 PASS; shared Hardware/Contracts #44646341922 FAIL at ESP32 compile. |
+
+CORE remains separately owned. PHX-MASTER did not invoke, edit, or compete with CORE work.
