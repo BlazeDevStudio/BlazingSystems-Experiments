@@ -1,5 +1,20 @@
 # Project Phoenix — Coordination Index
 
+## Latest live state — PHX-MASTER UTC21 (2026-11-23T21:51:11Z)
+
+- Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; issue #172-designated development `blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5`; main-handover-designated v0.6 branch `2fbd2475e9f54878c316fa7cea2f228386b0e859`; Master start `8ab1cf41dc08f94069f33ab751afecdd44250607`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`.
+- PR #288 remains OPEN / DRAFT / UNMERGED; 192 changed paths, all under `coordination/phoenix/`; Master Actions at the starting HEAD: zero runs. This UTC21 update edits six existing Master documents only; no new file/artifact is created.
+- HARDWARE #347 source/test `00fcd6a9...`, PR/docs head `b33e654...`: Quarantine #45272162126 PASS (6/6 timeout contract, 17/17 pulse capture both boards); Relay #45272162193 PASS; Full #45272162174 FAIL at the inherited QA-owned Missing poll signature check.
+- COE RELEASE #35 source/test `aa6d6e7c...`, docs head `33f2d097...`: 206 packaging/tool tests PASS / 2 skips, 10/10 ULA profile denials; sandbox 40/40 host preflight then Bubblewrap exit 125; case-collision PASS.
+- CORE #252 scoped build PASS; RENTAL #328 APK/API PASS but build FAIL; PISONET #255 Windows PASS; QA #290 Windows PASS, #292 no runs; RELEASE #291 ESP32 compatibility PASS 3/3, Full/Windows FAIL; COE #45 scoped PASS; COE #49 Stage 5.1/case PASS, Shared ESP32 compile FAIL.
+- COE #26 remains FROZEN at `b382d233...`, five workflows QUEUED / zero jobs. The 11-route manifest remains DRAFT_REVIEW_ONLY, PHX-MASTER target null; no migration is staged.
+- Issue #172 points to v0.5.3 development, while main PROJECT_HANDOVER points to v0.6.0; PR #30 is CLOSED / UNMERGED and the v0.6 branch advanced separately. CORE confirmation required.
+- Architecture has 89 §6 headings through §6.92; historical duplicate numbers remain §6.9, §6.10, §6.11, §6.25 and §6.38. No renumbering.
+- INDEX remains 107/107 Master report links, unique and non-duplicated. Cleanup #266 remains OPEN / 0-of-7. Canonical private Drive v11/newer corrections unavailable; no older snapshot substituted. Full Master Python suite and `verify_coordination.py` NOT RUN.
+- **PRODUCTION NO-GO.**
+
+---
+
 
 ## Latest live state — PHX-MASTER UTC20 (2026-11-23T20:38:16Z)
 
