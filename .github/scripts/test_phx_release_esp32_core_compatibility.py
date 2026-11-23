@@ -191,9 +191,99 @@ def check_application_image_verifier(workflow_content: str) -> list[str]:
         if not swap_state["done"]:
             errors.append("output-directory replacement injection did not reach the final descriptor identity check")
 
+    def verify_directory_descriptor_cleanup(
+        label: str,
+        injected_error: BaseException,
+        expected_exception: type[BaseException],
+    ) -> None:
+        with tempfile.TemporaryDirectory(prefix="phx-app-image-close-") as temporary:
+            directory = Path(temporary) / "output"
+            directory.mkdir()
+            real_open = os.open
+            real_close = os.close
+            real_fstat = os.fstat
+            opened: list[int] = []
+            close_attempts: list[int] = []
+            injected = {"done": False}
+
+            def recording_open(*args, **kwargs):
+                descriptor = real_open(*args, **kwargs)
+                opened.append(descriptor)
+                return descriptor
+
+            def recording_close(descriptor: int) -> None:
+                close_attempts.append(descriptor)
+                if opened and descriptor == opened[0] and not injected["done"]:
+                    injected["done"] = True
+                    raise injected_error
+                real_close(descriptor)
+
+            try:
+                with patch.object(module.os, "open", side_effect=recording_open), patch.object(
+                    module.os, "close", side_effect=recording_close
+                ):
+                    try:
+                        module._open_output_directory(directory)
+                    except expected_exception:
+                        pass
+                    except BaseException as exc:
+                        errors.append(
+                            f"{label}: wrong exception type after descriptor cleanup: {type(exc).__name__}: {exc}"
+                        )
+                    else:
+                        errors.append(f"{label}: directory opener accepted a failed descriptor close")
+
+                if not injected["done"]:
+                    errors.append(f"{label}: close-failure injection did not run")
+                if len(opened) < 4:
+                    errors.append(f"{label}: expected root, ancestor, parent and output descriptors; got {len(opened)}")
+
+                for descriptor in opened:
+                    attempts = close_attempts.count(descriptor)
+                    if attempts != 1:
+                        errors.append(
+                            f"{label}: descriptor {descriptor} received {attempts} close attempts; expected exactly one"
+                        )
+
+                still_open: list[int] = []
+                for descriptor in opened:
+                    try:
+                        real_fstat(descriptor)
+                    except OSError:
+                        continue
+                    still_open.append(descriptor)
+
+                expected_uncertain = [opened[0]] if opened else []
+                if still_open != expected_uncertain:
+                    errors.append(
+                        f"{label}: descriptors left open after cleanup were {still_open}; "
+                        f"only the one-shot failed-close descriptor may remain uncertain ({expected_uncertain})"
+                    )
+            finally:
+                for descriptor in opened:
+                    try:
+                        real_fstat(descriptor)
+                    except OSError:
+                        continue
+                    try:
+                        real_close(descriptor)
+                    except OSError:
+                        pass
+
+    verify_directory_descriptor_cleanup(
+        "ancestor close OSError",
+        OSError("injected one-shot close failure"),
+        ValueError,
+    )
+    verify_directory_descriptor_cleanup(
+        "ancestor close KeyboardInterrupt",
+        KeyboardInterrupt("injected close interruption"),
+        KeyboardInterrupt,
+    )
+
     if errors:
         return errors
-    print("PHX-ESP32-APP-IMAGE-TESTS-PASS: exact candidate, filename, size, SHA-256, missing, wrong-name, ambiguous, empty, symlink, hard-link, parent-symlink and directory-swap controls")
+    print("PHX-ESP32-APP-IMAGE-TESTS-PASS: exact candidate, filename, size, SHA-256, missing, wrong-name, ambiguous, empty, symlink, hard-link, parent-symlink, directory-swap and one-shot descriptor-cleanup controls")
     return errors
 
 
