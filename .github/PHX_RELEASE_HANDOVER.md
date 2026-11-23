@@ -2649,3 +2649,15 @@ No merge, rebase, retarget, signer operation, real-key signing, release tag, pub
 - Exact source/test-head Windows run [#45088102765](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45088102765): FAILED at the same CORE-owned PROJECT_HANDOVER freshness gate; Windows build and publisher SKIPPED.
 - Exact source/test-head ESP32 compatibility run [#45088102762](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45088102762) was PENDING at the last read. The release provenance regression job had passed in the earlier docs-head run; no final two-core compatibility result is claimed for this source/test head.
 - The exact PR Full run #45088102758 had its CI-0701 job PASS, but its downstream target jobs were still queued/in progress at the last read. This is not a completed Full integration result. The source/test head before this follow-up handover append was c904b0128ef9f8bdb35ab1e1285a361eda8ac8c2; the final docs-head CI must be read separately after this append.
+
+
+### UTC00 final docs-head terminal CI reconciliation — 2026-11-23T00:22Z
+
+Final handover/PR HEAD at this read: e87b0c8e8a519ef7302c408745c008ca4d8e31ff.
+
+- Full BlazePwifi PR run [#45088256891](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45088256891): CI-0701 job 137411767160 **SUCCESS**, including **25/25 handover tests PASS**. All **14/14 target/platform jobs ultimately completed SUCCESS**: ESP8266, ESP32, Android, x86_64, Ruijie, Orange Pi One / Zero 3 / PC, and the optional board targets. Mandatory validate job 137411828484 **FAILED** at the CORE-owned PROJECT_HANDOVER.md freshness gate (last checkpoint adcae8141e673dc2147fcad50521ef3a23084d71). Therefore the overall workflow is **FAILURE, not green** despite 14/14 target jobs passing. Update bundle, all v0.4 simulations, candidate gate, production signing handoff and publication were **SKIPPED**.
+- Windows PR run [#45088256930](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45088256930): **FAILURE** at the same CORE-owned freshness gate; Windows build and publisher **SKIPPED**.
+- ESP32 compatibility PR run [#45088256828](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45088256828): **SUCCESS, 3/3 jobs** — release artifact provenance suite and ESP32 core 3.3.13 / 4.0.0 jobs all passed.
+- These are hosted CI results at the exact draft PR head only. No accepted release candidate, signed binary, production publication, or physical device acceptance is established.
+
+PHX-CORE owns the freshness record and must update its own PROJECT_HANDOVER.md before Full/Windows can proceed past mandatory validation. RELEASE did not edit or bypass that gate.
