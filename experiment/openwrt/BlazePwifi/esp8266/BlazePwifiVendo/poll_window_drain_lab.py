@@ -10,6 +10,8 @@ from pathlib import Path
 import subprocess
 import tempfile
 
+from firmware_lab_source import extract_function
+
 ROOT = Path(__file__).resolve().parents[2]
 BOARDS = (
     ("ESP8266", ROOT / "esp8266/BlazePwifiVendo/BlazePwifiVendo.ino"),
@@ -25,9 +27,14 @@ static uint16_t runDebounceMs=40;
 static int pulseStart=-1, pulseEnd=-1;
 static constexpr int LOW=0, HIGH=1;
 static bool fsReady=true, journalRecoveryRequired=false, pendingReady=false;
+// This drain-window lab exercises timing, not ISR delivery; keep the new
+// output-gate sequence dependency idle. Poll-loop labs inject real ISR edges.
+static volatile uint32_t coinEdgeSequence=0;
+static uint32_t lastHandledCoinEdgeSequence=0;
+static uint32_t snapshotCoinEdgeSequence(){ return coinEdgeSequence; }
 bool outputPolarityKnown=true;
 static uint8_t pendingPulses=0;
-static bool runCoinActiveLow=true, pollIntakeSuspended=false;
+static bool runCoinActiveLow=true, pollIntakeSuspended=false, pollDrainAbortedOnActiveLine=false;
 static int runCoinPin=4, runRelayPin=5, runLedPin=2;
 static bool pinConfigSafe=true, controllerEnabled=true, coinEnabled=true, insertMode=true;
 static bool ledEnabled=true, relayEnabled=true, runRelayActiveHigh=true, runLedActiveHigh=true;
@@ -48,7 +55,8 @@ static bool runCase(const char*name,int start,int end,uint16_t debounce,
                     bool expectPoll,uint32_t expectedElapsed,uint32_t startAt=0){
   fakeNow=startAt; pulseStart=start; pulseEnd=end; runDebounceMs=debounce;
   fsReady=true; journalRecoveryRequired=false; pendingReady=false; pendingPulses=0;
-  pollIntakeSuspended=false; relayOn=true; ledOn=true;
+  coinEdgeSequence=0; lastHandledCoinEdgeSequence=0;
+  pollIntakeSuspended=false; pollDrainAbortedOnActiveLine=false; relayOn=true; ledOn=true;
   const uint32_t started=fakeNow;
   const bool opened=beginPollWindow();
   const uint32_t elapsed=(uint32_t)(fakeNow-started);
@@ -64,7 +72,7 @@ static bool runCase(const char*name,int start,int end,uint16_t debounce,
                <<" led="<<ledOn<<"\n";
       return false;
     }
-  } else if(pollIntakeSuspended || !relayOn || !ledOn || coinLineIdle()){
+  } else if(!pollIntakeSuspended || relayOn || ledOn || coinLineIdle()){
     std::cerr<<"FAIL "<<name<<" abort-state inhibit="<<pollIntakeSuspended
              <<" relay="<<relayOn<<" led="<<ledOn
              <<" idle="<<coinLineIdle()<<"\n";
@@ -101,21 +109,6 @@ int main(){
 }
 '''
 
-def extract(source: str, signature: str) -> str:
-    start = source.find(signature)
-    if start < 0:
-        raise RuntimeError(f"missing production function: {signature}")
-    brace = source.find("{", start)
-    depth = 0
-    for pos in range(brace, len(source)):
-        if source[pos] == "{":
-            depth += 1
-        elif source[pos] == "}":
-            depth -= 1
-            if depth == 0:
-                return source[start:pos + 1]
-    raise RuntimeError(f"unbalanced production function: {signature}")
-
 def compile_and_run(functions):
     source = CPP.replace("@@FUNCTIONS@@", "\n\n".join(functions))
     with tempfile.TemporaryDirectory(prefix="phx-poll-drain-") as temp:
@@ -132,18 +125,18 @@ def compile_and_run(functions):
         return subprocess.run([str(binary)], capture_output=True, text=True, check=False)
 
 def main():
-    signatures = (
-        "bool coinLineIdle(){",
-        "bool canStartPoll(){",
-        "void applyOutputs(){",
-        "bool coinLineQuietAfterInhibit(){",
-        "bool beginPollWindow(){",
+    function_names = (
+        "coinLineIdle",
+        "canStartPoll",
+        "applyOutputs",
+        "coinLineQuietAfterInhibit",
+        "beginPollWindow",
     )
     failures = []
     for board, sketch in BOARDS:
         try:
             source = sketch.read_text(encoding="utf-8")
-            functions = [extract(source, signature) for signature in signatures]
+            functions = [extract_function(source, name) for name in function_names]
             result = compile_and_run(functions)
             if result.returncode:
                 failures.append(f"{board} exact-source RED: {result.stderr or result.stdout}")
@@ -153,7 +146,7 @@ def main():
                 continue
             print(f"{board}_POLL_WINDOW_DRAIN_PASS 11/11")
 
-            quiet_index = signatures.index("bool coinLineQuietAfterInhibit(){")
+            quiet_index = function_names.index("coinLineQuietAfterInhibit")
             mutated = list(functions)
             needle = "pulseTrainQuietMs=250UL"
             if needle not in mutated[quiet_index]:

@@ -125,8 +125,38 @@ def require(condition: bool, message: str) -> None:
         raise AssertionError(message)
 
 
+
+def verify_boot_output_before_littlefs(source: str) -> None:
+    setup = extract_function(source, "setup")
+    calls = (
+        "loadConfig()",
+        "initPollFaultBackupStore()",
+        "configureRuntimePins(runCoinPin,runRelayPin,runLedPin)",
+        "initPendingStore()",
+    )
+    positions = [setup.find(call) for call in calls]
+    require(all(position >= 0 for position in positions),
+            "setup must load config and fault backup before safe GPIO, then mount LittleFS")
+    require(positions == sorted(positions),
+            "relay/LED GPIO OFF configuration must precede LittleFS mount")
+
+    # Deliberately reintroduce the unsafe ordering; the source guard must reject it.
+    unsafe = setup.replace(
+        calls[2],
+        "initPendingStore();\n  " + calls[2],
+        1,
+    )
+    require(unsafe != setup, "boot-order failure-injection anchor was not unique")
+    unsafe_positions = [unsafe.find(call) for call in calls]
+    require(not (unsafe_positions[0] < unsafe_positions[1] <
+                 unsafe_positions[2] < unsafe_positions[3]),
+            "unsafe LittleFS-before-GPIO mutation was not rejected")
+    print("GPIO_OFF_BEFORE_LITTLEFS_MOUNT_PASS board=ESP32")
+
+
 def main() -> None:
     source = SOURCE.read_text(encoding="utf-8")
+    verify_boot_output_before_littlefs(source)
 
     # These assertions intentionally fail on the pre-gate ESP32 source.
     for token, message in (
@@ -164,6 +194,8 @@ def main() -> None:
             "pinMode(runRelayPin,INPUT)" in configure and
             "pinMode(runLedPin,INPUT)" in configure,
             "unknown local polarity must leave relay and LED as INPUT")
+    require("quarantineCoinIngressTransition();" in configure,
+            "pin attachment must quarantine active or unobserved coin ingress")
     require("if(!outputPolarityKnown) return;" in apply_outputs,
             "applyOutputs must not drive unknown-polarity outputs")
     require("outputPolarityKnown" in can_poll and
@@ -197,6 +229,13 @@ def main() -> None:
             "canStartPoll",
             "canAttemptCoinPost",
         )
+    )
+    # This harness isolates local output-polarity ordering. The exact ingress
+    # helper is compiled and failure-injected by coin_pulse_capture_lab.py.
+    functions = functions.replace(
+        configure,
+        "bool quarantineCoinIngressTransition(){ return true; }\n" + configure,
+        1,
     )
 
     cpp = r"""
@@ -274,6 +313,9 @@ void digitalWrite(int pin,int level) {
 }
 int digitalPinToInterrupt(int pin) { return pin; }
 void detachInterrupt(int) {}
+volatile uint32_t coinEdgeSequence=0;
+uint32_t lastHandledCoinEdgeSequence=0;
+uint32_t snapshotCoinEdgeSequence(){ return coinEdgeSequence; }
 void coinEdgeISR() {}
 void attachInterrupt(int,void(*)(),int) {}
 bool coinLineIdle() { return true; }
@@ -283,6 +325,8 @@ struct SerialStub { void println(const char *) {} } Serial;
 
 void resetState() {
   prefs=Preferences();
+  coinEdgeSequence=0;
+  lastHandledCoinEdgeSequence=0;
   cfg=Config{};
   outputPolarityKnown=false;
   pinConfigSafe=false;

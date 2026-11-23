@@ -2,6 +2,7 @@
 #include <ESP8266WebServer.h>
 #include <ESP8266HTTPClient.h>
 #include <EEPROM.h>
+#include <flash_hal.h>
 #include <LittleFS.h>
 #include <string.h>
 #include <bearssl/bearssl_hash.h>
@@ -57,6 +58,11 @@ struct Config {
 
 Config cfg;
 bool pollFaultBackupReady=false;
+// True only after a status-bearing full-image read and EEPROM RAM reconciliation.
+bool configImageReadVerified=false;
+// A failed commit is ambiguous until a cold boot reads the flash-backed store.
+// Never treat the still-dirty EEPROM RAM buffer as a durable deny marker.
+bool pollFaultBackupWriteFailed=false;
 ESP8266WebServer web(80);
 const uint32_t MAGIC_V1=0x42505731;
 const uint32_t MAGIC_V2=0x42505732;
@@ -64,7 +70,7 @@ const uint32_t MAGIC=0x42505733;
 
 bool insertMode=false;
 bool lastCoin=false;
-bool pollIntakeSuspended=false, pinConfigSafe=true;
+bool pollIntakeSuspended=false, pollDrainAbortedOnActiveLine=false, pinConfigSafe=true;
 bool controllerEnabled=true, coinEnabled=true, relayEnabled=true, ledEnabled=true, setupApOn=false;
 bool outputPolarityKnown=false;
 bool runCoinActiveLow=true, runRelayActiveHigh=false, runLedActiveHigh=false;
@@ -99,10 +105,10 @@ static const size_t POLL_FAULT_EEPROM_OFFSET=512;
 static const size_t POLL_FAULT_EEPROM_BYTES=544;
 static_assert(sizeof(Config)<=POLL_FAULT_EEPROM_OFFSET,
               "Config v3 overlaps the reserved poll-fault EEPROM record");
-static_assert(sizeof(Config)<=POLL_FAULT_EEPROM_OFFSET,"Config overlaps reserved poll-fault EEPROM record");
 static_assert(POLL_FAULT_EEPROM_OFFSET+sizeof(PollFaultRecord)<=POLL_FAULT_EEPROM_BYTES,"Poll-fault record exceeds EEPROM buffer");
 
 volatile uint32_t coinEdgeSequence=0;
+uint32_t lastHandledCoinEdgeSequence=0;
 
 // The ISR only counts the configured active edge. No String, filesystem,
 // network or logging calls are permitted from interrupt context.
@@ -382,34 +388,102 @@ bool validPollFaultRecord(const PollFaultRecord &record){
 }
 
 
+bool readFullEepromImage(uint8_t *image,size_t length){
+  if(!image || !pollFaultBackupReady ||
+     length!=POLL_FAULT_EEPROM_BYTES || EEPROM.length()<length) return false;
+  // Match EEPROMClass::begin()'s sector base, but preserve the flashRead status.
+  const uint32_t flashAddress=(uint32_t)EEPROM_start-0x40200000UL;
+  return ESP.flashRead(flashAddress,image,length);
+}
+
+bool restoreEepromRamImage(const uint8_t *image,size_t length){
+  if(!image || !pollFaultBackupReady ||
+     length!=POLL_FAULT_EEPROM_BYTES || EEPROM.length()<length) return false;
+  // getDataPtr() marks the RAM image dirty; no commit occurs for read recovery alone.
+  // The next intended config/marker commit writes this verified image plus its mutation.
+  uint8_t *current=EEPROM.getDataPtr();
+  if(!current) return false;
+  memcpy(current,image,length);
+  const uint8_t *verify=EEPROM.getConstDataPtr();
+  return verify && memcmp(verify,image,length)==0;
+}
+
+bool refreshVerifiedEepromImage(){
+  configImageReadVerified=false;
+  alignas(4) uint8_t image[POLL_FAULT_EEPROM_BYTES];
+  if(!pollFaultBackupReady ||
+     EEPROM.length()<POLL_FAULT_EEPROM_BYTES ||
+     !readFullEepromImage(image,sizeof(image)) ||
+     !restoreEepromRamImage(image,sizeof(image))){
+    pollFaultBackupReady=false;
+    return false;
+  }
+  configImageReadVerified=true;
+  return true;
+}
+
+bool readPollFaultBackupFlash(PollFaultRecord &stored){
+  // Match ESP8266 core EEPROM.cpp's sector mapping, but use the status-bearing
+  // raw read API: EEPROM.begin() logs and ignores a flashRead failure.
+  const uint32_t flashAddress=
+      (uint32_t)EEPROM_start-0x40200000UL+(uint32_t)POLL_FAULT_EEPROM_OFFSET;
+  return ESP.flashRead(flashAddress,reinterpret_cast<uint8_t*>(&stored),sizeof(stored));
+}
+
 bool pollFaultBackupPresentOrCorrupt(){
   // EEPROM emulation is a separate reserved sector from LittleFS on the same flash chip.
   // Any non-erased byte is a permanent deny marker, including malformed/partial records.
-  if(!pollFaultBackupReady ||
+  if(!pollFaultBackupReady || !configImageReadVerified ||
      EEPROM.length()<POLL_FAULT_EEPROM_OFFSET+sizeof(PollFaultRecord)) return true;
   PollFaultRecord stored{};
-  EEPROM.get(POLL_FAULT_EEPROM_OFFSET,stored);
+  if(!readPollFaultBackupFlash(stored)) return true;
   const uint8_t *bytes=(const uint8_t*)&stored;
   for(size_t i=0;i<sizeof(stored);++i) if(bytes[i]!=0xFF) return true;
   return false;
 }
 
 bool writePollFaultBackup(uint32_t pulseEdges){
-  if(!pollFaultBackupReady ||
+  if(!pollFaultBackupReady || !configImageReadVerified || pollFaultBackupWriteFailed ||
      EEPROM.length()<POLL_FAULT_EEPROM_OFFSET+sizeof(PollFaultRecord)) return false;
-  if(pollFaultBackupPresentOrCorrupt()) return true;
+  // Presence-or-corrupt also returns true on raw-read failure. Do not confuse
+  // an unavailable flash read with proof that a durable deny marker already exists.
+  PollFaultRecord existing{};
+  if(!readPollFaultBackupFlash(existing)){
+    pollFaultBackupWriteFailed=true;
+    return false;
+  }
+  const uint8_t *existingBytes=(const uint8_t*)&existing;
+  for(size_t i=0;i<sizeof(existing);++i) if(existingBytes[i]!=0xFF) return true;
   const PollFaultRecord record=makePollFaultRecord(pulseEdges);
   EEPROM.put(POLL_FAULT_EEPROM_OFFSET,record);
-  if(!EEPROM.commit()) return false;
-  // Re-open the emulated EEPROM so verification reads the flash-backed image, not its RAM buffer.
-  EEPROM.end();
+  configImageReadVerified=false;
+  if(!EEPROM.commit()){
+    pollFaultBackupWriteFailed=true;
+    pollFaultBackupReady=false;
+    return false;
+  }
+  // Re-open, then prove the entire EEPROM image before any later buffer use.
+  if(!EEPROM.end()){
+    pollFaultBackupWriteFailed=true;
+    pollFaultBackupReady=false;
+    return false;
+  }
   EEPROM.begin(POLL_FAULT_EEPROM_BYTES);
   pollFaultBackupReady=EEPROM.length()>=POLL_FAULT_EEPROM_BYTES;
   if(!pollFaultBackupReady ||
-     EEPROM.length()<POLL_FAULT_EEPROM_OFFSET+sizeof(PollFaultRecord)) return false;
+     EEPROM.length()<POLL_FAULT_EEPROM_OFFSET+sizeof(PollFaultRecord) ||
+     !refreshVerifiedEepromImage()){
+    pollFaultBackupWriteFailed=true;
+    return false;
+  }
   PollFaultRecord verify{};
-  EEPROM.get(POLL_FAULT_EEPROM_OFFSET,verify);
-  return validPollFaultRecord(verify) && memcmp(&record,&verify,sizeof(record))==0;
+  if(!readPollFaultBackupFlash(verify)){
+    pollFaultBackupWriteFailed=true;
+    return false;
+  }
+  const bool verified=validPollFaultRecord(verify) && memcmp(&record,&verify,sizeof(record))==0;
+  if(!verified) pollFaultBackupWriteFailed=true;
+  return verified;
 }
 
 // Legacy /pollpulse.fault path is retained so older firmware keeps denying on any existing marker.
@@ -542,18 +616,25 @@ bool configRecordErased(const Config &record){
 }
 
 bool saveCfg(){
-  if(!pollFaultBackupReady || EEPROM.length()<sizeof(Config)) return false;
+  if(!pollFaultBackupReady || !configImageReadVerified ||
+     EEPROM.length()<sizeof(Config)) return false;
   cfg.magic=MAGIC;
   cfg.checksum=configChecksum(cfg);
   EEPROM.put(0,cfg);
-  if(!EEPROM.commit()) return false;
+  configImageReadVerified=false;
+  if(!EEPROM.commit()){
+    pollFaultBackupReady=false;
+    return false;
+  }
 
-  // Re-open the emulated EEPROM before readback so verification does not use
-  // the mutable RAM image that was just written.
-  EEPROM.end();
+  // Re-open, then status-read and reconcile the full image before Config readback.
+  if(!EEPROM.end()){
+    pollFaultBackupReady=false;
+    return false;
+  }
   EEPROM.begin(POLL_FAULT_EEPROM_BYTES);
   pollFaultBackupReady=EEPROM.length()>=POLL_FAULT_EEPROM_BYTES;
-  if(!pollFaultBackupReady) return false;
+  if(!pollFaultBackupReady || !refreshVerifiedEepromImage()) return false;
 
   Config verify{};
   EEPROM.get(0,verify);
@@ -567,6 +648,10 @@ bool saveCfg(){
 }
 
 void latchConfigPersistenceFailure(const char *reason){
+  // A rejected or ambiguous config image must remain non-writable for this boot.
+  // In particular, the local setup AP must not turn malformed legacy/unknown
+  // bytes into defaults by calling saveCfg() after this failure latch.
+  configImageReadVerified=false;
   outputPolarityKnown=false;
   runRelayActiveHigh=false;
   runLedActiveHigh=false;
@@ -610,6 +695,7 @@ bool configStringsTerminated(const ConfigV1 &c){
 void loadCfg(){
   EEPROM.begin(POLL_FAULT_EEPROM_BYTES);
   pollFaultBackupReady=EEPROM.length()>=POLL_FAULT_EEPROM_BYTES;
+  configImageReadVerified=false;
   outputPolarityKnown=false;
   runRelayActiveHigh=false;
   runLedActiveHigh=false;
@@ -620,6 +706,11 @@ void loadCfg(){
   if(!pollFaultBackupReady){
     defaults();
     latchConfigPersistenceFailure("CRITICAL: EEPROM configuration/fault region unavailable; output polarity unknown and coin admission denied.");
+    return;
+  }
+
+  if(!refreshVerifiedEepromImage()){
+    latchConfigPersistenceFailure("CRITICAL: full EEPROM image read/restore failed; preserve configuration and poll-fault bytes; outputs disabled.");
     return;
   }
 
@@ -752,6 +843,8 @@ bool runtimePinsSafe(int coinPin,int relayPin,int ledPin){
          coinPin!=ledPin && relayPin!=ledPin;
 }
 
+bool quarantineCoinIngressTransition();
+
 void configureRuntimePins(int coinPin,int relayPin,int ledPin){
   // Never drive either output while local polarity or GPIO validation is unknown.
   if(!outputPolarityKnown || !pinConfigSafe){
@@ -775,6 +868,7 @@ void configureRuntimePins(int coinPin,int relayPin,int ledPin){
     insertMode=false;
     activeTarget="";
     attachInterrupt(digitalPinToInterrupt(runCoinPin),coinEdgeISR,runCoinActiveLow?FALLING:RISING);
+    quarantineCoinIngressTransition();
     return;
   }
 
@@ -786,6 +880,7 @@ void configureRuntimePins(int coinPin,int relayPin,int ledPin){
   attachInterrupt(digitalPinToInterrupt(runCoinPin),coinEdgeISR,runCoinActiveLow?FALLING:RISING);
   writeLogical(runRelayPin,false,runRelayActiveHigh);
   writeLogical(runLedPin,false,runLedActiveHigh);
+  quarantineCoinIngressTransition();
 }
 
 // Intentionally dormant: register/poll admission signatures do not authenticate
@@ -814,29 +909,44 @@ void applyRemoteConfig(const String&r){
   remoteRevision=rev; applyOutputs();
 }
 
+bool validSha256Hex(const String &digest){
+  if(digest.length()!=64) return false;
+  for(size_t i=0;i<64;i++){
+    const char c=digest[i];
+    if(!((c>='0'&&c<='9') ||
+         (c>='a'&&c<='f') ||
+         (c>='A'&&c<='F'))) return false;
+  }
+  return true;
+}
+
 String lastSentNonce;
 
 String signedBody(const String& action,const String& pulses,const String& target,const String& forcedNonce=""){
   String n=forcedNonce.length()?forcedNonce:freshNonce();
-  lastSentNonce=n;
   String base=String(cfg.key)+"|"+action+"|"+cfg.id+"|"+n+"|"+pulses+"|"+target+"|"+cfg.key;
-  return "action="+action+"&id="+esc(cfg.id)+"&nonce="+n+"&pulses="+pulses+"&target="+esc(target)+"&sig="+hexDigest(base);
+  String digest=hexDigest(base);
+  if(!validSha256Hex(digest)) return String();
+  lastSentNonce=n;
+  return "action="+action+"&id="+esc(cfg.id)+"&nonce="+n+"&pulses="+pulses+"&target="+esc(target)+"&sig="+digest;
 }
 
 String post(const String& action,const String& pulses="0",const String& target="",const String& forcedNonce=""){
   if(WiFi.status()!=WL_CONNECTED) return "";
+  String body=signedBody(action,pulses,target,forcedNonce);
+  if(!body.length()) return "";
   WiFiClient client; HTTPClient h;
   String url="http://"+String(cfg.server)+":4455/cgi-bin/vendo";
   if(!h.begin(client,url)) return "";
   h.setTimeout(3500);
   h.addHeader("Content-Type","application/x-www-form-urlencoded");
-  int code=h.POST(signedBody(action,pulses,target,forcedNonce));
+  int code=h.POST(body);
   String r=code>0?h.getString():""; h.end(); return r;
 }
 
 // Never send a RAM-only pulse if its flash journal failed or is ambiguous.
 bool canAttemptCoinPost(){
-  return outputPolarityKnown && fsReady && !journalRecoveryRequired &&
+  return outputPolarityKnown && pinConfigSafe && fsReady && !journalRecoveryRequired &&
          !pendingPostAttempted && pendingReady && pendingPulses>0;
 }
 
@@ -855,9 +965,26 @@ bool canStartPoll(){
 void applyOutputs(){
   if(!outputPolarityKnown) return;
   bool accepting=pinConfigSafe && controllerEnabled && coinEnabled && insertMode && activeTarget.length()>0 && fsReady &&
-                 !journalRecoveryRequired && !pendingReady && !pollIntakeSuspended;
+                 !journalRecoveryRequired && !pendingReady && !pollIntakeSuspended &&
+                 snapshotCoinEdgeSequence()==lastHandledCoinEdgeSequence;
   if(ledEnabled) writeLogical(runLedPin,accepting,runLedActiveHigh); else writeLogical(runLedPin,false,runLedActiveHigh);
+
+  // The first GPIO write can be interrupted after the admission snapshot.
+  // Recheck before the relay write so an unresolved edge cannot power the acceptor.
+  if(snapshotCoinEdgeSequence()!=lastHandledCoinEdgeSequence){
+    writeLogical(runLedPin,false,runLedActiveHigh);
+    writeLogical(runRelayPin,false,runRelayActiveHigh);
+    return;
+  }
+
   if(relayEnabled) writeLogical(runRelayPin,accepting,runRelayActiveHigh); else writeLogical(runRelayPin,false,runRelayActiveHigh);
+
+  // An edge may also interrupt the relay write itself. Deassert immediately;
+  // the next loop sample persists the unresolved ingress fault.
+  if(snapshotCoinEdgeSequence()!=lastHandledCoinEdgeSequence){
+    writeLogical(runRelayPin,false,runRelayActiveHigh);
+    writeLogical(runLedPin,false,runLedActiveHigh);
+  }
 }
 
 void latchPollPulseFault(uint32_t pulseEdges){
@@ -879,21 +1006,60 @@ void latchPollPulseFault(uint32_t pulseEdges){
   }
 }
 
+bool quarantineCoinIngressTransition(){
+  const uint32_t observedEdgeSequence=snapshotCoinEdgeSequence();
+  const uint32_t unhandledEdges=observedEdgeSequence-lastHandledCoinEdgeSequence;
+  const bool lineIdle=coinLineIdle();
+  if(journalRecoveryRequired){
+    lastHandledCoinEdgeSequence=observedEdgeSequence;
+    lastCoin=!lineIdle;
+    if(pendingPulses>0U) pendingReady=true;
+    applyOutputs();
+    return false;
+  }
+  if(lineIdle && unhandledEdges==0U) return true;
+  if(pendingPulses>0U) pendingReady=true;
+  lastHandledCoinEdgeSequence=observedEdgeSequence;
+  lastCoin=!lineIdle;
+  const uint32_t unresolvedEdges=(uint32_t)pendingPulses+
+      (unhandledEdges>0U?unhandledEdges:1U);
+  latchPollPulseFault(unresolvedEdges);
+  Serial.println("CRITICAL: coin ingress was active or an ISR edge crossed pin configuration; operator reconciliation required.");
+  return false;
+}
+
+bool reconcileUnobservedCoinEdges(){
+  const uint32_t observedEdgeSequence=snapshotCoinEdgeSequence();
+  const uint32_t unhandledEdges=observedEdgeSequence-lastHandledCoinEdgeSequence;
+  if(unhandledEdges==0U) return true;
+  lastHandledCoinEdgeSequence=observedEdgeSequence;
+  if(pendingPulses>0) pendingReady=true;
+  latchPollPulseFault((uint32_t)pendingPulses+unhandledEdges);
+  Serial.println("CRITICAL: unobserved coin ISR edge(s) crossed a blocking operation; operator reconciliation required.");
+  return false;
+}
+
 
 
 // Observe a full debounce-width quiet interval after disabling intake.
 // A pulse at any point cancels polling and returns to normal journal handling.
 bool coinLineQuietAfterInhibit(){
+  pollDrainAbortedOnActiveLine=false;
   const uint32_t started=millis();
   // Drain the supported 30–100 ms coin pulse train before blocking HTTP.
   // Preserve a larger configured debounce interval; never shorten it.
   const uint32_t pulseTrainQuietMs=250UL;
   const uint32_t quietMs=runDebounceMs>pulseTrainQuietMs?runDebounceMs:pulseTrainQuietMs;
   while(millis()-started<quietMs){
-    if(!coinLineIdle()) return false;
+    if(!coinLineIdle()){
+      pollDrainAbortedOnActiveLine=true;
+      return false;
+    }
     delay(1);
   }
-  return coinLineIdle();
+  const bool idle=coinLineIdle();
+  if(!idle) pollDrainAbortedOnActiveLine=true;
+  return idle;
 }
 
 // Close the check-to-inhibit race: after the first idle check, disable intake,
@@ -902,32 +1068,67 @@ bool beginPollWindow(){
   if(!canStartPoll()) return false;
   pollIntakeSuspended=true;
   applyOutputs();
-  if(coinLineQuietAfterInhibit()) return true;
-  pollIntakeSuspended=false;
-  applyOutputs();
-  return false;
+  // The caller must reconcile the ISR sequence before releasing this inhibit,
+  // whether the quiet drain succeeds or aborts.
+  return coinLineQuietAfterInhibit();
 }
  
 void sampleCoinPulseEdge(bool active){
-  if(insertMode && fsReady && !journalRecoveryRequired && activeTarget.length() &&
-     !pendingReady && active && !lastCoin && millis()-lastEdge>runDebounceMs){
-    if(pendingPulses==0){
-      pendingNonce=freshNonce();
-      pendingTarget=activeTarget;
+  const uint32_t observedEdgeSequence=snapshotCoinEdgeSequence();
+  const uint32_t unseenEdges=observedEdgeSequence-lastHandledCoinEdgeSequence;
+  const bool sampledSingleEdge=unseenEdges==1U && active && !lastCoin &&
+      fsReady && !journalRecoveryRequired && !pendingReady &&
+      insertMode && activeTarget.length()>0 &&
+      millis()-lastEdge>runDebounceMs;
+  if(unseenEdges>0U && !sampledSingleEdge){
+    if(pendingPulses>0) pendingReady=true;
+    if(!journalRecoveryRequired){
+      latchPollPulseFault((uint32_t)pendingPulses+unseenEdges);
+      Serial.println("CRITICAL: ISR coin edge could not be sampled and assigned to a pending event; operator reconciliation required.");
     }
-    if(pendingTarget==activeTarget && pendingPulses<20){
-      pendingPulses++;
-      lastEdge=millis();
-      if(!savePending()){
-        // Preserve a boot-visible deny latch before declaring LittleFS unavailable.
-        latchPollPulseFault(pendingPulses);
-        fsReady=false;
+    lastHandledCoinEdgeSequence=observedEdgeSequence;
+    lastCoin=active;
+    applyOutputs();
+    return;
+  }
+  if(fsReady && !journalRecoveryRequired && active && !lastCoin &&
+     millis()-lastEdge>runDebounceMs){
+    if(!pinConfigSafe){
+      latchPollPulseFault((uint32_t)pendingPulses+1U);
+      pendingReady=true;
+      applyOutputs();
+      Serial.println("CRITICAL: coin pulse observed with unsafe GPIO mapping; operator reconciliation required.");
+    } else if(pendingReady){
+      // A pulse after the pending batch is closed cannot be appended or safely
+      // assigned to a new event. Preserve the old identity and quarantine it.
+      latchPollPulseFault((uint32_t)pendingPulses+1U);
+      pendingReady=true;
+      applyOutputs();
+      Serial.println("CRITICAL: coin pulse arrived after pending batch closed; operator reconciliation required.");
+    } else if(insertMode && activeTarget.length()){
+      if(pendingPulses==0){ pendingNonce=freshNonce(); pendingTarget=activeTarget; }
+      // PendingRecord.pulses is bounded to 20. Never silently discard an edge
+      // that cannot fit the record or that belongs to a different target.
+      if(pendingTarget!=activeTarget || pendingPulses>=20){
+        latchPollPulseFault((uint32_t)pendingPulses+1U);
         pendingReady=true;
         applyOutputs();
-        Serial.println("CRITICAL: failed to persist coin journal; sticky dual-store fault latch attempted; relay disabled.");
+        Serial.println("CRITICAL: coin pulse batch overflow or target changed; operator reconciliation required.");
+      } else {
+        pendingPulses++;
+        lastEdge=millis();
+        if(!savePending()){
+          // Preserve a boot-visible deny latch before declaring LittleFS unavailable.
+          latchPollPulseFault(pendingPulses);
+          fsReady=false;
+          pendingReady=true;
+          applyOutputs();
+          Serial.println("CRITICAL: pending journal write failed; sticky dual-store fault latch attempted; relay disabled.");
+        }
       }
     }
   }
+  lastHandledCoinEdgeSequence=observedEdgeSequence;
   lastCoin=active;
 }
 
@@ -1129,6 +1330,35 @@ bool coinPostDispositionVerified(const String &response,const String &nonce,
   // PHX-CORE must define the receipt contract; PHX-QA must approve its vectors.
   // Until then, preserve the pending journal and one-shot attempt marker.
   return false;
+}
+
+void handleCoinPostResponse(const String &response){
+  // Keep the response disposition gate separate from the network loop so the
+  // exact decision path can be compiled and failure-injected on both boards.
+  if(!coinPostDispositionVerified(response,pendingNonce,pendingTarget,pendingPulses)){
+    journalRecoveryRequired=true;
+    Serial.println("CRITICAL: coin POST response lacks approved event-bound authentication; pending evidence retained and automatic replay denied.");
+    applyOutputs();
+    return;
+  }
+  if(pollJsonTopLevelTrue(response,"ok")){
+    if(reconcileUnobservedCoinEdges()) clearPending();
+    if(!reconcileUnobservedCoinEdges()) applyOutputs();
+    applyOutputs();
+  } else if(response.indexOf("coin window expired")>=0 ||
+            response.indexOf("coin target mismatch")>=0 ||
+            response.indexOf("no active coin window")>=0 ||
+            response.indexOf("another vendo selected")>=0){
+    quarantinePending(response);
+    if(!reconcileUnobservedCoinEdges()) applyOutputs();
+    applyOutputs();
+  } else {
+    // An authenticated but malformed/unknown disposition remains ambiguous.
+    journalRecoveryRequired=true;
+    Serial.println("CRITICAL: authenticated coin POST disposition was unknown; pending evidence retained for operator reconciliation.");
+    if(!reconcileUnobservedCoinEdges()) applyOutputs();
+    applyOutputs();
+  }
 }
 
 bool acceptPollResponse(const String &response){
@@ -1586,7 +1816,13 @@ bool appendQuarantineRecord(const String &reason){
 }
 
 bool quarantinePending(const String &reason){
-  if(pendingPulses==0) return false;
+  if(pendingPulses==0){
+    // A verified rejection without its pending event is an inconsistent state.
+    // Preserve the one-shot attempt evidence and force a deny latch.
+    journalRecoveryRequired=true;
+    Serial.println("CRITICAL: quarantine disposition has no pending coin event; operator reconciliation required.");
+    return false;
+  }
   if(!pendingAttemptMarkerMatches()){
     journalRecoveryRequired=true;
     Serial.println("CRITICAL: quarantine disposition denied without a matching durable coin POST attempt marker.");
@@ -1604,7 +1840,7 @@ bool quarantinePending(const String &reason){
 }
 
 void setup(){
-  Serial.begin(115200); loadCfg(); initPendingStore();
+  Serial.begin(115200); loadCfg();
   runCoinPin=cfg.coinPin;runLedPin=cfg.insertLedPin;runRelayPin=cfg.relayPin;runCoinActiveLow=cfg.coinActiveLow;
   if(!runtimePinsSafe(runCoinPin,runRelayPin,runLedPin)){
     pinConfigSafe=false;
@@ -1614,7 +1850,36 @@ void setup(){
     runCoinPin=4;runLedPin=14;runRelayPin=5;
     Serial.println("CRITICAL: stored GPIO assignment unsafe; outputs remain INPUT until corrected.");
   }
-  configureRuntimePins(runCoinPin,runRelayPin,runLedPin);setupPortal();connectSta();
+  // loadCfg() has verified the EEPROM fault backup. Deassert outputs and attach
+  // the coin ISR before LittleFS mount; early ingress falls back to EEPROM.
+  configureRuntimePins(runCoinPin,runRelayPin,runLedPin);
+  initPendingStore();
+  setupPortal();connectSta();
+}
+
+void handlePollDrainAbortAfterSample(){
+  if(!pollDrainAbortedOnActiveLine) return;
+  if(journalRecoveryRequired){
+    pollDrainAbortedOnActiveLine=false;
+    pollIntakeSuspended=false;
+    applyOutputs();
+    return;
+  }
+  if(pendingPulses==0U){
+    // The drain saw a pulse but the ordinary sample could not durably queue it.
+    latchPollPulseFault(1U);
+    pollDrainAbortedOnActiveLine=false;
+    pollIntakeSuspended=false;
+    applyOutputs();
+    lastPoll=millis();
+    return;
+  }
+  // A captured pulse keeps intake inhibited until the input line is idle.
+  if(!coinLineIdle()) return;
+  pollDrainAbortedOnActiveLine=false;
+  pollIntakeSuspended=false;
+  applyOutputs();
+  lastPoll=millis();
 }
 
 void loop(){
@@ -1627,20 +1892,46 @@ void loop(){
 
   if(WiFi.status()==WL_CONNECTED && millis()-lastPoll>1500){
     const uint32_t pollEdgeStart=snapshotCoinEdgeSequence();
-    if(beginPollWindow()){
-    wifiFailures=0;
-    String r=post("poll");
-    // Keep intake inhibited until this response has been accepted or denied.
-    acceptPollResponse(r);
-    pollIntakeSuspended=false;
-    const uint32_t pollEdgeEnd=snapshotCoinEdgeSequence();
-    if(pollEdgeEnd!=pollEdgeStart){
-      latchPollPulseFault(pollEdgeEnd-pollEdgeStart);
-    }
-    applyOutputs();lastPoll=millis();
+    if(pollEdgeStart!=lastHandledCoinEdgeSequence){
+      const uint32_t unhandledEdges=pollEdgeStart-lastHandledCoinEdgeSequence;
+      lastHandledCoinEdgeSequence=pollEdgeStart;
+      if(pendingPulses>0) pendingReady=true;
+      latchPollPulseFault((uint32_t)pendingPulses+unhandledEdges);
+      pollIntakeSuspended=false;
+      applyOutputs();
+      lastPoll=millis();
+    } else {
+      const bool pollWindowReady=beginPollWindow();
+      // Reconcile ISR edges for both drain outcomes while outputs remain inhibited.
+      const uint32_t pollEdgeAfterDrain=snapshotCoinEdgeSequence();
+      if(pollEdgeAfterDrain!=pollEdgeStart){
+        lastHandledCoinEdgeSequence=pollEdgeAfterDrain;
+        if(pendingPulses>0) pendingReady=true;
+        latchPollPulseFault(pollEdgeAfterDrain-pollEdgeStart);
+        pollIntakeSuspended=false;
+        applyOutputs();
+        lastPoll=millis();
+      } else if(pollWindowReady){
+        wifiFailures=0;
+        String r=post("poll");
+        // Keep intake inhibited until this response has been accepted or denied.
+        acceptPollResponse(r);
+        pollIntakeSuspended=false;
+        const uint32_t pollEdgeEnd=snapshotCoinEdgeSequence();
+        lastHandledCoinEdgeSequence=pollEdgeEnd;
+        if(pollEdgeEnd!=pollEdgeStart){
+          if(pendingPulses>0) pendingReady=true;
+          latchPollPulseFault(pollEdgeEnd-pollEdgeStart);
+        }
+        applyOutputs();
+        lastPoll=millis();
+      } else if(pollIntakeSuspended && !pollDrainAbortedOnActiveLine && coinLineIdle()){
+        pollIntakeSuspended=false;
+        applyOutputs();
+        lastPoll=millis();
+      }
     }
   }
-
   bool raw=digitalRead(runCoinPin);
   bool active=runCoinActiveLow?!raw:raw;
   sampleCoinPulseEdge(active);
@@ -1651,31 +1942,22 @@ void loop(){
     applyOutputs();
   }
 
+  handlePollDrainAbortAfterSample();
+
   if(canAttemptCoinPost() && WiFi.status()==WL_CONNECTED){
     if(!markPendingPostAttempt()){
       journalRecoveryRequired=true;
       applyOutputs();
+      if(!reconcileUnobservedCoinEdges()) applyOutputs();
+    } else if(!reconcileUnobservedCoinEdges()){
+      applyOutputs();
     } else {
       String r=post("coin",String(pendingPulses),pendingTarget,pendingNonce);
       lastSend=millis();
-      if(!coinPostDispositionVerified(r,pendingNonce,pendingTarget,pendingPulses)){
-        journalRecoveryRequired=true;
-        Serial.println("CRITICAL: coin POST response lacks approved event-bound authentication; pending evidence retained and automatic replay denied.");
-        applyOutputs();
-      } else if(pollJsonTopLevelTrue(r,"ok")){
-        clearPending();
-        applyOutputs();
-      } else if(r.indexOf("coin window expired")>=0 ||
-                r.indexOf("coin target mismatch")>=0 ||
-                r.indexOf("no active coin window")>=0 ||
-                r.indexOf("another vendo selected")>=0){
-        quarantinePending(r);
+      if(!reconcileUnobservedCoinEdges()){
         applyOutputs();
       } else {
-        // An authenticated but malformed/unknown disposition remains ambiguous.
-        journalRecoveryRequired=true;
-        Serial.println("CRITICAL: authenticated coin POST disposition was unknown; pending evidence retained for operator reconciliation.");
-        applyOutputs();
+        handleCoinPostResponse(r);
       }
     }
   }

@@ -1,15 +1,19 @@
 #!/usr/bin/env python3
 """Execute the actual ESP loop() around the synchronous poll with bounded host I/O stubs.
 
-The production loop, poll-window helpers, output gate and default-deny
-acceptPollResponse() are extracted unchanged from both sketches. Secondary
+The production loop, poll-window helpers, output gate, coin POST disposition
+helper and default-deny acceptPollResponse() are extracted unchanged from both sketches. Secondary
 NVS/EEPROM helpers are stubbed here; poll_fault_dual_store_lab.py tests them
 separately. This is SIMULATED control-flow evidence, not physical coin proof.
 """
 from pathlib import Path
-import re
 import subprocess
 import tempfile
+
+from firmware_lab_source import extract_function, mask_active_cpp_code, mask_non_code
+from firmware_lab_source_lab import run_source_extractor_regressions
+
+run_source_extractor_regressions()
 
 ROOT = Path(__file__).resolve().parents[2]
 BOARDS = {
@@ -17,348 +21,20 @@ BOARDS = {
     "ESP32": ROOT / "esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino",
 }
 
-def extract(source, name):
-    pattern = r"\b(?:void|bool|uint16_t|uint32_t)\s+(?:(?:IRAM_ATTR|ICACHE_RAM_ATTR)\s+)?" + re.escape(name) + r"\s*\([^)]*\)\s*\{"
-    match = re.search(pattern, source)
-    if not match:
-        raise AssertionError(f"missing production function: {name}")
-    depth = 0
-    for pos in range(match.end() - 1, len(source)):
-        if source[pos] == "{":
-            depth += 1
-        elif source[pos] == "}":
-            depth -= 1
-            if depth == 0:
-                return source[match.start():pos + 1]
-    raise AssertionError(f"unbalanced production function: {name}")
-
-STUBS = r"""
-#include <cstdint>
-#include <cstdio>
-#include <cstring>
-#include <iostream>
-#include <map>
-#include <string>
-#ifndef IRAM_ATTR
-#define IRAM_ATTR
-#endif
-#ifndef ICACHE_RAM_ATTR
-#define ICACHE_RAM_ATTR
-#endif
-static constexpr int HIGH=1, LOW=0, WL_CONNECTED=3;
-static constexpr int INPUT=0, INPUT_PULLUP=2, OUTPUT=1, FALLING=4, RISING=5;
-static bool fakeShortWrite=false, fakeCorruptReadback=false, fakeOpenFail=false;
-class File {
-  std::string *data=nullptr;
-  size_t pos=0;
-public:
-  File()=default;
-  explicit File(std::string *value):data(value){}
-  explicit operator bool() const { return data!=nullptr; }
-  size_t write(const uint8_t *bytes,size_t length){
-    if(!data) return 0;
-    size_t actual=length;
-    if(fakeShortWrite && actual) --actual;
-    data->append(reinterpret_cast<const char*>(bytes),actual);
-    return actual;
-  }
-  void flush(){}
-  void close(){}
-  size_t size() const { return data?data->size():0; }
-  int read(){
-    if(!data || pos>=data->size()) return -1;
-    unsigned char value=(unsigned char)(*data)[pos++];
-    if(fakeCorruptReadback && pos==1) value^=1;
-    return value;
-  }
-};
-void observeFaultMarkerOpen();
-struct FakeLittleFS {
-  std::map<std::string,std::string> files;
-  bool begin(bool){ return true; }
-  bool begin(){ return true; }
-  bool exists(const char *path) const { return files.find(path)!=files.end(); }
-  File open(const char *path,const char *mode){
-    if(fakeOpenFail) return File();
-    const std::string key(path);
-    if(key=="/pollpulse.fault" && mode[0]=='w') observeFaultMarkerOpen();
-    if(mode[0]=='w'){ files[key].clear(); return File(&files[key]); }
-    auto found=files.find(key);
-    return found==files.end()?File():File(&found->second);
-  }
-} LittleFS;
-static bool interruptAttached=false;
-static int attachedPin=-1, attachedMode=-1;
-static void (*attachedIsr)()=nullptr;
-int digitalPinToInterrupt(int pin){ return pin; }
-void attachInterrupt(int pin,void (*handler)(),int mode){
-  interruptAttached=true; attachedPin=pin; attachedMode=mode; attachedIsr=handler;
-}
-void detachInterrupt(int pin){
-  if(interruptAttached && attachedPin==pin){
-    interruptAttached=false; attachedPin=-1; attachedMode=-1; attachedIsr=nullptr;
-  }
-}
-void pinMode(int,int){}
-void loadPending(){}
-// This lab isolates the production loop and LittleFS marker path. The exact
-// secondary-store implementation and reboot fallback are covered separately
-// by poll_fault_dual_store_lab.py.
-bool pollFaultBackupPresentOrCorrupt(){ return false; }
-void observeBackupWrite();
-bool writePollFaultBackup(uint32_t){ observeBackupWrite(); return false; }
-volatile uint32_t coinEdgeSequence=0;
-struct String : std::string {
-  using std::string::string;
-  using std::string::operator=;
-  String()=default;
-  String(const std::string &v):std::string(v){}
-  String(int v):std::string(std::to_string(v)){}
-  size_t length() const { return size(); }
-  int indexOf(const char *needle) const {
-    const auto p=find(needle);
-    return p==npos?-1:(int)p;
-  }
-  bool isEmpty() const { return empty(); }
-};
-static uint32_t fakeNow=2000;
-static int pulseStart=-1, pulseEnd=-1;
-static bool relayOn=false, ledOn=false;
-static bool backupWriteSawRelayOn=false, backupWriteSawLedOn=false;
-static bool markerOpenSawRelayOn=false, markerOpenSawLedOn=false;
-void observeBackupWrite(){ backupWriteSawRelayOn=relayOn; backupWriteSawLedOn=ledOn; }
-void observeFaultMarkerOpen(){ markerOpenSawRelayOn=relayOn; markerOpenSawLedOn=ledOn; }
-static bool relayLevelHigh=false, ledLevelHigh=false;
-static bool injectDuringHttp=false;
-static bool injectAfterDrainEdge=false;
-static int pollCalls=0, saveCalls=0;
-static uint32_t pollStartAt=0, pollEndAt=0;
-static bool pollStartRelayOn=true, pollStartSuspended=false;
-static bool pollStartCoinIdle=false, pollEndRelayOn=true, pollEndSuspended=false;
-static bool pollPulseObservedDuringHttp=false, pollPulseRelayOff=false, pollPulseSuspended=false;
-bool insertMode=true, lastCoin=false;
-bool pollIntakeSuspended=false, pinConfigSafe=true;
-bool outputPolarityKnown=true;
-bool controllerEnabled=true, coinEnabled=true, relayEnabled=true, ledEnabled=true;
-bool setupApOn=false;
-bool runCoinActiveLow=true, runRelayActiveHigh=true, runLedActiveHigh=true;
-bool pendingReady=false, fsReady=true, journalRecoveryRequired=false;
-bool pendingPostAttempted=false;
-uint32_t lastPoll=0, lastEdge=0, lastSend=0, configuredApSince=0;
-uint8_t pendingPulses=0;
-int runCoinPin=4, runLedPin=2, runRelayPin=26;
-int maxWifiRetries=6, wifiFailures=0;
-uint16_t runDebounceMs=40, runPulseGroupMs=400;
-String activeTarget="target-01", pendingTarget="", pendingNonce="";
-struct ConfigStub {
-#ifdef TARGET_ESP32
-  String ssid="test-ssid", pass="test-pass";
-#else
-  char ssid[33]="test-ssid"; char pass[65]="test-pass";
-#endif
-} cfg;
-int digitalRead(int) {
-  const bool active=pulseStart>=0 &&
-    fakeNow>=(uint32_t)pulseStart && fakeNow<(uint32_t)pulseEnd;
-  if(runCoinActiveLow) return active?LOW:HIGH;
-  return active?HIGH:LOW;
-}
-void digitalWrite(int pin,int level) {
-  if(pin==runRelayPin) {
-    relayLevelHigh=(level==HIGH);
-    relayOn=(level==(runRelayActiveHigh?HIGH:LOW));
-  }
-  if(pin==runLedPin) {
-    ledLevelHigh=(level==HIGH);
-    ledOn=(level==(runLedActiveHigh?HIGH:LOW));
-  }
-}
-uint32_t millis(){ return fakeNow; }
-void delay(int ms){ fakeNow+=(uint32_t)ms; }
-struct FakeWiFi {
-  int status() const { return WL_CONNECTED; }
-  void disconnect() {}
-  void softAPdisconnect(bool) {}
-  void begin(const char*,const char*) {}
-} WiFi;
-struct FakeWeb { void handleClient() {} } web;
-struct FakeSerial {
-  template<class T> void println(const T&) {}
-} Serial;
-"""
-
-SUPPORT = r"""
-String freshNonce(){ return String("nonce12345678"); }
-bool savePending(){ ++saveCalls; return true; }
-bool canAttemptCoinPost(){ return false; }
-bool markPendingPostAttempt(){ return false; }
-bool coinPostDispositionVerified(const String&,const String&,const String&,uint8_t){ return false; }
-bool pollJsonTopLevelTrue(const String&,const char*){ return false; }
-bool clearPending(){ return false; }
-bool quarantinePending(const String&){ return false; }
-void startSetupAp(){}
-String post(const String &action,const String &pulses=String("0"),
-            const String &target=String(""),const String &forcedNonce=String("")){
-  (void)pulses; (void)target; (void)forcedNonce;
-  if(action=="poll"){
-    ++pollCalls;
-    pollStartAt=fakeNow;
-    pollStartRelayOn=relayOn;
-    pollStartSuspended=pollIntakeSuspended;
-    pollStartCoinIdle=coinLineIdle();
-    if(injectDuringHttp){
-      pulseStart=(int)fakeNow+50;
-      pulseEnd=(int)fakeNow+130;
-      fakeNow+=50UL;
-      pollPulseObservedDuringHttp=!coinLineIdle();
-      if(interruptAttached && attachedIsr && attachedPin==runCoinPin &&
-         attachedMode==(runCoinActiveLow?FALLING:RISING)) attachedIsr();
-      pollPulseRelayOff=!relayOn;
-      pollPulseSuspended=pollIntakeSuspended;
-      fakeNow+=80UL;
-      fakeNow+=3370UL;
-    } else {
-      fakeNow+=3500UL;
-    }
-    // Simulate the production HTTPClient timeout. The extracted loop remains
-    // blocked while the relay and poll-inhibit state must remain unchanged.
-    pollEndAt=fakeNow;
-    pollEndRelayOn=relayOn;
-    pollEndSuspended=pollIntakeSuspended;
-    // Deliberately hostile positive response: the extracted production
-    // acceptPollResponse() must still deny it until CORE/QA approve the contract.
-    return String("{\"ok\":true,\"insert\":true,\"target\":\"spoof-target\"}");
-  }
-  return String("");
-}
-"""
-
-MAIN = r"""
-void resetState(){
-  fakeNow=2000; pulseStart=-1; pulseEnd=-1;
-  coinEdgeSequence=0; interruptAttached=false; attachedPin=-1; attachedMode=-1; attachedIsr=nullptr;
-  fakeShortWrite=false; fakeCorruptReadback=false; fakeOpenFail=false; LittleFS.files.clear();
-  relayOn=false; ledOn=false; backupWriteSawRelayOn=false; backupWriteSawLedOn=false;
-  markerOpenSawRelayOn=false; markerOpenSawLedOn=false; relayLevelHigh=false; ledLevelHigh=false;
-  injectDuringHttp=false; injectAfterDrainEdge=false; pollCalls=0; saveCalls=0;
-  pollStartAt=0; pollEndAt=0; pollStartRelayOn=true; pollStartSuspended=false;
-  pollStartCoinIdle=false; pollEndRelayOn=true; pollEndSuspended=false;
-  pollPulseObservedDuringHttp=false; pollPulseRelayOff=false; pollPulseSuspended=false;
-  insertMode=true; lastCoin=false; pollIntakeSuspended=false; pinConfigSafe=true; outputPolarityKnown=true;
-  controllerEnabled=true; coinEnabled=true; relayEnabled=true; ledEnabled=true;
-  setupApOn=false; runCoinActiveLow=true; runRelayActiveHigh=true; runLedActiveHigh=true;
-  pendingReady=false; fsReady=true; journalRecoveryRequired=false; pendingPostAttempted=false;
-  lastPoll=0; lastEdge=0; lastSend=0; configuredApSince=0;
-  pendingPulses=0; runCoinPin=4; runLedPin=2; runRelayPin=26;
-  maxWifiRetries=6; wifiFailures=0; runDebounceMs=40; runPulseGroupMs=400;
-  activeTarget="target-01"; pendingTarget=""; pendingNonce="";
-  configureRuntimePins(runCoinPin,runRelayPin,runLedPin);
-  applyOutputs();
-}
-bool recordedPulseState(){
-  return pollCalls==0 && pendingPulses==1 && !pendingReady &&
-         pendingTarget=="target-01" && pendingNonce=="nonce12345678" &&
-         lastCoin && relayOn && !pollIntakeSuspended && saveCalls==1;
-}
-int main(){
-  // A normal blocked poll remains inhibited and default-deny when no edge occurs.
-  resetState(); loop();
-  if(pollCalls!=1 || pollStartAt!=2250 || pollStartRelayOn ||
-     !pollStartSuspended || !pollStartCoinIdle ||
-     pollEndAt-pollStartAt!=3500 || pollEndRelayOn || !pollEndSuspended ||
-     pollIntakeSuspended || relayOn || ledOn || insertMode ||
-     !activeTarget.empty() || pendingPulses!=0 || journalRecoveryRequired ||
-     LittleFS.exists("/pollpulse.fault") || lastPoll!=pollEndAt ||
-     fakeNow!=pollEndAt+2) return 10;
-
-  // Verify the latch requests OFF before either persistent store is entered.
-  // The first hook is the secondary NVS/EEPROM writer; the second is LittleFS open.
-  resetState();
-  relayOn=true; ledOn=true; insertMode=true; activeTarget="target-01";
-  latchPollPulseFault(1);
-  if(backupWriteSawRelayOn || backupWriteSawLedOn ||
-     markerOpenSawRelayOn || markerOpenSawLedOn || relayOn || ledOn ||
-     !journalRecoveryRequired || insertMode || !activeTarget.empty()) return 23;
-  std::cout<<"POLL_FAULT_PRE_PERSISTENCE_OUTPUT_OFF_PASS backup-write and LittleFS-open\\n";
-
-  // A pulse edge during the 3.5 s synchronous poll must be captured by the
-  // production ISR, latched to LittleFS, and never interpreted as a credit.
-  resetState(); injectDuringHttp=true; loop();
-  if(pollCalls!=1 || pollStartAt!=2250 || pollStartAt-2000<250 ||
-     pollStartRelayOn || !pollStartSuspended || !pollStartCoinIdle ||
-     pollEndAt-pollStartAt!=3500 || pollEndRelayOn || !pollEndSuspended ||
-     !pollPulseObservedDuringHttp || !pollPulseRelayOff || !pollPulseSuspended ||
-     pollIntakeSuspended || relayOn || ledOn || insertMode ||
-     !activeTarget.empty() || pendingPulses!=0 || lastPoll!=pollEndAt ||
-     fakeNow!=pollEndAt+2) return 11;
-  if(!journalRecoveryRequired || !LittleFS.exists("/pollpulse.fault")) return 12;
-  const std::string marker=LittleFS.files["/pollpulse.fault"];
-  if(marker.find("COIN_INGRESS_UNRESOLVED")==std::string::npos ||
-     marker.find("pulses=1")==std::string::npos) return 13;
-
-  // A reboot must restore the persistent fault latch before any output can energize.
-  journalRecoveryRequired=false; insertMode=true; activeTarget="target-01";
-  applyOutputs();
-  if(!relayOn) return 14;
-  initPendingStore(); applyOutputs();
-  if(!journalRecoveryRequired || insertMode || !activeTarget.empty() || relayOn || ledOn) return 15;
-
-  // Active-high input polarity must attach the opposite edge and fail closed too.
-  resetState(); runCoinActiveLow=false;
-  configureRuntimePins(runCoinPin,runRelayPin,runLedPin);
-  injectDuringHttp=true; loop();
-  if(attachedMode!=RISING || !journalRecoveryRequired ||
-     !LittleFS.exists("/pollpulse.fault") || relayOn || ledOn) return 16;
-
-  // A short write leaves a path that boot treats as a fault even when readback fails.
-  resetState(); fakeShortWrite=true; injectDuringHttp=true; loop();
-  if(!journalRecoveryRequired || !LittleFS.exists("/pollpulse.fault")) return 17;
-  journalRecoveryRequired=false; insertMode=true; activeTarget="target-01";
-  initPendingStore(); applyOutputs();
-  if(!journalRecoveryRequired || relayOn) return 18;
-
-  // Readback corruption is rejected; existence alone remains a boot-time deny latch.
-  resetState(); fakeCorruptReadback=true; injectDuringHttp=true; loop();
-  if(!journalRecoveryRequired || !LittleFS.exists("/pollpulse.fault")) return 19;
-  journalRecoveryRequired=false; insertMode=true; activeTarget="target-01";
-  initPendingStore(); applyOutputs();
-  if(!journalRecoveryRequired || relayOn) return 20;
-
-  // If marker creation itself is unavailable, the current boot still remains denied.
-  resetState(); fakeOpenFail=true; injectDuringHttp=true; loop();
-  if(!journalRecoveryRequired || LittleFS.exists("/pollpulse.fault") || relayOn || ledOn) return 21;
-
-  // Existing pulse-drain behavior remains intact for a pulse observed before poll.
-  resetState(); pulseStart=2050; pulseEnd=2130; loop();
-  if(!recordedPulseState()) return 31;
-  resetState(); runCoinActiveLow=false; configureRuntimePins(runCoinPin,runRelayPin,runLedPin);
-  pulseStart=2200; pulseEnd=2280; loop();
-  if(!recordedPulseState()) return 32;
-  resetState(); pulseStart=2250; pulseEnd=2330; loop();
-  if(!recordedPulseState()) return 33;
-
-  // Existing pending/recovery/FS guards remain fail-closed.
-  resetState(); pendingReady=true; pendingPulses=1; applyOutputs(); loop();
-  if(pollCalls!=0 || relayOn || ledOn || pollIntakeSuspended) return 41;
-  resetState(); journalRecoveryRequired=true; applyOutputs(); loop();
-  if(pollCalls!=0 || relayOn || ledOn || pollIntakeSuspended) return 42;
-  resetState(); fsReady=false; applyOutputs(); loop();
-  if(pollCalls!=0 || relayOn || ledOn || pollIntakeSuspended) return 43;
-
-  std::cout<<"POLL_BLOCKED_EDGE_FAULT_PASS 7/7 fault-marker scenarios; existing poll-loop guards 7/7\n";
-  std::cout<<"SIMULATED_ONLY=1 PHYSICAL_COIN_ACCEPTOR_VERIFIED=0 PHYSICAL_POWER_CUT_VERIFIED=0\n";
-  return 0;
-}
-"""
-
-RACE_MAIN = MAIN.replace(
-    "  // Existing pulse-drain behavior remains intact for a pulse observed before poll.",
-    "  resetState(); injectAfterDrainEdge=true; loop();\n"
-    "  if(pollCalls!=1 || !journalRecoveryRequired || !LittleFS.exists(\"/pollpulse.fault\") ||\n"
-    "     relayOn || ledOn || insertMode || !activeTarget.empty()) return 22;\n\n"
-    "  // Existing pulse-drain behavior remains intact for a pulse observed before poll.",
-    1,
+from poll_loop_blocking_inhibit_lab_fixtures import (
+    STUBS,
+    SUPPORT,
+    MAIN,
+    RACE_MAIN,
+    post_drain_rollover_main,
+    missed_sample_main,
+    TIMING_MAIN,
+    LONG_DEBOUNCE_ROLLOVER_MAIN,
+    RELEASE_EDGE_MAIN,
 )
+
+ACTIVE_HIGH_MISSED_SAMPLE_MAIN = missed_sample_main(active_low=False, failure_code=57)
+ACTIVE_LOW_MISSED_SAMPLE_MAIN = missed_sample_main(active_low=True, failure_code=58)
 
 
 def compile_and_run(code, board, expected=0, label="normal"):
@@ -381,6 +57,218 @@ def compile_and_run(code, board, expected=0, label="normal"):
             )
         return ran.stdout.strip()
 
+POLL_SAFETY_PARITY = (
+    "coinEdgeISR",
+    "snapshotCoinEdgeSequence",
+    "boundedCoinDebounceMs",
+    "canStartPoll",
+    "applyOutputs",
+    "beginPollWindow",
+    "sampleCoinPulseEdge",
+    "latchPollPulseFault",
+    "quarantineCoinIngressTransition",
+    "handlePollDrainAbortAfterSample",
+    "reconcileUnobservedCoinEdges",
+    # Shared trust, receipt and pending-evidence authority must not drift by board.
+    "acceptPollResponse",
+    "coinPostDispositionVerified",
+    "canAttemptCoinPost",
+    "markPendingPostAttempt",
+    "pendingAttemptMarkerMatches",
+    "clearPending",
+)
+
+
+REQUIRED_COIN_AUTHORITY_PARITY = (
+    "acceptPollResponse",
+    "coinPostDispositionVerified",
+    "canAttemptCoinPost",
+    "markPendingPostAttempt",
+    "pendingAttemptMarkerMatches",
+    "clearPending",
+)
+missing_coin_authority_helpers = [
+    name for name in REQUIRED_COIN_AUTHORITY_PARITY
+    if name not in POLL_SAFETY_PARITY
+]
+if missing_coin_authority_helpers:
+    raise SystemExit(
+        "POLL_COIN_AUTHORITY_PARITY_REQUIRED_HELPERS_MISSING: "
+        + ", ".join(missing_coin_authority_helpers)
+    )
+
+
+def poll_safety_helpers():
+    helpers = {}
+    for board, path in BOARDS.items():
+        source = path.read_text(encoding="utf-8")
+        helpers[board] = {}
+        for name in POLL_SAFETY_PARITY:
+            body = extract_function(source, name)
+            if not body:
+                raise AssertionError(f"{board}: missing shared poll-safety helper {name}")
+            # Ignore formatting-only changes; comments and executable tokens remain
+            # part of the comparison so safety intent cannot drift silently.
+            helpers[board][name] = " ".join(body.split())
+    return helpers
+
+
+def poll_safety_parity_mismatches(helpers):
+    reference = helpers["ESP8266"]
+    candidate = helpers["ESP32"]
+    return [
+        name for name in POLL_SAFETY_PARITY
+        if not reference.get(name) or reference.get(name) != candidate.get(name)
+    ]
+
+
+def verify_poll_safety_board_parity():
+    helpers = poll_safety_helpers()
+    mismatches = poll_safety_parity_mismatches(helpers)
+    if mismatches:
+        raise SystemExit(
+            "POLL_SAFETY_BOARD_PARITY_FAIL: " + ", ".join(mismatches)
+        )
+    print(
+        f"POLL_SAFETY_BOARD_PARITY_PASS {len(POLL_SAFETY_PARITY)}/"
+        f"{len(POLL_SAFETY_PARITY)} normalized helpers"
+    )
+
+    # Failure-inject a fail-open ESP32 drift in the persistent-fault output
+    # gate and prove the parity guard detects it before either board is built.
+    mutated = {
+        board: dict(board_helpers)
+        for board, board_helpers in helpers.items()
+    }
+    marker = "!journalRecoveryRequired"
+    apply_outputs = mutated["ESP32"]["applyOutputs"]
+    if marker not in apply_outputs:
+        raise AssertionError("ESP32 applyOutputs parity mutation anchor missing")
+    mutated["ESP32"]["applyOutputs"] = apply_outputs.replace(
+        marker, "journalRecoveryRequired", 1
+    )
+    if not poll_safety_parity_mismatches(mutated):
+        raise SystemExit(
+            "POLL_SAFETY_BOARD_PARITY_MUTATION_SURVIVED: "
+            "ESP32 applyOutputs lost journal-fault deny guard"
+        )
+    print(
+        "POLL_SAFETY_BOARD_PARITY_MUTATION_REJECTED "
+        "ESP32_applyOutputs_journal_fault_guard"
+    )
+
+    # Each one-board fail-open mutation must be caught by the shared-helper
+    # parity contract before the board-specific labs proceed.
+    authority_mutations = (
+        ("acceptPollResponse", "insertMode=false;", "insertMode=true;"),
+        ("coinPostDispositionVerified", "return false;", "return true;"),
+        ("canAttemptCoinPost", "outputPolarityKnown && ", ""),
+        ("markPendingPostAttempt", 'if(LittleFS.exists("/pending.attempt")){', "if(false){"),
+        ("pendingAttemptMarkerMatches", "return attempt.pulses==pendingPulses &&", "return true;"),
+        ("clearPending", "if(!pendingAttemptMarkerMatches()){", "if(false){"),
+    )
+    for name, anchor, replacement in authority_mutations:
+        mutated = {
+            board: dict(board_helpers)
+            for board, board_helpers in helpers.items()
+        }
+        body = mutated["ESP32"][name]
+        if anchor not in body:
+            raise AssertionError(f"ESP32 {name} parity mutation anchor missing")
+        mutated["ESP32"][name] = body.replace(anchor, replacement, 1)
+        mismatches = poll_safety_parity_mismatches(mutated)
+        if name not in mismatches:
+            raise SystemExit(
+                f"POLL_COIN_AUTHORITY_PARITY_MUTATION_SURVIVED: ESP32 {name}"
+            )
+        print(f"POLL_COIN_AUTHORITY_PARITY_MUTATION_REJECTED ESP32_{name}")
+
+
+def normalized_cpp_fixture(source: str) -> str:
+    """Normalize only C++ code; comments and literal contents are not callsites."""
+    return " ".join(mask_active_cpp_code(source).split())
+
+
+def verify_drain_abort_polarity_fixture_is_shared():
+    helper = "int runDrainAbortWithoutIsr(bool activeLow, int holdFailureCode, int releaseFailureCode,"
+    if normalized_cpp_fixture(MAIN).count(helper) != 1:
+        raise SystemExit(
+            "POLL_DRAIN_ABORT_POLARITY_BUILDER_MISSING: expected one shared C++ helper"
+        )
+    normalized_main = normalized_cpp_fixture(MAIN)
+    calls = (
+        "runDrainAbortWithoutIsr( true, 34, 35,",
+        "runDrainAbortWithoutIsr( false, 36, 37,",
+    )
+    for call in calls:
+        if normalized_main.count(call) != 1:
+            raise SystemExit(
+                "POLL_DRAIN_ABORT_POLARITY_BUILDER_CALL_MISSING: " + call
+            )
+
+    # Failure injection: a call-shaped comment/string must not stand in for
+    # the active-low/active-high C++ callsites.
+    decoy_cases = (
+        (
+            'const int activeLowDrainResult=runDrainAbortWithoutIsr(\n      true, 34, 35,',
+            'const int activeLowDrainResult=0;\n  // runDrainAbortWithoutIsr( true, 34, 35,',
+            calls[0],
+            "comment",
+        ),
+        (
+            'const int activeHighDrainResult=runDrainAbortWithoutIsr(\n      false, 36, 37,',
+            'const int activeHighDrainResult=0;\n  std::cout << "runDrainAbortWithoutIsr( false, 36, 37,";',
+            calls[1],
+            "string",
+        ),
+    )
+    for original, decoy, marker, label in decoy_cases:
+        mutated = MAIN.replace(original, decoy, 1)
+        if mutated == MAIN:
+            raise AssertionError(f"could not construct {label} decoy mutation")
+        if normalized_cpp_fixture(mutated).count(marker) != 0:
+            raise SystemExit(
+                f"POLL_DRAIN_ABORT_POLARITY_{label.upper()}_DECOY_SURVIVED"
+            )
+    # A call-shaped expression in a literal #if 0 branch must not satisfy the
+    # active-low/active-high builder contract. This is a static matcher mutation;
+    # it does not compile or execute the fixture fragment.
+    inactive_branch_cases = (
+        (
+            "#if 0\nrunDrainAbortWithoutIsr(\n"
+            "    true, 34, 35, \"inactive-low-capture\", \"inactive-low-release\");\n"
+            "#endif\n",
+            calls[0],
+            "active-low",
+        ),
+        (
+            "#if 0\nrunDrainAbortWithoutIsr(\n"
+            "    false, 36, 37, \"inactive-high-capture\", \"inactive-high-release\");\n"
+            "#endif\n",
+            calls[1],
+            "active-high",
+        ),
+    )
+    for inactive_source, marker, label in inactive_branch_cases:
+        legacy_count = " ".join(mask_non_code(inactive_source).split()).count(marker)
+        if legacy_count != 1:
+            raise AssertionError(
+                f"legacy comment/literal-only mask did not expose {label} decoy: {legacy_count}"
+            )
+        if normalized_cpp_fixture(inactive_source).count(marker) != 0:
+            raise SystemExit(
+                f"POLL_DRAIN_ABORT_POLARITY_INACTIVE_BRANCH_DECOY_SURVIVED: {label}"
+            )
+    print("POLL_DRAIN_ABORT_POLARITY_INACTIVE_BRANCH_DECOY_REJECTED 2/2")
+
+    print("POLL_DRAIN_ABORT_POLARITY_DECOY_REJECTED 2/2")
+    print("POLL_DRAIN_ABORT_POLARITY_BUILDER_PASS 2/2")
+
+
+verify_poll_safety_board_parity()
+verify_drain_abort_polarity_fixture_is_shared()
+
+
 for board,path in BOARDS.items():
     source=path.read_text(encoding="utf-8")
     edge_decl=source.find("volatile uint32_t coinEdgeSequence")
@@ -393,36 +281,124 @@ for board,path in BOARDS.items():
     )
     if edge_decl < 0 or edge_isr < 0 or edge_decl > edge_isr:
         raise AssertionError(f"{board}: coinEdgeSequence must be declared before coinEdgeISR")
-    loop=extract(source,"loop")
-    write=extract(source,"writeLogical")
-    output=extract(source,"applyOutputs")
-    idle=extract(source,"coinLineIdle")
-    can_start=extract(source,"canStartPoll")
-    quiet=extract(source,"coinLineQuietAfterInhibit")
-    begin=extract(source,"beginPollWindow")
-    accept=extract(source,"acceptPollResponse")
-    isr=extract(source,"coinEdgeISR")
-    snapshot=extract(source,"snapshotCoinEdgeSequence")
-    configure=extract(source,"configureRuntimePins")
-    write_fault=extract(source,"writePollPulseFaultMarker")
-    load_fault=extract(source,"loadPollPulseFaultLatch")
-    latch_fault=extract(source,"latchPollPulseFault")
-    init_store=extract(source,"initPendingStore")
-    sample=extract(source,"sampleCoinPulseEdge")
+    loop=extract_function(source, "loop")
+    write=extract_function(source, "writeLogical")
+    output=extract_function(source, "applyOutputs")
+    idle=extract_function(source, "coinLineIdle")
+    can_start=extract_function(source, "canStartPoll")
+    quiet=extract_function(source, "coinLineQuietAfterInhibit")
+    begin=extract_function(source, "beginPollWindow")
+    accept=extract_function(source, "acceptPollResponse")
+    isr=extract_function(source, "coinEdgeISR")
+    snapshot=extract_function(source, "snapshotCoinEdgeSequence")
+    configure=extract_function(source, "configureRuntimePins")
+    write_fault=extract_function(source, "writePollPulseFaultMarker")
+    load_fault=extract_function(source, "loadPollPulseFaultLatch")
+    latch_fault=extract_function(source, "latchPollPulseFault")
+    quarantine=extract_function(source, "quarantineCoinIngressTransition")
+    init_store=extract_function(source, "initPendingStore")
+    sample=extract_function(source, "sampleCoinPulseEdge")
+    drain_abort=extract_function(source, "handlePollDrainAbortAfterSample")
+    reconcile=extract_function(source, "reconcileUnobservedCoinEdges")
+    handle=extract_function(source, "handleCoinPostResponse")
 
     def assemble(loop_source=loop,output_source=output,quiet_source=quiet,accept_source=accept,
                  configure_source=configure,isr_source=isr,write_fault_source=write_fault,
                  load_fault_source=load_fault,latch_fault_source=latch_fault,init_store_source=init_store,
-                 begin_source=begin,sample_source=sample,main_source=MAIN):
+                 begin_source=begin,sample_source=sample,main_source=MAIN,reconcile_source=reconcile,
+                 handle_source=handle,drain_abort_source=drain_abort,quarantine_source=quarantine,
+                 idle_source=idle):
         board_define = "#define TARGET_ESP32\n" if board=="ESP32" else "#define ESP8266\n"
-        return (board_define+STUBS+isr_source+snapshot+write+output_source+idle+can_start+
-                quiet_source+begin_source+configure_source+accept_source+write_fault_source+
-                load_fault_source+latch_fault_source+init_store_source+SUPPORT+sample_source+loop_source+main_source)
+        return (board_define+STUBS+isr_source+snapshot+write+output_source+idle_source+can_start+
+                quiet_source+begin_source+write_fault_source+
+                load_fault_source+latch_fault_source+quarantine_source+configure_source+accept_source+reconcile_source+init_store_source+SUPPORT+handle_source+sample_source+drain_abort_source+loop_source+main_source)
 
     print(board,compile_and_run(assemble(),board,0,"exact-source"))
+    print(board,compile_and_run(assemble(main_source=RELEASE_EDGE_MAIN),board,0,
+                                "poll-release-output-interlock"))
+    timing_output=compile_and_run(assemble(main_source=TIMING_MAIN),board,0,
+                                 "issue-177-original-1501-1600-1680-timing")
+    if "PHX_177_ORIGINAL_1501_1600_1680_PULSE_ABORTED_BEFORE_HTTP_PASS" not in timing_output:
+        raise AssertionError(f"{board}: exact #177 timing marker missing")
+    print(f"{board} PHX_177_ORIGINAL_1501_1600_1680_TIMING_PASS")
+
+    long_debounce_output=compile_and_run(
+        assemble(main_source=LONG_DEBOUNCE_ROLLOVER_MAIN),
+        board,0,"long-debounce-millis-rollover"
+    )
+    if "POLL_QUIET_WINDOW_LONG_DEBOUNCE_ROLLOVER_PASS" not in long_debounce_output:
+        raise AssertionError(f"{board}: long-debounce millis-rollover marker missing")
+    print(f"{board} POLL_QUIET_WINDOW_LONG_DEBOUNCE_ROLLOVER_PASS")
+
+    capped_quiet=quiet.replace(
+        "const uint32_t quietMs=runDebounceMs>pulseTrainQuietMs?runDebounceMs:pulseTrainQuietMs;",
+        "const uint32_t quietMs=pulseTrainQuietMs;",
+        1,
+    )
+    if capped_quiet==quiet:
+        raise AssertionError(f"{board}: long-debounce cap mutation anchor missing")
+    compile_and_run(
+        assemble(quiet_source=capped_quiet,main_source=LONG_DEBOUNCE_ROLLOVER_MAIN),
+        board,61,"cap-quiet-window-at-250ms"
+    )
+    print(f"{board} MUTATION_REJECTED cap-quiet-window-at-250ms expected_exit=61")
+
+    unsafe_wrap_quiet=quiet.replace(
+        "while(millis()-started<quietMs){",
+        "while(millis()<started+quietMs){",
+        1,
+    )
+    if unsafe_wrap_quiet==quiet:
+        raise AssertionError(f"{board}: millis-deadline rollover mutation anchor missing")
+    compile_and_run(
+        assemble(quiet_source=unsafe_wrap_quiet,main_source=LONG_DEBOUNCE_ROLLOVER_MAIN),
+        board,61,"non-wrap-safe-quiet-deadline"
+    )
+    print(f"{board} MUTATION_REJECTED non-wrap-safe-quiet-deadline expected_exit=61")
+
+    unsafe_timing_loop=loop.replace(
+        "const bool pollWindowReady=beginPollWindow();",
+        "const bool pollWindowReady=true;",
+        1,
+    )
+    if unsafe_timing_loop==loop:
+        raise AssertionError(f"{board}: #177 pre-poll inhibit mutation anchor missing")
+    compile_and_run(assemble(loop_source=unsafe_timing_loop,main_source=TIMING_MAIN),
+                    board,47,"issue-177-missing-prepoll-inhibit")
+    print(f"{board} MUTATION_REJECTED issue-177-missing-prepoll-inhibit expected_exit=47")
+    non_wrap_safe_loop=loop.replace(
+        "latchPollPulseFault(pollEdgeEnd-pollEdgeStart);",
+        "latchPollPulseFault(pollEdgeEnd>pollEdgeStart ? pollEdgeEnd-pollEdgeStart : 0U);",
+        1,
+    )
+    if non_wrap_safe_loop==loop:
+        raise AssertionError(f"{board}: poll-edge wrap mutation anchor missing")
+    compile_and_run(assemble(loop_source=non_wrap_safe_loop),board,50,
+                    "non-wrap-safe-poll-edge-delta")
+    print(f"{board} MUTATION_REJECTED non-wrap-safe-poll-edge-delta expected_exit=50")
+    single_edge_loop=loop.replace(
+        "latchPollPulseFault(pollEdgeEnd-pollEdgeStart);",
+        "latchPollPulseFault(1U);",
+        1,
+    )
+    if single_edge_loop==loop:
+        raise AssertionError(f"{board}: exact poll-edge count mutation anchor missing")
+    compile_and_run(assemble(loop_source=single_edge_loop),board,51,
+                    "single-edge-poll-delta")
+    print(f"{board} MUTATION_REJECTED single-edge-poll-delta expected_exit=51")
+    idle_fault_shortcut = quarantine.replace(
+        "  if(journalRecoveryRequired){",
+        "  if(lineIdle && unhandledEdges==0U) return true;\n  if(journalRecoveryRequired){",
+        1,
+    )
+    if idle_fault_shortcut == quarantine:
+        raise AssertionError(f"{board}: journal-fault idle-line mutation anchor missing")
+    compile_and_run(assemble(quarantine_source=idle_fault_shortcut),board,48,
+                    "journal-fault-idle-line-shortcut")
+    print(f"{board} MUTATION_REJECTED journal-fault-idle-line-shortcut")
     edge_hook = begin.replace(
-        "if(coinLineQuietAfterInhibit()) return true;",
-        "if(coinLineQuietAfterInhibit()){ if(injectAfterDrainEdge){ coinEdgeSequence++; injectAfterDrainEdge=false; } return true; }",
+        "return coinLineQuietAfterInhibit();",
+        "if(coinLineQuietAfterInhibit()){ if(injectAfterDrainEdge){ for(unsigned edge=0; edge<injectAfterDrainEdgeCount; ++edge){ if(interruptAttached && attachedIsr && attachedPin==runCoinPin && attachedMode==(runCoinActiveLow?FALLING:RISING)) attachedIsr(); } injectAfterDrainEdge=false; } return true; } return false;",
         1,
     )
     if edge_hook == begin:
@@ -430,23 +406,138 @@ for board,path in BOARDS.items():
     compile_and_run(assemble(begin_source=edge_hook,main_source=RACE_MAIN),board,0,
                     "edge-after-drain-before-snapshot")
     print(f"{board} POLL_EDGE_SNAPSHOT_RACE_PASS")
-    late_snapshot_loop = loop.replace(
-        "    const uint32_t pollEdgeStart=snapshotCoinEdgeSequence();\n    if(beginPollWindow()){",
-        "    if(beginPollWindow()){\n      const uint32_t pollEdgeStart=snapshotCoinEdgeSequence();",
+    single_post_drain_edge_loop = loop.replace(
+        "latchPollPulseFault(pollEdgeAfterDrain-pollEdgeStart);",
+        "latchPollPulseFault(1U);",
         1,
     )
-    if late_snapshot_loop == loop:
-        raise AssertionError(f"{board}: late-snapshot mutation did not apply")
-    compile_and_run(assemble(loop_source=late_snapshot_loop,begin_source=edge_hook,main_source=RACE_MAIN),
-                    board,22,"late-snapshot-regression")
-    print(f"{board} MUTATION_REJECTED late-poll-edge-snapshot")
+    if single_post_drain_edge_loop == loop:
+        raise AssertionError(f"{board}: post-drain exact-edge-count mutation anchor missing")
+    compile_and_run(
+        assemble(loop_source=single_post_drain_edge_loop,begin_source=edge_hook,main_source=RACE_MAIN),
+        board,55,"single-edge-post-drain-count"
+    )
+    print(f"{board} MUTATION_REJECTED single-edge-post-drain-count expected_exit=55")
+
+    # The dedicated active-high scenario uses the real RISING ISR on both boards.
+    compile_and_run(assemble(begin_source=edge_hook,main_source=post_drain_rollover_main(active_low=False)),
+                    board,0,"active-high-post-drain-multi-edge-rollover")
+    print(f"{board} POLL_POST_DRAIN_ACTIVE_HIGH_MULTI_EDGE_ROLLOVER_PASS")
+    active_high_wrong_edge = configure.replace(
+        "runCoinActiveLow?FALLING:RISING",
+        "runCoinActiveLow?FALLING:FALLING",
+    )
+    if active_high_wrong_edge == configure:
+        raise AssertionError(f"{board}: active-high ISR polarity mutation anchor missing")
+    compile_and_run(
+        assemble(configure_source=active_high_wrong_edge,begin_source=edge_hook,main_source=post_drain_rollover_main(active_low=False)),
+        board,56,"active-high-post-drain-edge-polarity"
+    )
+    print(f"{board} MUTATION_REJECTED active-high-post-drain-edge-polarity expected_exit=56")
+
+    # The active-low counterpart uses the real FALLING ISR across the same wrap race.
+    compile_and_run(assemble(begin_source=edge_hook,main_source=post_drain_rollover_main(active_low=True)),
+                    board,0,"active-low-post-drain-multi-edge-rollover")
+    print(f"{board} POLL_POST_DRAIN_ACTIVE_LOW_MULTI_EDGE_ROLLOVER_PASS")
+    active_low_wrong_edge = configure.replace(
+        "runCoinActiveLow?FALLING:RISING",
+        "runCoinActiveLow?RISING:RISING",
+    )
+    if active_low_wrong_edge == configure:
+        raise AssertionError(f"{board}: active-low ISR polarity mutation anchor missing")
+    compile_and_run(
+        assemble(configure_source=active_low_wrong_edge,begin_source=edge_hook,main_source=post_drain_rollover_main(active_low=True)),
+        board,59,"active-low-post-drain-edge-polarity"
+    )
+    print(f"{board} MUTATION_REJECTED active-low-post-drain-edge-polarity expected_exit=59")
+
+    # A high-polarity pulse can disappear after the drain read but before the
+    # ordinary loop sample. Preserve the unresolved event instead of polling.
+    missed_sample_output = compile_and_run(
+        assemble(main_source=ACTIVE_HIGH_MISSED_SAMPLE_MAIN),
+        board, 0, "active-high-pulse-ended-before-sample"
+    )
+    if "POLL_ABORT_ACTIVE_HIGH_PULSE_ENDED_BEFORE_SAMPLE_FAIL_CLOSED_PASS" not in missed_sample_output:
+        raise AssertionError(f"{board}: active-high missed-sample marker missing")
+    print(f"{board} POLL_ABORT_ACTIVE_HIGH_PULSE_ENDED_BEFORE_SAMPLE_PASS")
+
+    active_high_idle_fail_open = idle.replace(
+        "return runCoinActiveLow?raw:!raw;",
+        "return runCoinActiveLow?raw:true;",
+        1,
+    )
+    if active_high_idle_fail_open == idle:
+        raise AssertionError(f"{board}: active-high coin-line idle mutation anchor missing")
+    compile_and_run(
+        assemble(idle_source=active_high_idle_fail_open,
+                 main_source=ACTIVE_HIGH_MISSED_SAMPLE_MAIN),
+        board, 57, "active-high-pulse-misread-as-idle"
+    )
+    print(f"{board} MUTATION_REJECTED active-high-pulse-misread-as-idle expected_exit=57")
+    # The active-low counterpart isolates the same missed-sample failure path.
+    missed_sample_low_output = compile_and_run(
+        assemble(main_source=ACTIVE_LOW_MISSED_SAMPLE_MAIN),
+        board, 0, "active-low-pulse-ended-before-sample"
+    )
+    if "POLL_ABORT_ACTIVE_LOW_PULSE_ENDED_BEFORE_SAMPLE_FAIL_CLOSED_PASS" not in missed_sample_low_output:
+        raise AssertionError(f"{board}: active-low missed-sample marker missing")
+    print(f"{board} POLL_ABORT_ACTIVE_LOW_PULSE_ENDED_BEFORE_SAMPLE_PASS")
+
+    active_low_idle_fail_open = idle.replace(
+        "return runCoinActiveLow?raw:!raw;",
+        "return runCoinActiveLow?true:!raw;",
+        1,
+    )
+    if active_low_idle_fail_open == idle:
+        raise AssertionError(f"{board}: active-low coin-line idle mutation anchor missing")
+    compile_and_run(
+        assemble(idle_source=active_low_idle_fail_open,
+                 main_source=ACTIVE_LOW_MISSED_SAMPLE_MAIN),
+        board, 58, "active-low-pulse-misread-as-idle"
+    )
+    print(f"{board} MUTATION_REJECTED active-low-pulse-misread-as-idle expected_exit=58")
+    release_on_abort = drain_abort.replace(
+        "if(!coinLineIdle()) return;",
+        "pollDrainAbortedOnActiveLine=false; pollIntakeSuspended=false; applyOutputs(); return;",
+        1,
+    )
+    if release_on_abort == drain_abort:
+        raise AssertionError(f"{board}: drain-abort release mutation anchor missing")
+    compile_and_run(assemble(drain_abort_source=release_on_abort),board,34,"release-while-active-drain-line")
+    print(f"{board} MUTATION_REJECTED release-while-active-drain-line")
+    pre_poll_guard = loop.find("if(pollEdgeAfterDrain!=pollEdgeStart)")
+    poll_call = loop.find('String r=post("poll")')
+    if pre_poll_guard < 0 or poll_call < 0 or pre_poll_guard > poll_call:
+        raise AssertionError(f"{board}: pre-poll edge guard must precede HTTP poll")
+
+    begin_poll = loop.find("const bool pollWindowReady=beginPollWindow();")
+    drain_snapshot = loop.find("const uint32_t pollEdgeAfterDrain=snapshotCoinEdgeSequence();", begin_poll)
+    if begin_poll < 0 or drain_snapshot < begin_poll or pre_poll_guard < drain_snapshot:
+        raise AssertionError(f"{board}: ISR snapshot must follow either drain outcome before branching")
+    poll_guard_removed = loop.replace(
+        "const uint32_t pollEdgeAfterDrain=snapshotCoinEdgeSequence();",
+        "const uint32_t pollEdgeAfterDrain=pollEdgeStart;",
+        1,
+    )
+    if poll_guard_removed == loop:
+        raise AssertionError(f"{board}: missing pre-poll edge-abort guard")
+    compile_and_run(assemble(loop_source=poll_guard_removed,begin_source=edge_hook,main_source=RACE_MAIN),
+                    board,25,"missing-drain-abort-edge-reconciliation")
+    print(f"{board} MUTATION_REJECTED missing-pre-poll-edge-abort")
     mutations=(
-      ("remove-beginPollWindow",loop.replace("if(beginPollWindow()){","if(true){",1),output,quiet,accept),
+      ("remove-beginPollWindow",loop.replace("const bool pollWindowReady=beginPollWindow();","const bool pollWindowReady=true;",1),output,quiet,accept),
       ("ignore-pollIntakeSuspended",loop,output.replace(" && !pollIntakeSuspended","",1),quiet,accept),
       ("shorten-quiet-window-to-249ms",loop,output,quiet.replace("pulseTrainQuietMs=250UL;","pulseTrainQuietMs=249UL;",1),accept),
       ("keep-insert-enabled-after-poll",loop,output,quiet,accept.replace("insertMode=false;","insertMode=true;",1)),
       ("retain-stale-target-after-poll",loop,output,quiet,accept.replace('activeTarget="";','activeTarget="stale-target";',1)),
     )
+    journal_fault_guard_removed = output.replace("!journalRecoveryRequired && ", "", 1)
+    if journal_fault_guard_removed == output:
+        raise AssertionError(f"{board}: journal-recovery output guard mutation did not apply")
+    compile_and_run(assemble(output_source=journal_fault_guard_removed),board,48,
+                    "ignore-journal-recovery-output-deny")
+    print(f"{board} MUTATION_REJECTED ignore-journal-recovery-output-deny expected_exit=48")
+
     for name,mut_loop,mut_output,mut_quiet,mut_accept in mutations:
         if name=="remove-beginPollWindow" and mut_loop==loop:
             raise AssertionError(f"{board}: poll-window call mutation did not apply")
@@ -494,4 +585,38 @@ for board,path in BOARDS.items():
         compile_and_run(assemble(ml,mo,mq,ma,mc,mi,mw,mload,mlatch,ms),board,expected,name)
         print(f"{board} MUTATION_REJECTED {name} expected_exit={expected}")
 
-print("PHX-HARDWARE: poll-fault output inhibition before secondary-store and LittleFS persistence passed on ESP8266 and ESP32; no hardware evidence")
+    # Prove the release-window ISR edge is caught by the ordinary sample path
+    # when it arrives after the post-poll snapshot but before the loop's final sample.
+    missing_release_sample = loop.replace(
+        "sampleCoinPulseEdge(active);",
+        "(void)active; // mutation: final post-poll sample omitted",
+        1,
+    )
+    if missing_release_sample == loop:
+        raise AssertionError(f"{board}: final post-poll sample mutation did not apply")
+    compile_and_run(assemble(loop_source=missing_release_sample),board,29,
+                    "skip-poll-release-edge-sample")
+    print(f"{board} MUTATION_REJECTED skip-poll-release-edge-sample")
+
+    pre_poll_edge_guard_removed = loop.replace(
+        "if(pollEdgeStart!=lastHandledCoinEdgeSequence){",
+        "if(false){",
+        1,
+    )
+    if pre_poll_edge_guard_removed == loop:
+        raise AssertionError(f"{board}: pre-poll unobserved-edge guard mutation did not apply")
+    compile_and_run(assemble(loop_source=pre_poll_edge_guard_removed),board,44,
+                    "ignore-unobserved-edge-before-poll")
+    print(f"{board} MUTATION_REJECTED ignore-unobserved-edge-before-poll")
+    missing_coin_post_latch = reconcile.replace(
+        "latchPollPulseFault((uint32_t)pendingPulses+unhandledEdges);",
+        "// mutation: unresolved edge persistence omitted",
+        1,
+    )
+    if missing_coin_post_latch == reconcile:
+        raise AssertionError(f"{board}: coin-post persistence mutation did not apply")
+    compile_and_run(assemble(reconcile_source=missing_coin_post_latch),board,45,
+                    "missing-coin-post-edge-persistence")
+    print(f"{board} MUTATION_REJECTED missing-coin-post-edge-persistence")
+
+print("PHX-HARDWARE: poll-fault and coin-POST ISR reconciliation passed on ESP8266 and ESP32; no hardware evidence")
