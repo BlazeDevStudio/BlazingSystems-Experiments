@@ -265,3 +265,47 @@ All focused output remains SIMULATED_ONLY=1; physical coin acceptor, relay polar
 - PHX-HARDWARE: retain #345 OPEN / DRAFT / UNMERGED and continue only after revalidating all stacked branch heads.
 
 **Classification:** host fixture SIMULATED; exact-head Quarantine and Relay CI VERIFIED; Full integration FAILED at the shared contract assertion; HARDWARE ACCEPTED NO; PRODUCTION NO-GO.
+
+
+## PHX-HARDWARE UTC05 — source-exact pending-journal reclamation failure injection
+
+**Task:** one bounded Hardware-owned test modularization / preservation increment on the existing #345 draft. No production sketch, shared API, CORE ledger, QA-owned test, Release workflow, or COE destination changed.
+
+### Exact source/test commit
+
+- Commit: `0cde88296855515c06b7650a71b190167834fcc5`.
+- Branch: `phoenix/hw-coin-intake-armed-gate-20261122-utc23`.
+- Parent: previous PR #345 HEAD `4c4653e5fab28170fcf05c490a873a2ae73e4a1d`.
+- PR #345 remains OPEN / DRAFT / UNMERGED, based on #343 at `dfeff7d5f63e699de7bc296c7641f2493f1e0e13`.
+
+### Change
+
+The existing poll-loop host lab already checked board parity for `clearPending()`, but did not execute that exact helper through deletion-failure paths. The runner now extracts `clearPending()` unchanged from each ESP8266/ESP32 sketch and invokes a dedicated module:
+
+`experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/pending_clear_failure_lab.py`
+
+The isolated fake filesystem exercises three fail-closed cases plus a successful control:
+
+1. Pending-journal removal fails: both journal and attempt marker remain; RAM identity is retained and recovery is latched.
+2. Attempt-marker removal fails after the pending journal is removed: the attempt marker remains as an orphan boot-deny witness; RAM identity is retained and recovery is latched.
+3. Remove reports success but readback still finds the pending file: reclamation is rejected and recovery is latched.
+4. Successful control: both files are removed and the pending RAM identity is cleared.
+
+A failure-injection mutation that ignores the attempt-marker removal result must be rejected with expected exit 91 on both board builds.
+
+**Fixture boundary:** this compiles the exact `clearPending()` body, but stubs `readPendingFile()`, `pendingAttemptMarkerMatches()`, and the filesystem. It tests the deletion sequence and fail-closed state transitions only. It does not parse the production record, emulate LittleFS wear/metadata semantics, prove reboot recovery, or establish power-cut durability.
+
+### Exact-head CI evidence — source/test SHA `0cde88296855515c06b7650a71b190167834fcc5`
+
+- Quarantine [#45117528160](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45117528160), job `137503661431`: **SUCCESS**. ESP8266 and ESP32 baseline cases passed; the attempt-marker deletion-failure mutation was rejected on both boards with expected exit 91. Existing poll-edge/rollover, pending identity 6/6 and 9/9, attempted-evidence 6/6, relay output gate, NVS/EEPROM and request-digest failure-injection labs passed. Logs explicitly retain `SIMULATED_ONLY=1` and physical acceptance flags at 0.
+- Relay [#45117528212](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45117528212): source-output-polarity job `137503661391` and ESP32 boot-polarity job `137503661937`: **SUCCESS**. Existing active-high/active-low output and poll-release interlock regressions passed.
+- Full build [#45117528096](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45117528096), validation job `137503662135`: **FAILURE** at the inherited QA-owned `Controller protocol parity` / `Missing poll signature check` in the ESP8266 sketch. All 14 configured target/platform jobs completed **SUCCESS** (ESP8266, ESP32, Android, x86_64, Ruijie and configured Orange Pi targets). Downstream simulation, bundle, candidate, signing and publication jobs were skipped.
+
+### Ownership / remaining blockers
+
+- PHX-HARDWARE owns the ESP sketches and the host labs under the Hardware directories. No QA or CORE-owned source was changed.
+- The Master `ROLE_ASSIGNMENTS.md` still lists #327 as the active Hardware child while the Control Plane references #345; Master must reconcile its own assignment/integration pointers. Hardware does not edit Master-owned coordination files.
+- CORE/QA must publish and independently validate the authenticated register/poll and event-bound receipt contract. Do not synthesize `response_sig` or relax the default-deny consumer.
+- Physical coin/relay/electrical acceptance, 150 power cuts, 30-device/24-hour soak, independent witness, protected signer, financial migration, durable accounting/replay and independent QA/release signoff remain outstanding.
+
+**Classification:** source-exact host regression **SIMULATED**; Quarantine and Relay **CI VERIFIED**; Full integration **FAILED/BLOCKED**; **HARDWARE ACCEPTED NO; PRODUCTION NO-GO.**
