@@ -32,6 +32,78 @@ def _sha256(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
+def _same_file_state(left: os.stat_result, right: os.stat_result) -> bool:
+    return (
+        left.st_dev == right.st_dev
+        and left.st_ino == right.st_ino
+        and left.st_size == right.st_size
+        and left.st_mtime_ns == right.st_mtime_ns
+        and left.st_ctime_ns == right.st_ctime_ns
+        and left.st_nlink == right.st_nlink
+    )
+
+
+def _read_installed_binary(path: Path, expected_info: os.stat_result) -> bytes:
+    """Read a bounded executable through a stable no-follow file descriptor."""
+    if expected_info.st_size <= 0 or expected_info.st_size > MAX_BINARY_SIZE:
+        raise VerificationError(
+            "installed Arduino CLI binary size is outside the allowed range: "
+            f"{expected_info.st_size}"
+        )
+
+    nofollow = getattr(os, "O_NOFOLLOW", None)
+    if nofollow is None:
+        raise VerificationError(
+            "descriptor no-follow access is unavailable; refusing installed Arduino CLI admission"
+        )
+
+    flags = os.O_RDONLY | nofollow | getattr(os, "O_CLOEXEC", 0)
+    fd = -1
+    try:
+        fd = os.open(path, flags)
+        before = os.fstat(fd)
+        if not stat.S_ISREG(before.st_mode):
+            raise VerificationError("installed Arduino CLI path is not a regular file")
+        if before.st_size <= 0 or before.st_size > MAX_BINARY_SIZE:
+            raise VerificationError(
+                "installed Arduino CLI binary size is outside the allowed range: "
+                f"{before.st_size}"
+            )
+        if not _same_file_state(expected_info, before):
+            raise VerificationError("installed Arduino CLI binary changed before reading")
+
+        chunks: list[bytes] = []
+        total = 0
+        while True:
+            read_limit = min(1024 * 1024, MAX_BINARY_SIZE + 1 - total)
+            block = os.read(fd, read_limit)
+            if not block:
+                break
+            total += len(block)
+            if total > MAX_BINARY_SIZE:
+                raise VerificationError(
+                    f"installed Arduino CLI binary exceeds {MAX_BINARY_SIZE} bytes"
+                )
+            chunks.append(block)
+
+        after = os.fstat(fd)
+        path_after = os.stat(path, follow_symlinks=False)
+        if not _same_file_state(before, after) or not _same_file_state(after, path_after):
+            raise VerificationError("installed Arduino CLI binary changed while reading")
+        if total != after.st_size:
+            raise VerificationError("installed Arduino CLI binary size changed while reading")
+        return b"".join(chunks)
+    except VerificationError:
+        raise
+    except OSError as exc:
+        raise VerificationError(
+            f"cannot safely read installed Arduino CLI binary: {exc}"
+        ) from exc
+    finally:
+        if fd >= 0:
+            os.close(fd)
+
+
 def _read_cli_member(archive_bytes: bytes) -> bytes:
     try:
         with tarfile.open(fileobj=io.BytesIO(archive_bytes), mode="r:gz") as archive:
@@ -107,6 +179,9 @@ def verify_downloaded_binary(binary_path: str | os.PathLike[str]) -> dict[str, s
     if not stat.S_ISREG(info.st_mode) or not os.access(resolved, os.X_OK):
         raise VerificationError("installed Arduino CLI path is not an executable regular file")
 
+    # Reject oversized or unstable installed files before downloading the reference archive.
+    installed_binary_bytes = _read_installed_binary(resolved, info)
+
     request = Request(
         ARCHIVE_URL,
         headers={"User-Agent": "Project-Phoenix-Release-Integrity/1"},
@@ -130,11 +205,6 @@ def verify_downloaded_binary(binary_path: str | os.PathLike[str]) -> dict[str, s
     except (OSError, URLError, TimeoutError) as exc:
         raise VerificationError(f"cannot download pinned Arduino CLI release asset: {exc}") from exc
 
-    try:
-        installed_binary_bytes = resolved.read_bytes()
-    except OSError as exc:
-        raise VerificationError(f"cannot read installed Arduino CLI binary: {exc}") from exc
-
     binary_sha256 = verify_archive_payload(archive_bytes, installed_binary_bytes)
     return {
         "archive_sha256": ARCHIVE_SHA256,
@@ -142,7 +212,6 @@ def verify_downloaded_binary(binary_path: str | os.PathLike[str]) -> dict[str, s
         "binary_sha256": binary_sha256,
         "binary_path": str(resolved),
     }
-
 
 def main() -> int:
     parser = argparse.ArgumentParser(
