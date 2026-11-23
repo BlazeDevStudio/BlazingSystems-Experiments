@@ -977,6 +977,55 @@ class BuildProvenanceTests(unittest.TestCase):
 
 
 
+
+    def test_new_provenance_json_removes_published_target_after_directory_fsync_failure(self):
+        directory_fd = os.open(
+            self.artifact,
+            os.O_RDONLY | getattr(os, "O_DIRECTORY", 0),
+        )
+        target = self.artifact / "BUILD-PROVENANCE.json"
+        fsync_calls = 0
+
+        def fail_directory_sync_after_publication(_fd):
+            nonlocal fsync_calls
+            fsync_calls += 1
+            if fsync_calls == 2:
+                raise OSError("injected directory fsync failure")
+            return None
+
+        try:
+            with patch.object(
+                provenance.os,
+                "fsync",
+                side_effect=fail_directory_sync_after_publication,
+            ):
+                with self.assertRaisesRegex(
+                    OSError,
+                    "injected directory fsync failure",
+                ):
+                    provenance._write_new_json(
+                        target,
+                        {"schema": "blaze.phx-release.build-provenance/test"},
+                        directory_fd=directory_fd,
+                    )
+            self.assertFalse(
+                target.exists(),
+                "failed directory durability after publication must not leave a manifest that blocks retry",
+            )
+            self.assertEqual(
+                list(self.artifact.glob(".BUILD-PROVENANCE.*")),
+                [],
+                "failed publication must not leave an untracked temporary sidecar",
+            )
+            self.assertEqual(
+                fsync_calls,
+                3,
+                "cleanup of a published target must itself be directory-synced",
+            )
+        finally:
+            os.close(directory_fd)
+
+
 if __name__ == "__main__":
     suite = unittest.defaultTestLoader.loadTestsFromTestCase(BuildProvenanceTests)
     result = unittest.TextTestRunner(verbosity=2).run(suite)
