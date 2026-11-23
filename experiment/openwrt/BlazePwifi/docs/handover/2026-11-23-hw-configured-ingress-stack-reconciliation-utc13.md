@@ -412,7 +412,7 @@ No production ESP sketch, shared CORE API, finance, signer, witness, QA-owned as
 
 ---
 
-## PHX-HARDWARE UTC21 follow-up — ISR edges during the synchronous poll HTTP window
+## PHX-HARDWARE UTC22 — ISR edges during the synchronous poll HTTP window
 
 **Observed:** 2026-11-23T22:12Z  
 **Task:** #177 / #347 — prove the blocking poll path retains ISR evidence before the normal post-HTTP sample  
