@@ -2911,3 +2911,16 @@ This append supersedes UTC22 for the live refs below; it does not reassign owner
 | COE Stage 5.1 #49 | aeb8ff11b2f5db9a5f86280ab62ab988245f3919 | Stage 5.1 44646341873 and case guard 44646341992 PASS; shared ESP32 compile in 44646341922 FAILS on missing mbedtls/sha256.h under core 4.0.0. | Separate sidecar; not a replacement for CORE contract or frozen #26. |
 
 No owner branch, subsystem source, route, or release assignment changed.
+
+## PHX-MASTER UTC00 owner routing refresh — 2026-11-23
+
+- **PHX-MASTER:** owns `coordination/phoenix/`, architecture/interface contracts, integration matrix and provenance only. Prior HEAD `d1cb7dfe8cac0c491c424a1ea24769be220b98e2`; next commit is on the same existing draft branch/PR #288. No subsystem source paths.
+- **PHX-CORE:** #252 `c82705f2...` Build [42698139210](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42698139210) PASS. CORE source remains reserved to its separate owner; Master made no CORE changes.
+- **PHX-RENTAL:** #328 `0e0da62a...`; APK identity/API21/API23 pass, Build [44782114390](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44782114390) fails. Resolve missing Mbed TLS/toolchain and stale handover on RENTAL branch only.
+- **PHX-PISONET:** #255 `d01fd164...` Windows [42462978704](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42462978704) pass; native COM/device acceptance remains separate.
+- **PHX-HARDWARE:** #345 `01916c89ae6718d3991c778b676d06718155d6a2` corrects both board sketches with configured gate `controllerEnabled && coinEnabled && relayEnabled`; Quarantine [45085291729](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45085291729) + Relay [45085291635](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45085291635) pass; Full [45085291816](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45085291816) fails at inherited QA parity. Hardware owns code/fixture/handover.
+- **PHX-QA:** #290 `5c29d159...` Windows pass; #292 `75a3f66d...` no runs. QA owns replacing the stale positive poll-signature assertion with source-linked negative/default-deny checks and independent review of #345, including both fault stores and existing pending identity.
+- **PHX-RELEASE:** #291 `1e0e58aa...`; Windows [45088729284](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45088729284) and Full [45088729330](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45088729330) fail; ESP32 compatibility [45088729327](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45088729327) passes. RELEASE owns handover freshness correction.
+- **COE integration owner:** #26 `b382d233ff06c8791b1028bed3c617cc7b670d12` remains FROZEN; five workflows queued / zero jobs. No migration staging until 61-row intake counts, 20 changed/8 absent current source paths, 34 missing Hardware helpers, sketch/test identities and NOTICE/license scope reconcile.
+
+No assignment transfer, branch merge, destination edit or release authority is implied. Cleanup #266 remains OPEN; Master inventory is partial. PRODUCTION NO-GO.

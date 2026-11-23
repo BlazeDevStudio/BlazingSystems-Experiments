@@ -713,3 +713,7 @@ At the exact starting tree, 89 `PHX_MASTER_*.md` reports were present but INDEX 
 - [PHX_MASTER_UTC23_20261122_RELAY_DISABLED_COIN_EDGE_DENY_AND_LIVE_CI_RECONCILIATION.md](PHX_MASTER_UTC23_20261122_RELAY_DISABLED_COIN_EDGE_DENY_AND_LIVE_CI_RECONCILIATION.md) — Hardware #345 exact-source RED, provisional relay-disabled coin-edge invariant, exact owner CI, COE #26 tree/blob/licence/import reconciliation, and current governance/test blockers.
 
 **Post-update index coverage:** 93/93 PHX-MASTER reports linked at this commit; historical reports remain immutable.
+
+- [PHX-MASTER UTC00 Hardware #345 fix verification and COE #26 exact-tree delta audit](PHX_MASTER_UTC00_20261123_HARDWARE345_FIX_VERIFICATION_AND_COE26_SOURCE_DELTA_AUDIT.md) — exact #345 source/CI correction, both-board disabled-gate coverage, remaining QA durability/parity gates, and frozen COE #26 blob/import/license provenance.
+
+**Post-update index coverage:** 94/94 PHX-MASTER reports linked at this commit; historical reports remain immutable.
