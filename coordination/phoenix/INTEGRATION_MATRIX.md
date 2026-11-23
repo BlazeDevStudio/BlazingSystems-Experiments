@@ -2,7 +2,7 @@
 
 **Protocol Specification:** BLAZE-COMMS/1  
 **Master Auditor:** `PHX-MASTER`  
-**Original matrix date:** 2026-11-13 · **Latest bounded correction:** 2026-11-22 UTC00  
+**Original matrix date:** 2026-11-13 · **Latest bounded correction:** 2026-11-23 UTC15  
 **Overall Commercial / Production Status:** **STRICT NO-GO**
 
 ---
@@ -11,15 +11,33 @@
 
 | Subsystem | Owner Role | Code Maturity | Dev Ready | Lab / CI Verified | Hardware Accepted | Production Ready | Active Draft PR / Branch |
 |---|---|---|---|---|---|---|---|
-| **Coordination & Gates** | PHX-MASTER | In review | **DRAFT** | **PARTIAL** (QA recipient 4/4; full 18-suite **NOT RUN**) | N/A (Governance) | **NO RELEASE AUTHORITY** | [Draft #288](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/288) |
-| **Financial Ledger / Vendo** | PHX-CORE | Medium | **YES** | **YES** (Lab/CI) | **NO** (Pending HW) | **NO** (Gate P0) | PR #241, #248, #252 |
-| **ESP32/ESP8266 Firmware** | PHX-HARDWARE | Medium | **YES** | **YES** (C++ Mock) | **NO** (No bench log) | **NO** (Gate P0) | PR #283, #254 |
-| **Android BlazeRental** | PHX-RENTAL | High | **YES** | **YES** (API27 CI) | **NO** (Physical DO) | **NO** (Lineage lock) | PR #240, #285, #287 |
-| **Windows SoftTimer** | PHX-PISONET | High | **YES** | **YES** (CLR/Win CI)| **NO** (Serial bench) | **NO** (AuthSign lock) | PR #238, #255, #268 |
-| **QA / Failure Injection** | PHX-QA | High | **YES** | **YES** (20-job CI) | **NO** (Physical rig) | **NO** (Gate P0) | PR #267, #264, #279 |
-| **Release / Packaging** | PHX-RELEASE | Medium | **YES** | **YES** (CI smoke) | **NO** (Prod secrets) | **NO** (Authenticode) | PR #242, #217 |
+| **Coordination & Gates** | PHX-MASTER | In review | **DRAFT** | **PARTIAL** (Master Actions absent; full Python suite **NOT RUN**) | N/A (Governance) | **NO RELEASE AUTHORITY** | [Draft #288](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/288) |
+| **Financial Ledger / Vendo** | PHX-CORE | Medium | **YES** | **PARTIAL** (scoped build #42698139210 only; no durable-state acceptance) | **NO** (Pending HW) | **NO** (Gate P0) | PR #252 |
+| **ESP32/ESP8266 Firmware** | PHX-HARDWARE | Medium | **YES** | **PARTIAL** (Quarantine/Relay PASS; Full fails at QA poll-signature assertion) | **NO** (No bench log) | **NO** (Gate P0) | #345 parent → #347 child; #346 stale sibling |
+| **Android BlazeRental** | PHX-RENTAL | High | **YES** | **PARTIAL** (APK/API PASS; shared build FAIL) | **NO** (Physical DO) | **NO** (Lineage lock) | PR #328 |
+| **Windows SoftTimer** | PHX-PISONET | High | **YES** | **YES** (Windows CI #42462978704) | **NO** (Serial bench) | **NO** (AuthSign lock) | PR #255 |
+| **QA / Failure Injection** | PHX-QA | High | **YES** | **PARTIAL** (#290 Windows PASS; #292 no runs) | **NO** (Physical rig) | **NO** (Gate P0) | PR #290, #292 |
+| **Release / Packaging** | PHX-RELEASE | Medium | **YES** | **PARTIAL** (exact-source dual-core PASS; Full/Windows fail at CORE handover freshness) | **NO** (Prod secrets) | **NO** (Authenticode) | PR #291 |
 
 ---
+
+
+ 
+## PHX-MASTER UTC15 exact owner CI and integration status — 2026-11-23
+
+| Owner / candidate | Exact head | Current exact-head CI | Integration interpretation |
+|---|---|---|---|
+| CORE #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | Build #42698139210 PASS | Scoped build only; no durable financial-state or independent witness acceptance. |
+| RENTAL #328 | `0e0da62acd47c6a1ce287f8a30fc700d603fa070` | APK #44782114384 PASS; API #44782114393 PASS; build #44782114390 FAIL | Handover freshness and ESP32 include/build contract remain blockers. |
+| PISONET #255 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | Windows #42462978704 PASS | Synthetic Windows CI only; native COM/serial acceptance remains unverified. |
+| HARDWARE #347 | PR/docs/lab `fa7115f7bc15c6c885de8cf0af1469cf5d71bf84`; firmware source `275057aa28375223a32da099420f52696d9b667c`; base #345 `ca72497ed386c9ac4e50d3f811827bef51e296ad` | Quarantine #45202818871 PASS; Relay #45202818915 PASS; Full #45202801601 FAIL at `Missing poll signature check` | Focused host labs verified; aggregate validation remains blocked by QA-owned assertion. Physical acceptance NOT TESTED. |
+| QA #290 / #292 | `5c29d15994cee1279058f1eca12f2a3180704292` / `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | #290 Windows #43633486963 PASS; #292 no runs | Independent exact-head #292 evidence absent. |
+| RELEASE #291 | docs `c5a566fd04a59a3c4a4bbbaa9524f8a9b97e6b7d`; code/workflow `98ba3af1fe76128b331f93a4cf3543087cc0919b` | Compatibility #45209288305 3/3 PASS; Full #45209288533 FAIL; Windows #45209288746 FAIL | Dual-core source pin is current; integrated builds remain blocked at CORE-owned handover freshness. |
+
+**COE exact refs:** main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; integration #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`. Recursive trees are complete: source 2,340 entries, #26 286 entries, COE main 3 entries. Five #26 workflows are QUEUED / zero jobs. #35 remains blocked by approved ULA authority and Bubblewrap; #45 scoped checks pass; #49 Stage 5.1/case-collision pass but Shared Contracts compile fails.
+
+The previous exact per-file blob/mode, test identity, import and license/NOTICE comparison remains the baseline because source main and destination #26 refs are unchanged. No destination file was staged, copied, moved, overwritten, cherry-picked, rebased, retargeted or promoted. All production gates remain NO-GO.
+
 
 ## 2. Cross-Subsystem Dependency Flow
 

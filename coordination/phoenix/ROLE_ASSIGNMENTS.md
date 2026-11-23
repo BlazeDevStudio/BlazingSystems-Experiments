@@ -51,6 +51,7 @@
   - [PR #278 / #281 / #285](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/285) — Merged QR builder URL placeholder fix and verification.
   - [PR #284 / #286](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/284) — Standalone rental uninstall directory scoping.
   - [PR #287](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/287) — Standalone backup directory collision & copy failure protection.
+  - [PR #328](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/328) — Current rental candidate; APK identity/API smoke pass, shared build fails at handover freshness and ESP32 include resolution.
 - **Assigned Scope Boundaries:** Owns Android and standalone rental client. MUST NOT modify OpenWrt financial ledger scripts.
 
 ### 2.4 PHX-PISONET (BlazePisonet Windows SoftTimer)
@@ -69,15 +70,13 @@
 - **Mission:** ESP32/ESP8266 coin controller firmware, pulse conditioning/debounce, client-side signature verification, LittleFS quarantine.
 - **Active Task:** [#177](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/177) — preserve coin-line edges during synchronous poll; maintain fail-closed admission and durable unresolved-event evidence.
 - **Current candidate stack (OPEN / DRAFT / UNMERGED; no merge authorized):**
-  - **#322** — current docs head 50d93e0de3d682550b6f02fb43484e76ad9c7e08; child of #320 at b2b41a3d6ce7887b9624137c966f58462895d3fa; source/test anchor 7ba56c1ba92dcffa2555e4cce10d3010c3afaf5b.
-  - **#323** — current docs head 1761bf38d01c44f3bfd87acc6c7f03d97d7e1d17; child of #322 at 50d93e0de3d682550b6f02fb43484e76ad9c7e08; source/test anchor d37d5da9bdd8e3be08f6344f4a2520c29c2d0abb.
-  - **#326** — current docs head 58c558fb6a237935214621adc3dee65a10fe1a51; current focused source/test anchor 28e13fc82a250821e815fd84b5fd61f1769e7106; PR body records a #323 parent snapshot 988904e8bcd058b62a9fac4aa6319a9b7c5b2470.
-  - **#327 (active child)** — current docs/PR head b6304208d65548a9cfe371504badf03ae3e15dcf; exact poll-loop workflow/source/test commit 2f89326d5b555ffdb2bfaba0a404483d665aa614; base #326 at 58c558fb6a237935214621adc3dee65a10fe1a51.
-- **Master stack ancestry finding:** current #323 head 1761bf38 is an ancestor of #326 head 58c558fb; comparison is 42 commits ahead / 0 behind. The #326 body records prior parent snapshot 988904e8; that snapshot is 31 commits ahead of current #323 and #326 is 11 commits ahead of that snapshot. Treat this as parent-branch head movement requiring PHX-HARDWARE confirmation; Master will not rebase, force-push, merge, or silently select a replacement parent.
-- **Parallel open drafts, not the #322–#327 child chain:** #239 at d83b715b116185107737fef721c2eece8feebf39; #254 at bea6f44e66f5d692859449253facebf01b217891 (focused header run passes, Full build fails on missing mbedtls/sha256.h under ESP32 core 4.0.0); #283 at 830c355376380f9b5533d5cda2558beed41a593a. Do not cherry-pick or treat these as merged prerequisites.
-- **Current CI:** #327 focused quarantine #44675789220 and relay/output #44675789222 PASS; Full #44675789227 FAILS at QA-owned Missing poll signature check. All firmware target jobs completed successfully; downstream simulations/signing/publishing were skipped.
-- **Owner boundaries:** PHX-HARDWARE owns firmware and hardware labs; PHX-QA owns the stale positive poll-signature fixture; PHX-RELEASE owns Arduino core compatibility/reproducibility workflow; PHX-PISONET owns its Windows negative-selftest variable fix. No Master source edits or reassignment.
-- **COE #49:** Hardware explicitly ACKed audit-only and DECLINED implementation ownership in comment #7028198239. No route or source ownership transfer exists.
+  - **#345 parent** — current head `ca72497ed386c9ac4e50d3f811827bef51e296ad`, base #343 `dfeff7d5f63e699de7bc296c7641f2493f1e0e13`. Quarantine [#45165015610](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45165015610) PASS; Relay [#45165015665](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45165015665) PASS; Full [#45165015859](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45165015859) FAIL at QA-owned `Missing poll signature check`.
+  - **#347 reconciled child** — current PR/docs head and latest lab-source commit `fa7115f7bc15c6c885de8cf0af1469cf5d71bf84`; base exactly #345 `ca72497ed386c9ac4e50d3f811827bef51e296ad`. Keep separate anchors: firmware-source commit `275057aa28375223a32da099420f52696d9b667c`; ESP32 sketch blob `717336b84d434d51eb24beac1ed8efce8e719f69`; latest test/lab source `fa7115f7...`. The latest `fa7115f7` increment changes the ESP8266 `coin_pulse_capture_lab.py` helper map and Hardware handover, not production `.ino` runtime.
+  - **#346 sibling** — `bd3fd6e85717395f768aae26a310b647cdd72a7e`, based on older `797dece76c18d464a7c0580658b5db9351cb8e15`; no exact-head workflow runs. It is not an accepted cumulative candidate and remains owner-reconciliation-only.
+- **#347 exact-head CI:** Quarantine [#45202818871](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45202818871) PASS; Relay [#45202818915](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45202818915) PASS; Full [#45202801601](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45202801601) and duplicate trigger [#45202819813](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45202819813) FAIL at `tests/controllers.sh` / `Missing poll signature check`. The Full run completed 14/14 target/platform jobs successfully; validation failed and downstream simulations/signing/publication were skipped.
+- **RELEASE compatibility dependency:** current #291 docs head `c5a566fd04a59a3c4a4bbbaa9524f8a9b97e6b7d`, code/workflow head `98ba3af1fe76128b331f93a4cf3543087cc0919b`. Compatibility [#45209288305](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45209288305) passes 3/3 for exact firmware source `275057aa...` and sketch blob `717336b8...` on ESP32 core 3.3.13 and 4.0.0. This validates the firmware-source pin, not the latest Hardware lab source or physical acceptance. Full [#45209288533](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45209288533) and Windows [#45209288746](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45209288746) remain blocked at CORE-owned handover freshness.
+- **Owner boundaries:** PHX-HARDWARE owns firmware and hardware labs; PHX-QA owns the inherited poll-signature assertion and independent test verification; PHX-CORE owns the authenticated producer contract and shared handover; PHX-RELEASE owns its exact-source compatibility workflow. PHX-MASTER records only cross-role evidence and must not edit subsystem source.
+- **Acceptance boundary:** focused host/source-extracted tests are SIMULATED / CI VERIFIED only. Physical coin acceptor, relay electrical behavior, LittleFS power-loss durability, 150 controlled cuts, 30-device 24-hour soak and native acceptance remain NOT TESTED. Do not synthesize a positive legacy signature or weaken default-deny.
 - **Assigned Scope Boundaries:** Owns firmware .ino files, pin assignments, and electrical protocols. MUST NOT declare hardware accepted based solely on host C++ simulations.
 
 ### 2.6 PHX-QA (Independent QA & Security)
@@ -85,6 +84,8 @@
 - **Active PRs:**
   - [PR #264](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/264) — Deduplicate native pulse generation transitions.
   - [PR #267](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/267) — Parallel pinned Windows, CORE, ESP and double Android emulator labs (20-job CI fan-out).
+  - [PR #290](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/290) — Current Windows QA/native enumeration candidate (Windows CI PASS).
+  - [PR #292](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/292) — Independent cross-subsystem verification candidate; no PR-triggered workflow runs at current head.
 - **Assigned Scope Boundaries:** Owns tests and verification suites. Independent test evidence required for every financial or cryptographic change before merge.
 
 ### 2.7 PHX-RELEASE (Build, Packaging & Release)
@@ -92,6 +93,7 @@
 - **Active PRs:**
   - [PR #217 / #218](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/217) — Pinned Authenticode and production signature gates.
   - [PR #242](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/242) — Fail-closed future SoftTimer Authenticode signing and final package admission.
+  - [PR #291](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/291) — Current exact-source ESP32 compatibility matrix; compatibility PASS, integrated Full/Windows blocked by CORE handover freshness.
 - **Assigned Scope Boundaries:** Owns `.github/workflows/` and release scripts. Gated by Master Auditor approval and QA verification.
 
 
@@ -3203,3 +3205,22 @@ This append-only snapshot supersedes prior current-head rows only for the exact 
 | COE INTERCON #49 | `aeb8ff11b2f5db9a5f86280ab62ab988245f3919` | Stage 5.1 [#44646341873](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44646341873) PASS; case collision [#44646341992](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44646341992) PASS; Shared Contracts [#44646341922](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44646341922) FAIL at ESP32 compile. | COE owner retains router bridge and compile repair. |
 
 No subsystem branch was checked out, rebased, retargeted, or edited by PHX-MASTER. CORE remained with its separate owner.
+
+ 
+## PHX-MASTER live owner-head and CI reconciliation — 2026-11-23 UTC15
+
+| Role / candidate | Exact current PR head | Exact-head evidence |
+|---|---|---|
+| PHX-CORE #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | Build [#42698139210](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42698139210) PASS; scoped CI only, CORE remains separately owned. |
+| PHX-RENTAL #328 | `0e0da62acd47c6a1ce287f8a30fc700d603fa070` | APK identity [#44782114384](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44782114384) PASS; API smoke [#44782114393](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44782114393) PASS; shared build [#44782114390](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44782114390) FAIL. |
+| PHX-PISONET #255 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | Windows [#42462978704](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42462978704) PASS; native COM/device acceptance remains unverified. |
+| PHX-HARDWARE parent #345 | `ca72497ed386c9ac4e50d3f811827bef51e296ad` | Quarantine #45165015610 PASS; Relay #45165015665 PASS; Full #45165015859 FAIL at QA poll-signature assertion. |
+| PHX-HARDWARE child #347 | `fa7115f7bc15c6c885de8cf0af1469cf5d71bf84`; firmware source `275057aa28375223a32da099420f52696d9b667c`; base #345 `ca72497...` | Quarantine #45202818871 PASS; Relay #45202818915 PASS; Full #45202801601/#45202819813 FAIL at `Missing poll signature check`; 14/14 target/platform jobs PASS, downstream skipped. |
+| PHX-HARDWARE sibling #346 | `bd3fd6e85717395f768aae26a310b647cdd72a7e`, base `797dece76c18d464a7c0580658b5db9351cb8e15` | No exact-head workflow runs; stale sibling, not accepted. |
+| PHX-QA #290 / #292 | `5c29d15994cee1279058f1eca12f2a3180704292` / `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | #290 Windows #43633486963 PASS; #292 no PR-triggered runs. |
+| PHX-RELEASE #291 | docs `c5a566fd04a59a3c4a4bbbaa9524f8a9b97e6b7d`; code/workflow `98ba3af1fe76128b331f93a4cf3543087cc0919b`; base #242 `734b89d9e7792247e8376335c3f3685500ab3f89` | Compatibility #45209288305 3/3 PASS on firmware source #347 `275057aa` / sketch blob `717336b8`; Full #45209288533 FAIL at CORE handover freshness (14/14 targets PASS; 13 downstream SKIPPED); Windows #45209288746 FAIL at same gate (build/publisher SKIPPED). |
+
+**COE candidates:** integration #26 `b382d233ff06c8791b1028bed3c617cc7b670d12` remains OPEN / DRAFT / FROZEN with five queued workflows and zero jobs. COE #35 `4234ee00b1fbb02167a977383a737fe5f3917e3a`: Shared/firmware FAIL (10/10 profiles fail closed without approved site ULA /48); Sandbox FAIL (Bubblewrap unavailable, exit 125); Case-collision PASS. COE #45 `9d76a134c1f6512aa40c20ec4d247306a71a8cce`: Overlay/Shell and Case-collision PASS. COE #49 `aeb8ff11b2f5db9a5f86280ab62ab988245f3919`: Stage 5.1 and Case-collision PASS; Shared Contracts ESP32 compile FAIL.
+
+CORE remains under its separate owner. PHX-MASTER changed no CORE, RENTAL, PISONET, HARDWARE, QA or RELEASE source branch.
+

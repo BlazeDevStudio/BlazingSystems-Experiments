@@ -1579,3 +1579,17 @@ At these exact complete trees (2,340 source / 286 destination entries), route co
 The candidate's 61-row SOURCE_INTAKE historical source/destination blobs and modes all resolve with zero recorded-identity mismatches; computed classification is 46 identical / 15 derived while the summary says 47 / 14. The 15 derived test fixtures exceed the 14 derived-test rows in MIGRATION_MAP; voucher journal is omitted and run_focus/member journal IDs are stale. Only 33/61 historical source rows match current main (20 changed, 8 absent). PisoWiFi LICENSE matches; destination root NOTICE, Android Launcher and Tabler coverage remain missing at checked paths. Five #26 workflows are QUEUED / zero jobs.
 
 **Routing decision:** COE #26 stays FROZEN. Do not stage, copy, move, overwrite, cherry-pick, rebase, retarget, promote or write any destination path. No source ownership or migration authority changes.
+
+
+## UTC15 exact routing and destination freeze — 2026-11-23
+
+The live machine manifest remains `OWNERSHIP_ROUTES.json@e4db324315a1b3543fec17a148fbf960170fcb29`: 11 routes, `DRAFT_REVIEW_ONLY`, source Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`, destination candidate COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`, PHX-MASTER target `null`. COE main remains the three-entry scaffold at `a6513ab4412b4c014eee2863e45cbe32d06cb243`.
+
+Current recursive trees are complete and non-truncated: Experiments main 2,340 entries; COE #26 286; COE main 3. COE #26 remains OPEN / DRAFT / FROZEN with five workflows QUEUED / zero jobs. Because source and destination refs have not moved, the earlier exact per-file blob/mode, license/NOTICE, import completeness and test-identity comparison remains the baseline; this UTC15 refresh did not re-run every per-file comparison and proposes no migration.
+
+The previous discrepancies remain unresolved: SOURCE_INTAKE computed 46 identical / 15 derived versus recorded 47 / 14; 15 derived tests versus 14 migration-map rows; omitted `voucher_txn_journal.sh`; stale `run_focus.sh` and `member_txn_journal.sh` blob IDs; historical source drift; missing destination NOTICE and reviewed Android/Tabler license counterparts. Five #26 workflows still have zero jobs. No route is promoted by a green owner-scoped CI result.
+
+COE #35 remains blocked by missing approved site-scoped RFC 4193 ULA /48 and unavailable Bubblewrap (exit 125); all ten appliance profiles fail closed. COE #45 scoped checks pass; COE #49 Stage 5.1/case-collision pass but Shared Contracts ESP32 compile fails.
+
+**Review-before-move hold:** no source/destination file was staged, copied, moved, overwritten, cherry-picked, rebased, retargeted or promoted. No source ownership, destination ownership or route permission changed. PHX-MASTER remains coordination-only. Private Drive registry contents and identifiers remain private and unavailable to this run.
+

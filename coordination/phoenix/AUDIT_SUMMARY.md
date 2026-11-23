@@ -2462,3 +2462,19 @@ The ownership manifest remains 11 routes / `DRAFT_REVIEW_ONLY` / PHX-MASTER dest
 - CORE remained with its separate active continuation owner; PHX-MASTER did not invoke it, edit CORE source, or create competing CORE work.
 
 **Disposition:** coordination-only; COE #26 FROZEN; PR #288 OPEN / DRAFT / UNMERGED; no subsystem source changes; no COE destination changes; PRODUCTION NO-GO.
+
+
+## PHX-MASTER UTC15 live disposition — 2026-11-23
+
+**Master scope:** existing `coordination/phoenix/` only. Audit-start Master head `d8af23f89a5b4d42bb87de55fa8694df214fd914`; branch/PR head was re-read before update. Main `f4e8a891...`, development `aad3aade...`, COE main `a6513ab...`, and COE #26 `b382d233...` are unchanged. PR #288 remains OPEN / DRAFT / UNMERGED.
+
+**Current integration truth:** HARDWARE #347 focused Quarantine/Relay CI passes at PR head `fa7115f7...`; Full fails at QA-owned `Missing poll signature check`. Firmware source `275057aa...` and test/lab source `fa7115f7...` are distinct. RELEASE #291 now has a terminal 3/3 dual-core compatibility PASS at exact firmware source `275057aa...` / sketch blob `717336b8...`; this supersedes the old stale-pin observation. Integrated Full and Windows still fail closed at CORE-owned `PROJECT_HANDOVER.md` freshness; all 14 target/platform builds pass but downstream validation/build/publisher stages skip.
+
+**Other owner CI:** CORE #252 scoped build PASS; RENTAL #328 APK/API PASS and shared build FAIL; PISONET #255 Windows PASS; QA #290 Windows PASS / #292 no runs. COE #26 five workflows queued / zero jobs; #35 blocked by missing approved ULA /48 and Bubblewrap; #45 scoped checks pass; #49 Shared Contracts ESP32 compile fails.
+
+**Migration:** recursive trees re-read complete/non-truncated at Experiments main 2,340 entries, COE #26 286, COE main 3. The 11-route manifest remains `DRAFT_REVIEW_ONLY`, PHX-MASTER target null. The earlier exact per-file blob/mode, license/NOTICE, import and test-identity comparison remains the baseline because source/destination refs are unchanged. No destination staging or file move was proposed.
+
+**Execution limits:** Master Python suite and `verify_coordination.py` NOT RUN; Master PR Actions absent at audit-start SHA. Canonical private Drive registry v11 and newer corrections remain BLOCKED (not surfaced through authorized Library search; no Drive connector action available). Cleanup #266 remains OPEN / 0-of-7. CORE ownership was left untouched.
+
+**Disposition:** no subsystem source modifications, no COE destination modifications, no ownership transfers, no merge/release/flash/signing/secret/payment/physical test. **PRODUCTION NO-GO** pending independent protected signer/anti-rollback witness, crash-atomic durable financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized gates.
+

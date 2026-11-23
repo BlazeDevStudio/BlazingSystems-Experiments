@@ -1526,3 +1526,38 @@ At current PHX-RELEASE #291 docs HEAD `886cc1530119b280574c60ceb68fdf4705b7c362`
 At the same #291 docs head, BlazePwifi build [#45193305375](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45193305375) and Windows [#45193305362](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45193305362) fail the mandatory CORE-owned handover freshness gate: `PROJECT_HANDOVER.md` is older than source/workflow changes (last recorded checkpoint `adcae8141e673dc2147fcad50521ef3a23084d71`). CORE must refresh its own live handover/current-state/change-ledger; RELEASE then reruns its own exact-head jobs. No bypass or cross-owner handover edit is permitted.
 
 **Acceptance limit:** dual-core hosted compilation is not a signed release, physical board acceptance, financial migration proof or production authorization. PR #291 remains OPEN / DRAFT / UNMERGED; PRODUCTION NO-GO.
+
+
+## 6.87 Hardware firmware, lab/test, and documentation pins are separate evidence axes — #347 UTC15 (2026-11-23)
+
+A stacked Hardware PR can carry distinct firmware-source, test/lab-source, and PR/docs heads. Do not compress these into one ambiguous `source/test SHA` when a later test-only commit follows a firmware-source commit.
+
+For current HARDWARE #347:
+- **Parent/base:** #345 exact head `ca72497ed386c9ac4e50d3f811827bef51e296ad`.
+- **Firmware-source anchor:** `275057aa28375223a32da099420f52696d9b667c`.
+- **ESP32 sketch Git blob:** `717336b84d434d51eb24beac1ed8efce8e719f69`.
+- **Latest test/lab-source commit and current PR/docs head:** `fa7115f7bc15c6c885de8cf0af1469cf5d71bf84`. The latest commit changes the ESP8266 `coin_pulse_capture_lab.py` helper map plus the Hardware handover; it does not change production `.ino` runtime in that commit.
+- The lab now derives mutation indexes from one `FUNCTION_SPECS` table, checks duplicate helper names/signatures, validates extracted declarations, and rejects unknown mutation targets. This is a host-lab integrity correction, not firmware behavior change.
+
+**Exact #347 head CI at `fa7115f7...`:** Quarantine [#45202818871](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45202818871) PASS; Relay [#45202818915](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45202818915) PASS; Full [#45202801601](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45202801601) and duplicate trigger [#45202819813](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45202819813) FAIL at QA-owned `tests/controllers.sh` / `Missing poll signature check`. The Full run completed 14/14 target/platform jobs; validation failed and downstream stages were skipped.
+
+**Release compatibility is scoped to firmware source, not the latest lab source.** RELEASE #291's exact-source matrix [#45209288305](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45209288305) checked out firmware source `275057aa...`, verified ESP32 sketch blob `717336b8...`, and passed provenance plus ESP32 core 3.3.13 and 4.0.0 jobs (3/3). It does not execute or qualify the later Hardware lab-source change at `fa7115f7...`, and it does not establish physical acceptance.
+
+**Required pin schema for future handovers:** record `firmware_source_sha`, `test_lab_source_sha`, `pr_docs_head`, `parent_base_sha`, and each CI run's `head_sha` independently. A test/lab commit invalidates prior lab-source evidence even when firmware sketches are unchanged; a docs-only commit does not invalidate source tests, but any new exact-head workflow still needs its own terminal result. The release matrix may pin the firmware source and sketch blob separately, provided it explicitly states that it does not qualify the latest test/lab commit.
+
+**Ownership:** HARDWARE owns firmware and its labs/handover; RELEASE owns the compatibility workflow; QA owns the inherited poll-signature assertion; CORE owns authenticated producer and shared handover. PHX-MASTER owns this evidence-identity contract only. No source edit, rebase, merge or release authority is granted. Physical coin/relay, LittleFS power-loss, 150 real cuts, 30-device/24-hour soak and native acceptance remain NOT TESTED.
+
+## 6.88 RELEASE #291 now qualifies the current #347 firmware pin; integrated Full/Windows remain blocked — UTC15 (2026-11-23)
+
+This supersedes the historical stale Hardware-pin finding in §6.86. The exact-source matrix now follows the current #347 **firmware-source** SHA and sketch blob; the integrated release workflows remain fail-closed at a separate CORE-owned handover gate.
+
+**Current RELEASE branch state:** PR #291 OPEN / DRAFT / UNMERGED; branch `phoenix/release-publisher-isolation-20261115`; base #242 `734b89d9e7792247e8376335c3f3685500ab3f89`; code/workflow head `98ba3af1fe76128b331f93a4cf3543087cc0919b`; final docs/handover head `c5a566fd04a59a3c4a4bbbaa9524f8a9b97e6b7d`.
+
+- Exact-source compatibility [#45209288305](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45209288305): **3/3 SUCCESS**. Provenance job `137813399239`, ESP32 core 3.3.13 job `137813398561`, and ESP32 core 4.0.0 job `137813399194` all PASS. Both core jobs verify exact Hardware source `275057aa...` and sketch blob `717336b84d434d51eb24beac1ed8efce8e719f69`, pinned Arduino CLI/core inputs, image inspection, and two-build reproducibility. CI-generated application images are not production-approved binaries.
+- Integrated Full [#45209288533](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45209288533): **OVERALL FAILURE**. CI-0701 and all 14 target/platform jobs PASS; validation job `137813526598` fails at mandatory freshness check for CORE-owned `experiment/openwrt/BlazePwifi/PROJECT_HANDOVER.md` (last recorded checkpoint `adcae8141e673dc2147fcad50521ef3a23084d71`). Thirteen downstream update/simulation/signing/publishing jobs are SKIPPED.
+- Windows [#45209288746](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45209288746): **FAILURE** at the same CORE-owned handover freshness gate; `build-windows` and `publish-release` are SKIPPED.
+
+**Owner sequence:** CORE refreshes its own shared handover/state records; RELEASE reruns Full and Windows at the resulting exact head; QA independently reviews the compatibility pin contract. PHX-MASTER records the dependency only and must not edit CORE or RELEASE source paths. No bypass or synthetic freshness claim is permitted.
+
+The compatibility PASS is firmware-source-scoped hosted CI only. It does not imply a successful integrated Full build, signed release, production binary, financial migration, hardware acceptance, real power-cut evidence or customer readiness. PR #291 remains DRAFT / UNMERGED. **PRODUCTION NO-GO.**
+
