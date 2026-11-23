@@ -8,6 +8,7 @@ Host C++ only; no physical relay, acceptor, or power-cut evidence.
 """
 from pathlib import Path
 from cpp_fixture_runner import run_cpp_fixture
+from cpp_fixture_runner_contract_lab import verify as verify_cpp_fixture_runner_contract
 
 from firmware_lab_source import extract_function
 
@@ -119,6 +120,7 @@ def compile_and_run(functions):
     )
 
 def main():
+    verify_cpp_fixture_runner_contract()
     function_names = (
         "coinLineIdle",
         "canStartPoll",

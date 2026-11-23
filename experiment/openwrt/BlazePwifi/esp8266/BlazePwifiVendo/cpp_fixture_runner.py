@@ -10,17 +10,25 @@ import subprocess
 import tempfile
 
 
+DEFAULT_COMPILE_TIMEOUT_SECONDS = 30
+DEFAULT_RUN_TIMEOUT_SECONDS = 10
+
+
 def run_cpp_fixture(
     source,
     *,
     prefix,
     stem,
     extra_flags=(),
-    compile_timeout=None,
-    run_timeout=None,
+    compile_timeout=DEFAULT_COMPILE_TIMEOUT_SECONDS,
+    run_timeout=DEFAULT_RUN_TIMEOUT_SECONDS,
     context="C++ fixture",
 ):
-    """Compile and execute one fixture, returning its CompletedProcess result."""
+    """Compile and execute one fixture, returning its CompletedProcess result.
+
+    Every caller gets bounded compile/execution time by default. A lab may
+    choose a different positive timeout for a known slower fixture.
+    """
     with tempfile.TemporaryDirectory(prefix=prefix) as folder:
         cpp = Path(folder) / f"{stem}.cpp"
         binary = Path(folder) / stem
