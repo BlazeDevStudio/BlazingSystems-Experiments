@@ -1,5 +1,16 @@
 # Project Phoenix — Coordination Index
-**Updated:** 2026-11-23T12:31:43.469Z
+
+## Latest live state — PHX-MASTER UTC13 (2026-11-23T13:42:41Z)
+
+- Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; development `blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5`; Master starting HEAD `9f04ece155d2a7f58753521645d16042ae52dbaa`.
+- Hardware #347 is the reconciled child of #345 at exact base `ca72497ed386c9ac4e50d3f811827bef51e296ad`, current head `275057aa28375223a32da099420f52696d9b667c`. Exact-head Quarantine and Relay pass; Full fails at the inherited QA-owned poll-signature assertion. Its PR body still has a stale source/test anchor because the final head adds a test-only change to `pending_clear_failure_lab.py`.
+- Hardware #346 remains a stale sibling at `bd3fd6e85717395f768aae26a310b647cdd72a7e`, based on `797dece76c18d464a7c0580658b5db9351cb8e15`; no exact-head runs.
+- COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; integration #26 remains FROZEN at `b382d233ff06c8791b1028bed3c617cc7b670d12`; COE #35 `4234ee00b1fbb02167b3c99853d4143a4a0550e` remains blocked by ULA authority and Bubblewrap.
+- `OWNERSHIP_ROUTES.json` remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`, 11 routes, `DRAFT_REVIEW_ONLY`, PHX-MASTER destination `null`. No staging or ownership transfer.
+- Cleanup #266 remains OPEN, 0/7. Canonical private Drive v11/newer corrections remain inaccessible; no older snapshot is substituted. Full Master tests and `verify_coordination.py` remain NOT RUN.
+- No subsystem source or COE destination paths changed. CORE remains with its separate owner. **PRODUCTION NO-GO.**
+
+**Updated:** 2026-11-23T13:42:41Z
 **Updated:** 2026-11-22T23:34:12Z
 **Role:** PHX-MASTER — coordination / architecture / integration provenance only  
 **Safety:** DRAFT REVIEW ONLY · PRODUCTION NO-GO
@@ -794,3 +805,9 @@ Both historical reports were already indexed in the earlier sections above; UTC0
 - COE #26 remains FROZEN at `b382d233...`; five workflows queued / zero jobs; SOURCE_INTAKE 46/15 vs summary 47/14 and derived-test map/test/license/NOTICE discrepancies remain.
 - Master tree/index verification: 2,530 tree entries, 103 reports / 103 unique links, zero duplicate, dangling or unindexed targets. No new timestamped report was added; the existing UTC11 stack/provenance report remains historical evidence, while this live refresh is recorded in the canonical documents and control-plane checkpoint.
 - Cleanup #266 remains OPEN / 0/7; private Drive v11/newer corrections and full Master test execution remain BLOCKED. PRODUCTION NO-GO.
+
+
+## Latest exact-head reconciliation — 2026-11-23 UTC13
+
+- [PHX-MASTER UTC13 Hardware #347 final-head CI and live role matrix reconciliation](PHX_MASTER_UTC13_20261123_HARDWARE347_FINAL_HEAD_CI_AND_ROLE_MATRIX_RECONCILIATION.md) — exact PR/branch/CI re-read, #347 test-source anchor drift, stale #346 sibling disposition, current owner CI and COE migration hold.
+- The starting index inventory was 103 reports / 103 unique links. This new report is added once; post-commit tree/index validation is required before claiming final coverage.

@@ -4434,3 +4434,24 @@ Disposition: keep #26 FROZEN. No copy, move, staging, overwrite, cherry-pick, re
 - The prior exact audit at source main `f4e8a891...` and destination #26 `b382d233...` found all 61 recorded destination blobs match the intake, but only 33/61 historical source blobs still match current main; 28 have drifted. These exact refs have not moved, so the previous blob/mode comparison remains the current provenance baseline.
 - PisoWiFi LICENSE matches; source root NOTICE is absent from COE #26; Android Launcher/Tabler coverage is missing at checked destination paths; QRCode/TailAdmin license/notice blobs match; no Hardware-local LICENSE/NOTICE was found at the checked paths.
 - Keep #26 FROZEN until per-file source/destination blobs, modes, licenses, imports, test identities, terminal exact-head CI and independent owner review are reconciled. No staging, copy, move, overwrite, cherry-pick, rebase, or destination write.
+
+
+## UTC13 exact-head integration snapshot — 2026-11-23T13:42:41Z
+
+### Hardware stack: #345 → #347; #346 is a stale sibling
+
+- Parent #345 HEAD: `ca72497ed386c9ac4e50d3f811827bef51e296ad`.
+- Stale sibling #346 HEAD: `bd3fd6e85717395f768aae26a310b647cdd72a7e`, base `797dece76c18d464a7c0580658b5db9351cb8e15`; no exact-head workflow runs.
+- Reconciled child #347 HEAD: `275057aa28375223a32da099420f52696d9b667c`, base exactly #345 HEAD `ca72497ed386c9ac4e50d3f811827bef51e296ad`.
+- #347 exact-head Quarantine [#45186057750](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45186057750) PASS; Relay [#45186057806](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45186057806) PASS; Full [#45186057891](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45186057891) FAIL. The Full validation job log explicitly reports `Missing poll signature check` in the ESP8266 sketch via `tests/controllers.sh`; all 14 firmware/platform/Android jobs completed successfully, but downstream simulation/signing/publication jobs were skipped.
+- The final commit `275057aa...` changes only `experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/pending_clear_failure_lab.py`. #347's current PR body still says no test source changed after source/test SHA `724d892e...` and pins docs HEAD `c7ab3601...`. That assertion is now stale. Treat `275057aa...` as the latest test-source/PR head until Hardware updates its body/handover; no firmware runtime change is indicated by this final commit.
+- Hardware owns #347 source/lab and its PR description; QA owns the inherited poll assertion; CORE owns the authenticated producer response contract. PHX-MASTER owns this integration/freshness record only. Do not add a positive legacy signature or weaken default-deny.
+
+### COE and other exact-head gates
+
+- Experiments main `f4e8a891...`; development `aad3aade...`; Master start `9f04ece155d2a7f58753521645d16042ae52dbaa`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`.
+- COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`: OPEN / DRAFT / FROZEN, five workflows queued / zero jobs, 205 changed paths, 286-entry candidate tree. The prior 61-row SOURCE_INTAKE 46 identical / 15 derived versus summary 47 / 14, derived-test map omission/stale SHAs, source drift and NOTICE/license gaps remain unresolved. Manifest stays 11 routes / DRAFT_REVIEW_ONLY / Master target null.
+- COE #35 `4234ee00b1fbb02167b3c99853d4143a4a0550e`: Shared/firmware #45174042588 FAIL, Sandbox #45174042599 FAIL, Case collision #45174042568 PASS. Ten profiles fail closed without approved site-scoped ULA /48; Bubblewrap is unavailable. No ULA is invented and no unsandboxed fallback is allowed.
+- COE #45 `9d76a134...` scoped checks PASS. COE #49 `aeb8ff11...` Stage 5.1 and case-collision PASS, Shared/firmware FAIL.
+
+**Migration disposition:** no source/destination staging, copy, move, overwrite, cherry-pick, rebase, retarget, route promotion or destination write. Keep COE #26 frozen pending per-file source blob, license, import completeness, test identity, terminal exact-head CI and owner-review evidence.

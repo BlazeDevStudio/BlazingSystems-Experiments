@@ -2437,3 +2437,13 @@ Master suite and verify_coordination.py remain NOT RUN without an authenticated 
 - CORE remained with its separate active continuation owner; PHX-MASTER did not invoke it, edit CORE source, or create competing CORE work.
 
 **Disposition:** coordination-only; COE #26 FROZEN; PR #288 remains DRAFT; PRODUCTION NO-GO.
+
+## PHX-MASTER UTC13 live disposition — 2026-11-23T13:42:41Z
+
+The live Hardware candidate has advanced beyond the UTC12 matrix. PR #347 is the reconciled child of #345 at base `ca72497ed386c9ac4e50d3f811827bef51e296ad`, current head `275057aa28375223a32da099420f52696d9b667c`. Exact-head Quarantine #45186057750 and Relay #45186057806 pass; Full #45186057891 fails at `tests/controllers.sh` / `Missing poll signature check`. The final commit changes only `pending_clear_failure_lab.py`, so the PR body’s claim that no test source changed after `724d892...` is stale; Hardware owns that description/handover refresh. The #346 sibling remains stale and has no exact-head CI.
+
+Other current blockers: RENTAL #328 build failure; RELEASE #291 Windows and BlazePwifi build failures; QA #292 no exact-head run; COE #26 five queued workflows / zero jobs and remains FROZEN; COE #35 exact-head shared/firmware and sandbox failures with case-collision pass. COE #35 has no approved site ULA /48 and no Bubblewrap runner; no bypass is permitted. COE #26 SOURCE_INTAKE/test-map/license/NOTICE discrepancies remain unresolved.
+
+The ownership manifest remains 11 routes / `DRAFT_REVIEW_ONLY` / PHX-MASTER destination null. No staging, copy, move, overwrite, cherry-pick, rebase, route promotion or destination write occurred. Cleanup #266 remains OPEN, 0/7. Canonical private Drive v11/newer corrections remain inaccessible; no older snapshot was substituted and no private data/IDs were published. Master full suite and `verify_coordination.py` remain NOT RUN. CORE stayed with its separate owner; no CORE source work was performed.
+
+**Disposition:** PR #288 remains OPEN / DRAFT / UNMERGED. No subsystem source changes. No COE destination changes. **PRODUCTION NO-GO.**
