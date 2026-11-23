@@ -66,6 +66,39 @@ int main(){
 """
 
 
+def disabled_ingress_gate_main(disabled_flag: str, failure_code: int) -> str:
+    """Build a single-edge deny case that isolates sample admission from output gating."""
+    if disabled_flag not in {"controllerEnabled", "coinEnabled", "relayEnabled"}:
+        raise ValueError("unknown configured coin-ingress gate")
+    return MAIN[:MAIN.index("int main(){")] + f"""
+int main(){{
+  resetState();
+  fakeNow=100U;
+  lastEdge=0U;
+  runDebounceMs=40U;
+  lastCoin=false;
+  insertMode=true;
+  activeTarget="target-01";
+  fsReady=true;
+  journalRecoveryRequired=false;
+  pendingReady=false;
+  pendingPulses=0U;
+  saveCalls=0U;
+  coinEdgeSequence=1U;
+  lastHandledCoinEdgeSequence=0U;
+  {disabled_flag}=false;
+  relayOn=false;
+  ledOn=false;
+  sampleCoinPulseEdge(true);
+  applyOutputs();
+  if(pendingPulses!=0U || saveCalls!=0U ||
+     !journalRecoveryRequired || relayOn || ledOn) return {failure_code};
+  std::cout<<"DISABLED_INGRESS_BASELINE_DENY_PASS"<<std::endl;
+  return 0;
+}}
+"""
+
+
 def compile_and_run(code, board, expected=0, label="normal"):
     with tempfile.TemporaryDirectory(prefix="phx-poll-loop-") as folder:
         cpp=Path(folder)/"poll_loop.cpp"
@@ -491,6 +524,11 @@ for board,path in BOARDS.items():
     )
     if output_gate_for_sample_mutation == output:
         raise AssertionError(f"{board}: sample isolation output-gate anchor missing")
+    disabled_flags = {
+        "controller": "controllerEnabled",
+        "coin": "coinEnabled",
+        "relay": "relayEnabled",
+    }
     for gate_name, mutated_gate, expected_exit in coin_ingress_gate_mutations:
         coin_ingress_gate_mutation = coin_ingress_config.replace(
             original_coin_ingress_gate,
@@ -501,9 +539,18 @@ for board,path in BOARDS.items():
             raise AssertionError(
                 f"{board}: configured {gate_name} coin-ingress gate mutation anchor missing"
             )
+        gate_main = disabled_ingress_gate_main(disabled_flags[gate_name], expected_exit)
+        compile_and_run(
+            assemble(output_source=output_gate_for_sample_mutation, main_source=gate_main),
+            board,
+            0,
+            f"disabled-intake-{gate_name}-coin-ingress-baseline",
+        )
+        print(f"{board} BASELINE_PASS disabled-intake-{gate_name}-coin-ingress")
         compile_and_run(
             assemble(output_source=output_gate_for_sample_mutation,
-                     coin_ingress_config_source=coin_ingress_gate_mutation, main_source=MAIN),
+                     coin_ingress_config_source=coin_ingress_gate_mutation,
+                     main_source=gate_main),
             board,
             expected_exit,
             f"disabled-intake-{gate_name}-coin-ingress-gate",
