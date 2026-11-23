@@ -4247,3 +4247,37 @@ COE main a6513ab has 3 tree entries / 2 blobs; PR #26 tree 8a7d4cf has 286 entri
 PisoWiFi LICENSE is byte-identical. Source root NOTICE exists but COE has no root counterpart. Rental Android, jsQR and Tabler license files exist in source but have no destination counterpart. qrcode and tailadmin license blobs match. Hardware-local LICENSE/NOTICE is absent at the checked source/destination paths. No license grant or approval is implied.
 
 No route promotion, staging, copy, move, overwrite, cherry-pick, rebase or destination edit is authorized. OWNERSHIP_ROUTES.json remains DRAFT_REVIEW_ONLY with PHX-MASTER target null.
+## Live exact-head integration refresh — 2026-11-23 UTC07 (observed 2026-11-23T08:07:19Z)
+
+This section supersedes older live status rows; it does not merge stacks, change owners or authorize route promotion.
+
+| Subsystem | Current owner candidate | Exact evidence | Readiness |
+|---|---|---|---|
+| Master / coordination | #288 `fbbd4f79...` | 185 changed paths, all `coordination/phoenix/`; 0 Actions runs and 0 combined statuses. 8/8 source-extracted recipient checks pass; full Master suite NOT RUN. | DRAFT / partial; no release authority |
+| CORE / Vendo | #252 `c82705f2...` | Build #42698139210 PASS (scoped DENY-only). | Lab-only; financial admission NO-GO |
+| Rental | #328 `0e0da62a...` | APK identity #44782114384 and API21/23 smoke #44782114393 PASS; build #44782114390 FAIL at handover freshness and ESP32 compile. | Partial; no production signing/device acceptance |
+| Windows SoftTimer | #255 `d01fd164...` | Windows #42462978704 PASS. | Software lab only; physical COM acceptance NO |
+| ESP32/ESP8266 | #345 `deed0f49...` (source/test `b1a5a366...`) | Quarantine #45134012104 and Relay #45134012012 PASS; build #45134012436 FAIL at inherited QA poll-signature assertion; 14/14 targets PASS. | Simulated only; Full integration blocked; hardware acceptance NO |
+| QA | #290 `5c29d159...`; #292 `75a3f66d...` | #290 Windows #43633486963 PASS; #292 no workflow runs. | Independent exact-head review incomplete |
+| Release | #291 `886cabfc...` | ESP32 compatibility, Windows and full build fail; all target/platform jobs pass but validation/handover failures skip downstream signing/publication. | No release authority |
+
+### COE #26 — exact source/destination review; keep FROZEN
+
+- COE main remains a three-entry scaffold at `a6513ab4412b4c014eee2863e45cbe32d06cb243`; candidate #26 is `b382d233ff06c8791b1028bed3c617cc7b670d12`, 286 tree entries / 205 changed PR paths / five PR workflows queued with zero jobs.
+- The 11-route ownership manifest remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`, `DRAFT_REVIEW_ONLY`; PHX-MASTER target is null. The manifest describes representative routes, not an executable complete migration map.
+- Current CORE #252 rootfs: 61 source files vs 62 destination files; 45 byte-identical, 16 different, 0 missing, and one destination-only `usr/sbin/blaze-appliance-diag`.
+- Historical `Pisowifi/SOURCE_INTAKE.json` blob `1b9018ff944f7f673934d0fc2a97e0a0090d3f5f`: 61 runtime rows contain 46 `byte_identical` and 15 derived rows, while its summary says 47 identical / 14 derived. All 61 destination blobs match their recorded manifest values. Against current Experiments main `f4e8a891...`, only 33 recorded source blobs still match; 20 differ and 8 are absent. This is source-pin drift, not a reason to overwrite the candidate.
+- Route-mapped path/blob comparison at current owner heads: PISONET 68/47 (27 identical, 11 different, 30 missing, 9 destination-only; 29 source test files: 7 identical, 2 different, 20 missing); Rental Android 991/8 (no exact matches; 65 source tests missing); standalone Rental profile 30/19 (2 different, 28 missing, 17 extra); standalone Rental server 12/4 (1 different, 11 missing, 3 extra; 5 source tests missing); Hardware ESP32 16/1 (15 missing, 1 different); Hardware ESP8266 32/1 (31 missing, 1 different); QA tests 38/19 (1 identical, 3 different, 34 missing, 15 extra); Release workflow 1/1 but different.
+- Licensing: `Pisowifi/LICENSE` matches the source LICENSE blob; COE root NOTICE is absent while Experiments root `NOTICE.md` exists; source Android Launcher and Tabler license files have no matching destination path; qrcode and TailAdmin LICENSE/NOTICE blobs match. No Hardware-local LICENSE/NOTICE was found in the inspected source/destination paths; licensing scope remains an owner review item.
+- COE #35 still lacks trusted Bubblewrap and approved site-scoped ULA /48; #49 ESP32 compile remains failed; #45 is scoped contract CI only. None authorizes destination promotion.
+
+**Decision:** no staging, copy, move, overwrite, cherry-pick, rebase or destination write. Reconcile source pins, import completeness, test identities, license/NOTICE scope and terminal CI first. Keep PR #26 FROZEN.
+
+### Governance and execution
+
+- Experiments main `f4e8a891...`, development `aad3aade...`, and Master `fbbd4f79...` report `protected=false`; COE main `a6513ab...` also reports `protected=false`. Both repositories return empty ruleset lists.
+- Cleanup #266 remains OPEN; all seven checkboxes remain unchecked (0/7). Master cleanup inventory is not complete.
+- Local `git ls-remote` failed because this runner cannot resolve `github.com`; full Master tests and `verify_coordination.py` remain NOT RUN. The 8/8 recipient test above is only an executed source-excerpt check.
+- Canonical private Drive v11 and newer corrections are NOT ACCESSIBLE through this runtime; no older Library snapshot is substituted. No private registry content or identifiers are published.
+
+**Production remains STRICT NO-GO.** Independent protected signing/anti-rollback witness, crash-atomic durable financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized release gates remain mandatory.
