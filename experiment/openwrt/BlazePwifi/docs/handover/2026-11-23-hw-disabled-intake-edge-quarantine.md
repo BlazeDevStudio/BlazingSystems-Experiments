@@ -483,8 +483,8 @@ At behavior-test SHA `78bfd193a90ab04630ac0c064c72b9b66a6d29f6`:
 At logging-only commit `7dee461649e6554389e4f80481086b43a4ddd85a`:
 
 - Relay [#45133582168](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45133582168): both jobs **SUCCESS**.
-- Quarantine [#45133582142](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45133582142), job `137554433283`: **IN PROGRESS** at handover time.
-- Full [#45133582073](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45133582073), validation job `137554534027`: **FAILURE** at the same inherited `Missing poll signature check`; target matrix was still running at handover time.
+- Quarantine [#45133582142](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45133582142), job `137554433283`: **SUCCESS**. Logs show `PENDING_CLEAR_ATTEMPT_MARKER_REMOVE_READBACK_FAILURE_PRESERVED_PASS` twice (ESP8266 and ESP32), `PENDING_CLEAR_REMOVE_FAILURE_INJECTION_PASS 4/4 plus success control` twice, and rejection of the readback-postcondition mutation with expected exit 103 on both boards.
+- Full [#45133582073](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45133582073), validation job `137554534027`: **FAILURE** at the same inherited `Missing poll signature check`. Eleven of thirteen firmware target jobs completed SUCCESS; ESP32 and x86_64 target jobs were CANCELLED, as was Android, after validation failed. Validation-dependent simulations, candidate, signing and publication were cancelled or skipped. No target job is reported as a build failure.
 
 ### Scope and limits
 
