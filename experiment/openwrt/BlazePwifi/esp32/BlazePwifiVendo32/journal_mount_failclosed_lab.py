@@ -148,7 +148,7 @@ for board, path in BOARDS:
         raise SystemExit(f"{board}: dangerous automatic journal formatting remains")
     code = CPP.replace("@@POLL_PULSE_LATCH@@", extract(real, "void loadPollPulseFaultLatch(){"))
     code = code.replace("@@INIT_FUNCTION@@", extract(real, "void initPendingStore(){"))
-    code = code.replace("@@OUTPUTS_FUNCTION@@", extract(real, "void applyOutputs(){"))
+    code = code.replace("@@OUTPUTS_FUNCTION@@", extract(real, "bool coinIngressConfigurationAllows(){") + "\n" + extract(real, "void applyOutputs(){"))
     with tempfile.TemporaryDirectory(prefix="phx-hw-mount-") as tmp:
         source = Path(tmp) / "mount.cpp"
         executable = Path(tmp) / "mount"
