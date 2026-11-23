@@ -4191,3 +4191,24 @@ This live section supersedes earlier exact-head pins below. Experiments main=f4e
 Master verifier blob f2442966... requires to be exactly one registered PHX role or literal ALL. QA #292 is test-only and based on old Master base b1ca02e; no Actions runs exist. Keep it DRAFT until QA executes the unchanged test file against the current verifier at an exact SHA. Do not accept array-valued or semicolon-separated recipients.
 
 COE #26 remains FROZEN. No staging or destination writes were made. The canonical private v11 registry and newer corrections were not surfaced by the authorized connected surface; older registry snapshots/checkpoint summaries are not substitutes. Rulesets list is empty; branch-protection endpoints returned 403, so enforcement could not be verified in this activation. Full Master tests remain NOT RUN.
+
+
+## PHX-MASTER UTC06 live exact-head correction — 2026-11-23
+
+This section supersedes stale exact-head and CI pins above; earlier evidence remains historical.
+
+| Role / candidate | Exact head | Exact-head evidence |
+|---|---|---|
+| CORE #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | [42698139210](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42698139210) scoped Build PASS. |
+| RENTAL #328 | `0e0da62acd47c6a1ce287f8a30fc700d603fa070` | [44782114384](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44782114384) APK identity PASS; [44782114390](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44782114390) Build FAIL; [44782114393](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44782114393) API21/API23 smoke PASS. |
+| PISONET #255 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | [42462978704](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42462978704) Windows synthetic PASS; native acceptance NOT TESTED. |
+| HARDWARE #345 | `e385a26fecd36e2696b5be1dcfcce601609614ff` | [45125188884](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45125188884) Quarantine PASS; [45125188887](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45125188887) Relay PASS; [45125188863](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45125188863) Full FAIL at QA-owned Missing poll signature check. |
+| QA #290 | `5c29d15994cee1279058f1eca12f2a3180704292` | [43633486963](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43633486963) Windows PASS. |
+| QA #292 | `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | No workflow runs; stale Master base. |
+| RELEASE #291 | `886cabfc5080c3fbef03c2a3b1afe9d52dea6f60` | [45117006790](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45117006790) core 4.0.0 archive verification FAIL; [45117006843](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45117006843) Windows freshness FAIL; [45117006794](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45117006794) Full freshness FAIL. |
+| COE #26 | `b382d233ff06c8791b1028bed3c617cc7b670d12` | Five workflows QUEUED / zero jobs; FROZEN. |
+| COE #35 | `adbb3894ac222ab615cd681ffe893163dc9214c2` | [45124298956](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45124298956) host preflight 39/39 PASS then Bubblewrap missing / exit 125; [45124298960](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45124298960) 10/10 appliance profiles fail closed without approved site ULA /48; [45124298967](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45124298967) case-collision PASS. |
+| COE #45 | `9d76a134c1f6512aa40c20ec4d247306a71a8cce` | [44295049727](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44295049727) and [44295049903](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44295049903) scoped PASS. |
+| COE #49 | `aeb8ff11b2f5db9a5f86280ab62ab988245f3919` | [44646341992](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44646341992) case-collision PASS; [44646341873](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44646341873) INTERCON PASS; [44646341922](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44646341922) Hardware/Shared FAIL. |
+
+**Master execution:** PR #288 has zero Actions runs and zero combined statuses. Full Master tests and `verify_coordination.py` remain NOT RUN. The current exact role heads above are separate owner candidates, not a combined integration acceptance.

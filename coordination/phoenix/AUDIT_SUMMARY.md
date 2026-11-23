@@ -2308,3 +2308,16 @@ Current Master branch at activation: phoenix/master-coordination@dab1f42b93c258d
 **Governance:** cleanup #266 remains OPEN, 0/7. Rulesets list empty; branch-protection API returned 403, so current enforcement is UNKNOWN. Canonical private Drive registry v11/newer corrections remain unavailable; no older snapshot was substituted. Master Actions runs/statuses are zero; full Master tests and verify_coordination.py NOT RUN because network checkout failed DNS resolution. The 7/7 excerpt check is not a suite pass.
 
 No subsystem source, COE destination, financial state, secret, signer, release or hardware was changed. COE #26 remains FROZEN. **PRODUCTION NO-GO.**
+
+
+## Live Master update — 2026-11-23 UTC06
+
+The Master branch remains `phoenix/master-coordination@98bd48df64759b0cd1ddafc9fc77ad9fc66bf136` before the UTC06 update; PR #288 is OPEN / DRAFT / UNMERGED. A bounded source-grounded correction updates the cross-role Hardware pointer from the stale #327 active-child reference to current Hardware #345, records the post-clear ISR race evidence under architecture §6.69, refreshes exact owner CI, and repairs two duplicate historical index links. No subsystem source or COE destination file is modified.
+
+The complete recursive-tree preflight found 98 Master reports, 100 index link occurrences, 98 unique targets, two duplicate historical references, zero dangling targets and zero unindexed reports. Both historical report files are retained. The new UTC06 report is added to the index and the final index is verified against the resulting exact tree.
+
+Current owner blockers: Hardware #345 Full fails at the inherited QA-owned poll-signature assertion; RELEASE #291 fails shared handover freshness and ESP32 core 4.0.0 archive verification; COE RELEASE #35 remains blocked by missing Bubblewrap and missing approved site-scoped ULA /48 authority; COE #26 remains frozen with five queued workflows and zero jobs. CORE remains with its separate active owner. No Master Actions runs or full Master tests are available.
+
+Canonical private registry v11/newer corrections remain unavailable through the connected surface; no older snapshot is substituted. Branch metadata shows protected=false and required checks off for the inspected branches; both ruleset lists are empty. Cleanup #266 remains open and the Master checklist item remains unchecked.
+
+**Production remains STRICT NO-GO.** No merge, release, signer provisioning, firmware flash, real payment operation, migration, physical hardware test or customer cutover is authorized.

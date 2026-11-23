@@ -2995,3 +2995,19 @@ This section supersedes earlier owner/CI pins below without rewriting historical
 | RELEASE #291 | 886cabfc5080c3fbef03c2a3b1afe9d52dea6f60 | #45117006790 core3.3.13 PASS/core4.0.0 archive verify FAIL; #45117006843 Windows freshness FAIL; #45117006794 Full freshness FAIL with target builds completed and release stages skipped |
 
 No source ownership or assignment changed. Master did not edit CORE, RENTAL, PISONET, HARDWARE, QA or RELEASE paths. Cleanup #266 remains OPEN, 0/7. COE #26 remains frozen. Full Master tests NOT RUN; private v11/newer corrections unavailable; branch-protection endpoints 403 and rulesets empty. PRODUCTION NO-GO.
+
+
+## Live exact-head correction — 2026-11-23 UTC06
+
+This section supersedes stale active-candidate pointers in the historical role profiles above without deleting their lineage. The former #322–#327 Hardware stack remains historical/parallel evidence; the current active Hardware candidate is #345.
+
+| Role | Current owner PR | Branch / exact head | Current CI disposition |
+|---|---|---|---|
+| PHX-CORE | [#252](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/252) | `fix/phx-core-g-coin-fixture-controller-auth-v1-20261029` / `c82705f2de865c89ab733b10efa84f26f56a5cc4` | Scoped build PASS; CORE implementation remains separately owned. |
+| PHX-RENTAL | [#328](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/328) | `phoenix/rental-apk-contract-audit-20261121` / `0e0da62acd47c6a1ce287f8a30fc700d603fa070` | APK identity/API smoke PASS; build FAIL. |
+| PHX-PISONET | [#255](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/255) | `phoenix/pisonet-native-com-interface-20261030` / `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | Windows synthetic PASS; native COM acceptance NOT TESTED. |
+| PHX-HARDWARE | [#345](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/345) | `phoenix/hw-coin-intake-armed-gate-20261122-utc23` / `e385a26fecd36e2696b5be1dcfcce601609614ff` | Quarantine/Relay PASS; Full FAIL at inherited QA poll-signature assertion. Base: `phoenix/hw-esp8266-pin-recovery-20261122-utc16@dfeff7d5...`. |
+| PHX-QA | [#290](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/290), [#292](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/292) | #290 `5c29d159...`; #292 `75a3f66d...` | #290 Windows PASS; #292 no workflow runs and stale Master base. |
+| PHX-RELEASE | [#291](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/291) | `phoenix/release-publisher-isolation-20261115` / `886cabfc5080c3fbef03c2a3b1afe9d52dea6f60` | Core 4.0.0 archive verification and shared handover freshness fail; no release stage authorized. |
+
+The new #345 source/test commit `edff098446247d3b2851af643d31673921cae03f` is a host-lab clear-window ISR regression; final docs head is `e385a26f...`. No Master-to-owner path transfer or subsystem edit occurred.

@@ -734,8 +734,8 @@ At the exact starting tree, 89 `PHX_MASTER_*.md` reports were present but INDEX 
 
 ## Restored historical report links — 2026-11-23 UTC04
 
-- [PHX_MASTER_UTC17_20261121_EXACT_HEAD_ROLE_CI_COE26_SOURCE_MAIN_PROVENANCE_AUDIT.md](PHX_MASTER_UTC17_20261121_EXACT_HEAD_ROLE_CI_COE26_SOURCE_MAIN_PROVENANCE_AUDIT.md) — historical exact-head source-main and COE #26 provenance audit, restored to the index without changing the report.
-- [PHX_MASTER_UTC20_20261121_EXACT_HEAD_ROLE_CI_COE26_MANIFEST_BASELINE_CANDIDATE_AUDIT.md](PHX_MASTER_UTC20_20261121_EXACT_HEAD_ROLE_CI_COE26_MANIFEST_BASELINE_CANDIDATE_AUDIT.md) — historical routing-manifest and baseline-candidate audit, restored to the index without changing the report.
+Both historical reports were already indexed in the earlier sections above; UTC06 removes only the duplicate link occurrences. The report files and their canonical earlier entries are retained.
+
 
 ## Latest exact-head reconciliation — 2026-11-23 UTC04
 
@@ -747,3 +747,8 @@ At the exact starting tree, 89 `PHX_MASTER_*.md` reports were present but INDEX 
 ## UTC05 recipient-contract and live owner CI reconciliation — 2026-11-23T06:06:54Z
 
 - [PHX_MASTER_UTC05_20261123_RECIPIENT_VALIDATION_AND_LIVE_OWNER_CI_RECONCILIATION.md](PHX_MASTER_UTC05_20261123_RECIPIENT_VALIDATION_AND_LIVE_OWNER_CI_RECONCILIATION.md) — current Master recipient-validator source audit, QA #292 stale-base disposition, exact owner CI, COE #26 hold, registry/branch-protection/test limitations.
+
+
+## Latest exact-head reconciliation — 2026-11-23 UTC06
+
+- [PHX-MASTER UTC06 Hardware #345 clear-window ISR, live owner CI and index reconciliation](PHX_MASTER_UTC06_20261123_HARDWARE345_CLEAR_WINDOW_INDEX_AND_COE35_RECONCILIATION.md) — current role heads/CI, source-extracted post-clear ISR evidence, COE #35 fail-closed blockers, branch protection, private registry access limitation, and duplicate-free report index.
