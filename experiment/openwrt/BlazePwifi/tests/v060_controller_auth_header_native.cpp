@@ -50,11 +50,21 @@ int main() {
   assert(matches_policy_digest(policy.data(),policy.size(),hashhex,64));
   assert(!matches_policy_digest(policy.data(),policy.size(),hashhex,63));
   assert(!matches_policy_digest((policy+" ").data(),policy.size()+1,hashhex,64));
+  // Empty policy bytes are invalid even when their digest is correct.
+  const char emptySha256[] = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
+  assert(!matches_policy_digest("",0,emptySha256,sizeof(emptySha256)-1));
+  std::puts("PHX-HW empty policy span denied PASS");
 
   const std::string prefix="blazepwifi-controller-response-v1|poll|";
   const std::string suffix=std::string("|7|")+hashhex+"|0||0|DENY";
   const std::string good=prefix+"vendo-01|0011223344556677"+suffix;
   const std::string signature=mac(good);
+  // An empty message cannot be a canonical controller response.
+  const std::string emptyCanonical;
+  const std::string emptyCanonicalMac=mac(emptyCanonical);
+  assert(!verify_mac(key,strlen(key),emptyCanonical.data(),emptyCanonical.size(),
+                     emptyCanonicalMac.data(),emptyCanonicalMac.size()));
+  std::puts("PHX-HW empty canonical span denied PASS");
   const std::vector<char> raw_canonical(good.begin(),good.end());
   const std::vector<char> raw_signature(signature.begin(),signature.end());
   assert(verify_mac(key,strlen(key),raw_canonical.data(),raw_canonical.size(),
