@@ -106,6 +106,7 @@ static bool injectDuringHttp=false;
 static unsigned injectDuringHttpEdgeCount=1;
 static bool injectTimedPollPulse=false, timedPulseIsrInjected=false;
 static bool allowCoinPost=false, injectDuringCoinPost=false, injectDuringClear=false;
+static unsigned injectDuringCoinPostEdgeCount=1;
 static int coinPostCalls=0, clearCalls=0;
 static bool injectAfterDrainEdge=false;
 unsigned injectAfterDrainEdgeCount=1;
@@ -285,7 +286,14 @@ String post(const String &action,const String &pulses=String("0"),
   }
   if(action=="coin"){
     ++coinPostCalls;
-    if(injectDuringCoinPost){ coinEdgeSequence++; injectDuringCoinPost=false; }
+    if(injectDuringCoinPost){
+      const unsigned edgeCount=injectDuringCoinPostEdgeCount;
+      injectDuringCoinPost=false;
+      for(unsigned edge=0; edge<edgeCount; ++edge){
+        if(interruptAttached && attachedIsr && attachedPin==runCoinPin &&
+           attachedMode==(runCoinActiveLow?FALLING:RISING)) attachedIsr();
+      }
+    }
     fakeNow+=3500UL;
     return String("{\"ok\":true}");
   }

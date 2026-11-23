@@ -27,6 +27,7 @@ from poll_loop_blocking_inhibit_lab_fixtures import (
     STUBS,
     SUPPORT,
     MAIN,
+    COIN_POST_ISR_MAIN,
     PENDING_PRESERVATION_MAIN,
     RACE_MAIN,
     post_drain_rollover_main,
@@ -446,6 +447,28 @@ for board,path in BOARDS.items():
                 load_fault_source+latch_fault_source+quarantine_source+configure_source+accept_source+reconcile_source+init_store_source+SUPPORT+handle_source+sample_source+drain_abort_source+loop_source+main_source)
 
     print(board,compile_and_run(assemble(),board,0,"exact-source"))
+    coin_post_output=compile_and_run(
+        assemble(main_source=COIN_POST_ISR_MAIN),
+        board,0,"coin-post-isr-multi-edge-rollover"
+    )
+    if "COIN_POST_ISR_MULTI_EDGE_ROLLOVER_RETAINED_PASS" not in coin_post_output:
+        raise AssertionError(f"{board}: coin-POST ISR rollover marker missing")
+    print(f"{board} COIN_POST_ISR_MULTI_EDGE_ROLLOVER_RETAINED_PASS")
+
+    coin_post_attach_anchor=(
+        "attachInterrupt(digitalPinToInterrupt(runCoinPin),coinEdgeISR,"
+        "runCoinActiveLow?FALLING:RISING);"
+    )
+    coin_post_missing_isr=configure.replace(coin_post_attach_anchor,"")
+    if coin_post_missing_isr==configure:
+        raise AssertionError(f"{board}: coin-POST ISR attachment mutation anchor missing")
+    compile_and_run(
+        assemble(configure_source=coin_post_missing_isr,
+                 main_source=COIN_POST_ISR_MAIN),
+        board,45,"coin-post-missing-isr-attachment"
+    )
+    print(f"{board} MUTATION_REJECTED coin-post-missing-isr-attachment expected_exit=45")
+
     print(board,compile_and_run(assemble(main_source=CLEAR_WINDOW_ISR_MAIN),
                                 board,0,"coin-post-clear-window-isr-edge"))
     clear_recheck_anchor = (

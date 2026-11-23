@@ -17,7 +17,7 @@ void resetState(){
   injectDuringPollRelease=false; injectDuringPollReleaseAtRelayWrite=false;
   pollReleaseEdgeInjected=false; pollReleaseEdgeSawRelayOff=false;
   pollReleaseRelayEnergizedBeforeLatch=false; pollReleaseRelayClearedBeforeLatch=false;
-  allowCoinPost=false; injectDuringCoinPost=false; injectDuringClear=false; coinPostCalls=0; clearCalls=0;
+  allowCoinPost=false; injectDuringCoinPost=false; injectDuringClear=false; coinPostCalls=0; clearCalls=0; injectDuringCoinPostEdgeCount=1;
   drainAbortReadCount=0; drainAbortInjected=false; drainAbortSawRelayOn=false;
   drainAbortSampleSawRelayOn=false; drainAbortReenabledBeforeLatch=false;
   drainAbortActiveLineReenabled=false;
@@ -515,6 +515,36 @@ int main(){
   return 0;
 }
 
+"""
+
+
+COIN_POST_ISR_MAIN = r"""
+int main(){
+  resetState();
+  allowCoinPost=true;
+  pendingReady=true;
+  pendingPulses=4U;
+  pendingNonce="nonce-existing";
+  pendingTarget="target-01";
+  insertMode=false;
+  activeTarget="";
+  coinEdgeSequence=0xFFFFFFFEUL;
+  lastHandledCoinEdgeSequence=0xFFFFFFFEUL;
+  injectDuringCoinPost=true;
+  injectDuringCoinPostEdgeCount=2U;
+  loop();
+  if(coinPostCalls!=1 || clearCalls!=0 || pendingPulses!=4U ||
+     !pendingReady || !pendingPostAttempted || !journalRecoveryRequired ||
+     !LittleFS.exists("/pollpulse.fault") || relayOn || ledOn ||
+     insertMode || !activeTarget.empty() ||
+     coinEdgeSequence!=0U || lastHandledCoinEdgeSequence!=0U ||
+     pendingTarget!="target-01" || pendingNonce!="nonce-existing") return 45;
+  const std::string marker=LittleFS.files["/pollpulse.fault"];
+  if(marker.find("COIN_INGRESS_UNRESOLVED")==std::string::npos ||
+     marker.find("pulses=6")==std::string::npos) return 45;
+  std::cout<<"COIN_POST_ISR_MULTI_EDGE_ROLLOVER_RETAINED_PASS\\n";
+  return 0;
+}
 """
 
 
