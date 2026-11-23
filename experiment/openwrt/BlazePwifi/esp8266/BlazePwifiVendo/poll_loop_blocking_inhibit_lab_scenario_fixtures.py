@@ -107,6 +107,8 @@ int runDisabledIngressPendingCase(bool disableController, bool disableCoin, bool
   if(disableCoin) coinEnabled=false;
   if(disableRelay) relayEnabled=false;
   applyOutputs();
+  // Check the configured output interlock before the fault handler can mask a bad initial state.
+  if(relayOn || ledOn) return failureCode;
   if(injectIsrEdge) coinEdgeSequence=1U;
   sampleCoinPulseEdge(true);
   if(!journalRecoveryRequired || pendingPulses!=2U || !pendingReady ||
@@ -137,6 +139,8 @@ int runDisabledIngressPendingMultiEdgeCase(bool disableController, bool disableC
   if(disableCoin) coinEnabled=false;
   if(disableRelay) relayEnabled=false;
   applyOutputs();
+  // Check the configured output interlock before sampling or fault handling.
+  if(relayOn || ledOn) return failureCode;
   lastHandledCoinEdgeSequence=initialSequence;
   coinEdgeSequence=initialSequence+edgeDelta;
   sampleCoinPulseEdge(true);
