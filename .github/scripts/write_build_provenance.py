@@ -9,6 +9,7 @@ import os
 import re
 import stat
 import subprocess
+import sys
 import secrets
 import shlex
 from pathlib import Path, PurePosixPath
@@ -92,6 +93,81 @@ def _same_file_state(left: os.stat_result, right: os.stat_result) -> bool:
         and left.st_ctime_ns == right.st_ctime_ns
         and left.st_nlink == right.st_nlink
     )
+
+
+def _record_cleanup_failure(primary_error: BaseException, detail: str) -> None:
+    """Attach cleanup diagnostics without replacing the error being handled."""
+    try:
+        add_note = getattr(primary_error, "add_note", None)
+        if callable(add_note):
+            add_note(detail)
+        else:
+            sys.stderr.write(detail + "\n")
+    except BaseException:
+        # Cleanup diagnostics must never replace the operation or cleanup error.
+        pass
+
+
+def _close_file_and_parent_descriptors(
+    fd: int,
+    parent_fd: int,
+    display_path: Path,
+) -> None:
+    """Attempt both descriptor closes and preserve the primary read/hash failure."""
+    primary_error = sys.exc_info()[1]
+    close_errors: list[tuple[str, OSError]] = []
+    cleanup_interruptions: list[tuple[str, BaseException]] = []
+
+    for descriptor, label in (
+        (fd, "file descriptor"),
+        (parent_fd, "parent-directory descriptor"),
+    ):
+        try:
+            os.close(descriptor)
+        except OSError as exc:
+            close_errors.append((label, exc))
+        except BaseException as exc:
+            # A new interruption must not prevent the remaining descriptor
+            # from receiving its one close attempt.
+            cleanup_interruptions.append((label, exc))
+
+    if cleanup_interruptions:
+        label, interruption = cleanup_interruptions[0]
+        if primary_error is not None:
+            _record_cleanup_failure(
+                interruption,
+                "provenance read/hash failure also occurred before "
+                f"{label} cleanup for {display_path}: "
+                f"{type(primary_error).__name__}: {primary_error}",
+            )
+        for failed_label, error in close_errors:
+            _record_cleanup_failure(
+                interruption,
+                f"could not close {failed_label} for {display_path}: "
+                f"{type(error).__name__}: {error}",
+            )
+        for failed_label, error in cleanup_interruptions[1:]:
+            _record_cleanup_failure(
+                interruption,
+                f"additional {failed_label} cleanup interruption for {display_path}: "
+                f"{type(error).__name__}: {error}",
+            )
+        raise interruption from primary_error
+
+    if close_errors:
+        detail = "; ".join(
+            f"{label}: {type(error).__name__}: {error}"
+            for label, error in close_errors
+        )
+        if primary_error is not None:
+            _record_cleanup_failure(
+                primary_error,
+                f"provenance descriptor cleanup also failed for {display_path}: {detail}",
+            )
+            return
+        raise ProvenanceError(
+            f"could not close provenance descriptors for {display_path}: {detail}"
+        ) from close_errors[0][1]
 
 
 def _open_regular(path: Path) -> tuple[int, os.stat_result, int, str]:
@@ -189,8 +265,7 @@ def _read_regular(path: Path) -> bytes:
     except OSError as exc:
         raise ProvenanceError(f"cannot read {path}: {exc}") from exc
     finally:
-        os.close(fd)
-        os.close(parent_fd)
+        _close_file_and_parent_descriptors(fd, parent_fd, path)
     if not _same_file_state(before, after) or not _same_file_state(after, path_after):
         raise ProvenanceError(f"file changed while reading: {path}")
     if total != after.st_size:
@@ -214,8 +289,7 @@ def _hash_regular(path: Path) -> tuple[str, int]:
     except OSError as exc:
         raise ProvenanceError(f"cannot hash {path}: {exc}") from exc
     finally:
-        os.close(fd)
-        os.close(parent_fd)
+        _close_file_and_parent_descriptors(fd, parent_fd, path)
     if not _same_file_state(before, after) or not _same_file_state(after, path_after):
         raise ProvenanceError(f"file changed while hashing: {path}")
     if total != after.st_size:
