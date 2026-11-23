@@ -1,5 +1,26 @@
 # Project Phoenix — Canonical Role Assignments & Directory Ownership
 
+## PHX-MASTER UTC23 owner pins — 2026-11-23T23:37:42Z
+
+Live refs: Experiments main f4e8a891aed8af86d5fd315d28750a0ac3a7372b; issue #172 development blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5; comparison-only v0.6 audit foundation 2fbd2475e9f54878c316fa7cea2f228386b0e859; Master PR #288 starting head 56f1d68e55d675abcd622cab6ba7f9ec2427ab72; COE main a6513ab4412b4c014eee2863e45cbe32d06cb243; COE #26 b382d233ff06c8791b1028bed3c617cc7b670d12.
+
+| Owner / candidate | Exact PR head | Exact-head evidence and interpretation |
+|---|---|---|
+| CORE #252 | c82705f2de865c89ab733b10efa84f26f56a5cc4 | Build [#42698139210](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42698139210) PASS; scoped build only. |
+| RENTAL #328 | 0e0da62acd47c6a1ce287f8a30fc700d603fa070 | APK identity [#44782114384](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44782114384) PASS; API smoke [#44782114393](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44782114393) PASS; build [#44782114390](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44782114390) FAIL. |
+| PISONET #255 | d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | Windows [#42462978704](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42462978704) PASS; synthetic CI, native COM acceptance not established. |
+| HARDWARE #347 | docs 19ea4ae9b677111812cba11e14f4852c99ef0111; source/test e69a3d715aca6724dd0390e925e48a7510009ab1; firmware source 275057aa28375223a32da099420f52696d9b667c | Quarantine [#45283033953](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45283033953) PASS; Relay [#45283034099](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45283034099) PASS; Full [#45283033969](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45283033969) FAIL at Controller protocol parity / Missing poll signature check. All 14 target/platform builds pass; validation-dependent stages skip. |
+| HARDWARE #348 | c18826892160b1777f107e2ca0ca49aaed66ba6a | Focused header-native [#45207909335](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45207909335) PASS, 5/5 synthetic checks; build [#45207909463](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45207909463) FAIL at ESP32 compile and handover freshness. |
+| QA #290 / #292 | 5c29d15994cee1279058f1eca12f2a3180704292 / 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | #290 Windows [#43633486963](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43633486963) PASS; #292 has no workflow runs. |
+| RELEASE #291 | c5a566fd04a59a3c4a4bbbaa9524f8a9b97e6b7d | ESP32 compatibility [#45209288305](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45209288305) PASS 3/3; Full [#45209288533](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45209288533) FAIL; Windows [#45209288746](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45209288746) FAIL. |
+| COE RELEASE #35 | 2bb153c3cc2434a6d63f81ce3707743a1e72fc1f | Shared [#45288319126](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45288319126): 210 PASS / 2 skips, then 10/10 ULA profile denials; sandbox [#45288319117](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45288319117): 40/40 host tests PASS, Bubblewrap unavailable / exit 125; case-collision [#45288319159](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45288319159) PASS. |
+| COE CORE #45 | 9d76a134c1f6512aa40c20ec4d247306a71a8cce | Overlay shell [#44295049727](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44295049727) PASS; case-collision [#44295049903](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44295049903) PASS. |
+| COE INTERCON #49 | aeb8ff11b2f5db9a5f86280ab62ab988245f3919 | Stage 5.1 [#44646341873](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44646341873) PASS; case [#44646341992](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44646341992) PASS; Shared ESP32 compile [#44646341922](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44646341922) FAIL. |
+| COE integration #26 | b382d233ff06c8791b1028bed3c617cc7b670d12 | Five workflows remain QUEUED with zero jobs; FROZEN, not integration acceptance. |
+
+The exact ownership routes remain 11 entries / DRAFT_REVIEW_ONLY / PHX-MASTER target null. Cleanup #266 remains OPEN, 0/7. Do not transfer ownership or infer physical/production acceptance from these CI results.
+
+
 **Protocol Specification:** BLAZE-COMMS/1  
 **Exact source routing authority:** [OWNERSHIP_ROUTES.json](OWNERSHIP_ROUTES.json) and [REPOSITORY_ROUTING.md](REPOSITORY_ROUTING.md). Broad root paths below do not grant ownership of unrelated products.  
 **Team Topology:** FULL (7 CHATS) TEAM  

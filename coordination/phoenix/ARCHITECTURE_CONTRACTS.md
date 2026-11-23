@@ -1652,3 +1652,16 @@ The source ESP32 sketch selects the PSA API for Mbed TLS 4 and the checked legac
 Before any destination move, the integration owner must reconcile every source/destination blob, file mode, test identity/import, dependency, license/NOTICE, and exact-head CI result. The ownership manifest remains `DRAFT_REVIEW_ONLY`; PHX-MASTER destination remains null. This contract authorizes no copy, migration, firmware edit, or release.
 
 HARDWARE owns firmware and board-local labs; QA owns the positive/negative assertion; CORE owns the authenticated poll producer contract; COE integration owns destination mapping. PHX-MASTER owns only this cross-role qualification rule.
+
+### 6.95 Non-empty authenticated policy and canonical-message spans — PHX-HARDWARE #348 (2026-11-23 UTC23)
+
+A cryptographic match over an empty byte span is not a valid controller-policy or controller-response authorization:
+
+1. A raw policy span MUST have a non-null pointer and an explicit length greater than zero before SHA-256 comparison. The digest of the empty string MUST NOT admit an empty policy.
+2. A canonical controller-response span MUST have a non-null pointer and an explicit length greater than zero before HMAC verification. A mathematically valid HMAC over an empty string MUST NOT admit an empty response.
+3. Verification MUST preserve the caller-supplied byte span and explicit length. Do not infer length by normalizing or silently substituting a different serialization.
+4. Keep the rejection before cryptographic comparison and preserve default-deny admission. This host-lab contract does not authorize coin/relay intake, change the wire format, transfer parser ownership to HARDWARE, or establish a protected production signer or freshness witness.
+
+Evidence / scope: HARDWARE PR #348 is an OPEN/DRAFT child of #254, final head c18826892160b1777f107e2ca0ca49aaed66ba6a; source correction 21d075e366e1a6fab54985a14996e2d30a7cc862; exact-head focused header run #45207909335, job 137808529744, passed 5/5 synthetic header checks, including correct SHA-256(empty) and HMAC(key, empty) rejection. The initial test-only head was not observed in Actions, so no RED result is claimed. The separate build run #45207909463 failed at ESP32 compile and mandatory handover freshness; no Full acceptance or hardware acceptance is implied.
+
+Independent review: PHX-QA must verify both zero-length negative cases and the non-empty controls against the exact source/test SHA. CORE remains authority for the production response envelope and authenticated register/poll contract.

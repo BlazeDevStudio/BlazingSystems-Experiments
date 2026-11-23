@@ -1,5 +1,14 @@
 # Project Phoenix — Source ownership and migration routing (2026-11-15)
 
+## PHX-MASTER UTC23 staging recheck — 2026-11-23T23:37:42Z
+
+Current refs: Experiments main f4e8a891aed8af86d5fd315d28750a0ac3a7372b; issue #172 development aad3aade72c1156eecba1fed30907c6d0283b2c5; COE main a6513ab4412b4c014eee2863e45cbe32d06cb243; COE integration #26 b382d233ff06c8791b1028bed3c617cc7b670d12. Master PR #288 remains OPEN/DRAFT/UNMERGED. The machine-readable route manifest blob e4db324315a1b3543fec17a148fbf960170fcb29 remains 11 routes / DRAFT_REVIEW_ONLY / PHX-MASTER target null.
+
+New focused absence check: source HARDWARE #348 contains ControllerAuthV1Lab.h (blob 27950692147b2ec89b92505062d085deb8afb699) and v060_controller_auth_header_native.cpp (blob 8c192a15ae79f3240062fe7a88f8848e7bb1768d). The complete non-truncated COE #26 tree contains no matching controller-auth header or empty-span fixture path. Record this as NOT IMPORTED / provenance gap, not as a copy instruction. The source helper is a non-actuating lab artifact; its owner must decide whether and how a corresponding test is imported, after license/dependency/test-identity review. No destination edit or staging occurred.
+
+Earlier #26 audit remains a review baseline only: 61 mapped runtime rows; computed 46 identical / 15 derived vs recorded 47 / 14; 15 derived tests vs 14 mapped; two stale test blob IDs; 34 Hardware board-local Python helpers in source vs zero in destination; source/destination ESP sketches differ; root NOTICE and Hardware-local license/notice counterparts remain gaps. This UTC23 pass did not rerun every row; no full parity claim is made.
+
+
 This is a **routing and review document**, not a claim that code has been copied, integrated, tested, or released. Machine-readable source paths and role owners are in [OWNERSHIP_ROUTES.json](OWNERSHIP_ROUTES.json). Keep this map scoped to Phoenix; unrelated `android/` and `embedded/` experiments are **not** automatically owned by Rental or Pisonet.
 
 ## Verified repository state

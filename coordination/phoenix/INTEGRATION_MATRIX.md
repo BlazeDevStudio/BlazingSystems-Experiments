@@ -1,5 +1,32 @@
 # Project Phoenix — Subsystem Integration Matrix & Gate Hierarchy
 
+## PHX-MASTER UTC23 exact-head integration reconciliation — 2026-11-23T23:37:42Z
+
+- Experiments main f4e8a891aed8af86d5fd315d28750a0ac3a7372b; issue #172 development blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5; comparison-only v0.6 audit foundation 2fbd2475e9f54878c316fa7cea2f228386b0e859.
+- COE main a6513ab4412b4c014eee2863e45cbe32d06cb243 remains a three-entry scaffold; integration #26 b382d233ff06c8791b1028bed3c617cc7b670d12 remains OPEN/DRAFT/FROZEN with five queued workflows and zero jobs.
+- Ownership manifest OWNERSHIP_ROUTES.json blob e4db324315a1b3543fec17a148fbf960170fcb29: 11 routes, DRAFT_REVIEW_ONLY, PHX-MASTER target null. No route promotion.
+
+### New exact source-to-destination gap — HARDWARE #348
+
+At source PR #348 final head c18826892160b1777f107e2ca0ca49aaed66ba6a, source paths include:
+- experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/ControllerAuthV1Lab.h, blob 27950692147b2ec89b92505062d085deb8afb699;
+- experiment/openwrt/BlazePwifi/tests/v060_controller_auth_header_native.cpp, blob 8c192a15ae79f3240062fe7a88f8848e7bb1768d.
+
+The complete non-truncated COE #26 tree contains no path matching controller_auth, ControllerAuth, or the empty-span fixture identity. This is a test-support/source-intake gap, not permission to copy the files. Preserve the source and require per-file owner, license, dependency, import-completeness and exact test-SHA review before any destination proposal. No staging, copy, move, overwrite or destination edit occurred.
+
+The existing 61-row #26 intake audit remains the prior baseline (46 identical / 15 derived versus summary 47 / 14; 15 derived tests versus 14 mapped; two stale test blob IDs; 34 source Hardware board-local Python helpers versus zero destination; firmware sketches differ; root NOTICE and Hardware-local license/notice gaps remain). This activation re-read the exact main/#26 refs and performed the focused #348 path absence check; it did not claim to rerun all 61 row comparisons.
+
+### Exact-head CI interpretation
+
+- HARDWARE #347 docs head 19ea4ae9b677111812cba11e14f4852c99ef0111: Quarantine and Relay PASS; Full FAIL at QA-owned Missing poll signature check; 14/14 target builds pass, dependent stages skipped.
+- HARDWARE #348 head c18826892160b1777f107e2ca0ca49aaed66ba6a: header-native run #45207909335 passes 5/5 synthetic checks; separate build run #45207909463 fails ESP32 compile and handover freshness.
+- COE RELEASE #35 head 2bb153c3cc2434a6d63f81ce3707743a1e72fc1f: 210 packaging tests PASS / 2 skips, then 10/10 site-ULA denials; Bubblewrap unavailable / exit 125; case-collision PASS.
+- COE INTERCON #49 Shared ESP32 compile still fails on the Mbed TLS header mismatch; Stage 5.1 and case-collision pass.
+- CORE #252, RENTAL #328, PISONET #255, QA #290/#292 and RELEASE #291 exact heads/CI are pinned in ROLE_ASSIGNMENTS.md.
+
+All source and destination candidates remain review-only. No byte identity, import completeness, license clearance, full integration CI, native hardware acceptance or release authority is inferred from a partial pass.
+
+
 **Protocol Specification:** BLAZE-COMMS/1  
 **Master Auditor:** `PHX-MASTER`  
 **Original matrix date:** 2026-11-13 · **Latest bounded correction:** 2026-11-23 UTC15  

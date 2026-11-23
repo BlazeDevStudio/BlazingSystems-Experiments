@@ -1,16 +1,15 @@
 # Project Phoenix — Coordination Index
 
 
-## Latest live state — PHX-MASTER UTC22 (2026-11-23T22:37:39Z)
+## Latest live state — PHX-MASTER UTC23 (2026-11-23T23:37:42Z)
 
-- Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; issue #172 development `blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5`; Master branch starting HEAD `c5a685903470a1e140c08452d934c2834a655d74`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243); COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`.
-- PR #288 remains OPEN / DRAFT / UNMERGED; 192 changed paths, all under `coordination/phoenix/`. This update edits six existing Master documents only; no new report, folder, Drive artifact or source/destination file was created.
-- HARDWARE #347 head `e69a3d715aca6724dd0390e925e48a7510009ab1`: Quarantine #45281321173 PASS, Relay #45281321207 PASS, Full #45281321180 FAIL at QA-owned `Missing poll signature check`; target builds pass, dependent stages skip.
-- COE #26 exact hardware source comparison: both ESP sketch blobs differ; source has 38 board-local Python files and destination has zero; generic destination hardening test differs from source test. Keep #26 FROZEN.
-- COE #35: 208 tests PASS / 2 skips, then 10/10 ULA denials; Bubblewrap missing / exit 125; case collision PASS. COE #49 Shared ESP32 compile fails on `mbedtls/sha256.h`; separate candidate, not #26 CI.
-- Cleanup #266 remains OPEN / 0-of-7. Ownership manifest remains 11 routes / `DRAFT_REVIEW_ONLY` / PHX-MASTER target null. Private Drive v11/newer corrections remain inaccessible; no older registry substituted. Master Python suite and `verify_coordination.py` NOT RUN.
-- All four relevant branch refs report `protected=false`; effective ruleset enforcement remains an administrator verification item. **PRODUCTION NO-GO.**
-
+- Experiments main f4e8a891aed8af86d5fd315d28750a0ac3a7372b; issue #172 development blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5; comparison-only v0.6 audit foundation 2fbd2475e9f54878c316fa7cea2f228386b0e859. Master PR #288 remains OPEN/DRAFT/UNMERGED; refresh parent 56f1d68e55d675abcd622cab6ba7f9ec2427ab72.
+- COE main a6513ab4412b4c014eee2863e45cbe32d06cb243 (three-entry scaffold); integration #26 b382d233ff06c8791b1028bed3c617cc7b670d12 remains OPEN/DRAFT/FROZEN, five workflows QUEUED / zero jobs.
+- HARDWARE #347 docs head 19ea4ae9, source/test e69a3d71, firmware source 275057aa: Quarantine/Relay PASS; Full FAIL at QA-owned Missing poll signature check; 14/14 target builds pass and downstream stages skip. HARDWARE #348 head c1882689: focused header-native 5/5 synthetic checks PASS; build fails at ESP32 compile and handover freshness.
+- COE RELEASE #35 head 2bb153c3: 210 packaging tests PASS / 2 skips, 10/10 ULA profile denials; Bubblewrap unavailable / exit 125; case-collision PASS. COE #49 Stage 5.1/case PASS, Shared ESP32 compile FAIL; #45 overlay/case checks PASS.
+- Owner PR/CI pins for CORE #252, RENTAL #328, PISONET #255, QA #290/#292 and RELEASE #291 are in ROLE_ASSIGNMENTS.md and INTEGRATION_MATRIX.md. COE #26 staging remains frozen; #348 lab header/test paths are absent from its complete tree. No staging/copy/move.
+- Ownership manifest remains 11 routes / DRAFT_REVIEW_ONLY / PHX-MASTER target null. Cleanup #266 remains OPEN, 0/7. Experiments main, issue-designated development and COE main report protected=false. Private Drive v11/newer corrections unavailable; older v3-v7 not substituted. No Google Drive connector exposed.
+- Master Python suite and verify_coordination.py NOT RUN; no authenticated local checkout. This index retains the existing 107/107 report links; no new report/artifact was created. PRODUCTION NO-GO.
 
 ## Latest live state — PHX-MASTER UTC21 (2026-11-23T21:51:11Z)
 
