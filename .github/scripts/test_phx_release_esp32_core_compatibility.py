@@ -219,8 +219,10 @@ def check_application_image_verifier(workflow_content: str) -> list[str]:
                 real_close(descriptor)
 
             try:
-                with patch.object(module.os, "open", side_effect=recording_open), patch.object(
-                    module.os, "close", side_effect=recording_close
+                with patch.object(module.os, "open", new=recording_open), patch.object(
+                    module.os, "close", new=recording_close
+                ), patch.object(
+                    module.os, "supports_dir_fd", set(os.supports_dir_fd) | {recording_open}
                 ):
                     try:
                         module._open_output_directory(directory)
