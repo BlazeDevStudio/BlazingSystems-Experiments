@@ -4281,3 +4281,50 @@ This section supersedes older live status rows; it does not merge stacks, change
 - Canonical private Drive v11 and newer corrections are NOT ACCESSIBLE through this runtime; no older Library snapshot is substituted. No private registry content or identifiers are published.
 
 **Production remains STRICT NO-GO.** Independent protected signing/anti-rollback witness, crash-atomic durable financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized release gates remain mandatory.
+
+
+## PHX-MASTER UTC08 live owner CI and COE #26 provenance refresh — 2026-11-23T08:38:39Z
+
+### Current exact refs
+
+- Experiments `main@f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; development `blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5`; Master `phoenix/master-coordination@952fc374f75e53a9d7dbc09074981bf5b89e66df`.
+- COE `main@a6513ab4412b4c014eee2863e45cbe32d06cb243`; integration #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`.
+- Master PR #288 is OPEN / DRAFT / UNMERGED, base main `f4e8a891...`, 185 changed paths, all under `coordination/phoenix/`, 0 Actions runs and 0 combined statuses.
+- `OWNERSHIP_ROUTES.json` remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`, 11 routes, `DRAFT_REVIEW_ONLY`, PHX-MASTER target null.
+
+### Exact owner CI and blockers
+
+- CORE #252 scoped Build PASS; no CORE source changes by Master.
+- RENTAL #328 APK identity/API21/23 smoke PASS; combined build fails at mandatory handover freshness and ESP32 compile.
+- PISONET #255 Windows Release PASS; native COM hardware acceptance NOT TESTED.
+- HARDWARE #345 Quarantine/Relay PASS; Full fails at QA-owned legacy `Missing poll signature check`; all 14 target/platform jobs pass, downstream simulations/signing/publication skip. Host/FakeLittleFS only.
+- QA #290 Windows PASS; QA #292 has no workflow runs.
+- RELEASE #291 ESP32 core 4.0.0 archive verifier, Windows handover freshness and full-build freshness checks fail; core 3.3.13 compatibility sub-job passes. No downstream release authority.
+- COE #26 five workflows queued / zero jobs. COE #35 current head `ede91d43...` has no exact-head workflow runs; prior run #45124298956 is on superseded `adbb3894...`. COE #45 scoped overlay/case checks pass. COE #49 Stage 5.1/case checks pass but Hardware & Shared Contracts ESP32 compile fails.
+
+### COE #26 exact source/destination provenance carried forward
+
+The owner source PR heads and COE #26 candidate SHA are unchanged from the prior exact-tree comparison, so the route counts below remain pinned to those same refs; no destination mutation or staging occurred.
+
+| Route | Source / destination files | Exact comparison |
+|---|---:|---|
+| CORE rootfs | 61 / 62 | 45 identical, 16 different, 0 missing, 1 destination-only diagnostic |
+| PISONET | 68 / 47 | 27 identical, 11 different, 30 missing, 9 destination-only; 29 source tests: 7 identical, 2 different, 20 missing |
+| Rental Android | 991 / 8 | No exact path/blob matches; 65 source tests missing |
+| Standalone Rental profile | 30 / 19 | 2 different, 28 missing, 17 extra |
+| Standalone Rental server | 12 / 4 | 1 different, 11 missing, 3 extra; 5 source tests missing |
+| Hardware ESP32 | 16 / 1 | 15 missing, 1 different |
+| Hardware ESP8266 | 32 / 1 | 31 missing, 1 different |
+| QA tests | 38 / 19 | 1 identical, 3 different, 34 missing, 15 extra |
+| Release workflow | 1 / 1 | Different implementation; reimplementation review required |
+
+### SOURCE_INTAKE and licensing recheck
+
+Current COE #26 `Pisowifi/SOURCE_INTAKE.json` blob `1b9018ff944f7f673934d0fc2a97e0a0090d3f5f` has 61 runtime rows: 46 `byte_identical` and 15 `derived_cleanup_review_required_real_router_test`. Its summary still claims 47 byte-identical / 14 derived. The 4 test rows are marked 2 derived-cleanup-executed-in-CI and 2 byte-identical-executed-in-CI, but the current #26 PR workflows are still queued with zero jobs; those manifest labels are not current exact-head CI evidence. The separate `derived_tests` list has 15 entries.
+
+- PisoWiFi LICENSE matches source exactly (both blob `1ee55b94183417be977ca287cd7391f9a6f7e721`).
+- Experiments root `NOTICE.md` exists (blob `f6d92cd21465312be5993631fe26977219be0fb9`); COE candidate root `NOTICE.md` is absent.
+- Android Launcher and Tabler license coverage remains missing at the checked destination paths; qrcode and TailAdmin LICENSE/NOTICE blobs match.
+- No Hardware-local LICENSE/NOTICE was found at the inspected source/destination paths; keep this as an owner/licensing review item.
+
+**Decision:** COE #26 remains FROZEN. Do not stage, copy, move, overwrite, cherry-pick, rebase or promote any route until exact source blobs, licenses, test identities, import completeness and terminal CI are reconciled and owner-authorized.

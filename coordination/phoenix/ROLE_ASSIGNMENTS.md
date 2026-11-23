@@ -3053,3 +3053,29 @@ This is the live pin table for the existing UTC07 PHX-MASTER checkpoint. It supe
 | #49 INTERCON Stage 5.1 | `aeb8ff11b2f5db9a5f86280ab62ab988245f3919` | Stage 5.1 #44646341873 PASS; case-collision #44646341992 PASS; hardware/shared #44646341922 fails ESP32 compile. LAB / PAID NO-GO. |
 
 CORE remains owned by its separate active automation; PHX-MASTER did not invoke or edit CORE work. No worker branch was changed.
+
+
+## PHX-MASTER UTC08 live exact-head / CI refresh — 2026-11-23T08:38:39Z
+
+This snapshot supersedes earlier live-head tables for the observed refs only. Historical evidence is retained; ownership and branch targets are unchanged.
+
+| Role | Current draft PR / exact head | Exact-head CI | Boundary |
+|---|---|---|---|
+| PHX-MASTER | #288 `phoenix/master-coordination@952fc374f75e53a9d7dbc09074981bf5b89e66df` | 0 Actions runs; 0 combined statuses. Static recursive-tree/index check: 100/100 reports linked, 0 duplicates, 0 dangling, 0 unindexed. | `coordination/phoenix/` only; PR OPEN/DRAFT/UNMERGED. |
+| PHX-CORE | #252 `c82705f2de865c89ab733b10efa84f26f56a5cc4` | [Build #42698139210](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42698139210) PASS; scoped DENY-only evidence. | CORE retains all financial/runtime source ownership; Master did not edit or run CORE work. |
+| PHX-RENTAL | #328 `0e0da62acd47c6a1ce287f8a30fc700d603fa070` | [APK identity #44782114384](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44782114384) PASS; [API21/23 smoke #44782114393](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44782114393) PASS; [build #44782114390](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44782114390) FAIL at handover freshness and ESP32 compile. | No APK production signing, device provisioning or migration. |
+| PHX-PISONET | #255 `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | [Windows Release #42462978704](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42462978704) PASS. | Software/synthetic only; native COM and physical pulse acceptance NOT TESTED. |
+| PHX-HARDWARE | #345 PR head `deed0f49c04d8cd69dc4fda78d2a4d914aa4dd4d`; source/test `b1a5a36627075581973b451934eed000e43b4038`; parent #343 `dfeff7d5f63e699de7bc296c7641f2493f1e0e13` | Quarantine [#45134012104](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45134012104) PASS; Relay [#45134012012](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45134012012) PASS; Full [#45134012436](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45134012436) FAIL at inherited QA-owned `Missing poll signature check`; all 14 target/platform jobs PASS, downstream stages skipped. | FakeLittleFS/host-lab only; physical acceptance NOT TESTED. PR body still contains stale `4c4653e5...`; Hardware owns its correction. |
+| PHX-QA | #290 `5c29d15994cee1279058f1eca12f2a3180704292`; #292 `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | #290 [Windows #43633486963](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43633486963) PASS; #292 0 workflow runs. | Independent poll-signature assertion and exact-current-source verification remain open. |
+| PHX-RELEASE | #291 `886cabfc5080c3fbef03c2a3b1afe9d52dea6f60` | [ESP32 compatibility #45117006790](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45117006790) FAIL: core 3.3.13 PASS, core 4.0.0 pinned archive verification FAIL; [Windows #45117006843](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45117006843) FAIL at shared handover freshness; [build #45117006794](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45117006794) FAIL at mandatory handover freshness. | All target/platform build jobs pass; downstream signing/publication skipped. CORE must refresh its own handover; RELEASE owns reruns. |
+
+### COE destination candidates
+
+| COE PR | Current exact head | Exact-head CI |
+|---|---|---|
+| #26 integration | `b382d233ff06c8791b1028bed3c617cc7b670d12` | Five PR workflows QUEUED / zero jobs; 205 changed paths; 286-entry candidate tree. FROZEN. |
+| #35 release sandbox | `ede91d4323c158f6abd454da18b6ee059f4609d0` | No workflow runs at this exact head. Prior sandbox run [#45124298956](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45124298956) belongs to superseded head `adbb3894ac222ab615cd681ffe893163dc9214c2`; it is not current-head evidence. |
+| #45 receipt vectors | `9d76a134c1f6512aa40c20ec4d247306a71a8cce` | Overlay/shell #44295049727 and case-collision #44295049903 PASS; scoped only. |
+| #49 INTERCON Stage 5.1 | `aeb8ff11b2f5db9a5f86280ab62ab988245f3919` | Stage 5.1 #44646341873 and case-collision #44646341992 PASS; Hardware & Shared Contracts #44646341922 FAIL at ESP32 compile. |
+
+The exact COE #35 head advanced after its earlier failing runs. Do not transfer prior CI conclusions to `ede91d43...`; its next action is a fresh exact-head run by the COE RELEASE owner.

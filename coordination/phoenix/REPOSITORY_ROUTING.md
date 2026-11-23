@@ -1504,3 +1504,22 @@ Current PISONET #255 is 68 source / 47 destination (27 exact, 11 changed, 30 mis
 PisoWiFi LICENSE matches exactly. Source root NOTICE has no COE root counterpart; Rental Android, jsQR and Tabler license files have no destination counterpart. qrcode and tailadmin license blobs match. No Hardware-local license/notice exists at the checked source/destination paths. These gaps require owner/licensing review.
 
 OWNERSHIP_ROUTES.json remains blob e4db324315a1b3543fec17a148fbf960170fcb29, 11 routes, DRAFT_REVIEW_ONLY, PHX-MASTER target null. No migration staging or destination mutation.
+
+
+## UTC08 exact-source routing and destination hold — 2026-11-23T08:38:39Z
+
+The ownership manifest remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`, 11 routes, `DRAFT_REVIEW_ONLY`; PHX-MASTER target remains null. The source owner PR heads and COE #26 candidate head are unchanged from the prior exact-tree comparison. No migration operation is authorized or staged.
+
+Current COE destination refs:
+- COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243` (three-entry scaffold).
+- Integration #26 `b382d233ff06c8791b1028bed3c617cc7b670d12` (OPEN / DRAFT / FROZEN; 205 changed paths; 286 tree entries; five workflows queued / zero jobs).
+
+The route-mapped source/destination counts remain: CORE rootfs 61/62 (45 identical, 16 different, 1 destination-only); PISONET 68/47 (27 identical, 11 different, 30 missing, 9 extra); Rental Android 991/8 (no exact matches); standalone Rental profile 30/19 (2 different, 28 missing, 17 extra); Rental server 12/4 (1 different, 11 missing, 3 extra); Hardware ESP32 16/1 (15 missing, 1 different); Hardware ESP8266 32/1 (31 missing, 1 different); QA tests 38/19 (1 identical, 3 different, 34 missing, 15 extra); Release workflow 1/1 but different implementation. These are exact-head comparisons carried forward because the relevant source PR heads and COE #26 candidate SHA have not moved.
+
+The current `Pisowifi/SOURCE_INTAKE.json` blob is `1b9018ff944f7f673934d0fc2a97e0a0090d3f5f`: 61 runtime rows resolve to 46 byte-identical and 15 derived, while the summary says 47/14. Its four test rows contain historical `*_executed_in_ci` labels, but current #26 PR workflows remain queued / zero jobs; do not treat those labels as current exact-head CI.
+
+Licensing readback: PisoWiFi LICENSE matches exactly; Experiments root NOTICE exists but COE root NOTICE is absent; Android Launcher and Tabler coverage is missing at checked destination paths; qrcode and TailAdmin LICENSE/NOTICE blobs match; no Hardware-local LICENSE/NOTICE was found in the inspected paths.
+
+COE #35 advanced to `ede91d4323c158f6abd454da18b6ee059f4609d0`; no workflow runs exist at that exact head. The previous sandbox failure run #45124298956 belongs to superseded `adbb3894ac222ab615cd681ffe893163dc9214c2`, so it is not current-head evidence. COE #45 remains scoped PASS; #49 retains an ESP32 compile failure in Hardware & Shared Contracts.
+
+**Routing decision:** keep #26 FROZEN. No staging, copy, move, overwrite, cherry-pick, rebase, branch retarget, or destination write. Reconcile exact source blobs, licenses, test identities, import completeness and terminal exact-head CI before any later owner-authorized staging review.

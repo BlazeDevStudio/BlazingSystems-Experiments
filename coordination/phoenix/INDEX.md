@@ -758,3 +758,9 @@ Both historical reports were already indexed in the earlier sections above; UTC0
 ## Latest exact-head reconciliation — 2026-11-23 UTC06
 
 - [PHX-MASTER UTC06 Hardware #345 clear-window ISR, live owner CI and index reconciliation](PHX_MASTER_UTC06_20261123_HARDWARE345_CLEAR_WINDOW_INDEX_AND_COE35_RECONCILIATION.md) — current role heads/CI, source-extracted post-clear ISR evidence, COE #35 fail-closed blockers, branch protection, private registry access limitation, and duplicate-free report index.
+
+
+## Latest exact-head reconciliation — 2026-11-23 UTC08
+
+- [PHX-MASTER UTC08 live owner CI, COE #26 provenance and registry-access audit](PHX_MASTER_UTC08_20261123_LIVE_OWNER_CI_COE26_AND_REGISTRY_ACCESS_AUDIT.md) — current exact role heads/CI, corrected COE #35 current-head evidence, SOURCE_INTAKE 46/15 versus 47/14 discrepancy, license/NOTICE status, frozen destination route comparison, branch protection, private registry access limitation and release blockers.
+- The starting exact recursive tree had 100 PHX-MASTER reports; the starting index had 100 unique report links with zero duplicates, dangling or unindexed targets. The new UTC08 report is the 101st report; final post-commit coverage is verified against the resulting recursive tree.
