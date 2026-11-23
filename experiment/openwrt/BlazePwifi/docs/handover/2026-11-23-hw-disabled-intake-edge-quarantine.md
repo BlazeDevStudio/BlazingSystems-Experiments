@@ -221,3 +221,47 @@ The runner adds a negative mutation that deletes `/pending.dat` inside the extra
 This proves only byte-preservation behavior in the fake LittleFS host fixture. It does **not** prove actual filesystem durability, reboot recovery, physical coin/relay behavior, power-cut recovery or an independent witness. `SIMULATED_ONLY=1`; physical acceptance remains **NOT TESTED**.
 
 **Next exact action:** PHX-QA and PHX-CORE reconcile the stale positive poll-signature assertion against the current main `register|ping` and `poll` producers; Hardware keeps coin admission default-deny until an approved authenticated response/event contract exists.
+
+
+## 2026-11-23 UTC04 follow-up — preserve all pending recovery evidence
+
+**Task:** one bounded PHX-HARDWARE test-integrity improvement on the existing #345 child. The production ESP8266/ESP32 sketches and shared APIs were not changed.
+
+### Exact source/test change
+
+**Source/test commit:** b1a5a36627075581973b451934eed000e43b4038.
+
+The previous opaque fake LittleFS fixture preserved only /pending.dat. That did not independently guard the other recovery artifacts or the durable POST-attempt marker. The host lab now adds a separate already-attempted pending-event scenario that seeds opaque bytes at:
+
+- /pending.dat
+- /pending.new
+- /pending.bak
+- /pending.attempt
+
+For each configured gate (controller OFF, coin feature OFF, acceptor relay OFF), with and without a simulated ISR edge, the new 6/6-per-board matrix verifies that pending RAM identity, pendingPostAttempted, and every seeded file's exact bytes survive the disabled-intake fault. It also checks no save/POST path is entered, the sticky fault marker records three unresolved pulses, and outputs remain OFF.
+
+The runner builds a separate ATTEMPTED_EVIDENCE_MAIN so each injected deletion is caught by the intended new scenario rather than an earlier legacy pending-identity assertion. It injects deletion of each of the four paths and clearing of pendingPostAttempted; every mutation must exit 82 on both boards.
+
+**Fixture boundary:** all four files are deliberately opaque sentinels, seeded together to model ambiguous recovery evidence. This test does not parse PendingRecord, validate a production journal layout, choose a recovery candidate, or prove actual LittleFS durability. It proves only that this extracted fault path does not erase or rewrite the supplied evidence in the host fixture.
+
+### Test-first correction history
+
+- Initial implementation commit cc3db78dc9182c7b5f3d83b89c4ac1ad5d679aa6 ran the deletion mutations through the combined legacy/new main. The /pending.dat deletion was detected earlier by the legacy test (exit 66) before the new scenario's expected exit 82. Quarantine [#45113942257](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45113942257) and Relay [#45113942311](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45113942311) therefore failed at the harness sequencing/exit expectation; this was not a production firmware failure.
+- Correction commit b1a5a36627075581973b451934eed000e43b4038 isolates the attempted-evidence main and runs it as an independent unmutated baseline before the deletion mutations.
+
+### Exact-head CI evidence — source/test SHA b1a5a36627075581973b451934eed000e43b4038
+
+- Quarantine [run #45114100708](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45114100708), job 137492844603: **SUCCESS**. ESP8266 and ESP32 each pass the existing pending-identity matrices (6/6 and 9/9) and new attempted-evidence matrix (6/6). All four file-deletion mutations and the attempt-state mutation are rejected on both boards with expected exit 82. Normalized poll-safety helper parity remains 17/17.
+- Relay [run #45114100704](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45114100704): source-output-polarity job 137492844339 **SUCCESS**; ESP32 boot-polarity job 137492844764 **SUCCESS**. Existing active-high/active-low output scenarios remain 48/48 per board; poll-window, edge-capture and output-interlock mutations are rejected.
+- Full [run #45114100788](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45114100788): validation job 137492926791 **FAILURE** at the inherited QA-owned Missing poll signature check in the ESP8266 sketch. All 14/14 configured target/platform jobs completed **SUCCESS** (ESP8266, ESP32, Android, Ruijie and configured Orange Pi/x86 targets). Downstream simulations, update bundle, candidate gate, signing handoff and publication were skipped.
+
+All focused output remains SIMULATED_ONLY=1; physical coin acceptor, relay polarity, electrical recovery and power-cut acceptance remain **NOT TESTED**. No hardware flashing, device reset, live coin/money, migration, signer provisioning, merge, release tag, deployment or cutover occurred.
+
+### Coordination and next exact action
+
+- PHX-CORE / PHX-QA: publish and independently validate the authenticated register/poll and event-bound receipt contract; do not invent response_sig or relax default-deny.
+- PHX-MASTER: current control-plane body identifies #345 as the Hardware child, while the current ROLE_ASSIGNMENTS.md snapshot in #288 still names #327. Reconcile those pointers in Master-owned files; Hardware did not edit them.
+- Registry: private BLAZE_PROJECT_REGISTRY_v11_20261027.json was not available in the connected file surface, and no Google Drive connector action was exposed. No older registry snapshot was substituted.
+- PHX-HARDWARE: retain #345 OPEN / DRAFT / UNMERGED and continue only after revalidating all stacked branch heads.
+
+**Classification:** host fixture SIMULATED; exact-head Quarantine and Relay CI VERIFIED; Full integration FAILED at the shared contract assertion; HARDWARE ACCEPTED NO; PRODUCTION NO-GO.
