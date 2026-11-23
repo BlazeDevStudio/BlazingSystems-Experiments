@@ -2942,3 +2942,20 @@ No assignment transfer, merge or release authority is implied. Cleanup #266 rema
 - **PHX-MASTER:** owns the contract/integration record only; no Hardware source path changed by Master.
 
 No assignment transfer or release authority is implied. PRODUCTION NO-GO.
+
+
+## Live exact-head reconciliation — 2026-11-23T03:17:36.200Z (PHX-MASTER UTC03)
+
+This snapshot supersedes older current-head pins above; it does not transfer ownership. Exact branch/PR heads were re-read from GitHub.
+
+| Role | Live PR / head | Exact-head CI observation |
+|---|---|---|
+| PHX-CORE | #252 `c82705f2de865c89ab733b10efa84f26f56a5cc4` | Build [42698139210](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42698139210) PASS, scoped. CORE source remains with its separate owner. |
+| PHX-RENTAL | #328 `0e0da62acd47c6a1ce287f8a30fc700d603fa070` | APK identity and API21/API23 smoke PASS; build [44782114390](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44782114390) FAIL. |
+| PHX-PISONET | #255 `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | Windows synthetic CI [42462978704](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42462978704) PASS; physical COM acceptance NOT TESTED. |
+| PHX-HARDWARE | #283 `4dd0b01bf04cf80aec6d4dd6fc93b2fdc633da30`; #343 `dfeff7d5f63e699de7bc296c7641f2493f1e0e13`; #344 `3bfa530c94a929191d7b3335c085dbd7f99e1e18`; #345 `c69a69678a5074108eb7946352b1edb5382d9ce9` | #345 Quarantine/Relay PASS; Full build FAIL at inherited QA poll-signature assertion. Other exact-head scoped/Full results are recorded in the UTC03 report. |
+| PHX-QA | #290 `5c29d15994cee1279058f1eca12f2a3180704292`; #292 `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | #290 Windows PASS; #292 has no PR-triggered runs. |
+| PHX-RELEASE | #291 `821ef3e9272a747e09c5246525eabe45740a5df5` | Compatibility PENDING, Windows freshness FAIL, build QUEUED at observation time; RELEASE owner was active and was not modified. |
+| COE integration | #26 `b382d233ff06c8791b1028bed3c617cc7b670d12` | Five workflows QUEUED / zero jobs; FROZEN. |
+
+The machine-readable routing manifest remains unchanged at `e4db324315a1b3543fec17a148fbf960170fcb29`, 11 routes, DRAFT_REVIEW_ONLY, Master target null. No subsystem or COE destination files were changed.

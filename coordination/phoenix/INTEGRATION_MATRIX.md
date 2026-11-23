@@ -4116,3 +4116,25 @@ This follow-up proves host-level pending count/target/nonce preservation and no 
 ## UTC00 terminal refresh — Hardware #345 Full at current PR head (2026-11-23)
 
 Current #345 head `01916c89ae6718d3991c778b676d06718155d6a2`: Quarantine [45091417124](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45091417124) PASS; Relay [45091417060](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45091417060) PASS; Full [45091417147](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45091417147) FAIL at validation step 8 `Controller protocol parity` / inherited QA-owned `Missing poll signature check`. All 14 target/platform jobs (13 firmware targets plus Android) pass; downstream simulation/update/candidate/signing/publication skipped. Focused CI is not hardware acceptance. #345 remains OPEN / DRAFT / UNMERGED.
+
+
+## Live exact-head reconciliation — 2026-11-23T03:17:36.200Z (PHX-MASTER UTC03)
+
+The following is the current observation, not a claim that scoped CI equals full integration acceptance.
+
+| Area | Exact candidate | Latest observed result |
+|---|---|---|
+| Experiments main / development | main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; v0.5.3 dev `aad3aade72c1156eecba1fed30907c6d0283b2c5`; v0.6 audit foundation `2fbd2475e9f54878c316fa7cea2f228386b0e859` | Branch refs re-read; v0.6 remains comparison-only in the control plane. |
+| Master #288 | `8750d615cbb39aa70c1b12847479acb594fe5e3c` | OPEN/DRAFT; 180 prior changed paths, all coordination-only; zero Actions runs and zero combined statuses. |
+| CORE #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | Scoped Build PASS [42698139210](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42698139210). |
+| RENTAL #328 | `0e0da62acd47c6a1ce287f8a30fc700d603fa070` | APK identity and API21/API23 smoke PASS; Build FAIL [44782114390](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44782114390). |
+| PISONET #255 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | Windows synthetic CI PASS [42462978704](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42462978704); physical acceptance NOT TESTED. |
+| HARDWARE #345 | `c69a69678a5074108eb7946352b1edb5382d9ce9` | Quarantine [45102194088](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45102194088) and Relay [45102194019](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45102194019) PASS; Full/build [45102194087](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45102194087) FAIL at QA-owned Missing poll signature check. |
+| QA #290 / #292 | `5c29d159...` / `75a3f66d...` | #290 Windows PASS; #292 no runs. |
+| RELEASE #291 | `821ef3e9272a747e09c5246525eabe45740a5df5` | Compatibility PENDING [45104614515](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45104614515); Windows freshness FAIL [45104614520](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45104614520); Build QUEUED [45104614511](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45104614511). |
+| COE #26 | `b382d233ff06c8791b1028bed3c617cc7b670d12` | Five workflows QUEUED / zero jobs; FROZEN. |
+| COE #35 / #45 / #49 | `16c0e140...` / `9d76a134...` / `aeb8ff11...` | #35 ULA/sandbox gates FAIL closed; #45 scoped Pisowifi suite PASS; #49 Stage 5.1 bridge and case guard PASS but Hardware/Shared CI FAIL. |
+
+COE #26 migration remains blocked: prior exact audit still shows 61 mapped rows (46 byte-identical / 15 derived vs 47/14 summary), 34 source Hardware helpers / zero destination, divergent firmware/test identities, and incomplete NOTICE/Hardware license scope. No staging or destination write.
+
+Branch objects report protected=false and no required contexts for Experiments main/development/Master and COE main. Administrator configuration/verification is required. Private Drive v11/newer corrections remain inaccessible; no older snapshot substituted. Production remains NO-GO.

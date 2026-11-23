@@ -35,12 +35,14 @@ Run the repository's actual test suite from an authenticated checkout at the exa
 
 Timestamped `PHX_MASTER_*.md`, subsystem audits, and migration-gate reports are immutable historical evidence. They are **not** the current source of truth when their exact SHA differs from the live branch/PR API. Start with the four canonical live documents above, then open the newest report only for the issue under investigation. Do not mass-delete or rename older reports; first inventory inbound links and consumers.
 
-## UTC04 cleanup-first inventory
+## UTC03 cleanup-first inventory — live recursive tree
 
-- Coordination tree at the audited Master head: 116 files (105 `.md`, 3 `.json`, 8 `.py`).
-- Exact duplicate blob SHA count: **0**.
-- Architecture-contract numbered heading collisions: §6.9, §6.10, §6.11, §6.12, §6.25, §6.32. No renumbering performed because references have not been fully inventoried.
-- No source files, test files, route manifest, or historical report were deleted or moved.
+- Audited starting Master HEAD: `8750d615cbb39aa70c1b12847479acb594fe5e3c`; complete recursive tree, `truncated=false`, 2,522 tree entries.
+- `coordination/phoenix/`: 180 blobs at the starting HEAD (169 `.md`, 3 `.json`, 8 `.py`). This activation adds one report and edits four existing coordination documents; expected final subtree: 181 blobs (170 `.md`, 3 `.json`, 8 `.py`).
+- Existing report inventory before this activation: 95 `PHX_MASTER_*.md` files and 95 unique index links; zero duplicate links, dangling links or unindexed reports. The new UTC03 report raises both totals to 96.
+- Duplicate coordination blob-SHA groups: **0**.
+- Current top-level Architecture Contracts §6 numbering has four collisions: §6.9, §6.10, §6.11 and §6.25. The repeated headings are listed in the UTC03 report. No renumbering was performed because historical cross-references and consumers have not been fully inventoried.
+- No historical report, source file, test, route manifest or subsystem file was deleted or moved. The Master cleanup checkbox remains open; this bounded inventory does not complete the seven-role cleanup gate.
 
 ## Live refs at the UTC04 audit
 
@@ -725,3 +727,7 @@ At the exact starting tree, 89 `PHX_MASTER_*.md` reports were present but INDEX 
 - Post-update static verification at the resulting commit: 95 reports / 95 unique links, zero duplicates, zero dangling targets and zero unindexed reports.
 
 **Safety:** coordination-only; COE #26 remains FROZEN; PRODUCTION NO-GO.
+
+## Latest exact-head reconciliation — 2026-11-23 UTC03
+
+- [PHX-MASTER UTC03 live-head, cleanup inventory and migration-hold audit](PHX_MASTER_UTC03_20261123_LIVE_HEAD_CLEANUP_AND_MIGRATION_HOLD_AUDIT.md) — exact branch refs and owner CI, current Master tree/index/architecture audit, branch-protection metadata, private registry access limitation, and frozen COE #26 provenance. No subsystem or destination writes.
