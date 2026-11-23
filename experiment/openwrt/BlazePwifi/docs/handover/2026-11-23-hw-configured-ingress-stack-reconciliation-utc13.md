@@ -457,3 +457,55 @@ No production ESP8266/ESP32 `.ino`, CORE producer/API, finance, signer, witness,
 The new test is a source-extracted host simulation. CI VERIFIED means the simulated test and target build jobs passed; it does not establish physical coin-slot pulse capture, electrical relay de-energization, LittleFS durability under real power loss, or accounting acceptance. Physical coin/relay/power-cut flags remain zero. The #177 issue remains P0 and production NO-GO.
 
 **Next exact action:** PHX-CORE publishes the approved signed poll-response contract and golden vectors; PHX-QA independently reconciles the missing poll-signature assertion; PHX-MASTER refreshes the #347 matrix to the current source/test head. Hardware then reruns Full without weakening default-deny.
+
+
+## UTC22 follow-up — blocked-poll transport-timeout ISR failure injection (2026-11-23)
+
+**Role:** PHX-HARDWARE. **PR:** #347 OPEN / DRAFT / UNMERGED. **Parent:** #345 at `ca72497ed386c9ac4e50d3f811827bef51e296ad`.
+
+### Exact evidence identities
+
+- Firmware source anchor: `275057aa28375223a32da099420f52696d9b667c`.
+- ESP8266 sketch blob: `fa8ed828026396db89aab2889bf6a61d6cf6bbac`.
+- ESP32 sketch blob: `717336b84d434d51eb24beac1ed8efce8e719f69`.
+- Source/test head: `e69a3d715aca6724dd0390e925e48a7510009ab1`.
+- This handover update is a documentation-only successor; it does not change either sketch or the test/lab source.
+
+### Engineering delta
+
+The previous blocked-poll ISR scenario injected two registered ISR edges during the 3.5-second synchronous poll and returned hostile positive JSON. It proved that the edge counter rollover and durable unresolved-pulse latch were independent of that untrusted body, but it did not separately execute the transport-failure result returned by production `post()` when HTTPClient reports a non-positive status.
+
+Added a second source-extracted scenario:
+- The same ESP8266/ESP32 production loop, ISR, poll response handler, and output helpers are compiled from the exact sketches.
+- The test overrides only the host `SUPPORT` post() stub to return an empty `String()`, matching the production wrapper's non-positive HTTPClient result.
+- Two attached ISR edges occur during the blocked request across `uint32_t` rollover.
+- The test requires `/pollpulse.fault` to be durable before the first ordinary post-HTTP sample; relay/LED remain OFF; insert admission stays denied; no coin POST or pending clear occurs.
+- A mutation removing post-response edge reconciliation is rejected with expected exit 88 on both boards.
+- The original hostile-positive-response scenario remains unchanged.
+
+Changed paths for this follow-up:
+- `experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_loop_blocking_inhibit_lab.py`
+- `experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_loop_blocking_inhibit_lab_runtime_fixtures.py` (comment clarification only)
+
+No production `.ino`, financial code, controller schema, CORE/QA/RELEASE file, or COE destination was changed.
+
+### Exact-head CI at source/test SHA e69a3d
+
+- Quarantine [#45281321173](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45281321173), job `138066210892`: **SUCCESS**. Logs include both the hostile-positive and empty-timeout ISR rollover markers, the expected-exit-88 timeout-path reconciliation mutation rejection, and explicit `SIMULATED_ONLY=1` / physical acceptance flags set to zero.
+- Relay [#45281321207](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45281321207): **SUCCESS**. Job `138066210824` passed the source/output-polarity suite with the new timeout scenario and mutation; ESP32 boot job `138066211312` passed.
+- Full [#45281321180](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45281321180): **TERMINAL FAILURE**, 27/27 jobs terminal. Fourteen target/platform jobs (including ESP8266, ESP32, Android, Ruijie, Orange Pi variants and x86-64) **PASS**; validation job `138067089292` **FAILS** at the inherited ESP8266 controller-parity assertion `Missing poll signature check`; twelve dependent simulation/update/signing/publication jobs **SKIPPED**. No signature was fabricated and no admission guard was weakened.
+
+### Failed fixture iterations retained
+
+The following intermediate test commits and failed focused runs remain in branch history; they are not relabeled as PASS:
+- `51c46bf7649a6df437411a2a085ea95f254bf738`: Quarantine [#45280375418](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45280375418) and Relay [#45280375493](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45280375493) failed because the response-stub anchor was searched in `POLL_HTTP_ISR_MAIN`; the stub lives in the runtime support fixture.
+- `871db24333e7a97584a1e201bac5de60bf1767e4`: Quarantine [#45280720514](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45280720514) and Relay [#45280720409](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45280720409) failed; indentation correction did not fix the wrong fixture container.
+- `14c4f24de5d4d50064c3a16193ed0e0fabab9fb4`: Quarantine [#45280780443](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45280780443) and Relay [#45280780407](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45280780407) failed for the same container mismatch.
+- `c80e95092cc0c53a69383b702a48692a4288648a`: Quarantine [#45281089415](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45281089415) and Relay [#45281089319](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45281089319) failed because the post() stub is in `SUPPORT`, not `STUBS`.
+- Correction `e69a3d715aca6724dd0390e925e48a7510009ab1` adds an explicit `support_source` override to the local assembler and passes the exact-head focused suites above.
+
+### Ownership and acceptance boundary
+
+PHX-HARDWARE owns these firmware labs and handover. PHX-CORE owns the authenticated register/poll producer contract; PHX-QA owns independent reconciliation of the inherited signature assertion; PHX-MASTER owns assignment/integration records only. Do not add a positive legacy `response_sig` to firmware or bypass the current default-deny path.
+
+This is host/source-extracted CI evidence only. Physical coin acceptor, relay/electrical pulse recovery, LittleFS power-loss durability, 150 controlled power cuts, 30-device 24-hour soak, protected anti-rollback signer/witness, financial v1-to-v2 migration, durable accounting/replay and independent QA/release acceptance remain **NOT TESTED / NOT ACCEPTED**. **HARDWARE ACCEPTED: NO. PRODUCTION READY: NO-GO.**
