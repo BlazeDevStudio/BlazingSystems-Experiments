@@ -484,9 +484,13 @@ for board,path in BOARDS.items():
         ("relay", "controllerEnabled && coinEnabled && true", 60),
     )
     original_coin_ingress_gate = "return controllerEnabled && coinEnabled && relayEnabled;"
-    # Isolate sample-path admission with an output-OFF stub. The separate
-    # output-gate mutation above already exercises the real applyOutputs().
-    output_off_stub = "void applyOutputs(){ relayOn=false; ledOn=false; }"
+    # Isolate sample-path admission while retaining the real output function's
+    # side effects: force only its configured-admission call false.
+    output_gate_for_sample_mutation = output.replace(
+        "coinIngressConfigurationAllows()", "false", 1
+    )
+    if output_gate_for_sample_mutation == output:
+        raise AssertionError(f"{board}: sample isolation output-gate anchor missing")
     for gate_name, mutated_gate, expected_exit in coin_ingress_gate_mutations:
         coin_ingress_gate_mutation = coin_ingress_config.replace(
             original_coin_ingress_gate,
@@ -498,7 +502,7 @@ for board,path in BOARDS.items():
                 f"{board}: configured {gate_name} coin-ingress gate mutation anchor missing"
             )
         compile_and_run(
-            assemble(output_source=output_off_stub,
+            assemble(output_source=output_gate_for_sample_mutation,
                      coin_ingress_config_source=coin_ingress_gate_mutation, main_source=MAIN),
             board,
             expected_exit,
