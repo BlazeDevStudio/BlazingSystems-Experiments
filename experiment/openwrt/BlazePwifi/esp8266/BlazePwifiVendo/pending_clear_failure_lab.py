@@ -14,6 +14,8 @@ CLEAR_PENDING_STUBS = r"""
 #include <map>
 #include <string>
 
+using String = std::string;
+
 struct PendingRecord {
   uint32_t magic;
   uint8_t pulses;
@@ -208,16 +210,47 @@ int main() {
 """
 
 
+
+
+BOOT_ORPHAN_ATTEMPT_MAIN = r"""
+int main() {
+  resetState();
+  LittleFS.failRemovePath = "/pending.attempt";
+  if(clearPending() || !journalRecoveryRequired ||
+     LittleFS.exists("/pending.dat") ||
+     !LittleFS.exists("/pending.attempt")) return 101;
+
+  // Simulate reboot: retain fake flash, discard every volatile pending field.
+  journalRecoveryRequired = false;
+  pendingPulses = 0U;
+  pendingReady = false;
+  pendingPostAttempted = false;
+  pendingNonce.clear();
+  pendingTarget.clear();
+  lastSend = 0U;
+  loadPending();
+
+  if(!journalRecoveryRequired || pendingPulses != 0U ||
+     pendingReady || pendingPostAttempted ||
+     LittleFS.exists("/pending.dat") ||
+     !LittleFS.exists("/pending.attempt")) return 102;
+  std::cout << "PENDING_CLEAR_ORPHAN_ATTEMPT_BOOT_DENY_PASS\n";
+  return 0;
+}
+"""
+
 def run_pending_clear_failure_lab(
     board,
     clear_pending_source,
     same_pending_record_source,
+    load_pending_source,
     pending_attempt_marker_matches_source,
     compile_and_run,
 ):
     """Compile exact production helpers and reject fail-open reclamation mutations."""
     sources = {
         "clearPending": clear_pending_source,
+        "loadPending": load_pending_source,
         "samePendingRecord": same_pending_record_source,
         "pendingAttemptMarkerMatches": pending_attempt_marker_matches_source,
     }
@@ -225,22 +258,27 @@ def run_pending_clear_failure_lab(
         if not source:
             raise AssertionError(f"{board}: missing source-exact {name} helper")
 
-    def compile_case(label, expected=0, clear_source=None, same_record_source=None):
+    def compile_case(label, expected=0, clear_source=None, same_record_source=None,
+                     load_source=None, main_source=None):
         selected_clear = clear_source if clear_source is not None else clear_pending_source
         selected_same = (
             same_record_source
             if same_record_source is not None
             else same_pending_record_source
         )
+        selected_load = load_source if load_source is not None else load_pending_source
+        selected_main = main_source if main_source is not None else CLEAR_PENDING_MAIN
         program = (
             CLEAR_PENDING_STUBS
             + selected_same
             + "\n"
             + pending_attempt_marker_matches_source
             + "\n"
+            + selected_load
+            + "\n"
             + selected_clear
             + "\n"
-            + CLEAR_PENDING_MAIN
+            + selected_main
         )
         return compile_and_run(program, board, expected, label)
 
@@ -251,6 +289,33 @@ def run_pending_clear_failure_lab(
     ):
         if marker not in baseline:
             raise AssertionError(f"{board}: pending-clear baseline marker missing: {marker}")
+
+    boot_baseline = compile_case(
+        "pending-clear-orphan-attempt-boot-deny",
+        main_source=BOOT_ORPHAN_ATTEMPT_MAIN,
+    )
+    if "PENDING_CLEAR_ORPHAN_ATTEMPT_BOOT_DENY_PASS" not in boot_baseline:
+        raise AssertionError(f"{board}: orphan attempt marker boot-deny marker missing")
+    print(f"{board} PENDING_CLEAR_ORPHAN_ATTEMPT_BOOT_DENY_PASS")
+
+    orphan_attempt_anchor = 'if(hasAttempt){\n      journalRecoveryRequired=true;'
+    orphan_attempt_mutation = load_pending_source.replace(
+        orphan_attempt_anchor,
+        'if(false && hasAttempt){\n      journalRecoveryRequired=true;',
+        1,
+    )
+    if orphan_attempt_mutation == load_pending_source:
+        raise AssertionError(f"{board}: orphan attempt boot-deny mutation anchor missing")
+    compile_case(
+        "pending-clear-orphan-attempt-boot-deny-mutation",
+        102,
+        load_source=orphan_attempt_mutation,
+        main_source=BOOT_ORPHAN_ATTEMPT_MAIN,
+    )
+    print(
+        f"{board} MUTATION_REJECTED pending-clear-orphan-attempt-boot-deny "
+        "expected_exit=102"
+    )
 
     attempt_remove_anchor = (
         'if(!LittleFS.remove("/pending.attempt") || LittleFS.exists("/pending.attempt")){'
