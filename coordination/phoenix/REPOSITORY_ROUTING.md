@@ -1523,3 +1523,12 @@ Licensing readback: PisoWiFi LICENSE matches exactly; Experiments root NOTICE ex
 COE #35 advanced to `ede91d4323c158f6abd454da18b6ee059f4609d0`; no workflow runs exist at that exact head. The previous sandbox failure run #45124298956 belongs to superseded `adbb3894ac222ab615cd681ffe893163dc9214c2`, so it is not current-head evidence. COE #45 remains scoped PASS; #49 retains an ESP32 compile failure in Hardware & Shared Contracts.
 
 **Routing decision:** keep #26 FROZEN. No staging, copy, move, overwrite, cherry-pick, rebase, branch retarget, or destination write. Reconcile exact source blobs, licenses, test identities, import completeness and terminal exact-head CI before any later owner-authorized staging review.
+
+
+## UTC09 live COE #35 head and migration hold — 2026-11-23T09:40:15Z
+
+The routing manifest remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`, 11 routes, `DRAFT_REVIEW_ONLY`, PHX-MASTER target null. COE main remains `a6513ab4412b4c014eee2863e45cbe32d06cb243`; integration #26 remains `b382d233ff06c8791b1028bed3c617cc7b670d12`, OPEN / DRAFT / FROZEN, 205 paths, 286-entry candidate tree, five workflows queued / zero jobs.
+
+COE RELEASE #35 now points to `9b300ea18886c11447ff6f0891d4ed9147454881` (source/test `59c57cba0dd230434ad0cb89bc1a0f19c0a684d3`). Exact-head sandbox #45145590304 passes 39 host tests then blocks because Bubblewrap is absent (exit 125). Exact-head shared #45145590011 passes 195 tests / 2 intentional skips, then fails closed on all ten profiles without approved site ULA /48; board compiles skip. Case-collision #45145590247 passes. This supersedes the prior UTC08 no-runs observation for the old `ede91d43...` head.
+
+**Routing decision:** no source/destination path is promoted. Keep #26 frozen until file/blob provenance, licenses/NOTICE, test identities, complete imports, exact-head terminal CI and independent owner review are reconciled. No staging, copy, move, overwrite, cherry-pick, rebase, or destination write.
