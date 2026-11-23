@@ -114,3 +114,52 @@ All logs continue to declare SIMULATED_ONLY=1, physical coin/relay/power-cut acc
 ## Follow-up ownership boundary
 
 The follow-up adds only the Hardware-owned runner, fixture-export module, scenario fixture, and this handover. It does not edit QA-owned tests/controllers.sh, the register/poll producer, shared API, finance backend, ledger, migration, signer, witness, Release workflow or COE destination. Keep the stale poll-signature assertion with PHX-QA and do not synthesize a response_sig.
+
+
+## PHX-HARDWARE UTC01 — multi-edge disabled-intake pending identity coverage
+
+**Scope:** one bounded Hardware-owned cleanup/test increment on the existing #345 draft. No shared API, CORE ledger, QA-owned test, Release workflow, or production admission behavior was changed.
+
+### Exact source/test head before this handover update
+
+- Branch: \`phoenix/hw-coin-intake-armed-gate-20261122-utc23\`
+- Source/test HEAD: \`40d8a705d2519e9bcbb2576b00facb2bd456cd01\`
+- PR #345: OPEN / DRAFT / UNMERGED; parent #343 remains separate.
+- ESP8266 source commit: \`66c88d1f3d107b01a1f6939b7160854a4f839dbd\`
+- ESP32 source commit: \`97be7d5bec7328ea9e6d3b257d9b559a964d5825\`
+- Scenario fixture commit: \`966107c1b4062d3b58b5d28d6e8e3833c1473f02\`
+- Runner mutation commit: \`3489a17d090a420e8a0ccedabda13b79da0cf11c\`
+- Baseline-runner correction: \`40d8a705d2519e9bcbb2576b00facb2bd456cd01\`
+
+### Change
+
+Both sketches now name the existing single-edge condition as \`exactlyOneUnseenEdge\`. This is a behavior-preserving readability change: an ISR delta other than exactly one is never collapsed into one credit-eligible sampled edge.
+
+The source-extracted pending-identity matrix now runs as a green baseline on the unmutated source, in addition to its mutation runs. Three additional scenarios cover:
+
+- relay disabled, three unseen ISR edges across \`uint32_t\` rollover (\`0xFFFFFFFE + 3 -> 1\`);
+- coin disabled, two unseen ISR edges;
+- controller disabled, four unseen ISR edges.
+
+Each scenario starts with an existing two-pulse pending batch and asserts that pulse count, target, nonce and pending identity are preserved; \`pendingReady\` is raised for reconciliation; no save or POST is attempted; the sticky fault marker records the exact aggregate edge count; and relay/LED/coin admission remain OFF.
+
+A failure-injection mutation that collapses \`pendingPulses + unseenEdges\` to \`pendingPulses + 1\` is rejected on both boards.
+
+### Exact-source CI evidence
+
+- Quarantine [run #45097138177](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45097138177), job \`137439344434\`: SUCCESS. The unmutated matrix reports 9/9 per board; the pending-ready, identity-clear and multi-edge-count mutations are rejected. The existing dual-store fault lab also passes while explicitly reproducing the known BOTH-STORES-FAILED reboot-durability limitation.
+- Relay [run #45097138288](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45097138288), jobs \`137439345032\` and \`137439345194\`: SUCCESS. Output polarity suite 48/48 per board; normalized poll safety parity 17/17; pending identity matrix 9/9 per board and the three mutations are rejected.
+- Full [run #45097138225](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45097138225), validation job \`137439345378\`: FAILURE at the inherited QA-owned \`Missing poll signature check\`. All 14 configured firmware target jobs completed SUCCESS; Android was still running when this handover was written. Downstream simulations, bundle, candidate, signing and publication were skipped.
+
+The earlier run on the intermediate \`3489a17\` head is not used as 9/9 baseline evidence: inspection showed the focused matrix was only exercised under mutation. The runner correction at \`40d8a705\` now executes the unmutated 9/9 matrix first; the successful Quarantine and Relay runs above verify that correction.
+
+### Remaining boundaries
+
+- CI classification: **CI VERIFIED / SIMULATED ONLY**.
+- Physical relay, coin pulse, electrical recovery and power-cut acceptance: **NOT TESTED**.
+- The dual-store lab still reproduces that if both LittleFS and the secondary EEPROM/NVS fault stores fail before persistence, only the current-boot RAM latch remains. No protected independent witness is established.
+- Full integration remains blocked by the stale positive poll-signature assertion. The current main register/poll producer still does not provide the required \`response_sig\`; Hardware will not invent a producer or weaken QA validation.
+- PR #254 remains stacked on #239 and separately fails the ESP32 Mbed TLS 4 application build; do not transplant the #327/#340 PSA candidate until Master selects canonical ancestry and Release confirms the supported toolchain.
+- PR #283 remains a separate parallel branch. Its quarantine helper is definition-only on the checked head; no production callsite or authenticated poll response contract is claimed.
+
+**Next exact action:** PHX-QA / PHX-CORE to reconcile the positive poll-signature assertion against the live producer/consumer contract, and PHX-MASTER to refresh role/stack pins before any cross-branch integration. No merge, flash, device reset, money, migration, signer provisioning or release action.
