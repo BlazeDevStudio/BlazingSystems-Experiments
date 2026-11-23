@@ -268,7 +268,7 @@ int main() {
      !pendingRamIdentityPreserved() ||
      !pendingAndAttemptBytesPreserved() ||
      appendQuarantineCalls != 1U) return 110;
-  std::cout << "QUARANTINE_APPEND_FAILURE_PRESERVES_PENDING_AND_ATTEMPT_PASS\\n";
+  std::cout << "QUARANTINE_APPEND_FAILURE_PRESERVES_PENDING_AND_ATTEMPT_PASS\n";
 
   resetState();
   appendQuarantineShouldFail = false;
@@ -278,7 +278,7 @@ int main() {
      !pendingNonce.empty() || !pendingTarget.empty() ||
      LittleFS.exists("/pending.dat") || LittleFS.exists("/pending.attempt") ||
      appendQuarantineCalls != 1U) return 111;
-  std::cout << "QUARANTINE_APPEND_SUCCESS_CLEAR_CONTROL_PASS\\n";
+  std::cout << "QUARANTINE_APPEND_SUCCESS_CLEAR_CONTROL_PASS\n";
 
   resetState();
   appendQuarantineShouldFail = true;
@@ -286,7 +286,7 @@ int main() {
   pendingPulses = 0U;
   if(quarantinePending("controller rejected") || !journalRecoveryRequired ||
      !pendingAndAttemptBytesPreserved() || appendQuarantineCalls != 0U) return 112;
-  std::cout << "QUARANTINE_MISSING_PENDING_DENIED_PASS\\n";
+  std::cout << "QUARANTINE_MISSING_PENDING_DENIED_PASS\n";
 
   resetState();
   appendQuarantineShouldFail = true;
@@ -294,8 +294,8 @@ int main() {
   mismatchAttemptRecord = true;
   if(quarantinePending("controller rejected") || !journalRecoveryRequired ||
      !pendingAndAttemptBytesPreserved() || appendQuarantineCalls != 0U) return 113;
-  std::cout << "QUARANTINE_MISMATCHED_ATTEMPT_DENIED_PASS\\n";
-  std::cout << "QUARANTINE_DISPOSITION_FAILURE_INJECTION_PASS 1/1 plus 2 preconditions and success control\\n";
+  std::cout << "QUARANTINE_MISMATCHED_ATTEMPT_DENIED_PASS\n";
+  std::cout << "QUARANTINE_DISPOSITION_FAILURE_INJECTION_PASS 1/1 plus 2 preconditions and success control\n";
   return 0;
 }
 """
@@ -496,15 +496,15 @@ def run_pending_clear_failure_lab(
         program = (
             CLEAR_PENDING_STUBS
             + QUARANTINE_PENDING_STUBS
-            + "\\n"
+            + "\n"
             + same_pending_record_source
-            + "\\n"
+            + "\n"
             + pending_attempt_marker_matches_source
-            + "\\n"
+            + "\n"
             + clear_pending_source
-            + "\\n"
+            + "\n"
             + selected_quarantine
-            + "\\n"
+            + "\n"
             + QUARANTINE_PENDING_MAIN
         )
         return compile_and_run(program, board, expected, label)
@@ -545,12 +545,12 @@ def run_pending_clear_failure_lab(
     )
 
     append_latch_anchor = (
-        'journalRecoveryRequired=true;\\n'
+        'journalRecoveryRequired=true;\n'
         '    Serial.println("CRITICAL: quarantine journal commit failed; pending coin retained and relay disabled.");'
     )
     append_latch_mutation = quarantine_pending_source.replace(
         append_latch_anchor,
-        'journalRecoveryRequired=false;\\n'
+        'journalRecoveryRequired=false;\n'
         '    Serial.println("CRITICAL: quarantine journal commit failed; pending coin retained and relay disabled.");',
         1,
     )
