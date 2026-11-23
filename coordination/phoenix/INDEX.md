@@ -1,5 +1,5 @@
 # Project Phoenix — Coordination Index
-**Updated:** 2026-11-23T01:07:03Z
+**Updated:** 2026-11-23T09:40:15Z
 **Updated:** 2026-11-22T23:34:12Z
 **Role:** PHX-MASTER — coordination / architecture / integration provenance only  
 **Safety:** DRAFT REVIEW ONLY · PRODUCTION NO-GO
@@ -764,3 +764,9 @@ Both historical reports were already indexed in the earlier sections above; UTC0
 
 - [PHX-MASTER UTC08 live owner CI, COE #26 provenance and registry-access audit](PHX_MASTER_UTC08_20261123_LIVE_OWNER_CI_COE26_AND_REGISTRY_ACCESS_AUDIT.md) — current exact role heads/CI, corrected COE #35 current-head evidence, SOURCE_INTAKE 46/15 versus 47/14 discrepancy, license/NOTICE status, frozen destination route comparison, branch protection, private registry access limitation and release blockers.
 - The starting exact recursive tree had 100 PHX-MASTER reports; the starting index had 100 unique report links with zero duplicates, dangling or unindexed targets. The new UTC08 report is the 101st report; final post-commit coverage is verified against the resulting recursive tree.
+
+
+## Latest exact-head reconciliation — 2026-11-23 UTC09
+
+- [PHX-MASTER UTC09 COE #35 exact-head CI and live coordination reconciliation](PHX_MASTER_UTC09_20261123_COE35_EXACT_HEAD_CI_AND_LIVE_HEAD_RECONCILIATION.md) — corrected current COE #35 head and exact hosted CI, revalidated all seven role PRs and COE candidates, preserved COE #26 freeze, and recorded Drive/branch-protection/full-test blockers.
+- Existing indexed PHX-MASTER report links were unique before this update; this new report is added exactly once. The full recursive repository tree was not enumerated through the available GitHub surface in this activation, so repository-wide dangling/unindexed counts are not claimed.
