@@ -297,6 +297,7 @@ def run_pending_clear_failure_lab(
     ):
         if marker not in baseline:
             raise AssertionError(f"{board}: pending-clear baseline marker missing: {marker}")
+    print(f"{board} {baseline}")
 
     boot_baseline = compile_case(
         "pending-clear-orphan-attempt-boot-deny",
@@ -304,6 +305,7 @@ def run_pending_clear_failure_lab(
     )
     if "PENDING_CLEAR_ORPHAN_ATTEMPT_BOOT_DENY_PASS" not in boot_baseline:
         raise AssertionError(f"{board}: orphan attempt marker boot-deny marker missing")
+    print(f"{board} {boot_baseline}")
     print(f"{board} PENDING_CLEAR_ORPHAN_ATTEMPT_BOOT_DENY_PASS")
 
     orphan_attempt_anchor = 'if(hasAttempt){\n      journalRecoveryRequired=true;'
