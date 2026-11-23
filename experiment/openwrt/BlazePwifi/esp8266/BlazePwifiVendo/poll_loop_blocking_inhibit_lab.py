@@ -8,12 +8,14 @@ separately. This is SIMULATED control-flow evidence, not physical coin proof.
 """
 from pathlib import Path
 from cpp_fixture_runner import run_cpp_fixture
+from cpp_fixture_runner_contract_lab import verify as verify_cpp_fixture_runner_contract
 
 from firmware_lab_source import extract_function, mask_active_cpp_code, mask_non_code
 from firmware_lab_source_lab import run_source_extractor_regressions
 from remote_config_pin_recovery_lab import run_remote_config_pin_recovery_lab
 from pending_clear_failure_lab import run_pending_clear_failure_lab
 
+verify_cpp_fixture_runner_contract()
 run_source_extractor_regressions()
 
 ROOT = Path(__file__).resolve().parents[2]
