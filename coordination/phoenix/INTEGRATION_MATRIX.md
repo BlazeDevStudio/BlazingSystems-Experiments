@@ -4170,3 +4170,24 @@ The candidate tree is non-truncated. Comparisons use current owner PR heads and 
 Licensing: source `BlazePwifi/LICENSE` and destination `Pisowifi/LICENSE` match blob `1ee55b94183417be977ca287cd7391f9a6f7e721`. Experiments root `NOTICE.md` exists; COE root NOTICE is absent. Hardware-local LICENSE/NOTICE files are absent at checked locations. Preserve third-party vendor notices already present in the PisoWiFi overlay.
 
 **Disposition:** COE #26 remains FROZEN. No staging, copy, move, overwrite, cherry-pick, rebase or destination write. No migration proposal until each divergent file, test identity, license, import and current owner SHA is reconciled by its source owner and independently reviewed by QA.
+
+
+## PHX-MASTER UTC05 exact-head matrix — 2026-11-23T06:06:54Z
+
+This live section supersedes earlier exact-head pins below. Experiments main=f4e8a891aed8af86d5fd315d28750a0ac3a7372b; development=blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5; Master starting HEAD=dab1f42b93c258d00054a754bd85698e3ae38b82. COE main=a6513ab4412b4c014eee2863e45cbe32d06cb243; COE #26=b382d233ff06c8791b1028bed3c617cc7b670d12 OPEN/DRAFT/FROZEN, five workflows QUEUED/zero jobs.
+
+| Role / candidate | Exact head | Latest exact-head evidence |
+|---|---|---|
+| CORE #252 | c82705f2de865c89ab733b10efa84f26f56a5cc4 | [42698139210](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42698139210) scoped Build PASS |
+| RENTAL #328 | 0e0da62acd47c6a1ce287f8a30fc700d603fa070 | [44782114384](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44782114384) APK identity PASS; [44782114390](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44782114390) Build FAIL; [44782114393](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44782114393) API21/API23 smoke PASS |
+| PISONET #255 | d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | [42462978704](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42462978704) Windows synthetic PASS; native acceptance NOT TESTED |
+| HARDWARE #345 | fdf0d39eaef79fee0f5661ac30029e831ba5f0a6 | [45121931669](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45121931669) Quarantine PASS; [45121931651](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45121931651) Relay PASS; [45121931662](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45121931662) Full FAIL at inherited QA Controller protocol parity / Missing poll signature check. All 14 target/platform jobs passed; downstream stages skipped. |
+| QA #290 | 5c29d15994cee1279058f1eca12f2a3180704292 | [43633486963](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43633486963) Windows PASS |
+| QA #292 | 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | No workflow runs. Current Master verifier blob f2442966cbe6ca93cf0ef69e44ed5d328568b580 enforces exact registered role or ALL. Local function-excerpt checks 7/7; full module/QA branch CI NOT RUN. |
+| RELEASE #291 | 886cabfc5080c3fbef03c2a3b1afe9d52dea6f60 | [45117006790](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45117006790) core3.3.13 PASS/core4.0.0 archive verification FAIL; [45117006843](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45117006843) Windows freshness FAIL; [45117006794](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45117006794) Full freshness FAIL; target builds completed, downstream validation/release skipped. |
+
+### Recipient contract and migration hold
+
+Master verifier blob f2442966... requires to be exactly one registered PHX role or literal ALL. QA #292 is test-only and based on old Master base b1ca02e; no Actions runs exist. Keep it DRAFT until QA executes the unchanged test file against the current verifier at an exact SHA. Do not accept array-valued or semicolon-separated recipients.
+
+COE #26 remains FROZEN. No staging or destination writes were made. The canonical private v11 registry and newer corrections were not surfaced by the authorized connected surface; older registry snapshots/checkpoint summaries are not substitutes. Rulesets list is empty; branch-protection endpoints returned 403, so enforcement could not be verified in this activation. Full Master tests remain NOT RUN.

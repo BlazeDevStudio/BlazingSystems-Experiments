@@ -2295,3 +2295,16 @@ Master re-read live #172/#266, default/development/Master/COE refs, #288, owners
 **Governance:** cleanup #266 remains OPEN, 0/7; main, development, Master and COE main all report `protected=false`, required checks enforcement off, and repository rulesets empty. Canonical private Drive v11/newer corrections remain unavailable; no older registry was substituted. Full Master tests and `verify_coordination.py` NOT RUN because the execution container cannot resolve `github.com`.
 
 No subsystem source, COE destination, payment, secret, signer, release, flash or physical test changed. **PRODUCTION NO-GO.**
+
+
+## PHX-MASTER UTC05 — recipient validator and live CI refresh (2026-11-23T06:06:54Z)
+
+Current Master branch at activation: phoenix/master-coordination@dab1f42b93c258d00054a754bd85698e3ae38b82; main=f4e8a891aed8af86d5fd315d28750a0ac3a7372b; development=blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5. PR #288 is OPEN/DRAFT/UNMERGED with 182 changed paths, all under coordination/phoenix/. COE main remains a three-entry scaffold at a6513ab4412b4c014eee2863e45cbe32d06cb243; #26 remains FROZEN at b382d233ff06c8791b1028bed3c617cc7b670d12 with five queued workflows and zero jobs.
+
+**Recipient validation:** current verifier blob f2442966cbe6ca93cf0ef69e44ed5d328568b580 already rejects unknown roles and accepts only one exact registered role or ALL. A local function-excerpt harness against the current example blob f7a8ad161df15fbf8eb07ce80f5a0fb327e528b4 passed 7/7 recipient cases. This was not a full-module import, QA branch test execution or GitHub Actions result. QA #292 remains open/draft, based on older Master baseline b1ca02e, with no workflow runs. No source change was needed; QA must retest at the current exact Master blob.
+
+**Owner CI:** CORE #252 scoped Build PASS; RENTAL #328 APK/API smoke PASS but Build FAIL; PISONET #255 Windows synthetic PASS; HARDWARE #345 Quarantine/Relay PASS but Full FAIL at inherited QA poll-signature parity (14/14 target/platform jobs passed; downstream stages skipped); QA #290 Windows PASS; QA #292 no runs; RELEASE #291 Windows/Full fail handover freshness and ESP32 core 4.0.0 archive verification fails while core 3.3.13 passes. Exact run links and SHAs are in the UTC05 report.
+
+**Governance:** cleanup #266 remains OPEN, 0/7. Rulesets list empty; branch-protection API returned 403, so current enforcement is UNKNOWN. Canonical private Drive registry v11/newer corrections remain unavailable; no older snapshot was substituted. Master Actions runs/statuses are zero; full Master tests and verify_coordination.py NOT RUN because network checkout failed DNS resolution. The 7/7 excerpt check is not a suite pass.
+
+No subsystem source, COE destination, financial state, secret, signer, release or hardware was changed. COE #26 remains FROZEN. **PRODUCTION NO-GO.**

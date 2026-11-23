@@ -2978,3 +2978,20 @@ This snapshot supersedes earlier current-head pins above; historical evidence re
 | COE integration | [#26](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/pull/26) `b382d233ff06c8791b1028bed3c617cc7b670d12`; #35 `16c0e140cbfd52d4cb572b7121189866763c77b2`; #45 `9d76a134c1f6512aa40c20ec4d247306a71a8cce`; #49 `aeb8ff11b2f5db9a5f86280ab62ab988245f3919` | #26 five workflows QUEUED / zero jobs. #35 case guard PASS, shared contracts and sandbox FAIL. #45 PisoWiFi overlay + case guard PASS. #49 INTERCON + case guard PASS, Hardware/Shared CI FAIL. #26 remains FROZEN. |
 
 The routing manifest remains `e4db324315a1b3543fec17a148fbf960170fcb29`, 11 routes, `DRAFT_REVIEW_ONLY`; PHX-MASTER target is null. No role, branch, source ownership or assignment changed. Cleanup #266 remains OPEN with 0/7 boxes checked.
+
+
+## PHX-MASTER UTC05 exact-head delta — 2026-11-23T06:06:54Z
+
+This section supersedes earlier owner/CI pins below without rewriting historical records. Master branch at activation: phoenix/master-coordination@dab1f42b93c258d00054a754bd85698e3ae38b82; PR #288 OPEN/DRAFT/UNMERGED, 182 changed paths, all under coordination/phoenix/. Main=f4e8a891aed8af86d5fd315d28750a0ac3a7372b; development=blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5. COE main=a6513ab4412b4c014eee2863e45cbe32d06cb243; COE #26=b382d233ff06c8791b1028bed3c617cc7b670d12, FROZEN, five workflows queued/zero jobs.
+
+| Role | Exact PR head | Current exact-head CI |
+|---|---|---|
+| CORE #252 | c82705f2de865c89ab733b10efa84f26f56a5cc4 | #42698139210 scoped Build PASS |
+| RENTAL #328 | 0e0da62acd47c6a1ce287f8a30fc700d603fa070 | #44782114384 APK identity PASS; #44782114390 Build FAIL; #44782114393 API21/API23 smoke PASS |
+| PISONET #255 | d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | #42462978704 Windows synthetic PASS; native COM/electrical acceptance NOT TESTED |
+| HARDWARE #345 | fdf0d39eaef79fee0f5661ac30029e831ba5f0a6 | #45121931669 Quarantine PASS; #45121931651 Relay PASS; #45121931662 Full FAIL at inherited QA poll-signature parity; 14 target/platform jobs pass, downstream stages skipped |
+| QA #290 | 5c29d15994cee1279058f1eca12f2a3180704292 | #43633486963 Windows PASS |
+| QA #292 | 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | No runs; old base b1ca02e; current Master validator blob f2442966cbe6ca93cf0ef69e44ed5d328568b580 already enforces exact role-or-ALL |
+| RELEASE #291 | 886cabfc5080c3fbef03c2a3b1afe9d52dea6f60 | #45117006790 core3.3.13 PASS/core4.0.0 archive verify FAIL; #45117006843 Windows freshness FAIL; #45117006794 Full freshness FAIL with target builds completed and release stages skipped |
+
+No source ownership or assignment changed. Master did not edit CORE, RENTAL, PISONET, HARDWARE, QA or RELEASE paths. Cleanup #266 remains OPEN, 0/7. COE #26 remains frozen. Full Master tests NOT RUN; private v11/newer corrections unavailable; branch-protection endpoints 403 and rulesets empty. PRODUCTION NO-GO.
