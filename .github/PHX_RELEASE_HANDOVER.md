@@ -2902,3 +2902,49 @@ The canonical private Drive registry v11 was not available through the authorize
 - Rollback is limited to reverting the two RELEASE-owned test/source commits on this draft branch; do not revert inherited cross-role paths or shared coordination files.
 
 No merge, signing, release tag, publication, hardware flash, real payment migration or customer deployment occurred. Protected signer and independent freshness witness, durable financial accounting/migration, independent QA/MASTER approval, approved production binaries, 150 physical power cuts and 30-device/24-hour soak remain unproven or NOT TESTED. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC13 — provenance read/hash descriptor cleanup (2026-11-23)
+
+**Disposition:** one RELEASE-owned provenance cleanup was reproduced test-first and corrected on the existing draft PR #291 branch. PR #291 remains OPEN / DRAFT / UNMERGED. No signer, publisher, release tag, or production gate was enabled.
+
+### Live control plane and ownership
+
+- Read live control-plane issue #172 and cleanup-first issue #266, including the latest UTC12 MASTER checkpoint; read MASTER PR #288 at `9f04ece155d2a7f58753521645d16042ae52dbaa` and its exact ownership manifest `coordination/phoenix/OWNERSHIP_ROUTES.json` blob `e4db324315a1b3543fec17a148fbf960170fcb29`.
+- The ownership manifest remains `DRAFT_REVIEW_ONLY`; the PHX-RELEASE route for `.github/workflows/blazepwifi-build.yml` is `reimplementation-review`, not migration permission. This increment changes only the RELEASE-owned provenance script, its test and this RELEASE handover.
+- Experiments #242 remains at `734b89d9e7792247e8376335c3f3685500ab3f89`; #291 branch `phoenix/release-publisher-isolation-20261115` was at `886cabfc5080c3fbef03c2a3b1afe9d52dea6f60` before this task, based on #242. COE #26 remains frozen at `b382d233ff06c8791b1028bed3c617cc7b670d12`; COE #31 remains at `59ed44d0b911e176f1a95b9cf5585ef811ffd31b`; COE #35 remains a separate open draft at `4234ee00b1fbb02167a977383a737fe5f3917e3a`.
+- Cleanup-first #266 remains OPEN and incomplete (0/7 tracks); its RELEASE checklist entry is explicitly assigned to #242. This #291 provenance increment is separate and does not count as completion of that checklist.
+- Canonical private Drive registry v11 was not surfaced by authorized Library search. A private checkpoint summary refers to its name, but that is not the canonical registry bytes or a current read. Historical v3-v7 snapshots were not substituted and no private contents were copied.
+
+### Defect and bounded correction
+
+`.github/scripts/write_build_provenance.py::_read_regular()` and `_hash_regular()` each closed the file descriptor and then the pinned parent-directory descriptor in one unguarded `finally` block. If the first close raised, the parent descriptor never received a close attempt; the close exception also replaced an active read/hash `ProvenanceError`. A close-only failure escaped as an unclassified raw `OSError`.
+
+The correction adds one RELEASE-local paired-close helper. It attempts each descriptor close exactly once, continues to the parent after an ordinary close failure or interruption, preserves an active read/hash error while attaching cleanup diagnostics, reports close-only `OSError` as `ProvenanceError`, and propagates a new non-`OSError` interruption only after both close attempts. No checksum format, provenance schema, artifact bytes, workflow permission, signer or cross-role interface changed.
+
+### Test-first and source commits
+
+- Test-first regression: [`0d3b1529`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/0d3b152964924dcc9ada76ccd9c231445182b927).
+- Expected RED: [compatibility run #45182004071](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45182004071), provenance job `137717892767`: **45 tests, exactly four new errors**. Both `_read_regular` and `_hash_regular` failed the injected primary-read/close-error case and the close-only-error case because the first `os.close(fd)` masked/escaped before `os.close(parent_fd)`.
+- Source correction: [`f2230032`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/f2230032fabae7b59f36a513c261338a8e8445b2).
+- Exact source/test CI-0701: [BlazePwifi build run #45182136250](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45182136250), job `137718332872`: **SUCCESS**. Provenance regression suite **45/45 PASS**; handover-current-ref **25/25 PASS**; Arduino CLI archive verifier **10/10 PASS**; immutable action pins, concurrency, release workflow contract, board-core pins and docs-only classifier checks PASS.
+- The same #45182136250 overall build is **NOT green**: validation job `137718481489` fails at the inherited mandatory CORE-owned `experiment/openwrt/BlazePwifi/PROJECT_HANDOVER.md` freshness gate. Its subsequent validation steps are skipped; no CORE handover was edited or bypassed.
+- Exact-source ESP32 compatibility run [#45182136214](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45182136214) was triggered at `f2230032`; its final job outcomes must be read at the final handover head before any matrix claim. The previous #291 core 4.0.0 HTTP 403 result is not silently treated as repaired.
+
+### Exact branch state and scope
+
+- Branch: `phoenix/release-publisher-isolation-20261115`.
+- Source/test HEAD: `f2230032fabae7b59f36a513c261338a8e8445b2`.
+- Base #242: `734b89d9e7792247e8376335c3f3685500ab3f89`.
+- Files changed in this increment: `.github/scripts/test_build_provenance.py`, `.github/scripts/write_build_provenance.py`, and this `.github/PHX_RELEASE_HANDOVER.md` only. The accumulated PR still contains inherited CORE/PISONET paths from earlier work; none was modified here.
+- No independent PR #291 reviews were submitted at the start of this activation. QA review remains required.
+
+### Next actions and release boundary
+
+- **PHX-QA:** independently review both paired-close paths, close-error precedence, and interruption behavior at the final handover head.
+- **PHX-CORE:** refresh its own shared `PROJECT_HANDOVER.md` and rerun Full/Windows freshness; RELEASE will not edit or bypass CORE-owned documentation.
+- **PHX-RELEASE:** verify final handover-head CI and the exact ESP32 compatibility matrix; keep the core 4.0.0 archive leg blocked if its pinned asset cannot be verified.
+- **PHX-MASTER:** refresh the live #172 child-PR reference and preserve the `reimplementation-review` route.
+- Rollback is limited to reverting the two RELEASE-owned test/source commits for this increment; do not revert inherited cross-role files.
+
+No merge, rebase, signing, release tag, publication, hardware flash, payment migration or customer deployment occurred. CI remains synthetic/hosted evidence only. Protected signer and independent freshness witness, durable financial accounting/migration, independent QA/MASTER approval, approved production binaries, 150 physical power cuts and 30-device/24-hour soak remain unproven or NOT TESTED. **PRODUCTION NO-GO.**
