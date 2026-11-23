@@ -1,5 +1,20 @@
 # Project Phoenix — Coordination Index
 
+
+## Latest live state — PHX-MASTER UTC20 (2026-11-23T20:38:16Z)
+
+- Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; development `blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5`; v0.6 comparison branch `2fbd2475e9f54878c316fa7cea2f228386b0e859`; Master start `ee3e0497faa519a49cc6ccd975f32479604dbf04`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`.
+- PR #288 remains OPEN / DRAFT / UNMERGED; its 191 existing paths are all under `coordination/phoenix/`; Master Actions at the starting HEAD: zero runs. This UTC20 update changes six existing coordination documents and adds one report.
+- New [UTC20 COE #35 / role CI / branch-ancestry audit](PHX_MASTER_UTC20_20261123_COE35_FAILCLOSED_STAGING_AND_LIVE_ROLE_CI_RECONCILIATION.md): exact RELEASE source/test fix and final docs-head CI, live owner PR matrix, v0.5.3/v0.6 handover conflict, current architecture/index checks, and registry-access hold.
+- COE #35 source/test `daf08616...`, docs head `a91b46c...`: 204 packaging tests PASS / 2 skips; 10/10 ULA profile admissions fail closed; sandbox 40/40 host preflight then Bubblewrap unavailable / exit 125; case-collision PASS. No appliance binary or ImageBuilder sandbox run.
+- HARDWARE #347 focused Quarantine/Relay PASS; Full fails at QA-owned Missing poll signature check. RELEASE #291 ESP32 compatibility passes for the exact ESP32 sketch only; Full/Windows fail at CORE handover freshness. RENTAL #328 APK/API pass but Build fails. PISONET #255 Windows PASS. QA #290 workflow does not run its native lab; QA #292 has no PR-triggered runs.
+- COE #26 remains FROZEN at `b382d233...`, five workflows QUEUED / zero jobs. The 11-route manifest remains `DRAFT_REVIEW_ONLY`, Master target `null`; no migration is staged.
+- The source handover still conflicts: issue #172 points to v0.5.3 development, while main PROJECT_HANDOVER points to v0.6.0. CORE confirmation is required. Cleanup #266 remains OPEN / 0-of-7.
+- Current architecture scan: 87 top-level §6 headings through §6.91, with four historical duplicate numbers (§6.9, §6.10, §6.11, §6.25); no renumbering. Prior index count is 106 reports / 106 links; this report raises both to 107.
+- Main/development/COE main metadata reports `protected=false`; ruleset lists are empty and effective admin enforcement remains unverified. Canonical private Drive v11/newer corrections were not surfaced; no older snapshot substituted. Full Master Python tests and `verify_coordination.py` NOT RUN.
+- **PRODUCTION NO-GO.** No subsystem source or COE destination path changed; no merge, release, signing, flash, payment operation, or physical test.
+
+
 ## Latest live state — PHX-MASTER UTC15 (2026-11-23)
 
 - Exact refs: Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; development `blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5`; Master audit-start `d8af23f89a5b4d42bb87de55fa8694df214fd914`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE integration #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`. PR #288 is OPEN / DRAFT / UNMERGED; no PR-triggered workflow run was returned at the audit-start head.

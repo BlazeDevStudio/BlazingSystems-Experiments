@@ -4568,3 +4568,21 @@ License/NOTICE readback: PisoWiFi `LICENSE` matches exactly; source root `NOTICE
 - Five #26 workflows remain QUEUED / zero jobs. The ownership manifest remains 11 routes / DRAFT_REVIEW_ONLY / PHX-MASTER target null.
 
 **Decision:** #26 remains FROZEN. Do not stage/copy/move/overwrite/rebase/cherry-pick. The COE integration owner must reconcile the aggregate count, derived-test map, stale test blobs and license/NOTICE gaps, then run exact-head CI and obtain independent owner/QA review.
+
+
+## PHX-MASTER UTC20 exact-head integration refresh — 2026-11-23
+
+| Workstream | Exact source/docs identity | Exact CI result | Integration state |
+|---|---|---|---|
+| CORE #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | #42698139210 PASS | Scoped build only; durable financial state / independent witness remain unverified. |
+| RENTAL #328 | `0e0da62acd47c6a1ce287f8a30fc700d603fa070` | #44782114384 and #44782114393 PASS; #44782114390 FAIL | APK/API scoped checks pass; shared build blocked by handover freshness and ESP32 Mbed TLS include. |
+| PISONET #255 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | #42462978704 PASS | Windows synthetic CI only; native COM/serial hardware acceptance NOT TESTED. |
+| HARDWARE #347 | Docs `5260d433ca440ddb7526ec08519b00a7e6620eb5`; firmware `275057aa28375223a32da099420f52696d9b667c`; lab `fc1bfe86e51e1446712915c69087dca5be8e0763` | Quarantine #45253005056 PASS; Relay #45253003611 PASS; Full #45253005102 FAIL at Missing poll signature check | Focused host labs PASS; Full integration blocked; physical acceptance NOT TESTED. |
+| QA #290 / #292 | `5c29d15994cee1279058f1eca12f2a3180704292` / `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | #290 Windows #43633486963 PASS; #292 no runs | Native lab not invoked by #290 workflow; #292 exact-head evidence absent. |
+| RELEASE #291 | Docs `c5a566fd04a59a3c4a4bbbaa9524f8a9b97e6b7d`; code `98ba3af1fe76128b331f93a4cf3543087cc0919b` | ESP32 compatibility #45209288305 3/3 PASS; Full #45209288533 FAIL; Windows #45209288746 FAIL | Exact ESP32 sketch compatibility only; integrated jobs blocked by CORE handover freshness. |
+| COE RELEASE #35 | Docs `a91b46c43222e328d7a195179d1c105b5811e548`; source/test `daf08616ec001dae7013a8f029894153f597e1ae` | #45257165703: 204 PASS / 2 skips, 10/10 ULA profile denials; #45257165711: 40/40 preflight then Bubblewrap unavailable; #45257165626 case PASS | Packager traversal fix verified; no sandbox build or appliance binary; ULA / Bubblewrap / independent QA blockers remain. |
+| COE CORE #45 | `9d76a134c1f6512aa40c20ec4d247306a71a8cce` | #44295049727 and #44295049903 PASS | Scoped contract candidate only. |
+| COE INTERCON #49 | `aeb8ff11b2f5db9a5f86280ab62ab988245f3919` | #44646341873 and #44646341992 PASS; #44646341922 FAIL | Stage 5.1 scoped pass does not override Shared ESP32 compile failure. |
+| COE integration #26 | `b382d233ff06c8791b1028bed3c617cc7b670d12` | Five workflows QUEUED / zero jobs | FROZEN; no destination changes or migration approval. |
+
+The latest COE #35 source/test correction is independent of the #26 candidate. Do not treat #35 packaging CI as #26 integration CI or as a completed ImageBuilder run.

@@ -2521,3 +2521,18 @@ The ownership manifest remains 11 routes / `DRAFT_REVIEW_ONLY` / PHX-MASTER dest
 **Validation:** JavaScript static checks recomputed all 61 migration classifications, source/destination blob identity, historical/current source drift, derived-test inventory, stale test blobs, and board sketch blob identity. Full Master Python suite and verify_coordination.py were NOT RUN; Master Actions are NOT RUN. This is not a full test-suite pass.
 
 **Disposition:** #288 remains OPEN / DRAFT / UNMERGED; #26 remains FROZEN; no subsystem source or COE destination files changed. Cleanup #266 remains OPEN / 0-of-7. PRODUCTION NO-GO.
+
+
+## PHX-MASTER UTC20 live audit — 2026-11-23
+
+**Verified update:** COE RELEASE #35 now has an exact-source fail-closed overlay-walk correction (`daf08616`) and final docs head `a91b46c`. The exact-source packaging/tool suite passes 204 tests with two intentional skips, but 10/10 appliance profiles still fail closed for missing approved site-scoped ULA /48. Sandbox host preflight passes 40/40, but Bubblewrap is unavailable (exit 125); no ImageBuilder execution or appliance binary was produced.
+
+**Cross-role state:** HARDWARE #347 focused Quarantine/Relay checks pass, while Full remains blocked by the QA-owned Missing poll signature assertion. RELEASE #291 compatibility passes only for the exact ESP32 sketch; Full/Windows remain blocked at CORE handover freshness. RENTAL #328 APK/API checks pass but shared build fails. PISONET #255 Windows CI passes; physical COM acceptance is untested. QA #290's workflow does not execute its native lab; QA #292 has no PR-triggered runs. COE #26 remains FROZEN with five queued workflows and zero jobs.
+
+**Authority conflict:** issue #172 points to v0.5.3 development, while main PROJECT_HANDOVER points to v0.6.0; the v0.5.3 handover is dated 2026-10-06 and lacks the expected CURRENT_STATE file at that ref. CORE must confirm the canonical branch. Master did not edit CORE source or handovers.
+
+**Migration:** ownership manifest remains 11 routes / DRAFT_REVIEW_ONLY / Master target null. The previous 61-row COE #26 provenance audit remains the applicable baseline because source and destination pins are unchanged. No destination file was staged or moved.
+
+**Governance/access:** main, development and COE main report protected=false; ruleset lists are empty; effective admin protection is not verified. Canonical private Drive v11 and newer corrections are unavailable through the current connector surface; no older snapshot was substituted. Full Master Python tests and verify_coordination.py were NOT RUN.
+
+**Disposition:** cleanup #266 OPEN / 0-of-7; PRODUCTION NO-GO.

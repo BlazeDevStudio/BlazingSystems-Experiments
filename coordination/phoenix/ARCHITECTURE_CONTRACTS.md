@@ -1603,3 +1603,17 @@ A release compile pin, a Hardware test/lab source head, and a later PR/handover 
 7. PHX-MASTER owns this evidence contract and integration matrix only. HARDWARE/RELEASE/CORE/QA owners retain their source branches and must correct their own files.
 
 This contract prevents both false stale-source claims and the opposite error of promoting a narrow compile pass into full-stack acceptance.
+
+
+## 6.92 Release overlay traversal errors must abort staging — COE #35 (2026-11-23 UTC20)
+
+COE RELEASE #35 source/test SHA `daf08616ec001dae7013a8f029894153f597e1ae` fixes a real staging-integrity defect: the final permission-normalization pass used `os.walk(staging_dir)` without an `onerror` callback, so a subtree scan failure could be silently skipped while the staging operation appeared successful. The correction re-raises the original traversal error.
+
+1. Every recursive filesystem walk that contributes to a release manifest, permission normalization, or packaging-complete decision must surface traversal errors. A silently skipped subtree is not a complete package.
+2. If traversal or normalization fails, abort the packaging operation before publishing a manifest, execute-mode claim, or completion marker. Preserve the original exception for diagnosis.
+3. A partially created staging directory after a failed walk is **tainted**. The current correction does not guarantee automatic rollback; do not reuse that directory for a retry. Cleanup and verify it, or create a new isolated staging directory with a fresh identity before another attempt.
+4. Regression evidence must inject a nested subtree scan failure and verify both that the original error propagates and that no package-complete/publishable result is emitted. A host preflight PASS is not a Bubblewrap/ImageBuilder execution.
+5. Keep ULA authority, sandbox availability, and package traversal correctness as separate gates. COE #35's 204 packaging/tool tests passing does not override 10/10 profile admission denials for missing approved ULA /48 or the unavailable Bubblewrap runner.
+6. PHX-MASTER owns this cross-role contract only. PHX-RELEASE owns its packager implementation; PHX-QA owns independent regression review; PHX-INFRA/COE owns the compliant runner. No firmware, financial schema, migration, or release authority changes.
+
+This contract is source/test/host-CI scoped. It does not establish an appliance binary, sandbox execution, signing, or production readiness.

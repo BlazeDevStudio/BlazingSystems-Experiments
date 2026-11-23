@@ -3268,3 +3268,22 @@ This section supersedes earlier Hardware #347 and Release #291 pins where they d
 | COE integration #26 | **b382d233ff06c8791b1028bed3c617cc7b670d12**, base COE main **a6513ab4412b4c014eee2863e45cbe32d06cb243** | Five workflows QUEUED / zero jobs | OPEN / DRAFT / FROZEN. No destination staging, file move or promotion. |
 
 Cleanup #266 remains OPEN / 0-of-7. CORE remains with its separate owner; no CORE source branch or competing CORE work was touched by PHX-MASTER.
+
+
+## PHX-MASTER UTC20 live owner/PR/CI reconciliation — 2026-11-23
+
+This section supersedes older owner-head and COE #35 pins above for this live snapshot; it does not transfer source ownership.
+
+| Role / candidate | Exact current head(s) | Current evidence | Required owner action |
+|---|---|---|---|
+| PHX-CORE #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | Build #42698139210 PASS, scoped | Confirm canonical v0.5.3 vs v0.6 development branch and publish authenticated register/poll contract; no Master CORE edits. |
+| PHX-RENTAL #328 | `0e0da62acd47c6a1ce287f8a30fc700d603fa070` | APK #44782114384 PASS; API #44782114393 PASS; Build #44782114390 FAIL at handover freshness and ESP32 Mbed TLS include | RENTAL/CORE reconcile their own handover and build contract. |
+| PHX-PISONET #255 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | Windows #42462978704 PASS | Physical same-handle COM/serial acceptance remains NOT TESTED. |
+| PHX-HARDWARE #347 | Docs `5260d433ca440ddb7526ec08519b00a7e6620eb5`; firmware `275057aa28375223a32da099420f52696d9b667c`; test/lab `fc1bfe86e51e1446712915c69087dca5be8e0763` | Quarantine #45253005056 PASS; Relay #45253003611 PASS; Full #45253005102 FAIL at QA-owned Missing poll signature check; 14/14 target builds pass, 12 downstream stages skip | HARDWARE retains firmware; QA/CORE resolve the producer/assertion contract. |
+| PHX-QA #290 / #292 | `5c29d15994cee1279058f1eca12f2a3180704292` / `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | #290 Windows #43633486963 PASS but does not invoke NativeComInterfaceHandleLab; #292 no PR-triggered runs | QA must execute native tests at an authorized exact head and reconcile stale #292 base. |
+| PHX-RELEASE #291 | Docs `c5a566fd04a59a3c4a4bbbaa9524f8a9b97e6b7d`; code/workflow `98ba3af1fe76128b331f93a4cf3543087cc0919b` | ESP32 compatibility #45209288305 3/3 PASS for exact ESP32 sketch only; Full #45209288533 and Windows #45209288746 fail at CORE handover freshness | RELEASE keeps its source scope; CORE owns handover correction. |
+| COE RELEASE #35 | Docs `a91b46c43222e328d7a195179d1c105b5811e548`; source/test `daf08616ec001dae7013a8f029894153f597e1ae` | 204 packaging tests PASS / 2 skips; 10/10 ULA profile denials; 40/40 sandbox host preflight then Bubblewrap exit 125; case collision PASS | QA review, approved ULA authority, compliant Bubblewrap runner, and partial-staging cleanup remain required. |
+| COE CORE #45 / INTERCON #49 | `9d76a134c1f6512aa40c20ec4d247306a71a8cce` / `aeb8ff11b2f5db9a5f86280ab62ab988245f3919` | #45 overlay/shell and case PASS; #49 Stage 5.1/case PASS, Shared ESP32 compile FAIL | Keep as separate review candidates; no combined acceptance inferred. |
+| COE integration #26 | `b382d233ff06c8791b1028bed3c617cc7b670d12` | Five workflows QUEUED / zero jobs | FROZEN; destination provenance/licensing/test-map corrections remain with integration owner. |
+
+CORE remains owner-reserved. Master made no CORE, RENTAL, PISONET, HARDWARE, QA, RELEASE, or COE destination source changes.
