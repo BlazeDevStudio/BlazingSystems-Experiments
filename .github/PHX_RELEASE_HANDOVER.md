@@ -2280,16 +2280,17 @@ Only RELEASE-owned test, compatibility workflow and this RELEASE handover are in
 
 This is the single machine-checked current pointer for the RELEASE ESP32 compatibility workflow. Older anchors above are historical and superseded.
 
-- HARDWARE #345 docs HEAD: `01916c89ae6718d3991c778b676d06718155d6a2`.
-- HARDWARE #345 source/test SHA: `6eb3e9ba82fdbdcfe4fb6dc8ab1c38c9ffdc3043`.
-- HARDWARE #345 PR HEAD: `01916c89ae6718d3991c778b676d06718155d6a2`.
+- HARDWARE #347 source/test SHA: `275057aa28375223a32da099420f52696d9b667c`.
+- HARDWARE #347 docs HEAD: `c256098dc84574d87321b81bdfd602e6f71b7c78`.
+- HARDWARE #347 PR HEAD: `c256098dc84574d87321b81bdfd602e6f71b7c78`.
+- Superseded HARDWARE #345 source/test SHA: `6eb3e9ba82fdbdcfe4fb6dc8ab1c38c9ffdc3043`; docs/PR HEAD: `01916c89ae6718d3991c778b676d06718155d6a2`.
 - Previous RELEASE pin (superseded): `a2d690b511524f8c710813fe4b4fc06cd52de3a8`.
 - Previous HARDWARE #327 source/test pin (superseded): `3110a42886bb595e28ba7ddeac16a51c2b86bd1c`; previous sketch blob: `7ffb7b534c7163678726902946a17b04992950a0`.
-- ESP32 sketch Git blob SHA: `2a5bad5904a1f6afabdcac95e762482975ebd886`.
-- Exact-source compatibility matrix: [#45094196458](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45094196458) — SUCCESS (3/3 jobs).
-- Push exact-source compatibility matrix: [#45094190762](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45094190762) — SUCCESS (3/3 jobs).
+- Superseded HARDWARE #345 ESP32 sketch blob: `2a5bad5904a1f6afabdcac95e762482975ebd886`.
+- ESP32 sketch Git blob SHA: `717336b84d434d51eb24beac1ed8efce8e719f69`.
+- Exact-source compatibility matrix: [#45203591352](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45203591352) — SUCCESS (3/3 jobs).
+- Push exact-source compatibility matrix: [#45203577135](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45203577135) — SUCCESS (3/3 jobs).
 - **Evidence boundary: hosted CI only.** The application images are CI-generated, not approved production binaries; no physical hardware acceptance is implied.
-
 ---
 
 ## PHX-RELEASE UTC09 — exact-head Full workflow follow-through
@@ -3047,3 +3048,55 @@ This supersedes the IN_PROGRESS matrix entries in the preceding UTC14 section fo
 - Do not transfer source/test-head matrix PASS to the docs-only successor; its own remaining jobs must be read at its exact SHA.
 
 The remaining build blocker is outside RELEASE ownership: **PHX-CORE must refresh its own PROJECT_HANDOVER.md and related state records** before the mandatory freshness gate can pass. RELEASE did not edit or bypass those files. No merge, signing, tagging, publication, hardware flash, payment migration or customer deployment occurred. PRODUCTION NO-GO.
+
+
+---
+
+## PHX-RELEASE UTC15 — exact-source ESP32 compatibility refreshed to HARDWARE #347 (2026-11-23)
+
+**Disposition:** RELEASE-owned compatibility pin refreshed from the superseded HARDWARE #345 source to the current reconciled HARDWARE #347 source/test commit. PR #291 remains OPEN / DRAFT / UNMERGED. No Hardware source, CORE, RENTAL, PISONET, QA or MASTER implementation path was changed.
+
+### Live control plane and ownership
+
+- Control plane: [issue #172](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/172); this activation's sole role-lock/checkpoint is maintained in comment [#7105237417](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/172#issuecomment-7105237417).
+- Cleanup-first [#266](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/266) remains OPEN / 0-of-7. Its RELEASE cleanup assignment remains #242; this #291 compatibility-pin refresh does not count as completion of that separate track.
+- MASTER [#288](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/288) current observed head: `d8af23f89a5b4d42bb87de55fa8694df214fd914`. Ownership manifest blob: `e4db324315a1b3543fec17a148fbf960170fcb29`, status `DRAFT_REVIEW_ONLY`; RELEASE workflow route is `reimplementation-review`, not copy/move authorization.
+- RELEASE #242 current head: `734b89d9e7792247e8376335c3f3685500ab3f89`, base `6d4c9b487af4d768c4d7627654d119417fcc6e00`. It remains a separate future SoftTimer signing/release track; no signer or publisher action was enabled.
+- RELEASE #291 branch: `phoenix/release-publisher-isolation-20261115`, base `734b89d9e7792247e8376335c3f3685500ab3f89`; this UTC15 increment is limited to the compatibility test contract, workflow pin and this handover.
+- HARDWARE #347 current PR/docs head: `c256098dc84574d87321b81bdfd602e6f71b7c78`; source/test SHA: `275057aa28375223a32da099420f52696d9b667c`; ESP32 sketch path `experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino`; exact Git blob: `717336b84d434d51eb24beac1ed8efce8e719f69`. The sketch blob was read at both the source/test SHA and current PR/docs head and matched.
+- COE integration #26 current head: `b382d233ff06c8791b1028bed3c617cc7b670d12`, base `a6513ab4412b4c014eee2863e45cbe32d06cb243`, FROZEN / DRAFT. COE release-packager #31 current head: `59ed44d0b911e176f1a95b9cf5585ef811ffd31b`, base #26; child #35 remains the active packaging-safety draft at `4234ee00b1fbb02167a977383a737fe5f3917e3a`. No COE destination or workflow was changed.
+- Canonical private Drive project registry v11 was not surfaced through authorized Library search. Older v3-v7 snapshots were not substituted; no private registry contents or identifiers were published.
+
+### Test-first pin refresh
+
+- Test/contract commit: [`838a4f7a`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/838a4f7ad6a649a784a829f342d31d80921e197d). It advances the machine-checked expected HARDWARE source/test SHA, docs/PR head and sketch blob to #347.
+- Expected RED: [PR Full run #45203357261](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45203357261), CI-0701 job `137792379499`, failed at the compatibility guard because the workflow still contained the superseded #345 source/blob. The preceding 45 provenance, 25 handover-reference and 10 Arduino CLI archive tests passed. This is the intended stale-pin reproduction.
+- The same test-only head triggered compatibility runs [#45203357199](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45203357199) and [#45203339184](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45203339184), each 3/3 SUCCESS **against the old #345 source `6eb3e9ba...`**. They are retained as historical/stale-pin runs and are not credited as #347 qualification.
+- Workflow correction: [`969d074c`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/969d074c42853d23ea7326ab44536e744589d134). It changes only the RELEASE-owned compatibility workflow's matrix label, `EXPECTED_SOURCE_SHA`, exact checkout ref and `EXPECTED_SKETCH_BLOB` to the nominated #347 source/blob. The two immutable action pins, read-only permissions, exact core versions and build/reproducibility controls remain unchanged.
+
+### Exact-source HARDWARE #347 matrix — terminal
+
+- PR matrix [#45203591352](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45203591352): **3/3 SUCCESS** — provenance job `137794559317`, ESP32 core 4.0.0 job `137794559025`, ESP32 core 3.3.13 job `137794559692`.
+- Push matrix [#45203577135](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45203577135): **3/3 SUCCESS** — provenance job `137794296589`, ESP32 core 4.0.0 job `137794297114`, ESP32 core 3.3.13 job `137794297134`.
+- Both matrix jobs independently checked out source/test SHA `275057aa28375223a32da099420f52696d9b667c` and verified sketch blob `717336b84d434d51eb24beac1ed8efce8e719f69`.
+- Both provenance jobs passed 45 tests and 10 Arduino CLI archive-verifier tests.
+- Core 3.3.13: two clean builds produced identical application image SHA-256 `6ef8a971c8926efd32ba1fa326557f3dc49f79fad0c9c6bee8d734cb743d7cef`, size 1,044,768 bytes.
+- Core 4.0.0: two clean builds produced identical application image SHA-256 `3453838cd850ee92a4062d5a8d8c9d31652178402220deac4b8679ced01b3616`, size 1,098,880 bytes.
+- Both core jobs passed pinned Arduino CLI archive verification, exact source/blob check, SOURCE_DATE_EPOCH wiring, ELF section/symbol checks, application-image validation and two-build reproducibility. This is hosted CI source qualification, not hardware flashing or production binary approval.
+
+### Staged and inherited failures retained
+
+- At workflow-fix head `969d074c`, CI-0701 job `137793212946` in [#45203591163](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45203591163) failed closed at the handover anchor because the handover still pointed to #345. The 45 provenance tests, 25 reference tests, 10 archive tests and application-image/reproducibility/SOURCE_DATE_EPOCH controls passed before that expected stale-anchor failure. This handover update replaces that anchor; final docs-head CI must recheck it.
+- Windows [#45203591272](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45203591272), handover job `137793212216`, failed at the inherited CORE-owned `experiment/openwrt/BlazePwifi/PROJECT_HANDOVER.md` freshness gate; Windows build and publisher were skipped. RELEASE did not edit or bypass CORE records.
+- The earlier test-first head's Windows freshness failure and the later workflow-fix head's same CORE freshness failure are not reclassified as RELEASE compatibility failures.
+- The exact-head compatibility matrix is complete. The broader integrated Full/Windows release workflows remain blocked by the independent CORE handover freshness gate; signing/publication remain skipped.
+
+### Next owner actions and release boundary
+
+1. PHX-CORE refreshes its own `PROJECT_HANDOVER.md` and freshness records at the live source/workflow head; RELEASE then reruns Full/Windows validation without bypassing the gate.
+2. PHX-QA independently reviews the #291 compatibility source-pin contract and test evidence; no submitted review has been recorded.
+3. PHX-MASTER keeps the #291/#242/#347 ownership dependency and review-only routing current. HARDWARE source remains read-only to RELEASE.
+4. Repository administrator verifies effective branch protection and required checks; current protection evidence remains unavailable/unknown.
+5. Registry custodian supplies canonical v11 provenance access through an authorized channel.
+
+No merge, rebase, force-push, cross-repository migration, real-key signing, release tag, publication, hardware flash, real payment migration or customer deployment occurred. The matrix outputs are CI-generated synthetic qualification only. Protected signer, independent freshness witness, durable financial accounting/migration, independent QA/MASTER approval, approved production binaries, 150 physical power cuts and 30-device/24-hour soak remain unproven or NOT TESTED. **PRODUCTION NO-GO.**
