@@ -1026,6 +1026,54 @@ class BuildProvenanceTests(unittest.TestCase):
             os.close(directory_fd)
 
 
+    def assert_descriptors_closed_after_interrupt(self, operation, interrupt_type):
+        real_open = os.open
+        real_fstat = os.fstat
+        opened_fds = []
+
+        def tracked_open(path, flags, *args, **kwargs):
+            descriptor = real_open(path, flags, *args, **kwargs)
+            opened_fds.append(descriptor)
+            return descriptor
+
+        def interrupted_fstat(descriptor):
+            if len(opened_fds) >= 2 and descriptor == opened_fds[-1]:
+                raise interrupt_type("injected directory traversal interruption")
+            return real_fstat(descriptor)
+
+        supported = set(os.supports_dir_fd)
+        supported.add(tracked_open)
+        with patch.object(provenance.os, "open", new=tracked_open), patch.object(
+            provenance.os, "supports_dir_fd", supported
+        ), patch.object(provenance.os, "fstat", side_effect=interrupted_fstat):
+            with self.assertRaises(interrupt_type):
+                operation()
+
+        self.assertGreaterEqual(len(opened_fds), 2)
+        for descriptor in opened_fds:
+            with self.subTest(descriptor=descriptor):
+                with self.assertRaises(OSError):
+                    real_fstat(descriptor)
+
+    def test_regular_file_traversal_closes_parent_and_child_fds_on_keyboard_interrupt(self):
+        parent = self.root / "interrupt-regular-parent"
+        parent.mkdir()
+        payload = parent / "payload.bin"
+        payload.write_bytes(b"descriptor-cleanup")
+        self.assert_descriptors_closed_after_interrupt(
+            lambda: provenance._open_regular(payload),
+            KeyboardInterrupt,
+        )
+
+    def test_directory_traversal_closes_parent_and_child_fds_on_system_exit(self):
+        directory = self.root / "interrupt-directory-parent" / "child"
+        directory.mkdir(parents=True)
+        self.assert_descriptors_closed_after_interrupt(
+            lambda: provenance._open_directory(directory, "test directory"),
+            SystemExit,
+        )
+
+
 if __name__ == "__main__":
     suite = unittest.defaultTestLoader.loadTestsFromTestCase(BuildProvenanceTests)
     result = unittest.TextTestRunner(verbosity=2).run(suite)
