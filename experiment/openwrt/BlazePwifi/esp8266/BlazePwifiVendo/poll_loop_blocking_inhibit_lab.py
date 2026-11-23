@@ -13,6 +13,7 @@ import tempfile
 from firmware_lab_source import extract_function, mask_active_cpp_code, mask_non_code
 from firmware_lab_source_lab import run_source_extractor_regressions
 from remote_config_pin_recovery_lab import run_remote_config_pin_recovery_lab
+from pending_clear_failure_lab import run_pending_clear_failure_lab
 
 run_source_extractor_regressions()
 
@@ -26,15 +27,43 @@ from poll_loop_blocking_inhibit_lab_fixtures import (
     STUBS,
     SUPPORT,
     MAIN,
+    PENDING_PRESERVATION_MAIN,
     RACE_MAIN,
     post_drain_rollover_main,
     missed_sample_main,
     TIMING_MAIN,
     RELEASE_EDGE_MAIN,
+    CLEAR_WINDOW_ISR_MAIN,
 )
 
 ACTIVE_HIGH_MISSED_SAMPLE_MAIN = missed_sample_main(active_low=False, failure_code=57)
 ACTIVE_LOW_MISSED_SAMPLE_MAIN = missed_sample_main(active_low=True, failure_code=58)
+
+
+ATTEMPTED_EVIDENCE_MAIN = MAIN[:MAIN.index("int main(){")] + r"""
+int main(){
+  int result=runAttemptedPendingEvidenceCase(false,false,true,false,82,
+      "POLL_DISABLED_RELAY_ATTEMPTED_EVIDENCE_PRESERVED_PASS");
+  if(result) return result;
+  result=runAttemptedPendingEvidenceCase(false,false,true,true,83,
+      "POLL_DISABLED_RELAY_ISR_ATTEMPTED_EVIDENCE_PRESERVED_PASS");
+  if(result) return result;
+  result=runAttemptedPendingEvidenceCase(false,true,false,false,84,
+      "POLL_DISABLED_COIN_ATTEMPTED_EVIDENCE_PRESERVED_PASS");
+  if(result) return result;
+  result=runAttemptedPendingEvidenceCase(false,true,false,true,85,
+      "POLL_DISABLED_COIN_ISR_ATTEMPTED_EVIDENCE_PRESERVED_PASS");
+  if(result) return result;
+  result=runAttemptedPendingEvidenceCase(true,false,false,false,86,
+      "POLL_DISABLED_CONTROLLER_ATTEMPTED_EVIDENCE_PRESERVED_PASS");
+  if(result) return result;
+  result=runAttemptedPendingEvidenceCase(true,false,false,true,87,
+      "POLL_DISABLED_CONTROLLER_ISR_ATTEMPTED_EVIDENCE_PRESERVED_PASS");
+  if(result) return result;
+  std::cout<<"POLL_DISABLED_INGRESS_ATTEMPTED_EVIDENCE_PRESERVATION_PASS 6/6"<<std::endl;
+  return 0;
+}
+"""
 
 
 def compile_and_run(code, board, expected=0, label="normal"):
@@ -76,6 +105,7 @@ POLL_SAFETY_PARITY = (
     "markPendingPostAttempt",
     "pendingAttemptMarkerMatches",
     "clearPending",
+    "quarantinePending",
 )
 
 
@@ -86,6 +116,7 @@ REQUIRED_COIN_AUTHORITY_PARITY = (
     "markPendingPostAttempt",
     "pendingAttemptMarkerMatches",
     "clearPending",
+    "quarantinePending",
 )
 missing_coin_authority_helpers = [
     name for name in REQUIRED_COIN_AUTHORITY_PARITY
@@ -166,6 +197,7 @@ def verify_poll_safety_board_parity():
         ("markPendingPostAttempt", 'if(LittleFS.exists("/pending.attempt")){', "if(false){"),
         ("pendingAttemptMarkerMatches", "return attempt.pulses==pendingPulses &&", "return true;"),
         ("clearPending", "if(!pendingAttemptMarkerMatches()){", "if(false){"),
+        ("quarantinePending", "if(!appendQuarantineRecord(reason)){", "if(false){"),
     )
     for name, anchor, replacement in authority_mutations:
         mutated = {
@@ -301,6 +333,13 @@ for board,path in BOARDS.items():
     drain_abort=extract_function(source, "handlePollDrainAbortAfterSample")
     reconcile=extract_function(source, "reconcileUnobservedCoinEdges")
     handle=extract_function(source, "handleCoinPostResponse")
+    clear_pending=extract_function(source, "clearPending")
+    load_pending=extract_function(source, "loadPending")
+    same_pending_record=extract_function(source, "samePendingRecord")
+    pending_attempt_marker_matches=extract_function(source, "pendingAttemptMarkerMatches")
+    quarantine_pending=extract_function(source, "quarantinePending")
+    if not clear_pending or not load_pending or not same_pending_record or not pending_attempt_marker_matches or not quarantine_pending:
+        raise AssertionError(f"{board}: missing source-exact pending-clear/recovery helper set")
 
     def assemble(loop_source=loop,output_source=output,quiet_source=quiet,accept_source=accept,
                  configure_source=configure,isr_source=isr,write_fault_source=write_fault,
@@ -314,6 +353,156 @@ for board,path in BOARDS.items():
                 load_fault_source+latch_fault_source+quarantine_source+configure_source+accept_source+reconcile_source+init_store_source+SUPPORT+handle_source+sample_source+drain_abort_source+loop_source+main_source)
 
     print(board,compile_and_run(assemble(),board,0,"exact-source"))
+    print(board,compile_and_run(assemble(main_source=CLEAR_WINDOW_ISR_MAIN),
+                                board,0,"coin-post-clear-window-isr-edge"))
+    clear_recheck_anchor = (
+        "if(reconcileUnobservedCoinEdges()) clearPending();\n"
+        "    if(!reconcileUnobservedCoinEdges()) applyOutputs();"
+    )
+    clear_recheck_mutation = handle.replace(
+        clear_recheck_anchor,
+        "if(reconcileUnobservedCoinEdges()) clearPending();",
+        1,
+    )
+    if clear_recheck_mutation == handle:
+        raise AssertionError(f"{board}: clear-window reconciliation mutation anchor missing")
+    compile_and_run(
+        assemble(handle_source=clear_recheck_mutation,
+                 main_source=CLEAR_WINDOW_ISR_MAIN),
+        board,54,"coin-post-clear-window-isr-recheck"
+    )
+    print(f"{board} MUTATION_REJECTED coin-post-clear-window-isr-recheck expected_exit=54")
+    run_pending_clear_failure_lab(board,clear_pending,same_pending_record,load_pending,
+                                   pending_attempt_marker_matches,quarantine_pending,compile_and_run)
+    # Execute the focused pending-identity matrix on the unmutated exact source;
+    # mutation-only execution is not a substitute for a green baseline run.
+    print(board,compile_and_run(assemble(main_source=PENDING_PRESERVATION_MAIN),
+                                board,0,"disabled-intake-pending-identity"))
+    print(board,compile_and_run(assemble(main_source=ATTEMPTED_EVIDENCE_MAIN),
+                                board,0,"disabled-intake-attempted-pending-evidence"))
+    pending_ready_mutation = sample.replace(
+        "if(pendingPulses>0U) pendingReady=true;",
+        "if(false) pendingReady=true;",
+        1,
+    )
+    if pending_ready_mutation == sample:
+        raise AssertionError(f"{board}: disabled-intake pendingReady mutation anchor missing")
+    compile_and_run(
+        assemble(sample_source=pending_ready_mutation,main_source=PENDING_PRESERVATION_MAIN),
+        board,66,"disabled-intake-pending-ready-preservation"
+    )
+    print(f"{board} MUTATION_REJECTED disabled-intake-pending-ready-preservation expected_exit=66")
+    pending_identity_mutation = latch_fault.replace(
+        'activeTarget="";',
+        'activeTarget=""; pendingTarget=""; pendingNonce="";',
+        1,
+    )
+    if pending_identity_mutation == latch_fault:
+        raise AssertionError(f"{board}: pending-identity mutation anchor missing")
+    compile_and_run(
+        assemble(latch_fault_source=pending_identity_mutation,main_source=PENDING_PRESERVATION_MAIN),
+        board,66,"disabled-intake-pending-identity"
+    )
+    print(f"{board} MUTATION_REJECTED disabled-intake-pending-identity expected_exit=66")
+
+    pending_evidence_paths = (
+        "/pending.dat",
+        "/pending.new",
+        "/pending.bak",
+        "/pending.attempt",
+    )
+    for evidence_path in pending_evidence_paths:
+        pending_evidence_mutation = latch_fault.replace(
+            'activeTarget="";',
+            f'activeTarget=""; LittleFS.files.erase("{evidence_path}");',
+            1,
+        )
+        if pending_evidence_mutation == latch_fault:
+            raise AssertionError(
+                f"{board}: pending evidence deletion mutation anchor missing for {evidence_path}"
+            )
+        compile_and_run(
+            assemble(latch_fault_source=pending_evidence_mutation,
+                     main_source=ATTEMPTED_EVIDENCE_MAIN),
+            board,82,f"disabled-intake-pending-evidence-preservation-{evidence_path}"
+        )
+        print(
+            f"{board} MUTATION_REJECTED disabled-intake-pending-evidence-preservation "
+            f"path={evidence_path} expected_exit=82"
+        )
+
+    pending_attempt_state_mutation = latch_fault.replace(
+        'activeTarget="";',
+        'activeTarget=""; pendingPostAttempted=false;',
+        1,
+    )
+    if pending_attempt_state_mutation == latch_fault:
+        raise AssertionError(f"{board}: pending attempt-state mutation anchor missing")
+    compile_and_run(
+        assemble(latch_fault_source=pending_attempt_state_mutation,
+                 main_source=ATTEMPTED_EVIDENCE_MAIN),
+        board,82,"disabled-intake-pending-attempt-state-preservation"
+    )
+    print(
+        f"{board} MUTATION_REJECTED disabled-intake-pending-attempt-state-preservation "
+        "expected_exit=82"
+    )
+
+    pending_edge_delta_mutation = sample.replace(
+        "latchPollPulseFault((uint32_t)pendingPulses+unseenEdges);",
+        "latchPollPulseFault((uint32_t)pendingPulses+1U);",
+        1,
+    )
+    if pending_edge_delta_mutation == sample:
+        raise AssertionError(f"{board}: pending multi-edge delta mutation anchor missing")
+    compile_and_run(
+        assemble(sample_source=pending_edge_delta_mutation,main_source=PENDING_PRESERVATION_MAIN),
+        board,72,"disabled-intake-pending-edge-delta"
+    )
+    print(f"{board} MUTATION_REJECTED disabled-intake-pending-edge-delta expected_exit=72")
+
+    relay_gate_mutation = output.replace(
+        "bool accepting=pinConfigSafe && controllerEnabled && coinEnabled && relayEnabled && insertMode",
+        "bool accepting=pinConfigSafe && controllerEnabled && coinEnabled && insertMode",
+        1,
+    )
+    if relay_gate_mutation == output:
+        raise AssertionError(f"{board}: configured relay output gate mutation anchor missing")
+    compile_and_run(
+        assemble(output_source=relay_gate_mutation,main_source=PENDING_PRESERVATION_MAIN),
+        board,80,"disabled-intake-relay-output-gate"
+    )
+    print(f"{board} MUTATION_REJECTED disabled-intake-relay-output-gate expected_exit=80")
+    # The output-gate mutation above protects applyOutputs(), but that alone
+    # cannot prove that sampleCoinPulseEdge() refuses to create a pending credit.
+    # Independently remove each configured admission term and require the
+    # existing no-pending disabled-ingress scenarios to fail on that mutation.
+    coin_ingress_gate_mutations = (
+        ("controller", "true && coinEnabled && relayEnabled", 64),
+        ("coin", "controllerEnabled && true && relayEnabled", 62),
+        ("relay", "controllerEnabled && coinEnabled && true", 60),
+    )
+    original_coin_ingress_gate = "const bool coinIngressConfigured=controllerEnabled && coinEnabled && relayEnabled;"
+    for gate_name, mutated_gate, expected_exit in coin_ingress_gate_mutations:
+        coin_ingress_gate_mutation = sample.replace(
+            original_coin_ingress_gate,
+            f"const bool coinIngressConfigured={mutated_gate};",
+            1,
+        )
+        if coin_ingress_gate_mutation == sample:
+            raise AssertionError(
+                f"{board}: configured {gate_name} coin-ingress gate mutation anchor missing"
+            )
+        compile_and_run(
+            assemble(sample_source=coin_ingress_gate_mutation, main_source=MAIN),
+            board,
+            expected_exit,
+            f"disabled-intake-{gate_name}-coin-ingress-gate",
+        )
+        print(
+            f"{board} MUTATION_REJECTED disabled-intake-{gate_name}-coin-ingress-gate "
+            f"expected_exit={expected_exit}"
+        )
     print(board,compile_and_run(assemble(main_source=RELEASE_EDGE_MAIN),board,0,
                                 "poll-release-output-interlock"))
     timing_output=compile_and_run(assemble(main_source=TIMING_MAIN),board,0,

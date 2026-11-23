@@ -189,7 +189,7 @@ int main() {
       runLedActiveHigh = ledHigh != 0;
       relayEnabled = false;
       applyOutputs();
-      checkBoth(false, true, "relay output disabled");
+      checkBoth(false, false, "relay output disabled");
 
       resetState();
       runRelayActiveHigh = relayHigh != 0;

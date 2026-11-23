@@ -17,7 +17,7 @@ void resetState(){
   injectDuringPollRelease=false; injectDuringPollReleaseAtRelayWrite=false;
   pollReleaseEdgeInjected=false; pollReleaseEdgeSawRelayOff=false;
   pollReleaseRelayEnergizedBeforeLatch=false; pollReleaseRelayClearedBeforeLatch=false;
-  allowCoinPost=false; injectDuringCoinPost=false; coinPostCalls=0; clearCalls=0;
+  allowCoinPost=false; injectDuringCoinPost=false; injectDuringClear=false; coinPostCalls=0; clearCalls=0;
   drainAbortReadCount=0; drainAbortInjected=false; drainAbortSawRelayOn=false;
   drainAbortSampleSawRelayOn=false; drainAbortReenabledBeforeLatch=false;
   drainAbortActiveLineReenabled=false;
@@ -70,7 +70,170 @@ int runDrainAbortWithoutIsr(bool activeLow, int holdFailureCode, int releaseFail
   std::cout<<releasedMarker<<"\\n";
   return 0;
 }
+int runDisabledIngressCase(bool disableController, bool disableCoin, bool disableRelay,
+                           bool injectIsrEdge, int failureCode, const char *passMarker){
+  resetState();
+  if(disableController) controllerEnabled=false;
+  if(disableCoin) coinEnabled=false;
+  if(disableRelay) relayEnabled=false;
+  applyOutputs();
+  if(relayOn || ledOn){
+    std::cout<<"POLL_DISABLED_INGRESS_OUTPUTS_OFF_FAIL\\n";
+    return failureCode+20;
+  }
+  if(injectIsrEdge) coinEdgeSequence=1U;
+  sampleCoinPulseEdge(true);
+  if(!journalRecoveryRequired || pendingPulses!=0U || saveCalls!=0 ||
+     !LittleFS.exists("/pollpulse.fault") || relayOn || ledOn ||
+     insertMode || !activeTarget.empty()) return failureCode;
+  const std::string fault=LittleFS.files["/pollpulse.fault"];
+  if(fault.find("COIN_INGRESS_UNRESOLVED")==std::string::npos ||
+     fault.find("pulses=1")==std::string::npos) return failureCode;
+  std::cout<<passMarker<<"\\n";
+  return 0;
+}
+
+const std::string PENDING_JOURNAL_FIXTURE_BYTES =
+    "PHX-PENDING-JOURNAL-OPAQUE-v1|pulses=2|target=pending-target|nonce=pending-nonce";
+
+std::string seedPendingJournalFixture() {
+  LittleFS.files["/pending.dat"] = PENDING_JOURNAL_FIXTURE_BYTES;
+  return PENDING_JOURNAL_FIXTURE_BYTES;
+}
+
+bool pendingJournalFixturePreserved(const std::string &expectedBytes) {
+  const auto found = LittleFS.files.find("/pending.dat");
+  return found != LittleFS.files.end() && found->second == expectedBytes;
+}
+
+const std::map<std::string,std::string> PENDING_EVIDENCE_FIXTURE_FILES = {
+  {"/pending.dat","PHX-PENDING-DAT-OPAQUE-v1|pulses=2|target=pending-target|nonce=pending-nonce"},
+  {"/pending.new","PHX-PENDING-NEW-OPAQUE-v1|candidate=uncommitted"},
+  {"/pending.bak","PHX-PENDING-BAK-OPAQUE-v1|candidate=previous"},
+  {"/pending.attempt","PHX-PENDING-ATTEMPT-OPAQUE-v1|attempted=1|target=pending-target|nonce=pending-nonce"}
+};
+
+std::map<std::string,std::string> seedPendingEvidenceFixture() {
+  for (const auto &entry : PENDING_EVIDENCE_FIXTURE_FILES) {
+    LittleFS.files[entry.first] = entry.second;
+  }
+  return PENDING_EVIDENCE_FIXTURE_FILES;
+}
+
+bool pendingEvidenceFixturePreserved(
+    const std::map<std::string,std::string> &expectedFiles) {
+  for (const auto &expected : expectedFiles) {
+    const auto found = LittleFS.files.find(expected.first);
+    if (found == LittleFS.files.end() || found->second != expected.second) return false;
+  }
+  return true;
+}
+
+int runDisabledIngressPendingCase(bool disableController, bool disableCoin, bool disableRelay,
+                                  bool injectIsrEdge, int failureCode, const char *passMarker){
+  resetState();
+  // Model the existing RAM identity plus opaque pending-journal bytes. This
+  // loop lab checks byte preservation; it does not parse the on-disk record format.
+  const std::string pendingJournalBytes=seedPendingJournalFixture();
+  pendingPulses=2U;
+  pendingReady=false;
+  pendingTarget="pending-target";
+  pendingNonce="pending-nonce";
+  pendingPostAttempted=false;
+  if(disableController) controllerEnabled=false;
+  if(disableCoin) coinEnabled=false;
+  if(disableRelay) relayEnabled=false;
+  applyOutputs();
+  // Check the configured output interlock before the fault handler can mask a bad initial state.
+  if(relayOn || ledOn) return failureCode+14; // reserved exit range for configured-output interlock mutation
+  if(injectIsrEdge) coinEdgeSequence=1U;
+  sampleCoinPulseEdge(true);
+  if(!journalRecoveryRequired || pendingPulses!=2U || !pendingReady ||
+     pendingTarget!="pending-target" || pendingNonce!="pending-nonce" ||
+     pendingPostAttempted || saveCalls!=0 ||
+     !pendingJournalFixturePreserved(pendingJournalBytes) ||
+     !LittleFS.exists("/pollpulse.fault") || relayOn || ledOn ||
+     insertMode || !activeTarget.empty()) return failureCode;
+  const std::string fault=LittleFS.files["/pollpulse.fault"];
+  if(fault.find("COIN_INGRESS_UNRESOLVED")==std::string::npos ||
+     fault.find("pulses=3")==std::string::npos) return failureCode;
+  std::cout<<passMarker<<std::endl;
+  return 0;
+}
+
+
+int runDisabledIngressPendingMultiEdgeCase(bool disableController, bool disableCoin, bool disableRelay,
+                                           uint32_t initialSequence, uint32_t edgeDelta,
+                                           uint32_t expectedFaultPulses, int failureCode,
+                                           const char *passMarker){
+  resetState();
+  // RAM identity and opaque pending-journal bytes must survive a multi-edge
+  // delta, including uint32 rollover; the journal's serialized format is not parsed here.
+  const std::string pendingJournalBytes=seedPendingJournalFixture();
+  pendingPulses=2U;
+  pendingReady=false;
+  pendingTarget="pending-target";
+  pendingNonce="pending-nonce";
+  pendingPostAttempted=false;
+  if(disableController) controllerEnabled=false;
+  if(disableCoin) coinEnabled=false;
+  if(disableRelay) relayEnabled=false;
+  applyOutputs();
+  // Check the configured output interlock before sampling or fault handling.
+  if(relayOn || ledOn) return failureCode+14; // reserved exit range for configured-output interlock mutation
+  lastHandledCoinEdgeSequence=initialSequence;
+  coinEdgeSequence=initialSequence+edgeDelta;
+  sampleCoinPulseEdge(true);
+  if(!journalRecoveryRequired || pendingPulses!=2U || !pendingReady ||
+     pendingTarget!="pending-target" || pendingNonce!="pending-nonce" ||
+     pendingPostAttempted || saveCalls!=0 ||
+     !pendingJournalFixturePreserved(pendingJournalBytes) ||
+     lastHandledCoinEdgeSequence!=coinEdgeSequence || !lastCoin ||
+     !LittleFS.exists("/pollpulse.fault") || relayOn || ledOn ||
+     insertMode || !activeTarget.empty()) return failureCode;
+  const std::string fault=LittleFS.files["/pollpulse.fault"];
+  if(fault.find("COIN_INGRESS_UNRESOLVED")==std::string::npos ||
+     fault.find("pulses="+std::to_string(expectedFaultPulses))==std::string::npos)
+    return failureCode;
+  std::cout<<passMarker<<std::endl;
+  return 0;
+}
+
+
+int runAttemptedPendingEvidenceCase(bool disableController, bool disableCoin, bool disableRelay,
+                                    bool injectIsrEdge, int failureCode, const char *passMarker){
+  resetState();
+  // Deliberately model opaque recovery evidence for an already-attempted event,
+  // including alternate journal candidates. This checks preservation only; it
+  // does not parse or bless any PendingRecord serialization or recovery choice.
+  const auto pendingEvidenceFiles=seedPendingEvidenceFixture();
+  pendingPulses=2U;
+  pendingReady=true;
+  pendingTarget="pending-target";
+  pendingNonce="pending-nonce";
+  pendingPostAttempted=true;
+  if(disableController) controllerEnabled=false;
+  if(disableCoin) coinEnabled=false;
+  if(disableRelay) relayEnabled=false;
+  applyOutputs();
+  if(relayOn || ledOn) return failureCode+14;
+  if(injectIsrEdge) coinEdgeSequence=1U;
+  sampleCoinPulseEdge(true);
+  if(!journalRecoveryRequired || pendingPulses!=2U || !pendingReady ||
+     !pendingPostAttempted || pendingTarget!="pending-target" ||
+     pendingNonce!="pending-nonce" || saveCalls!=0 ||
+     !pendingEvidenceFixturePreserved(pendingEvidenceFiles) ||
+     !LittleFS.exists("/pollpulse.fault") || relayOn || ledOn ||
+     insertMode || !activeTarget.empty()) return failureCode;
+  const std::string fault=LittleFS.files["/pollpulse.fault"];
+  if(fault.find("COIN_INGRESS_UNRESOLVED")==std::string::npos ||
+     fault.find("pulses=3")==std::string::npos) return failureCode;
+  std::cout<<passMarker<<std::endl;
+  return 0;
+}
+
 int main(){
+
   // A prior persistent journal fault must abort even with an idle line and no new ISR edge.
   resetState();
   journalRecoveryRequired=true;
@@ -311,9 +474,49 @@ int main(){
 
   std::cout<<"POLL_BLOCKED_EDGE_FAULT_PASS 8/8 fault-marker scenarios; existing poll-loop guards 7/7\n";
   std::cout<<"SIMULATED_ONLY=1 PHYSICAL_COIN_ACCEPTOR_VERIFIED=0 PHYSICAL_POWER_CUT_VERIFIED=0\n";
+  // Disabled controller/coin/relay configurations must quarantine sampled edges.
+  int disabledIngressResult=runDisabledIngressCase(false,false,true,false,60,
+      "POLL_EDGE_WHILE_RELAY_DISABLED_DENY_PASS");
+  if(disabledIngressResult) return disabledIngressResult;
+  disabledIngressResult=runDisabledIngressCase(false,false,true,true,61,
+      "POLL_ISR_EDGE_WHILE_RELAY_DISABLED_DENY_PASS");
+  if(disabledIngressResult) return disabledIngressResult;
+  disabledIngressResult=runDisabledIngressCase(false,true,false,false,62,
+      "POLL_EDGE_WHILE_COIN_DISABLED_DENY_PASS");
+  if(disabledIngressResult) return disabledIngressResult;
+  disabledIngressResult=runDisabledIngressCase(false,true,false,true,63,
+      "POLL_ISR_EDGE_WHILE_COIN_DISABLED_DENY_PASS");
+  if(disabledIngressResult) return disabledIngressResult;
+  disabledIngressResult=runDisabledIngressCase(true,false,false,false,64,
+      "POLL_EDGE_WHILE_CONTROLLER_DISABLED_DENY_PASS");
+  if(disabledIngressResult) return disabledIngressResult;
+  disabledIngressResult=runDisabledIngressCase(true,false,false,true,65,
+      "POLL_ISR_EDGE_WHILE_CONTROLLER_DISABLED_DENY_PASS");
+  if(disabledIngressResult) return disabledIngressResult;
+  disabledIngressResult=runDisabledIngressPendingCase(false,false,true,false,66,
+      "POLL_DISABLED_RELAY_PENDING_IDENTITY_PRESERVED_PASS");
+  if(disabledIngressResult) return disabledIngressResult;
+  disabledIngressResult=runDisabledIngressPendingCase(false,false,true,true,67,
+      "POLL_DISABLED_RELAY_ISR_PENDING_IDENTITY_PRESERVED_PASS");
+  if(disabledIngressResult) return disabledIngressResult;
+  disabledIngressResult=runDisabledIngressPendingCase(false,true,false,false,68,
+      "POLL_DISABLED_COIN_PENDING_IDENTITY_PRESERVED_PASS");
+  if(disabledIngressResult) return disabledIngressResult;
+  disabledIngressResult=runDisabledIngressPendingCase(false,true,false,true,69,
+      "POLL_DISABLED_COIN_ISR_PENDING_IDENTITY_PRESERVED_PASS");
+  if(disabledIngressResult) return disabledIngressResult;
+  disabledIngressResult=runDisabledIngressPendingCase(true,false,false,false,70,
+      "POLL_DISABLED_CONTROLLER_PENDING_IDENTITY_PRESERVED_PASS");
+  if(disabledIngressResult) return disabledIngressResult;
+  disabledIngressResult=runDisabledIngressPendingCase(true,false,false,true,71,
+      "POLL_DISABLED_CONTROLLER_ISR_PENDING_IDENTITY_PRESERVED_PASS");
+  if(disabledIngressResult) return disabledIngressResult;
+  std::cout<<"POLL_DISABLED_INGRESS_PENDING_IDENTITY_PRESERVATION_PASS 6/6"<<std::endl;
   return 0;
 }
+
 """
+
 
 RACE_MAIN = MAIN.replace(
     "  // Existing pulse-drain behavior remains intact for a pulse observed before poll.",
@@ -482,3 +685,5 @@ int main(){
   return 0;
 }
 """
+
+
