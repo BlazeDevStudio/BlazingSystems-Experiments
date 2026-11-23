@@ -739,6 +739,6 @@ At the exact starting tree, 89 `PHX_MASTER_*.md` reports were present but INDEX 
 
 ## Latest exact-head reconciliation — 2026-11-23 UTC04
 
-- [${reportName}](${reportName}) — current exact role heads/CI, index recovery, branch protection, private registry access limitation, and route-by-route COE #26 blob/license/test provenance comparison.
+- [PHX_MASTER_UTC04_20261123_LIVE_OWNER_CI_AND_COE26_SOURCE_INTAKE_RECONCILIATION.md](PHX_MASTER_UTC04_20261123_LIVE_OWNER_CI_AND_COE26_SOURCE_INTAKE_RECONCILIATION.md) — current exact role heads/CI, index recovery, branch protection, private registry access limitation, and route-by-route COE #26 blob/license/test provenance comparison.
 
 **Post-update index coverage target:** 97/97 PHX-MASTER reports; no duplicate links, dangling targets or unindexed reports (to be verified against the resulting commit).

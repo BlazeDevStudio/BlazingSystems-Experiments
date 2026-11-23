@@ -2282,7 +2282,7 @@ During final readback, PR #291 advanced to `29bd31bcd8e4a120a8d23de041c1494a84e1
 
 ## PHX-MASTER UTC04 — live owner/CI and exact COE intake reconciliation (2026-11-23T04:41:02Z)
 
-Master re-read live #172/#266, default/development/Master/COE refs, #288, ownership routes, current owner PRs/CI, COE #26 and the required governance documents. The exact report is [PHX-MASTER UTC04 live owner/CI and COE #26 source-intake reconciliation](${reportName}).
+Master re-read live #172/#266, default/development/Master/COE refs, #288, ownership routes, current owner PRs/CI, COE #26 and the required governance documents. The exact report is [PHX-MASTER UTC04 live owner/CI and COE #26 source-intake reconciliation](PHX_MASTER_UTC04_20261123_LIVE_OWNER_CI_AND_COE26_SOURCE_INTAKE_RECONCILIATION.md).
 
 **Master branch:** starting HEAD `e3e1f642d5a4129f81300ce927c0c78ce250b7c4`, base main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`. PR #288 is OPEN/DRAFT/UNMERGED; 181 changed paths are all under `coordination/phoenix/`; no Master Actions runs or combined statuses exist. This activation is coordination-only.
 
