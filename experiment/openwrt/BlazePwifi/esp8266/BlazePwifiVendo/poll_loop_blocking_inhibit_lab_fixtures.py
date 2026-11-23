@@ -11,6 +11,7 @@ from poll_loop_blocking_inhibit_lab_scenario_fixtures import (
     post_drain_rollover_main,
     missed_sample_main,
     TIMING_MAIN,
+    LONG_DEBOUNCE_ROLLOVER_MAIN,
     RELEASE_EDGE_MAIN,
 )
 
@@ -22,5 +23,6 @@ __all__ = [
     "post_drain_rollover_main",
     "missed_sample_main",
     "TIMING_MAIN",
+    "LONG_DEBOUNCE_ROLLOVER_MAIN",
     "RELEASE_EDGE_MAIN",
 ]

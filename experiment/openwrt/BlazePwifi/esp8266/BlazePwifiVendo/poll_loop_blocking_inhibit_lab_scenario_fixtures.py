@@ -433,6 +433,23 @@ TIMING_MAIN = MAIN.replace(
 )
 
 
+LONG_DEBOUNCE_ROLLOVER_MAIN = MAIN.replace(
+    "int main(){",
+    """int main(){
+  resetState();
+  const uint32_t started=0xFFFFFF00UL;
+  fakeNow=started;
+  runDebounceMs=2000U;
+  if(!beginPollWindow()) return 61;
+  if((uint32_t)(fakeNow-started)!=2000U) return 61;
+  if(!pollIntakeSuspended || relayOn || ledOn || pollDrainAbortedOnActiveLine) return 62;
+  std::cout<<"POLL_QUIET_WINDOW_LONG_DEBOUNCE_ROLLOVER_PASS\\n";
+  return 0;
+""",
+    1,
+)
+
+
 RELEASE_EDGE_MAIN = r"""
 void resetReleaseEdgeState(){
   fakeNow=2000; pulseStart=-1; pulseEnd=-1;

@@ -29,6 +29,7 @@ from poll_loop_blocking_inhibit_lab_fixtures import (
     post_drain_rollover_main,
     missed_sample_main,
     TIMING_MAIN,
+    LONG_DEBOUNCE_ROLLOVER_MAIN,
     RELEASE_EDGE_MAIN,
 )
 
@@ -320,6 +321,41 @@ for board,path in BOARDS.items():
     if "PHX_177_ORIGINAL_1501_1600_1680_PULSE_ABORTED_BEFORE_HTTP_PASS" not in timing_output:
         raise AssertionError(f"{board}: exact #177 timing marker missing")
     print(f"{board} PHX_177_ORIGINAL_1501_1600_1680_TIMING_PASS")
+
+    long_debounce_output=compile_and_run(
+        assemble(main_source=LONG_DEBOUNCE_ROLLOVER_MAIN),
+        board,0,"long-debounce-millis-rollover"
+    )
+    if "POLL_QUIET_WINDOW_LONG_DEBOUNCE_ROLLOVER_PASS" not in long_debounce_output:
+        raise AssertionError(f"{board}: long-debounce millis-rollover marker missing")
+    print(f"{board} POLL_QUIET_WINDOW_LONG_DEBOUNCE_ROLLOVER_PASS")
+
+    capped_quiet=quiet.replace(
+        "const uint32_t quietMs=runDebounceMs>pulseTrainQuietMs?runDebounceMs:pulseTrainQuietMs;",
+        "const uint32_t quietMs=pulseTrainQuietMs;",
+        1,
+    )
+    if capped_quiet==quiet:
+        raise AssertionError(f"{board}: long-debounce cap mutation anchor missing")
+    compile_and_run(
+        assemble(quiet_source=capped_quiet,main_source=LONG_DEBOUNCE_ROLLOVER_MAIN),
+        board,61,"cap-quiet-window-at-250ms"
+    )
+    print(f"{board} MUTATION_REJECTED cap-quiet-window-at-250ms expected_exit=61")
+
+    unsafe_wrap_quiet=quiet.replace(
+        "while(millis()-started<quietMs){",
+        "while(millis()<started+quietMs){",
+        1,
+    )
+    if unsafe_wrap_quiet==quiet:
+        raise AssertionError(f"{board}: millis-deadline rollover mutation anchor missing")
+    compile_and_run(
+        assemble(quiet_source=unsafe_wrap_quiet,main_source=LONG_DEBOUNCE_ROLLOVER_MAIN),
+        board,61,"non-wrap-safe-quiet-deadline"
+    )
+    print(f"{board} MUTATION_REJECTED non-wrap-safe-quiet-deadline expected_exit=61")
+
     unsafe_timing_loop=loop.replace(
         "const bool pollWindowReady=beginPollWindow();",
         "const bool pollWindowReady=true;",
