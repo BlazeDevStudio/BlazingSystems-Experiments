@@ -2975,3 +2975,49 @@ This section records terminal outcomes for the prior final handover HEAD `da83cc
 - **PHX-MASTER:** refresh its own #172 child-PR pin and preserve the #288 `DRAFT_REVIEW_ONLY` / `reimplementation-review` route.
 
 The compatibility matrix is reproducible hosted CI only. No hardware flash, production image approval, signer invocation, release tag, publication, financial migration or customer deployment occurred. Physical 150 power-cut and 30-device/24-hour acceptance remain NOT TESTED. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC14 — ESP32 application-image directory descriptor cleanup (2026-11-23)
+
+**Disposition:** one RELEASE-owned cleanup was reproduced test-first and fixed on the existing draft PR #291 branch. Source/test HEAD: `1efd329c5b43d12c22a077577e532381aecaff34`. PR #291 remains OPEN / DRAFT / UNMERGED. Production remains NO-GO.
+
+### Live control plane, ownership and provenance
+
+- Control plane #172 was refreshed; the single UTC14 PHX-RELEASE role-lock/checkpoint comment is ID `7103595647` and is updated in place.
+- Cleanup-first #266 remains OPEN / incomplete (0/7 tracks in the current Master matrix). Its RELEASE cleanup assignment is explicitly PR #242; this #291 task does not count as completion of that track.
+- MASTER PR #288 is OPEN / DRAFT at `2fd03816e3ab44c48fdcc81ec3c20ae13c0a2e0c`. `coordination/phoenix/OWNERSHIP_ROUTES.json` remains `DRAFT_REVIEW_ONLY`; RELEASE's `.github/workflows/blazepwifi-build.yml` route is `reimplementation-review`, not copy or migration authorization.
+- Experiments #242 remains at `734b89d9e7792247e8376335c3f3685500ab3f89`. Experiments #291 branch `phoenix/release-publisher-isolation-20261115` is based on #242 at that SHA.
+- COE #26 remains FROZEN at `b382d233ff06c8791b1028bed3c617cc7b670d12`; COE #31 remains OPEN / DRAFT at `59ed44d0b911e176f1a95b9cf5585ef811ffd31b`; child #35 remains OPEN / DRAFT at `4234ee00b1fbb02167a977383a737fe5f3917e3a`. The historical #31 generated-shell literal-escape concern was rechecked at the current #31 source head; line 495 is now the runner-path verification block, so no duplicate fix was applied.
+- Canonical private Drive project registry v11 was not surfaced by the authorized Library search. Historical v3-v7 snapshots were not substituted and no private registry content was copied.
+- The GitHub branch-protection endpoint returned 403 (resource not accessible by integration); effective protection is UNKNOWN, not asserted enabled or disabled. PR #291 has zero submitted reviews and zero review threads at this checkpoint.
+
+### Defect and bounded correction
+
+`.github/scripts/verify_esp32_application_image.py::_open_output_directory()` popped the pinned output and parent descriptors out of its ownership list before closing earlier path-ancestor descriptors. If an ancestor `os.close()` raised, cleanup no longer owned or attempted the parent/output descriptors; the failing ancestor could be retried; and a `KeyboardInterrupt` bypassed the `Exception` handler, leaving the remaining descriptors unattempted.
+
+The correction adds a one-shot descriptor cleanup helper. It pops ownership before each close attempt, attempts every remaining descriptor even after an ordinary error or interruption, retains parent/output ownership until all ancestor closes succeed, closes parent/output if ancestor cleanup fails, and attaches secondary cleanup diagnostics without replacing the primary exception. An ambiguous failed close is never retried.
+
+### Test-first history
+
+- Initial regression test commit: [`fb0b8c89`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/fb0b8c89398c12a481a87fa2b8a7f3a7ee8e1e9e). Its first CI attempt was a test-fixture setup failure: patching `os.open` changed the callable identity used by `os.supports_dir_fd`, so the injected close path did not execute. This is not counted as product RED.
+- Fixture correction: [`4390edb5`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/4390edb5cef632a6acf4d47c8076f4ef93032094) registers the wrapper in the temporary `supports_dir_fd` capability set.
+- Expected product RED at exact test-only head `4390edb5`: PR [run #45192086724](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45192086724), CI-0701 job `137752788892`, and push [run #45192071890](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45192071890), job `137752733117`. Both reproduced the defect: descriptor 3 received two close attempts, descriptors 5/6 received zero attempts; the KeyboardInterrupt control left descriptors 3/4/5/6 open. The 45 provenance tests, 25 handover-reference tests and 10 archive-verifier tests passed; the new application-image cleanup guard correctly failed.
+- Source fix: [`1efd329c`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/1efd329c5b43d12c22a077577e532381aecaff34).
+- Compare from previous head `cc0192722cface63bcf5c2e5149b485ade83f41e` to source/test head `1efd329c5b43d12c22a077577e532381aecaff34`: 3 commits ahead, 0 behind, exactly two changed paths: `.github/scripts/test_phx_release_esp32_core_compatibility.py` and `.github/scripts/verify_esp32_application_image.py`. Both are RELEASE-owned. No CORE, RENTAL, PISONET, HARDWARE, QA or MASTER files were changed in this increment.
+
+### Exact-source GitHub Actions at `1efd329c`
+
+- PR BlazePwifi build [#45192373927](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45192373927), CI-0701 job `137753782618`: **PASS**. Logs show provenance 45/45, handover references 25/25, Arduino CLI archive verifier 10/10, immutable action pins and release guards PASS; the application-image verifier guard reports its synthetic candidate/symlink/hard-link/directory-swap and one-shot descriptor-cleanup controls PASS. The overall build is not green: mandatory validation job `137753949853` **FAILED** at the inherited CORE-owned `experiment/openwrt/BlazePwifi/PROJECT_HANDOVER.md` freshness gate. ESP8266 job `137753949501` PASS; ESP32 and Android were still running at last read; target jobs were a mix of PASS and in progress. Update bundle and downstream simulations were skipped after the gate.
+- Push BlazePwifi build [#45192355932](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45192355932), CI-0701 job `137753718005`: **PASS**. Mandatory validation job `137753872708` **FAILED** at the same CORE-owned handover freshness gate. ESP32, ESP8266 and all 11 OpenWrt target jobs PASS; Android was still in progress at last read. Update bundle and downstream simulations were skipped.
+- PR ESP32 compatibility [#45192373807](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45192373807): provenance job `137754186760` PASS; core 3.3.13 job `137754187002` and core 4.0.0 job `137754186355` were IN_PROGRESS at last read.
+- Push ESP32 compatibility [#45192356025](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45192356025): provenance job `137754140985` PASS; core 3.3.13 job `137754140876` and core 4.0.0 job `137754140289` were IN_PROGRESS at last read. No final matrix PASS is claimed.
+- Windows release [#45192374621](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45192374621): handover job `137753784401` FAILED at the same CORE-owned `PROJECT_HANDOVER.md` freshness gate; Windows build and publisher were SKIPPED. The PISONET negative-selftest was not reached by this run and was not modified.
+
+### Next actions and release boundary
+
+1. **PHX-CORE:** update its own `PROJECT_HANDOVER.md`, `CURRENT_STATE.md` and `CHANGE_LEDGER.md`, then rerun the shared freshness gate. RELEASE must not edit or bypass CORE-owned records.
+2. **PHX-QA:** independently review the one-shot descriptor ownership transitions and both OSError/KeyboardInterrupt regressions at the current PR head.
+3. **PHX-MASTER:** refresh the stale #172 child-PR reference to the new #291 head and preserve #288's `DRAFT_REVIEW_ONLY` / `reimplementation-review` route.
+4. **PHX-RELEASE:** record terminal results of the exact-head 3.3.13/4.0.0 compatibility jobs before treating the matrix as complete.
+
+No merge, rebase, cross-repository migration, signing, release tag, publication, hardware flash, real payment migration or customer deployment occurred. CI evidence is synthetic/hosted only. Protected signer and independent freshness witness, durable financial accounting/migration, independent QA/MASTER approval, approved production binaries, 150 physical power cuts and 30-device/24-hour soak remain unproven or NOT TESTED. **PRODUCTION NO-GO.**
