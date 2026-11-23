@@ -1,8 +1,10 @@
 """Source-exact host regression for pending-journal reclamation failures.
 
-This isolates clearPending() from GPIO/network behavior. The fake filesystem
-injects delete failures and false-success readback; it does not emulate LittleFS
-wear, power loss, or record serialization. Physical durability remains untested.
+This isolates clearPending() from GPIO/network behavior. The lab extracts the
+production clearPending(), samePendingRecord(), and pendingAttemptMarkerMatches()
+helpers unchanged. readPendingFile() and LittleFS remain explicit test adapters:
+they model record-read failures and identity changes, not serialized bytes,
+LittleFS wear, power loss, or physical durability.
 """
 
 CLEAR_PENDING_STUBS = r"""
@@ -51,26 +53,29 @@ std::string pendingTarget = "target-01";
 uint32_t lastSend = 123U;
 PendingRecord expectedRecord{};
 
+std::string failReadPath;
+bool mismatchAttemptRecord = false;
+bool mismatchDurableRecord = false;
+bool changePersistedIdentityAfterFirstAttemptRead = false;
+unsigned attemptReadCount = 0U;
+
 bool readPendingFile(const char *path, PendingRecord &record) {
-  if(!LittleFS.exists(path)) return false;
+  const std::string candidate(path);
+  if(!LittleFS.exists(path) || candidate == failReadPath) return false;
+
   record = expectedRecord;
+  if(candidate == "/pending.attempt") {
+    ++attemptReadCount;
+    if(mismatchAttemptRecord ||
+       (changePersistedIdentityAfterFirstAttemptRead && attemptReadCount >= 2U)) {
+      ++record.pulses;
+    }
+  } else if(candidate == "/pending.dat" &&
+            (mismatchDurableRecord ||
+             (changePersistedIdentityAfterFirstAttemptRead && attemptReadCount >= 2U))) {
+    ++record.pulses;
+  }
   return true;
-}
-
-bool samePendingRecord(const PendingRecord &left,const PendingRecord &right) {
-  return left.magic == right.magic &&
-         left.pulses == right.pulses &&
-         std::strcmp(left.nonce,right.nonce) == 0 &&
-         std::strcmp(left.target,right.target) == 0 &&
-         left.checksum == right.checksum;
-}
-
-bool pendingAttemptMarkerMatches() {
-  PendingRecord attempt{};
-  return readPendingFile("/pending.attempt",attempt) &&
-         attempt.pulses == pendingPulses &&
-         std::strcmp(attempt.nonce,pendingNonce.c_str()) == 0 &&
-         std::strcmp(attempt.target,pendingTarget.c_str()) == 0;
 }
 
 void resetState() {
@@ -93,12 +98,30 @@ void resetState() {
   std::strcpy(expectedRecord.nonce,pendingNonce.c_str());
   std::strcpy(expectedRecord.target,pendingTarget.c_str());
   expectedRecord.checksum = 0x12345678U;
+  failReadPath.clear();
+  mismatchAttemptRecord = false;
+  mismatchDurableRecord = false;
+  changePersistedIdentityAfterFirstAttemptRead = false;
+  attemptReadCount = 0U;
 }
 
 bool pendingRamIdentityPreserved() {
   return pendingPulses == 4U && pendingReady && pendingPostAttempted &&
          pendingNonce == "nonce-existing" &&
          pendingTarget == "target-01" && lastSend == 123U;
+}
+
+bool attemptMarkerBytesPreserved() {
+  const auto marker = LittleFS.files.find("/pending.attempt");
+  return marker != LittleFS.files.end() &&
+         marker->second == "opaque-attempt-marker";
+}
+
+bool pendingAndAttemptBytesPreserved() {
+  const auto pending = LittleFS.files.find("/pending.dat");
+  return pending != LittleFS.files.end() &&
+         pending->second == "opaque-pending-record" &&
+         attemptMarkerBytesPreserved();
 }
 """
 
@@ -108,8 +131,7 @@ int main() {
   LittleFS.failRemovePath = "/pending.dat";
   if(clearPending() || !journalRecoveryRequired ||
      !pendingRamIdentityPreserved() ||
-     !LittleFS.exists("/pending.dat") ||
-     !LittleFS.exists("/pending.attempt")) return 90;
+     !pendingAndAttemptBytesPreserved()) return 90;
   std::cout << "PENDING_CLEAR_JOURNAL_REMOVE_FAILURE_PRESERVED_PASS\\n";
 
   resetState();
@@ -117,15 +139,14 @@ int main() {
   if(clearPending() || !journalRecoveryRequired ||
      !pendingRamIdentityPreserved() ||
      LittleFS.exists("/pending.dat") ||
-     !LittleFS.exists("/pending.attempt")) return 91;
+     !attemptMarkerBytesPreserved()) return 91;
   std::cout << "PENDING_CLEAR_ATTEMPT_MARKER_REMOVE_FAILURE_PRESERVED_PASS\\n";
 
   resetState();
   LittleFS.retainRemovePath = "/pending.dat";
   if(clearPending() || !journalRecoveryRequired ||
      !pendingRamIdentityPreserved() ||
-     !LittleFS.exists("/pending.dat") ||
-     !LittleFS.exists("/pending.attempt")) return 92;
+     !pendingAndAttemptBytesPreserved()) return 92;
   std::cout << "PENDING_CLEAR_REMOVE_READBACK_FAILURE_PRESERVED_PASS\\n";
 
   resetState();
@@ -135,41 +156,182 @@ int main() {
      LittleFS.exists("/pending.dat") || LittleFS.exists("/pending.attempt")) return 93;
   std::cout << "PENDING_CLEAR_SUCCESS_CONTROL_PASS\\n";
   std::cout << "PENDING_CLEAR_REMOVE_FAILURE_INJECTION_PASS 3/3 plus success control\\n";
+
+  resetState();
+  mismatchAttemptRecord = true;
+  if(clearPending() || !journalRecoveryRequired ||
+     !pendingRamIdentityPreserved() || !pendingAndAttemptBytesPreserved()) return 94;
+  std::cout << "PENDING_CLEAR_ATTEMPT_IDENTITY_MISMATCH_PRESERVED_PASS\\n";
+
+  resetState();
+  failReadPath = "/pending.attempt";
+  if(clearPending() || !journalRecoveryRequired ||
+     !pendingRamIdentityPreserved() || !pendingAndAttemptBytesPreserved()) return 95;
+  std::cout << "PENDING_CLEAR_ATTEMPT_READ_FAILURE_PRESERVED_PASS\\n";
+
+  resetState();
+  changePersistedIdentityAfterFirstAttemptRead = true;
+  if(clearPending() || !journalRecoveryRequired ||
+     !pendingRamIdentityPreserved() || !pendingAndAttemptBytesPreserved()) return 96;
+  std::cout << "PENDING_CLEAR_ATTEMPT_RECHECK_IDENTITY_CHANGE_PRESERVED_PASS\\n";
+
+  resetState();
+  mismatchDurableRecord = true;
+  if(clearPending() || !journalRecoveryRequired ||
+     !pendingRamIdentityPreserved() || !pendingAndAttemptBytesPreserved()) return 97;
+  std::cout << "PENDING_CLEAR_DURABLE_RECORD_MISMATCH_PRESERVED_PASS\\n";
+
+  resetState();
+  failReadPath = "/pending.dat";
+  if(clearPending() || !journalRecoveryRequired ||
+     !pendingRamIdentityPreserved() || !pendingAndAttemptBytesPreserved()) return 98;
+  std::cout << "PENDING_CLEAR_DURABLE_RECORD_READ_FAILURE_PRESERVED_PASS\\n";
+
+  resetState();
+  LittleFS.files["/pending.new"] = "opaque-new-candidate";
+  const auto extraCandidateBytes = std::string("opaque-new-candidate");
+  if(clearPending() || !journalRecoveryRequired ||
+     !pendingRamIdentityPreserved() || !pendingAndAttemptBytesPreserved() ||
+     LittleFS.files.find("/pending.new") == LittleFS.files.end() ||
+     LittleFS.files.find("/pending.new")->second != extraCandidateBytes) return 99;
+  std::cout << "PENDING_CLEAR_AMBIGUOUS_CANDIDATES_PRESERVED_PASS\\n";
+
+  resetState();
+  LittleFS.files.erase("/pending.dat");
+  if(clearPending() || !journalRecoveryRequired ||
+     !pendingRamIdentityPreserved() || LittleFS.exists("/pending.dat") ||
+     !attemptMarkerBytesPreserved()) return 100;
+  std::cout << "PENDING_CLEAR_MISSING_CANDIDATE_PRESERVED_PASS\\n";
+  std::cout << "PENDING_CLEAR_PRECONDITION_FAILURE_INJECTION_PASS 7/7\\n";
   return 0;
 }
 """
 
 
-def run_pending_clear_failure_lab(board, clear_pending_source, compile_and_run):
-    """Compile the exact board helper and reject a fail-open deletion mutation."""
-    if not clear_pending_source:
-        raise AssertionError(f"{board}: clearPending source extraction is empty")
+def run_pending_clear_failure_lab(
+    board,
+    clear_pending_source,
+    same_pending_record_source,
+    pending_attempt_marker_matches_source,
+    compile_and_run,
+):
+    """Compile exact production helpers and reject fail-open reclamation mutations."""
+    sources = {
+        "clearPending": clear_pending_source,
+        "samePendingRecord": same_pending_record_source,
+        "pendingAttemptMarkerMatches": pending_attempt_marker_matches_source,
+    }
+    for name, source in sources.items():
+        if not source:
+            raise AssertionError(f"{board}: missing source-exact {name} helper")
 
-    baseline = compile_and_run(
-        CLEAR_PENDING_STUBS + clear_pending_source + CLEAR_PENDING_MAIN,
-        board,
-        0,
-        "pending-clear-removal-failure-injection",
+    def compile_case(label, expected=0, clear_source=None, same_record_source=None):
+        selected_clear = clear_source if clear_source is not None else clear_pending_source
+        selected_same = (
+            same_record_source
+            if same_record_source is not None
+            else same_pending_record_source
+        )
+        program = (
+            CLEAR_PENDING_STUBS
+            + selected_same
+            + "\\n"
+            + pending_attempt_marker_matches_source
+            + "\\n"
+            + selected_clear
+            + "\\n"
+            + CLEAR_PENDING_MAIN
+        )
+        return compile_and_run(program, board, expected, label)
+
+    baseline = compile_case("pending-clear-precondition-and-removal-failures")
+    for marker in (
+        "PENDING_CLEAR_REMOVE_FAILURE_INJECTION_PASS 3/3 plus success control",
+        "PENDING_CLEAR_PRECONDITION_FAILURE_INJECTION_PASS 7/7",
+    ):
+        if marker not in baseline:
+            raise AssertionError(f"{board}: pending-clear baseline marker missing: {marker}")
+
+    attempt_remove_anchor = (
+        'if(!LittleFS.remove("/pending.attempt") || LittleFS.exists("/pending.attempt")){'
     )
-    if "PENDING_CLEAR_REMOVE_FAILURE_INJECTION_PASS 3/3 plus success control" not in baseline:
-        raise AssertionError(f"{board}: pending-clear baseline marker missing")
-
-    anchor = 'if(!LittleFS.remove("/pending.attempt") || LittleFS.exists("/pending.attempt")){'
-    mutation = clear_pending_source.replace(
-        anchor,
+    attempt_remove_mutation = clear_pending_source.replace(
+        attempt_remove_anchor,
         'LittleFS.remove("/pending.attempt"); if(false){',
         1,
     )
-    if mutation == clear_pending_source:
-        raise AssertionError(f"{board}: attempt-marker deletion mutation anchor missing")
-
-    compile_and_run(
-        CLEAR_PENDING_STUBS + mutation + CLEAR_PENDING_MAIN,
-        board,
-        91,
+    if attempt_remove_mutation == clear_pending_source:
+        raise AssertionError(f"{board}: attempt-marker removal mutation anchor missing")
+    compile_case(
         "pending-clear-ignores-attempt-marker-removal-failure",
+        91,
+        clear_source=attempt_remove_mutation,
     )
     print(
         f"{board} MUTATION_REJECTED pending-clear-ignores-attempt-marker-removal-failure "
         "expected_exit=91"
+    )
+
+    attempt_recheck_anchor = (
+        'if(!readPendingFile("/pending.attempt",attempt) ||\n'
+        '     attempt.pulses!=pendingPulses ||\n'
+        '     strcmp(attempt.nonce,pendingNonce.c_str())!=0 ||\n'
+        '     strcmp(attempt.target,pendingTarget.c_str())!=0){'
+    )
+    attempt_recheck_mutation = clear_pending_source.replace(
+        attempt_recheck_anchor,
+        'if(!readPendingFile("/pending.attempt",attempt)){',
+        1,
+    )
+    if attempt_recheck_mutation == clear_pending_source:
+        raise AssertionError(f"{board}: attempt-marker identity recheck mutation anchor missing")
+    compile_case(
+        "pending-clear-skips-second-attempt-identity-check",
+        96,
+        clear_source=attempt_recheck_mutation,
+    )
+    print(
+        f"{board} MUTATION_REJECTED pending-clear-skips-second-attempt-identity-check "
+        "expected_exit=96"
+    )
+
+    same_record_anchor = (
+        "return left.magic==right.magic && left.pulses==right.pulses &&\\n"
+        "         strcmp(left.nonce,right.nonce)==0 &&\\n"
+        "         strcmp(left.target,right.target)==0 &&\\n"
+        "         left.checksum==right.checksum;"
+    )
+    same_record_mutation = same_pending_record_source.replace(
+        same_record_anchor,
+        "return true;",
+        1,
+    )
+    if same_record_mutation == same_pending_record_source:
+        raise AssertionError(f"{board}: durable-record identity mutation anchor missing")
+    compile_case(
+        "pending-clear-ignores-durable-record-identity",
+        97,
+        same_record_source=same_record_mutation,
+    )
+    print(
+        f"{board} MUTATION_REJECTED pending-clear-ignores-durable-record-identity "
+        "expected_exit=97"
+    )
+
+    candidate_count_anchor = "if(candidateCount!=1 || !candidatePath){"
+    candidate_count_mutation = clear_pending_source.replace(
+        candidate_count_anchor,
+        "if(false){",
+        1,
+    )
+    if candidate_count_mutation == clear_pending_source:
+        raise AssertionError(f"{board}: candidate-count guard mutation anchor missing")
+    compile_case(
+        "pending-clear-ignores-ambiguous-journal-candidates",
+        99,
+        clear_source=candidate_count_mutation,
+    )
+    print(
+        f"{board} MUTATION_REJECTED pending-clear-ignores-ambiguous-journal-candidates "
+        "expected_exit=99"
     )

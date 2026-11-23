@@ -330,8 +330,10 @@ for board,path in BOARDS.items():
     reconcile=extract_function(source, "reconcileUnobservedCoinEdges")
     handle=extract_function(source, "handleCoinPostResponse")
     clear_pending=extract_function(source, "clearPending")
-    if not clear_pending:
-        raise AssertionError(f"{board}: missing source-exact clearPending helper")
+    same_pending_record=extract_function(source, "samePendingRecord")
+    pending_attempt_marker_matches=extract_function(source, "pendingAttemptMarkerMatches")
+    if not clear_pending or not same_pending_record or not pending_attempt_marker_matches:
+        raise AssertionError(f"{board}: missing source-exact pending-clear helper set")
 
     def assemble(loop_source=loop,output_source=output,quiet_source=quiet,accept_source=accept,
                  configure_source=configure,isr_source=isr,write_fault_source=write_fault,
@@ -345,7 +347,8 @@ for board,path in BOARDS.items():
                 load_fault_source+latch_fault_source+quarantine_source+configure_source+accept_source+reconcile_source+init_store_source+SUPPORT+handle_source+sample_source+drain_abort_source+loop_source+main_source)
 
     print(board,compile_and_run(assemble(),board,0,"exact-source"))
-    run_pending_clear_failure_lab(board,clear_pending,compile_and_run)
+    run_pending_clear_failure_lab(board,clear_pending,same_pending_record,
+                                   pending_attempt_marker_matches,compile_and_run)
     # Execute the focused pending-identity matrix on the unmutated exact source;
     # mutation-only execution is not a substitute for a green baseline run.
     print(board,compile_and_run(assemble(main_source=PENDING_PRESERVATION_MAIN),
