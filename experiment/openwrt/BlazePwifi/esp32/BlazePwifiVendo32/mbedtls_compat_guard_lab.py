@@ -12,6 +12,10 @@ import tempfile
 import textwrap
 import sys
 
+BLAZEPWIFI_ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(BLAZEPWIFI_ROOT / "esp8266/BlazePwifiVendo"))
+from firmware_lab_source import extract_function, mask_active_cpp_code, mask_non_code
+
 SKETCH = Path(__file__).with_name("BlazePwifiVendo32.ino")
 UNSUPPORTED_ERROR = (
     "Unsupported Mbed TLS major version: "
@@ -19,59 +23,60 @@ UNSUPPORTED_ERROR = (
 )
 
 
-def extract_braced_function(source: str, signature: str) -> str:
-    start = source.find(signature)
-    if start < 0:
-        raise RuntimeError(f"missing production function: {signature}")
-    opening = source.find("{", start)
-    if opening < 0:
-        raise RuntimeError(f"missing function body: {signature}")
-    depth = 0
-    for index in range(opening, len(source)):
-        if source[index] == "{":
-            depth += 1
-        elif source[index] == "}":
-            depth -= 1
-            if depth == 0:
-                return source[start:index + 1]
-    raise RuntimeError(f"unterminated production function: {signature}")
-
-
 def extract_selector(source: str) -> str:
+    # Ignore comments/literals and reject selector-shaped directives whose
+    # required include lines are in branches proven inactive by literal #if 0/1.
+    masked_source = mask_active_cpp_code(source)
+    if len(masked_source) != len(source):
+        raise RuntimeError("selector lexical mask changed source offsets")
+
     lines = source.splitlines()
+    code_lines = masked_source.splitlines()
+    if len(code_lines) != len(lines):
+        raise RuntimeError("selector lexical mask changed source line count")
+
     starts = [
-        i for i, line in enumerate(lines)
+        i for i, line in enumerate(code_lines)
         if line.strip() == "#if MBEDTLS_VERSION_MAJOR == 4"
     ]
     if len(starts) < 2:
         raise RuntimeError("expected header selector and hexDigest version branch")
-    start = starts[0]
-    depth = 0
-    for i in range(start, len(lines)):
-        stripped = lines[i].strip()
-        if stripped.startswith(("#if ", "#ifdef ", "#ifndef ")):
-            depth += 1
-        elif stripped == "#endif":
-            depth -= 1
-            if depth == 0:
-                block = "\n".join(lines[start:i + 1])
-                required = (
-                    "#if MBEDTLS_VERSION_MAJOR == 4",
-                    "#include <psa/crypto.h>",
-                    "#elif MBEDTLS_VERSION_MAJOR == 3",
-                    "#include <mbedtls/sha256.h>",
-                    "#else",
-                    f'#error "{UNSUPPORTED_ERROR}"',
-                    "#endif",
-                )
-                missing = [token for token in required if token not in block]
-                if missing:
-                    raise RuntimeError(
-                        "firmware selector no longer matches the reviewed contract: "
-                        + ", ".join(missing)
-                    )
-                return block
-    raise RuntimeError("unterminated Mbed TLS selector")
+
+    active_required = (
+        "#if MBEDTLS_VERSION_MAJOR == 4",
+        "#include <psa/crypto.h>",
+        "#elif MBEDTLS_VERSION_MAJOR == 3",
+        "#include <mbedtls/sha256.h>",
+        "#else",
+        "#error",
+        "#endif",
+    )
+    matches = []
+    for start in starts:
+        depth = 0
+        for i in range(start, len(code_lines)):
+            stripped = code_lines[i].strip()
+            if stripped.startswith(("#if ", "#ifdef ", "#ifndef ")):
+                depth += 1
+            elif stripped == "#endif":
+                depth -= 1
+                if depth == 0:
+                    block = chr(10).join(lines[start:i + 1])
+                    active_block = chr(10).join(code_lines[start:i + 1])
+                    missing = [
+                        token for token in active_required
+                        if token not in active_block
+                    ]
+                    if missing or f'#error "{UNSUPPORTED_ERROR}"' not in block:
+                        break
+                    matches.append(block)
+                    break
+
+    if len(matches) != 1:
+        raise RuntimeError(
+            f"expected exactly one active Mbed TLS selector, found {len(matches)}"
+        )
+    return matches[0]
 
 
 def write_stub_headers(root: Path) -> None:
@@ -292,13 +297,124 @@ def reject_unsupported(cxx: str, root: Path, major: int, selector: str) -> None:
     print(f"MBEDTLS_UNSUPPORTED_MAJOR_{major}_REJECTED")
 
 
+
+def verify_shared_lexical_extractor():
+    fixture = (
+        'String lexicalProbe(){\n'
+        '  const char *ordinary = "}";\n'
+        '  const char *raw = R"tag({ })tag";\n'
+        '  // } line-comment decoy\n'
+        '  /* { block-comment decoy */\n'
+        '  return ordinary;\n'
+        '}'
+    )
+    extracted = extract_function(fixture, "lexicalProbe")
+    if extracted != fixture:
+        raise RuntimeError(
+            "shared lexical extractor did not preserve a function with comment/literal brace decoys"
+        )
+
+def verify_selector_extraction_ignores_comment_decoys() -> None:
+    selector = (
+        "#if MBEDTLS_VERSION_MAJOR == 4\n"
+        "#include <psa/crypto.h>\n"
+        "#elif MBEDTLS_VERSION_MAJOR == 3\n"
+        "#include <mbedtls/sha256.h>\n"
+        "#else\n"
+        f'#error "{UNSUPPORTED_ERROR}"\n'
+        "#endif\n"
+    )
+    # This complete but inactive selector-shaped block is deliberately placed
+    # inside a comment. A line-only directive scan must not accept it.
+    decoy_selector = selector.replace(
+        "#include <psa/crypto.h>\n",
+        "#define PHX_SELECTOR_COMMENT_DECOY 1\n"
+        "#include <psa/crypto.h>\n",
+        1,
+    )
+    comment_decoy = "/*\n" + decoy_selector + "*/\n"
+    digest_branch = "#if MBEDTLS_VERSION_MAJOR == 4\n#endif\n"
+
+    extracted = extract_selector(comment_decoy + selector + digest_branch)
+    if "PHX_SELECTOR_COMMENT_DECOY" in extracted:
+        raise AssertionError("selector extractor accepted a comment-only preprocessor decoy")
+    if extracted != selector.rstrip("\n"):
+        raise AssertionError("selector extractor did not return the first active selector block")
+    print("MBEDTLS_SELECTOR_COMMENT_DECOY_REJECTED 1/1")
+
+    newline = chr(10)
+    inactive_decoy_selector = selector.replace(
+        "#include <psa/crypto.h>" + newline,
+        "#define PHX_SELECTOR_INACTIVE_DECOY 1" + newline + "#include <psa/crypto.h>" + newline,
+        1,
+    )
+    inactive_decoy = "#if 0" + newline + inactive_decoy_selector + "#endif" + newline
+    extracted_inactive = extract_selector(inactive_decoy + selector + digest_branch)
+    if "PHX_SELECTOR_INACTIVE_DECOY" in extracted_inactive:
+        raise AssertionError("selector extractor accepted a literal #if 0 decoy")
+    if extracted_inactive != selector.rstrip(newline):
+        raise AssertionError("selector extractor did not skip the inactive decoy")
+    print("MBEDTLS_SELECTOR_INACTIVE_BRANCH_DECOY_REJECTED 1/1")
+
+
+def verify_prefixed_literals_are_masked() -> None:
+    splice = chr(92) + chr(10)
+    fixture = (
+        'const char *utf8 = u8"/* { #if 0 } */";\n'
+        'const char16_t *utf16 = u"// { #if 0 }";\n'
+        'const char32_t *utf32 = U"/* #if 0 */";\n'
+        'const wchar_t *wide = L"// #if 0";\n'
+        "const char16_t char16 = u'x';\n"
+        "const char32_t char32 = U'y';\n"
+        "const wchar_t wide_char = L'z';\n"
+        'const char *spliced_prefix = u' + splice + '8"phase2";\n'
+        'const char *spliced_quote = u8' + splice + '"phase2";\n'
+        "int u8_identifier = 1;\n"
+    )
+    masked = mask_non_code(fixture)
+    if len(masked) != len(fixture) or masked.count("\n") != fixture.count("\n"):
+        raise AssertionError("prefixed-literal mask changed source offsets or line count")
+
+    literal_spans = (
+        'u8"/* { #if 0 } */"',
+        'u"// { #if 0 }"',
+        'U"/* #if 0 */"',
+        'L"// #if 0"',
+        "u'x'",
+        "U'y'",
+        "L'z'",
+        "u" + splice + '8"phase2"',
+        "u8" + splice + '"phase2"',
+    )
+    for literal in literal_spans:
+        start = fixture.index(literal)
+        end = start + len(literal)
+        expected = "".join(
+            character if character in "\r\n" else " "
+            for character in fixture[start:end]
+        )
+        if masked[start:end] != expected:
+            raise AssertionError(
+                f"prefixed ordinary literal survived lexical masking: {literal!r}"
+            )
+
+    identifier = "u8_identifier"
+    start = fixture.index(identifier)
+    if masked[start:start + len(identifier)] != identifier:
+        raise AssertionError("ordinary identifier beginning with u8 was incorrectly masked")
+    print("MBEDTLS_PREFIXED_ORDINARY_LITERALS_MASKED 9/9")
+
+
 def main() -> int:
+    verify_selector_extraction_ignores_comment_decoys()
+    verify_prefixed_literals_are_masked()
+    verify_shared_lexical_extractor()
     cxx = shutil.which("c++") or shutil.which("g++")
     if not cxx:
         raise RuntimeError("C++ compiler unavailable; refusing to skip selector test")
     source = SKETCH.read_text(encoding="utf-8")
     selector = extract_selector(source)
-    digest_function = extract_braced_function(source, "String hexDigest(")
+    digest_function = extract_function(source, "hexDigest")
     if digest_function.count("#if MBEDTLS_VERSION_MAJOR == 4") != 1:
         raise RuntimeError("hexDigest must contain exactly one Mbed TLS 4 branch")
     if digest_function.count("#elif MBEDTLS_VERSION_MAJOR == 3") != 1:
