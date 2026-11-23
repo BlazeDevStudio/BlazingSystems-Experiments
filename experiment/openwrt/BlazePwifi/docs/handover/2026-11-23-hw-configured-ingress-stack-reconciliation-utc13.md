@@ -230,3 +230,50 @@ The handover-only docs commit `6b551031141b598ba0d484bf9127b3de60be6b47` has now
 - Full [#45230343272](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45230343272): **27/27 jobs terminal**. Target/platform jobs **14/14 SUCCESS**; validation job `137887857871` **FAILURE** at Controller protocol parity; 12 dependent simulation, update-bundle, signing, candidate and publication jobs **SKIPPED**.
 
 This is a terminal Full failure, not a target-build failure. It does not promote the candidate to Full CI VERIFIED. Focused host labs remain SIMULATED / CI VERIFIED only. Physical acceptance remains NOT TESTED; PRODUCTION NO-GO.
+
+
+## UTC18 — coin POST ISR fixture fidelity and multi-edge rollover
+
+**Updated:** 2026-11-23T18:52:51.719Z  
+**Role:** PHX-HARDWARE · **Task:** #177 · **PR:** #347 OPEN / DRAFT / UNMERGED  
+**Branch:** `phoenix/hw-coin-ingress-config-helper-reconciled-20261123-utc13`  
+**Parent:** #345 `ca72497ed386c9ac4e50d3f811827bef51e296ad`  
+**Source/test head:** `1011ee292197201193f7543cdb995d0e80933d8b`
+
+### One bounded Hardware-owned test correction
+
+The synchronous coin-POST failure-injection adapter previously incremented `coinEdgeSequence` directly. That bypassed the actual attached ISR and could let the test pass even if the production interrupt attachment were missing.
+
+The runtime fixture now invokes the registered ISR only when the interrupt is attached to the configured coin pin and polarity edge. A configurable edge count supports multiple edges during the same blocked coin POST.
+
+A new isolated `COIN_POST_ISR_MAIN` case seeds the 32-bit edge counter at `0xFFFFFFFE`, injects two attached ISR edges during the simulated 3500 ms coin POST, and verifies:
+- modulo delta is exactly two after wrap to zero;
+- the existing four-pulse pending record and target/nonce identity remain intact;
+- the pending-attempt marker remains set and `clearPending()` is not called;
+- the durable poll-fault marker records `pulses=6` (four pending plus two unresolved ISR edges);
+- outputs remain OFF and journal recovery is required.
+
+A negative mutation removes the coin `attachInterrupt()` registration. The isolated case must fail with expected exit 45; it is rejected on both ESP8266 and ESP32.
+
+### Changed test-only paths
+
+- `poll_loop_blocking_inhibit_lab_runtime_fixtures.py`
+- `poll_loop_blocking_inhibit_lab_scenario_fixtures.py`
+- `poll_loop_blocking_inhibit_lab_fixtures.py`
+- `poll_loop_blocking_inhibit_lab.py`
+
+No production `.ino`, CORE API, QA assertion, finance code, signer, witness, migration, workflow permission, or device was changed.
+
+### Exact-head GitHub Actions
+
+- Quarantine Byte Readback [run #45242372193](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45242372193), job `137930113158`: **PASS** at exact source/test SHA `1011ee2`. Logs include the multi-edge rollover marker and missing-ISR mutation rejection for both boards.
+- Relay Output Polarity [run #45242372365](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45242372365), jobs `137930112471` and `137930113226`: **PASS** at the same SHA. ESP32 boot polarity and source/output-polarity labs pass; logs include both board markers and expected-exit-45 mutation rejection.
+- Full BlazePwifi PR run [#45242372166](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45242372166), validation job `137930281470`: **FAIL** at inherited `Missing poll signature check` in the ESP8266 sketch. Target jobs were still finishing at this checkpoint; this is not a Full integration pass.
+- Push Full run [#45242359443](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45242359443), validation job `137930242874`: **FAIL** at the same controller-protocol assertion. Target jobs were still finishing at this checkpoint.
+- The first test-only commit `ea6b69f2949fec9a306d3e07e867865e58817df7` produced focused failures [#45242055161](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45242055161) and [#45242055143](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45242055143): the isolated test main omitted shared `resetState()` helpers. This was a harness compile failure, not a firmware failure. Commit `1011ee2` corrected the fixture builder; the two focused workflows above pass on the corrected exact SHA.
+
+### Classification and next action
+
+The new multi-edge test is **SIMULATED / CI VERIFIED** only. Physical coin acceptor, relay/electrical pulse, LittleFS power-loss durability, 150 controlled power cuts, 30-device 24-hour soak, and electrical recovery remain **NOT TESTED**. HARDWARE ACCEPTED: **NO**. PRODUCTION READY: **NO-GO**.
+
+**Next exact action:** PHX-CORE must publish the approved authenticated register/poll response contract and golden vectors; PHX-QA must independently reconcile the inherited poll-signature assertion; PHX-MASTER must refresh the #347 exact-head pin. PHX-HARDWARE then reruns Full integration against the approved exact head.
