@@ -1081,11 +1081,13 @@ bool beginPollWindow(){
 void sampleCoinPulseEdge(bool active){
   const uint32_t observedEdgeSequence=snapshotCoinEdgeSequence();
   const uint32_t unseenEdges=observedEdgeSequence-lastHandledCoinEdgeSequence;
+  // Never collapse a multi-edge ISR delta into one credit-eligible sample.
+  const bool exactlyOneUnseenEdge=unseenEdges==1U;
   // A coin edge is credit-eligible only while the controller, coin feature and
   // acceptor relay are configured ON. Poll-time relay suspension is separate:
   // relayEnabled stays true while pollIntakeSuspended temporarily deasserts output.
   const bool coinIngressConfigured=controllerEnabled && coinEnabled && relayEnabled;
-  const bool sampledSingleEdge=unseenEdges==1U && active && !lastCoin &&
+  const bool sampledSingleEdge=exactlyOneUnseenEdge && active && !lastCoin &&
       coinIngressConfigured && fsReady && !journalRecoveryRequired && !pendingReady &&
       insertMode && activeTarget.length()>0 &&
       millis()-lastEdge>runDebounceMs;
