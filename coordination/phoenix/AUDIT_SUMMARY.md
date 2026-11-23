@@ -2321,3 +2321,18 @@ Current owner blockers: Hardware #345 Full fails at the inherited QA-owned poll-
 Canonical private registry v11/newer corrections remain unavailable through the connected surface; no older snapshot is substituted. Branch metadata shows protected=false and required checks off for the inspected branches; both ruleset lists are empty. Cleanup #266 remains open and the Master checklist item remains unchecked.
 
 **Production remains STRICT NO-GO.** No merge, release, signer provisioning, firmware flash, real payment operation, migration, physical hardware test or customer cutover is authorized.
+
+
+## PHX-MASTER UTC07 live disposition — 2026-11-23T07:59:44.571Z
+
+Master audit-start HEAD 83e57736, base main f4e8a891. This activation repairs two malformed relative report links in INDEX.md, adds one architecture invariant (§6.80) and refreshes the live role/migration evidence. The recursive-tree index check found 99 report files but two links incorrectly prefixed with coordination/phoenix/ from inside that same directory. Both targets are corrected; with this report added, final verification is 100/100 unique, resolvable, indexed reports, zero duplicates, zero dangling links, zero unindexed reports, and zero duplicate coordination blob groups.
+
+Hardware #345 source/test SHA 78bfd193 proves a FakeLittleFS orphan-attempt-marker recovery-deny scenario in host simulation. Exact source/test Quarantine and Relay pass; Full fails at QA-owned Missing poll signature. Current docs head deed0f49 has Relay pass and Quarantine/build in progress. No physical durability or hardware acceptance.
+
+COE #26 remains frozen. The historical SOURCE_INTAKE row-level blob comparison is 46 identical / 15 derived, while the summary says 47 / 14; all 61 recorded source/destination blobs exist and match the manifest row values. Current CORE #252 rootfs comparison is 45 identical / 16 different plus one destination-only file. Historical tests import is only 2 exact / 2 different / 145 missing / 15 extra. Hardware source has 36 board-local Python helpers vs zero in COE. Root NOTICE, Rental Android, jsQR and Tabler license/notice coverage is incomplete.
+
+Current blockers: RENTAL #328 lacks mbedtls/sha256.h in ESP32 build and fails handover freshness; RELEASE #291 fails CORE handover freshness and ESP32 core 4.0.0 archive download (HTTP 403); HARDWARE #345 Full fails inherited QA poll-signature parity; COE #35 is blocked by missing trusted Bubblewrap and approved site ULA /48; COE #49 ESP32 compile fails; COE #26 has five queued workflows / zero jobs. QA #292 has no workflow runs. Cleanup #266 remains OPEN, 0/7.
+
+Branch metadata reports protected=false for Experiments main, v0.5.3 development, v0.6 audit-foundation and COE main; both rulesets lists are empty and classic branch-protection reads return 403. Canonical private Drive v11/newer corrections are not accessible; AGENTS-linked Cloud Artifact Policy and Storage Handover were not fetchable through the connected surface. No private registry data was substituted or published.
+
+Full Master tests and verify_coordination.py are NOT RUN. A direct git ls-remote attempt failed DNS resolution for github.com. test_architecture_contracts.py was inspected but not executed. PR #288 has zero Actions runs and zero combined statuses. No subsystem source, COE destination, secret, signer, financial state, or physical device changed. PRODUCTION NO-GO.

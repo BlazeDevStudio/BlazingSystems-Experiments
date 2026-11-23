@@ -15,7 +15,7 @@
 
 | File | Purpose |
 |---|---|
-| `ARCHITECTURE_CONTRACTS.md` | Earlier integration gates §§6.58–6.75 remain historical. Latest Hardware #345 gates are §6.76 (relay-disabled edge is non-crediting, provisional), §6.77 (controller/coin/relay configured-ingress parity), §6.78 (existing pending identity preservation), and §6.79 (current Full terminal failure at QA-owned Controller protocol parity / Missing poll signature check). Evidence remains host-lab/CI only; no physical acceptance or release authority. |
+| `ARCHITECTURE_CONTRACTS.md` | Earlier integration gates §§6.58–6.75 remain historical. Latest Hardware #345 gates are §6.76 (relay-disabled edge is non-crediting, provisional), §6.77 (controller/coin/relay configured-ingress parity), §6.78 (existing pending identity preservation), §6.79 (historical exact-head Full failure), and §6.80 (orphan /pending.attempt after partial clear remains a reboot recovery deny). Latest #345 source/test head 78bfd193 has focused Quarantine/Relay PASS and Full FAIL at the inherited QA-owned poll-signature assertion; current docs-head checks are separately identified. Evidence remains host-lab/CI only; no physical acceptance or release authority. |
 | `ROLE_ASSIGNMENTS.md` | Current owner/PR heads, scope boundaries and next owner actions. |
 | `INTEGRATION_MATRIX.md` | Exact source/destination heads and CI dispositions. |
 | `AUDIT_SUMMARY.md` | Current blockers and release-readiness disposition. |
@@ -34,6 +34,12 @@ Run the repository's actual test suite from an authenticated checkout at the exa
 ## Append-only audit reports
 
 Timestamped `PHX_MASTER_*.md`, subsystem audits, and migration-gate reports are immutable historical evidence. They are **not** the current source of truth when their exact SHA differs from the live branch/PR API. Start with the four canonical live documents above, then open the newest report only for the issue under investigation. Do not mass-delete or rename older reports; first inventory inbound links and consumers.
+
+
+## Latest live audit — 2026-11-23 UTC07
+
+- [PHX_MASTER_UTC07_20261123_ORPHAN_ATTEMPT_MARKER_INDEX_LINK_AND_COE26_PROVENANCE_AUDIT.md](PHX_MASTER_UTC07_20261123_ORPHAN_ATTEMPT_MARKER_INDEX_LINK_AND_COE26_PROVENANCE_AUDIT.md) — exact current owner heads/CI, Hardware #345 orphan-attempt-marker recovery contract, corrected two malformed historical report links, and revalidated COE #26 source blobs, test identities and licensing. COE staging remains frozen.
+- Final recursive-tree check after this report is added: 100 report files / 100 unique relative links; zero duplicate, dangling or unindexed report links; zero duplicate coordination blob groups.
 
 ## UTC03 cleanup-first inventory — live recursive tree
 
@@ -445,7 +451,7 @@ Current HARDWARE #327 docs head is 4d651e918f71de2e69d1f3bcfe627c4f944c9c39; sou
 
 ## Latest PHX-MASTER audit — UTC17, 2026-11-21
 
-- [UTC17 exact-head, role-CI and COE #26 source-main provenance audit](coordination/phoenix/PHX_MASTER_UTC17_20261121_EXACT_HEAD_ROLE_CI_COE26_SOURCE_MAIN_PROVENANCE_AUDIT.md) This is the single canonical index entry for that historical source-main audit.
+- [UTC17 exact-head, role-CI and COE #26 source-main provenance audit](PHX_MASTER_UTC17_20261121_EXACT_HEAD_ROLE_CI_COE26_SOURCE_MAIN_PROVENANCE_AUDIT.md) This is the single canonical index entry for that historical source-main audit.
 - Reconciles current default/development/Master and COE refs, all seven role PR/CI checkpoints, Hardware stack ancestry, exact source-main-to-#26 path/blob counts, QA fixture identity, license/NOTICE scope and access/production blockers.
 - Architecture assertions: 10/10 PASS in JavaScript harness; Python unittest NOT RUN; Master Actions absent.
 - COE #26 remains FROZEN; no migration or destination write. Cleanup #266 remains 0/7. Private v11 registry and effective branch protection remain unverified. PRODUCTION NO-GO.
@@ -481,7 +487,7 @@ COE RELEASE #35 advanced to 732ba66626d267b9b85c80b251722a3f710f2972. New exact-
 
 ## Latest exact-head audit — 2026-11-21 UTC20
 
-- [PHX_MASTER_UTC20_20261121_EXACT_HEAD_ROLE_CI_COE26_MANIFEST_BASELINE_CANDIDATE_AUDIT.md](coordination/phoenix/PHX_MASTER_UTC20_20261121_EXACT_HEAD_ROLE_CI_COE26_MANIFEST_BASELINE_CANDIDATE_AUDIT.md) — re-reads current Master/default/development refs, role PRs and exact-head CI; separates manifest baseline main@f4e8 from current HARDWARE #336 candidate@000d4e; records COE #26 exact blobs, license/NOTICE and test-import gaps The post-commit COE RELEASE #35 head/CI correction is captured in this same report.
+- [PHX_MASTER_UTC20_20261121_EXACT_HEAD_ROLE_CI_COE26_MANIFEST_BASELINE_CANDIDATE_AUDIT.md](PHX_MASTER_UTC20_20261121_EXACT_HEAD_ROLE_CI_COE26_MANIFEST_BASELINE_CANDIDATE_AUDIT.md) — re-reads current Master/default/development refs, role PRs and exact-head CI; separates manifest baseline main@f4e8 from current HARDWARE #336 candidate@000d4e; records COE #26 exact blobs, license/NOTICE and test-import gaps The post-commit COE RELEASE #35 head/CI correction is captured in this same report.
 - Master audit-start HEAD: 46cbcd0eac6312d029fd8904e20d362db7dca7db; PR #288 remains OPEN/DRAFT/UNMERGED against main f4e8a891....
 - Current HARDWARE #336 docs head 000d4e6804c451991e1cf81ec97d1b2d7ed6b526; source/test commit 741068c7804b83897f5deab5afc7739457532427; current-head Quarantine #44943506271 PASS (source-extracted), Full #44943506269 FAIL at Missing poll signature check.
 - COE #26 remains frozen at b382d233ff06c8791b1028bed3c617cc7b670d12, five workflows queued / zero jobs. No migration.

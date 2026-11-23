@@ -4212,3 +4212,38 @@ This section supersedes stale exact-head and CI pins above; earlier evidence rem
 | COE #49 | `aeb8ff11b2f5db9a5f86280ab62ab988245f3919` | [44646341992](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44646341992) case-collision PASS; [44646341873](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44646341873) INTERCON PASS; [44646341922](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44646341922) Hardware/Shared FAIL. |
 
 **Master execution:** PR #288 has zero Actions runs and zero combined statuses. Full Master tests and `verify_coordination.py` remain NOT RUN. The current exact role heads above are separate owner candidates, not a combined integration acceptance.
+
+
+## PHX-MASTER UTC07 exact-head and migration supersession — 2026-11-23T07:59:44.571Z
+
+### Current owner refs and CI
+
+| Owner | Exact candidate head | Evidence / disposition |
+|---|---|---|
+| CORE #252 | c82705f2de865c89ab733b10efa84f26f56a5cc4 | [42698139210](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42698139210) scoped Build PASS. |
+| RENTAL #328 | 0e0da62acd47c6a1ce287f8a30fc700d603fa070 | [44782114384](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44782114384) APK identity PASS; [44782114390](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44782114390) Build FAIL (handover freshness and missing mbedtls/sha256.h); [44782114393](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44782114393) API smoke PASS. |
+| PISONET #255 | d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | [42462978704](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42462978704) Windows synthetic PASS; native COM NOT TESTED. |
+| HARDWARE #345 | docs deed0f49; source/test 78bfd193; logging 7dee461 | Source/test Quarantine/Relay PASS, Full FAIL at inherited poll-signature assertion; current docs-head Relay PASS, Quarantine/build IN_PROGRESS. No physical acceptance. |
+| QA #290 / #292 | 5c29d159 / 75a3f66d | #290 Windows PASS; #292 no workflow runs. |
+| RELEASE #291 | 886cabfc5080c3fbef03c2a3b1afe9d52dea6f60 | Windows and Full freshness FAIL; core 4.0.0 archive fetch HTTP 403; core 3.3.13 and artifact provenance regression PASS. |
+| COE #26 | b382d233ff06c8791b1028bed3c617cc7b670d12 | Five workflows queued / zero jobs; frozen. |
+| COE #35 / #45 / #49 | ead1c3b4 / 9d76a134 / aeb8ff11 | #35 missing Bubblewrap and missing site ULA /48; #45 scoped PASS; #49 shared validation PASS, ESP32 compile FAIL, ESP8266 compile PASS. |
+
+### COE #26 exact tree and intake recheck
+
+COE main a6513ab has 3 tree entries / 2 blobs; PR #26 tree 8a7d4cf has 286 entries / 207 blobs.
+
+- Current CORE #252 rootfs: 61 source files vs 62 destination files; 45 exact blob matches, 16 differences, 0 missing, 1 destination-only file (blaze-appliance-diag).
+- Historical intake pin 6d4c9b487af4d768c4d7627654d119417fcc6e00 / tree 9b0ec594, manifest blob 1b9018ff944f7f673934d0fc2a97e0a0090d3f5f: 61 runtime rows all resolve to their recorded source and destination blobs, with 0 missing and 0 blob mismatches. Row-level comparison is 46 identical / 15 derived, while summary counters say 47 / 14. The summary is off by one; do not silently rewrite the historical source pin.
+- Historical original tests tree 7e3b16f2 has 149 blobs; destination Pisowifi/tests has 19: 2 identical, 2 different, 145 missing, 15 destination-only.
+- Current QA #292 tests route: 38 source / 19 destination; 1 identical, 3 different, 34 missing, 15 destination-only.
+- PISONET #255 route: 68 / 47; 27 identical, 11 different, 30 missing, 9 destination-only.
+- RENTAL Android: 991 / 8; 991 missing, 8 destination-only, no exact path/blob match. Rental server: 12 / 4; 1 different, 11 missing, 3 destination-only.
+- HARDWARE #345: ESP32 16 / 1 (1 different, 15 missing); ESP8266 32 / 1 (1 different, 31 missing). Current source has 36 board-local Python helpers; COE #26 has 0.
+- RELEASE workflow: 1 source / 1 destination, blobs differ; destination is a reimplementation, not byte-identical.
+
+### License and NOTICE scope
+
+PisoWiFi LICENSE is byte-identical. Source root NOTICE exists but COE has no root counterpart. Rental Android, jsQR and Tabler license files exist in source but have no destination counterpart. qrcode and tailadmin license blobs match. Hardware-local LICENSE/NOTICE is absent at the checked source/destination paths. No license grant or approval is implied.
+
+No route promotion, staging, copy, move, overwrite, cherry-pick, rebase or destination edit is authorized. OWNERSHIP_ROUTES.json remains DRAFT_REVIEW_ONLY with PHX-MASTER target null.

@@ -3011,3 +3011,21 @@ This section supersedes stale active-candidate pointers in the historical role p
 | PHX-RELEASE | [#291](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/291) | `phoenix/release-publisher-isolation-20261115` / `886cabfc5080c3fbef03c2a3b1afe9d52dea6f60` | Core 4.0.0 archive verification and shared handover freshness fail; no release stage authorized. |
 
 The new #345 source/test commit `edff098446247d3b2851af643d31673921cae03f` is a host-lab clear-window ISR regression; final docs head is `e385a26f...`. No Master-to-owner path transfer or subsystem edit occurred.
+
+
+## PHX-MASTER UTC07 live exact-head supersession — 2026-11-23T07:59:44.571Z
+
+This snapshot supersedes earlier active-candidate pins below without deleting their history. PHX-MASTER remains coordination-only; no worker branch or subsystem source ownership changed.
+
+| Role / candidate | Current exact PR head | Current CI disposition |
+|---|---|---|
+| PHX-CORE #252 | c82705f2de865c89ab733b10efa84f26f56a5cc4 | [42698139210](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42698139210) scoped Build PASS. |
+| PHX-RENTAL #328 | 0e0da62acd47c6a1ce287f8a30fc700d603fa070 | APK identity [44782114384](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44782114384) PASS; Build [44782114390](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44782114390) FAIL at handover freshness and ESP32 compile (missing mbedtls/sha256.h); API21/API23 smoke [44782114393](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44782114393) PASS. |
+| PHX-PISONET #255 | d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | [42462978704](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42462978704) Windows synthetic PASS; native COM/electrical acceptance NOT TESTED. |
+| PHX-HARDWARE #345 | docs head deed0f49c04d8cd69dc4fda78d2a4d914aa4dd4d; source/test 78bfd193a90ab04630ac0c064c72b9b66a6d29f6; logging-only 7dee461649e6554389e4f80481086b43a4ddd85a | Source/test Quarantine #45133190059 and Relay #45133190127 PASS; Full #45133190056 FAIL at QA-owned Missing poll signature check. Logging-only Full #45133582073 also FAILS there. Current docs-head Relay #45134012012 PASS; Quarantine #45134012104 and build #45134012436 were IN_PROGRESS. |
+| PHX-QA #290 / #292 | 5c29d15994cee1279058f1eca12f2a3180704292 / 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | #290 Windows [#43633486963](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43633486963) PASS; #292 has no workflow runs. QA owns the inherited poll-signature assertion. |
+| PHX-RELEASE #291 | 886cabfc5080c3fbef03c2a3b1afe9d52dea6f60 | Windows #45117006843 and Full #45117006794 fail CORE-owned handover freshness. Compatibility #45117006790: core 3.3.13 PASS, core 4.0.0 archive download fails HTTP 403; artifact provenance regression suite PASS. |
+| COE #26 | b382d233ff06c8791b1028bed3c617cc7b670d12 | Five workflows QUEUED / zero jobs; FROZEN. |
+| COE #35 / #45 / #49 | ead1c3b4ab84acc69eef6b63bfd7d224b4cbbecc / 9d76a134c1f6512aa40c20ec4d247306a71a8cce / aeb8ff11b2f5db9a5f86280ab62ab988245f3919 | #35 Bubblewrap missing (exit 125) and 10/10 profiles fail closed without approved site ULA /48; #45 scoped checks PASS; #49 shared-contract validation PASS, ESP8266 compile PASS, ESP32 compile FAIL. |
+
+Experiments main is f4e8a891aed8af86d5fd315d28750a0ac3a7372b; legacy v0.5.3 development is aad3aade72c1156eecba1fed30907c6d0283b2c5; v0.6 audit-foundation is 2fbd2475e9f54878c316fa7cea2f228386b0e859. COE main is a6513ab4412b4c014eee2863e45cbe32d06cb243. The ownership manifest remains blob e4db324315a1b3543fec17a148fbf960170fcb29, 11 routes, DRAFT_REVIEW_ONLY, PHX-MASTER target null. Cleanup #266 remains OPEN, 0/7; the Master checkbox remains unchecked.

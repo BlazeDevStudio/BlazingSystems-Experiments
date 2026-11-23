@@ -1493,3 +1493,14 @@ COE #26 still has older sketch blobs and no matching Hardware Python helpers. Ow
 ## UTC00 terminal CI result — Hardware #345 (2026-11-23)
 
 At current #345 head `01916c89ae6718d3991c778b676d06718155d6a2`, Quarantine [45091417124](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45091417124) and Relay [45091417060](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45091417060) pass; Full [45091417147](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45091417147) fails at QA-owned Controller protocol parity / Missing poll signature check. Hardware owns all six #345 paths; QA owns the assertion and independent review; Master owns only coordination. No route change or COE staging.
+
+
+## UTC07 exact-source route and intake reconciliation — 2026-11-23T07:59:44.571Z
+
+The live owner candidate trees were compared with the frozen COE #26 candidate at exact blob SHA, not by filename count alone. CORE #252 rootfs is 61 files vs 62 in COE: 45 identical, 16 different, one destination-only. The historical SOURCE_INTAKE pin 6d4c9b... has 61 mapped rows; exact row-level comparison is 46 byte-identical / 15 derived, while the summary claims 47 / 14. All source and destination blob IDs in the 61 rows resolve; no row is missing or mismatched. Historical tests tree 7e3b16f2 has 149 blobs; COE has 19, with 2 exact, 2 changed, 145 missing and 15 destination-only. Current QA #292 tree has 38 tests vs 19, with 1 exact, 3 changed, 34 missing and 15 extra.
+
+Current PISONET #255 is 68 source / 47 destination (27 exact, 11 changed, 30 missing, 9 extra). RENTAL Android is 991 / 8 (no exact path/blob matches); Rental server is 12 / 4 (1 changed, 11 missing, 3 extra). HARDWARE #345 has 16 ESP32 files and 32 ESP8266 files vs one destination file each; 15 ESP32 and 31 ESP8266 files are missing, and both destination sketches differ. The source contains 36 board-local Python helpers; COE contains zero. RELEASE workflow blobs differ and must be treated as a reimplementation.
+
+PisoWiFi LICENSE matches exactly. Source root NOTICE has no COE root counterpart; Rental Android, jsQR and Tabler license files have no destination counterpart. qrcode and tailadmin license blobs match. No Hardware-local license/notice exists at the checked source/destination paths. These gaps require owner/licensing review.
+
+OWNERSHIP_ROUTES.json remains blob e4db324315a1b3543fec17a148fbf960170fcb29, 11 routes, DRAFT_REVIEW_ONLY, PHX-MASTER target null. No migration staging or destination mutation.
