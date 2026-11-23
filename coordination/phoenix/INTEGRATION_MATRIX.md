@@ -4545,3 +4545,26 @@ License/NOTICE readback: PisoWiFi `LICENSE` matches exactly; source root `NOTICE
 - COE #26 remains OPEN / DRAFT / FROZEN. Its five workflows have zero jobs; no destination CI acceptance exists.
 
 **Migration decision:** no path was staged, copied, moved, overwritten, cherry-picked, rebased, retargeted or promoted. Do not use the SOURCE_INTAKE summary as an authoritative aggregate until it agrees with row-level blob classification and MIGRATION_MAP. Correct the manifest/map in the COE owner branch, preserve source history, and obtain exact-head CI plus owner/QA approval before any move.
+
+
+## PHX-MASTER UTC19 integration / source-pin reconciliation — 2026-11-23
+
+### Hardware → Release exact-source qualification
+
+- HARDWARE #347 is OPEN / DRAFT / UNMERGED, based on #345@ca72497. Current PR/docs HEAD is **5260d433ca440ddb7526ec08519b00a7e6620eb5**; test/lab HEAD is **fc1bfe86e51e1446712915c69087dca5be8e0763**; production firmware source anchor is **275057aa28375223a32da099420f52696d9b667c**.
+- At the current #347 docs head, the ESP8266 sketch blob is **fa8ed828026396db89aab2889bf6a61d6cf6bbac** and ESP32 sketch blob is **717336b84d434d51eb24beac1ed8efce8e719f69**. Both exactly match the same board blobs at firmware source anchor 275057aa.
+- The failed intermediate test-harness refactor 0bf7d9b removed POLL_SAFETY_PARITY and caused Quarantine/Relay NameError failures. Hardware corrected this in fc1bfe8; current exact-head Quarantine/Relay and final docs-head Quarantine/Relay all pass.
+- Current Full remains failed at QA's inherited **Missing poll signature check**; 14/14 target/platform builds pass, 12 dependent stages skip. The missing approved CORE authenticated register/poll producer contract is still the blocker.
+- RELEASE #291's 3/3 ESP32 compatibility run remains source-exact for the unchanged ESP32 sketch blob only. It is not proof of ESP8266, test/lab, or full-stack acceptance. RELEASE's Full/Windows remain blocked by CORE handover freshness.
+
+### COE #26 exact staging audit
+
+- Source baseline: Experiments main f4e8a891; historical intake source commit 6d4c9b487af4d768c4d7627654d119417fcc6e00; destination candidate #26 b382d233; COE main a6513ab4.
+- Complete trees: historical source 2,391 entries; current source main 2,340; COE #26 destination 286. COE main is a 3-entry scaffold.
+- All 61 runtime rows resolve against historical source and destination with exact recorded blob IDs and modes (61/61 source, 61/61 destination, 61/61 modes). Computed classification is **46 byte-identical / 15 derived**; SOURCE_INTAKE summary still says **47 / 14**.
+- Against current Experiments main, 33/61 historical source blobs remain identical, 20 differ, and 8 are absent. Historical and current main refs must not be silently conflated.
+- SOURCE_INTAKE contains 15 derived tests; MIGRATION_MAP contains 14. **tests/voucher_txn_journal.sh** exists in destination and SOURCE_INTAKE but is omitted from MIGRATION_MAP. The map's run_focus.sh blob **fa1f4f2c...** differs from actual destination **2b7b861e...**; member_txn_journal.sh map blob **01dc9c65...** differs from actual destination **d04df3c6...**.
+- First-party Pisowifi/LICENSE matches source blob **1ee55b94...**; QRCode LICENSE and TailAdmin LICENSE/NOTICE match their source blobs. Source repository root NOTICE **f6d92cd2...** has no COE root counterpart. Source Tabler LICENSE **22ee8122...** and Android Launcher LICENSE **c5b1efa7...** have no reviewed destination counterparts at expected mapped paths.
+- Five #26 workflows remain QUEUED / zero jobs. The ownership manifest remains 11 routes / DRAFT_REVIEW_ONLY / PHX-MASTER target null.
+
+**Decision:** #26 remains FROZEN. Do not stage/copy/move/overwrite/rebase/cherry-pick. The COE integration owner must reconcile the aggregate count, derived-test map, stale test blobs and license/NOTICE gaps, then run exact-head CI and obtain independent owner/QA review.

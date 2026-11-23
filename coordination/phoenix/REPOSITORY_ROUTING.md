@@ -1604,3 +1604,16 @@ Exact intake/map blobs at #26: `SOURCE_INTAKE.json@1b9018ff944f7f673934d0fc2a97e
 License/NOTICE state at the exact candidate: first-party PisoWiFi LICENSE, QRCode LICENSE and TailAdmin NOTICE match their source blobs; root NOTICE, Tabler LICENSE and Android Launcher LICENSE are absent from reviewed destination paths. The four original test rows resolve their source/destination blobs and modes; two are intentionally edited and two remain byte-identical. Five candidate workflows are queued with zero jobs.
 
 **Routing decision:** retain FROZEN / DRAFT_REVIEW_ONLY. No copy, stage, move, overwrite, cherry-pick, rebase, retarget or destination modification. The owning COE integration role must reconcile the row summary, test inventory, stale test blobs and licensing before requesting independent review. PHX-MASTER coordinates provenance only; it does not take over CORE/RENTAL/PISONET/HARDWARE/QA/RELEASE source branches.
+
+
+## PHX-MASTER UTC19 route and provenance hold — 2026-11-23
+
+The live OWNERSHIP_ROUTES.json remains blob e4db324315a1b3543fec17a148fbf960170fcb29: 11 routes, DRAFT_REVIEW_ONLY, PHX-MASTER target null. Source baseline is Experiments main f4e8a891; destination candidate is COE #26 b382d233 on COE main a6513ab4.
+
+The exact #26 review still finds 61/61 historical source blobs, destination blobs, and modes resolvable, but 46/15 computed runtime classification vs 47/14 recorded summary; 15 derived tests vs 14 mapped; missing voucher_txn_journal.sh; stale run_focus.sh and member_txn_journal.sh blob IDs; 28/61 historical source blobs drift from current main; and root NOTICE / Tabler / Android Launcher license gaps. Five destination workflows remain queued with zero jobs.
+
+HARDWARE #347 has a corrected test/lab runner at fc1bfe8 and current docs HEAD 5260d433; focused Quarantine/Relay pass, Full remains blocked at the inherited poll-signature assertion. RELEASE #291's ESP32 compatibility is exact for the unchanged ESP32 sketch blob only. COE #35 remains blocked by missing approved site ULA /48 and unavailable Bubblewrap.
+
+Both Experiments and COE report protected:false for their default branches; rulesets lists are empty. The classic protection endpoint is not readable by this integration (403). No branch protection, route, ownership, or target was changed by Master.
+
+**Review-before-move hold:** no source/destination file was staged, copied, moved, overwritten, cherry-picked, rebased, retargeted or promoted. No route permission changed. PHX-MASTER remains coordination-only. Private Drive registry contents and identifiers remain private and unavailable to this run.

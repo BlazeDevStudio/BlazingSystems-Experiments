@@ -1588,3 +1588,18 @@ For every proposed mapped file, record and compare the complete evidence tuple:
 7. PHX-MASTER's route target remains `null`; Master coordinates provenance and integration but does not own subsystem source or destination files.
 
 These controls preserve a human-auditable chain from original source blob through destination import and exact test evidence. Missing or contradictory evidence remains UNKNOWN/BLOCKED, never PASS by inference.
+
+
+## 6.91 Firmware-source vs test/lab-source qualification
+
+A release compile pin, a Hardware test/lab source head, and a later PR/handover head are different evidence identities. Record them separately and qualify only the object actually tested.
+
+1. Record at least: PR/docs HEAD, production firmware source commit and per-board sketch blob(s), test/lab source HEAD, and each workflow's exact **head_sha**.
+2. A compatibility compile result is **source-file scoped**. If the candidate's exact sketch blob equals the blob compiled by the compatibility run, that result remains source-exact for that sketch even when later commits change only host-test/lab code or handover documents.
+3. That narrow result does not qualify changed test/lab code, the other board's sketch, the full integration workflow, or any later source blob. Every test/lab change requires its own exact-head Quarantine/Relay/Full evidence.
+4. A failing test-harness refactor remains a failure until the owning role corrects it and the corrected test/lab SHA has terminal exact-head runs. Preserve the failed intermediate SHA and correction lineage; never relabel the failed run as PASS.
+5. A docs-only successor may carry forward a test result only when its test/lab source SHA is unchanged and the workflow explicitly proves that identity. Record the docs HEAD and source/test HEAD separately.
+6. Do not require a production-source repin merely because a test-only commit advanced; first compare the exact board sketch blob. Conversely, a matching ESP32 sketch does not qualify ESP8266 or full-stack behavior.
+7. PHX-MASTER owns this evidence contract and integration matrix only. HARDWARE/RELEASE/CORE/QA owners retain their source branches and must correct their own files.
+
+This contract prevents both false stale-source claims and the opposite error of promoting a narrow compile pass into full-stack acceptance.

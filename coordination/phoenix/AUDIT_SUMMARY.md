@@ -2498,3 +2498,26 @@ The ownership manifest remains 11 routes / `DRAFT_REVIEW_ONLY` / PHX-MASTER dest
 **Governance:** cleanup #266 OPEN / 0-of-7; canonical private Drive registry v11/newer corrections unavailable because no Google Drive connector is exposed. The public cloud-artifact policy and storage handover were read; policy requires BLOCKED, not a simulated Drive upload. No older registry snapshot was substituted.
 
 **Disposition:** PR #288 remains OPEN / DRAFT / UNMERGED; COE #26 remains FROZEN; PRODUCTION NO-GO. No move, merge, release, signing, flash, physical test, payment operation, or customer cutover occurred.
+
+
+## PHX-MASTER UTC19 live audit — 2026-11-23
+
+**Starting Master:** phoenix/master-coordination@88cf6a42fef138b0a3ddc9b723e3fe4dba63eca7; Experiments main f4e8a891aed8af86d5fd315d28750a0ac3a7372b; development blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5. COE main a6513ab4412b4c014eee2863e45cbe32d06cb243; integration #26 b382d233ff06c8791b1028bed3c617cc7b670d12.
+
+**Master scope:** PR #288 OPEN / DRAFT / UNMERGED, 190 starting paths, all under coordination/phoenix/. Its 83,836-character description exceeds GitHub's body limit, so the live run update is recorded in the PR conversation rather than truncating/replacing history. Master Actions on the starting head have zero runs/statuses.
+
+**New evidence:** HARDWARE #347 current docs HEAD 5260d433..., test/lab HEAD fc1bfe86..., firmware source anchor 275057aa.... The first C++ fixture-runner refactor 0bf7d9b failed focused labs with missing POLL_SAFETY_PARITY; Hardware restored it in fc1bfe8. Corrected Quarantine/Relay runs pass on source/test and docs heads. Full remains failed at the inherited QA-owned Missing poll signature check; all 14 target builds pass and 12 dependent stages skip. The current ESP8266 and ESP32 sketch blobs match the pinned firmware source; RELEASE #291's 3/3 compatibility pass is valid for the ESP32 sketch only, not the whole Hardware stack.
+
+**COE #26:** exact historical/source/destination trees were re-read. All 61 runtime source/destination blobs and modes resolve, but computed 46/15 differs from manifest 47/14; 15 derived tests vs 14 mapped, missing voucher_txn_journal.sh, two stale map test blobs, 28/61 historical blobs drift from current main, and root NOTICE / Tabler / Android license gaps remain. Five workflows are queued with zero jobs. No destination file was changed or staged.
+
+**COE #35:** 203 packaging tests PASS / 2 skips, then 10/10 appliance profiles fail closed for missing approved site ULA /48; compiles skipped. Sandbox host preflight 40/40 PASS, but Bubblewrap is absent (exit 125), so namespace and real sandbox packaging are skipped. Case-collision passes.
+
+**Repository governance:** Experiments main, development, Master coordination, and COE main all report protected:false; rulesets reads return empty lists for both repositories. The classic branch-protection detail endpoint returns 403 to this integration. No protected required-check enforcement is evidenced. Repository owner/admin must establish protected default/development branches and required checks before integration.
+
+**Documentation source-of-truth:** Experiments main README blob 7990e2ec... still says current production release 0.3.0; main PROJECT_HANDOVER blob f86c0ae9... (last updated 2026-10-07) and development handover blob 0430f421... (last updated 2026-10-06) say production is frozen at v0.5.2. GitHub Release v0.5.2 exists and targets bf299297...; release metadata reports immutable=false. This is a documentation/provenance conflict; Master did not edit product README or historical handovers.
+
+**Drive:** root AGENTS.md and public cloud artifact policy/handover were read. The private registry v11 and newer corrections were not available through the connected Library/Google Drive tools; only older v3/v5/v6 Library snapshots surfaced. No older snapshot was substituted, no private registry content/IDs were published, and no Drive artifact was created.
+
+**Validation:** JavaScript static checks recomputed all 61 migration classifications, source/destination blob identity, historical/current source drift, derived-test inventory, stale test blobs, and board sketch blob identity. Full Master Python suite and verify_coordination.py were NOT RUN; Master Actions are NOT RUN. This is not a full test-suite pass.
+
+**Disposition:** #288 remains OPEN / DRAFT / UNMERGED; #26 remains FROZEN; no subsystem source or COE destination files changed. Cleanup #266 remains OPEN / 0-of-7. PRODUCTION NO-GO.
