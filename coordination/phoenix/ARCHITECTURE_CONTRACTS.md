@@ -1617,3 +1617,17 @@ COE RELEASE #35 source/test SHA `daf08616ec001dae7013a8f029894153f597e1ae` fixes
 6. PHX-MASTER owns this cross-role contract only. PHX-RELEASE owns its packager implementation; PHX-QA owns independent regression review; PHX-INFRA/COE owns the compliant runner. No firmware, financial schema, migration, or release authority changes.
 
 This contract is source/test/host-CI scoped. It does not establish an appliance binary, sandbox execution, signing, or production readiness.
+
+
+## 6.93 C++ fixture timeout overrides must be finite and positive — HARDWARE #347 (2026-11-23 UTC21)
+
+HARDWARE #347 added a bounded-input contract to the shared ESP8266 C++ fixture runner. Source/test commit [00fcd6a9](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/00fcd6a9ed80a4ccccd429d3912e183ee2d4b3bd) changes only `cpp_fixture_runner.py` and `cpp_fixture_runner_contract_lab.py`; the later PR/docs head is [b33e654](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/b33e654af8aecc1a8477e63121ba03bc7c72cf2c).
+
+1. Compile and execution timeout defaults remain finite (30 seconds and 10 seconds respectively). An explicit override is permitted only when it is a finite, strictly positive real number of seconds.
+2. Reject `None`, zero, negative values, positive/negative infinity, NaN, booleans, and strings. Python booleans must be rejected explicitly even though `bool` subclasses `int`.
+3. Validate both timeout parameters before temporary-directory creation and before any compiler or fixture process launch. Invalid overrides raise a parameter-specific `ValueError`; the regression asserts `subprocess.run` was not called.
+4. The contract lab covers 16 invalid combinations (eight values across compile and execution parameters). Exact PR merge-ref Quarantine run [#45272162126](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45272162126), job `138034494698`, passed six tests and emitted `CPP_FIXTURE_RUNNER_CONTRACT_PASS 6/6`; both board coin-pulse labs emitted 17/17. Relay [#45272162193](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45272162193) passed both jobs.
+5. Full [#45272162174](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45272162174) remains FAILED at the inherited `Missing poll signature check` in the ESP8266 controller parity step. Fourteen target/platform jobs passed; twelve downstream simulation/update/signing/publication jobs were skipped. The PR workflow checked out merge ref `539f76ba` (b33e654 over parent #345 ca72497), not a physical board.
+6. This is a test-harness reliability contract, not financial or hardware acceptance. HARDWARE owns the runner; CORE owns the authenticated poll producer contract; QA owns the independent assertion review; MASTER owns this cross-role evidence rule. Do not synthesize a signature or weaken default-deny.
+
+The result is **CI VERIFIED for the bounded runner contract only**. Physical compiler/relay/coin behavior, LittleFS durability, power cuts, native acceptance and soak remain NOT TESTED.
