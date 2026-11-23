@@ -204,3 +204,20 @@ The source/test SHA remains `6f1dc79b6d8f263655a0a385eb162d31972d3700`; the prev
 - Full build [#45101889654](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45101889654), validation job `137454395798`: **FAILURE** at the inherited QA-owned `Missing poll signature check`. All 14/14 configured target/platform jobs (including Android, ESP32 and ESP8266) completed **SUCCESS**; 12 downstream simulation/bundle/candidate/signing/publication jobs were skipped.
 - This update changes only this handover. Firmware/test source remains at `6f1dc79b6d8f263655a0a385eb162d31972d3700`; the PR documentation head advances with this commit.
 
+
+
+### UTC03 pending-journal byte-preservation regression
+
+Exact source/test SHA: `e95b1109141f8c3377aff055946c3fdd78965c73`. This increment is a host-lab test-integrity correction only; no production sketch or shared API changed.
+
+The disabled-intake pending-identity scenarios now seed an **opaque** fake LittleFS `/pending.dat` byte fixture and compare it byte-for-byte after `sampleCoinPulseEdge()` latches the fault. The handover and fixture explicitly state that this lab does not parse or validate the production `PendingRecord` serialization. Both the single-edge and multi-edge/uint32-rollover cases assert that the sentinel remains present and unchanged.
+
+The runner adds a negative mutation that deletes `/pending.dat` inside the extracted `latchPollPulseFault()`; the pending-identity suite must reject it on both board builds.
+
+- Quarantine [#45107477749](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45107477749), job `137471956271`: **SUCCESS**. ESP8266 and ESP32 each pass pending identity 6/6 and 9/9; the new pending-journal deletion mutation is rejected with expected exit 66 on both boards. Existing pending-edge-delta and configured relay-output mutations are also rejected (72 and 80).
+- Relay [#45107477959](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45107477959): source-output-polarity job `137471957188` and ESP32 boot-polarity job `137471957356`: **SUCCESS**; active-high/active-low source scenarios 48/48 per board.
+- Full build [#45107477751](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45107477751): validation job `137471957500` **FAILURE** at inherited QA-owned `Missing poll signature check` in `tests/controllers.sh`. All 14/14 target/platform jobs completed **SUCCESS**; downstream simulation, bundle, candidate, signing and publication jobs were skipped.
+
+This proves only byte-preservation behavior in the fake LittleFS host fixture. It does **not** prove actual filesystem durability, reboot recovery, physical coin/relay behavior, power-cut recovery or an independent witness. `SIMULATED_ONLY=1`; physical acceptance remains **NOT TESTED**.
+
+**Next exact action:** PHX-QA and PHX-CORE reconcile the stale positive poll-signature assertion against the current main `register|ping` and `poll` producers; Hardware keeps coin admission default-deny until an approved authenticated response/event contract exists.
