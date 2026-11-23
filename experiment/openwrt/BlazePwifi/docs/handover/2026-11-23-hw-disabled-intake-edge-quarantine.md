@@ -361,3 +361,40 @@ The lab reports `PENDING_CLEAR_LAB_PASS 17/17` for each board. There was no sepa
 - Physical acceptance, 150 power cuts, 30-device/24-hour soak, independent witness, protected signer, v1-to-v2 financial migration, durable accounting/replay, and independent QA/release signoff remain outstanding.
 
 **Classification:** source-exact host lab SIMULATED; focused Quarantine/Relay CI VERIFIED; Full integration FAILED/BLOCKED; HARDWARE ACCEPTED NO; PRODUCTION NO-GO.
+
+
+## PHX-HARDWARE UTC06 — post-clear ISR edge race regression
+
+**Role:** PHX-HARDWARE  
+**Repository:** \`BlazeDevStudio/BlazingSystems-Experiments\`  
+**Branch:** \`phoenix/hw-coin-intake-armed-gate-20261122-utc23\`  
+**Parent/base:** #343 at \`dfeff7d5f63e699de7bc296c7641f2493f1e0e13\`  
+**Source/test commit:** \`edff098446247d3b2851af643d31673921cae03f\`  
+**PR:** #345, OPEN / DRAFT / UNMERGED
+
+### Change
+
+Added a host regression for the narrow race where a coin ISR edge arrives while the pending event is being cleared after a simulated authenticated success response.
+
+- \`poll_loop_blocking_inhibit_lab_runtime_fixtures.py\`: test-only \`clearPending()\` injects the extracted \`coinEdgeISR()\` during the clear window.
+- \`poll_loop_blocking_inhibit_lab_scenario_fixtures.py\`: adds \`CLEAR_WINDOW_ISR_MAIN\`; verifies the new edge is reconciled after clear, \`journalRecoveryRequired\` is latched, the fake \`/pollpulse.fault\` record contains \`pulses=1\`, and relay/ready outputs remain OFF.
+- \`poll_loop_blocking_inhibit_lab_fixtures.py\`: exports the new scenario.
+- \`poll_loop_blocking_inhibit_lab.py\`: runs the scenario and a failure-injection mutation that removes the second post-clear \`reconcileUnobservedCoinEdges()\` check.
+
+The test compiles the exact extracted production ISR, reconciliation, fault-latch, output, and response-handler functions for both boards. The positive disposition is a **test-only stub override**; production \`coinPostDispositionVerified()\` remains default-deny. No production \`.ino\`, shared API, financial ledger, QA-owned file, COE destination, or release workflow was changed.
+
+### Exact CI evidence at source/test SHA
+
+- Quarantine [#45124661252](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45124661252), job \`137526132962\`: SUCCESS.
+  - ESP8266 and ESP32 both emitted \`COIN_POST_CLEAR_WINDOW_ISR_EDGE_LATCHED_PASS\`.
+  - Both rejected \`coin-post-clear-window-isr-recheck\` mutation with expected exit 54.
+  - Existing pending-clear lab: 17/17 source-extracted cases per board.
+  - Existing poll blocked-edge fault suite: 8/8 scenarios.
+- Relay [#45124661167](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45124661167): SUCCESS; jobs \`137526132969\` and \`137526133163\` both PASS.
+- Full build/integration [#45124661259](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45124661259): FAILURE at validation job \`137526133628\`, exact message \`Missing poll signature check\` in the ESP8266 sketch. All 14/14 configured target/platform jobs (13 firmware targets plus Android) PASS. Downstream simulation, candidate, signing and publication stages were skipped.
+
+### Limits and blockers
+
+This is host SIMULATED / CI VERIFIED evidence only. It does not prove physical coin timing, LittleFS persistence, electrical pulse recovery, power-cut durability, or hardware acceptance. The response-signature contract remains a CORE/QA dependency; no positive coin disposition is enabled. Master #288 must refresh the active Hardware role pointer: the current \`ROLE_ASSIGNMENTS.md\` still points to #327 while the current integration matrix records #345.
+
+**Next action:** PHX-QA independently review the clear-window race fixture; PHX-CORE publish the canonical authenticated poll/receipt contract; PHX-MASTER reconcile the #327/#345 assignment pointer. Hardware will continue only on a separate unblocked firmware-preservation task.
