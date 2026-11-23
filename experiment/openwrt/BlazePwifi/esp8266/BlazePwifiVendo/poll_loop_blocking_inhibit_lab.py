@@ -490,6 +490,13 @@ for board,path in BOARDS.items():
     )
     print(f"{board} MUTATION_REJECTED poll-http-missing-post-response-edge-reconciliation expected_exit=88")
 
+    # The timeout path must also fail if the post-response ISR reconciliation is removed.
+    compile_and_run(
+        assemble(loop_source=poll_reconcile_mutation,main_source=poll_http_timeout_main),
+        board,88,"poll-http-timeout-missing-post-response-edge-reconciliation"
+    )
+    print(f"{board} MUTATION_REJECTED poll-http-timeout-missing-post-response-edge-reconciliation expected_exit=88")
+
     # The real relay/LED gate must remain inhibited for the entire blocking HTTP call.
     poll_output_mutation=output.replace("!pollIntakeSuspended &&","true &&",1)
     if poll_output_mutation==output:
