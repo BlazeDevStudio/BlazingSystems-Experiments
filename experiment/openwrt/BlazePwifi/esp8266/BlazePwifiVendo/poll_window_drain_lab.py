@@ -7,8 +7,7 @@ Injects 30–100 ms coin pulses during the inhibit-settle interval.
 Host C++ only; no physical relay, acceptor, or power-cut evidence.
 """
 from pathlib import Path
-import subprocess
-import tempfile
+from cpp_fixture_runner import run_cpp_fixture
 
 from firmware_lab_source import extract_function
 
@@ -111,18 +110,13 @@ int main(){
 
 def compile_and_run(functions):
     source = CPP.replace("@@FUNCTIONS@@", "\n\n".join(functions))
-    with tempfile.TemporaryDirectory(prefix="phx-poll-drain-") as temp:
-        cpp = Path(temp) / "poll_window_drain.cpp"
-        binary = Path(temp) / "poll_window_drain"
-        cpp.write_text(source, encoding="utf-8")
-        compiled = subprocess.run(
-            ["g++", "-std=c++17", "-Wall", "-Wextra", "-Werror", "-pedantic",
-             "-O2", str(cpp), "-o", str(binary)],
-            capture_output=True, text=True, check=False,
-        )
-        if compiled.returncode:
-            raise RuntimeError(compiled.stderr)
-        return subprocess.run([str(binary)], capture_output=True, text=True, check=False)
+    return run_cpp_fixture(
+        source,
+        prefix="phx-poll-drain-",
+        stem="poll_window_drain",
+        extra_flags=("-pedantic", "-O2"),
+        context="poll window drain lab",
+    )
 
 def main():
     function_names = (
