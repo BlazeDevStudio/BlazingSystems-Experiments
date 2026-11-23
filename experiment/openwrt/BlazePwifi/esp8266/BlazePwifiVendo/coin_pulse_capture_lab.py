@@ -493,6 +493,7 @@ FUNCTION_NAMES = (
     "coinLineIdle",
     "canStartPoll",
     "canAttemptCoinPost",
+    "coinIngressConfigurationAllows",
     "applyOutputs",
     "coinLineQuietAfterInhibit",
     "beginPollWindow",

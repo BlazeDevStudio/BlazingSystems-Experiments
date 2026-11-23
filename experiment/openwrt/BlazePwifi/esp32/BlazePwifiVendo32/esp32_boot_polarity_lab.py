@@ -225,13 +225,14 @@ def main() -> None:
             "persistLocalOutputPolarity",
             "writeLogical",
             "configureRuntimePins",
+            "coinIngressConfigurationAllows",
             "applyOutputs",
             "canStartPoll",
             "canAttemptCoinPost",
         )
     )
-    # This harness isolates local output-polarity ordering. The exact ingress
-    # helper is compiled and failure-injected by coin_pulse_capture_lab.py.
+    # Include the configured-ingress predicate required by applyOutputs();
+    # coin_pulse_capture_lab.py owns its controller/coin/relay mutation matrix.
     functions = functions.replace(
         configure,
         "bool quarantineCoinIngressTransition(){ return true; }\n" + configure,

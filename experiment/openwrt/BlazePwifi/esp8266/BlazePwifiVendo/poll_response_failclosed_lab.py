@@ -193,7 +193,7 @@ for board,path in BOARDS.items():
     last_poll=loop.index("lastPoll=millis()",outputs)
     assert pre_poll_guard < pre_poll_latch < pre_poll_release < poll_call < accept < post_release < outputs < last_poll, board+": poll release ordering changed"
     parser="\n".join(extract(source,name) for name in ("pollJsonSpace","pollJsonHex","pollJsonSkipString","pollJsonSkipComposite","pollJsonSkipPrimitive","pollJsonSkipValue","pollJsonTopLevelTrue","coinPostDispositionVerified"))
-    code=("#define TARGET_ESP32\n" if board=="ESP32" else "")+STUBS+parser+extract(source,"acceptPollResponse")+extract(source,"applyOutputs")+MAIN
+    code=("#define TARGET_ESP32\n" if board=="ESP32" else "")+STUBS+parser+extract(source,"acceptPollResponse")+extract(source,"coinIngressConfigurationAllows")+extract(source,"applyOutputs")+MAIN
     with tempfile.TemporaryDirectory(prefix="phx-poll-response-") as folder:
         cpp=Path(folder)/"test.cpp"; binary=Path(folder)/"test"
         cpp.write_text(code,encoding="utf-8")
@@ -259,6 +259,7 @@ for board, path in BOARDS.items():
         raise RuntimeError(f"{board}: pre-poll abort / response / release ordering changed: {order}")
     functions = "\n".join([
         extract(source, "boundedCoinDebounceMs"),
+        extract(source, "coinIngressConfigurationAllows"),
         extract(source, "applyOutputs"),
         extract(source, "coinLineIdle"),
         extract(source, "canStartPoll"),
@@ -290,6 +291,7 @@ for board, path in BOARDS.items():
     mutated_quiet = quiet.replace("const bool idle=coinLineIdle();", "const bool idle=true;", 1)
     mutated_functions = "\n".join([
         extract(source, "boundedCoinDebounceMs"),
+        extract(source, "coinIngressConfigurationAllows"),
         extract(source, "applyOutputs"),
         extract(source, "coinLineIdle"),
         extract(source, "canStartPoll"),
