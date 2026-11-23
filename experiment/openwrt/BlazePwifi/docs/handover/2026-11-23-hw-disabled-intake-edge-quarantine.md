@@ -414,3 +414,38 @@ A new crash-window scenario injects failure to remove `/pending.attempt` after `
 - Full [#45127191753](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45127191753): validation job `137534235233` **FAILURE** at the inherited QA-owned `Missing poll signature check`. All 14/14 configured target/platform jobs completed **SUCCESS**; downstream simulation, update-bundle, candidate, signing and publication jobs were skipped.
 
 This increment changes only the Hardware-owned host lab and runner; no production `.ino`, shared API, CORE/QA-owned test, financial backend, signer, witness, migration, Release workflow or COE destination changed. FakeLittleFS/host reboot simulation is not physical LittleFS durability, real power-cut acceptance or HARDWARE ACCEPTED evidence. `SIMULATED_ONLY=1`; physical power-cut, coin and relay acceptance remain zero.
+
+
+## PHX-HARDWARE UTC07 — isolate pending-recovery host scenarios
+
+**Source/test commit:** `f178dac4de7488bb1252c3a5373635fdb6b7386d`  
+**PR:** #345, OPEN / DRAFT / UNMERGED  
+**Branch:** `phoenix/hw-coin-intake-armed-gate-20261122-utc23`  
+**Parent:** #343 at `dfeff7d5f63e699de7bc296c7641f2493f1e0e13`
+
+### Cleanup change
+
+Moved the pending-identity and post-clear ISR scenario entry points out of the large general poll-loop scenario fixture into a dedicated Hardware-owned module:
+
+- Added `poll_pending_recovery_lab_fixtures.py`, which owns `PENDING_PRESERVATION_MAIN` and `CLEAR_WINDOW_ISR_MAIN` and imports the unchanged shared `MAIN` harness.
+- Updated `poll_loop_blocking_inhibit_lab_fixtures.py` to re-export those names from the new module while preserving the runner's stable import surface.
+- Removed the two scenario entry-point definitions from `poll_loop_blocking_inhibit_lab_scenario_fixtures.py`.
+
+The raw C++ scenario bodies were moved verbatim; no test assertions, exit codes, production sketch, parser, persistence format, shared API, or runtime behavior changed. This is a bounded human-debuggability refactor of Hardware-owned host fixtures only.
+
+### Exact-head CI evidence
+
+- Quarantine [#45130453337](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45130453337), job `137544491349`: **SUCCESS**. The runner imported the new module and executed both ESP8266 and ESP32 source-extracted labs. Logs include pending identity 9/9, attempted-evidence 6/6, clear-window ISR edge latched, orphan attempt-marker boot deny, and rejection of the configured pending/journal/relay mutations. `SIMULATED_ONLY=1`; `PHYSICAL_POWER_CUT_VERIFIED=0`.
+- Relay [#45130453364](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45130453364): **SUCCESS**. ESP32 boot-polarity job `137544491207` and source-output-polarity job `137544491482` both PASS.
+- Full [#45130453630](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45130453630): validation job `137544492636` **FAILURE** at inherited QA-owned `Missing poll signature check` in the ESP8266 sketch. All 14/14 configured target/platform jobs completed **SUCCESS**; 12 validation-dependent simulation, bundle, candidate, signing, and publication jobs were skipped.
+
+### Coordination and limits
+
+- The current Master PR #288 head is `83e57736d1edb7b1cb175bf3b6db878e66c19221`; its assignment/integration pins predate this Hardware head and require a Master-owned refresh. Hardware did not edit `coordination/phoenix/`.
+- PHX-QA still owns independent fixture review and replacement of the stale positive poll-signature assertion. PHX-CORE still owns the authenticated register/poll and event-bound receipt contract. No `response_sig` was invented and firmware remains default-deny.
+- The private Drive registry v11 was not available through the connected Library surface; no older snapshot was substituted.
+- No physical coin/relay operation, flashing, power interruption, migration, signer, witness, release or production deployment occurred.
+
+**Classification:** host fixtures SIMULATED; Quarantine/Relay CI VERIFIED; Full validation FAILED/BLOCKED; HARDWARE ACCEPTED NO; PRODUCTION NO-GO.
+
+**Next exact action:** PHX-QA independently review the refactored fixture import path and clear-window/orphan-marker assertions; PHX-CORE publish the approved authenticated response/receipt contract; PHX-MASTER refresh the #345 role pin. Hardware continues only on a separate unblocked firmware-owned task.
