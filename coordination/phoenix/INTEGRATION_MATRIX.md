@@ -4328,3 +4328,15 @@ Current COE #26 `Pisowifi/SOURCE_INTAKE.json` blob `1b9018ff944f7f673934d0fc2a97
 - No Hardware-local LICENSE/NOTICE was found at the inspected source/destination paths; keep this as an owner/licensing review item.
 
 **Decision:** COE #26 remains FROZEN. Do not stage, copy, move, overwrite, cherry-pick, rebase or promote any route until exact source blobs, licenses, test identities, import completeness and terminal CI are reconciled and owner-authorized.
+
+
+## UTC09 COE #35 exact-head CI update — 2026-11-23T09:40:15Z
+
+COE RELEASE PR #35 advanced from the UTC08 observed `ede91d4323c158f6abd454da18b6ee059f4609d0` to current PR/docs HEAD `9b300ea18886c11447ff6f0891d4ed9147454881`. The previous no-runs observation is superseded; do not transfer results from earlier heads.
+
+- Source/test commit: `59c57cba0dd230434ad0cb89bc1a0f19c0a684d3`; final docs/handover head: `9b300ea18886c11447ff6f0891d4ed9147454881`.
+- [Sandbox run #45145590304](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45145590304), job 137593948352: 39/39 host tests PASS; runner then fails closed because `bwrap` is not installed (exit 125). Unprivileged namespace and mandatory packaging regressions are skipped.
+- [Shared/firmware run #45145590011](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45145590011), job 137593947117: 195 tests PASS / 2 intentional skips; all 10 appliance profile admissions fail closed because no approved site-scoped RFC 4193 ULA /48 has been supplied; ESP32/ESP8266 compile jobs are skipped.
+- [Case-collision #45145590247](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45145590247) PASS.
+
+This is exact-head hosted CI evidence. It is not a successful ImageBuilder sandbox, appliance firmware build, native hardware acceptance, production signing or release. COE #26 remains FROZEN; no destination staging or migration is authorized.
