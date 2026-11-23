@@ -286,8 +286,9 @@ String post(const String &action,const String &pulses=String("0"),
     } else {
       fakeNow+=3500UL;
     }
-    // Simulate the production HTTPClient timeout. The extracted loop remains
-    // blocked while the relay and poll-inhibit state must remain unchanged.
+    // Simulate the production 3.5-second blocked poll request. The default
+    // stub returns hostile positive data; the lab derives an empty-response
+    // variant to exercise the HTTPClient transport-timeout result as well.
     pollEndAt=fakeNow;
     pollEndRelayOn=relayOn;
     pollEndSuspended=pollIntakeSuspended;

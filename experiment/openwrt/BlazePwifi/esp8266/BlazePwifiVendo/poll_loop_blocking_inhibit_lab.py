@@ -459,6 +459,26 @@ for board,path in BOARDS.items():
         raise AssertionError(f"{board}: blocked-poll ISR rollover marker missing")
     print(f"{board} POLL_HTTP_ISR_MULTI_EDGE_ROLLOVER_RETAINED_PASS")
 
+    # Re-run the same blocked-poll ISR case with the empty response returned by
+    # post() when HTTPClient reports a transport timeout or other non-positive code.
+    timeout_response_anchor = r'return String("{\"ok\":true,\"insert\":true,\"target\":\"spoof-target\"}");'
+    if POLL_HTTP_ISR_MAIN.count(timeout_response_anchor) != 1:
+        raise AssertionError(f"{board}: blocked-poll hostile response anchor is not unique")
+    poll_http_timeout_main = POLL_HTTP_ISR_MAIN.replace(
+        timeout_response_anchor, "return String();", 1
+    ).replace(
+        "POLL_HTTP_ISR_MULTI_EDGE_ROLLOVER_RETAINED_PASS",
+        "POLL_HTTP_TIMEOUT_ISR_MULTI_EDGE_ROLLOVER_RETAINED_PASS",
+        1,
+    )
+    timeout_output = compile_and_run(
+        assemble(main_source=poll_http_timeout_main),
+        board,0,"poll-http-timeout-isr-multi-edge-rollover"
+    )
+    if "POLL_HTTP_TIMEOUT_ISR_MULTI_EDGE_ROLLOVER_RETAINED_PASS" not in timeout_output:
+        raise AssertionError(f"{board}: timeout-path ISR fault marker missing")
+    print(f"{board} POLL_HTTP_TIMEOUT_ISR_MULTI_EDGE_ROLLOVER_RETAINED_PASS")
+
     # The post-HTTP ISR delta must be durably latched before the ordinary input sample.
     poll_reconcile_anchor="if(pollEdgeEnd!=pollEdgeStart){"
     poll_reconcile_mutation=loop.replace(poll_reconcile_anchor,"if(false){",1)
