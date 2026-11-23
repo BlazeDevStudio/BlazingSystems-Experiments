@@ -176,6 +176,30 @@ def main():
                 failures.append(f"{board} unsafe absolute-deadline mutation was not rejected")
                 continue
             print(f"{board}_POLL_WINDOW_MUTATION_REJECTED unsafe-deadline-rollover")
+
+            # Prove the active-line check inside the drain loop is essential.
+            # Keep the final idle sample intact: without the in-loop abort, a
+            # short pulse that ends before the 250 ms window closes is missed.
+            mutated = list(functions)
+            active_line_guard = (
+                "    if(!coinLineIdle()){\\n"
+                "      pollDrainAbortedOnActiveLine=true;\\n"
+                "      return false;\\n"
+                "    }\\n"
+            )
+            if active_line_guard not in mutated[quiet_index]:
+                failures.append(f"{board} missing active-line abort guard for mutation test")
+                continue
+            mutated[quiet_index] = mutated[quiet_index].replace(active_line_guard, "", 1)
+            active_line_mutation = compile_and_run(mutated)
+            if (active_line_mutation.returncode == 0 or
+                    "FAIL pulse-100ms-width30" not in active_line_mutation.stderr):
+                failures.append(
+                    f"{board} missing active-line abort mutation survived or failed unexpectedly: "
+                    f"{active_line_mutation.stderr or active_line_mutation.stdout}"
+                )
+                continue
+            print(f"{board}_POLL_WINDOW_MUTATION_REJECTED missing-active-line-abort")
         except Exception as error:
             failures.append(f"{board} lab error: {error}")
     if failures:
