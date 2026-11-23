@@ -117,6 +117,39 @@ int runDisabledIngressPendingCase(bool disableController, bool disableCoin, bool
   return 0;
 }
 
+
+int runDisabledIngressPendingMultiEdgeCase(bool disableController, bool disableCoin, bool disableRelay,
+                                           uint32_t initialSequence, uint32_t edgeDelta,
+                                           uint32_t expectedFaultPulses, int failureCode,
+                                           const char *passMarker){
+  resetState();
+  // Existing journal identity must survive a multi-edge delta, including uint32 rollover.
+  pendingPulses=2U;
+  pendingReady=false;
+  pendingTarget="pending-target";
+  pendingNonce="pending-nonce";
+  pendingPostAttempted=false;
+  if(disableController) controllerEnabled=false;
+  if(disableCoin) coinEnabled=false;
+  if(disableRelay) relayEnabled=false;
+  applyOutputs();
+  lastHandledCoinEdgeSequence=initialSequence;
+  coinEdgeSequence=initialSequence+edgeDelta;
+  sampleCoinPulseEdge(true);
+  if(!journalRecoveryRequired || pendingPulses!=2U || !pendingReady ||
+     pendingTarget!="pending-target" || pendingNonce!="pending-nonce" ||
+     pendingPostAttempted || saveCalls!=0 ||
+     lastHandledCoinEdgeSequence!=coinEdgeSequence || !lastCoin ||
+     !LittleFS.exists("/pollpulse.fault") || relayOn || ledOn ||
+     insertMode || !activeTarget.empty()) return failureCode;
+  const std::string fault=LittleFS.files["/pollpulse.fault"];
+  if(fault.find("COIN_INGRESS_UNRESOLVED")==std::string::npos ||
+     fault.find("pulses="+std::to_string(expectedFaultPulses))==std::string::npos)
+    return failureCode;
+  std::cout<<passMarker<<std::endl;
+  return 0;
+}
+
 int main(){
 
   // A prior persistent journal fault must abort even with an idle line and no new ISR edge.
@@ -422,7 +455,16 @@ int main(){
   result=runDisabledIngressPendingCase(true,false,false,true,71,
       "POLL_DISABLED_CONTROLLER_ISR_PENDING_IDENTITY_PRESERVED_PASS");
   if(result) return result;
-  std::cout<<"POLL_DISABLED_INGRESS_PENDING_IDENTITY_PRESERVATION_PASS 6/6"<<std::endl;
+  result=runDisabledIngressPendingMultiEdgeCase(false,false,true,0xFFFFFFFEUL,3U,5U,72,
+      "POLL_DISABLED_RELAY_MULTI_ISR_PENDING_IDENTITY_PRESERVED_PASS");
+  if(result) return result;
+  result=runDisabledIngressPendingMultiEdgeCase(false,true,false,100U,2U,4U,73,
+      "POLL_DISABLED_COIN_MULTI_ISR_PENDING_IDENTITY_PRESERVED_PASS");
+  if(result) return result;
+  result=runDisabledIngressPendingMultiEdgeCase(true,false,false,200U,4U,6U,74,
+      "POLL_DISABLED_CONTROLLER_MULTI_ISR_PENDING_IDENTITY_PRESERVED_PASS");
+  if(result) return result;
+  std::cout<<"POLL_DISABLED_INGRESS_PENDING_IDENTITY_PRESERVATION_PASS 9/9"<<std::endl;
   return 0;
 }
 """
