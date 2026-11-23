@@ -598,7 +598,7 @@ def run_pending_clear_failure_lab(
     clear_result_anchor = "  return clearPending();"
     clear_result_mutation = quarantine_pending_source.replace(
         clear_result_anchor,
-        "  clearPending();\\n  return true;",
+        "  clearPending(); return true;",
         1,
     )
     if clear_result_mutation == quarantine_pending_source:
