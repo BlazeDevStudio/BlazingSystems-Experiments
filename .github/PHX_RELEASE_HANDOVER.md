@@ -2857,3 +2857,48 @@ Only these RELEASE-owned files changed in this increment:
 - **Registry custodian:** restore authorized access to canonical private registry v11.
 
 No merge, signing, release tag, publication, hardware flash, real payment migration or customer deployment occurred. Protected signer and independent freshness witness, durable financial accounting/migration, independent QA/MASTER approval, approved production binaries, 150 physical power cuts and 30-device/24-hour soak remain unproven or NOT TESTED. **PRODUCTION NO-GO.**
+
+## PHX-RELEASE UTC05 — interruption-safe provenance directory traversal
+
+**Checkpoint:** 2026-11-23T05Z  
+**Repository:** `BlazeDevStudio/BlazingSystems-Experiments`  
+**Draft:** [PR #291](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/291), OPEN / DRAFT / UNMERGED  
+**Branch:** `phoenix/release-publisher-isolation-20261115`  
+**Base:** PR #291 base #242 at `734b89d9e7792247e8376335c3f3685500ab3f89`  
+**Task base:** `ed73974472b5162e7d283211b3bb7ab8e208380e`  
+**Source/test HEAD:** `dc68346ffe7a465fad817b8c5a5bc78b94c495d8`  
+**Disposition:** two descriptor-traversal interruption regressions reproduced and fixed; exact-source CI-0701 passes 41 provenance tests. Shared Full/Windows integration remains blocked outside this RELEASE-owned change. PRODUCTION NO-GO.
+
+### Finding
+
+The release provenance helpers `_open_regular()` and `_open_directory()` opened a child directory descriptor, then called `os.fstat()`, but did not retain that child descriptor in the exception-cleanup state. Their cleanup handlers caught `Exception`, not `BaseException`. A KeyboardInterrupt or SystemExit during the child-directory verification therefore leaked both the pinned parent descriptor and the newly opened child descriptor.
+
+### Test-first / correction
+
+- Test-first commit: [`018b1044`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/018b1044a46fe22888f9f8dce692914fd0d125f8) adds two descriptor-lifetime regressions: KeyboardInterrupt during regular-file traversal and SystemExit during directory traversal.
+- Expected RED: [push run #45116754362](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45116754362), CI-0701 job `137501245232`: 41 tests ran; exactly four subtest failures across the two new cases. The parent and child descriptors remained open (fd 3/4 in the directory case; fd 5/6 in the regular-file case). The test exposed a real cleanup gap, not a fixture/import failure.
+- Source fix: [`dc68346f`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/dc68346ffe7a465fad817b8c5a5bc78b94c495d8) tracks the in-flight child descriptor explicitly, transfers ownership only after the parent close succeeds, and closes all still-owned descriptors on both OSError and BaseException paths while preserving the original exception.
+- Exact-source push CI-0701: [run #45116860105](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45116860105), job `137501565487`, SUCCESS; provenance suite `41/41 PASS`, including both new interruption cases. Immutable action-pin checks passed (52 + 4 + 6 = 62 invocations), and the release handover anchor passed.
+- Exact-source PR CI-0701: [run #45116865284](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45116865284), job `137501583096`, SUCCESS; provenance suite `41/41 PASS`. The broader PR workflow was still in progress at the last read.
+- Windows workflow [run #45116865268](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45116865268) FAILED at the existing CORE-owned handover freshness gate; build-windows and publish-release were SKIPPED. This is not a failure of the descriptor fix.
+
+### Ownership and current integration boundary
+
+The compare from task base `ed739744` to source/test head `dc68346` contains exactly two changed paths, both RELEASE-owned:
+- `.github/scripts/test_build_provenance.py`
+- `.github/scripts/write_build_provenance.py`
+
+No CORE, RENTAL, PISONET, HARDWARE, QA or MASTER file was changed. The inherited #291 mixed-owner paths remain untouched. The final handover update is documentation-only; exact docs-head CI will be checked separately.
+
+MASTER #288 was observed at `dab1f42b93c258d00054a754bd85698e3ae38b82`; `OWNERSHIP_ROUTES.json` remains `DRAFT_REVIEW_ONLY`, and the RELEASE workflow route remains `reimplementation-review`. No cross-repository migration was attempted. COE #26 remains FROZEN; COE #31 remains a draft and does not authorize destination integration.
+
+The canonical private Drive registry v11 was not available through the authorized Library/connector surface. Historical snapshots and checkpoint summaries were not substituted; no private registry content was copied.
+
+### Next actions and rollback
+
+- **PHX-QA:** independently review the descriptor-ownership transitions and interruption regressions at the final PR head.
+- **PHX-CORE:** refresh its own `PROJECT_HANDOVER.md` and rerun the shared Full/Windows freshness gate; RELEASE must not edit or bypass CORE-owned files.
+- **PHX-MASTER:** reconcile the stale embedded #172 references to current #288 and preserve the draft-only release route.
+- Rollback is limited to reverting the two RELEASE-owned test/source commits on this draft branch; do not revert inherited cross-role paths or shared coordination files.
+
+No merge, signing, release tag, publication, hardware flash, real payment migration or customer deployment occurred. Protected signer and independent freshness witness, durable financial accounting/migration, independent QA/MASTER approval, approved production binaries, 150 physical power cuts and 30-device/24-hour soak remain unproven or NOT TESTED. **PRODUCTION NO-GO.**
