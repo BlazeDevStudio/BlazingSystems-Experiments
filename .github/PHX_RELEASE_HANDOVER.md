@@ -2638,3 +2638,14 @@ The bounded task is now source/test/handover verified. Full integration remains 
 No merge, rebase, retarget, signer operation, real-key signing, release tag, publication, hardware flash, real payment migration or customer deployment occurred. Protected signer and independent freshness witness, durable financial accounting/migration, independent QA/MASTER approval, approved production binaries, **150 physical power cuts** and the **30-device/24-hour soak** remain unproven or NOT TESTED.
 
 **Disposition: PRODUCTION NO-GO.**
+
+
+### UTC00 test correction and exact source/test follow-through
+
+- The first handover-head run [#45088026478](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45088026478), CI-0701 job 137410960612, ran 25 handover tests and failed one assertion only: the test expected the phrase "No CORE or PISONET path was changed", while this handover accurately says "No inherited CORE or PISONET path was changed by this task." This was a test wording mismatch, not a source or ownership defect.
+- Test assertion correction: [c904b012](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/c904b0128ef9f8bdb35ab1e1285a361eda8ac8c2) now checks the precise inherited-owner statement.
+- Exact PR source/test-head CI-0701 [#45088102758](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45088102758), job 137411203735: **SUCCESS, 25/25 handover tests PASS**. The archive-verifier suite (10 tests), build-provenance suite (36 tests), and ESP32 compatibility workflow contract suite (8 tests) also completed successfully in this job.
+- Exact push source/test-head CI-0701 [#45088098551](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45088098551), job 137411190816: **SUCCESS**. Its separate mandatory validate job failed at the CORE-owned handover freshness gate; downstream release/update jobs were not accepted. Target jobs were still running at the last read, so no target-matrix total is claimed.
+- Exact source/test-head Windows run [#45088102765](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45088102765): FAILED at the same CORE-owned PROJECT_HANDOVER freshness gate; Windows build and publisher SKIPPED.
+- Exact source/test-head ESP32 compatibility run [#45088102762](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45088102762) was PENDING at the last read. The release provenance regression job had passed in the earlier docs-head run; no final two-core compatibility result is claimed for this source/test head.
+- The exact PR Full run #45088102758 had its CI-0701 job PASS, but its downstream target jobs were still queued/in progress at the last read. This is not a completed Full integration result. The source/test head before this follow-up handover append was c904b0128ef9f8bdb35ab1e1285a361eda8ac8c2; the final docs-head CI must be read separately after this append.
