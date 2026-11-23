@@ -4513,3 +4513,35 @@ The intake lists 15 derived tests, while `MIGRATION_MAP.md` contains 14 derived-
 License/NOTICE readback: PisoWiFi `LICENSE` matches exactly; source root `NOTICE.md` exists but destination `Pisowifi/NOTICE.md` is absent; QRCode and TailAdmin license/notice blobs match; Android Launcher and Tabler license counterparts are absent at the reviewed destination paths; no Hardware-local LICENSE/NOTICE was found at the checked paths.
 
 **Disposition:** keep #26 FROZEN. No source/destination staging, copy, move, overwrite, cherry-pick, rebase, retarget, route promotion or destination write.
+
+
+## PHX-MASTER UTC17 exact-head integration and COE #26 provenance re-audit — 2026-11-23 (scheduled UTC17; observed 18:32Z)
+
+**Master refs:** Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; development `blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5`; #288 `3d4226bbff276a26066b3cb04e520b6eba252110`. **COE refs:** main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; integration #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`. Both recursive candidate trees were complete/non-truncated: Experiments main 2,340 entries; historical intake source commit `6d4c9b487af4d768c4d7627654d119417fcc6e00` 2,391 entries; COE #26 286 entries; COE main 3 entries.
+
+### Exact owner CI (current candidates only)
+
+| Candidate | Exact PR/docs head / source-test pin | CI and integration interpretation |
+|---|---|---|
+| CORE #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | Build #42698139210 PASS; scoped DENY-only evidence, not durable-state acceptance. |
+| RENTAL #328 | `0e0da62acd47c6a1ce287f8a30fc700d603fa070` | APK/API PASS; shared build FAIL. ESP32 compile log reports `mbedtls/sha256.h` missing. |
+| PISONET #255 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | Windows synthetic CI PASS; native COM/serial acceptance NOT TESTED. |
+| HARDWARE #347 | docs `4f64f19b8304e2e8e40ba422417d64ddea9837d4`; source/test `865d56f58e22e8a44dc45f15ea350ecb6ca035af`; base #345 `ca72497ed386c9ac4e50d3f811827bef51e296ad` | Quarantine/Relay PASS; Full FAIL at QA-owned poll-signature assertion; 14/14 targets PASS, downstream stages SKIPPED. Physical acceptance NOT TESTED. |
+| HARDWARE #348 | head `c18826892160b1777f107e2ca0ca49aaed66ba6a`; source correction `21d075e366e1a6fab54985a14996e2d30a7cc862` | Focused auth-header check PASS; Full FAIL on ESP32 core 4.0.0 missing `mbedtls/sha256.h`. |
+| QA #290 / #292 | `5c29d15994cee1279058f1eca12f2a3180704292` / `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | #290 Windows PASS; #292 no runs and old Master base. |
+| RELEASE #291 | docs `c5a566fd04a59a3c4a4bbbaa9524f8a9b97e6b7d`; workflow `98ba3af1fe76128b331f93a4cf3543087cc0919b`; Hardware pin `275057aa28375223a32da099420f52696d9b667c` | Dual-core compatibility PASS 3/3 at old pin; current #347 source/test `865d56f...` is 11 commits ahead / 0 behind, four Hardware paths changed. Full/Windows fail at CORE freshness. Re-run is required. |
+| COE RELEASE #35 | docs `151a6fab2b7ff6e36c3fe66ceff1a87f901f2d4e`; source/test `5b6a8a74bb068cc8822661e879498d34a70209ef` | Shared 202 tests PASS / 2 skips, then 10/10 ULA profile admissions FAIL CLOSED; sandbox 40/40 host tests PASS, Bubblewrap missing / exit 125; case collision PASS. |
+| COE CORE #45 / INTERCON #49 | `9d76a134c1f6512aa40c20ec4d247306a71a8cce` / `aeb8ff11b2f5db9a5f86280ab62ab988245f3919` | #45 scoped Overlay/Shell + case checks PASS; #49 Stage 5.1 + case checks PASS, Shared Contracts compile FAIL. |
+| COE integration #26 | `b382d233ff06c8791b1028bed3c617cc7b670d12` | Five workflows QUEUED / zero jobs; FROZEN. |
+
+### Exact COE #26 intake / migration-map comparison
+
+- Ownership manifest: `OWNERSHIP_ROUTES.json@e4db324315a1b3543fec17a148fbf960170fcb29`, 11 routes, `DRAFT_REVIEW_ONLY`, PHX-MASTER target `null`; source baseline main `f4e8a891...`, destination candidate #26 `b382d233...`.
+- `Pisowifi/SOURCE_INTAKE.json` blob `1b9018ff944f7f673934d0fc2a97e0a0090d3f5f`; `Pisowifi/MIGRATION_MAP.md` blob `b54fc15d83bc2269de03db8aadd0e76259fd13d9`.
+- 61 runtime rows: 61/61 historical source blobs resolve at source commit `6d4c9b...`; 61/61 destination blobs resolve at COE #26; 61/61 file modes match; no missing runtime row. Row-level comparison yields **46 byte-identical / 15 derived**, but SOURCE_INTAKE summary records **47 / 14**. This one-file summary discrepancy remains unresolved.
+- Only 33/61 historical source blobs still match current Experiments main; 28/61 have drifted from current main. Historical source and current main must not be silently conflated.
+- Four original test rows resolve source/destination blobs and modes exactly: config/integration are intentionally edited; portal/security are byte-identical. SOURCE_INTAKE lists 15 derived test fixtures, while MIGRATION_MAP has 14 derived-test rows. `voucher_txn_journal.sh` is present in SOURCE_INTAKE but absent from MIGRATION_MAP. The map's `run_focus.sh` blob `fa1f4f2c...` differs from actual destination `2b7b861e...`; `member_txn_journal.sh` recorded `01dc9c65...` differs from actual `d04df3c6...`.
+- License/NOTICE recheck: first-party `Pisowifi/LICENSE` matches source blob `1ee55b94...`; QRCode LICENSE matches `150770c0...`; TailAdmin NOTICE matches `f0425bbb...`. Source root `NOTICE.md` exists but COE #26 root NOTICE is absent. Source Tabler LICENSE (`22ee8122...`) and Android Launcher LICENSE (`c5b1efa7...`) have no reviewed destination counterparts at the expected paths.
+- COE #26 remains OPEN / DRAFT / FROZEN. Its five workflows have zero jobs; no destination CI acceptance exists.
+
+**Migration decision:** no path was staged, copied, moved, overwritten, cherry-picked, rebased, retargeted or promoted. Do not use the SOURCE_INTAKE summary as an authoritative aggregate until it agrees with row-level blob classification and MIGRATION_MAP. Correct the manifest/map in the COE owner branch, preserve source history, and obtain exact-head CI plus owner/QA approval before any move.

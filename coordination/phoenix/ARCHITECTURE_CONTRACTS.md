@@ -1561,3 +1561,30 @@ This supersedes the historical stale Hardware-pin finding in §6.86. The exact-s
 
 The compatibility PASS is firmware-source-scoped hosted CI only. It does not imply a successful integrated Full build, signed release, production binary, financial migration, hardware acceptance, real power-cut evidence or customer readiness. PR #291 remains DRAFT / UNMERGED. **PRODUCTION NO-GO.**
 
+
+
+## 6.89 Role/hour checkpoint idempotency and delayed activations
+
+- The deduplication key is **role ID + scheduled UTC hour**, not the time at which a delayed automation actually starts or finishes.
+- Put the scheduled slot in the stable BLAZE-COMMS `message_id`; put the actual write time in `updated_utc`. These fields must not be conflated.
+- Before posting, inspect the live control-plane comments and current PR checkpoint. If the same role already has a checkpoint for that scheduled UTC hour, update that comment in place; do not create a second lock or a second checkpoint.
+- A delayed/retried activation resumes the original scheduled slot. It must not claim a later UTC hour merely because the wall clock crossed the boundary while the task was queued.
+- A PR conversation comment is supporting evidence, not a substitute for the one canonical control-plane issue checkpoint. Keep exactly one BLAZE-COMMS/1 issue checkpoint per role and scheduled UTC hour.
+- If no source/document delta exists, perform a read-only reconciliation and update the existing same-hour checkpoint; do not create a no-op commit. If a delta exists, preserve history and make one fast-forward commit on the existing role branch.
+- A checkpoint is VERIFIED only after remote readback of its comment ID/body, exact branch/commit, and linked evidence. Never claim a future activation or background work that has not actually run.
+
+## 6.90 Cross-repository migration evidence tuple and fail-closed staging
+
+For every proposed mapped file, record and compare the complete evidence tuple:
+
+`(source repository, source commit, source path, source blob, source mode; destination repository, destination commit, destination path, destination blob, destination mode)`.
+
+1. Resolve every recorded source and destination blob against the exact source and destination trees. Compare file modes as well as blob IDs; missing paths or unresolved blobs are blockers.
+2. Distinguish the historical source commit recorded by an intake manifest from current source main. A historical blob that has drifted from current main is not silently “current” and must not be overwritten by a broad recursive copy.
+3. Recompute aggregate identical/derived counts from the row-level tuples. A recorded summary that disagrees with computed rows is a migration blocker until corrected in the owning destination branch.
+4. Verify original test identities, derived-test inventories, exact CI at the candidate SHA, import completeness, license files, NOTICE files, and owner-approved path mapping independently. Missing derived-test rows or stale test blob IDs block integration even if runtime files resolve.
+5. A green workflow on another branch, parent, historical source pin, or docs-only successor does not qualify the candidate. Record the exact source/test SHA separately from a later handover/docs HEAD.
+6. `DRAFT_REVIEW_ONLY` and `manual-file-mapping-required` are hard holds, not copy permission. Review the staged destination tree before proposing a move; do not stage/copy/move/overwrite/rebase/cherry-pick until per-file provenance, licenses, tests, exact-head CI and owner authorization all agree.
+7. PHX-MASTER's route target remains `null`; Master coordinates provenance and integration but does not own subsystem source or destination files.
+
+These controls preserve a human-auditable chain from original source blob through destination import and exact test evidence. Missing or contradictory evidence remains UNKNOWN/BLOCKED, never PASS by inference.

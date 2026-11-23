@@ -831,3 +831,8 @@ Both historical reports were already indexed in the earlier sections above; UTC0
 
 - [PHX-MASTER UTC13 Hardware #347 final-head CI and live role matrix reconciliation](PHX_MASTER_UTC13_20261123_HARDWARE347_FINAL_HEAD_CI_AND_ROLE_MATRIX_RECONCILIATION.md) — exact PR/branch/CI re-read, #347 test-source anchor drift, stale #346 sibling disposition, current owner CI and COE migration hold.
 - The starting index inventory was 103 reports / 103 unique links. This new report is added once; post-commit tree/index validation is required before claiming final coverage.
+
+
+## 2026-11-23 — PHX-MASTER scheduled UTC17 continuation
+
+- [PHX-MASTER UTC17 — exact owner CI, COE #26 row-level blob/licence/test provenance and checkpoint-idempotency audit](PHX_MASTER_UTC17_20261123_ROLE_CI_COE26_BLOB_AND_COE35_EXACT_HEAD_REAUDIT.md) — starting Master head `3d4226bb...`; exact COE #26 source/destination refs; new §6.89–§6.90 controls; PR #288 remains draft and COE #26 frozen.

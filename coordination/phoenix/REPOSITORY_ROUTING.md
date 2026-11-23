@@ -1593,3 +1593,14 @@ COE #35 remains blocked by missing approved site-scoped RFC 4193 ULA /48 and una
 
 **Review-before-move hold:** no source/destination file was staged, copied, moved, overwritten, cherry-picked, rebased, retargeted or promoted. No source ownership, destination ownership or route permission changed. PHX-MASTER remains coordination-only. Private Drive registry contents and identifiers remain private and unavailable to this run.
 
+
+
+## PHX-MASTER UTC17 route and migration hold — 2026-11-23
+
+The live routing manifest remains `coordination/phoenix/OWNERSHIP_ROUTES.json@e4db324315a1b3543fec17a148fbf960170fcb29`: 11 routes, `DRAFT_REVIEW_ONLY`, PHX-MASTER target `null`. No route was changed. The COE integration candidate remains #26 at `b382d233ff06c8791b1028bed3c617cc7b670d12`, based on COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; source baseline is Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`.
+
+Exact intake/map blobs at #26: `SOURCE_INTAKE.json@1b9018ff944f7f673934d0fc2a97e0a0090d3f5f`; `MIGRATION_MAP.md@b54fc15d83bc2269de03db8aadd0e76259fd13d9`. The 61 runtime tuples resolve completely against historical source commit `6d4c9b487af4d768c4d7627654d119417fcc6e00` and destination #26, with identical modes; row-level count is 46 byte-identical / 15 derived, not the recorded 47 / 14. The current main has drifted from 28 of the 61 historical source blobs. The derived-test list has 15 entries, the map has 14, omits `voucher_txn_journal.sh`, and records stale blob IDs for `run_focus.sh` and `member_txn_journal.sh`.
+
+License/NOTICE state at the exact candidate: first-party PisoWiFi LICENSE, QRCode LICENSE and TailAdmin NOTICE match their source blobs; root NOTICE, Tabler LICENSE and Android Launcher LICENSE are absent from reviewed destination paths. The four original test rows resolve their source/destination blobs and modes; two are intentionally edited and two remain byte-identical. Five candidate workflows are queued with zero jobs.
+
+**Routing decision:** retain FROZEN / DRAFT_REVIEW_ONLY. No copy, stage, move, overwrite, cherry-pick, rebase, retarget or destination modification. The owning COE integration role must reconcile the row summary, test inventory, stale test blobs and licensing before requesting independent review. PHX-MASTER coordinates provenance only; it does not take over CORE/RENTAL/PISONET/HARDWARE/QA/RELEASE source branches.

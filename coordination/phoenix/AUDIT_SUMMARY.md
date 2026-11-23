@@ -2478,3 +2478,23 @@ The ownership manifest remains 11 routes / `DRAFT_REVIEW_ONLY` / PHX-MASTER dest
 
 **Disposition:** no subsystem source modifications, no COE destination modifications, no ownership transfers, no merge/release/flash/signing/secret/payment/physical test. **PRODUCTION NO-GO** pending independent protected signer/anti-rollback witness, crash-atomic durable financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized gates.
 
+
+
+## PHX-MASTER UTC17 — exact owner CI and COE #26 row-level provenance re-audit (2026-11-23; observed 18:32Z)
+
+**Starting Master head:** `phoenix/master-coordination@3d4226bbff276a26066b3cb04e520b6eba252110`, based on Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`. Development remains `blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5`. COE main remains `a6513ab4412b4c014eee2863e45cbe32d06cb243`; integration #26 remains `b382d233ff06c8791b1028bed3c617cc7b670d12`.
+
+**Master work:** appended the exact-head owner/CI snapshot, row-level migration findings, and contracts §6.89–§6.90 to existing coordination files; added one indexed report. No subsystem source, test, firmware, payment, or COE destination file changed. #288's 189 existing paths were all under `coordination/phoenix/`; Master Actions at the starting head had zero runs/statuses.
+
+**New integration findings:**
+- HARDWARE #347 source/test SHA `865d56f58e22e8a44dc45f15ea350ecb6ca035af` is distinct from docs/PR head `4f64f19b8304e2e8e40ba422417d64ddea9837d4`. Its focused Quarantine/Relay checks pass; Full remains blocked by the inherited poll-signature assertion. The PR body still names older test SHA `275057aa...`.
+- RELEASE #291 still pins Hardware `275057aa...`; current #347 source/test `865d56f...` is 11 commits ahead / 0 behind and changes four Hardware paths. The old 3/3 compatibility pass is not current #347 evidence.
+- COE RELEASE #35 latest docs/source-test heads are `151a6fab...` / `5b6a8a74...`. Shared suite is 202 PASS / 2 skips, then 10/10 profiles fail closed for missing approved ULA /48. Sandbox host suite is 40/40 PASS, then Bubblewrap is absent (exit 125). Case-collision passes.
+- COE #26 exact row-level audit confirms 61/61 historical source blobs, 61/61 destination blobs and 61/61 modes; computed runtime classification is 46 identical / 15 derived, while SOURCE_INTAKE records 47 / 14. Derived tests are 15 in SOURCE_INTAKE versus 14 in MIGRATION_MAP; `voucher_txn_journal.sh` is omitted and two map test blob IDs are stale.
+- First-party PisoWiFi and QRCode licenses and TailAdmin NOTICE match exact source blobs; root NOTICE, Tabler LICENSE and Android Launcher LICENSE have no reviewed destination counterparts.
+
+**Validation:** complete recursive trees and exact Git blobs were inspected; JavaScript static checks recomputed migration rows and report-index uniqueness. Full Master Python suite and `verify_coordination.py` were NOT RUN. COE #26's five workflows remain QUEUED / zero jobs.
+
+**Governance:** cleanup #266 OPEN / 0-of-7; canonical private Drive registry v11/newer corrections unavailable because no Google Drive connector is exposed. The public cloud-artifact policy and storage handover were read; policy requires BLOCKED, not a simulated Drive upload. No older registry snapshot was substituted.
+
+**Disposition:** PR #288 remains OPEN / DRAFT / UNMERGED; COE #26 remains FROZEN; PRODUCTION NO-GO. No move, merge, release, signing, flash, physical test, payment operation, or customer cutover occurred.
