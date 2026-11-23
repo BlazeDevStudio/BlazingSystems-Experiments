@@ -27,6 +27,7 @@ from poll_loop_blocking_inhibit_lab_fixtures import (
     SUPPORT,
     MAIN,
     COIN_POST_ISR_MAIN,
+    POLL_HTTP_ISR_MAIN,
     PENDING_PRESERVATION_MAIN,
     RACE_MAIN,
     post_drain_rollover_main,
@@ -449,6 +450,35 @@ for board,path in BOARDS.items():
     if "COIN_POST_ISR_MULTI_EDGE_ROLLOVER_RETAINED_PASS" not in coin_post_output:
         raise AssertionError(f"{board}: coin-POST ISR rollover marker missing")
     print(f"{board} COIN_POST_ISR_MULTI_EDGE_ROLLOVER_RETAINED_PASS")
+
+    poll_http_output=compile_and_run(
+        assemble(main_source=POLL_HTTP_ISR_MAIN),
+        board,0,"poll-http-isr-multi-edge-rollover"
+    )
+    if "POLL_HTTP_ISR_MULTI_EDGE_ROLLOVER_RETAINED_PASS" not in poll_http_output:
+        raise AssertionError(f"{board}: blocked-poll ISR rollover marker missing")
+    print(f"{board} POLL_HTTP_ISR_MULTI_EDGE_ROLLOVER_RETAINED_PASS")
+
+    # The post-HTTP ISR delta must be durably latched before the ordinary input sample.
+    poll_reconcile_anchor="if(pollEdgeEnd!=pollEdgeStart){"
+    poll_reconcile_mutation=loop.replace(poll_reconcile_anchor,"if(false){",1)
+    if poll_reconcile_mutation==loop:
+        raise AssertionError(f"{board}: post-HTTP poll-edge reconciliation mutation anchor missing")
+    compile_and_run(
+        assemble(loop_source=poll_reconcile_mutation,main_source=POLL_HTTP_ISR_MAIN),
+        board,88,"poll-http-missing-post-response-edge-reconciliation"
+    )
+    print(f"{board} MUTATION_REJECTED poll-http-missing-post-response-edge-reconciliation expected_exit=88")
+
+    # The real relay/LED gate must remain inhibited for the entire blocking HTTP call.
+    poll_output_mutation=output.replace("!pollIntakeSuspended &&","true &&",1)
+    if poll_output_mutation==output:
+        raise AssertionError(f"{board}: poll-intake output gate mutation anchor missing")
+    compile_and_run(
+        assemble(output_source=poll_output_mutation,main_source=POLL_HTTP_ISR_MAIN),
+        board,88,"poll-http-output-gate-ignores-intake-inhibit"
+    )
+    print(f"{board} MUTATION_REJECTED poll-http-output-gate-ignores-intake-inhibit expected_exit=88")
 
     coin_post_attach_anchor=(
         "attachInterrupt(digitalPinToInterrupt(runCoinPin),coinEdgeISR,"
