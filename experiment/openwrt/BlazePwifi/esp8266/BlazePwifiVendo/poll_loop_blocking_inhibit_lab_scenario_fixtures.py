@@ -106,6 +106,29 @@ bool pendingJournalFixturePreserved(const std::string &expectedBytes) {
   return found != LittleFS.files.end() && found->second == expectedBytes;
 }
 
+const std::map<std::string,std::string> PENDING_EVIDENCE_FIXTURE_FILES = {
+  {"/pending.dat","PHX-PENDING-DAT-OPAQUE-v1|pulses=2|target=pending-target|nonce=pending-nonce"},
+  {"/pending.new","PHX-PENDING-NEW-OPAQUE-v1|candidate=uncommitted"},
+  {"/pending.bak","PHX-PENDING-BAK-OPAQUE-v1|candidate=previous"},
+  {"/pending.attempt","PHX-PENDING-ATTEMPT-OPAQUE-v1|attempted=1|target=pending-target|nonce=pending-nonce"}
+};
+
+std::map<std::string,std::string> seedPendingEvidenceFixture() {
+  for (const auto &entry : PENDING_EVIDENCE_FIXTURE_FILES) {
+    LittleFS.files[entry.first] = entry.second;
+  }
+  return PENDING_EVIDENCE_FIXTURE_FILES;
+}
+
+bool pendingEvidenceFixturePreserved(
+    const std::map<std::string,std::string> &expectedFiles) {
+  for (const auto &expected : expectedFiles) {
+    const auto found = LittleFS.files.find(expected.first);
+    if (found == LittleFS.files.end() || found->second != expected.second) return false;
+  }
+  return true;
+}
+
 int runDisabledIngressPendingCase(bool disableController, bool disableCoin, bool disableRelay,
                                   bool injectIsrEdge, int failureCode, const char *passMarker){
   resetState();
@@ -172,6 +195,39 @@ int runDisabledIngressPendingMultiEdgeCase(bool disableController, bool disableC
   if(fault.find("COIN_INGRESS_UNRESOLVED")==std::string::npos ||
      fault.find("pulses="+std::to_string(expectedFaultPulses))==std::string::npos)
     return failureCode;
+  std::cout<<passMarker<<std::endl;
+  return 0;
+}
+
+
+int runAttemptedPendingEvidenceCase(bool disableController, bool disableCoin, bool disableRelay,
+                                    bool injectIsrEdge, int failureCode, const char *passMarker){
+  resetState();
+  // Deliberately model opaque recovery evidence for an already-attempted event,
+  // including alternate journal candidates. This checks preservation only; it
+  // does not parse or bless any PendingRecord serialization or recovery choice.
+  const auto pendingEvidenceFiles=seedPendingEvidenceFixture();
+  pendingPulses=2U;
+  pendingReady=true;
+  pendingTarget="pending-target";
+  pendingNonce="pending-nonce";
+  pendingPostAttempted=true;
+  if(disableController) controllerEnabled=false;
+  if(disableCoin) coinEnabled=false;
+  if(disableRelay) relayEnabled=false;
+  applyOutputs();
+  if(relayOn || ledOn) return failureCode+14;
+  if(injectIsrEdge) coinEdgeSequence=1U;
+  sampleCoinPulseEdge(true);
+  if(!journalRecoveryRequired || pendingPulses!=2U || !pendingReady ||
+     !pendingPostAttempted || pendingTarget!="pending-target" ||
+     pendingNonce!="pending-nonce" || saveCalls!=0 ||
+     !pendingEvidenceFixturePreserved(pendingEvidenceFiles) ||
+     !LittleFS.exists("/pollpulse.fault") || relayOn || ledOn ||
+     insertMode || !activeTarget.empty()) return failureCode;
+  const std::string fault=LittleFS.files["/pollpulse.fault"];
+  if(fault.find("COIN_INGRESS_UNRESOLVED")==std::string::npos ||
+     fault.find("pulses=3")==std::string::npos) return failureCode;
   std::cout<<passMarker<<std::endl;
   return 0;
 }
@@ -491,6 +547,25 @@ int main(){
       "POLL_DISABLED_CONTROLLER_MULTI_ISR_PENDING_IDENTITY_PRESERVED_PASS");
   if(result) return result;
   std::cout<<"POLL_DISABLED_INGRESS_PENDING_IDENTITY_PRESERVATION_PASS 9/9"<<std::endl;
+  int attemptedEvidenceResult=runAttemptedPendingEvidenceCase(false,false,true,false,82,
+      "POLL_DISABLED_RELAY_ATTEMPTED_EVIDENCE_PRESERVED_PASS");
+  if(attemptedEvidenceResult) return attemptedEvidenceResult;
+  attemptedEvidenceResult=runAttemptedPendingEvidenceCase(false,false,true,true,83,
+      "POLL_DISABLED_RELAY_ISR_ATTEMPTED_EVIDENCE_PRESERVED_PASS");
+  if(attemptedEvidenceResult) return attemptedEvidenceResult;
+  attemptedEvidenceResult=runAttemptedPendingEvidenceCase(false,true,false,false,84,
+      "POLL_DISABLED_COIN_ATTEMPTED_EVIDENCE_PRESERVED_PASS");
+  if(attemptedEvidenceResult) return attemptedEvidenceResult;
+  attemptedEvidenceResult=runAttemptedPendingEvidenceCase(false,true,false,true,85,
+      "POLL_DISABLED_COIN_ISR_ATTEMPTED_EVIDENCE_PRESERVED_PASS");
+  if(attemptedEvidenceResult) return attemptedEvidenceResult;
+  attemptedEvidenceResult=runAttemptedPendingEvidenceCase(true,false,false,false,86,
+      "POLL_DISABLED_CONTROLLER_ATTEMPTED_EVIDENCE_PRESERVED_PASS");
+  if(attemptedEvidenceResult) return attemptedEvidenceResult;
+  attemptedEvidenceResult=runAttemptedPendingEvidenceCase(true,false,false,true,87,
+      "POLL_DISABLED_CONTROLLER_ISR_ATTEMPTED_EVIDENCE_PRESERVED_PASS");
+  if(attemptedEvidenceResult) return attemptedEvidenceResult;
+  std::cout<<"POLL_DISABLED_INGRESS_ATTEMPTED_EVIDENCE_PRESERVATION_PASS 6/6"<<std::endl;
   return 0;
 }
 """

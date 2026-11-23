@@ -344,18 +344,48 @@ for board,path in BOARDS.items():
     )
     print(f"{board} MUTATION_REJECTED disabled-intake-pending-identity expected_exit=66")
 
-    pending_journal_mutation = latch_fault.replace(
+    pending_evidence_paths = (
+        "/pending.dat",
+        "/pending.new",
+        "/pending.bak",
+        "/pending.attempt",
+    )
+    for evidence_path in pending_evidence_paths:
+        pending_evidence_mutation = latch_fault.replace(
+            'activeTarget="";',
+            f'activeTarget=""; LittleFS.files.erase("{evidence_path}");',
+            1,
+        )
+        if pending_evidence_mutation == latch_fault:
+            raise AssertionError(
+                f"{board}: pending evidence deletion mutation anchor missing for {evidence_path}"
+            )
+        compile_and_run(
+            assemble(latch_fault_source=pending_evidence_mutation,
+                     main_source=PENDING_PRESERVATION_MAIN),
+            board,82,f"disabled-intake-pending-evidence-preservation-{evidence_path}"
+        )
+        print(
+            f"{board} MUTATION_REJECTED disabled-intake-pending-evidence-preservation "
+            f"path={evidence_path} expected_exit=82"
+        )
+
+    pending_attempt_state_mutation = latch_fault.replace(
         'activeTarget="";',
-        'activeTarget=""; LittleFS.files.erase("/pending.dat");',
+        'activeTarget=""; pendingPostAttempted=false;',
         1,
     )
-    if pending_journal_mutation == latch_fault:
-        raise AssertionError(f"{board}: pending journal deletion mutation anchor missing")
+    if pending_attempt_state_mutation == latch_fault:
+        raise AssertionError(f"{board}: pending attempt-state mutation anchor missing")
     compile_and_run(
-        assemble(latch_fault_source=pending_journal_mutation,main_source=PENDING_PRESERVATION_MAIN),
-        board,66,"disabled-intake-pending-journal-preservation"
+        assemble(latch_fault_source=pending_attempt_state_mutation,
+                 main_source=PENDING_PRESERVATION_MAIN),
+        board,82,"disabled-intake-pending-attempt-state-preservation"
     )
-    print(f"{board} MUTATION_REJECTED disabled-intake-pending-journal-preservation expected_exit=66")
+    print(
+        f"{board} MUTATION_REJECTED disabled-intake-pending-attempt-state-preservation "
+        "expected_exit=82"
+    )
 
     pending_edge_delta_mutation = sample.replace(
         "latchPollPulseFault((uint32_t)pendingPulses+unseenEdges);",
