@@ -1639,3 +1639,14 @@ The prior exact #26 61-row blob/mode/test/license comparison remains the applica
 **Branch authority:** issue #172 points to v0.5.3 development, while the main product handover points to v0.6.0; PR #30 is closed/unmerged and the v0.6 branch has advanced separately. CORE must select and document the canonical product development ref. MASTER does not change worker branches or handovers.
 
 **Review-before-move hold:** no source/destination file was staged, copied, moved, overwritten, cherry-picked, rebased, retargeted or promoted. The private Drive v11 registry was unavailable, so no new artifact or folder was created.
+
+
+## PHX-MASTER UTC22 exact Hardware destination-route review — 2026-11-23
+
+The machine-readable route manifest is unchanged at blob `e4db324315a1b3543fec17a148fbf960170fcb29`: 11 routes, `DRAFT_REVIEW_ONLY`, PHX-MASTER source `coordination/phoenix/`, destination null. The Hardware directory prefixes remain selective-review routes only; they do not prove file completeness or authorize recursive copying.
+
+At Experiments HARDWARE #347 head `e69a3d715aca6724dd0390e925e48a7510009ab1` vs frozen COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`, the ESP8266 sketch blobs differ (`fa8ed828...` vs `c8be98f7...`) and ESP32 sketch blobs differ (`717336b8...` vs `3cc7ec54...`). All four file modes are `100644`. The source board directories contain 38 Python files; the destination board directories contain zero. The destination's generic `Hardware/tests/test_firmware_hardening.sh` is blob `f921c56c...`, while the source `v05_firmware_hardening_test.sh` is `41211b2c...`; both retain positive poll-signature checks that conflict with the current source default-deny state and the Full CI failure.
+
+The source root `NOTICE.md` is present (blob `f6d92cd2...`); COE #26 has no root `NOTICE.md`. Existing COE PisoWiFi / QRCode / TailAdmin license files are not a substitute for a complete per-file dependency notice review. COE #26 still has five queued workflows / zero jobs.
+
+**Review-before-move hold:** no route target, copy permission, owner, or destination path changed. No source/destination file was staged, copied, moved, overwritten, cherry-picked, rebased, retargeted or promoted. Integration owner must provide a per-file source/test/license map and exact-head destination CI before any migration proposal.
