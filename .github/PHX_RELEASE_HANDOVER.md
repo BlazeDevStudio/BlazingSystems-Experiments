@@ -3157,3 +3157,14 @@ The exact-source ESP32 matrix is green; the integrated Full and Windows workflow
 - Canonical private Drive registry v11 was not surfaced through authorized Library search. Older v3-v7 snapshots were not substituted.
 
 No source outside RELEASE-owned compatibility tests/workflow/handover was changed by this increment. No merge, rebase, force-push, signing, tagging, publication, hardware flashing, financial migration or customer deployment. Protected signer, independent freshness witness, durable financial accounting/migration, independent QA/MASTER approval, approved production binaries, 150 physical power cuts and 30-device/24-hour soak remain unproven or NOT TESTED. **PRODUCTION NO-GO.**
+
+## UTC15 — current COE #35 exact-head packaging gate refresh
+
+The previous COE #35 snapshot in this handover referred to an older child head. Current readback:
+
+- COE #35 final head: `4234ee00b1fbb02167a977383a737fe5f3917e3a`, OPEN / DRAFT / UNMERGED.
+- Shared/firmware run [#45174042588](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45174042588): **OVERALL FAILURE**. RELEASE-owned manifest/packaging tests completed **199 PASS / 2 intentional skips**; the subsequent profile-admission gate rejected **10/10** profiles because no approved site-scoped RFC 4193 ULA /48 authority is defined. ESP32/ESP8266 compile jobs were **SKIPPED** after the gate.
+- Sandbox run [#45174042599](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45174042599): host preflight **39/39 PASS**; Bubblewrap is absent on the hosted runner, exit 125. Namespace and mandatory sandbox packaging tests were **SKIPPED**, not passed.
+- Case-collision guard [#45174042568](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45174042568): **PASS**.
+
+The #35 child remains a separate COE packaging draft and does not unfreeze integration #26. PHX-RELEASE must not invent the ULA prefix or weaken the admission gate. The actionable dependencies remain approved site-scoped ULA authority from PHX-CORE/MASTER and a disposable runner with a functioning unprivileged Bubblewrap namespace from PHX-INFRA/COE. No COE file was changed by this Experiments handover update.
