@@ -2377,3 +2377,14 @@ Branch metadata reports protection disabled for Experiments main/development/Mas
 
 **Testing:** static index/tree and PR-scope checks PASS. Full Master test suite and `verify_coordination.py` NOT RUN; no local checkout or Master CI execution is claimed.  
 **Safety:** no merge, release, signer, secret, flash, physical test, real payment or migration. **PRODUCTION NO-GO.**
+
+
+## PHX-MASTER UTC09 — COE #35 exact-head correction and live CI
+
+Observed 2026-11-23T09:40:15Z. Current Master started at `876051f1b7c3c0a13a2c322c5a127306d0908b21`; Experiments main is `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`, development is `aad3aade72c1156eecba1fed30907c6d0283b2c5`, COE main is `a6513ab4412b4c014eee2863e45cbe32d06cb243`, and COE integration #26 is `b382d233ff06c8791b1028bed3c617cc7b670d12`.
+
+The material delta is COE RELEASE #35: current head `9b300ea18886c11447ff6f0891d4ed9147454881` now has exact-head CI. Sandbox host tests are 39/39 PASS but the job exits 125 because Bubblewrap is absent. Shared/firmware reports 195 PASS / 2 intentional skips, then correctly fails closed on all ten appliance profiles because the approved site ULA /48 is not configured. Case-collision passes. The previous UTC08 “no runs at ede91…” statement is historical only.
+
+All other owner PR heads and the exact CI results are recorded in the UTC09 table in `ROLE_ASSIGNMENTS.md`. HARDWARE #345 Full still fails at the inherited QA-owned poll-signature assertion; RELEASE #291 still fails archive/freshness gates. COE #26 remains frozen and the 11-route manifest remains `DRAFT_REVIEW_ONLY`, Master destination null.
+
+Cleanup #266 remains OPEN / 0-of-7. Canonical private Drive v11 and newer corrections remain unavailable because no Google Drive connector is exposed; older Library snapshots/checkpoints were not substituted. Master Actions/statuses remain empty; full Master suite and `verify_coordination.py` were NOT RUN. No subsystem or destination files changed. **PRODUCTION NO-GO.**
