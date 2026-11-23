@@ -1,10 +1,9 @@
-"""Source-exact host regression for pending-journal reclamation failures.
+"""Source-exact host regression for pending-journal reclamation and quarantine failures.
 
-This isolates clearPending() from GPIO/network behavior. The lab extracts the
-production clearPending(), samePendingRecord(), and pendingAttemptMarkerMatches()
-helpers unchanged. readPendingFile() and LittleFS remain explicit test adapters:
-they model record-read failures and identity changes, not serialized bytes,
-LittleFS wear, power loss, or physical durability.
+This isolates clearPending() and quarantinePending() from GPIO/network behavior.
+The lab extracts production helpers unchanged. readPendingFile(), appendQuarantineRecord()
+and LittleFS remain explicit test adapters: they model record-read, append and
+removal failures, not serialized bytes, LittleFS wear, power loss, or durability.
 """
 
 CLEAR_PENDING_STUBS = r"""
@@ -43,6 +42,7 @@ struct FakeLittleFS {
 
 struct SerialStub {
   void println(const char *message) { (void)message; }
+  void println(const String &message) { (void)message; }
 } Serial;
 
 bool fsReady = true;
@@ -247,12 +247,66 @@ int main() {
 }
 """
 
+
+QUARANTINE_PENDING_STUBS = r"""
+bool appendQuarantineShouldFail = true;
+unsigned appendQuarantineCalls = 0U;
+
+bool appendQuarantineRecord(const String &reason) {
+  (void)reason;
+  ++appendQuarantineCalls;
+  return !appendQuarantineShouldFail;
+}
+"""
+
+QUARANTINE_PENDING_MAIN = r"""
+int main() {
+  resetState();
+  appendQuarantineShouldFail = true;
+  appendQuarantineCalls = 0U;
+  if(quarantinePending("controller rejected") || !journalRecoveryRequired ||
+     !pendingRamIdentityPreserved() ||
+     !pendingAndAttemptBytesPreserved() ||
+     appendQuarantineCalls != 1U) return 110;
+  std::cout << "QUARANTINE_APPEND_FAILURE_PRESERVES_PENDING_AND_ATTEMPT_PASS\\n";
+
+  resetState();
+  appendQuarantineShouldFail = false;
+  appendQuarantineCalls = 0U;
+  if(!quarantinePending("controller rejected") || journalRecoveryRequired ||
+     pendingPulses != 0U || pendingReady || pendingPostAttempted ||
+     !pendingNonce.empty() || !pendingTarget.empty() ||
+     LittleFS.exists("/pending.dat") || LittleFS.exists("/pending.attempt") ||
+     appendQuarantineCalls != 1U) return 111;
+  std::cout << "QUARANTINE_APPEND_SUCCESS_CLEAR_CONTROL_PASS\\n";
+
+  resetState();
+  appendQuarantineShouldFail = true;
+  appendQuarantineCalls = 0U;
+  pendingPulses = 0U;
+  if(quarantinePending("controller rejected") || !journalRecoveryRequired ||
+     !pendingAndAttemptBytesPreserved() || appendQuarantineCalls != 0U) return 112;
+  std::cout << "QUARANTINE_MISSING_PENDING_DENIED_PASS\\n";
+
+  resetState();
+  appendQuarantineShouldFail = true;
+  appendQuarantineCalls = 0U;
+  mismatchAttemptRecord = true;
+  if(quarantinePending("controller rejected") || !journalRecoveryRequired ||
+     !pendingAndAttemptBytesPreserved() || appendQuarantineCalls != 0U) return 113;
+  std::cout << "QUARANTINE_MISMATCHED_ATTEMPT_DENIED_PASS\\n";
+  std::cout << "QUARANTINE_DISPOSITION_FAILURE_INJECTION_PASS 1/1 plus 2 preconditions and success control\\n";
+  return 0;
+}
+"""
+
 def run_pending_clear_failure_lab(
     board,
     clear_pending_source,
     same_pending_record_source,
     load_pending_source,
     pending_attempt_marker_matches_source,
+    quarantine_pending_source,
     compile_and_run,
 ):
     """Compile exact production helpers and reject fail-open reclamation mutations."""
@@ -261,6 +315,7 @@ def run_pending_clear_failure_lab(
         "loadPending": load_pending_source,
         "samePendingRecord": same_pending_record_source,
         "pendingAttemptMarkerMatches": pending_attempt_marker_matches_source,
+        "quarantinePending": quarantine_pending_source,
     }
     for name, source in sources.items():
         if not source:
@@ -426,7 +481,105 @@ def run_pending_clear_failure_lab(
         99,
         clear_source=candidate_count_mutation,
     )
+
     print(
         f"{board} MUTATION_REJECTED pending-clear-ignores-ambiguous-journal-candidates "
         "expected_exit=99"
+    )
+
+    def compile_quarantine_case(label, expected=0, quarantine_source=None):
+        selected_quarantine = (
+            quarantine_source
+            if quarantine_source is not None
+            else quarantine_pending_source
+        )
+        program = (
+            CLEAR_PENDING_STUBS
+            + QUARANTINE_PENDING_STUBS
+            + "\\n"
+            + same_pending_record_source
+            + "\\n"
+            + pending_attempt_marker_matches_source
+            + "\\n"
+            + clear_pending_source
+            + "\\n"
+            + selected_quarantine
+            + "\\n"
+            + QUARANTINE_PENDING_MAIN
+        )
+        return compile_and_run(program, board, expected, label)
+
+    quarantine_baseline = compile_quarantine_case(
+        "quarantine-append-failure-preservation"
+    )
+    quarantine_markers = (
+        "QUARANTINE_APPEND_FAILURE_PRESERVES_PENDING_AND_ATTEMPT_PASS",
+        "QUARANTINE_APPEND_SUCCESS_CLEAR_CONTROL_PASS",
+        "QUARANTINE_MISSING_PENDING_DENIED_PASS",
+        "QUARANTINE_MISMATCHED_ATTEMPT_DENIED_PASS",
+        "QUARANTINE_DISPOSITION_FAILURE_INJECTION_PASS 1/1",
+    )
+    for marker in quarantine_markers:
+        if marker not in quarantine_baseline:
+            raise AssertionError(
+                f"{board}: quarantine disposition baseline marker missing: {marker}"
+            )
+    print(f"{board} {quarantine_baseline}")
+
+    append_guard_anchor = "if(!appendQuarantineRecord(reason)){"
+    append_guard_mutation = quarantine_pending_source.replace(
+        append_guard_anchor,
+        "if(false){",
+        1,
+    )
+    if append_guard_mutation == quarantine_pending_source:
+        raise AssertionError(f"{board}: quarantine append-failure guard mutation anchor missing")
+    compile_quarantine_case(
+        "quarantine-append-failure-clears-pending",
+        110,
+        quarantine_source=append_guard_mutation,
+    )
+    print(
+        f"{board} MUTATION_REJECTED quarantine-append-failure-clears-pending "
+        "expected_exit=110"
+    )
+
+    append_latch_anchor = (
+        'journalRecoveryRequired=true;\\n'
+        '    Serial.println("CRITICAL: quarantine journal commit failed; pending coin retained and relay disabled.");'
+    )
+    append_latch_mutation = quarantine_pending_source.replace(
+        append_latch_anchor,
+        'journalRecoveryRequired=false;\\n'
+        '    Serial.println("CRITICAL: quarantine journal commit failed; pending coin retained and relay disabled.");',
+        1,
+    )
+    if append_latch_mutation == quarantine_pending_source:
+        raise AssertionError(f"{board}: quarantine append-failure latch mutation anchor missing")
+    compile_quarantine_case(
+        "quarantine-append-failure-without-recovery-latch",
+        110,
+        quarantine_source=append_latch_mutation,
+    )
+    print(
+        f"{board} MUTATION_REJECTED quarantine-append-failure-without-recovery-latch "
+        "expected_exit=110"
+    )
+
+    attempt_gate_anchor = "if(!pendingAttemptMarkerMatches()){"
+    attempt_gate_mutation = quarantine_pending_source.replace(
+        attempt_gate_anchor,
+        "if(false){",
+        1,
+    )
+    if attempt_gate_mutation == quarantine_pending_source:
+        raise AssertionError(f"{board}: quarantine attempt-marker guard mutation anchor missing")
+    compile_quarantine_case(
+        "quarantine-without-matching-attempt-marker",
+        113,
+        quarantine_source=attempt_gate_mutation,
+    )
+    print(
+        f"{board} MUTATION_REJECTED quarantine-without-matching-attempt-marker "
+        "expected_exit=113"
     )

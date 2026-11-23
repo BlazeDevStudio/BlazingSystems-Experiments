@@ -105,6 +105,7 @@ POLL_SAFETY_PARITY = (
     "markPendingPostAttempt",
     "pendingAttemptMarkerMatches",
     "clearPending",
+    "quarantinePending",
 )
 
 
@@ -115,6 +116,7 @@ REQUIRED_COIN_AUTHORITY_PARITY = (
     "markPendingPostAttempt",
     "pendingAttemptMarkerMatches",
     "clearPending",
+    "quarantinePending",
 )
 missing_coin_authority_helpers = [
     name for name in REQUIRED_COIN_AUTHORITY_PARITY
@@ -195,6 +197,7 @@ def verify_poll_safety_board_parity():
         ("markPendingPostAttempt", 'if(LittleFS.exists("/pending.attempt")){', "if(false){"),
         ("pendingAttemptMarkerMatches", "return attempt.pulses==pendingPulses &&", "return true;"),
         ("clearPending", "if(!pendingAttemptMarkerMatches()){", "if(false){"),
+        ("quarantinePending", "if(!appendQuarantineRecord(reason)){", "if(false){"),
     )
     for name, anchor, replacement in authority_mutations:
         mutated = {
@@ -334,7 +337,8 @@ for board,path in BOARDS.items():
     load_pending=extract_function(source, "loadPending")
     same_pending_record=extract_function(source, "samePendingRecord")
     pending_attempt_marker_matches=extract_function(source, "pendingAttemptMarkerMatches")
-    if not clear_pending or not load_pending or not same_pending_record or not pending_attempt_marker_matches:
+    quarantine_pending=extract_function(source, "quarantinePending")
+    if not clear_pending or not load_pending or not same_pending_record or not pending_attempt_marker_matches or not quarantine_pending:
         raise AssertionError(f"{board}: missing source-exact pending-clear/recovery helper set")
 
     def assemble(loop_source=loop,output_source=output,quiet_source=quiet,accept_source=accept,
@@ -369,7 +373,7 @@ for board,path in BOARDS.items():
     )
     print(f"{board} MUTATION_REJECTED coin-post-clear-window-isr-recheck expected_exit=54")
     run_pending_clear_failure_lab(board,clear_pending,same_pending_record,load_pending,
-                                   pending_attempt_marker_matches,compile_and_run)
+                                   pending_attempt_marker_matches,quarantine_pending,compile_and_run)
     # Execute the focused pending-identity matrix on the unmutated exact source;
     # mutation-only execution is not a substitute for a green baseline run.
     print(board,compile_and_run(assemble(main_source=PENDING_PRESERVATION_MAIN),
