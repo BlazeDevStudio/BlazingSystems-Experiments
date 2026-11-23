@@ -91,7 +91,8 @@ int main(){{
   ledOn=false;
   sampleCoinPulseEdge(true);
   applyOutputs();
-  if(pendingPulses!=0U || saveCalls!=0U ||
+  if(pendingPulses!=0U || saveCalls!=0U || !pendingNonce.empty() ||
+     !pendingTarget.empty() || insertMode || !activeTarget.empty() ||
      !journalRecoveryRequired || relayOn || ledOn) return {failure_code};
   std::cout<<"DISABLED_INGRESS_BASELINE_DENY_PASS"<<std::endl;
   return 0;
