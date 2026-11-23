@@ -4586,3 +4586,21 @@ License/NOTICE readback: PisoWiFi `LICENSE` matches exactly; source root `NOTICE
 | COE integration #26 | `b382d233ff06c8791b1028bed3c617cc7b670d12` | Five workflows QUEUED / zero jobs | FROZEN; no destination changes or migration approval. |
 
 The latest COE #35 source/test correction is independent of the #26 candidate. Do not treat #35 packaging CI as #26 integration CI or as a completed ImageBuilder run.
+
+
+## PHX-MASTER UTC21 exact-head integration refresh — 2026-11-23
+
+| Workstream | Exact source/docs identity | Exact CI evidence | Integration disposition |
+|---|---|---|---|
+| Experiments main / development | main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; issue #172 development `blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5`; main handover-designated v0.6 branch `2fbd2475e9f54878c316fa7cea2f228386b0e859` | #30 is CLOSED / UNMERGED at old head `9df0a7e7...`; v0.6 branch advanced after later PRs | Canonical development authority is unresolved; CORE must reconcile issue #172, main handover and branch handovers. |
+| HARDWARE #347 | parent #345 `ca72497ed386c9ac4e50d3f811827bef51e296ad`; source/test `00fcd6a9ed80a4ccccd429d3912e183ee2d4b3bd`; PR/docs head `b33e654af8aecc1a8477e63121ba03bc7c72cf2c` | Quarantine #45272162126 PASS; Relay #45272162193 PASS; Full #45272162174 FAIL at Missing poll signature check | Bounded fixture runner CI VERIFIED; Full integration remains blocked; physical acceptance NOT TESTED. |
+| COE RELEASE #35 | source/test `aa6d6e7ccea895c683ea9f5a12558bc4234c85b2`; PR/docs head `33f2d097d2eef4016ecf9df7089bec9a5483379f` | #45267949409: 206 PASS / 2 skips, then 10/10 ULA denials; #45267949199: 40/40 host preflight then Bubblewrap exit 125; #45267949174 case PASS | Descriptor-close error-preservation fix has source/test evidence; ULA and sandbox remain blocked; no appliance binary. |
+| CORE #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | #42698139210 PASS | Scoped build only; crash-atomic financial state and independent witness unverified. |
+| RENTAL #328 | `0e0da62acd47c6a1ce287f8a30fc700d603fa070` | #44782114384 / #44782114393 PASS; #44782114390 FAIL | APK/API scoped checks pass; shared build blocked. |
+| PISONET #255 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | #42462978704 PASS | Windows CI only; native COM acceptance NOT TESTED. |
+| QA #290 / #292 | `5c29d15994cee1279058f1eca12f2a3180704292` / `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | #290 Windows #43633486963 PASS; #292 no runs | Independent native lab and exact-head evidence remain incomplete. |
+| RELEASE #291 | `c5a566fd04a59a3c4a4bbbaa9524f8a9b97e6b7d` | ESP32 compatibility #45209288305 PASS 3/3; Full #45209288533 FAIL; Windows #45209288746 FAIL | Narrow ESP32 sketch compatibility only; no full integration acceptance. |
+| COE #45 / #49 | `9d76a134c1f6512aa40c20ec4d247306a71a8cce` / `aeb8ff11b2f5db9a5f86280ab62ab988245f3919` | #45 scoped PASS; #49 Stage 5.1 and case PASS, Shared ESP32 compile FAIL | Separate review candidates; do not infer combined acceptance. |
+| COE integration #26 | COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; PR #26 `b382d233ff06c8791b1028bed3c617cc7b670d12` | Five workflows QUEUED / zero jobs | FROZEN; previous 61-row blob/test/license audit remains applicable because both pins are unchanged. |
+
+The #347 Full failure is not a firmware acceptance pass. The #35 source/test pass is not an ImageBuilder sandbox run. COE #35 is not COE #26 migration CI.
