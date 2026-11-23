@@ -1184,11 +1184,23 @@ def _write_new_json(
 
     data = (json.dumps(payload, sort_keys=True, indent=2) + "\n").encode("utf-8")
     fd, temporary_name = _create_temp_file_at(directory_fd, ".BUILD-PROVENANCE.")
+    published_identity: tuple[int, int] | None = None
+    published = False
     try:
         with os.fdopen(fd, "wb") as stream:
             stream.write(data)
             stream.flush()
             os.fsync(stream.fileno())
+
+        temporary_metadata = os.stat(
+            temporary_name,
+            dir_fd=directory_fd,
+            follow_symlinks=False,
+        )
+        if not stat.S_ISREG(temporary_metadata.st_mode):
+            raise ProvenanceError("provenance temporary sidecar is not a regular file")
+        published_identity = (temporary_metadata.st_dev, temporary_metadata.st_ino)
+
         # A descriptor-relative hard link is an atomic create-if-absent operation.
         os.link(
             temporary_name,
@@ -1197,19 +1209,46 @@ def _write_new_json(
             dst_dir_fd=directory_fd,
             follow_symlinks=False,
         )
+        published = True
         os.unlink(temporary_name, dir_fd=directory_fd)
         os.fsync(directory_fd)
     except BaseException as primary_error:
+        cleanup_errors: list[BaseException] = []
         try:
             os.unlink(temporary_name, dir_fd=directory_fd)
         except FileNotFoundError:
             pass
         except BaseException as cleanup_error:
-            add_note = getattr(primary_error, "add_note", None)
-            if callable(add_note):
-                add_note(
-                    f"temporary sidecar cleanup failed for {temporary_name}: {cleanup_error}"
+            cleanup_errors.append(cleanup_error)
+
+        # If the directory fsync fails after the hard link was published, remove
+        # only the same inode created from our temporary sidecar. Never unlink a
+        # different file that may have appeared at the destination name.
+        if published and published_identity is not None:
+            try:
+                current = os.stat(
+                    path.name,
+                    dir_fd=directory_fd,
+                    follow_symlinks=False,
                 )
+                if (current.st_dev, current.st_ino) == published_identity:
+                    os.unlink(path.name, dir_fd=directory_fd)
+                    os.fsync(directory_fd)
+                else:
+                    cleanup_errors.append(
+                        ProvenanceError(
+                            "published provenance target changed before failed-publication cleanup"
+                        )
+                    )
+            except FileNotFoundError:
+                pass
+            except BaseException as cleanup_error:
+                cleanup_errors.append(cleanup_error)
+
+        add_note = getattr(primary_error, "add_note", None)
+        if callable(add_note):
+            for cleanup_error in cleanup_errors:
+                add_note(f"provenance publication cleanup failed: {cleanup_error}")
         raise
 
 
