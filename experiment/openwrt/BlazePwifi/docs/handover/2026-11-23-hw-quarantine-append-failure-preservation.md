@@ -27,6 +27,8 @@ The lab now extracts the exact production `quarantinePending()` function from bo
 
 The test adapter does **not** model actual LittleFS serialization, flash wear, physical power loss, or durability. It is SIMULATED / CI VERIFIED only.
 
+**Reachability caveat:** PR #345 has one `quarantinePending()` callsite inside `handleCoinPostResponse()`, but that path is currently unreachable because `coinPostDispositionVerified()` returns false unconditionally until PHX-CORE publishes an approved event-bound response contract and PHX-QA approves its vectors. This lab verifies the helper's fail-closed behavior; it does not activate or accept a live coin-disposition lifecycle. In parallel PR #283, `quarantinePending()` remains definition-only in both sketches.
+
 ## CI evidence at exact source/test head
 
 - Quarantine [run #45163252713](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45163252713), job `137653677198`: SUCCESS. Logs show all four baseline/control markers on both boards, the three expected-exit mutation rejections on both boards, and the ESP32 authority-parity mutation rejection.
