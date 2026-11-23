@@ -509,3 +509,16 @@ The following intermediate test commits and failed focused runs remain in branch
 PHX-HARDWARE owns these firmware labs and handover. PHX-CORE owns the authenticated register/poll producer contract; PHX-QA owns independent reconciliation of the inherited signature assertion; PHX-MASTER owns assignment/integration records only. Do not add a positive legacy `response_sig` to firmware or bypass the current default-deny path.
 
 This is host/source-extracted CI evidence only. Physical coin acceptor, relay/electrical pulse recovery, LittleFS power-loss durability, 150 controlled power cuts, 30-device 24-hour soak, protected anti-rollback signer/witness, financial v1-to-v2 migration, durable accounting/replay and independent QA/release acceptance remain **NOT TESTED / NOT ACCEPTED**. **HARDWARE ACCEPTED: NO. PRODUCTION READY: NO-GO.**
+
+
+## UTC22 final docs-head CI — handover-only successor evidence (2026-11-23)
+
+The exact PR/docs head `1ca5aded3bcfce973ee664e4d6eb17d91dd28ee6` was tested after the source/test commit `e69a3d715aca6724dd0390e925e48a7510009ab1`. The only path changed from source/test SHA e69a3d to docs head 1ca5aded was this handover Markdown; both production sketches and all test/lab files were unchanged.
+
+- Quarantine [#45282245288](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45282245288), job `138069422186`: **SUCCESS**. Logs include the hostile-positive and empty-timeout ISR rollover markers, the timeout-path missing-reconciliation mutation rejection, and `SIMULATED_ONLY=1`; physical relay/power-cut flags remain zero.
+- Relay [#45282245194](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45282245194): **SUCCESS**. Source/output polarity job `138069422267` and ESP32 boot-polarity job `138069421675` both pass.
+- Full [#45282244865](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45282244865): **TERMINAL FAILURE**, 27/27 jobs terminal. Fourteen target/platform jobs **PASS** (including Android, ESP8266, ESP32, Ruijie, Orange Pi variants and x86-64); validation job `138069422152` **FAILS** at the inherited ESP8266 `Missing poll signature check`; twelve dependent simulation/update/signing/publication jobs **SKIPPED**.
+
+This confirms the source/test SHA e69a3d and the docs-only successor 1ca5aded. It does not resolve the CORE authenticated producer / QA assertion dependency. The next handover commit is also documentation-only and leaves the verified source/test SHA unchanged; no new source/test claim is made for it.
+
+**Disposition:** Quarantine/Relay are **CI VERIFIED** for the source-extracted host labs; Full integration remains **FAILED**; physical acceptance remains **NOT TESTED**; **HARDWARE ACCEPTED: NO; PRODUCTION READY: NO-GO**.
