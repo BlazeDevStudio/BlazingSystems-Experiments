@@ -47,7 +47,7 @@ inline void encode_sha256_hex(const unsigned char digest[32], char out[65]) {
 }
 inline bool matches_policy_digest(const char *raw_policy,size_t len,
                                   const char *digest,size_t digest_len) {
-  if (!raw_policy || !hex64(digest,digest_len)) return false;
+  if (!raw_policy || len == 0 || !hex64(digest,digest_len)) return false;
   unsigned char hash[32]; char hex[65];
   mbedtls_sha256_context ctx; mbedtls_sha256_init(&ctx);
   bool ok=mbedtls_sha256_starts_ret(&ctx,0)==0 &&
@@ -66,7 +66,7 @@ inline bool matches_policy_digest(const char *raw_policy,size_t len,
 inline bool verify_mac(const char *key,size_t key_len,
                        const char *canonical,size_t canonical_len,
                        const char *signature,size_t signature_len) {
-  if(!key || !key_len || !canonical || !hex64(signature,signature_len)) return false;
+  if(!key || !key_len || !canonical || !canonical_len || !hex64(signature,signature_len)) return false;
   unsigned char out[32]; char hex[65];
   const mbedtls_md_info_t *md=mbedtls_md_info_from_type(MBEDTLS_MD_SHA256);
   if(!md || mbedtls_md_hmac(md,reinterpret_cast<const unsigned char*>(key),
