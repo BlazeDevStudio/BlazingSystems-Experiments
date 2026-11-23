@@ -20,6 +20,7 @@ FUNCTIONS = (
     "validOutputPin",
     "runtimePinsSafe",
     "configureRuntimePins",
+    "coinIngressConfigurationAllows",
     "applyOutputs",
     "applyRemoteConfig",
 )
