@@ -25,6 +25,10 @@ void resetState(){
   pollStartAt=0; pollEndAt=0; pollStartRelayOn=true; pollStartSuspended=false;
   pollStartCoinIdle=false; pollEndRelayOn=true; pollEndSuspended=false;
   pollPulseObservedDuringHttp=false; pollPulseRelayOff=false; pollPulseSuspended=false;
+  pollHttpReturned=false; pollPostHttpSampleObserved=false;
+  pollPostHttpFaultLatchedBeforeSample=false;
+  pollPostHttpMarkerPresentBeforeSample=false;
+  pollPostHttpOutputsOffBeforeSample=false;
   insertMode=true; lastCoin=false; pollIntakeSuspended=false; pollDrainAbortedOnActiveLine=false; pinConfigSafe=true; outputPolarityKnown=true;
   controllerEnabled=true; coinEnabled=true; relayEnabled=true; ledEnabled=true;
   setupApOn=false; runCoinActiveLow=true; runRelayActiveHigh=true; runLedActiveHigh=true;
@@ -543,6 +547,36 @@ int main(){
   if(marker.find("COIN_INGRESS_UNRESOLVED")==std::string::npos ||
      marker.find("pulses=6")==std::string::npos) return 45;
   std::cout<<"COIN_POST_ISR_MULTI_EDGE_ROLLOVER_RETAINED_PASS\\n";
+  return 0;
+}
+"""
+
+
+POLL_HTTP_ISR_MAIN = MAIN[:MAIN.index("int main(){")] + r"""
+int main(){
+  resetState();
+  coinEdgeSequence=0xFFFFFFFEUL;
+  lastHandledCoinEdgeSequence=0xFFFFFFFEUL;
+  injectDuringHttp=true;
+  injectDuringHttpEdgeCount=2U;
+  loop();
+  if(pollCalls!=1 || coinPostCalls!=0 || clearCalls!=0 ||
+     pollStartAt==0U || pollEndAt-pollStartAt!=3500UL ||
+     !pollStartCoinIdle || pollStartRelayOn || !pollStartSuspended ||
+     !pollPulseObservedDuringHttp || !pollPulseRelayOff || !pollPulseSuspended ||
+     pollEndRelayOn || !pollEndSuspended || !pollHttpReturned ||
+     !pollPostHttpSampleObserved || !pollPostHttpFaultLatchedBeforeSample ||
+     !pollPostHttpMarkerPresentBeforeSample || !pollPostHttpOutputsOffBeforeSample ||
+     !journalRecoveryRequired || !LittleFS.exists("/pollpulse.fault") ||
+     relayOn || ledOn || insertMode || !activeTarget.empty() ||
+     pollIntakeSuspended || pollDrainAbortedOnActiveLine ||
+     pendingPulses!=0U || pendingReady || pendingPostAttempted ||
+     !pendingTarget.empty() || !pendingNonce.empty() ||
+     coinEdgeSequence!=0U || lastHandledCoinEdgeSequence!=0U) return 88;
+  const std::string marker=LittleFS.files["/pollpulse.fault"];
+  if(marker.find("COIN_INGRESS_UNRESOLVED")==std::string::npos ||
+     marker.find("pulses=2")==std::string::npos) return 88;
+  std::cout<<"POLL_HTTP_ISR_MULTI_EDGE_ROLLOVER_RETAINED_PASS"<<std::endl;
   return 0;
 }
 """
