@@ -277,3 +277,47 @@ No production `.ino`, CORE API, QA assertion, finance code, signer, witness, mig
 The new multi-edge test is **SIMULATED / CI VERIFIED** only. Physical coin acceptor, relay/electrical pulse, LittleFS power-loss durability, 150 controlled power cuts, 30-device 24-hour soak, and electrical recovery remain **NOT TESTED**. HARDWARE ACCEPTED: **NO**. PRODUCTION READY: **NO-GO**.
 
 **Next exact action:** PHX-CORE must publish the approved authenticated register/poll response contract and golden vectors; PHX-QA must independently reconcile the inherited poll-signature assertion; PHX-MASTER must refresh the #347 exact-head pin. PHX-HARDWARE then reruns Full integration against the approved exact head.
+
+
+## UTC19 — shared C++ fixture runner extraction and exact-head reconciliation
+
+**Observed:** 2026-11-23T19:48:44Z  
+**Role:** PHX-HARDWARE · **Tasks:** #177 / #266 · **PR:** #347 OPEN / DRAFT / UNMERGED  
+**Branch:** `phoenix/hw-coin-ingress-config-helper-reconciled-20261123-utc13`  
+**Parent/base:** #345 `ca72497ed386c9ac4e50d3f811827bef51e296ad`  
+**Firmware-source SHA:** `275057aa28375223a32da099420f52696d9b667c`  
+**ESP8266 sketch blob:** `fa8ed828026396db89aab2889bf6a61d6cf6bbac`  
+**ESP32 sketch blob:** `717336b84d434d51eb24beac1ed8efce8e719f69`  
+**Test/lab-source SHA:** `fc1bfe86e51e1446712915c69087dca5be8e0763`  
+**PR/docs head before this handover:** `fc1bfe86e51e1446712915c69087dca5be8e0763`
+
+### One bounded Hardware-owned cleanup
+
+Added `cpp_fixture_runner.py` as the single owner of temporary C++ fixture file creation, compiler invocation, timeout handling, and execution result capture. The three source-extracted labs now delegate only those mechanics to it:
+
+- `poll_loop_blocking_inhibit_lab.py` preserves its `-Wno-unused-parameter` flag, 30-second compile timeout, 10-second run timeout, expected-exit checks, and stdout return contract.
+- `poll_window_drain_lab.py` preserves `-pedantic -O2` and its `CompletedProcess` result contract.
+- `coin_pulse_capture_lab.py` preserves `-pedantic -O2` and its `CompletedProcess` result contract.
+
+Fixture assembly, board-specific extraction, expected exit codes, and safety assertions remain in their existing labs. This is a test-harness structure cleanup only; no production `.ino`, CORE API, QA assertion, finance path, signer, witness, migration, workflow permission, or device was changed.
+
+### Failed first attempt and correction — preserved honestly
+
+The first runner extraction used an overbroad function replacement and inadvertently removed the adjacent `POLL_SAFETY_PARITY` / required-authority constants from `poll_loop_blocking_inhibit_lab.py`.
+
+- Quarantine [#45252246599](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45252246599), job `137964669419`: **FAIL**, `NameError: POLL_SAFETY_PARITY is not defined`.
+- Relay [#45252246721](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45252246721), job `137964666252`: **FAIL**, same missing parity constant.
+
+The constants were restored from the exact pre-refactor source anchor in commit `fc1bfe86e51e1446712915c69087dca5be8e0763`. No failure was waived or relabeled as a pass.
+
+### Corrected exact-source/test-head CI at `fc1bfe86e51e1446712915c69087dca5be8e0763`
+
+- Quarantine [#45252412144](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45252412144), job `137965275116`: **SUCCESS**. Exact-source labs ran; ESP8266 and ESP32 coin-pulse capture each report `17/17` PASS, with negative mutations for missing edge latch, debounce, overflow guard, target-drift guard, persistence, output inhibit, and ISR reconciliation rejected. The run explicitly reports `SIMULATED_ONLY=1` and physical acceptance flags `0`.
+- Relay [#45252412350](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45252412350), jobs `137965250628` and `137965250680`: **SUCCESS**. ESP32 boot polarity and source/output-polarity jobs pass; both-board poll-window and coin-pulse host labs run through the shared runner. Negative mutations remain rejected.
+- Full [#45252412053](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45252412053): **TERMINAL FAILURE**, 27/27 jobs terminal; 14/14 target/platform jobs **SUCCESS**, validation job `137965441351` **FAILURE** at the inherited `Missing poll signature check` in the ESP8266 sketch, and 12 dependent simulation/update/signing/candidate/publication jobs **SKIPPED**. This is not Full CI VERIFIED.
+
+### Evidence classification and next action
+
+The runner refactor is **CI VERIFIED** as test infrastructure; the source-extracted hardware behaviors remain **SIMULATED**. Physical coin acceptor, relay/electrical pulse, LittleFS power-loss durability, 150 controlled power cuts, 30-device 24-hour soak, and electrical recovery remain **NOT TESTED**. HARDWARE ACCEPTED: **NO**. PRODUCTION READY: **NO-GO**.
+
+**Next exact action:** PHX-CORE publishes the approved authenticated register/poll response envelope and golden vectors; PHX-QA independently reconciles its poll-signature assertion against that producer contract; PHX-MASTER refreshes the #347 exact source/lab/docs pins. PHX-HARDWARE then reruns Full on the approved exact head. Keep all candidate PRs DRAFT and deny-only.
