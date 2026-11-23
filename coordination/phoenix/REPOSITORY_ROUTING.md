@@ -1569,3 +1569,13 @@ No source/destination file move, copy, staging, overwrite, cherry-pick, rebase o
 - Hardware #346 is not migration-ready: its base is four commits behind parent #345, it overlaps four parent paths, and it omits parent-only `pending_clear_failure_lab.py`. Parent CI cannot be inherited by the child. Hardware must reconcile the stack in its own branch and run CI at its final exact head.
 - COE #35 at `4234ee00...` is blocked by missing approved site ULA /48 (ten profiles fail closed) and unavailable Bubblewrap (exit 125); no fallback or fabricated network prefix.
 - No source/destination path was staged, copied, moved, overwritten, cherry-picked, rebased, retargeted, or promoted. COE #26 remains FROZEN pending exact provenance, licensing, import, test and terminal CI evidence plus owner authorization.
+
+## UTC14 exact-source route hold — 2026-11-23T14:40:25Z
+
+The live machine manifest remains `OWNERSHIP_ROUTES.json@e4db324315a1b3543fec17a148fbf960170fcb29`: 11 routes, `DRAFT_REVIEW_ONLY`, source Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`, COE candidate #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`, PHX-MASTER target `null`. COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243` remains a three-entry scaffold.
+
+At these exact complete trees (2,340 source / 286 destination entries), route counts are now recorded in INTEGRATION_MATRIX: CORE library 15/20 (6 identical, 9 different, 5 destination-only); CORE CGI 1/1 (different); RENTAL Android 983/8 (983 missing, 8 destination-only); Rental server 7/4 (1 different, 6 missing, 3 destination-only); PISONET 32/47 (13 identical, 11 different, 8 missing, 23 destination-only); Hardware ESP32 and ESP8266 each 3/1 (one different, two missing); QA tests 38/19 (1 identical, 3 different, 34 missing, 15 destination-only); RELEASE workflow 1/1 different under reimplementation-review. The broad Rental parent route remains manual-file-mapping-only with `copy_permitted=false`.
+
+The candidate's 61-row SOURCE_INTAKE historical source/destination blobs and modes all resolve with zero recorded-identity mismatches; computed classification is 46 identical / 15 derived while the summary says 47 / 14. The 15 derived test fixtures exceed the 14 derived-test rows in MIGRATION_MAP; voucher journal is omitted and run_focus/member journal IDs are stale. Only 33/61 historical source rows match current main (20 changed, 8 absent). PisoWiFi LICENSE matches; destination root NOTICE, Android Launcher and Tabler coverage remain missing at checked paths. Five #26 workflows are QUEUED / zero jobs.
+
+**Routing decision:** COE #26 stays FROZEN. Do not stage, copy, move, overwrite, cherry-pick, rebase, retarget, promote or write any destination path. No source ownership or migration authority changes.

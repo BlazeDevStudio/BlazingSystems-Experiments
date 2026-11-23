@@ -1,5 +1,14 @@
 # Project Phoenix — Coordination Index
 
+## Latest live state — PHX-MASTER UTC14 (2026-11-23T14:40:25Z)
+
+- Exact refs: Experiments main `f4e8a891...`; development `aad3aade...`; Master start `2fd03816e3ab44c48fdcc81ec3c20ae13c0a2e0c`; COE main `a6513ab...`; COE #26 `b382d233...`. PR #288 remains OPEN / DRAFT / UNMERGED; its 83,836-character body exceeds GitHub's body limit, so the existing description is preserved and this run is recorded in the PR conversation.
+- Hardware #347 is OPEN / DRAFT at docs HEAD `c256098d...`, source/test SHA `275057aa...`, based on #345 `ca72497e...`. Quarantine/Relay pass at exact docs head; Full fails at the inherited QA-owned `Missing poll signature check`. Its PR body now correctly separates the source/test SHA from the docs-only head.
+- RELEASE #291 two-core compatibility run passes only for pinned Hardware source `6eb3e9...`, which is 64 commits behind current #347 source/test. Do not treat it as current #347 qualification. #291 build/Windows remain blocked at CORE handover freshness.
+- COE #26 remains FROZEN: complete exact-tree route comparison, 46/15 versus 47/14 SOURCE_INTAKE discrepancy, omitted/stale test-map entries, source drift and license/NOTICE gaps recorded; five workflows queued / zero jobs. Manifest remains 11 routes / DRAFT_REVIEW_ONLY / Master target null.
+- COE #35 remains blocked by missing approved site ULA /48 and unavailable trusted Bubblewrap; fail-closed behavior is preserved.
+- No new report or artifact was created; existing report inventory remains unchanged. No subsystem source or COE destination paths changed. Cleanup #266 remains OPEN / 0/7. Private Drive v11/newer corrections and full Master tests remain BLOCKED. **PRODUCTION NO-GO.**
+
 ## Latest live state — PHX-MASTER UTC13 (2026-11-23T13:42:41Z)
 
 - Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; development `blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5`; Master starting HEAD `9f04ece155d2a7f58753521645d16042ae52dbaa`.
@@ -10,7 +19,7 @@
 - Cleanup #266 remains OPEN, 0/7. Canonical private Drive v11/newer corrections remain inaccessible; no older snapshot is substituted. Full Master tests and `verify_coordination.py` remain NOT RUN.
 - No subsystem source or COE destination paths changed. CORE remains with its separate owner. **PRODUCTION NO-GO.**
 
-**Updated:** 2026-11-23T13:42:41Z
+**Updated:** 2026-11-23T14:40:25Z
 **Updated:** 2026-11-22T23:34:12Z
 **Role:** PHX-MASTER — coordination / architecture / integration provenance only  
 **Safety:** DRAFT REVIEW ONLY · PRODUCTION NO-GO

@@ -4455,3 +4455,43 @@ Disposition: keep #26 FROZEN. No copy, move, staging, overwrite, cherry-pick, re
 - COE #45 `9d76a134...` scoped checks PASS. COE #49 `aeb8ff11...` Stage 5.1 and case-collision PASS, Shared/firmware FAIL.
 
 **Migration disposition:** no source/destination staging, copy, move, overwrite, cherry-pick, rebase, retarget, route promotion or destination write. Keep COE #26 frozen pending per-file source blob, license, import completeness, test identity, terminal exact-head CI and owner-review evidence.
+
+## PHX-MASTER UTC14 exact integration and migration provenance — 2026-11-23T14:40:25Z
+
+### Hardware #347 lifecycle and source-pin reconciliation
+
+The live #347 PR is based exactly on parent #345 `ca72497ed386c9ac4e50d3f811827bef51e296ad`, with docs HEAD `c256098dc84574d87321b81bdfd602e6f71b7c78` and latest test/lab source SHA `275057aa28375223a32da099420f52696d9b667c`. The PR body/handover now correctly identifies c256 as docs-only and 2750 as the source/test anchor; the earlier UTC13 stale-body statement is superseded.
+
+The current handover distinguishes #283 from #347: at #283 head `4dd0b01bf04cf80aec6d4dd6fc93b2fdc633da30`, `quarantinePending()` remains definition-only with no active callsite; in #347, ESP8266 sketch blob `fa8ed828026396db89aab2889bf6a61d6cf6bbac` calls `quarantinePending(response)` at line 1374 and ESP32 sketch blob `717336b84d434d51eb24beac1ed8efce8e719f69` calls it at line 1616. In both #347 sketches, failed `appendQuarantineRecord(reason)` returns false before `clearPending()`. Exact #347 docs-head Quarantine [#45189705741](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45189705741) and Relay [#45189705900](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45189705900) PASS; Full [#45189706099](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45189706099) FAILs at `tests/controllers.sh` / `Missing poll signature check`. These are source-extracted host labs, not physical LittleFS/power-cut acceptance.
+
+### RELEASE compatibility source-pin mismatch
+
+PHX-RELEASE #291 docs HEAD `886cc1530119b280574c60ceb68fdf4705b7c362` has compatibility run [#45193305396](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45193305396) PASS for ESP32 core 3.3.13 and 4.0.0, but the logs pin Hardware source `6eb3e9ba82fdbdcfe4fb6dc8ab1c38c9ffdc3043`. The current #347 source/test SHA `275057aa28375223a32da099420f52696d9b667c` is 64 commits ahead of that pin (zero behind; merge base is the old pin), with changes to both sketches and Hardware labs. Therefore the pass does not qualify #347. HARDWARE must nominate the exact current source SHA and sketch blob; RELEASE updates its own compatibility workflow and reruns both cores. The #291 BlazePwifi build and Windows runs [#45193305375](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45193305375) / [#45193305362](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45193305362) fail at the CORE-owned handover freshness gate. CORE refreshes its own live handover; RELEASE owns reruns.
+
+### COE #26 exact source/destination tree and route matrix
+
+**Exact refs:** Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b` (2,340 tree entries, non-truncated); COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12` (286 entries, non-truncated); COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243` (three-entry scaffold). Ownership manifest `OWNERSHIP_ROUTES.json@e4db324315a1b3543fec17a148fbf960170fcb29` remains 11 routes / `DRAFT_REVIEW_ONLY` / PHX-MASTER target `null`.
+
+The following file counts compare the manifest's exact source/destination prefixes at those exact refs; directory entries are excluded. The broad Rental parent route is manual-file-mapping-only and excluded because `copy_permitted=false`.
+
+| Route | Source files | Destination files | Identical | Different | Missing at destination | Destination-only |
+|---|---:|---:|---:|---:|---:|---:|
+| CORE library | 15 | 20 | 6 | 9 | 0 | 5 |
+| CORE CGI | 1 | 1 | 0 | 1 | 0 | 0 |
+| RENTAL Android | 983 | 8 | 0 | 0 | 983 | 8 |
+| RENTAL server | 7 | 4 | 0 | 1 | 6 | 3 |
+| PISONET | 32 | 47 | 13 | 11 | 8 | 23 |
+| HARDWARE ESP32 | 3 | 1 | 0 | 1 | 2 | 0 |
+| HARDWARE ESP8266 | 3 | 1 | 0 | 1 | 2 | 0 |
+| QA tests | 38 | 19 | 1 | 3 | 34 | 15 |
+| RELEASE workflow (reimplementation review) | 1 | 1 | 0 | 1 | 0 | 0 |
+
+### SOURCE_INTAKE / MIGRATION_MAP exact identity and licensing
+
+At COE #26, `Pisowifi/SOURCE_INTAKE.json` blob `1b9018ff944f7f673934d0fc2a97e0a0090d3f5f` pins historical source `6d4c9b487af4d768c4d7627654d119417fcc6e00` and records 61 runtime rows. Re-reading both complete trees confirms all 61 recorded source/destination blobs and modes resolve with zero record mismatches: 46 byte-identical / 15 derived. Its summary still says 47 / 14. Against current Experiments main, only 33/61 historical source rows remain identical; 20 differ and 8 are absent.
+
+The intake lists 15 derived tests, while `MIGRATION_MAP.md` contains 14 derived-test rows. `tests/voucher_txn_journal.sh` is omitted; `tests/run_focus.sh` and `tests/member_txn_journal.sh` have stale map blob IDs. Intake statuses are 11 NOT_RUN and 4 PENDING_CI_RUN; these are manifest labels, not current #26 CI. All five #26 workflows remain QUEUED / zero jobs.
+
+License/NOTICE readback: PisoWiFi `LICENSE` matches exactly; source root `NOTICE.md` exists but destination `Pisowifi/NOTICE.md` is absent; QRCode and TailAdmin license/notice blobs match; Android Launcher and Tabler license counterparts are absent at the reviewed destination paths; no Hardware-local LICENSE/NOTICE was found at the checked paths.
+
+**Disposition:** keep #26 FROZEN. No source/destination staging, copy, move, overwrite, cherry-pick, rebase, retarget, route promotion or destination write.
