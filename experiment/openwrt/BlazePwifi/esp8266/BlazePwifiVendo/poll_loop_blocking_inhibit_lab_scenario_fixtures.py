@@ -547,25 +547,6 @@ int main(){
       "POLL_DISABLED_CONTROLLER_MULTI_ISR_PENDING_IDENTITY_PRESERVED_PASS");
   if(result) return result;
   std::cout<<"POLL_DISABLED_INGRESS_PENDING_IDENTITY_PRESERVATION_PASS 9/9"<<std::endl;
-  int attemptedEvidenceResult=runAttemptedPendingEvidenceCase(false,false,true,false,82,
-      "POLL_DISABLED_RELAY_ATTEMPTED_EVIDENCE_PRESERVED_PASS");
-  if(attemptedEvidenceResult) return attemptedEvidenceResult;
-  attemptedEvidenceResult=runAttemptedPendingEvidenceCase(false,false,true,true,83,
-      "POLL_DISABLED_RELAY_ISR_ATTEMPTED_EVIDENCE_PRESERVED_PASS");
-  if(attemptedEvidenceResult) return attemptedEvidenceResult;
-  attemptedEvidenceResult=runAttemptedPendingEvidenceCase(false,true,false,false,84,
-      "POLL_DISABLED_COIN_ATTEMPTED_EVIDENCE_PRESERVED_PASS");
-  if(attemptedEvidenceResult) return attemptedEvidenceResult;
-  attemptedEvidenceResult=runAttemptedPendingEvidenceCase(false,true,false,true,85,
-      "POLL_DISABLED_COIN_ISR_ATTEMPTED_EVIDENCE_PRESERVED_PASS");
-  if(attemptedEvidenceResult) return attemptedEvidenceResult;
-  attemptedEvidenceResult=runAttemptedPendingEvidenceCase(true,false,false,false,86,
-      "POLL_DISABLED_CONTROLLER_ATTEMPTED_EVIDENCE_PRESERVED_PASS");
-  if(attemptedEvidenceResult) return attemptedEvidenceResult;
-  attemptedEvidenceResult=runAttemptedPendingEvidenceCase(true,false,false,true,87,
-      "POLL_DISABLED_CONTROLLER_ISR_ATTEMPTED_EVIDENCE_PRESERVED_PASS");
-  if(attemptedEvidenceResult) return attemptedEvidenceResult;
-  std::cout<<"POLL_DISABLED_INGRESS_ATTEMPTED_EVIDENCE_PRESERVATION_PASS 6/6"<<std::endl;
   return 0;
 }
 """

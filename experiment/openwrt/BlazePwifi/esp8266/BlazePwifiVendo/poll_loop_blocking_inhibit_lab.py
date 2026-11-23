@@ -38,6 +38,32 @@ ACTIVE_HIGH_MISSED_SAMPLE_MAIN = missed_sample_main(active_low=False, failure_co
 ACTIVE_LOW_MISSED_SAMPLE_MAIN = missed_sample_main(active_low=True, failure_code=58)
 
 
+ATTEMPTED_EVIDENCE_MAIN = MAIN[:MAIN.index("int main(){")] + r"""
+int main(){
+  int result=runAttemptedPendingEvidenceCase(false,false,true,false,82,
+      "POLL_DISABLED_RELAY_ATTEMPTED_EVIDENCE_PRESERVED_PASS");
+  if(result) return result;
+  result=runAttemptedPendingEvidenceCase(false,false,true,true,83,
+      "POLL_DISABLED_RELAY_ISR_ATTEMPTED_EVIDENCE_PRESERVED_PASS");
+  if(result) return result;
+  result=runAttemptedPendingEvidenceCase(false,true,false,false,84,
+      "POLL_DISABLED_COIN_ATTEMPTED_EVIDENCE_PRESERVED_PASS");
+  if(result) return result;
+  result=runAttemptedPendingEvidenceCase(false,true,false,true,85,
+      "POLL_DISABLED_COIN_ISR_ATTEMPTED_EVIDENCE_PRESERVED_PASS");
+  if(result) return result;
+  result=runAttemptedPendingEvidenceCase(true,false,false,false,86,
+      "POLL_DISABLED_CONTROLLER_ATTEMPTED_EVIDENCE_PRESERVED_PASS");
+  if(result) return result;
+  result=runAttemptedPendingEvidenceCase(true,false,false,true,87,
+      "POLL_DISABLED_CONTROLLER_ISR_ATTEMPTED_EVIDENCE_PRESERVED_PASS");
+  if(result) return result;
+  std::cout<<"POLL_DISABLED_INGRESS_ATTEMPTED_EVIDENCE_PRESERVATION_PASS 6/6"<<std::endl;
+  return 0;
+}
+"""
+
+
 def compile_and_run(code, board, expected=0, label="normal"):
     with tempfile.TemporaryDirectory(prefix="phx-poll-loop-") as folder:
         cpp=Path(folder)/"poll_loop.cpp"
@@ -319,6 +345,8 @@ for board,path in BOARDS.items():
     # mutation-only execution is not a substitute for a green baseline run.
     print(board,compile_and_run(assemble(main_source=PENDING_PRESERVATION_MAIN),
                                 board,0,"disabled-intake-pending-identity"))
+    print(board,compile_and_run(assemble(main_source=ATTEMPTED_EVIDENCE_MAIN),
+                                board,0,"disabled-intake-attempted-pending-evidence"))
     pending_ready_mutation = sample.replace(
         "if(pendingPulses>0U) pendingReady=true;",
         "if(false) pendingReady=true;",
@@ -362,7 +390,7 @@ for board,path in BOARDS.items():
             )
         compile_and_run(
             assemble(latch_fault_source=pending_evidence_mutation,
-                     main_source=PENDING_PRESERVATION_MAIN),
+                     main_source=ATTEMPTED_EVIDENCE_MAIN),
             board,82,f"disabled-intake-pending-evidence-preservation-{evidence_path}"
         )
         print(
@@ -379,7 +407,7 @@ for board,path in BOARDS.items():
         raise AssertionError(f"{board}: pending attempt-state mutation anchor missing")
     compile_and_run(
         assemble(latch_fault_source=pending_attempt_state_mutation,
-                 main_source=PENDING_PRESERVATION_MAIN),
+                 main_source=ATTEMPTED_EVIDENCE_MAIN),
         board,82,"disabled-intake-pending-attempt-state-preservation"
     )
     print(
