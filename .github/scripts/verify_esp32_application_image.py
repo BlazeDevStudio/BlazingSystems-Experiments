@@ -21,8 +21,31 @@ def _same_directory_state(left: os.stat_result, right: os.stat_result) -> bool:
     return all(getattr(left, field) == getattr(right, field) for field in fields)
 
 
+def _attach_cleanup_failure(primary: BaseException, cleanup_error: BaseException) -> None:
+    """Record a secondary close failure without replacing the active exception."""
+    try:
+        primary.add_note(f"additional descriptor cleanup failure: {cleanup_error!r}")
+    except AttributeError:
+        pass
+
+
+def _close_descriptors_once(descriptors: list[int]) -> BaseException | None:
+    """Attempt every owned descriptor once; never retry an ambiguous close."""
+    first_error: BaseException | None = None
+    while descriptors:
+        descriptor = descriptors.pop()
+        try:
+            os.close(descriptor)
+        except BaseException as exc:
+            if first_error is None:
+                first_error = exc
+            else:
+                _attach_cleanup_failure(first_error, exc)
+    return first_error
+
+
 def _open_output_directory(path: str | Path) -> tuple[Path, int, int]:
-    """Pin the output directory and its parent without following path symlinks."""
+    """Pin the output directory and parent without following path symlinks."""
     candidate = Path(path)
     if ".." in candidate.parts:
         raise ValueError("output directory path must not contain parent-directory traversal")
@@ -61,28 +84,40 @@ def _open_output_directory(path: str | Path) -> tuple[Path, int, int]:
                 raise ValueError(f"output path component is not a real directory: {component}")
             current_fd = next_fd
 
-        root_fd = opened.pop()
-        parent_fd = opened.pop()
-        for descriptor in opened:
-            os.close(descriptor)
+        if len(opened) < 2:
+            raise ValueError("output directory must have a pinned parent directory")
+
+        root_fd = opened[-1]
+        parent_fd = opened[-2]
+        ancestor_descriptors = opened[:-2]
+        # Keep parent/root ownership until every ancestor close has been attempted.
+        opened[:] = [parent_fd, root_fd]
+        ancestor_error = _close_descriptors_once(ancestor_descriptors)
+        if ancestor_error is not None:
+            cleanup_error = _close_descriptors_once(opened)
+            if cleanup_error is not None:
+                _attach_cleanup_failure(ancestor_error, cleanup_error)
+            if isinstance(ancestor_error, OSError):
+                raise ValueError(
+                    f"cannot safely close output directory ancestors: {ancestor_error}"
+                ) from ancestor_error
+            raise ancestor_error
+
+        # Transfer the two pinned descriptors to the caller only after cleanup succeeds.
+        opened.clear()
         return absolute, parent_fd, root_fd
     except OSError as exc:
-        for descriptor in reversed(opened):
-            try:
-                os.close(descriptor)
-            except OSError:
-                pass
+        cleanup_error = _close_descriptors_once(opened)
+        if cleanup_error is not None:
+            _attach_cleanup_failure(exc, cleanup_error)
         raise ValueError(
             f"cannot safely open output directory without following symlinks: {exc}"
         ) from exc
-    except Exception:
-        for descriptor in reversed(opened):
-            try:
-                os.close(descriptor)
-            except OSError:
-                pass
+    except BaseException as exc:
+        cleanup_error = _close_descriptors_once(opened)
+        if cleanup_error is not None:
+            _attach_cleanup_failure(exc, cleanup_error)
         raise
-
 
 def _verify_output_directory_identity(
     directory: Path,
