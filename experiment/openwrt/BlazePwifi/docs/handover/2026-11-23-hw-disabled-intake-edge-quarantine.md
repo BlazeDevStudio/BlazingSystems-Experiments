@@ -449,3 +449,45 @@ The raw C++ scenario bodies were moved verbatim; no test assertions, exit codes,
 **Classification:** host fixtures SIMULATED; Quarantine/Relay CI VERIFIED; Full validation FAILED/BLOCKED; HARDWARE ACCEPTED NO; PRODUCTION NO-GO.
 
 **Next exact action:** PHX-QA independently review the refactored fixture import path and clear-window/orphan-marker assertions; PHX-CORE publish the approved authenticated response/receipt contract; PHX-MASTER refresh the #345 role pin. Hardware continues only on a separate unblocked firmware-owned task.
+
+
+## UTC07 follow-up — silent attempt-marker remove/readback failure
+
+**Role:** PHX-HARDWARE  
+**Repository:** `BlazeDevStudio/BlazingSystems-Experiments`  
+**Branch:** `phoenix/hw-coin-intake-armed-gate-20261122-utc23`  
+**Parent/base:** PR #343 at `dfeff7d5f63e699de7bc296c7641f2493f1e0e13`  
+**Behavior-test SHA:** `78bfd193a90ab04630ac0c064c72b9b66a6d29f6`  
+**Logging-only follow-up:** `7dee461649e6554389e4f80481086b43a4ddd85a`
+
+### Proven test-coverage gap
+
+The production `clearPending()` already checks both the return value of `LittleFS.remove("/pending.attempt")` and a subsequent `LittleFS.exists("/pending.attempt")` readback. The Hardware host fake could model a failed remove return and a pending-journal remove that reports success while the file remains, but it did not exercise the corresponding silent-success/readback-failure case for the final attempt marker.
+
+### Added regression and failure injection
+
+- `FakeLittleFS.retainRemovePath="/pending.attempt"` makes `remove()` report success while retaining the marker bytes.
+- The scenario confirms the pending journal has already been removed, but `clearPending()` must still return false, latch `journalRecoveryRequired`, preserve the RAM pending identity, and retain the attempt marker.
+- A source mutation removes only the `exists("/pending.attempt")` postcondition while keeping the `remove()` call. It must be rejected on both extracted board sources with expected exit 103.
+- The removal/readback matrix is now 4/4 plus its success control; the existing precondition matrix remains 7/7.
+- A follow-up logging-only commit prints the baseline and orphan-marker boot-deny fixture output so the pass markers are visible in Actions logs. It does not change test logic.
+
+### Exact-source evidence
+
+At behavior-test SHA `78bfd193a90ab04630ac0c064c72b9b66a6d29f6`:
+
+- Quarantine [#45133190059](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45133190059), job `137553194956`: **SUCCESS**.
+- Relay [#45133190127](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45133190127): source-output-polarity job `137553195964` and ESP32 boot-polarity job `137553195613`: **SUCCESS**.
+- Full [#45133190056](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45133190056), validation job `137553308447`: **FAILURE** at inherited QA-owned `Missing poll signature check`. All 13 configured firmware target jobs completed **SUCCESS**; Android was cancelled after validation failed. Validation-dependent simulations, candidate, signing and publication stages were skipped.
+
+At logging-only commit `7dee461649e6554389e4f80481086b43a4ddd85a`:
+
+- Relay [#45133582168](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45133582168): both jobs **SUCCESS**.
+- Quarantine [#45133582142](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45133582142), job `137554433283`: **IN PROGRESS** at handover time.
+- Full [#45133582073](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45133582073), validation job `137554534027`: **FAILURE** at the same inherited `Missing poll signature check`; target matrix was still running at handover time.
+
+### Scope and limits
+
+Only the Hardware-owned `pending_clear_failure_lab.py` host fixture changed. No production `.ino`, shared API, CORE/QA-owned source, financial ledger, migration, signer, witness, Release workflow, or COE destination changed. This uses fake LittleFS and host C++ extraction only; it is **SIMULATED / CI VERIFIED**, not physical LittleFS durability, real power-cut recovery, coin/relay acceptance, or HARDWARE ACCEPTED evidence.
+
+PR #345 remains OPEN / DRAFT / UNMERGED. Keep coin admission default-deny. The Full controller-signature blocker remains with PHX-QA/PHX-CORE; do not synthesize `response_sig`.
