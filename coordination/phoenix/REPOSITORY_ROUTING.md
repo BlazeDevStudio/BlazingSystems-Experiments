@@ -1532,3 +1532,13 @@ The routing manifest remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`, 11
 COE RELEASE #35 now points to `9b300ea18886c11447ff6f0891d4ed9147454881` (source/test `59c57cba0dd230434ad0cb89bc1a0f19c0a684d3`). Exact-head sandbox #45145590304 passes 39 host tests then blocks because Bubblewrap is absent (exit 125). Exact-head shared #45145590011 passes 195 tests / 2 intentional skips, then fails closed on all ten profiles without approved site ULA /48; board compiles skip. Case-collision #45145590247 passes. This supersedes the prior UTC08 no-runs observation for the old `ede91d43...` head.
 
 **Routing decision:** no source/destination path is promoted. Keep #26 frozen until file/blob provenance, licenses/NOTICE, test identities, complete imports, exact-head terminal CI and independent owner review are reconciled. No staging, copy, move, overwrite, cherry-pick, rebase, or destination write.
+
+## Live provenance and routing revalidation — 2026-11-23 UTC10
+
+Current refs: Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; development `aad3aade72c1156eecba1fed30907c6d0283b2c5`; Master branch audit-start `2214dc064cee24ddf6753f3fe3af2014f6915b0a`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE #26 candidate `b382d233ff06c8791b1028bed3c617cc7b670d12`.
+
+The machine manifest remains unchanged at blob `e4db324315a1b3543fec17a148fbf960170fcb29`: 11 routes, source baseline f4e8, destination candidate #26, `DRAFT_REVIEW_ONLY`, and PHX-MASTER `target: null`. The COE main tree is still a three-entry scaffold; #26 has 205 changed paths and a 286-entry candidate tree. The source main tree has 2,340 entries.
+
+Exact prefix-level blob/mode comparison and SOURCE_INTAKE/MIGRATION_MAP discrepancies are recorded in `INTEGRATION_MATRIX.md` (UTC10 section). The intake's 6d4c9b source pin is historical and distinct from the manifest's f4e8 main baseline; 28 of its 61 runtime source blobs have drifted from current main. Root PisoWiFi LICENSE and vendored QRCode/TailAdmin notices match; source root NOTICE is absent from COE #26. Derived-test mapping omits voucher_txn_journal and contains two stale blob IDs. COE #26 has five queued workflows / zero jobs.
+
+No source/destination file move, copy, staging, overwrite, cherry-pick, rebase or ownership transfer is proposed. The broad Rental parent route remains manual-file-mapping-only and `copy_permitted: false`; PHX-MASTER remains coordination-only.

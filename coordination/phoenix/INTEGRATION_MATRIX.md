@@ -4340,3 +4340,46 @@ COE RELEASE PR #35 advanced from the UTC08 observed `ede91d4323c158f6abd454da18b
 - [Case-collision #45145590247](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45145590247) PASS.
 
 This is exact-head hosted CI evidence. It is not a successful ImageBuilder sandbox, appliance firmware build, native hardware acceptance, production signing or release. COE #26 remains FROZEN; no destination staging or migration is authorized.
+
+## Live integration snapshot — 2026-11-23 UTC10
+
+Exact refs re-read: Experiments `main@f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; development `blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5`; Master branch audit-start `2214dc064cee24ddf6753f3fe3af2014f6915b0a`; COE `main@a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE #26 candidate `b382d233ff06c8791b1028bed3c617cc7b670d12`.
+
+| Area | Current evidence | Integration disposition |
+|---|---|---|
+| CORE #252 | Scoped build [#42698139210](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42698139210) SUCCESS | Lab/CI only; durable accounting, protected witness and producer contract remain unaccepted |
+| RENTAL #328 | APK identity/API smoke PASS; build [#44782114390](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44782114390) FAILs handover freshness and ESP32 Mbed TLS include | Integration blocked; owner handover/build correction required |
+| PISONET #255 | Windows [#42462978704](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42462978704) SUCCESS | Synthetic Windows CI only; native COM stress/acceptance NOT TESTED |
+| HARDWARE #345 | Final-head Quarantine/Relay PASS; Full [#45151311738](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45151311738) FAILs QA poll-signature assertion | Default-deny retained; hardware acceptance NOT TESTED |
+| QA #290/#292 | #290 Windows PASS; #292 no runs | Independent review and exact-head test execution pending |
+| RELEASE #291 | Core 4.0.0 archive download HTTP 403; Windows and Full handover freshness fail | No signing/publication authority |
+| COE #26 | Five workflows queued / zero jobs | FROZEN; no destination admission |
+| COE #35 | 197/197 host packaging tests pass (2 skips), but all 10 appliance profiles fail closed for missing ULA /48; sandbox lacks Bubblewrap | BLOCKED; do not bypass preflight or invent ULA authority |
+| COE #45/#49 | #45 scoped checks pass; #49 shared ESP32 compile fails on missing `mbedtls/sha256.h` | Separate draft experiments; not integrated acceptance |
+
+### Exact migration provenance — manifest baseline vs COE #26
+
+`OWNERSHIP_ROUTES.json` remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`, 11 routes, `DRAFT_REVIEW_ONLY`, PHX-MASTER target `null`, source baseline `main@f4e8a891...`, destination candidate #26 `b382d233...`. The source tree at f4e8 has 2,340 entries; COE #26 has 286 entries; neither tree response was truncated.
+
+| Manifest route | Source files | Destination files | Identical | Different | Missing | Extra |
+|---|---:|---:|---:|---:|---:|---:|
+| CORE `usr/lib/blazepwifi/` | 15 | 20 | 6 | 9 | 0 | 5 |
+| CORE `cgi-bin/vendo` | 1 | 1 | 0 | 1 | 0 | 0 |
+| Rental Android | 983 | 8 | 0 | 0 | 983 | 8 |
+| Standalone Rental profiles (manual mapping only) | 31 | 19 | 0 | 2 | 29 | 17 |
+| Rental standalone server | 7 | 4 | 0 | 1 | 6 | 3 |
+| Pisonet SoftTimer | 32 | 47 | 13 | 11 | 8 | 23 |
+| Hardware ESP32 | 3 | 1 | 0 | 1 | 2 | 0 |
+| Hardware ESP8266 | 3 | 1 | 0 | 1 | 2 | 0 |
+| QA tests | 38 | 19 | 1 | 3 | 34 | 15 |
+| RELEASE workflow | Reimplementation review | Reimplementation review | Not byte-identical | | | |
+
+### PisoWiFi SOURCE_INTAKE / MIGRATION_MAP exact audit
+
+COE #26 `Pisowifi/SOURCE_INTAKE.json` blob `1b9018ff944f7f673934d0fc2a97e0a0090d3f5f` is schema 8 and pins Experiments source commit `6d4c9b487af4d768c4d7627654d119417fcc6e00`, not current main f4e8. Its 61 runtime rows contain **46 byte-identical / 15 derived**, but summary counters claim 47 / 14. All 61 recorded source blobs match that pinned historical source tree; all 61 destination blobs match COE #26. Only 33/61 pinned source blobs still match current Experiments main; 28 have drifted. `MIGRATION_MAP.md` rootfs table has 61 rows: 46 copied unchanged, 13 intentionally edited, 2 locally derived (15 non-identical total), confirming the summary off-by-one.
+
+The intake lists four original tests; all four source/destination blob identities match the pinned trees (two byte-identical, two derived cleanup tests). It lists 15 derived tests, but the migration-map derived-fixture section contains 14 rows: `tests/voucher_txn_journal.sh` is omitted; `tests/run_focus.sh` and `tests/member_txn_journal.sh` have stale map blob IDs. All 15 derived test blobs are present at their recorded COE destination paths, but 11 are marked NOT_RUN and four PENDING_CI_RUN. COE #26's five candidate workflows remain QUEUED, so no current-head CI completion can be claimed.
+
+License/NOTICE: PisoWiFi `LICENSE` matches the source blob `1ee55b94183417be977ca287cd7391f9a6f7e721`; vendored QRCode and TailAdmin license/notice blobs match their source. Source root `NOTICE.md` blob `f6d92cd21465312be5993631fe26977219be0fb9` has no destination root counterpart. The intake snapshot's older source commit and the routing manifest's current-main baseline must remain separate; do not rewrite either pin to conceal drift.
+
+**Disposition:** no file copied, moved, staged, overwritten, rebased or cherry-picked. COE #26 remains FROZEN; all per-file provenance, test identity, licensing, and exact-head CI gaps must be resolved by the owning roles before any migration proposal.
