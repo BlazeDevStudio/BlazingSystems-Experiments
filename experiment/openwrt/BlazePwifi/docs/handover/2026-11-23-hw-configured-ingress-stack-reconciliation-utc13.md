@@ -100,7 +100,11 @@ The current ESP32 sketch on this #347 stack selects PSA Crypto for Mbed TLS 4 an
 
 ### Revalidated #283 audit leads
 
-At live #283 head `4dd0b01bf04cf80aec6d4dd6fc93b2fdc633da30`, both sketches return false on failed `appendQuarantineRecord()` before `clearPending()`. `quarantinePending()` remains definition-only (no active callsite), so no end-to-end quarantine lifecycle is accepted. Current main CGI producer blob `2e3a1430d08cc6606429a042df3b5848f53c7267` emits no approved `response_sig` for register/ping or poll; member-endpoint signatures are not interchangeable. Coin/config/relay admission remains deny-only.
+At live #283 head `4dd0b01bf04cf80aec6d4dd6fc93b2fdc633da30`, both sketches return false on failed `appendQuarantineRecord()` before `clearPending()`, but `quarantinePending()` is definition-only with no active callsite. **Do not mark #283's lifecycle as fixed.**
+
+The reconciled #347 stack is distinct: ESP8266 sketch blob `fa8ed828026396db89aab2889bf6a61d6cf6bbac` calls `quarantinePending(response)` at line 1374; ESP32 sketch blob `717336b84d434d51eb24beac1ed8efce8e719f69` calls it at line 1616. In both #347 sketches, failed `appendQuarantineRecord(reason)` returns false before `clearPending()`, and the clear helper is reached only after append/readback success. Exact-head Quarantine [#45186057750](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45186057750), job `137731843201`, logs both boards passing `QUARANTINE_APPEND_FAILURE_PRESERVES_PENDING_AND_ATTEMPT` and `QUARANTINE_CLEAR_FAILURE_PRESERVES_ATTEMPT_AND_RAM`; mutations that clear pending on append failure (expected exit 110) or ignore clear failure (expected exit 114) are rejected on both boards. This is source-extracted host simulation, not physical LittleFS/power-cut acceptance, and no #283 branch change or cherry-pick occurred.
+
+Current main CGI producer blob `2e3a1430d08cc6606429a042df3b5848f53c7267` emits no approved `response_sig` for register/ping or poll; member-endpoint signatures are not interchangeable. The authenticated producer/consumer contract remains CORE/QA-owned; coin/config/relay admission remains deny-only.
 
 ### Coordination and release state
 
