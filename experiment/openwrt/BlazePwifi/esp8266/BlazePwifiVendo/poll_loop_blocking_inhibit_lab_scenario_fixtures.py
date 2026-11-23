@@ -427,8 +427,6 @@ int main(){
 }
 """
 
-"""
-
 RACE_MAIN = MAIN.replace(
     "  // Existing pulse-drain behavior remains intact for a pulse observed before poll.",
     "  // An ISR edge after the final quiet sample must be persisted before HTTP begins.\n"
