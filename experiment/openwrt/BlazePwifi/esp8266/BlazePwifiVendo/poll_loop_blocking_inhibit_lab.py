@@ -436,9 +436,9 @@ for board,path in BOARDS.items():
                  load_fault_source=load_fault,latch_fault_source=latch_fault,init_store_source=init_store,
                  begin_source=begin,sample_source=sample,main_source=MAIN,reconcile_source=reconcile,
                  handle_source=handle,drain_abort_source=drain_abort,quarantine_source=quarantine,
-                 idle_source=idle,coin_ingress_config_source=coin_ingress_config):
+                 idle_source=idle,coin_ingress_config_source=coin_ingress_config,stubs_source=STUBS):
         board_define = "#define TARGET_ESP32\n" if board=="ESP32" else "#define ESP8266\n"
-        return (board_define+STUBS+isr_source+snapshot+write+coin_ingress_config_source+output_source+idle_source+can_start+
+        return (board_define+stubs_source+isr_source+snapshot+write+coin_ingress_config_source+output_source+idle_source+can_start+
                 quiet_source+begin_source+write_fault_source+
                 load_fault_source+latch_fault_source+quarantine_source+configure_source+accept_source+reconcile_source+init_store_source+SUPPORT+handle_source+sample_source+drain_abort_source+loop_source+main_source)
 
@@ -459,20 +459,19 @@ for board,path in BOARDS.items():
         raise AssertionError(f"{board}: blocked-poll ISR rollover marker missing")
     print(f"{board} POLL_HTTP_ISR_MULTI_EDGE_ROLLOVER_RETAINED_PASS")
 
-    # Re-run the same blocked-poll ISR case with the empty response returned by
-    # post() when HTTPClient reports a transport timeout or other non-positive code.
+    # Re-run the blocked-poll ISR case with the empty String returned when
+    # HTTPClient reports a transport timeout or another non-positive status.
     timeout_response_anchor = r'    return String("{\"ok\":true,\"insert\":true,\"target\":\"spoof-target\"}");'
-    if POLL_HTTP_ISR_MAIN.count(timeout_response_anchor) != 1:
-        raise AssertionError(f"{board}: blocked-poll hostile response anchor is not unique")
+    if STUBS.count(timeout_response_anchor) != 1:
+        raise AssertionError(f"{board}: blocked-poll hostile response stub is not unique")
+    timeout_stubs = STUBS.replace(timeout_response_anchor, "    return String();", 1)
     poll_http_timeout_main = POLL_HTTP_ISR_MAIN.replace(
-        timeout_response_anchor, "return String();", 1
-    ).replace(
         "POLL_HTTP_ISR_MULTI_EDGE_ROLLOVER_RETAINED_PASS",
         "POLL_HTTP_TIMEOUT_ISR_MULTI_EDGE_ROLLOVER_RETAINED_PASS",
         1,
     )
     timeout_output = compile_and_run(
-        assemble(main_source=poll_http_timeout_main),
+        assemble(stubs_source=timeout_stubs,main_source=poll_http_timeout_main),
         board,0,"poll-http-timeout-isr-multi-edge-rollover"
     )
     if "POLL_HTTP_TIMEOUT_ISR_MULTI_EDGE_ROLLOVER_RETAINED_PASS" not in timeout_output:
