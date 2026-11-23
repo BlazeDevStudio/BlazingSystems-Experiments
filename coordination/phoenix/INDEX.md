@@ -10,7 +10,7 @@
 - COE #26 remains FROZEN at `b382d233...`, five workflows QUEUED / zero jobs. The 11-route manifest remains DRAFT_REVIEW_ONLY, PHX-MASTER target null; no migration is staged.
 - Issue #172 points to v0.5.3 development, while main PROJECT_HANDOVER points to v0.6.0; PR #30 is CLOSED / UNMERGED and the v0.6 branch advanced separately. CORE confirmation required.
 - Architecture has 89 §6 headings through §6.92; historical duplicate numbers remain §6.9, §6.10, §6.11, §6.25 and §6.38. No renumbering.
-- INDEX remains 107/107 Master report links, unique and non-duplicated. Cleanup #266 remains OPEN / 0-of-7. Canonical private Drive v11/newer corrections unavailable; no older snapshot substituted. Full Master Python suite and `verify_coordination.py` NOT RUN.
+- INDEX remains 107/107 Master report links, unique and non-duplicated. Cleanup #266 remains OPEN / 0-of-7. Private Drive v11/newer corrections remain unavailable; public cloud policy/handover were read from `BlazeDevStudio/BlazingSystems`, confirming the private-registry prerequisite and BLOCKED status when Drive access is missing. No older registry snapshot substituted. Full Master Python suite and `verify_coordination.py` NOT RUN.
 - **PRODUCTION NO-GO.**
 
 ---
@@ -872,3 +872,15 @@ Both historical reports were already indexed in the earlier sections above; UTC0
 
 - [PHX-MASTER UTC19 — Hardware fixture-runner correction, Release source-pin qualification, COE #26 provenance and branch-protection audit](PHX_MASTER_UTC19_20261123_HW347_FIXTURE_COE26_PROVENANCE_BRANCH_PROTECTION.md) — exact #347 corrected test/lab and docs heads, current CI, source-blob match to #291 ESP32 compatibility, row-level COE #26 migration/derived-test/license review, missing branch protection, README/handover release identity conflict, and private registry access blocker.
 - This report preserves the failed intermediate Hardware test-harness refactor and its corrected successor. No subsystem source or COE destination path was modified.
+
+
+## PHX-MASTER UTC21 storage-policy access correction — 2026-11-23
+
+The first UTC21 pass could not read the AGENTS.md cloud-policy links under their legacy owner path. A follow-up read succeeded from the current public repository `BlazeDevStudio/BlazingSystems`:
+
+- [BLAZE_CLOUD_ARTIFACT_POLICY.md](https://github.com/BlazeDevStudio/BlazingSystems/blob/main/BLAZE_CLOUD_ARTIFACT_POLICY.md), blob `5e503925750c4e511314e4b7624579d82f60aae2`.
+- [BLAZE_CLOUD_STORAGE_HANDOVER.md](https://github.com/BlazeDevStudio/BlazingSystems/blob/main/BLAZE_CLOUD_STORAGE_HANDOVER.md), blob `a15f14cb3baf46424b820e1a921462794422f06b`.
+
+The policy confirms that the canonical private registry and sync ledger must be consulted before creating mirror folders or artifacts, and explicitly requires workers to report BLOCKED when the Drive connector is unavailable. The public handover is a 2026-10-26 **partial verified foundation**; it records that full Git-history bundles remain blocked and storage quota is unverified. It is not the requested private v11 registry or a current registry readback.
+
+The exact private `BLAZE_PROJECT_REGISTRY_v11_20261027.json` and newer corrections remain absent from the connected Library listing; no Google Drive connector is exposed in this run. No new report, folder, or Drive artifact was created.
