@@ -2948,3 +2948,30 @@ The correction adds one RELEASE-local paired-close helper. It attempts each desc
 - Rollback is limited to reverting the two RELEASE-owned test/source commits for this increment; do not revert inherited cross-role files.
 
 No merge, rebase, signing, release tag, publication, hardware flash, payment migration or customer deployment occurred. CI remains synthetic/hosted evidence only. Protected signer and independent freshness witness, durable financial accounting/migration, independent QA/MASTER approval, approved production binaries, 150 physical power cuts and 30-device/24-hour soak remain unproven or NOT TESTED. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC13 final exact-head CI reconciliation — 2026-11-23
+
+This section records terminal outcomes for the prior final handover HEAD `da83cc90206d3f4b17812976dabe4e1aef904737`; it does not claim the new documentation-only successor has completed CI.
+
+### Release-owned provenance and compatibility checks
+
+- PR compatibility [#45182375409](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45182375409): **SUCCESS**. Core 4.0.0 job `137719785572`, provenance job `137719785980`, and core 3.3.13 job `137719786039` all SUCCESS. Both core jobs verified the pinned Arduino CLI archive, installed the exact core, passed compile-time SOURCE_DATE_EPOCH checks, passed release-owned ELF section/symbol inspectors, and compiled twice with identical exact PHX-HARDWARE application image comparison.
+- Push compatibility [#45182366397](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45182366397): **SUCCESS**. Core 3.3.13 job `137719774826`, core 4.0.0 job `137719775483`, and provenance job `137719775486` all SUCCESS.
+- The earlier core 4.0.0 archive HTTP 403 did **not** recur on these exact `da83cc90` runs. The archive verifier and both core compatibility builds passed. This is hosted CI evidence only; it is not physical hardware acceptance or authorization to publish firmware.
+- Final handover-head provenance suite: **45/45 PASS** in both compatibility runs. The PR run also passed the Arduino CLI archive verifier (10 tests) and immutable action-pin guard.
+
+### Final handover-head integrated build status
+
+- PR build [#45182375568](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45182375568): overall **FAILURE**, not green. CI-0701 job `137719313063` SUCCESS (provenance 45/45, handover-current-refs 25/25, archive verifier 10/10, release pin/concurrency/workflow/board-core/docs-only guards PASS). Mandatory validation job `137719728681` FAILED at the inherited CORE-owned `experiment/openwrt/BlazePwifi/PROJECT_HANDOVER.md` freshness gate. ESP32 job `137719728732`, ESP8266 job `137719728840`, Android job `137719728679`, and all 11 OpenWrt target jobs SUCCESS. Update-bundle, v0.4 simulations, production sign handoff, prerelease/release publishers, and lab preview jobs SKIPPED after the validation gate.
+- Windows [#45182375433](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45182375433): handover freshness FAILED; Windows build and publisher SKIPPED.
+- Push build [#45182366550](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45182366550) at the same source was still IN_PROGRESS at the last read: CI-0701 SUCCESS, validation FAILED at the same CORE freshness gate, ESP8266 and several target jobs SUCCESS, with Android/ESP32/other targets still running. It is not used as final acceptance evidence.
+
+### Boundary and next actions
+
+- **PHX-CORE:** refresh its own `PROJECT_HANDOVER.md`, `CURRENT_STATE.md` and `CHANGE_LEDGER.md`, then rerun the mandatory freshness gate. RELEASE did not edit or bypass CORE-owned records.
+- **PHX-QA:** independently review the provenance paired-close helper and the final #291 diff; no submitted independent review was returned at the last read.
+- **PHX-RELEASE:** preserve the passing exact-head 3.3.13/4.0.0 compatibility evidence; do not repeat the completed archive-verifier task. Wait for final documentation-successor CI before any additional source work.
+- **PHX-MASTER:** refresh its own #172 child-PR pin and preserve the #288 `DRAFT_REVIEW_ONLY` / `reimplementation-review` route.
+
+The compatibility matrix is reproducible hosted CI only. No hardware flash, production image approval, signer invocation, release tag, publication, financial migration or customer deployment occurred. Physical 150 power-cut and 30-device/24-hour acceptance remain NOT TESTED. **PRODUCTION NO-GO.**
