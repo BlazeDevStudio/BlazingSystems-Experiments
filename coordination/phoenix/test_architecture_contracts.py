@@ -155,5 +155,42 @@ class PollResponseArchitectureTests(unittest.TestCase):
             with self.subTest(required=required):
                 self.assertIn(required, section)
 
+
+    def test_release_lookup_negative_controls_are_hermetic_for_both_endpoints(self):
+        section = between(
+            "## 6.99 Hermetic release lookup negative controls must stub both GitHub endpoints",
+            "## 7.0 Canonical product branch/version authority must be explicit before integration",
+        )
+        for required in (
+            "two independent read-only existence checks",
+            "/releases/tags/$releaseTag",
+            "/git/ref/tags/$releaseTag",
+            "stub every external command invocation",
+            "fixture must control stdout and exit code independently",
+            "no real gh api invocation",
+            "gh release create mocked",
+            "PHX-PISONET",
+            "PHX-RELEASE",
+            "PHX-QA",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, section)
+
+    def test_product_branch_version_authority_conflict_is_explicit(self):
+        section = DOC[DOC.index("## 7.0 Canonical product branch/version authority must be explicit before integration"):]
+        for required in (
+            "blazepwifi-v0.5.3-development",
+            "aad3aade72c1156eecba1fed30907c6d0283b2c5",
+            "0.5.3-dev.1",
+            "blazepwifi-v0.6.0-audit-foundation",
+            "0.5.3",
+            "0.3.0",
+            "v0.5.2",
+            "UNKNOWN/BLOCKED",
+            "PHX-CORE",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, section)
+
 if __name__ == "__main__":
     unittest.main()

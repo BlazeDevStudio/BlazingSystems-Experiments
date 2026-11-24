@@ -1709,3 +1709,23 @@ RELEASE #291 (`5222443b3747f47d440d804c4ff853eaa04686a5`) overlaps three handove
 COE #26 remains FROZEN at `b382d233ff06c8791b1028bed3c617cc7b670d12`. Exact current #349 source/destination tree comparison confirms different firmware blobs, 40 source board-local Python labs/helpers versus zero destination, missing parser-lab counterpart, different hardening-test identity, missing root NOTICE, missing Tabler LICENSE and BlazeRentalLauncher LICENSE. The product LICENSE and TailAdmin NOTICE are matching limited correspondences; they do not establish complete licensing provenance. Five destination workflows remain queued with zero jobs.
 
 **Review-before-move hold:** no source/destination file was staged, copied, moved, overwritten, cherry-picked, rebased, retargeted or promoted. The previous 61-row audit remains historical and was not rerun in full. Registry v11/newer corrections remain unavailable; no older snapshot or public registry substitute was used.
+
+## PHX-MASTER UTC04 route, owner-overlap and branch-authority hold — 2026-11-24T04:37:40Z
+
+The machine-readable OWNERSHIP_ROUTES.json remains blob e4db324315a1b3543fec17a148fbf960170fcb29: 11 routes, DRAFT_REVIEW_ONLY, PHX-MASTER source coordination/phoenix/, destination null. No route, owner, target or copy permission changed.
+
+RELEASE #291 current head f1fda47 still changes three handover paths also changed by CORE #252, PISONET #255 and QA #290. Their current blobs are different across all four candidate branches:
+
+| Shared path | CORE #252 | PISONET #255 | QA #290 | RELEASE #291 current |
+|---|---|---|---|---|
+| experiment/openwrt/BlazePwifi/PROJECT_HANDOVER.md | 72e8e487d333a9488f77c2c3e68652d1a650ff85 | d3e66608280644af8c42635168a7e27c8fba8f31 | 83db03cf387f280ba2d595ff6e9d58ffa23417c5 | c5dc398465bac6eda83aa3c72097160b09c5d3fc |
+| experiment/openwrt/BlazePwifi/docs/handover/CHANGE_LEDGER.md | df50981c1596838b1abf544e94f68e89ad556b7d | 02963d32018ea09ad2a6a5a95b487de1f65ff4f2 | 3180e1a93c852e5c983f947e8ca45a897df0479f | 0aa2470661bbb8973a84bad588e847e35954ab38 |
+| experiment/openwrt/BlazePwifi/docs/handover/CURRENT_STATE.md | 72c38aeb93377f3aedb758c91d670ff1150e87bd | 47e07b7c0e06766d0d4ebb18bc13bfb274adfe22 | 73b9d1d6acbd8b58c13f2d1b9d17512c392f444a | f6bbdea7a7562bb7cfdeea2de56e65547b7a0029 |
+
+RELEASE #291 also changes negative-selftest.ps1 and PublisherMockCli.ps1 inside the PISONET-owned SoftTimer subtree. PISONET reviews both test files; RELEASE reviews the workflow behavior; QA independently reviews the exact final head. The current Windows failure is recorded in Architecture §6.99. Do not resolve the conflict by copying or overwriting either owner's files.
+
+The product branch/version authority conflict is recorded in Architecture §7.0: issue #172 designates v0.5.3 development; a separate v0.6 branch policy calls v0.6.0 active; main README and VERSION disagree with the v0.5.2 production baseline in the v0.5.3 handover. CORE must reconcile the canonical ref and version policy before promotion or migration.
+
+COE #26 remains FROZEN. The exact current #349 source tree has 40 board-local Python files while #26 has zero; ESP8266/ESP32 firmware and hardening test blobs differ; the parser lab is missing; root NOTICE, Tabler LICENSE and Android Launcher LICENSE are missing. Matching product/QRCode/TailAdmin license files do not establish complete licensing provenance. Five destination workflows remain queued with zero jobs.
+
+**Review-before-move hold:** no source/destination file was staged, copied, moved, overwritten, cherry-picked, rebased, retargeted or promoted. The full historical 61-row audit was not rerun. Private registry v11/newer corrections remain unavailable, so no new Drive folder or artifact was created.

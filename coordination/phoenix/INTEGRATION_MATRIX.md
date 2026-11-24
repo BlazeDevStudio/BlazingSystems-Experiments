@@ -4734,3 +4734,49 @@ The complete source/test tree at #349 has 40 Python files beneath the ESP8266/ES
 - Ownership manifest blob `e4db324315a1b3543fec17a148fbf960170fcb29` remains 11 routes / `DRAFT_REVIEW_ONLY`; PHX-MASTER destination is null. No file was staged, copied, moved, overwritten, cherry-picked, rebased, retargeted or promoted.
 
 **Disposition:** COE #26 stays FROZEN. The source and destination firmware blobs differ, the new parser lab is absent, root NOTICE and two third-party license counterparts are missing, and destination CI has not run. Review and reconcile the destination tree before proposing any move; this Master audit grants no copy permission.
+
+
+## PHX-MASTER UTC04 exact #349-to-COE #26 provenance and current candidate CI — 2026-11-24T04:37:40Z
+
+Current source candidate: Experiments HARDWARE child #349 at PR/docs head 18803f884874afa3ff31d76d421b9dd811789c9f, source/test SHA 40b80bb075c008f3251c31f09a4dc9eb9e6c17e5, parent #347 base 960184670379f01e20f0e7e8bc23b3e5eedacd3f. Destination candidate: COE #26 at b382d233ff06c8791b1028bed3c617cc7b670d12 on COE main a6513ab4412b4c014eee2863e45cbe32d06cb243.
+
+Both recursive Git trees were fetched by exact commit tree SHA and were non-truncated:
+
+| Measure | Experiments #349 | COE #26 |
+|---|---:|---:|
+| Total tree entries | 2,494 | 286 |
+| ESP32 + ESP8266 board-directory files | 54 | 4 |
+| Board-local Python labs/helpers | 40 | 0 |
+
+Exact selected firmware/test identity:
+
+| Artifact | Experiments #349 source | COE #26 destination | Result |
+|---|---|---|---|
+| ESP8266 sketch | 2f87a9de84ac53dbb0d2718b5c79a4662b63de8f | c8be98f72596681e36a3ad1f8939bf8046c96887 | Different blobs |
+| ESP32 sketch | a9a1c2fecb001d71f8f22b43952edbd160aacaf8 | 3cc7ec54b476943dc04a8d1af5e2df5fe054e422 | Different blobs |
+| New parser lab | poll_json_array_primitive_lab.py, blob ac4b164e79da90039b0f99a22efdb6a136046442 | No destination counterpart | Missing test |
+| Hardening test | v05_firmware_hardening_test.sh, blob 41211b2c110ab409f6d9d1812ef12fda73b13211, mode 100755 | Hardware/tests/test_firmware_hardening.sh, blob f921c56cecc19cab1989507b9b4ade1f45dac54e, mode 100755 | Different test identity |
+
+The source tree has 40 board-local Python files and the destination has zero. The parser lab and all other source board-local Python helpers therefore lack direct destination counterparts; a similar test name does not establish equivalent coverage.
+
+Exact license/notice comparison:
+
+| Source artifact | Source blob | COE #26 counterpart |
+|---|---|---|
+| experiment/openwrt/BlazePwifi/LICENSE | 1ee55b94183417be977ca287cd7391f9a6f7e721 | Pisowifi/LICENSE has the same blob |
+| vendor/qrcode/LICENSE | 150770c0fc2994865ccdbef6662735cc083e780d | Matching destination blob |
+| vendor/tailadmin/LICENSE | cb92d4176b21b0594e5a6caf94d79340505e3d33 | Matching destination blob |
+| vendor/tailadmin/NOTICE.md | f0425bbbe34c1227311098173b1eae0c3e2a807b | Matching destination blob |
+| Root NOTICE.md | f6d92cd21465312be5993631fe26977219be0fb9 | Missing |
+| ui/vendor/tabler/LICENSE | 22ee8122400915cbff18e5f69368fa9eea6145eb | Missing |
+| android/BlazeRentalLauncher/LICENSE | c5b1efa7aac764ae6d8da63476a2d5cec02a6a5d | Missing |
+
+The matching product, QRCode and TailAdmin license/notice files are limited correspondences only. They do not close the missing root NOTICE, Tabler or Android Launcher license provenance, nor complete third-party attribution.
+
+Exact candidate CI:
+- #349 Quarantine #45322486386 PASS and Relay #45322486479 PASS; Full #45322486442 FAIL at QA-owned Missing poll signature check.
+- COE #26 has five queued workflows and zero jobs.
+- COE #35 exact head fails all 10 site profiles because approved ULA /48 authority is missing; its sandbox fails at Bubblewrap unavailable / exit 125.
+- COE #49 exact head fails Shared ESP32 compile at missing mbedtls/sha256.h despite Stage 5.1 and case-collision passing.
+
+The historical 61-row source-intake audit was not rerun in full this activation. This focused current-tree comparison is not migration staging or copy approval. No source/destination file was staged, copied, moved, overwritten, cherry-picked, rebased, retargeted or promoted. Preserve COE #26 as FROZEN until per-file provenance, license, test identity, import completeness, exact-head destination CI and owner authorization are supplied.

@@ -1718,3 +1718,40 @@ Exact tree comparison found that RELEASE PR #291 at `5222443b3747f47d440d804c4ff
 RELEASE #291 also changes two files inside the PHX-PISONET-owned `experiment/windows/BlazePisonet-SoftTimer/tests/ReleaseSigning/` subtree: `negative-selftest.ps1` (blob `8b69174bf519154e43f7e12e4a9fa2c0e75d350f`) and `PublisherMockCli.ps1` (blob `7d56522b4fd678a26a2d7ea39e9b51dc8e52612d`). Those paths are not in PISONET #255's 11-file diff, but the ownership manifest assigns the whole SoftTimer subtree to PHX-PISONET. Current RELEASE Windows run [#45319386947](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45319386947) fails in the PISONET-owned negative self-test at the missing-tag acceptance assertion.
 
 **Required before integration:** RELEASE must enumerate and explain every overlapping path; CORE, PISONET and QA must review the intended final handover blobs; PISONET must review the two ReleaseSigning test changes; and all required checks must run on the exact final integration head. A pass on one branch does not qualify another branch's blob. Do not silently overwrite, cherry-pick, rebase or merge these paths. This is a review gate, not a merge authorization.
+
+## 6.99 Hermetic release lookup negative controls must stub both GitHub endpoints — PHX-RELEASE #291 (2026-11-24 UTC04)
+
+The future SoftTimer publisher has two independent read-only existence checks before artifact verification and publication:
+
+1. The release-object lookup at /releases/tags/$releaseTag.
+2. The Git-ref lookup at /git/ref/tags/$releaseTag.
+
+A confirmed 404 for the release object does not prove that the Git tag itself is absent. Both checks must independently require exactly one unambiguous HTTP 404 with the expected nonzero CLI exit. Any 200, 401, 403, 5xx, transport error, duplicate status, multiple status lines, or other ambiguous result must fail closed.
+
+**Test-harness contract:** a negative test that claims synthetic/no-network behavior must stub every external command invocation in the extracted decision block. The fixture must control stdout and exit code independently for both GitHub lookups, assert call order, arguments and call count, and keep gh release create mocked. There must be no real gh api invocation, network access, credential use or publication from the test. The test must distinguish a missing release object from an existing tag and from a missing tag; do not weaken the production fail-closed checks to make a fixture pass.
+
+**Exact current evidence:**
+
+- RELEASE PR #291 remains OPEN / DRAFT / UNMERGED at final branch head f1fda47b1ebd5c4eafe8d8c450ab1eafcb037528.
+- The current release workflow blob is 61031c13aad934fb52aef3038598f8b4d6a89334. Its first release lookup is at workflow line 479; the second Git-ref lookup is at line 494, with its independent exit capture at line 495.
+- PISONET-owned negative-selftest.ps1 blob is 8b69174bf519154e43f7e12e4a9fa2c0e75d350f. Its extracted decision block starts at line 302 and ends before final artifact verification; line 308 replaces only the first $lookupExit = $LASTEXITCODE. The extracted block still contains the second gh api invocation and $tagLookupExit capture, which are not replaced by the fixture in this script. The comment at line 300 says synthetic API output must not exercise the real GitHub CLI.
+- The separate PublisherMockCli.ps1 blob is 7d56522b4fd678a26a2d7ea39e9b51dc8e52612d and defines a fake gh command, but its workflow step was skipped after the preceding negative-selftest failure.
+- Exact final-head Windows run #45326528399, job 138217448588, passed handover freshness and package parity, then failed step "RELEASE-SIGN test fail-closed negative controls" at negative-selftest.ps1 line 326: "RELEASE-PUBLISHER executable lookup regression: missing tag accepted=False". The later PublisherMockCli step and all publishing steps were skipped. ESP32 compatibility #45326528385 passed; BlazePwifi build #45326528447 passed.
+- The workflow log does not expose the second lookup's HTTP response. Therefore the static unmocked-command gap is confirmed, but the precise runtime response that caused accepted=False is not established. Do not attribute the failure to a specific GitHub status until the fixture isolates both calls.
+
+**Ownership and review:** PHX-PISONET owns the SoftTimer test files under experiment/windows/BlazePisonet-SoftTimer/; PHX-RELEASE owns the release workflow and publisher behavior. PISONET must make both lookup fixtures hermetic; RELEASE must confirm the expected two-endpoint semantics; PHX-QA independently reviews the corrected test and exact final head. This contract changes no subsystem source, test file or workflow and transfers no ownership. No signing, publication, merge or release is authorized.
+
+## 7.0 Canonical product branch/version authority must be explicit before integration
+
+Do not infer the active product branch or production version from a branch name, default-branch README, stale handover paragraph or VERSION file alone. Record the exact branch HEAD, VERSION blob/value, top handover status, control-plane designation and release/tag identity. If they disagree, classify the authority as UNKNOWN/BLOCKED and require the product owner to reconcile it before branch promotion, cross-branch migration or release decisions.
+
+**Current source-of-truth conflict, re-read 2026-11-24T04:37:40Z:**
+
+| Reference | Exact ref / file evidence | Current statement |
+|---|---|---|
+| Control plane #172 | Designates blazepwifi-v0.5.3-development at aad3aade72c1156eecba1fed30907c6d0283b2c5 | Issue-designated development branch |
+| v0.5.3 development | VERSION blob 62d8e87b40a05fb7a39b60d72369d10a4fccca21 = 0.5.3-dev.1; PROJECT_HANDOVER blob 0430f421f705451b2c94cf9a97d2cf02398e9657 | Handover calls v0.5.3-dev.1 active and v0.5.2 the frozen production baseline |
+| v0.6.0 audit-foundation | Branch HEAD 2fbd2475e9f54878c316fa7cea2f228386b0e859; VERSION blob be14282b7fffb9ba95d51c6546ed9816dc8f3ff8 = 0.5.3; README blob 62333e9c12ef3ba0d43c8efa7ef256e4dfeb840d; HANDOVER_POLICY blob c3a51e5185fb29de546d12e3b2ca25dc9aba77c6 | README and policy call v0.6.0 audit/UX/security foundation active while source VERSION remains 0.5.3; no signed installable v0.6.0 is claimed |
+| Experiments main | HEAD f4e8a891aed8af86d5fd315d28750a0ac3a7372b; VERSION blob 43c05666668b2a6d1eef2c5dca9032d8c6b77869 = 0.5.3-dev.5; README blob 7990e2ecbab06cafa5f8227050929e16fff1f4a1; PROJECT_HANDOVER blob f86c0ae9b14853963b8a9b835e1100eb5178d1a6 | README says current production release 0.3.0; default-branch handover labels itself historical and directs maintainers to v0.6.0; lower handover sections also retain v0.5.3-dev.5 |
+
+These statements are not mutually authoritative. The issue-designated v0.5.3 line is internally aligned at VERSION 0.5.3-dev.1, while the v0.6 branch is separately labeled active despite VERSION 0.5.3, and main's README production label conflicts with the v0.5.2 production baseline in the v0.5.3 handover. PHX-CORE must publish one owner-approved canonical development ref, version policy and production baseline, and reconcile the control-plane and handover pointers. PHX-MASTER records the conflict only; it does not select a product branch, edit product handovers or move source.

@@ -3442,3 +3442,33 @@ Exact branch refs: Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; 
 **Authority conflict retained:** issue #172 designates v0.5.3 development; its `PROJECT_HANDOVER.md` calls `0.5.3-dev.1` active. The separate v0.6 branch `HANDOVER_POLICY.md` calls v0.6.0 active, while root README on main still labels BlazePwifi 0.1.0-alpha.1. CORE must reconcile the canonical product branch/version authority; Master does not edit product handovers.
 
 Private v11 registry was not found. A newer Library checkpoint and the private sync-ledger copy were read, but they are not the canonical v11 JSON and do not replace live Drive readback. No Google Drive connector is exposed. No private registry content or identifiers are reproduced here.
+
+
+## PHX-MASTER UTC04 exact owner PR heads, CI and branch authority — 2026-11-24T04:37:40Z
+
+All PR heads below were fetched live. Workflow runs are attached to the exact listed head; scoped PASS does not imply integration or production acceptance.
+
+| Owner / candidate | Exact current PR head | Exact-head CI | Required owner action |
+|---|---|---|---|
+| PHX-CORE #252 | c82705f2de865c89ab733b10efa84f26f56a5cc4 | Build #42698139210 PASS (scoped) | CORE confirms the canonical development branch and authenticated register/poll producer envelope. Separate CORE production continuation retains implementation ownership. |
+| PHX-RENTAL #328 | 0e0da62acd47c6a1ce287f8a30fc700d603fa070 | APK identity #44782114384 PASS; API smoke #44782114393 PASS; BlazePwifi build #44782114390 FAIL | RENTAL/CORE resolve the shared build blockers on their own branches. |
+| PHX-PISONET #255 | d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | Windows #42462978704 PASS (synthetic CI only) | Native same-handle COM acceptance remains NOT TESTED. PISONET reviews the two ReleaseSigning test files touched by RELEASE #291. |
+| PHX-HARDWARE parent #347 | 960184670379f01e20f0e7e8bc23b3e5eedacd3f | Quarantine #45299741995 FAIL; Relay #45299742437 FAIL; Full #45299741993 FAIL | Parent remains a separate older parser candidate; do not attribute child #349 results to it. |
+| PHX-HARDWARE child #349 | final PR/docs head 18803f884874afa3ff31d76d421b9dd811789c9f; source/test SHA 40b80bb075c008f3251c31f09a4dc9eb9e6c17e5; parent #347 exact base 960184670379f01e20f0e7e8bc23b3e5eedacd3f | Quarantine #45322486386 PASS; Relay #45322486479 PASS; Full #45322486442 FAIL at QA-owned Missing poll signature check. Android and 13 firmware target jobs pass; 12 validation-dependent downstream jobs skip. | HARDWARE retains parser ownership; CORE supplies the approved authenticated producer contract; QA resolves the assertion without weakening default-deny. Physical acceptance remains NOT TESTED. |
+| PHX-HARDWARE auth #348 | c18826892160b1777f107e2ca0ca49aaed66ba6a | Focused header #45207909335 PASS 5/5; build #45207909463 FAIL | Independent QA review and full build remain open. |
+| PHX-QA #290 | 5c29d15994cee1279058f1eca12f2a3180704292 | Windows #43633486963 PASS | Scoped Windows evidence only. |
+| PHX-QA #292 | 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | No PR-triggered workflow runs returned | QA must run the source-exact recipient regression at its refreshed head. |
+| PHX-RELEASE #291 | f1fda47b1ebd5c4eafe8d8c450ab1eafcb037528 | Windows #45326528399 FAIL in PISONET negative-selftest line 326; ESP32 compatibility #45326528385 PASS; BlazePwifi build #45326528447 PASS. Handover job passed; PublisherMockCli and publisher jobs skipped. | PISONET makes both API lookups fixture-controlled; RELEASE reviews workflow semantics; QA independently reviews exact final head. |
+
+COE candidates at exact current heads:
+
+| Candidate | Exact head | Exact-head CI |
+|---|---|---|
+| COE integration #26 | b382d233ff06c8791b1028bed3c617cc7b670d12 on COE main a6513ab4412b4c014eee2863e45cbe32d06cb243 | Five workflows remain QUEUED / zero jobs; operationally FROZEN. |
+| COE RELEASE #35 | e7801818b00854f34a5a88955d979c601ec96404 | Shared #45303825436 fails all 10 appliance profiles for missing approved site-scoped ULA /48; case #45303825417 PASS; sandbox #45303825459 fails because Bubblewrap is absent (exit 125). |
+| COE CORE #45 | 9d76a134c1f6512aa40c20ec4d247306a71a8cce | Overlay #44295049727 and case-collision #44295049903 PASS (scoped). |
+| COE INTERCON #49 | aeb8ff11b2f5db9a5f86280ab62ab988245f3919 | Stage 5.1 #44646341873 and case #44646341992 PASS; Shared #44646341922 fails compiling ESP32 because mbedtls/sha256.h is missing. |
+
+The issue-designated development branch remains blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5; the separate v0.6 branch remains 2fbd2475e9f54878c316fa7cea2f228386b0e859. Their version/handover conflict and main README mismatch are recorded in Architecture §7.0. CORE must reconcile the canonical product ref; Master does not edit product branches.
+
+Experiments main, issue-designated development, v0.6 comparison branch, Master coordination and COE main report protected=false in the branch API. Cleanup #266 remains OPEN / 0-of-7. Master Actions at starting HEAD returned zero runs. The private v11 registry and newer corrections remain unavailable; no Google Drive connector is exposed. The Master Python suite and verify_coordination.py remain NOT RUN because local Git clone failed DNS resolution for github.com.
