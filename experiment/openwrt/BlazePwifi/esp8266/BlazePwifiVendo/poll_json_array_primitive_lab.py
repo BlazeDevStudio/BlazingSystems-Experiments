@@ -10,6 +10,7 @@ from pathlib import Path
 
 from poll_json_array_primitive_lab_fixtures import (
     COMPOSITE_MAIN,
+    DEPTH_MAIN,
     PARSER_FUNCTIONS,
     PRIMITIVE_MAIN,
     PROTOTYPES,
@@ -73,6 +74,21 @@ def verify(boards, extract, stubs):
                 f"stderr={primitive_baseline.stderr})"
             )
 
+        depth_baseline = _compile_and_run(
+            stubs + parser + DEPTH_MAIN, board, "depth-baseline"
+        )
+        if depth_baseline.returncode:
+            raise AssertionError(
+                f"{board}: composite nesting-depth boundary failed "
+                f"(exit={depth_baseline.returncode}; "
+                f"stdout={depth_baseline.stdout}; "
+                f"stderr={depth_baseline.stderr})"
+            )
+        print(
+            f"{board}: POLL_JSON_COMPOSITE_DEPTH_PASS "
+            "max=16 rejected=17 arrays=1 objects=1"
+        )
+
         primitive = extract(source, "pollJsonSkipPrimitive")
         delimiter = " && r[p]!=']'"
         if primitive.count(delimiter) != 1:
@@ -87,6 +103,24 @@ def verify(boards, extract, stubs):
         )
 
         composite = extract(source, "pollJsonSkipCompositeDepth")
+        depth_guard = " || depth>16"
+        if composite.count(depth_guard) != 1:
+            raise AssertionError(
+                f"{board}: expected exactly one composite nesting-depth guard"
+            )
+        depth_mutant = composite.replace(depth_guard, "", 1)
+        _expect_mutation_rejected(
+            stubs + parser.replace(composite, depth_mutant, 1) + DEPTH_MAIN,
+            board, "remove-composite-depth-cap", 122
+        )
+        off_by_one_mutant = composite.replace("depth>16", "depth>17", 1)
+        if off_by_one_mutant == composite:
+            raise AssertionError(f"{board}: depth-bound mutation anchor missing")
+        _expect_mutation_rejected(
+            stubs + parser.replace(composite, off_by_one_mutant, 1) + DEPTH_MAIN,
+            board, "allow-depth-17", 122
+        )
+
         separator = "if(p>=n || r[p++]!=',') return false;"
         if composite.count(separator) != 2:
             raise AssertionError(

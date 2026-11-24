@@ -104,3 +104,35 @@ int main() {
   return 0;
 }
 """
+
+
+DEPTH_MAIN = r"""
+String nestedComposite(unsigned depth, bool object) {
+  std::string value;
+  for (unsigned i = 0; i < depth; ++i) {
+    if (object) value += "{\\"k\\":";
+    else value += "[";
+  }
+  value += "0";
+  for (unsigned i = 0; i < depth; ++i) {
+    if (object) value += "}";
+    else value += "]";
+  }
+  return String(value);
+}
+
+int main() {
+  for (int object = 0; object < 2; ++object) {
+    String accepted = nestedComposite(16, object != 0);
+    int p = 0;
+    if (!pollJsonSkipComposite(accepted, p) ||
+        p != (int)accepted.length()) return object ? 131 : 121;
+
+    String rejected = nestedComposite(17, object != 0);
+    p = 0;
+    if (pollJsonSkipComposite(rejected, p)) return object ? 132 : 122;
+  }
+  std::cout << "POLL_JSON_COMPOSITE_DEPTH_PASS max=16 rejected=17 arrays=1 objects=1\\n";
+  return 0;
+}
+"""
