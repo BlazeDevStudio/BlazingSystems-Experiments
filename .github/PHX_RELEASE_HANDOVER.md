@@ -3884,3 +3884,28 @@ No merge, release tag, real-key signing, publication, hardware flashing, real pa
 - Compatible draft head `31d3cd0bd3f7e6a6d3dade542ad1af2bcfa663a6` already contains another worker’s ESP32 ELF-symbol inspection and regression-test refinement. No implementation was duplicated.
 - In [BlazePwifi build #45417613494](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45417613494), docs-only proof and scoped Android, ESP8266, ESP32, and OpenWrt compile legs succeeded; `validate` failed only at mandatory handover freshness. [Windows #45417613550](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45417613550) likewise stopped at handover freshness before Windows build/signing/publishing. [ESP32 compatibility #45417613647](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45417613647) succeeded.
 - This entry supplies the canonical freshness record. Evidence is scoped hosted CI only—not production, protected-signing, hardware, finance/migration, compatibility, or physical-acceptance evidence. PR #291 remains draft/unmerged and independently unreviewed. **PRODUCTION NO-GO** remains until MASTER and independent QA review, protected signer/source admission, durable finance/migration acceptance, and physical acceptance gates are satisfied.
+
+
+## PHX-RELEASE UTC15 — descriptor-safe ESP32 application-image admission
+
+**PR #291 remains OPEN / DRAFT / UNMERGED.** Branch `phoenix/release-publisher-isolation-20261115`; base #242 `734b89d9e7792247e8376335c3f3685500ab3f89`. Exact source-fix commit: [`dc8db27c`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/dc8db27c493c799f87704d9287659a2d242bb8ba). Current PR head at this handover edit: `dc8db27c493c799f87704d9287659a2d242bb8ba`.
+
+### Test-first defect and source correction
+
+- Regression tests were added first in [`f4604447`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/f460444759d258d06d58425e1ec2c233977c7ad8), then wired into CI-0701 by [`83176a50`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/83176a504a7a2b7cf6b80b22d9aa61bf518a504c). The fixture's `supports_dir_fd` capability set was corrected in [`341b8f07`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/341b8f074d6d5ea86decf6214e13ca79b5686386).
+- Expected RED on the pre-fix source: [BlazePwifi build #45426239469](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45426239469), CI-0701 job `138558922171`. The new 3-test suite ran: one synthetic positive passed; two descriptor-cleanup regressions failed. Exact failures: image close interruption masked the primary read error, and root-directory close interruption prevented a parent-directory close attempt.
+- Source fix [`dc8db27c`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/dc8db27c493c799f87704d9287659a2d242bb8ba) routes image, root and parent descriptors through the existing one-shot close-all helper. It attempts every owned close once, preserves the original exception when cleanup also fails, attaches secondary cleanup failures as notes, and surfaces a cleanup failure when there is no primary error. No retry is made after an ambiguous close result.
+
+### Exact-source verification at `dc8db27c`
+
+- [BlazePwifi build #45428594112](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45428594112): CI-0701 job `138567311098` **SUCCESS**. Logs show 53/53 provenance tests, 3/3 ESP32 image-admission descriptor tests, 25/25 release workflow concurrency tests, and 10/10 Arduino CLI archive verifier tests. Immutable action-pin parser/coverage and toolchain/handover contract checks also passed. The overall run is **IN PROGRESS** at this handover snapshot: mandatory shared CORE handover validation job `138567479214` **FAILED**, reporting `experiment/openwrt/BlazePwifi/PROJECT_HANDOVER.md` newer than its recorded checkpoint `86f9edb9f622987cba5bd19c11988cc02f123cb3`; several target jobs were still running. No full-build success is claimed.
+- [ESP32 compatibility #45428594110](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45428594110): release artifact provenance regression job `138567311593` **SUCCESS**; ESP32 core 3.3.13 and 4.0.0 compile/reproducibility jobs `138567311666` and `138567311033` were **IN PROGRESS** at this handover snapshot. No matrix success is claimed yet.
+- The RED run is retained as diagnostic evidence; it is not a passing result. These are hosted synthetic/CI checks only. The application-image fixture writes `SYNTHETIC-NOT-FIRMWARE`; no production firmware is represented by it.
+
+### Ownership and disposition
+
+- This increment changes only the RELEASE-owned verifier source; the test-first test file and CI step are preserved as preceding commits on this existing draft branch. No CORE, RENTAL, PISONET, HARDWARE, QA, MASTER or COE destination source was edited.
+- PHX-CORE / PHX-MASTER must refresh the canonical shared handover set, beginning with `experiment/openwrt/BlazePwifi/PROJECT_HANDOVER.md`, and publish the exact resulting SHA. PHX-RELEASE must rerun the complete build and Windows freshness gates at that exact SHA; no bypass is authorized.
+- MASTER must refresh the RELEASE child pointer in #288. PR #291 still has inherited cross-role paths and no independent QA/Master approval.
+
+No merge, signer operation, tag, publication, hardware flash, real payment migration or customer deployment occurred. **PRODUCTION NO-GO.**
