@@ -599,5 +599,80 @@ class BlazePwifiV053PublishPermissionTests(unittest.TestCase):
                 with self.assertRaisesRegex(AssertionError, "protected main"):
                     require_v053_release_permissions_are_isolated(unsafe)
 
+
+def workflow_step_block(content: str, job_name: str, step_name: str) -> str:
+    """Return one named step from a release workflow job."""
+    job = job_block(content, job_name)
+    marker = f"      - name: {step_name}\\n"
+    start = job.find(marker)
+    if start < 0:
+        raise AssertionError(f"missing {job_name} step: {step_name}")
+    end = job.find("\\n      - name:", start + len(marker))
+    if end < 0:
+        end = len(job)
+    return job[start:end]
+
+
+def require_run_identity(step: str, variable: str, workflow_path: str, event: str) -> None:
+    """Require an Actions run ID to identify the intended workflow, event and ref."""
+    required = (
+        f'test "$(printf \'%s\' "${variable}" | jq -r .path)" = "{workflow_path}"',
+        f'test "$(printf \'%s\' "${variable}" | jq -r .event)" = "{event}"',
+        f'test "$(printf \'%s\' "${variable}" | jq -r .head_branch)" = "main"',
+    )
+    missing = tuple(fragment for fragment in required if fragment not in step)
+    if missing:
+        raise AssertionError(
+            f"{variable} must be a {event} run of {workflow_path} from main; "
+            f"missing checks: {missing!r}"
+        )
+
+
+def require_v053_signer_candidate_run_identity(content: str) -> None:
+    """Reject PR/feature or unrelated workflow runs as production APK candidates."""
+    step = workflow_step_block(content, "sign", "Verify exact green v0.5.3 candidate")
+    require_run_identity(
+        step,
+        "B",
+        ".github/workflows/blazepwifi-build.yml",
+        "push",
+    )
+
+
+def require_v053_stage_run_identities(content: str) -> None:
+    """Bind staging to the canonical main build and exact main signer workflow run."""
+    step = workflow_step_block(content, "stage", "Verify exact candidate and signing runs")
+    require_run_identity(
+        step,
+        "B",
+        ".github/workflows/blazepwifi-build.yml",
+        "push",
+    )
+    require_run_identity(
+        step,
+        "S",
+        ".github/workflows/blazerental-v053-lineage2-sign.yml",
+        "workflow_dispatch",
+    )
+    exact_signer_source = 'test "$(printf \'%s\' "$S" | jq -r .head_sha)" = "$GITHUB_SHA"'
+    if exact_signer_source not in step:
+        raise AssertionError(
+            "the signer run must use the same protected-main workflow source commit as staging"
+        )
+
+
+class BlazePwifiV053RunProvenanceTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.sign_content = SIGN_WORKFLOW.read_text(encoding="utf-8")
+        cls.stage_content = RELEASE_STAGE_WORKFLOW.read_text(encoding="utf-8")
+
+    def test_signer_accepts_only_canonical_main_push_build_run(self):
+        require_v053_signer_candidate_run_identity(self.sign_content)
+
+    def test_stage_accepts_only_canonical_main_build_and_exact_main_signer_runs(self):
+        require_v053_stage_run_identities(self.stage_content)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
