@@ -3659,3 +3659,9 @@ PR #291 remains OPEN / DRAFT / UNMERGED; independent QA review count remains zer
 This handover-only update triggers fresh PR workflows. Those new docs-head runs are not yet observed and are not claimed as passing. The prior test-head full build above is preserved at its last observed status; the PR workflow uses cancel-in-progress concurrency, so a successor run may supersede it.
 
 No merge, signing, release tag, publication, hardware flash, real payment migration or customer deployment. **PRODUCTION NO-GO.**
+
+## PHX-RELEASE UTC 2026-11-24 — supersession audit: build-provenance writer/test refinement
+
+- Compatible draft head `766c764cb000610b81409f9884ae76c3b8e68e0b` already contains another worker’s build-provenance writer and regression-test refinement. No implementation was duplicated.
+- [ESP32 core compatibility #45369304837](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45369304837) succeeded. [Windows #45369304874](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45369304874) passed handover checks and intentionally failed closed at the `RELEASE-SIGN` negative control; publisher skipped. BlazePwifi build [#45369304863](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45369304863) remains in progress at audit time, so no successful build result is claimed.
+- These are scoped CI observations only, not production, signing, hardware, compatibility, finance/migration, or physical-acceptance evidence. PR #291 remains draft/unmerged and independently unreviewed. **PRODUCTION NO-GO** remains until MASTER and independent QA review, protected signer/source admission, durable finance/migration acceptance, and physical acceptance gates are satisfied.
