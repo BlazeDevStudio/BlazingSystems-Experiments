@@ -116,6 +116,10 @@ def map_address(
     candidates: list[dict[str, Any]] = []
 
     for symbol in symbols:
+        # GNU nm types A/a are absolute symbols, not members of this section.
+        # Their numeric values must not be mistaken for section-relative symbols.
+        if symbol["type"] in {"A", "a"}:
+            continue
         symbol_offsets: set[int] = set()
         if section["vma"] <= symbol["value"] < section["vma"] + section["size"]:
             symbol_offsets.add(symbol["value"] - section["vma"])
