@@ -397,18 +397,12 @@ for board,path in BOARDS.items():
     if keyless_fail_open == accept:
         raise AssertionError(f"{board}: keyless fail-open mutation anchor missing")
 
-    for relay_name, response_main in relay_cases:
-        keyless_main = response_main.replace(
-            "int main(){\n  resetState();",
-            "int main(){\n  resetState();\n  clearControllerKey();\n  if(!controllerKeyEmpty()) return 91;",
-            1,
-        ).replace(
-            "POLL_HTTP_RESPONSE_DENY_NO_EDGE_PASS",
-            "POLL_HTTP_KEYLESS_RESPONSE_DENY_PASS",
-            1,
+    for relay_name, _response_main in relay_cases:
+        keyless_main = (
+            POLL_HTTP_KEYLESS_RESPONSE_DENY_MAIN
+            if relay_name == "active-high"
+            else with_active_low_relay(POLL_HTTP_KEYLESS_RESPONSE_DENY_MAIN)
         )
-        if keyless_main == response_main:
-            raise AssertionError(f"{board}: keyless no-edge fixture anchor missing")
         scenario = f"poll-http-keyless-response-{relay_name}"
         keyless_output = compile_and_run(
             assemble(main_source=keyless_main, support_source=keyless_response_support),
