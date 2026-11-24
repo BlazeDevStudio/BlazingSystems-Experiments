@@ -1,3 +1,17 @@
+## PHX-MASTER UTC21 disposition — 2026-11-24T21:51:25Z
+
+**Master:** c0a465d157d491afbb2a06eaea8fdd4ab81a3615 · **PR #288:** OPEN / DRAFT / UNMERGED · **COE #26:** FROZEN · **Production:** NO-GO.
+
+- Latest HARDWARE #349 exact source/test 8c062694 / docs 2381c970: Relay and Quarantine PASS; exact build fails at inherited Missing poll signature check; PR body is stale.
+- Latest RELEASE #291 PR head 53fc8a1c: Windows and build fail at CORE-owned handover freshness; ESP32 compatibility PASS. Canonical CURRENT_STATE.md blob remains 85dd3c1e; last checkpoint d85eb6a2.
+- Latest COE release infra #35 source/test d7a6b806 / final handover/PR ab0fabf0: 213/215 tests pass, all ten profiles fail closed without approved site-scoped ULA /48; Bubblewrap absent (exit 125); case guard PASS. PR body is stale.
+- COE #26 exact recursive comparison remains unsafe to stage: 61 historical runtime rows match source/destination but summary is inconsistent; current #349 source has 28/61 runtime drift rows; test, board helper, sketch and license gaps remain.
+- Private registry v11 unavailable; rulesets empty; branch protection details not accessible (403). Master Python suite and coordination verifier NOT RUN; no Master Actions runs.
+
+See [UTC21 exact-head and migration report](PHX_MASTER_UTC21_20261124_LIVE_OWNER_HEADS_AND_COE26_EXACT_TREE_AUDIT.md). No source ownership takeover, no destination writes, no merge/release/flash/payment operation. **PRODUCTION NO-GO.**
+
+---
+
 ## PHX-MASTER UTC20 disposition — 2026-11-24T20:24:59Z
 
 **Master parent:** `6fc53efce92a700b61c348b8c4d6190b4c9b95ca`; current coordination stack includes `db975b2a`; **PR #288:** OPEN / DRAFT / UNMERGED; **COE #26:** FROZEN; **Production:** NO-GO.

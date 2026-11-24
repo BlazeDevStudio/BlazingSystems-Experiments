@@ -1,3 +1,34 @@
+## PHX-MASTER UTC21 exact-source / destination matrix refresh — 2026-11-24T21:51:25Z
+
+- **Experiments default main:** f4e8a891aed8af86d5fd315d28750a0ac3a7372b; **development:** blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5; **Master:** phoenix/master-coordination@c0a465d157d491afbb2a06eaea8fdd4ab81a3615.
+- **COE main:** a6513ab4412b4c014eee2863e45cbe32d06cb243; **integration candidate #26:** b382d233ff06c8791b1028bed3c617cc7b670d12 (OPEN/DRAFT/FROZEN; five workflows QUEUED, zero jobs/statuses).
+- **Ownership manifest:** OWNERSHIP_ROUTES.json@e4db324315a1b3543fec17a148fbf960170fcb29, 11 routes, DRAFT_REVIEW_ONLY, PHX-MASTER target null. Manifest source_ref is Experiments main; it is not the historical intake pin or current #349 source/test head.
+
+### Exact recursive trees
+
+| Ref | Tree | Entries | Completeness |
+|---|---|---:|---|
+| Historical intake source 6d4c9b487af4d768c4d7627654d119417fcc6e00 | 9b0ec594cb5d2bfe62d09d4a7fb9a254b9ffad3f | 2,391 | recursive, non-truncated |
+| Current #349 source/test 8c0626942815f1782211b6be784cf995ac5c5038 | 06e48c6ce1015850921769a9e80886f4036be749 | 2,527 | recursive, non-truncated |
+| COE #26 destination b382d233ff06c8791b1028bed3c617cc7b670d12 | 8a7d4cf81d7227118b876c1138dd2da12345fefa | 286 | recursive, non-truncated |
+
+### SOURCE_INTAKE and current source drift
+
+- All 61 runtime rows resolve to the recorded historical source blob/mode and exact destination blob/mode: **61/61 source rows and 61/61 destination rows match the pinned historical migration record**.
+- Recomputed runtime classification is **46 byte-identical / 15 derived**. JSON summary still says **47 / 14**; the summary is inconsistent with its own 61 rows and must be corrected by the COE intake owner.
+- Comparing the same 61 runtime paths against current #349 source/test 8c062694 yields **28 drift rows: 20 changed blobs and 8 missing paths** versus historical pin 6d4c9b. Do not silently replace the historical pin with current source or claim current-head identity.
+
+### Tests, board imports and licensing
+
+- Current #349 source test subtree: **47 entries** (46 executable test files + README); COE Pisowifi/tests: **19 executable files**. Exact blob/mode comparison: **1 exact, 3 divergent, 42 source-only, 15 destination-only**. Divergent same-path tests: config.sh, integration.sh, security.sh; portal.sh is exact.
+- SOURCE_INTAKE.derived_tests: 15 rows; MIGRATION_MAP.md has 18 test rows total (4 original + 14 derived). The map omits voucher_txn_journal.sh; run_focus.sh claims fa1f4f2c6393504499d50659d8bf980caf7ff85b but destination blob is 2b7b861ec63cf811d18d0e63b11a65efd1bec0e9; member_txn_journal.sh claims 01dc9c65ae9d74eaafb403d47aebcd20edd14390 but destination blob is d04df3c6f3ada60b9fda8c8c04230dd31e37019a.
+- Board subtree: **66 source entries / 4 destination entries**; **52 Python lab/helper files absent**. Both sketches differ: ESP32 source adfd2f11 vs destination 3cc7ec54; ESP8266 source 8a0b458b vs destination c8be98f7.
+- Exact destination license matches: Pisowifi/LICENSE, rootfs QRCode LICENSE, TailAdmin LICENSE and TailAdmin NOTICE. Missing/unrouted counterparts include UI QRCode LICENSE, UI Tabler LICENSE, and BlazeRentalLauncher LICENSE + assets/license.html under the separate Rental/android route. No automatic copy is authorized; confirm route ownership and source scope first.
+
+**Disposition:** COE #26 remains FROZEN. No staging, copy, move, overwrite, cherry-pick, rebase or destination write. Full provenance, test-set reconciliation, license routing and owner CI remain blockers.
+
+---
+
 ## PHX-MASTER UTC20 COE #26 exact-tree / source-intake refresh — 2026-11-24T20:24:59Z
 
 - Source/test: Experiments #349 source/test `639635c282a88133a715e921e4dc37e6febde87e` (tree 2,527, non-truncated); final handover/docs `05d91c8ac363f9fca2134998e0c1bb4ccdf76fd6` (docs-only; source tree unchanged); historical source pin `6d4c9b487af4d768c4d7627654d119417fcc6e00` (tree 2,391, non-truncated).

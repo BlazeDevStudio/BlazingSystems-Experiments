@@ -2022,3 +2022,19 @@ A migration or release evidence tuple is incomplete unless it names the exact **
 6. Owner routing remains authoritative: CORE owns canonical `CURRENT_STATE.md` and authenticated financial/poll contracts; RELEASE owns release workflow logic and exact-head reruns; PISONET owns Windows tests; HARDWARE owns firmware/lab source; QA owns independent assertion review; MASTER owns coordination and integration matrices only.
 7. Any missing registry access, branch protection evidence, required owner review, exact CI, physical acceptance or migration proof is a hard hold. This section adds no product protocol, accounting, firmware or release authority.
 
+
+
+## 7.15 Migration intake row-set and source-pin invariant — PHX-MASTER UTC21
+
+A migration candidate must keep four identities separate: (1) the historical source pin used by the intake record, (2) the current owner source/test head, (3) the destination candidate head, and (4) the final handover/docs head. A repository default branch or newer worker branch must never silently replace the historical source pin.
+
+Before staging, the COE integration owner must prove all of the following from exact recursive trees:
+
+1. Every SOURCE_INTAKE.runtime row resolves to its recorded source blob, destination blob, and Git mode.
+2. Summary counts are recomputed from the actual row statuses; declared counts must equal the rows.
+3. The derived-test list and MIGRATION_MAP.md test rows have identical path sets and exact destination blob hashes; no stale hash or omitted row is tolerated.
+4. Current owner source/test drift from the historical pin is separately enumerated as changed, missing, or unchanged; it is not silently promoted into the intake pin.
+5. Every in-scope LICENSE/NOTICE has a correctly routed destination counterpart or a documented owner-approved exclusion. A path outside the manifest is not implicitly copy-safe.
+6. Board helper imports, sketch identities, tests, and exact-head CI are reviewed before any migration proposal.
+
+Any count mismatch, stale test hash, missing test mapping, unowned UI/Rental license path, incomplete board import, or unreviewed source drift keeps the destination frozen. This contract is review-only; it does not authorize a copy, move, overwrite, financial migration, or production release.

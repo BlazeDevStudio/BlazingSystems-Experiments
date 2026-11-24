@@ -1,3 +1,18 @@
+## PHX-MASTER UTC21 owner routing — 2026-11-24T21:51:25Z
+
+- **PHX-CORE:** canonical CURRENT_STATE.md and authenticated poll/register contract remain CORE-owned. RELEASE #291 exact-head Windows/build are blocked by freshness; CORE must update the canonical handover before RELEASE reruns. Do not modify shared CORE files.
+- **PHX-HARDWARE:** #349 source/test 8c062694, final docs 2381c970; focused Relay/Quarantine PASS; Full/build fails at Missing poll signature check. Refresh the stale PR body; CORE supplies producer contract; QA reviews assertion.
+- **PHX-QA:** independently reconcile the poll-signature assertion and review release/migration evidence; do not weaken deny-default.
+- **PHX-RELEASE:** #291 remains blocked at CORE freshness. COE #35 current source/test d7a6b806, final handover/PR ab0fabf0; obtain authorized site-scoped ULA /48 policy and an approved disposable Bubblewrap runner; refresh stale PR body.
+- **PHX-PISONET:** retains two inherited #291 tests and Windows COM/SoftTimer source; no Master edits.
+- **COE integration owner:** correct SOURCE_INTAKE 47/14 summary to actual 46/15; reconcile 15 derived tests vs 14 map rows, add missing voucher mapping, correct run_focus and member_txn_journal hashes, and disposition 28 current-source drift rows, board helpers/sketches and license routing. Keep #26 frozen until exact owner review and CI.
+- **Registry custodian:** provide authorized private Drive v11 registry and newer corrections. Master has no Drive connector; no older snapshot substituted.
+- **Repository administrators:** establish protected branch/ruleset enforcement; current ruleset lists are empty and branch-protection detail endpoints return 403.
+
+PHX-MASTER owns only coordination/phoenix/, contracts, provenance and matrices. No owner branch takeover or parallel CORE worker.
+
+---
+
 ## PHX-MASTER UTC20 owner routing — 2026-11-24T20:24:59Z
 
 - **HARDWARE #349:** current PR/docs `05d91c8`, source/test `639635c`; Relay [#45479031211](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45479031211) and Quarantine [#45479031184](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45479031184) PASS; Full [#45479031223](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45479031223) FAIL at QA-owned `Missing poll signature check`. Hardware has refreshed its UTC20 handover and PR description; CORE owns authenticated poll producer contract; QA owns assertion reconciliation.
