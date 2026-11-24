@@ -75,6 +75,41 @@ int main() {
 """
 
 
+PRIMITIVE_MAIN = r"""
+int main() {
+  if (!pollJsonTopLevelTrue(String("{\"meta\":0,\"ok\":true}"), "ok")) return 81;
+  if (!pollJsonTopLevelTrue(String("{\"meta\":-0,\"ok\":true}"), "ok")) return 82;
+  if (!pollJsonTopLevelTrue(String("{\"meta\":1,\"ok\":true}"), "ok")) return 83;
+  if (!pollJsonTopLevelTrue(String("{\"meta\":-12,\"ok\":true}"), "ok")) return 84;
+  if (!pollJsonTopLevelTrue(String("{\"meta\":0.25,\"ok\":true}"), "ok")) return 85;
+  if (!pollJsonTopLevelTrue(String("{\"meta\":-0.25,\"ok\":true}"), "ok")) return 86;
+  if (!pollJsonTopLevelTrue(String("{\"meta\":1e3,\"ok\":true}"), "ok")) return 87;
+  if (!pollJsonTopLevelTrue(String("{\"meta\":1E+3,\"ok\":true}"), "ok")) return 88;
+  if (!pollJsonTopLevelTrue(String("{\"meta\":1e-3,\"ok\":true}"), "ok")) return 89;
+
+  if (pollJsonTopLevelTrue(String("{\"meta\":01,\"ok\":true}"), "ok")) return 101;
+  if (pollJsonTopLevelTrue(String("{\"meta\":-01,\"ok\":true}"), "ok")) return 102;
+  if (pollJsonTopLevelTrue(String("{\"meta\":+1,\"ok\":true}"), "ok")) return 103;
+  if (pollJsonTopLevelTrue(String("{\"meta\":.1,\"ok\":true}"), "ok")) return 104;
+  if (pollJsonTopLevelTrue(String("{\"meta\":1.,\"ok\":true}"), "ok")) return 105;
+  if (pollJsonTopLevelTrue(String("{\"meta\":1e,\"ok\":true}"), "ok")) return 106;
+  if (pollJsonTopLevelTrue(String("{\"meta\":1e+,\"ok\":true}"), "ok")) return 107;
+  if (pollJsonTopLevelTrue(String("{\"meta\":1e-,\"ok\":true}"), "ok")) return 108;
+  if (pollJsonTopLevelTrue(String("{\"meta\":--1,\"ok\":true}"), "ok")) return 109;
+  if (pollJsonTopLevelTrue(String("{\"meta\":NaN,\"ok\":true}"), "ok")) return 110;
+  if (pollJsonTopLevelTrue(String("{\"meta\":Infinity,\"ok\":true}"), "ok")) return 111;
+  if (pollJsonTopLevelTrue(String("{\"meta\":TRUE,\"ok\":true}"), "ok")) return 112;
+  if (pollJsonTopLevelTrue(String("{\"meta\":tru,\"ok\":true}"), "ok")) return 113;
+  if (pollJsonTopLevelTrue(String("{\"meta\":nullx,\"ok\":true}"), "ok")) return 114;
+  if (pollJsonTopLevelTrue(String("{\"meta\":1e++2,\"ok\":true}"), "ok")) return 115;
+  if (pollJsonTopLevelTrue(String("{\"meta\":0x10,\"ok\":true}"), "ok")) return 116;
+
+  std::cout << "POLL_JSON_PRIMITIVE_GRAMMAR_PASS valid=9/9 invalid=16/16\\n";
+  return 0;
+}
+"""
+
+
 def _compile_and_run(code, board, label):
     with tempfile.TemporaryDirectory(prefix="phx-json-composite-") as folder:
         cpp = Path(folder) / f"{label}.cpp"
@@ -117,6 +152,18 @@ def verify(boards, extract, stubs):
                 f"{board}: strict JSON composite cases failed "
                 f"(exit={baseline.returncode}; stdout={baseline.stdout}; "
                 f"stderr={baseline.stderr})"
+            )
+
+
+        primitive_baseline = _compile_and_run(
+            stubs + parser + PRIMITIVE_MAIN, board, "primitive-baseline"
+        )
+        if primitive_baseline.returncode:
+            raise AssertionError(
+                f"{board}: strict JSON primitive cases failed "
+                f"(exit={primitive_baseline.returncode}; "
+                f"stdout={primitive_baseline.stdout}; "
+                f"stderr={primitive_baseline.stderr})"
             )
 
         primitive = extract(source, "pollJsonSkipPrimitive")
@@ -188,6 +235,64 @@ def verify(boards, extract, stubs):
                 1
             ) + COMPOSITE_MAIN,
             board, "accept-nonhex-unicode-escape", 75
+        )
+
+
+        leading_zero_guard = "if(r[q]=='0'){\n    ++q;"
+        if primitive.count(leading_zero_guard) != 1:
+            raise AssertionError(f"{board}: expected one leading-zero guard")
+        leading_zero_mutant = primitive.replace(
+            leading_zero_guard,
+            "if(r[q]=='0'){\n    ++q;\n    while(q<end && r[q]>='0' && r[q]<='9') ++q;",
+            1
+        )
+        _expect_mutation_rejected(
+            stubs + parser.replace(primitive, leading_zero_mutant, 1)
+            + PRIMITIVE_MAIN,
+            board, "accept-leading-zero-integer", 101
+        )
+
+        fraction_guard = "if(q==fractionStart) return false;"
+        if primitive.count(fraction_guard) != 1:
+            raise AssertionError(f"{board}: expected one fraction digit guard")
+        fraction_mutant = primitive.replace(
+            fraction_guard, "if(false) return false;", 1
+        )
+        _expect_mutation_rejected(
+            stubs + parser.replace(primitive, fraction_mutant, 1)
+            + PRIMITIVE_MAIN,
+            board, "accept-empty-fraction", 105
+        )
+
+        exponent_guard = "if(q==exponentStart) return false;"
+        if primitive.count(exponent_guard) != 1:
+            raise AssertionError(f"{board}: expected one exponent digit guard")
+        exponent_mutant = primitive.replace(
+            exponent_guard, "if(false) return false;", 1
+        )
+        _expect_mutation_rejected(
+            stubs + parser.replace(primitive, exponent_mutant, 1)
+            + PRIMITIVE_MAIN,
+            board, "accept-empty-exponent", 106
+        )
+
+        true_literal = (
+            "if(length==4 && r[start]=='t' && r[start+1]=='r' &&\n"
+            "     r[start+2]=='u' && r[start+3]=='e') return true;"
+        )
+        if primitive.count(true_literal) != 1:
+            raise AssertionError(f"{board}: expected one exact true literal guard")
+        true_literal_mutant = primitive.replace(
+            true_literal, "if(length>=3 && r[start]=='t') return true;", 1
+        )
+        _expect_mutation_rejected(
+            stubs + parser.replace(primitive, true_literal_mutant, 1)
+            + PRIMITIVE_MAIN,
+            board, "accept-truncated-true-literal", 113
+        )
+        print(
+            f"{board}: POLL_JSON_PRIMITIVE_GRAMMAR_PASS "
+            "valid=9/9 invalid=16/16; mutations=4/4 rejected"
         )
 
         print(f"{board}: POLL_JSON_COMPOSITE_GRAMMAR_PASS valid=6/6 invalid=12/12")
