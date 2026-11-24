@@ -49,8 +49,16 @@ def _open_regular_image(path: str | Path, expected_name: str) -> tuple[Path, int
         if before_open.st_size != before_path.st_size:
             raise ValueError("application image size changed before comparison")
         return candidate, descriptor, before_open
-    except Exception:
-        os.close(descriptor)
+    except BaseException as primary_error:
+        try:
+            os.close(descriptor)
+        except BaseException as cleanup_error:
+            try:
+                primary_error.add_note(
+                    f"additional descriptor cleanup failure: {cleanup_error!r}"
+                )
+            except AttributeError:
+                pass
         raise
 
 
