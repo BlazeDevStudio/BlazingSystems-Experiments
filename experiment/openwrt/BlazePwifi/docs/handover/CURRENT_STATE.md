@@ -1,3 +1,11 @@
+<!-- PHX-HW-20261124-UTC07-ZERO-LENGTH-AUTH-SPANS:START -->
+> **PHX-HARDWARE UTC07 / #348 — IN PROGRESS / SIMULATED HOST CI ONLY / HARDWARE NOT TESTED / PRODUCTION NO-GO.**
+> Current source/test head at this checkpoint: `4ad6d202da4918ae244d5cb6f44176bf93e6fa3c`; PR #348 remains OPEN/DRAFT/UNMERGED, base #254 `84c442a46ee2ee48dcbe68b71ff0f54edbc09ba9`, parent #239 `d83b715b116185107737fef721c2eece8feebf39`.
+> Change: native header test rejects zero-length digest hex, policy digest and HMAC signature spans with valid nonempty backing data. Focused exact-SHA [#45350904157](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45350904157), job `138296790332`: PASS. Full [#45350904159](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45350904159): IN PROGRESS when recorded; do not claim terminal success.
+> The inherited ESP32 build still has a known Mbed TLS 4 header incompatibility in `BlazePwifiVendo32.ino:6`; provider selection is a coordinated Master/Release dependency, not changed by this task. All coin/relay admission remains DENY. Physical electrical, power-cut and soak acceptance remain NOT TESTED.
+> **NEXT EXACT ACTION:** read the terminal jobs for Full run #45350904159; update this state and CHANGE_LEDGER with exact conclusions; then request Master/Release disposition on the Mbed TLS 4 provider before any source port.
+<!-- PHX-HW-20261124-UTC07-ZERO-LENGTH-AUTH-SPANS:END -->
+
 <!-- PHX-HW-20261120-MBEDTLS4-RESULT:START -->
 > **PHX-HARDWARE UTC04 terminal Full result — PR #254 docs head `82e436dd77c5c62e838fd5dc2bbb789458f60201`; PRODUCTION NO-GO.**
 > Exact Full [#44673076995](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44673076995) completed **FAILURE**. Validation job `136078545528` PASS, including mandatory handover freshness, controller protocol parity and the full source/host validation suite. ESP8266 job `136078545345` PASS. ESP32 job `136078545445` FAIL: Arduino core `esp32:esp32@4.0.0` cannot find `mbedtls/sha256.h` included at line 6 of the inherited `BlazePwifiVendo32.ino`. Other platform builds and v0.4 simulations completed PASS; ESP32 simulation, signing and publishing remained skipped. This is not a Full pass.
