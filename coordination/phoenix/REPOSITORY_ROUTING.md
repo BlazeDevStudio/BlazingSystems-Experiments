@@ -1683,3 +1683,18 @@ COE main remains the three-entry scaffold at `a6513ab4412b4c014eee2863e45cbe32d0
 COE RELEASE #35 is a separate RELEASE-owned child of #31. Its source/test correction at `1abe0164` and final docs head `0019593` do not grant a #26 route or migration authority. RELEASE #291 currently includes three CORE handover files and two PISONET test files among 27 changed paths; those owners must review the overlap. MASTER only records the exact scope and current CI; it does not modify worker files or reassign ownership.
 
 **Review-before-move hold:** no source/destination file was staged, copied, moved, overwritten, cherry-picked, rebased, retargeted or promoted. The private Drive v11 registry and newer corrections remain unavailable; no older snapshot or public registry substitute was used.
+
+## PHX-MASTER UTC02 routing and destination hold — 2026-11-24T02:37:40Z
+
+The machine-readable `coordination/phoenix/OWNERSHIP_ROUTES.json` remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`: 11 routes, status `DRAFT_REVIEW_ONLY`, PHX-MASTER source `coordination/phoenix/`, target `null`. No route, target, copy permission, owner, or destination path was changed.
+
+- CORE #252 remains CORE-owned; the separate active CORE production-continuation owner is not displaced. Master made no CORE source or handover changes.
+- RENTAL #328, PISONET #255, HARDWARE #347/#348/#349, QA #290/#292 and RELEASE #291 remain in their existing owner branches. The Master role matrix records exact heads and CI only; no source ownership transfer occurred.
+- RELEASE #291 includes three CORE handover paths and two PISONET ReleaseSigning test paths. CORE and PISONET must review those overlaps; RELEASE owns its workflow changes. Master does not edit those files.
+- HARDWARE #349 is a stacked child of #347. Its current source/test SHA and docs HEAD are recorded separately. The child’s parser correction does not update parent #347 or authorize migration into COE #26.
+- COE #26 remains FROZEN at `b382d233ff06c8791b1028bed3c617cc7b670d12`. Its ESP32/ESP8266 firmware blobs differ from #349; the source’s 40 board-local Python files have zero destination counterparts; the new parser lab is absent; root NOTICE and two third-party license counterparts remain missing. Five destination workflows are QUEUED with zero jobs.
+- Product LICENSE, QRCode LICENSE and TailAdmin LICENSE/NOTICE correspond byte-for-byte at the reviewed blobs, but that limited match does not resolve root NOTICE, Tabler, Android Launcher or complete dependency-license provenance.
+- The previous 61-row source/destination audit is a historical baseline, not a current full rerun. No staged tree was created or reviewed; no source/destination file was copied, moved, overwritten, cherry-picked, rebased, retargeted or promoted.
+- The canonical private registry v11 was not available. The Library-held 2026-11-09 checkpoint and older sync-ledger copy were read privately but are not a replacement for v11 or current Drive verification. No Google Drive connector is exposed; no Drive artifact/folder was created.
+
+**Routing decision:** preserve `DRAFT_REVIEW_ONLY` and Master target `null`. COE integration owner must reconcile the per-file source/destination/test/license map and obtain exact-head destination CI plus owner authorization before proposing a move. PHX-MASTER remains coordination-only.
