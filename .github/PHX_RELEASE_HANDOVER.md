@@ -3574,3 +3574,39 @@ Evidence boundary: hosted CI only
 - Compatible draft head `ca753580117a74860f99d349a09bcbe0dc61539a` already contains another worker’s narrow ESP32 compatibility test/workflow adjustment. No implementation was duplicated.
 - Scoped evidence on that head: [BlazePwifi build #45358930000](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45358930000) and [ESP32 core compatibility #45358930031](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45358930031) succeeded. [Windows #45358929998](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45358929998) passed handover checks and intentionally failed closed at the `RELEASE-SIGN` negative control; publisher skipped. This is hosted, scoped CI evidence only—not production, compatibility, protected-signing, or physical-acceptance evidence.
 - PR #291 remains open, draft, unmerged, and independently unreviewed. **PRODUCTION NO-GO** remains until MASTER and independent QA review, protected signer/source admission, durable finance/migration acceptance, and physical acceptance gates are complete.
+
+
+## PHX-RELEASE UTC09 — OpenWrt source-tree provenance completeness (2026-11-24)
+
+**Existing draft:** [PR #291](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/291), base #242 `734b89d9e7792247e8376335c3f3685500ab3f89`, branch `phoenix/release-publisher-isolation-20261115`.
+
+### Finding and bounded correction
+
+The OpenWrt provenance writer previously recorded only `build/build-openwrt-image.sh` and `VERSION`. The build actually consumes the complete `openwrt/rootfs` overlay for every target, `build/prepare-tabler.sh` and `tools/verify-firmware-gzip.py` for x86/SBC targets, and the `linux-agent` tree for Orange Pi targets. Those source inputs were not represented by the OpenWrt manifest's Git source identity.
+
+The RELEASE-owned writer now adds an additive `source.trees` array with exact Git tree object IDs. It verifies each tree still matches tracked HEAD content, rejects untracked/ignored inputs, requires the Git object to be a tree, and fails closed for unsupported target names. `source.paths` now includes the target-specific helper blobs. The tree identity includes nested paths, file modes and symlink blobs without copying or modifying the CORE/HARDWARE-owned source trees.
+
+Target mapping is checked against the current `build-openwrt-image.sh` target case list:
+- All targets: `experiment/openwrt/BlazePwifi/openwrt/rootfs`.
+- x86_64 and Orange Pi: `build/prepare-tabler.sh`, `tools/verify-firmware-gzip.py`.
+- Orange Pi only: `experiment/openwrt/BlazePwifi/linux-agent`.
+
+Exact Git tree identities resolved from source commit `cfd34e2b178455313210962f48ae4560d83be096`:
+- OpenWrt rootfs tree: `f4a923aaacf1374e90c7bab5f335efe6c6ec55cf`.
+- Linux agent tree: `da87d556b16bd7650c440083c9f0f929d57d1274`.
+
+### Test-first and exact-source CI
+
+- Starting head: `aacc8f7968bc5f75814adf88b9da684f317a8a99`.
+- Test-first commit: [`156e7729`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/156e77294aa222cf95207ea5c397a3e93cdb04ff).
+- Expected RED: [ESP32/provenance #45365140547](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45365140547): both ESP32 core jobs PASS; provenance suite fails as intended (47 existing tests PASS, 2 expected errors and 1 expected failure for the missing tree/input guards). [Full #45365140594](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45365140594) fails at the provenance manifest/checksum negative-control gate; dependent jobs skip.
+- Source correction: [`cfd34e2b`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/cfd34e2b178455313210962f48ae4560d83be096).
+- Exact source-head compatibility: [#45365363035](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45365363035) **3/3 PASS**. Provenance suite **50 tests PASS**; Arduino CLI archive verifier **10 tests PASS**; ESP32 core 3.3.13 and 4.0.0 builds PASS.
+- Exact source-head full build: [#45365363016](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45365363016). At this handover snapshot: validation **133/133 steps PASS**; 20 jobs PASS, 4 production import/sign/publish jobs SKIPPED, 6 simulation jobs still IN PROGRESS, 0 failed jobs. This run is not yet terminal and is not called a full-build success.
+- Windows was not triggered by this provenance-only path change. The test-only-head Windows run [#45365140565](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45365140565) still fails the PISONET-owned `RELEASE-SIGN test fail-closed negative controls`; publisher SKIPPED. No PISONET file was changed.
+
+### Scope, review and rollback
+
+Only `.github/scripts/test_build_provenance.py`, `.github/scripts/write_build_provenance.py`, and this RELEASE handover are changed by this increment. No rootfs, linux-agent, CORE, RENTAL, PISONET, HARDWARE, QA, MASTER or COE destination files were modified. The existing PR remains OPEN / DRAFT / UNMERGED; independent QA and MASTER approval remain pending. The Git tree SHA values above are source-object identities, not an artifact download/readback or a signature.
+
+Rollback is a normal revert of the source commit followed by the test commit on this draft branch; no force-push, merge, release tag, signing, publication, flashing, payment migration or deployment. **PRODUCTION NO-GO.**
