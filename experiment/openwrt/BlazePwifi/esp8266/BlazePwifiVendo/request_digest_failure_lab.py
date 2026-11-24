@@ -8,6 +8,7 @@ ESP sketches. A failed digest must not create an HTTP session or dispatch a requ
 """
 from pathlib import Path
 import subprocess
+import re
 import tempfile
 
 from firmware_lab_source import extract_function
@@ -75,6 +76,7 @@ class HTTPClient {
   void setTimeout(int) {}
   void addHeader(const char *,const char *) {}
   int POST(const String &body) { ++httpPostCalls; postedBody=body; return 200; }
+  int getSize() const { return 2; }
   String getString() const { return String("ok"); }
   void end() {}
 };
@@ -115,9 +117,15 @@ def main() -> None:
         source = path.read_text(encoding="utf-8")
         helper = extract_function(source, "validSha256Hex", required=False)
         signed = extract_function(source, "signedBody")
+        bounded = extract_function(source, "readBoundedControllerResponse")
         post = extract_function(source, "post")
-        code = ("#define TARGET_ESP32\n" if board == "ESP32" else "")
-        code += STUBS + helper + "\n" + signed + "\n" + post + "\n" + MAIN
+        limit = re.search(r"static const int MAX_CONTROLLER_RESPONSE_BYTES\\s*=\\s*\\d+\\s*;", source)
+        if not limit:
+            print(board, "MISSING_BOUNDED_RESPONSE_LIMIT")
+            failed.append(board)
+            continue
+        code = ("#define TARGET_ESP32\\n" if board == "ESP32" else "")
+        code += STUBS + limit.group(0) + "\\n" + helper + "\\n" + signed + "\\n" + bounded + "\\n" + post + "\\n" + MAIN
         with tempfile.TemporaryDirectory(prefix="phx-request-digest-") as folder:
             cpp = Path(folder) / "digest_test.cpp"
             binary = Path(folder) / "digest_test"
