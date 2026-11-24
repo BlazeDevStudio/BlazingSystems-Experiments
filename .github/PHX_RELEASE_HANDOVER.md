@@ -3610,3 +3610,52 @@ Exact Git tree identities resolved from source commit `cfd34e2b178455313210962f4
 Only `.github/scripts/test_build_provenance.py`, `.github/scripts/write_build_provenance.py`, and this RELEASE handover are changed by this increment. No rootfs, linux-agent, CORE, RENTAL, PISONET, HARDWARE, QA, MASTER or COE destination files were modified. The existing PR remains OPEN / DRAFT / UNMERGED; independent QA and MASTER approval remain pending. The Git tree SHA values above are source-object identities, not an artifact download/readback or a signature.
 
 Rollback is a normal revert of the source commit followed by the test commit on this draft branch; no force-push, merge, release tag, signing, publication, flashing, payment migration or deployment. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC09 — tracked source-tree drift regression and artifact readback (2026-11-24)
+
+**Starting docs/source head:** `9d45ee19b2d8e3ef6623b3b0f0db3da56b1616e8`.  
+**Source implementation:** `cfd34e2b178455313210962f48ae4560d83be096`.  
+**Current test-only head before this handover update:** `956989186bed8de726ee85a9323341adb7e49f2d`.
+
+### Tracked source-tree drift coverage
+
+- Added test-only commit [`95698918`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/956989186bed8de726ee85a9323341adb7e49f2d) in `.github/scripts/test_build_provenance.py`.
+- Regression `test_openwrt_source_tree_rejects_tracked_drift_before_manifest_publication` simulates a nonzero `git diff --quiet HEAD -- openwrt/rootfs` result and verifies provenance publication fails closed, `BUILD-PROVENANCE.json` is absent, and the pre-existing `SHA256SUMS` remains byte-identical.
+- This adds coverage for the already-implemented tracked-drift guard; it is test-only and does not change product or release behavior.
+- Exact test-head compatibility [#45368112127](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45368112127): **SUCCESS, 3/3**. Provenance suite **51 tests PASS** (including the new tracked-drift case); Arduino CLI archive verifier **10 tests PASS**; ESP32 core 3.3.13 and 4.0.0 builds PASS.
+- Exact test-head full build [#45368112592](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45368112592): at this handover snapshot **23 jobs SUCCESS, 4 production jobs SKIPPED, 3 simulation jobs IN PROGRESS, 0 failed**. Browser, x86 and Android-emulator simulations had not reached terminal status. This is **not** a terminal full-build success.
+- Exact test-head Windows [#45368112145](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45368112145): **FAILURE** at PISONET-owned `experiment/windows/BlazePisonet-SoftTimer/tests/ReleaseSigning/negative-selftest.ps1:326`, `RELEASE-PUBLISHER executable lookup regression: missing tag accepted=False`; handover passed and publisher was skipped. No PISONET path was changed by this UTC09 increment.
+
+### CI artifact readback and checksum verification
+
+The previous exact docs-head full build [#45366411182](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45366411182) completed **SUCCESS: 26 jobs PASS, 4 production import/sign/publish jobs SKIPPED, 0 failures** at source head `9d45ee19b2d8e3ef6623b3b0f0db3da56b1616e8` (PR merge ref commit `c1b1bc9ccadaeda909ef457cc972f85c49259eba`). The exact docs-head compatibility matrix [#45366411198](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45366411198) completed **3/3 PASS**.
+
+Read back three firmware preview artifacts from that successful run; each outer ZIP SHA-256 matched the GitHub artifact digest, and every internal `SHA256SUMS` entry verified locally:
+
+| Target | Artifact ID | ZIP SHA-256 | Internal entries |
+|---|---:|---|---:|
+| Ruijie | 14906768615 | `a533ec0453eac15bc1634bd9d69e950d7ed8b78afe75b7cb3844221f91324389` | 5/5 PASS |
+| x86_64 | 14907540559 | `cd7d6ef3d6c148efa9c502419e556465fc24f9cbb13838c0155452f2f146fd04` | 6/6 PASS |
+| Orange Pi Zero3 | 14906463427 | `81d22bb407e7ef3b28c23b2d975afa78b9521974e39fcde573992e8daea40d86` | 5/5 PASS |
+
+Manifest source identity and target-specific inputs read back from those artifacts:
+
+- Rootfs overlay tree: `f4a923aaacf1374e90c7bab5f335efe6c6ec55cf`.
+- Orange Pi linux-agent tree: `da87d556b16bd7650c440083c9f0f929d57d1274`.
+- `build/build-openwrt-image.sh` blob: `81ad42e3ff80afa16bc68072d0b34656e1488f46`.
+- `VERSION` blob: `be14282b7fffb9ba95d51c6546ed9816dc8f3ff8`.
+- x86/SBC `build/prepare-tabler.sh` blob: `ea19ebae3e6da5c313ec6ac00ad5905bf3e8cbf5`.
+- x86/SBC `tools/verify-firmware-gzip.py` blob: `350af055dea804cd92d988d1997d4400298bef89`.
+
+All three manifests classify artifacts as `CI_PREVIEW_ONLY`, with `production_authorized=false`, `signing=NOT_PERFORMED`, and `hardware_acceptance=NOT_TESTED`. The OpenWrt ImageBuilder workflow does not invoke the target GCC compiler; `compiler_version=null`, and the upstream GCC toolchain is referenced but not downloaded or executed. These artifact readbacks are checksum/provenance evidence only—not signing, target-device compatibility, physical acceptance, or permission to flash.
+
+### Scope and coordination
+
+This increment changes only the RELEASE-owned provenance test and this RELEASE handover. The OpenWrt `rootfs` and `linux-agent` trees were read for Git tree identity only; no CORE/HARDWARE source content was modified. The broader #291 diff still contains inherited cross-role paths that require MASTER/owner reconciliation.
+
+PR #291 remains OPEN / DRAFT / UNMERGED; independent QA review count remains zero. MASTER #288 ownership routes remain 11 routes / `DRAFT_REVIEW_ONLY`; the RELEASE build-workflow route remains `reimplementation-review` toward frozen COE #26. COE #31 remains the parent release-packager draft with #35/#44 successor tracks; no destination migration or write was performed. The canonical private Drive registry v11 was not surfaced through authorized Library retrieval; older snapshots were not substituted.
+
+This handover-only update triggers fresh PR workflows. Those new docs-head runs are not yet observed and are not claimed as passing. The prior test-head full build above is preserved at its last observed status; the PR workflow uses cancel-in-progress concurrency, so a successor run may supersede it.
+
+No merge, signing, release tag, publication, hardware flash, real payment migration or customer deployment. **PRODUCTION NO-GO.**
