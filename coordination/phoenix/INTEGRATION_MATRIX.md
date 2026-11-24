@@ -4682,3 +4682,33 @@ The source refs are Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`,
 The previous 61-row main-to-#26 audit remains the baseline because Experiments main and COE #26 pins are unchanged: computed 46 identical / 15 derived versus recorded 47 / 14; 15 derived tests versus 14 mapped; missing `voucher_txn_journal.sh`; two stale test blob IDs; and unresolved root NOTICE / Tabler / Android Launcher license counterparts. That full 61-row audit was not rerun in this activation. The focused #347 comparison above is at its current owner PR head and does not grant copy permission.
 
 COE #26's five workflows remain QUEUED with zero jobs. The ownership manifest remains 11 routes / `DRAFT_REVIEW_ONLY` / PHX-MASTER target null. No file was staged, copied, moved, overwritten, cherry-picked, rebased, retargeted or promoted. Require per-file provenance, licenses, test identity/import completeness, exact-head destination CI and owner approval before proposing any move.
+
+## PHX-MASTER UTC02 exact #349 source/destination provenance and CI — 2026-11-24T02:37:40Z
+
+Current source candidate is HARDWARE child PR #349 at docs HEAD `c7d7d3c5e6dc8696a2bd108ae34570e667ea0cf9`, source/test HEAD `7c14c2600fbf4c10e591286a2eca786d5cf5e548`, based exactly on parent #347 `960184670379f01e20f0e7e8bc23b3e5eedacd3f`. COE destination remains frozen PR #26 `b382d233ff06c8791b1028bed3c617cc7b670d12` on main `a6513ab4412b4c014eee2863e45cbe32d06cb243`.
+
+### Exact current firmware/test comparison
+
+| Artifact | Experiments #349 source/test tree | COE #26 destination tree | Result |
+|---|---|---|---|
+| ESP8266 sketch | `2f87a9de84ac53dbb0d2718b5c79a4662b63de8f`, mode `100644` | `c8be98f72596681e36a3ad1f8939bf8046c96887`, mode `100644` | Different blobs |
+| ESP32 sketch | `a9a1c2fecb001d71f8f22b43952edbd160aacaf8`, mode `100644` | `3cc7ec54b476943dc04a8d1af5e2df5fe054e422`, mode `100644` | Different blobs |
+| New parser lab | `poll_json_array_primitive_lab.py`, blob `164db5d947585b7b02dd49d663a784f529d19440`, mode `100644` | No equivalent board-local lab in #26 | Missing destination test identity |
+
+The complete source/test tree at #349 has 40 Python files beneath the ESP8266/ESP32 board directories; COE #26 has zero Python files beneath `Hardware/esp8266/` and `Hardware/esp32/`. The new parser lab is therefore not imported or mapped in #26. The source tree is 2,492 entries; the complete #26 destination tree is 286 entries. COE main remains a three-entry scaffold.
+
+### License and notice comparison
+
+- Product license `experiment/openwrt/BlazePwifi/LICENSE` and destination `Pisowifi/LICENSE` are byte-identical at blob `1ee55b94183417be977ca287cd7391f9a6f7e721`.
+- QRCode license blobs match at `150770c0fc2994865ccdbef6662735cc083e780d`; TailAdmin LICENSE and NOTICE blobs match at `cb92d4176b21b0594e5a6caf94d79340505e3d33` and `f0425bbbe34c1227311098173b1eae0c3e2a807b`.
+- Experiments root `NOTICE.md` exists at `f6d92cd21465312be5993631fe26977219be0fb9`; COE #26 has no root `NOTICE.md`.
+- Source `ui/vendor/tabler/LICENSE` blob `22ee8122400915cbff18e5f69368fa9eea6145eb` and Android Launcher LICENSE blob `c5b1efa7aac764ae6d8da63476a2d5cec02a6a5d` have no corresponding license paths in the #26 destination tree. The matching product/QRCode/TailAdmin files do not establish complete third-party license provenance.
+
+### Exact-head CI and disposition
+
+- #349 source/test Quarantine [#45310725411](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45310725411) and Relay [#45310725456](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45310725456) PASS; Full [#45310725430](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45310725430) FAIL at QA-owned `Missing poll signature check`. Docs-head Quarantine/Relay #45311315194/#45311315250 PASS; docs-head Full #45311315267 FAIL.
+- COE #26 has five workflows QUEUED / zero jobs; no exact-head destination CI has completed.
+- The prior 61-row main-to-#26 audit remains a historical baseline; this activation did not rerun all 61 rows. Do not claim the historical 46/15 vs 47/14 classification or 15-vs-14 derived-test discrepancy is resolved.
+- Ownership manifest blob `e4db324315a1b3543fec17a148fbf960170fcb29` remains 11 routes / `DRAFT_REVIEW_ONLY`; PHX-MASTER destination is null. No file was staged, copied, moved, overwritten, cherry-picked, rebased, retargeted or promoted.
+
+**Disposition:** COE #26 stays FROZEN. The source and destination firmware blobs differ, the new parser lab is absent, root NOTICE and two third-party license counterparts are missing, and destination CI has not run. Review and reconcile the destination tree before proposing any move; this Master audit grants no copy permission.
