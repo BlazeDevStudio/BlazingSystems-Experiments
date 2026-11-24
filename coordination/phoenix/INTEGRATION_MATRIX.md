@@ -1,3 +1,25 @@
+## PHX-MASTER UTC18 exact-source / COE #26 integration snapshot — 2026-11-24
+
+- Experiments main f4e8a891aed8af86d5fd315d28750a0ac3a7372b; development aad3aade72c1156eecba1fed30907c6d0283b2c5; current HARDWARE #349 source/test tree 32c026538e737870ea8bb1e22143e438f9d61f7a (2,524 entries); historical intake pin 6d4c9b487af4d768c4d7627654d119417fcc6e00 (2,391 entries).
+- COE main a6513ab4412b4c014eee2863e45cbe32d06cb243; PR #26 b382d233ff06c8791b1028bed3c617cc7b670d12 (286 entries, 205 changed paths).
+
+### Runtime intake
+SOURCE_INTAKE.json blob 1b9018ff944f7f673934d0fc2a97e0a0090d3f5f has 61 rows. Exact source/destination blob and mode checks: 61/61 historical source matches and 61/61 destination matches. Summary says 47 identical / 14 derived; recomputation is 46 identical / 15 derived. Against current source: 33 rows unchanged, 20 changed, 8 missing.
+
+### Tests and board imports
+- Tests: source 47 / destination 19; 1 exact, 3 divergent (config.sh, integration.sh, security.sh), 43 source-only, 15 destination-only.
+- Derived tests: JSON 15 / MIGRATION_MAP 14. run_focus.sh and member_txn_journal.sh hashes are stale; voucher_txn_journal.sh is missing from the map.
+- ESP32 source/destination tree entries 17/2; ESP8266 49/2. Both destination sketches differ from current source blobs; many source labs/helpers/docs are not imported.
+
+### Licenses and CI
+- Exact: PisoWiFi product LICENSE, QRCode LICENSE, TailAdmin LICENSE and TailAdmin NOTICE.
+- Missing destination counterparts: root NOTICE.md and Tabler LICENSE. BlazeRentalLauncher LICENSE belongs to the RENTAL route. No jsqr path in either exact tree.
+- COE #26: five workflows queued, zero completed jobs/statuses. FROZEN; no staging/copy/move/overwrite/rebase/cherry-pick.
+
+Do not infer completeness from the 61 runtime rows: they cover the pinned runtime overlay only, not the current board/test trees, native packages or a bootable image.
+
+---
+
 ## PHX-MASTER UTC16 exact #349 → COE #26 provenance — 2026-11-24T16:05:40Z
 
 ## PHX-MASTER UTC17 exact-tree provenance — 2026-11-24

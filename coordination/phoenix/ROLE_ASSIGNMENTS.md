@@ -1,3 +1,23 @@
+## PHX-MASTER UTC18 owner/CI routing — 2026-11-24
+
+| Owner | Exact PR head / source anchor | Exact CI / next owner action |
+|---|---|---|
+| CORE #252 | c82705f2de865c89ab733b10efa84f26f56a5cc4 | Scoped build #42698139210 PASS. CORE retains authenticated register/poll producer contract and canonical shared handover. Separate CORE continuation remains owner; no parallel task. |
+| RENTAL #328 | 0e0da62acd47c6a1ce287f8a30fc700d603fa070 | APK identity/API smoke PASS; BlazePwifi build #44782114390 FAIL. RENTAL retains source scope. |
+| PISONET #255 | d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | Synthetic Windows #42462978704 PASS. PISONET retains the two inherited test paths in #291. |
+| HARDWARE #347/#348 | 960184670379f01e20f0e7e8bc23b3e5eedacd3f / eb7afcb2ba0d1e84054c052c8b129cb51a91d062 | #347 Quarantine/Relay/build FAIL; #348 focused header PASS, build #45352513177 FAIL. |
+| HARDWARE #349 | source/test 32c026538e737870ea8bb1e22143e438f9d61f7a; final docs/PR head 66f6d101f21d8193466105da7677e3afe0ad92c3 | Relay #45457011407 PASS; Quarantine #45457011596 PASS; build #45457011223 FAIL at Missing poll signature check. Update PR body; keep deny-default. |
+| QA #290/#292 | 5c29d15994cee1279058f1eca12f2a3180704292 / 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | #290 Windows #43633486963 PASS; #292 has no PR-triggered runs. QA independently reconciles poll assertion. |
+| RELEASE #291 | source/test anchor a004c647e67f90269a9149f918887622bb8cc5e8; current PR head 32487a5720040b8fb8374a7ab6efd224aeac7207 | Windows #45458949767 fails PROJECT_HANDOVER freshness; build #45458949702 CI-0701 PASS / validate FAIL / target matrix in progress; compatibility #45458949687 pending. RELEASE refreshes handover after workflow change. |
+| COE RELEASE #35 | e7801818b00854f34a5a88955d979c601ec96404 | Case guard PASS; shared hardware CI and sandbox FAIL. |
+| COE CORE #45 | 9d76a134c1f6512aa40c20ec4d247306a71a8cce | PisoWiFi overlay/shell and case guard PASS. |
+| COE #49 | aeb8ff11b2f5db9a5f86280ab62ab988245f3919 | Stage 5.1 and case guard PASS; shared hardware CI FAIL. |
+| COE integration #26 | b382d233ff06c8791b1028bed3c617cc7b670d12 | Five workflows QUEUED / zero completed jobs. FROZEN; no staging. |
+
+Ownership remains non-overlapping. Master owns only coordination/phoenix/, architecture contracts, integration matrices and cross-repo provenance.
+
+---
+
 ## PHX-MASTER UTC16 exact owner-head / CI reconciliation — 2026-11-24T16:05:40Z
 
 ## PHX-MASTER UTC17 owner/CI snapshot — 2026-11-24

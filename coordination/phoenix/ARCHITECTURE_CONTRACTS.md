@@ -1974,3 +1974,13 @@ At Experiments main f4e8a891, the exact CGI producer blob is 2e3a1430d08cc660642
 HARDWARE #349 current head aa9ac766 has focused Relay/Quarantine PASS, but Full run #45452999881 fails Controller protocol parity at the inherited “Missing poll signature check”. The test fixture's signature-looking placeholder is not an authenticated protocol value. Do not fabricate a response signature, reuse a member endpoint signature for poll, create positive poll admission, or weaken default-deny.
 
 PHX-CORE owns the authenticated register/poll producer contract, versioned envelope and canonical golden vectors. PHX-QA independently reconciles the legacy positive assertion against that approved contract. PHX-HARDWARE retains fail-closed consumer behavior until the contract is approved and independently tested. Hosted source-extracted CI is not native hardware acceptance; physical coin/relay tests, 150 real power cuts and the 30-device/24-hour soak remain NOT TESTED.
+
+
+### 7.12 Exact source/test, handover and PR-head identity — UTC18
+
+A role handover must distinguish (1) source/test commit, (2) final handover/docs commit, and (3) current PR head. These are not interchangeable.
+
+- HARDWARE #349: source/test 32c026538e737870ea8bb1e22143e438f9d61f7a; handover/docs/PR head 66f6d101f21d8193466105da7677e3afe0ad92c3. The current PR body still names aa9ac766/d9adf204 and must be refreshed by HARDWARE. Exact-head Relay/Quarantine pass; exact-head build fails at Missing poll signature check. The latest source commit is a lab-runner consolidation; aggregate PR #349 still contains earlier ESP32/ESP8266 sketch changes. No approved authenticated register/poll producer contract exists yet.
+- RELEASE #291: source/test anchor a004c647e67f90269a9149f918887622bb8cc5e8; current workflow/PR head 32487a5720040b8fb8374a7ab6efd224aeac7207. Latest commit changes only the BlazePwifi release workflow expression wiring. Windows and build validation fail the mandatory PROJECT_HANDOVER freshness gate at checkpoint 0406ce0b; compatibility is pending. Current PROJECT_HANDOVER blob ce00cabad64364c2255dc5a5a2fc29f4af0bcb17 and CURRENT_STATE blob 85dd3c1e9254d947c4e75daaeaf3351ef3e105e3 remain unrefreshed for this workflow change.
+- A successful older compatibility run is not current-head proof. RELEASE compatibility #45453527038 was pinned to source 6ce423783b30, not current source/test a004c647.
+- Freshness gates are admission controls. Do not bypass them, synthesize response_sig, reuse member signatures for poll, or weaken deny-default. CORE owns producer contract/canonical handover; QA owns independent assertion review; HARDWARE owns consumer labs; RELEASE owns release workflow and handover update.

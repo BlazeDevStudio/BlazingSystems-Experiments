@@ -1,3 +1,17 @@
+## PHX-MASTER UTC18 live snapshot — 2026-11-24T18:24Z
+
+**Starting Master HEAD:** e793eb6a820a032537d54ee09c4526a51ad608c5. **Current PR #288:** OPEN / DRAFT / UNMERGED; 200 changed paths, all coordination/phoenix/. **Production:** NO-GO.
+
+- Experiments main f4e8a891; development aad3aade; COE main a6513ab4; COE #26 b382d233 (FROZEN).
+- HARDWARE #349 source/test 32c02653; final handover/docs/PR head 66f6d101. Relay #45457011407 and Quarantine #45457011596 PASS; build #45457011223 fails at Missing poll signature check. PR body still pins aa9ac766/d9adf204.
+- RELEASE #291 source/test anchor a004c647; current PR/workflow head 32487a57. Windows #45458949767 fails PROJECT_HANDOVER freshness at checkpoint 0406ce0b. Build #45458949702 CI-0701 PASS, validate FAIL at the same gate; target matrix was still running. ESP32 compatibility #45458949687 pending.
+- COE #26: 2,524 current source entries vs 286 destination; 61 runtime intake blobs/modes match pinned source and destination, but summary counters are wrong (actual 46 identical / 15 derived vs claimed 47/14). Current source drift: 33 unchanged, 20 changed, 8 missing. Test and board import gaps plus license omissions keep it frozen.
+- Issue #172 OPEN; cleanup #266 OPEN / 0-of-7. Ownership manifest e4db3243, 11 routes, DRAFT_REVIEW_ONLY, Master target null.
+- Private Drive v11/newer corrections NOT RECOVERED; no Google Drive connector. Master Python tests and verifier NOT RUN (local git clone failed DNS). No Master CI runs.
+- Full evidence: [UTC18 exact-head, release handover and COE #26 audit](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/blob/e793eb6a820a032537d54ee09c4526a51ad608c5/coordination/phoenix/PHX_MASTER_UTC18_20261124_LIVE_HARDWARE349_RELEASE291_AND_COE26_PROVENANCE_AUDIT.md).
+
+---
+
 ## PHX-MASTER UTC16 live index — 2026-11-24T16:05:40Z
 
 ## PHX-MASTER UTC17 live snapshot — 2026-11-24

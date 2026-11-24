@@ -1,3 +1,16 @@
+## PHX-MASTER UTC18 routing — 2026-11-24
+
+- PHX-CORE owns the authenticated versioned register/poll producer contract, canonical vectors and shared handover. Do not start a parallel CORE task; the separate Blaze Production Continuation owns it.
+- PHX-QA owns independent reconciliation of Missing poll signature check. Keep deny-default; no fabricated response signature.
+- PHX-HARDWARE owns #349 source/tests and handover. Current source/test 32c026; final handover/docs/PR head 66f6d101. Refresh the stale PR description and wait for exact-head Full validation.
+- PHX-RELEASE owns #291 workflow/handover. Current PR head 32487a; update PROJECT_HANDOVER.md after the release workflow change, then rerun Windows/Build.
+- PHX-PISONET retains its two test paths in #291; QA independently reviews them. No path ownership transfer.
+- COE integration owner corrects SOURCE_INTAKE/MIGRATION_MAP and repeats exact provenance review. COE #26 remains FROZEN.
+- Registry custodian supplies authorized Drive v11/newer-correction access. Repository administrators address branch protection.
+- PHX-MASTER owns only coordination/phoenix/, architecture/interface contracts and cross-repo provenance. No source branch takeover, destination writes or release approval.
+
+---
+
 ## PHX-MASTER UTC16 ownership routing refresh — 2026-11-24T16:05:40Z
 
 ## PHX-MASTER UTC17 routing refresh — 2026-11-24
