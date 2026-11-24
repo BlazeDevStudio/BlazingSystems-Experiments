@@ -3540,3 +3540,36 @@ The test-only head `2a011eb4` also triggered PR compatibility [#45355114407](htt
 MASTER #288 ownership manifest remains `DRAFT_REVIEW_ONLY` (11 routes); RELEASE's BlazePwifi build workflow route to COE #26 is `reimplementation-review`, not copy/move authority. COE #26 remains frozen; COE #31 and its successor drafts remain separate. Cleanup-first #266 remains OPEN / 0-of-7. The authorized Library checkpoint `BLAZE_PRODUCTION_CHECKPOINT_20261109_v2.json` references the previous canonical registry `BLAZE_PROJECT_REGISTRY_v11_20261027.json` (55 projects; as-of `2026-10-27T00:32:50.937941Z`). The private registry contents themselves were not retrieved; this metadata is provenance only and does not authorize source movement. Older v3–v7 snapshots were not substituted.
 
 No merge, tag, signing, publication, hardware flashing, real payment migration or customer deployment. Physical 150 power cuts and 30-device/24-hour soak remain NOT TESTED. **PRODUCTION NO-GO.**
+
+## PHX-RELEASE UTC08 — final handover-anchor correction
+
+**Observed branch HEAD before this handover-only commit:** `bffc4ffd86794a2df3408a099369e3d48f8b3f0b`.  
+**Current HARDWARE #349 source/test SHA:** `6ce423783b306411bdb7e7217081c050cb4cbec4`.  
+**Current HARDWARE #349 docs HEAD:** `a994f7048673677651449eeb0a04d2bf9e91737c`.  
+**Current HARDWARE #349 PR HEAD:** `a994f7048673677651449eeb0a04d2bf9e91737c`.  
+**ESP32 sketch Git blob:** `a9a1c2fecb001d71f8f22b43952edbd160aacaf8`.
+
+### Exact failure diagnosis
+
+- BlazePwifi build [#45357167281](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45357167281) completed **FAILURE** in the release compatibility contract step. The 25 current handover-reference tests, 47 provenance tests and 10 Arduino CLI archive-verifier tests passed. The failing guard reported that the machine-checked handover anchor lacked the exact current HARDWARE #349 docs/PR identities. Firmware/ESP32/ESP8266/Android and downstream stages were skipped after this contract failure; no firmware build failure is inferred.
+- The current source-head compatibility matrix [#45357167298](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45357167298) completed **SUCCESS, 3/3 jobs**: provenance suite and both ESP32 core builds.
+- Windows [#45357167284](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45357167284) completed **FAILURE** in the PISONET-owned negative self-test at `negative-selftest.ps1:326`, `missing tag accepted=False`; publisher was skipped. Package parity and release workflow security checks passed. No PISONET path was edited.
+
+### Provenance separation
+
+Comparing HARDWARE source/test `6ce423783b306411bdb7e7217081c050cb4cbec4` to current PR/docs head `a994f7048673677651449eeb0a04d2bf9e91737c` yields one later commit and zero behind. That commit changes the HARDWARE relay/output workflow path filter and adds its UTC08 handover; it does not change the ESP32 sketch or the source/test anchor. The compatibility matrix intentionally checks out the exact source/test SHA and separately records the current docs/PR heads.
+
+This correction adds the machine-checked anchor required by the existing RELEASE regression guard. Only `.github/PHX_RELEASE_HANDOVER.md` is changed by this correction. The new exact-head CI triggered by this handover commit must be inspected before any final-head green claim.
+
+PR #291 remains OPEN / DRAFT / UNMERGED. MASTER ownership reconciliation and independent QA review remain pending. No merge, tag, signing, publication, firmware flash, payment migration or customer deployment occurred. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE CURRENT SOURCE ANCHOR (machine-checked)
+
+HARDWARE #349 source/test SHA: `6ce423783b306411bdb7e7217081c050cb4cbec4`
+HARDWARE #349 docs HEAD: `a994f7048673677651449eeb0a04d2bf9e91737c`
+HARDWARE #349 PR HEAD: `a994f7048673677651449eeb0a04d2bf9e91737c`
+ESP32 sketch Git blob SHA: `a9a1c2fecb001d71f8f22b43952edbd160aacaf8`
+- Exact-source compatibility matrix: [#45357167298](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45357167298) — SUCCESS (3/3 jobs).
+
+Evidence boundary: hosted CI only
