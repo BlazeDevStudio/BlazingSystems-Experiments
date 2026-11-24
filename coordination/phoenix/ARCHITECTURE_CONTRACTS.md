@@ -1890,3 +1890,19 @@ A source test and destination test are equivalent only when the mapped relative 
 At source HARDWARE #349 final docs head `861e80de8eec289ef04a84bd80484eec032a3b73` versus COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`, the source tree has 2,504 entries and the destination 286 (both non-truncated). Board subtrees are 58 versus 4 entries; 44 source board-local Python labs/helpers have no destination counterpart. Test mapping is 47 source / 19 destination: 1 exact blob+mode, 3 divergent same-path files (`config.sh`, `integration.sh`, `security.sh`), 43 source-only, and 15 destination-only. Both ESP8266 and ESP32 sketch blobs differ. This is a provenance gate, not a claim that every destination-only test is invalid or that every missing file should be copied.
 
 Product LICENSE, QRCode LICENSE, and TailAdmin LICENSE/NOTICE match exact blobs at their mapped paths. Experiments root NOTICE, Tabler LICENSE, and BlazeRentalLauncher LICENSE have no mapped COE #26 counterpart. Matching licenses do not establish complete third-party licensing or migration provenance. COE #26 remains FROZEN with five queued workflows and zero jobs/statuses.
+
+## 7.8 Exact source/test and final docs-head CI are separate release-provenance anchors — 2026-11-24 UTC11
+
+Every role checkpoint that separates implementation from handover/documentation MUST record a provenance tuple:
+1. exact source/test SHA;
+2. exact final PR/docs HEAD;
+3. workflow run IDs and conclusions for the exact SHA each run checked out;
+4. the final handover checkpoint that covers every changed source/workflow path.
+
+A focused source/test PASS does not imply that the final PR/docs head passes. If a later handover or workflow commit changes the tree, the relevant CI must be inspected or rerun at that final head. A final-head failure supersedes an earlier source/test PASS for integration readiness. Skipped downstream jobs are NOT PASS evidence.
+
+Shared handover gates must identify their canonical documents and every source/workflow path they monitor. When a role changes a workflow that is covered by another role's shared handover, the two owners coordinate the handover update after the code change; neither may bypass the gate or silently overwrite the other owner's record. Master routes and records the dependency but does not take ownership of the source or shared handover.
+
+For the current RELEASE #291 stack, the Windows workflow invokes the shared BlazePwifi gate while monitoring both BlazePwifi and SoftTimer paths. The current final docs head fails because `.github/workflows/blazepisonet-softtimer-release.yml` is newer than the canonical BlazePwifi `CURRENT_STATE.md` checkpoint. PHX-RELEASE and PHX-CORE must coordinate that update and rerun exact-head CI. This is a handover-freshness blocker, not permission to weaken the gate.
+
+For HARDWARE #349, focused Quarantine/Relay passes at both source/test and docs heads do not clear the Full validation failure at QA-owned `Missing poll signature check`. Keep firmware deny-only until the producer/consumer contract and independent QA assertion are reconciled.

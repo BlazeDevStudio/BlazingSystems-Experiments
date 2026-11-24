@@ -1033,3 +1033,15 @@ UTC05 final refresh: HARDWARE owner updated PR #349 body to current source/test/
 - COE #26 remains FROZEN: 2,504 source entries vs 286 destination; 44 board Python helpers missing; 47-to-19 test mapping (1 exact, 3 divergent, 43 source-only, 15 destination-only); firmware blobs differ; root NOTICE, Tabler and BlazeRentalLauncher license gaps remain.
 - Manifest remains 11 routes / DRAFT_REVIEW_ONLY / Master target null. Cleanup #266 OPEN / 0-of-7. Private canonical Drive registry v11/newer corrections remain inaccessible; no older snapshot substituted.
 - Master Python suite and `verify_coordination.py` NOT RUN because local clone DNS failed. JavaScript static source-tree assertions executed. No subsystem or COE destination changes. **PRODUCTION NO-GO.**
+
+## Latest exact-head reconciliation — 2026-11-24 UTC11 (updated 2026-11-24T11:37:40Z)
+
+- Starting Master branch/PR #288 head: `10a5c227775b9217dd0ffb8e5dd89d9af8e06bd9`; PR OPEN / DRAFT / UNMERGED; 195 changed paths, all under `coordination/phoenix/`. This UTC11 update adds seven coordination-only paths.
+- Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; development `aad3aade72c1156eecba1fed30907c6d0283b2c5`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`.
+- HARDWARE #349 source/test `083bc6405634c154e491f3b13e2b5ab0ef70df9c` / docs+PR `7723fd18c2f5fcf8a6e45ebb5646782038405881`: focused Quarantine/Relay pass at source and docs heads; Full fails at QA-owned `Missing poll signature check`.
+- RELEASE #291 source/test `0779a633e351f2ab3e8abdc651f530f63de772d6` / docs+PR `20d78f9035a019536e1c1a01cefb827cf34b4767`: compatibility passes; build and Windows fail at shared handover freshness because the SoftTimer release workflow changed after the canonical BlazePwifi handover checkpoint. Publisher/signing skipped.
+- RENTAL #328 has APK/API PASS but build FAIL (shared handover freshness and missing ESP32 Mbed TLS header). HARDWARE #348 focused header PASS but ESP32 build FAIL on the same missing header.
+- COE #26 exact tree: source #349 2,507 entries / 44 board-local Python labs; destination 286 entries / zero board Python labs. Test map 47/19: 1 exact, 3 divergent, 43 source-only, 15 destination-only. Firmware blobs differ; root NOTICE, Tabler LICENSE and BlazeRentalLauncher LICENSE are missing at destination. Five workflows queued / zero jobs/statuses.
+- Manifest remains 11 routes / DRAFT_REVIEW_ONLY / Master target null; cleanup #266 OPEN / 0-of-7. Canonical private registry v11/newer corrections unavailable; no older snapshot substituted. Master Python suite/verifier NOT RUN because GitHub DNS resolution failed.
+- Full evidence: [PHX-MASTER UTC11 live role-CI, COE #26 provenance and shared handover freshness](PHX_MASTER_UTC11_20261124_LIVE_HEAD_ROLE_CI_COE26_PROVENANCE_AND_HANDOVER_FRESHNESS.md).
+- PRODUCTION NO-GO; no subsystem source or COE destination changes.

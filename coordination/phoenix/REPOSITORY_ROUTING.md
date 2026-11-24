@@ -1829,3 +1829,16 @@ Current RELEASE #291 head `6345b71318e1ed20557c7faa88c2bdafac2c61bf` still has 2
 HARDWARE #349 is now at docs/PR head `861e80de8eec289ef04a84bd80484eec032a3b73` and source/test `75b4c9a7ef923cc9f58e228d12d673ea1a31541c`. Quarantine/Relay pass; Full fails at the inherited QA-owned poll-signature assertion. CORE owns the producer envelope; QA owns the assertion review; Hardware retains deny-only behavior. Master does not edit their source branches.
 
 COE #26 remains FROZEN at `b382d233ff06c8791b1028bed3c617cc7b670d12`. Current exact-tree provenance shows incomplete board-local test imports, divergent firmware/test blobs and three missing license/notice artifacts. No staging, copy, move, overwrite, rebase, cherry-pick, retarget, or destination write is authorized or performed.
+
+## PHX-MASTER UTC11 shared handover freshness route — 2026-11-24T11:37:40Z
+
+RELEASE #291 final docs/PR head is `20d78f9035a019536e1c1a01cefb827cf34b4767`. Its Windows release workflow invokes `experiment/openwrt/BlazePwifi/tests/handover_gate.sh`. The gate deliberately treats the BlazePwifi handover as the shared canonical record while scanning both:
+- `experiment/openwrt/BlazePwifi/` (P)
+- `experiment/windows/BlazePisonet-SoftTimer/` (W)
+- matching `blazepwifi`, `blazerental`, and `blazepisonet` workflow paths.
+
+At final docs head, build [#45384186939](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45384186939) and Windows [#45384186962](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45384186962) fail at the mandatory freshness gate. The Windows log names `.github/workflows/blazepisonet-softtimer-release.yml` as newer than shared BlazePwifi `CURRENT_STATE.md` checkpoint `d85eb6a2766781b6cac1807cef461993d8216b84`. The gate says to update the live record and exact evidence after the code change; no bypass is appropriate.
+
+**Ownership route:** PHX-RELEASE owns `.github/workflows/blazepisonet-softtimer-release.yml`; PHX-CORE owns the shared BlazePwifi handover. PHX-RELEASE must coordinate with PHX-CORE to record the workflow change in the shared `PROJECT_HANDOVER.md` / `CURRENT_STATE.md` / `CHANGE_LEDGER.md`, then rerun #291 on the new exact docs head. PHX-MASTER does not edit either owner's source or handover files.
+
+HARDWARE #349's current docs head is `7723fd18c2f5fcf8a6e45ebb5646782038405881`; its source/test `083bc6405634c154e491f3b13e2b5ab0ef70df9c` remains owner-controlled. Full validation still fails at QA's inherited poll-signature assertion. No role source ownership or migration route changed.

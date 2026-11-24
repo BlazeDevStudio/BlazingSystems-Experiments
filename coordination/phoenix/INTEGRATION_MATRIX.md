@@ -4961,3 +4961,27 @@ License/notice identity at these exact trees:
 - Experiments root NOTICE `f6d92cd21465312be5993631fe26977219be0fb9`, Tabler LICENSE `22ee8122400915cbff18e5f69368fa9eea6145eb`, and BlazeRentalLauncher LICENSE `c5b1efa7aac764ae6d8da63476a2d5cec02a6a5d` have no mapped destination counterpart.
 
 COE #26 exact-head Actions still return five QUEUED runs (case collision 43096752609, PISONET synthetic 43096752632, Shared Hardware 43096752800, Rental 43096752563, PisoWiFi overlay 43096752557), zero jobs and zero commit statuses. The historical 61-row intake reconciliation was not rerun in this bounded audit. **FROZEN:** no staging, copy, move, overwrite, rebase, cherry-pick, retarget, or promotion.
+
+## PHX-MASTER UTC11 exact #349 → COE #26 source/destination revalidation — 2026-11-24T11:37:40Z
+
+Complete recursive trees at exact refs:
+- Experiments #349 docs/PR `7723fd18c2f5fcf8a6e45ebb5646782038405881`: 2,507 entries.
+- COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`: 286 entries.
+- COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`: 3 entries.
+
+| Scope | Experiments #349 | COE #26 | Result |
+|---|---:|---:|---|
+| ESP32 subtree files | 16 | 1 | 15 source-only; mapped sketch differs |
+| ESP8266 subtree files | 40 | 1 | 39 source-only; mapped sketch differs |
+| Board-local Python labs/helpers | 44 | 0 | All 44 absent |
+| QA test directory | 47 | 19 | 1 exact, 3 divergent, 43 source-only, 15 destination-only |
+
+The three divergent same-path tests are `config.sh`, `integration.sh`, and `security.sh`; `portal.sh` is the sole exact blob+mode match. The 15 destination-only tests remain distinct.
+
+Firmware:
+- ESP8266 source `2f87a9de84ac53dbb0d2718b5c79a4662b63de8f` vs destination `c8be98f72596681e36a3ad1f8939bf8046c96887`: different.
+- ESP32 source `a9a1c2fecb001d71f8f22b43952edbd160aacaf8` vs destination `3cc7ec54b476943dc04a8d1af5e2df5fe054e422`: different.
+
+License/notice exact matches: Product LICENSE `1ee55b94183417be977ca287cd7391f9a6f7e721`; QRCode LICENSE `150770c0fc2994865ccdbef6662735cc083e780d`; TailAdmin LICENSE `cb92d4176b21b0594e5a6caf94d79340505e3d33`; TailAdmin NOTICE `f0425bbbe34c1227311098173b1eae0c3e2a807b`. Missing at destination: root NOTICE `f6d92cd21465312be5993631fe26977219be0fb9`; Tabler LICENSE `22ee8122400915cbff18e5f69368fa9eea6145eb`; BlazeRentalLauncher LICENSE `c5b1efa7aac764ae6d8da63476a2d5cec02a6a5d`.
+
+COE #26 exact-head workflows remain five QUEUED / zero jobs / zero statuses. **FROZEN:** no staging, copy, move, overwrite, rebase, cherry-pick, retarget or promotion.
