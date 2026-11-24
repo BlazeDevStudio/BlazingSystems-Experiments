@@ -27,6 +27,35 @@ def fnv1a64(data):
 
 runner_source = RUNNER_PATH.read_text(encoding="utf-8")
 runner_tree = ast.parse(runner_source)
+shared_runner_imports = {
+    alias.name
+    for node in runner_tree.body
+    if isinstance(node, ast.ImportFrom)
+    and node.module == "cpp_fixture_runner"
+    for alias in node.names
+}
+if shared_runner_imports != {"run_cpp_fixture"}:
+    raise AssertionError("POLL_RESPONSE_SHARED_RUNNER_IMPORT_MISSING")
+
+direct_imports = {
+    alias.name.split(".")[0]
+    for node in runner_tree.body
+    if isinstance(node, ast.Import)
+    for alias in node.names
+}
+if {"subprocess", "tempfile"} & direct_imports:
+    raise AssertionError("POLL_RESPONSE_LOCAL_PROCESS_RUNNER_REMAINS")
+
+direct_process_calls = [
+    node for node in ast.walk(runner_tree)
+    if isinstance(node, ast.Call)
+    and isinstance(node.func, ast.Attribute)
+    and isinstance(node.func.value, ast.Name)
+    and node.func.value.id in {"subprocess", "tempfile"}
+]
+if direct_process_calls:
+    raise AssertionError("POLL_RESPONSE_LOCAL_PROCESS_CALL_REMAINS")
+
 required = set(EXPECTED_FNV1A64)
 imports = {
     alias.name
@@ -76,6 +105,7 @@ for name, expected in EXPECTED_FNV1A64.items():
         raise AssertionError(f"POLL_RESPONSE_FIXTURE_BYTE_DRIFT: {name} {actual} != {expected}")
 
 runner_lines = len(runner_source.splitlines())
-if runner_lines >= 350:
+if runner_lines >= 330:
     raise AssertionError(f"POLL_RESPONSE_RUNNER_NOT_COMPACT: {runner_lines} lines")
+print("POLL_RESPONSE_SHARED_RUNNER_PASS")
 print(f"POLL_RESPONSE_FIXTURE_BOUNDARY_PASS 4/4; RUNNER_LINES={runner_lines}")

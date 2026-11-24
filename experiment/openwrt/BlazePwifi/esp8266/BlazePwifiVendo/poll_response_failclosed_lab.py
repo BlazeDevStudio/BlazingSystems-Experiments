@@ -3,11 +3,10 @@
 
 Compiles the production poll-status parser, acceptPollResponse(), and applyOutputs() functions from both board sketches. This is simulated control-flow evidence only.
 """
-import subprocess
 import sys
-import tempfile
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+from cpp_fixture_runner import run_cpp_fixture
 from firmware_lab_source import extract_function as _extract_function, mask_active_cpp_code, mask_non_code
 
 import poll_response_failclosed_lab_structure_guard  # noqa: F401
@@ -31,6 +30,19 @@ def extract(source, name):
         return _extract_function(source, name)
     except RuntimeError as exc:
         raise AssertionError(str(exc)) from exc
+
+
+def compile_and_run(code, board, label, prefix):
+    """Use the shared bounded C++ runner for every poll-response fixture."""
+    return run_cpp_fixture(
+        code,
+        prefix=prefix,
+        stem="poll_response",
+        extra_flags=("-Wno-unused-parameter",),
+        compile_timeout=30,
+        run_timeout=10,
+        context=f"{board}: {label}",
+    )
 
 
 def verify_lexical_extractor():
@@ -206,14 +218,14 @@ for board,path in BOARDS.items():
         "coinPostDispositionVerified"
     ))
     code=("#define TARGET_ESP32\n" if board=="ESP32" else "")+STUBS+parser+extract(source,"acceptPollResponse")+extract(source,"coinIngressConfigurationAllows")+extract(source,"applyOutputs")+MAIN
-    with tempfile.TemporaryDirectory(prefix="phx-poll-response-") as folder:
-        cpp=Path(folder)/"test.cpp"; binary=Path(folder)/"test"
-        cpp.write_text(code,encoding="utf-8")
-        built=subprocess.run(["g++","-std=c++17","-Wall","-Wextra","-Werror","-Wno-unused-parameter",str(cpp),"-o",str(binary)],capture_output=True,text=True,timeout=30)
-        if built.returncode:
-            print(board,"COMPILE FAIL",built.stderr[-2000:]); failed.append(board); continue
-        ran=subprocess.run([str(binary)],capture_output=True,text=True,timeout=10)
-        print(board,"PASS" if ran.returncode==0 else "FAIL",ran.stdout.strip(),ran.stderr.strip())
+    try:
+        ran = compile_and_run(code, board, "poll-response", "phx-poll-response-")
+    except RuntimeError as exc:
+        print(board, "FIXTURE FAIL", str(exc)[-2000:])
+        failed.append(board)
+        continue
+    print(board, "PASS" if ran.returncode == 0 else "FAIL",
+          ran.stdout.strip(), ran.stderr.strip())
         if ran.returncode: failed.append(board)
         coin_post = loop.find('String r=post("coin"')
         if coin_post < 0:
@@ -279,21 +291,13 @@ for board, path in BOARDS.items():
         extract(source, "beginPollWindow"),
     ])
     code = WINDOW_STUBS + functions + WINDOW_MAIN
-    with tempfile.TemporaryDirectory(prefix="phx-poll-window-") as folder:
-        cpp = Path(folder) / "poll_window.cpp"
-        binary = Path(folder) / "poll_window"
-        cpp.write_text(code, encoding="utf-8")
-        built = subprocess.run(
-            ["g++", "-std=c++17", "-Wall", "-Wextra", "-Werror",
-             "-Wno-unused-parameter", str(cpp), "-o", str(binary)],
-            capture_output=True, text=True, timeout=30
+    ran = compile_and_run(code, board, "poll-window", "phx-poll-window-")
+    if ran.returncode:
+        raise RuntimeError(
+            f"{board}: poll-window scenarios failed ({ran.returncode}): "
+            f"{ran.stdout}{ran.stderr}"
         )
-        if built.returncode:
-            raise RuntimeError(f"{board}: poll-window compile failed:\n{built.stderr[-3000:]}")
-        ran = subprocess.run([str(binary)], capture_output=True, text=True, timeout=10)
-        if ran.returncode:
-            raise RuntimeError(f"{board}: poll-window scenarios failed ({ran.returncode}): {ran.stderr}")
-        print(f"{board}: {ran.stdout.strip()}; source ordering PASS")
+    print(f"{board}: {ran.stdout.strip()}; source ordering PASS")
 
     # Failure injection: removing the final idle sample must be caught by the
     # pulse that begins exactly at the 250 ms quiet boundary.
@@ -311,24 +315,15 @@ for board, path in BOARDS.items():
         extract(source, "beginPollWindow"),
     ])
     mutated_code = WINDOW_STUBS + mutated_functions + WINDOW_MAIN
-    with tempfile.TemporaryDirectory(prefix="phx-poll-window-mutation-") as folder:
-        cpp = Path(folder) / "poll_window_mutated.cpp"
-        binary = Path(folder) / "poll_window_mutated"
-        cpp.write_text(mutated_code, encoding="utf-8")
-        built = subprocess.run(
-            [ "g++", "-std=c++17", "-Wall", "-Wextra", "-Werror",
-              "-Wno-unused-parameter", str(cpp), "-o", str(binary) ],
-            capture_output=True, text=True, timeout=30
+    mutated = compile_and_run(
+        mutated_code, board, "poll-window mutation", "phx-poll-window-mutation-"
+    )
+    if mutated.returncode != 25:
+        raise RuntimeError(
+            f"{board}: remove-final-quiet-sample mutation was not rejected at exact-boundary case 25; "
+            f"exit={mutated.returncode}; stdout={mutated.stdout}; stderr={mutated.stderr}"
         )
-        if built.returncode:
-            raise RuntimeError(f"{board}: mutated poll-window compile failed:\n{built.stderr[-3000:]}")
-        mutated = subprocess.run([str(binary)], capture_output=True, text=True, timeout=10)
-        if mutated.returncode != 25:
-            raise RuntimeError(
-                f"{board}: remove-final-quiet-sample mutation was not rejected at exact-boundary case 25; "
-                f"exit={mutated.returncode}; stdout={mutated.stdout}; stderr={mutated.stderr}"
-            )
-        print(f"{board}: MUTATION_REJECTED remove-final-quiet-sample (exit=25)")
+    print(f"{board}: MUTATION_REJECTED remove-final-quiet-sample (exit=25)")
 
 verify_json_array_primitive_delimiters(BOARDS, extract, STUBS)
 verify_current_cgi_envelope_deny(BOARDS, extract, STUBS)
