@@ -30,7 +30,6 @@ from poll_loop_blocking_inhibit_lab_fixtures import (
     MAIN,
     COIN_POST_ISR_MAIN,
     POLL_HTTP_ISR_MAIN,
-    PENDING_PRESERVATION_MAIN,
     RACE_MAIN,
     post_drain_rollover_main,
     missed_sample_main,
@@ -42,9 +41,7 @@ from poll_loop_blocking_inhibit_lab_fixtures import (
 from poll_loop_blocking_inhibit_lab_edge_fixtures import (
     ACTIVE_HIGH_MISSED_SAMPLE_MAIN,
     ACTIVE_LOW_MISSED_SAMPLE_MAIN,
-    ATTEMPTED_EVIDENCE_MAIN,
     STICKY_FAULT_LATER_ISR_MAIN,
-    disabled_ingress_gate_main,
     pre_poll_active_line_main,
     late_poll_baseline_main,
 )
@@ -56,6 +53,7 @@ from poll_loop_blocking_inhibit_lab_source_contracts import (
     verify_poll_safety_board_parity,
     verify_drain_abort_polarity_fixture_is_shared,
 )
+from poll_loop_blocking_inhibit_lab_pending_identity_contracts import run_pending_identity_matrix
 
 def compile_and_run(code, board, expected=0, label="normal"):
     ran = run_cpp_fixture(
@@ -318,157 +316,15 @@ for board,path in BOARDS.items():
     print(f"{board} MUTATION_REJECTED coin-post-clear-window-isr-recheck expected_exit=54")
     run_pending_clear_failure_lab(board,clear_pending,same_pending_record,load_pending,
                                    pending_attempt_marker_matches,quarantine_pending,compile_and_run)
-    # Execute the focused pending-identity matrix on the unmutated exact source;
-    # mutation-only execution is not a substitute for a green baseline run.
-    print(board,compile_and_run(assemble(main_source=PENDING_PRESERVATION_MAIN),
-                                board,0,"disabled-intake-pending-identity"))
-    print(board,compile_and_run(assemble(main_source=ATTEMPTED_EVIDENCE_MAIN),
-                                board,0,"disabled-intake-attempted-pending-evidence"))
-    pending_ready_mutation = sample.replace(
-        "if(pendingPulses>0U) pendingReady=true;",
-        "if(false) pendingReady=true;",
-        1,
+    run_pending_identity_matrix(
+        board=board,
+        assemble=assemble,
+        compile_and_run=compile_and_run,
+        sample=sample,
+        latch_fault=latch_fault,
+        output=output,
+        coin_ingress_config=coin_ingress_config,
     )
-    if pending_ready_mutation == sample:
-        raise AssertionError(f"{board}: disabled-intake pendingReady mutation anchor missing")
-    compile_and_run(
-        assemble(sample_source=pending_ready_mutation,main_source=PENDING_PRESERVATION_MAIN),
-        board,66,"disabled-intake-pending-ready-preservation"
-    )
-    print(f"{board} MUTATION_REJECTED disabled-intake-pending-ready-preservation expected_exit=66")
-    pending_identity_mutation = latch_fault.replace(
-        'activeTarget="";',
-        'activeTarget=""; pendingTarget=""; pendingNonce="";',
-        1,
-    )
-    if pending_identity_mutation == latch_fault:
-        raise AssertionError(f"{board}: pending-identity mutation anchor missing")
-    compile_and_run(
-        assemble(latch_fault_source=pending_identity_mutation,main_source=PENDING_PRESERVATION_MAIN),
-        board,66,"disabled-intake-pending-identity"
-    )
-    print(f"{board} MUTATION_REJECTED disabled-intake-pending-identity expected_exit=66")
-
-    pending_evidence_paths = (
-        "/pending.dat",
-        "/pending.new",
-        "/pending.bak",
-        "/pending.attempt",
-    )
-    for evidence_path in pending_evidence_paths:
-        pending_evidence_mutation = latch_fault.replace(
-            'activeTarget="";',
-            f'activeTarget=""; LittleFS.files.erase("{evidence_path}");',
-            1,
-        )
-        if pending_evidence_mutation == latch_fault:
-            raise AssertionError(
-                f"{board}: pending evidence deletion mutation anchor missing for {evidence_path}"
-            )
-        compile_and_run(
-            assemble(latch_fault_source=pending_evidence_mutation,
-                     main_source=ATTEMPTED_EVIDENCE_MAIN),
-            board,82,f"disabled-intake-pending-evidence-preservation-{evidence_path}"
-        )
-        print(
-            f"{board} MUTATION_REJECTED disabled-intake-pending-evidence-preservation "
-            f"path={evidence_path} expected_exit=82"
-        )
-
-    pending_attempt_state_mutation = latch_fault.replace(
-        'activeTarget="";',
-        'activeTarget=""; pendingPostAttempted=false;',
-        1,
-    )
-    if pending_attempt_state_mutation == latch_fault:
-        raise AssertionError(f"{board}: pending attempt-state mutation anchor missing")
-    compile_and_run(
-        assemble(latch_fault_source=pending_attempt_state_mutation,
-                 main_source=ATTEMPTED_EVIDENCE_MAIN),
-        board,82,"disabled-intake-pending-attempt-state-preservation"
-    )
-    print(
-        f"{board} MUTATION_REJECTED disabled-intake-pending-attempt-state-preservation "
-        "expected_exit=82"
-    )
-
-    pending_edge_delta_mutation = sample.replace(
-        "latchPollPulseFault((uint32_t)pendingPulses+unseenEdges);",
-        "latchPollPulseFault((uint32_t)pendingPulses+1U);",
-        1,
-    )
-    if pending_edge_delta_mutation == sample:
-        raise AssertionError(f"{board}: pending multi-edge delta mutation anchor missing")
-    compile_and_run(
-        assemble(sample_source=pending_edge_delta_mutation,main_source=PENDING_PRESERVATION_MAIN),
-        board,72,"disabled-intake-pending-edge-delta"
-    )
-    print(f"{board} MUTATION_REJECTED disabled-intake-pending-edge-delta expected_exit=72")
-
-    relay_gate_mutation = output.replace(
-        "bool accepting=pinConfigSafe && coinIngressConfigurationAllows() && insertMode",
-        "bool accepting=pinConfigSafe && true && insertMode",
-        1,
-    )
-    if relay_gate_mutation == output:
-        raise AssertionError(f"{board}: configured relay output gate mutation anchor missing")
-    compile_and_run(
-        assemble(output_source=relay_gate_mutation,main_source=PENDING_PRESERVATION_MAIN),
-        board,80,"disabled-intake-relay-output-gate"
-    )
-    print(f"{board} MUTATION_REJECTED disabled-intake-relay-output-gate expected_exit=80")
-    # The output-gate mutation above protects applyOutputs(), but that alone
-    # cannot prove that sampleCoinPulseEdge() refuses to create a pending credit.
-    # Independently remove each configured admission term and require the
-    # existing no-pending disabled-ingress scenarios to fail on that mutation.
-    coin_ingress_gate_mutations = (
-        ("controller", "true && coinEnabled && relayEnabled", 64),
-        ("coin", "controllerEnabled && true && relayEnabled", 62),
-        ("relay", "controllerEnabled && coinEnabled && true", 60),
-    )
-    original_coin_ingress_gate = "return controllerEnabled && coinEnabled && relayEnabled;"
-    # Isolate sample-path admission while retaining the real output function's
-    # side effects: force only its configured-admission call false.
-    output_gate_for_sample_mutation = output.replace(
-        "coinIngressConfigurationAllows()", "false", 1
-    )
-    if output_gate_for_sample_mutation == output:
-        raise AssertionError(f"{board}: sample isolation output-gate anchor missing")
-    disabled_flags = {
-        "controller": "controllerEnabled",
-        "coin": "coinEnabled",
-        "relay": "relayEnabled",
-    }
-    for gate_name, mutated_gate, expected_exit in coin_ingress_gate_mutations:
-        coin_ingress_gate_mutation = coin_ingress_config.replace(
-            original_coin_ingress_gate,
-            f"return {mutated_gate};",
-            1,
-        )
-        if coin_ingress_gate_mutation == coin_ingress_config:
-            raise AssertionError(
-                f"{board}: configured {gate_name} coin-ingress gate mutation anchor missing"
-            )
-        gate_main = disabled_ingress_gate_main(disabled_flags[gate_name], expected_exit)
-        compile_and_run(
-            assemble(output_source=output_gate_for_sample_mutation, main_source=gate_main),
-            board,
-            0,
-            f"disabled-intake-{gate_name}-coin-ingress-baseline",
-        )
-        print(f"{board} BASELINE_PASS disabled-intake-{gate_name}-coin-ingress")
-        compile_and_run(
-            assemble(output_source=output_gate_for_sample_mutation,
-                     coin_ingress_config_source=coin_ingress_gate_mutation,
-                     main_source=gate_main),
-            board,
-            expected_exit,
-            f"disabled-intake-{gate_name}-coin-ingress-gate",
-        )
-        print(
-            f"{board} MUTATION_REJECTED disabled-intake-{gate_name}-coin-ingress-gate "
-            f"expected_exit={expected_exit}"
-        )
     print(board,compile_and_run(assemble(main_source=RELEASE_EDGE_MAIN),board,0,
                                 "poll-release-output-interlock"))
     timing_output=compile_and_run(assemble(main_source=TIMING_MAIN),board,0,
