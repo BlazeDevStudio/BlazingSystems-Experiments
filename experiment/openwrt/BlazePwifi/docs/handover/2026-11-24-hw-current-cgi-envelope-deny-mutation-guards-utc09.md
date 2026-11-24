@@ -59,7 +59,7 @@ The intermediate source/test commit `fc5fcd4a77d780559a087893d4040492733e0571` f
 Full PR run [#45368938304](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45368938304) checks out synthetic merge `c4b7f3da6929c9d5371054329a74439fb2687efb` (PR head `75b4c9a7` into base `96018467`).
 
 - Validation job `138358003413`: **FAIL** at inherited QA-owned `tests/controllers.sh` assertion: `Missing poll signature check` in the ESP8266 sketch.
-- At this handover timestamp, 12/13 firmware target jobs plus Android had passed; ESP32 target job `138358003500` was still running.
+- Full PR run completed **FAILURE** at 2026-11-24T09:55:07Z. All 13/13 firmware target jobs and Android **PASS**; ESP32 job `138358003500` completed successfully.
 - Validation-dependent update, simulation, candidate, signing and publication stages were skipped.
 - No attempt was made to edit `tests/controllers.sh`, synthesize a poll signature, or weaken default-deny. PHX-CORE owns the producer contract; PHX-QA owns the assertion and independent test reconciliation.
 
