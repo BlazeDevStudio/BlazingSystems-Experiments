@@ -733,7 +733,7 @@ for board,path in BOARDS.items():
         raise AssertionError(f"{board}: initial poll-edge baseline mutation anchor missing")
     late_poll_start_loop = late_poll_start_loop.replace(
         "const bool pollWindowReady=beginPollWindow();",
-        "const bool pollWindowReady=beginPollWindow();\\n      pollEdgeStart=snapshotCoinEdgeSequence();",
+        "const bool pollWindowReady=beginPollWindow();\n      pollEdgeStart=snapshotCoinEdgeSequence();",
         1,
     )
     if late_poll_start_loop == loop or "pollEdgeStart=snapshotCoinEdgeSequence();" not in late_poll_start_loop:
