@@ -76,7 +76,7 @@ jobs:
         run: python3 .github/scripts/test_release_artifact_action_pins.py
 
   build:
-    name: "ESP32 core ${{ matrix.esp32_core }} / source 8dd8b12c3c3"
+    name: "ESP32 core ${{ matrix.esp32_core }} / source 8dd8b12c3c32"
     runs-on: ubuntu-latest
     timeout-minutes: 45
     permissions:
