@@ -1,31 +1,40 @@
-## PHX-MASTER UTC21 exact-source / destination matrix refresh — 2026-11-24T21:51:25Z
+## PHX-MASTER UTC22 exact-head / migration matrix — 2026-11-24T22:37:40Z
 
-- **Experiments default main:** f4e8a891aed8af86d5fd315d28750a0ac3a7372b; **development:** blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5; **Master:** phoenix/master-coordination@c0a465d157d491afbb2a06eaea8fdd4ab81a3615.
-- **COE main:** a6513ab4412b4c014eee2863e45cbe32d06cb243; **integration candidate #26:** b382d233ff06c8791b1028bed3c617cc7b670d12 (OPEN/DRAFT/FROZEN; five workflows QUEUED, zero jobs/statuses).
-- **Ownership manifest:** OWNERSHIP_ROUTES.json@e4db324315a1b3543fec17a148fbf960170fcb29, 11 routes, DRAFT_REVIEW_ONLY, PHX-MASTER target null. Manifest source_ref is Experiments main; it is not the historical intake pin or current #349 source/test head.
+- Experiments main: `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; development `blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5`; Master starting HEAD `66a734ee33b7fc9fca8a2dd0b95c7fdd7d29bba3`.
+- COE main: `a6513ab4412b4c014eee2863e45cbe32d06cb243`; integration candidate #26 `b382d233ff06c8791b1028bed3c617cc7b670d12` (OPEN/DRAFT/FROZEN; five workflows QUEUED, zero jobs/statuses).
+- `OWNERSHIP_ROUTES.json` blob `e4db324315a1b3543fec17a148fbf960170fcb29`: 11 routes, `DRAFT_REVIEW_ONLY`, PHX-MASTER target `null`. This is a review-only routing manifest, not a copy/move instruction.
 
-### Exact recursive trees
+### HARDWARE #349 — exact source/test vs final documentation identity
 
-| Ref | Tree | Entries | Completeness |
-|---|---|---:|---|
-| Historical intake source 6d4c9b487af4d768c4d7627654d119417fcc6e00 | 9b0ec594cb5d2bfe62d09d4a7fb9a254b9ffad3f | 2,391 | recursive, non-truncated |
-| Current #349 source/test 8c0626942815f1782211b6be784cf995ac5c5038 | 06e48c6ce1015850921769a9e80886f4036be749 | 2,527 | recursive, non-truncated |
-| COE #26 destination b382d233ff06c8791b1028bed3c617cc7b670d12 | 8a7d4cf81d7227118b876c1138dd2da12345fefa | 286 | recursive, non-truncated |
+- PR #349 OPEN / DRAFT / UNMERGED; branch `phoenix/hw-json-array-primitive-guard-20261124-utc00`; base #347 `960184670379f01e20f0e7e8bc23b3e5eedacd3f`.
+- Source/test SHA: `0aba4cd66deae4c358dec950ace1e86be3241674`; final docs/PR HEAD: `c265eafe83c472ba5355b584454f0fa76f379393`.
+- GitHub compare confirms four documentation commits after source/test, zero behind; only `experiment/openwrt/BlazePwifi/PROJECT_HANDOVER.md` and `experiment/openwrt/BlazePwifi/docs/handover/2026-11-24-hw-dual-store-shared-runner-utc22.md` changed in that interval. No source/test file changed after `0aba4cd`.
+- Exact source/test Quarantine [#45500875662](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45500875662) and Relay [#45500875749](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45500875749) PASS; source Full was cancelled, not a pass.
+- Exact final docs-head Quarantine [#45502304112](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45502304112) and Relay [#45502304004](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45502304004) PASS. Full [#45502304116](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45502304116) is terminal FAILURE at validation job `138828592534`, log: `Missing poll signature check`. All 14 firmware/platform targets plus Android passed; dependent stages were skipped. The PR body still labels this Full run pending and requires HARDWARE owner correction.
+- Focused CI is host/lab evidence only. Physical coin/relay/power-cut acceptance remains NOT TESTED. CORE owns the authenticated poll producer contract; QA owns independent assertion review. Do not weaken deny-default or transfer child results to parent #347.
 
-### SOURCE_INTAKE and current source drift
+### COE #26 — exact current source/destination tree and provenance
 
-- All 61 runtime rows resolve to the recorded historical source blob/mode and exact destination blob/mode: **61/61 source rows and 61/61 destination rows match the pinned historical migration record**.
-- Recomputed runtime classification is **46 byte-identical / 15 derived**. JSON summary still says **47 / 14**; the summary is inconsistent with its own 61 rows and must be corrected by the COE intake owner.
-- Comparing the same 61 runtime paths against current #349 source/test 8c062694 yields **28 drift rows: 20 changed blobs and 8 missing paths** versus historical pin 6d4c9b. Do not silently replace the historical pin with current source or claim current-head identity.
+- Complete, non-truncated recursive source tree at #349 source/test `0aba4cd`: **2,530 entries**. Complete destination tree at COE #26 `b382d233`: **286 entries**.
+- Tests: source `experiment/openwrt/BlazePwifi/tests/` **47** files; destination `Pisowifi/tests/` **19** files. Same-name blob/mode comparison: **1 exact, 3 divergent, 43 source-only, 15 destination-only**. Divergent: `config.sh`, `integration.sh`, `security.sh`; destination-only includes `run_focus.sh`, `member_txn_journal.sh`, and `voucher_txn_journal.sh`.
+- Hardware subtree: **65** source board files vs **2** destination sketches; **53** source Python lab/helper files vs **0** destination Python helpers. ESP32 source blob `adfd2f110d88243d03f2195658fb456b154dcb84` vs destination `3cc7ec54b476943dc04a8d1af5e2df5fe054e422`; ESP8266 source `8a0b458b6c7fb99c0913df16c5b4ca94dbcdc50e` vs destination `c8be98f72596681e36a3ad1f8939bf8046c96887`. Both sketches differ.
+- `SOURCE_INTAKE.json` has 61 runtime rows. Its actual row statuses are **46 byte-identical / 15 derived**, while its summary says **47 / 14**. All **61/61 destination** blobs/modes match the recorded destination pins. At current source/test `0aba4cd`, only **33/61** historical source blob/modes still match; **28** rows have source drift (20 changed, 8 absent). Do not replace the historical intake pin silently.
+- `MIGRATION_MAP.md` has 4 original-test rows + 14 derived-test rows = 18; JSON lists 15 derived tests. It omits `voucher_txn_journal.sh`; `run_focus.sh` map hash `fa1f4f2c6393504499d50659d8bf980caf7ff85b` differs from destination `2b7b861ec63cf811d18d0e63b11a65efd1bec0e9`; `member_txn_journal.sh` map hash `01dc9c65ae9d74eaafb403d47aebcd20edd14390` differs from destination `d04df3c6f3ada60b9fda8c8c04230dd31e37019a`; destination `voucher_txn_journal.sh` blob is `4277a56af800b930135745bb942d62b6d580cb99` with no map row.
+- PisoWiFi product LICENSE, rootfs QRCode LICENSE, and TailAdmin LICENSE/NOTICE have exact counterparts. Source UI QRCode LICENSE and Tabler LICENSE have no destination counterparts; BlazeRentalLauncher LICENSE remains a separate RENTAL route and is not reclassified as PisoWiFi ownership.
+- COE #26 remains FROZEN; five workflows QUEUED / zero jobs. No staging, copying, moving, overwriting, cherry-picking, rebasing or destination write is authorized by this audit.
 
-### Tests, board imports and licensing
+### COE #35 — current RELEASE-owned head and CI
 
-- Current #349 source test subtree: **47 entries** (46 executable test files + README); COE Pisowifi/tests: **19 executable files**. Exact blob/mode comparison: **1 exact, 3 divergent, 42 source-only, 15 destination-only**. Divergent same-path tests: config.sh, integration.sh, security.sh; portal.sh is exact.
-- SOURCE_INTAKE.derived_tests: 15 rows; MIGRATION_MAP.md has 18 test rows total (4 original + 14 derived). The map omits voucher_txn_journal.sh; run_focus.sh claims fa1f4f2c6393504499d50659d8bf980caf7ff85b but destination blob is 2b7b861ec63cf811d18d0e63b11a65efd1bec0e9; member_txn_journal.sh claims 01dc9c65ae9d74eaafb403d47aebcd20edd14390 but destination blob is d04df3c6f3ada60b9fda8c8c04230dd31e37019a.
-- Board subtree: **66 source entries / 4 destination entries**; **52 Python lab/helper files absent**. Both sketches differ: ESP32 source adfd2f11 vs destination 3cc7ec54; ESP8266 source 8a0b458b vs destination c8be98f7.
-- Exact destination license matches: Pisowifi/LICENSE, rootfs QRCode LICENSE, TailAdmin LICENSE and TailAdmin NOTICE. Missing/unrouted counterparts include UI QRCode LICENSE, UI Tabler LICENSE, and BlazeRentalLauncher LICENSE + assets/license.html under the separate Rental/android route. No automatic copy is authorized; confirm route ownership and source scope first.
+- Source/test `39ff80f005ce7ed39e851f3b63ad905c5bce2b16`; final handover/PR HEAD `23dcae0cace76c35dbad0217755af57aec033482`; the one commit after source/test changes only `tools/RELEASE_PACKAGER_HANDOVER.md`.
+- Exact current-head shared [#45499282763](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45499282763) runs 216 host tests with zero test failures, then fails closed because all 10 appliance profiles lack approved site-scoped RFC 4193 ULA /48 authority.
+- Sandbox [#45499282825](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45499282825) passes 40/40 host preflight tests, then fails closed with exit 125 because Bubblewrap is absent. Case-collision [#45499282801](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45499282801) PASS. These are host-CI results, not appliance acceptance. The COE #35 PR body remains stale at UTC15 and belongs to RELEASE to refresh.
 
-**Disposition:** COE #26 remains FROZEN. No staging, copy, move, overwrite, cherry-pick, rebase or destination write. Full provenance, test-set reconciliation, license routing and owner CI remain blockers.
+### Governance / execution limits
+
+- Issue #172 OPEN; cleanup #266 OPEN / 0-of-7. Root AGENTS requires the private project registry, artifact manifest and sync ledger before any new mirror artifact/folder; no Drive write was attempted.
+- Canonical private Drive registry v11 and newer corrections were not surfaced in the Library search; no Google Drive connector is exposed. Older v3-v7 snapshots and the November 9 checkpoint are not substitutes. No private Drive IDs/content are copied to public GitHub.
+- Master Python suite and `verify_coordination.py` NOT RUN: no authenticated local checkout is available. Recursive trees, blob/mode, manifest, test-map and exact-head CI reads were executed; this is not a Master product-test pass.
+- **PRODUCTION NO-GO.** Independent protected signing/anti-rollback witness, crash-atomic durable financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized release gates remain mandatory.
 
 ---
 

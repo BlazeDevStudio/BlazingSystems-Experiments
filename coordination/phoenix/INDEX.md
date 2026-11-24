@@ -1,13 +1,17 @@
-## PHX-MASTER UTC21 live checkpoint — 2026-11-24T21:51:25Z
+## PHX-MASTER UTC22 live checkpoint — 2026-11-24T22:37:40Z
 
-- Master branch c0a465d157d491afbb2a06eaea8fdd4ab81a3615; PR #288 base main@f4e8a891aed8af86d5fd315d28750a0ac3a7372b, OPEN/DRAFT/UNMERGED. New UTC21 audit: [PHX_MASTER_UTC21_20261124_LIVE_OWNER_HEADS_AND_COE26_EXACT_TREE_AUDIT.md](PHX_MASTER_UTC21_20261124_LIVE_OWNER_HEADS_AND_COE26_EXACT_TREE_AUDIT.md).
-- Live refs: Experiments main f4e8a891; development blazepwifi-v0.5.3-development@aad3aade; COE main a6513ab4; COE #26 b382d233.
-- Latest owner pointers: HARDWARE #349 source/test 8c062694, docs 2381c970; RELEASE #291 PR head 53fc8a1c; COE #35 source/test d7a6b806, final docs/PR ab0fabf0. Exact CI and blockers are in the linked report.
-- COE #26 exact-tree audit: historical source 2,391 entries; current #349 source 2,527; destination 286. Intake 61 rows match historical source/destination but summary counts are wrong (actual 46/15 vs declared 47/14); current source drift is 20 changed + 8 missing; test, board helper, sketch and license gaps keep staging frozen.
-- Issue #172 OPEN; cleanup #266 OPEN / 0-of-7. Manifest 11 routes / DRAFT_REVIEW_ONLY / Master target null. Private Drive registry v11 and newer corrections NOT_RECOVERED; no older snapshot substituted.
-- No Master product tests or Master CI executed; read-only tree/blob/manifest and exact owner CI inspection only. No subsystem source or COE destination changed. PRODUCTION NO-GO.
+- Experiments refs re-read: main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; development `aad3aade72c1156eecba1fed30907c6d0283b2c5`; Master starting HEAD `66a734ee33b7fc9fca8a2dd0b95c7fdd7d29bba3`. PR #288 remains OPEN / DRAFT / UNMERGED; its live head is the authoritative post-update pointer.
+- HARDWARE #349: source/test `0aba4cd66deae4c358dec950ace1e86be3241674`, final docs/PR `c265eafe83c472ba5355b584454f0fa76f379393`; focused Quarantine/Relay PASS; Full #45502304116 terminal FAIL at inherited `Missing poll signature check`. PR body still says pending; HARDWARE owner must correct it.
+- RELEASE #291 remains at `53fc8a1c558f80adde19dc675b879c78797f0cd5`; Windows/build fail CORE-owned CURRENT_STATE freshness; ESP32 compatibility PASS.
+- COE #35 source/test `39ff80f005ce7ed39e851f3b63ad905c5bce2b16`, final docs/PR `23dcae0cace76c35dbad0217755af57aec033482`; 216 host tests pass before 10/10 ULA authority failures; sandbox 40/40 host preflight passes before Bubblewrap exit 125; case guard PASS.
+- COE #26 remains FROZEN at `b382d233ff06c8791b1028bed3c617cc7b670d12`. Current exact trees: source 2,530 / destination 286; test, board-helper, sketch, SOURCE_INTAKE, migration-map and license differences remain. No staging or destination write.
+- Ownership manifest remains 11 routes / `DRAFT_REVIEW_ONLY` / PHX-MASTER target null. Cleanup #266 remains OPEN / 0-of-7. Canonical private Drive v11/newer corrections NOT_RECOVERED; no older snapshot substituted.
+- Master Python suite and `verify_coordination.py` NOT RUN; exact GitHub tree/blob/CI inspections executed. No subsystem source or COE destination changes. **PRODUCTION NO-GO**.
+
+[UTC22 exact-head, #349 pin and COE #26 provenance report](PHX_MASTER_UTC22_20261124_HW349_PIN_REFRESH_AND_COE26_EXACT_TREE_AUDIT.md)
 
 ---
+
 
 ## PHX-MASTER UTC20 live-head / migration provenance checkpoint — 2026-11-24T20:24:59Z
 
