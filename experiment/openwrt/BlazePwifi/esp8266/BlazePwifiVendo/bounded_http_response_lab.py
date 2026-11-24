@@ -155,7 +155,7 @@ def verify():
             (
                 "missing-status-deny",
                 "statusCode<200 || statusCode>=300",
-                "false",
+                "((void)statusCode, false)",
                 66,
             ),
         )
