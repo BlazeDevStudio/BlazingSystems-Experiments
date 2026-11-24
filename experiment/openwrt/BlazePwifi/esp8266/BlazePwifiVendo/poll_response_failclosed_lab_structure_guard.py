@@ -189,7 +189,7 @@ def verify_shared_runner_contract():
         if command[0] == "g++":
             runtime_dirs.append(Path(command[-3]).parent)
             return subprocess.CompletedProcess(command, 0, "", "")
-        return runtime_timeout
+        raise runtime_timeout
 
     with patch.object(shared_runner.subprocess, "run", side_effect=compile_then_timeout) as process:
         try:
