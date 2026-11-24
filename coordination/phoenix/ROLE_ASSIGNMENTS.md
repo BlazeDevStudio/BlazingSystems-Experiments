@@ -1,3 +1,24 @@
+## PHX-MASTER UTC07 owner/CI reconciliation — 2026-11-24T07:37:39Z
+
+### Current exact owner heads and CI
+
+| Owner / candidate | Exact head | Exact-head result |
+|---|---|---|
+| CORE #252 | c82705f2de865c89ab733b10efa84f26f56a5cc4 | Latest scoped run [#42698139210](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42698139210) SUCCESS; prior same-head [#42698124574](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42698124574) FAILURE at x86 simulation. CORE remains with its separate owner. |
+| RENTAL #328 | 0e0da62acd47c6a1ce287f8a30fc700d603fa070 | APK identity [#44782114384](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44782114384) and API smoke [#44782114393](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44782114393) PASS; build [#44782114390](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44782114390) FAIL (ESP32 / validation). |
+| PISONET #255 | d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | Windows [#42462978704](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42462978704) PASS; synthetic CI only. |
+| HARDWARE parent #347 | 960184670379f01e20f0e7e8bc23b3e5eedacd3f | Quarantine [#45299741995](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45299741995), Relay [#45299742437](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45299742437), and Full [#45299741993](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45299741993) FAIL. Do not inherit child results into the parent. |
+| HARDWARE #348 | c18826892160b1777f107e2ca0ca49aaed66ba6a | Header-native [#45207909335](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45207909335) PASS 5/5; build [#45207909463](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45207909463) FAIL at validation / ESP32 compile. |
+| HARDWARE #349 | docs/head dff053bb8fe276d3f0ba9764e845d61ebe640539; source/test da046d5ea80a8daac7258d302ecc310cd5634b24 | Quarantine [#45343153318](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45343153318) and Relay [#45343153313](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45343153313) PASS; Full [#45343153346](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45343153346) FAIL at QA-owned Controller protocol parity / Missing poll signature check. Thirteen firmware targets and Android pass; downstream release/sign/publish stages skip. |
+| QA #290 / #292 | 5c29d15994cee1279058f1eca12f2a3180704292 / 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | #290 Windows [#43633486963](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43633486963) PASS; #292 has no PR-triggered runs. |
+| RELEASE #291 | 1b50705e80c427d9d027b815d9ad2c54b9692fe4 | Windows [#45349040240](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45349040240) FAIL at RELEASE-SIGN test fail-closed negative controls; publish-release skipped. |
+
+COE exact heads: #35 e7801818b00854f34a5a88955d979c601ec96404 — validation [#45303825436](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45303825436) FAIL, sandbox [#45303825459](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45303825459) FAIL, case-collision [#45303825417](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45303825417) PASS; #45 9d76a134c1f6512aa40c20ec4d247306a71a8cce — overlay [#44295049727](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44295049727) and case [#44295049903](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44295049903) PASS; #49 aeb8ff11b2f5db9a5f86280ab62ab988245f3919 — shared tests [#44646341873](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44646341873) PASS, ESP32 compile [#44646341922](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44646341922) FAIL. COE #26 has zero check-runs and zero commit statuses.
+
+
+
+---
+
 # Project Phoenix — Canonical Role Assignments & Directory Ownership
 
 ## PHX-MASTER UTC03 live evidence refresh — 2026-11-24T03:37:41Z

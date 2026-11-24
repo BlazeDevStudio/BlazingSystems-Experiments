@@ -1,3 +1,16 @@
+# PHX-MASTER UTC07 live index — 2026-11-24T07:37:39Z
+
+- Master branch before this update: 48b961996a0c53452f5a75a4a40d0610f8a023dc; PR #288 base main at f4e8a891aed8af86d5fd315d28750a0ac3a7372b; PR remains OPEN / DRAFT / UNMERGED.
+- Default and development refs: main f4e8a891aed8af86d5fd315d28750a0ac3a7372b; blazepwifi-v0.5.3-development at aad3aade72c1156eecba1fed30907c6d0283b2c5.
+- Destination refs: COE main a6513ab4412b4c014eee2863e45cbe32d06cb243; integration #26 b382d233ff06c8791b1028bed3c617cc7b670d12 (FROZEN, 205 changed files, zero check-runs/statuses).
+- Current Hardware #349: docs/head dff053bb8fe276d3f0ba9764e845d61ebe640539, source/test da046d5ea80a8daac7258d302ecc310cd5634b24; focused Quarantine/Relay PASS, Full fails at QA-owned poll-signature parity. Parent #347 remains independently failing; do not transfer child results to parent.
+- Current RELEASE #291 head 1b50705e80c427d9d027b815d9ad2c54b9692fe4; Windows #45349040240 fails at release-sign negative controls; publisher skipped.
+- Exact #349 → #26 tree audit: 2,499 vs 286 entries; board 56 entries / 42 Python labs vs 4 entries / 0 Python; both sketches differ; parser lab/fixture missing; root NOTICE, Tabler and BlazeRentalLauncher license files absent at destination.
+- Ownership manifest unchanged: 11 routes / DRAFT_REVIEW_ONLY / PHX-MASTER target null. Cleanup #266 remains OPEN / 0-of-7.
+- No new report file or source artifact created; existing index links/history retained. Full Master Python suite NOT RUN (GitHub DNS failure/no local checkout). Private registry v11/newer corrections NOT RECOVERED; Google Drive connector unavailable. PRODUCTION NO-GO.
+
+---
+
 # Project Phoenix — Coordination Index
 
 ## PHX-MASTER UTC06 post-checkpoint exact-head refresh — live owner/CI reconciliation

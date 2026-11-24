@@ -1,3 +1,15 @@
+## PHX-MASTER UTC07 routing and provenance refresh — 2026-11-24T07:37:39Z
+
+Current source/destination refs: Experiments main f4e8a891aed8af86d5fd315d28750a0ac3a7372b; development aad3aade72c1156eecba1fed30907c6d0283b2c5; Master before update 48b961996a0c53452f5a75a4a40d0610f8a023dc; COE main a6513ab4412b4c014eee2863e45cbe32d06cb243; COE #26 b382d233ff06c8791b1028bed3c617cc7b670d12.
+
+The manifest OWNERSHIP_ROUTES.json remains blob e4db324315a1b3543fec17a148fbf960170fcb29, 11 routes, DRAFT_REVIEW_ONLY, PHX-MASTER target null. No route, owner, target path, or source SHA was changed. COE #26 remains frozen; exact current board/test/license discrepancies are recorded in INTEGRATION_MATRIX.md. The source test/fixture absence and sketch blob divergence are NOT IMPORTED / NOT BYTE-IDENTICAL, not copy instructions.
+
+PHX-MASTER remains coordination-only. CORE, RENTAL, PISONET, HARDWARE, QA and RELEASE retain their source branches. CORE remains with its separate continuation owner. No staging, copy, move, overwrite, rebase, cherry-pick, destination write, ownership transfer, or production action occurred.
+
+Registry v11/newer corrections are NOT RECOVERED because no authorized Google Drive connector is exposed and Library search/list did not surface the requested private file. No older registry substitute or private ID/content was used.
+
+---
+
 # Project Phoenix — Source ownership and migration routing (2026-11-15)
 
 

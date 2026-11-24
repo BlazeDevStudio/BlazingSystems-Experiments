@@ -1834,3 +1834,12 @@ Applied to HARDWARE #349: commit `da046d5ea80a8daac7258d302ecc310cd5634b24` move
 Applied to RELEASE #291: current Windows run #45340630145 fails at PISONET-owned `negative-selftest.ps1:326` after package parity and release policy checks pass. PHX-PISONET owns the fixture correction; PHX-RELEASE owns workflow semantics. Publisher is skipped.
 
 No financial, authentication, relay-admission, firmware, or production behavior changed in this Master update.
+
+
+## 7.2 Board-local test-import completeness is independent of firmware presence — COE #26 exact-tree gate (2026-11-24T07:37:39Z)
+
+A destination firmware sketch does not establish that its source-linked labs, fixture modules, mutation tests, licenses, or CI triggers were imported. Before any cross-repository promotion, the owner must map each source test/lab and fixture by exact blob or document an explicitly reviewed reimplementation; preserve executable modes and license/NOTICE obligations; then run destination CI at the exact destination SHA. Missing or identity-divergent tests remain NOT IMPORTED / UNKNOWN, not equivalent by filename or intent.
+
+Current exact example: Experiments HARDWARE #349 tree dff053bb8fe276d3f0ba9764e845d61ebe640539 contains 56 board entries including 42 Python labs/helpers. COE #26 tree b382d233ff06c8791b1028bed3c617cc7b670d12 contains four board entries (two sketches) and zero Python labs/helpers. The ESP8266 and ESP32 sketch blobs differ; source poll_json_array_primitive_lab.py (15c0d31ef9c07c549a0ddd5cf4d26c687cac8fd3) and its fixture module (b55ec6ef0ec4184c7b18b4e55bd65aeb96951812) have no destination counterpart. Product, QRCode and TailAdmin license artifacts match, but root NOTICE, Tabler LICENSE and BlazeRentalLauncher LICENSE are missing at the destination. COE #26 has zero check-runs/statuses at its exact head.
+
+This contract is a fail-closed review gate, not a migration instruction. PHX-MASTER did not stage, copy, move, overwrite, rebase, cherry-pick, or change COE #26. The destination remains FROZEN until owners complete file-level provenance, license review, test identity mapping and exact-head destination CI.

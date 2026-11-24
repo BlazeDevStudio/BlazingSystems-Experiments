@@ -1,3 +1,30 @@
+## PHX-MASTER UTC07 exact #349 → COE #26 source-intake and CI revalidation — 2026-11-24T07:37:39Z
+
+### Cross-repository #349 → COE #26 exact-tree audit
+
+Recursive trees are complete and non-truncated: source #349 dff053bb has 2,499 entries; destination #26 b382d233 has 286. Under the board directories, source has 56 entries including 42 Python labs/helpers; destination has 4 entries (two directories and two firmware sketches) and zero Python labs/helpers.
+
+| Artifact | Experiments #349 | COE #26 | Result |
+|---|---|---|---|
+| ESP8266 sketch | 2f87a9de84ac53dbb0d2718b5c79a4662b63de8f | c8be98f72596681e36a3ad1f8939bf8046c96887 | Different blobs |
+| ESP32 sketch | a9a1c2fecb001d71f8f22b43952edbd160aacaf8 | 3cc7ec54b476943dc04a8d1af5e2df5fe054e422 | Different blobs |
+| ESP8266 JSON parser lab | 15c0d31ef9c07c549a0ddd5cf4d26c687cac8fd3 | Missing | Not imported |
+| Parser fixture module | b55ec6ef0ec4184c7b18b4e55bd65aeb96951812 | Missing | Not imported |
+| Product LICENSE | 1ee55b94183417be977ca287cd7391f9a6f7e721 | Same blob at Pisowifi/LICENSE | Match |
+| QRCode LICENSE | 150770c0fc2994865ccdbef6662735cc083e780d | Same blob | Match |
+| TailAdmin LICENSE / NOTICE | cb92d4176b21b0594e5a6caf94d79340505e3d33 / f0425bbbe34c1227311098173b1eae0c3e2a807b | Same blobs | Match |
+| Root NOTICE | f6d92cd21465312be5993631fe26977219be0fb9 | Missing | Gap |
+| Tabler LICENSE | 22ee8122400915cbff18e5f69368fa9eea6145eb | Missing | Gap |
+| BlazeRentalLauncher LICENSE | c5b1efa7aac764ae6d8da63476a2d5cec02a6a5d | Missing | Gap |
+
+COE #26 remains OPEN / DRAFT / FROZEN (205 changed files), with zero check-runs/statuses at its exact head. This is an audit only: no staging, copy, move, overwrite, rebase, cherry-pick, or destination write.
+
+
+
+The tree comparison is a current exact-head review baseline, not permission to copy or promote files. The full 61-row historical intake map was not rerun in this activation; no full migration parity claim is made.
+
+---
+
 # Project Phoenix — Subsystem Integration Matrix & Gate Hierarchy
 
 ## PHX-MASTER UTC03 exact #349-to-COE #26 provenance and current owner overlap — 2026-11-24T03:37:41Z

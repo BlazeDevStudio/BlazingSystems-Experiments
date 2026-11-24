@@ -1,3 +1,24 @@
+## PHX-MASTER UTC07 live audit disposition — 2026-11-24T07:37:39Z
+
+### Governance and execution limits
+
+- Experiments main, development, Master branch and COE main report protected=false; repository rulesets list is empty. Branch-protection detail endpoint returned 403, so administrator-level protection configuration remains unverified.
+- Private BLAZE_PROJECT_REGISTRY_v11_20261027.json and newer corrections were not available through the authorized Library; no Google Drive connector is exposed. Older snapshots were not substituted and no private data/IDs were published.
+- Root AGENTS.md was read. Its linked Cloud Artifact Policy / Storage Handover could not be resolved because the referenced repository returns Moved Permanently and the current connector could not read the redirected path.
+- Master Python unittest suite and verify_coordination.py NOT RUN. Ordinary Git clone failed because this runtime could not resolve github.com; no authenticated local checkout is available. Static tree/blob/ownership/path checks were executed through the connected GitHub data and ordinary JavaScript validation.
+
+**Disposition: PRODUCTION NO-GO.** Independent protected signing/anti-rollback witness, crash-atomic durable financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak, and owner-authorized release gates remain mandatory. No merge, release, signing, secret provisioning, hardware flash, physical test, payment operation, or customer cutover occurred.
+
+
+Highest-priority owner actions:
+1. PHX-HARDWARE + PHX-QA: resolve the inherited Controller poll-signature assertion only after PHX-CORE publishes the approved authenticated producer contract; preserve deny-only behavior.
+2. PHX-RELEASE + PHX-PISONET: diagnose the exact-head #291 Windows negative-control failure on the owned test/workflow paths; do not change PISONET files from Master.
+3. COE integration owner: produce a per-file source/test/license mapping and exact destination CI before any migration staging.
+4. Registry custodian: restore authorized access to private v11 and newer corrections; repository administrator: establish effective branch protection.
+5. Authorized human runner: provide a local authenticated checkout and execute the Master Python suite plus verify_coordination.py.
+
+---
+
 # Project Phoenix — Master Audit Summary & Repository Ground Truth
 
 
