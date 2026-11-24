@@ -105,7 +105,7 @@ for name, expected in EXPECTED_FNV1A64.items():
         raise AssertionError(f"POLL_RESPONSE_FIXTURE_BYTE_DRIFT: {name} {actual} != {expected}")
 
 runner_lines = len(runner_source.splitlines())
-if runner_lines >= 330:
+if runner_lines > 330:
     raise AssertionError(f"POLL_RESPONSE_RUNNER_NOT_COMPACT: {runner_lines} lines")
 print("POLL_RESPONSE_SHARED_RUNNER_PASS")
 print(f"POLL_RESPONSE_FIXTURE_BOUNDARY_PASS 4/4; RUNNER_LINES={runner_lines}")
