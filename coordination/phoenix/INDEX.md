@@ -951,3 +951,6 @@ The exact private `BLAZE_PROJECT_REGISTRY_v11_20261027.json` and newer correctio
 - Exact #349-to-COE #26 provenance and license matrix is in [INTEGRATION_MATRIX.md](INTEGRATION_MATRIX.md); 41 source board-local Python labs vs zero destination, sketches/tests differ, required labs and several license notices are missing. COE #26 remains FROZEN.
 - Owner CI and exact refs are in [ROLE_ASSIGNMENTS.md](ROLE_ASSIGNMENTS.md); first-fault, parser and release-contract updates are in [ARCHITECTURE_CONTRACTS.md](ARCHITECTURE_CONTRACTS.md); blockers and limits are in [AUDIT_SUMMARY.md](AUDIT_SUMMARY.md).
 - Private v11 registry/newer corrections unavailable; baseline manifests not substituted. Master Python suite not run. No subsystem/destination/financial/hardware changes. **PRODUCTION NO-GO.**
+
+
+UTC05 post-run refresh: HARDWARE #349 current docs-head Quarantine/Relay PASS, Full FAIL at Missing poll signature check (13/13 targets + Android PASS); RELEASE #291 current Windows FAIL, ESP32 PASS 3/3, build still waiting only on Android emulator; signing/publishing skipped.

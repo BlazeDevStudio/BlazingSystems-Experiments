@@ -4803,3 +4803,7 @@ License correspondence: product LICENSE, QRCode LICENSE, TailAdmin LICENSE and T
 Source/test #1247a5: Quarantine #45335896662 PASS, Relay #45335896640 PASS, Full #45335896670 FAIL at Missing poll signature check (13/13 target jobs + Android pass; downstream skipped). Current docs-head #8639: Quarantine #45336321346 and Relay #45336321352 IN_PROGRESS; Full #45336321274 IN_PROGRESS with validation already failed at the same assertion. COE #26 has five queued workflows and zero jobs. COE #35 lacks site ULA /48 and Bubblewrap; COE #49 Shared compile fails at missing mbedtls header; COE #45 is scoped pass only.
 
 **Disposition: FROZEN.** No staging, copying, moving, overwriting, cherry-picking, rebasing, retargeting or promotion. Exact provenance, import completeness, licensing, test identity, destination CI and owner authorization remain required before any move.
+
+
+### UTC05 post-run exact-head CI refresh
+#349 docs head 8639deda: Quarantine/Relay #45336321346/#45336321352 PASS; Full #45336321274 FAIL at validation job 138249136286 / Missing poll signature check; all 13 firmware targets and Android PASS, downstream skipped. #291 head 3f92801: Windows #45336455064 FAIL at the PISONET negative self-test; ESP32 compatibility #45336455127 PASS 3/3; build #45336455073 still runs only the Android emulator job, with signing/publishing skipped. These CI results do not change the COE #26 FROZEN migration disposition.

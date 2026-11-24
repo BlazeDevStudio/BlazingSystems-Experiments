@@ -3494,3 +3494,8 @@ COE #26 remains at `b382d233ff06c8791b1028bed3c617cc7b670d12` on main `a6513ab44
 Live refs: Experiments main `f4e8a891...`, development `aad3aade...`, v0.6 comparison branch `2fbd2475...`, Master start `c0c53e36...`, COE main `a6513ab...`. Routing manifest remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`, 11 routes, DRAFT_REVIEW_ONLY, Master target null. Cleanup #266 OPEN / 0-of-7. Main/development/COE main branch APIs report protected=false. The v0.5.3/v0.6.0/main version-authority conflict remains for CORE to resolve.
 
 Exhaustive Library listing (15 pages) found v3-v7 snapshots and baseline registry/manifest/ledger JSONs, but no v11 registry or newer correction. Baseline files were read privately, not substituted. No Google Drive connector is exposed. Master Python suite and verify_coordination.py NOT RUN (no authenticated local checkout); remote tree/CI reads are not local test passes. No subsystem, COE destination, route, secret, signer, finance, hardware or release changes. **PRODUCTION NO-GO.**
+
+
+## UTC05 post-run CI terminal refresh
+- HARDWARE #349 docs head 8639deda: Quarantine #45336321346 PASS; Relay #45336321352 PASS; Full #45336321274 FAIL at Controller protocol parity / Missing poll signature check; 13/13 targets and Android PASS, downstream skipped.
+- RELEASE #291 head 3f92801: Windows #45336455064 FAIL at negative-selftest.ps1:326; ESP32 #45336455127 PASS 3/3; build #45336455073 remains in progress only on v04_android_emulator. CI-0701, validate, targets, update bundle and other simulations PASS; sign/publish SKIPPED.

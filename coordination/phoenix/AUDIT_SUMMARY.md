@@ -2713,3 +2713,7 @@ HARDWARE #349 current docs/PR `8639deda...`, source/test `1247a5c...`: source/te
 Current #349-to-COE #26 tree: 2,496 source/test / 2,497 docs / 286 destination entries; 41 source board-local Python helpers vs zero destination; both sketches differ; parser/first-fault/pending-clear labs missing; hardening test differs; root NOTICE, Tabler and Android Launcher license counterparts missing. COE #26 five workflows queued/zero jobs; FROZEN.
 
 Experiments main `f4e8a891...`, development `aad3aade...`, v0.6 branch `2fbd2475...`, COE main `a6513ab...` re-read. Routing manifest remains 11 routes / DRAFT_REVIEW_ONLY / Master target null; cleanup #266 OPEN / 0-of-7. Private v11 registry/newer corrections not found after exhaustive Library listing; baseline manifests read privately but not substituted; no Drive connector exposed. Master Python suite and verify_coordination.py NOT RUN (no authenticated local checkout). No subsystem or destination source changed. **PRODUCTION NO-GO.**
+
+
+## UTC05 post-run CI terminal refresh
+HARDWARE #349 docs-head Quarantine/Relay are PASS; Full is FAIL at Missing poll signature check, with all 13 firmware targets and Android PASS and downstream skipped. RELEASE #291 current-head Windows is FAIL at negative-selftest.ps1:326; ESP32 compatibility PASS 3/3; build remains in progress only on Android emulator. Signing/publishing remain skipped. No production release or migration.
