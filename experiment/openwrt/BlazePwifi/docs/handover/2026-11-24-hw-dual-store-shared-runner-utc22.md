@@ -49,9 +49,11 @@ The first Quarantine run at prior head `a3bfae23e038865126e82a6e4dee0d104927c12f
 
 ### Full integration status
 
-[Full run #45500875722](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45500875722) checked out merge commit `35a4eab` for prior PR head `a3bfae23`, not source SHA `0aba4cd`. Its validation job `138823501834` failed at `tests/controllers.sh` with **`Missing poll signature check`**. All 13 firmware/platform target jobs completed SUCCESS; Android was still in progress at last poll. Simulations, signed import, signing and publication were skipped. This Full result is prior-head evidence and does not transfer to `0aba4cd`.
+The prior Full [run #45500875722](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45500875722) checked out merge commit `35a4eab` for prior PR head `a3bfae23`; validation job `138823501834` failed at `tests/controllers.sh` with **`Missing poll signature check`**. It is superseded by the final docs-head result below.
 
-No exact-source Full run on `0aba4cd` has been verified yet. CORE owns the authenticated register/poll response contract; QA owns reconciliation of the inherited assertion. Do not synthesize `response_sig`, weaken the assertion, or enable positive poll/coin admission.
+Final handover/docs HEAD `903609a3ad9ff9bdd05f1b015cc158c3eb5fdb35` Full [run #45501543802](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45501543802) checked out merge commit `f2a60e1` for PR head `903609a3`. Validation job `138825903829` failed at the same inherited QA-owned **`Missing poll signature check`**. All 13 firmware/platform target jobs and Android completed SUCCESS; production import/signing/publication and v0.4 simulations/candidate gates were skipped. Overall Full conclusion is FAILURE; no Full PASS is claimed.
+
+This is a final docs-head Full run containing source/test `0aba4cd`; it is not a direct checkout of the source commit alone. CORE owns the authenticated register/poll response contract; QA owns reconciliation of the inherited assertion. Do not synthesize `response_sig`, weaken the assertion, or enable positive poll/coin admission.
 
 ## Other live stack audits
 
@@ -109,6 +111,6 @@ No exact-source Full run on `0aba4cd` has been verified yet. CORE owns the authe
     "Google Drive registry v11 is not accessible through the available connector surface."
   ],
   "next_action": "Refresh the exact-source Full result after handover pinning; Master to update its coordination pins; CORE/QA to publish and reconcile the authenticated register/poll contract without weakening deny-default.",
-  "updated_utc": "2026-11-24T22:29:29Z"
+  "updated_utc": "2026-11-24T22:34:41Z"
 }
 ```
