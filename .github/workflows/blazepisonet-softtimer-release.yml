@@ -85,8 +85,15 @@ jobs:
       - name: RELEASE-SIGN test fail-closed negative controls
         shell: pwsh
         run: |
-          pwsh -NoProfile -File "$env:PROJECT_DIR/tests/ReleaseSigning/negative-selftest.ps1"
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $buildWorkflowPath = Join-Path $env:GITHUB_WORKSPACE '.github/workflows/blazepwifi-build.yml'
+          if (-not (Test-Path -LiteralPath $buildWorkflowPath -PathType Leaf)) {
+            throw 'RELEASE-SIGN: shared BlazePwifi build workflow is missing'
+          }
+          $buildWorkflow = Get-Content -LiteralPath $buildWorkflowPath -Raw
+          if ([string]::IsNullOrWhiteSpace($buildWorkflow)) {
+            throw 'RELEASE-SIGN: shared BlazePwifi build workflow is empty'
+          }
+          . "$env:PROJECT_DIR/tests/ReleaseSigning/negative-selftest.ps1"
 
       - name: RELEASE-PUBLISHER-MOCK execute complete publication command path without credentials
         shell: pwsh
@@ -280,8 +287,15 @@ jobs:
         if: github.event_name == 'pull_request'
         shell: pwsh
         run: |
-          pwsh -NoProfile -File "$env:PROJECT_DIR/tests/ReleaseSigning/negative-selftest.ps1" -ActualUnsignedSetup "release/BlazePisonet-SoftTimer-Setup-v$env:VERSION.exe"
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $buildWorkflowPath = Join-Path $env:GITHUB_WORKSPACE '.github/workflows/blazepwifi-build.yml'
+          if (-not (Test-Path -LiteralPath $buildWorkflowPath -PathType Leaf)) {
+            throw 'RELEASE-SIGN: shared BlazePwifi build workflow is missing'
+          }
+          $buildWorkflow = Get-Content -LiteralPath $buildWorkflowPath -Raw
+          if ([string]::IsNullOrWhiteSpace($buildWorkflow)) {
+            throw 'RELEASE-SIGN: shared BlazePwifi build workflow is empty'
+          }
+          . "$env:PROJECT_DIR/tests/ReleaseSigning/negative-selftest.ps1" -ActualUnsignedSetup "release/BlazePisonet-SoftTimer-Setup-v$env:VERSION.exe"
 
       - name: Smoke-test Setup EXE install and uninstall
         shell: pwsh
