@@ -941,3 +941,13 @@ The exact private `BLAZE_PROJECT_REGISTRY_v11_20261027.json` and newer correctio
 - Cleanup #266 remains OPEN / 0-of-7. Ownership routes remain 11 / DRAFT_REVIEW_ONLY / Master target null. Inspected branches report protected=false.
 - Private Drive registry v11 and newer corrections remain inaccessible; no Google Drive connector is exposed. Master Python suite and verify_coordination.py were NOT RUN because local Git clone failed DNS resolution for github.com.
 - No subsystem source or COE destination path changed. No merge, release, signing, secret provisioning, hardware flash, real payment operation, physical test or migration. **PRODUCTION NO-GO.**
+
+
+## Latest exact-head reconciliation — 2026-11-24 UTC05 (updated 2026-11-24T05:37:40Z)
+
+- Master start `c0c53e36...`; PR #288 remains OPEN/DRAFT/UNMERGED. Five existing coordination docs updated; no new files.
+- HARDWARE #349 docs head `8639deda...`, source/test `1247a5c...`: source/test Q/R pass, Full fails; docs-head Q/R in progress and Full validation fails. Hardware PR body needs owner refresh.
+- RELEASE #291 current head `3f92801...`: ESP32 pending, Windows in progress, build queued; prior head's Windows negative test failed, while its build succeeded with signing/publishing skipped.
+- Exact #349-to-COE #26 provenance and license matrix is in [INTEGRATION_MATRIX.md](INTEGRATION_MATRIX.md); 41 source board-local Python labs vs zero destination, sketches/tests differ, required labs and several license notices are missing. COE #26 remains FROZEN.
+- Owner CI and exact refs are in [ROLE_ASSIGNMENTS.md](ROLE_ASSIGNMENTS.md); first-fault, parser and release-contract updates are in [ARCHITECTURE_CONTRACTS.md](ARCHITECTURE_CONTRACTS.md); blockers and limits are in [AUDIT_SUMMARY.md](AUDIT_SUMMARY.md).
+- Private v11 registry/newer corrections unavailable; baseline manifests not substituted. Master Python suite not run. No subsystem/destination/financial/hardware changes. **PRODUCTION NO-GO.**

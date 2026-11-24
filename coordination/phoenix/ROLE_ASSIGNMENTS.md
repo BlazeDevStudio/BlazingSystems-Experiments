@@ -3472,3 +3472,25 @@ COE candidates at exact current heads:
 The issue-designated development branch remains blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5; the separate v0.6 branch remains 2fbd2475e9f54878c316fa7cea2f228386b0e859. Their version/handover conflict and main README mismatch are recorded in Architecture §7.0. CORE must reconcile the canonical product ref; Master does not edit product branches.
 
 Experiments main, issue-designated development, v0.6 comparison branch, Master coordination and COE main report protected=false in the branch API. Cleanup #266 remains OPEN / 0-of-7. Master Actions at starting HEAD returned zero runs. The private v11 registry and newer corrections remain unavailable; no Google Drive connector is exposed. The Master Python suite and verify_coordination.py remain NOT RUN because local Git clone failed DNS resolution for github.com.
+
+
+## PHX-MASTER UTC05 live owner/CI pins — 2026-11-24T05:37:40Z
+
+| Role / PR | Current head | Exact CI snapshot |
+|---|---|---|
+| CORE #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | Build #42698139210 PASS (scoped); CORE ownership untouched. |
+| RENTAL #328 | `0e0da62acd47c6a1ce287f8a30fc700d603fa070` | APK #44782114384 PASS; API #44782114393 PASS; build #44782114390 FAIL. |
+| PISONET #255 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | Windows #42462978704 PASS (synthetic only). |
+| HARDWARE #345 | `ca72497ed386c9ac4e50d3f811827bef51e296ad` | Quarantine #45165015610 PASS; Relay #45165015665 PASS; build #45165015859 FAIL. |
+| HARDWARE #347 | `960184670379f01e20f0e7e8bc23b3e5eedacd3f` | Quarantine #45299741995, Relay #45299742437, Full #45299741993 FAIL. |
+| HARDWARE #348 | `c18826892160b1777f107e2ca0ca49aaed66ba6a` | Header #45207909335 PASS 5/5; build #45207909463 FAIL. |
+| HARDWARE #349 | Docs/PR `8639deda8d341d61efddff77be4d06ea931d040d`; source/test `1247a5c7b332677ae8dca83dc94cf586a015e7a0`; base #347 `960184...` | Source/test Q/R #45335896662/#45335896640 PASS; source/test Full #45335896670 FAIL at Missing poll signature check. Docs-head Q/R #45336321346/#45336321352 IN_PROGRESS; Full #45336321274 IN_PROGRESS with validation already FAIL. PR body still pins e4ab80/8dd8b12; Hardware must refresh it. |
+| QA #290 | `5c29d15994cee1279058f1eca12f2a3180704292` | Windows #43633486963 PASS (scoped). |
+| QA #292 | `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | No PR-triggered runs. |
+| RELEASE #291 | `3f92801aadf47be594fdef5a278b6aa125eaea1a` | Current ESP32 #45336455127 PENDING; Windows #45336455064 IN_PROGRESS; build #45336455073 QUEUED. Prior #157ec: Windows #45335209826 FAIL at negative-selftest.ps1:326; ESP32 #45335209966 PASS; build #45335209899 SUCCESS with sign/publish skipped. PR body still pins f1fda47. |
+
+COE #26 remains at `b382d233ff06c8791b1028bed3c617cc7b670d12` on main `a6513ab4412b4c014eee2863e45cbe32d06cb243`: five workflows QUEUED / zero jobs. COE #35 `e7801818...`: Shared #45303825436 FAIL for missing site ULA /48, case #45303825417 PASS, sandbox #45303825459 FAIL (Bubblewrap exit 125). COE #45 `9d76a134...`: overlay #44295049727 and case #44295049903 PASS scoped. COE #49 `aeb8ff11...`: Stage 5.1 #44646341873 and case #44646341992 PASS; Shared #44646341922 FAIL at missing `mbedtls/sha256.h`.
+
+Live refs: Experiments main `f4e8a891...`, development `aad3aade...`, v0.6 comparison branch `2fbd2475...`, Master start `c0c53e36...`, COE main `a6513ab...`. Routing manifest remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`, 11 routes, DRAFT_REVIEW_ONLY, Master target null. Cleanup #266 OPEN / 0-of-7. Main/development/COE main branch APIs report protected=false. The v0.5.3/v0.6.0/main version-authority conflict remains for CORE to resolve.
+
+Exhaustive Library listing (15 pages) found v3-v7 snapshots and baseline registry/manifest/ledger JSONs, but no v11 registry or newer correction. Baseline files were read privately, not substituted. No Google Drive connector is exposed. Master Python suite and verify_coordination.py NOT RUN (no authenticated local checkout); remote tree/CI reads are not local test passes. No subsystem, COE destination, route, secret, signer, finance, hardware or release changes. **PRODUCTION NO-GO.**

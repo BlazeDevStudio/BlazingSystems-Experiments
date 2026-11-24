@@ -4780,3 +4780,26 @@ Exact candidate CI:
 - COE #49 exact head fails Shared ESP32 compile at missing mbedtls/sha256.h despite Stage 5.1 and case-collision passing.
 
 The historical 61-row source-intake audit was not rerun in full this activation. This focused current-tree comparison is not migration staging or copy approval. No source/destination file was staged, copied, moved, overwritten, cherry-picked, rebased, retargeted or promoted. Preserve COE #26 as FROZEN until per-file provenance, license, test identity, import completeness, exact-head destination CI and owner authorization are supplied.
+
+
+## PHX-MASTER UTC05 exact #349-to-COE #26 tree/blob audit — 2026-11-24T05:37:40Z
+
+Source HARDWARE #349 docs/PR head `8639deda8d341d61efddff77be4d06ea931d040d`, source/test `1247a5c7b332677ae8dca83dc94cf586a015e7a0`, parent #347 `960184670379f01e20f0e7e8bc23b3e5eedacd3f`. UTC05 handover blob `571a6d66de41620e26eab0457d620fddc2bb3a96`. Destination COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`, COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`.
+
+Both recursive trees were complete/non-truncated: source/test 2,496 entries; docs head 2,497; COE #26 286. Source board subtree has 53 blobs / 41 Python labs/helpers; destination has 2 board blobs / 0 Python helpers. The source adds pending-clear fixture `5b10b47f4994bb053ebad5c7c1dd6c56900ea0a6` and refactors pending-clear runner to `a18ada4da4809af93f9d18d4834a13f5c3cadd29`. Parser lab `ac4b164e...` and first-fault lab `aacba2e...` remain; no destination counterparts.
+
+| Artifact | Experiments source blob | COE #26 destination blob | Result |
+|---|---|---|---|
+| ESP8266 sketch | `2f87a9de84ac53dbb0d2718b5c79a4662b63de8f` | `c8be98f72596681e36a3ad1f8939bf8046c96887` | Different |
+| ESP32 sketch | `a9a1c2fecb001d71f8f22b43952edbd160aacaf8` | `3cc7ec54b476943dc04a8d1af5e2df5fe054e422` | Different |
+| Parser lab | `ac4b164e79da90039b0f99a22efdb6a136046442` | Missing | Not imported |
+| First-fault lab | `aacba2e366a0b68ca47e04012ecaa0496cc3309a` | Missing | Not imported |
+| Pending-clear lab | `a18ada4da4809af93f9d18d4834a13f5c3cadd29` | Missing | Not imported |
+| Pending-clear fixtures | `5b10b47f4994bb053ebad5c7c1dd6c56900ea0a6` | Missing | Not imported |
+| Hardening test | `41211b2c110ab409f6d9d1812ef12fda73b13211` | `f921c56cecc19cab1989507b9b4ade1f45dac54e` | Different identity |
+
+License correspondence: product LICENSE, QRCode LICENSE, TailAdmin LICENSE and TailAdmin NOTICE have matching blobs. Root NOTICE (`f6d92cd...`), Tabler LICENSE (`22ee812...`) and Android BlazeRentalLauncher LICENSE (`c5b1efa7...`) have no destination counterpart. These limited matches do not establish complete licensing provenance.
+
+Source/test #1247a5: Quarantine #45335896662 PASS, Relay #45335896640 PASS, Full #45335896670 FAIL at Missing poll signature check (13/13 target jobs + Android pass; downstream skipped). Current docs-head #8639: Quarantine #45336321346 and Relay #45336321352 IN_PROGRESS; Full #45336321274 IN_PROGRESS with validation already failed at the same assertion. COE #26 has five queued workflows and zero jobs. COE #35 lacks site ULA /48 and Bubblewrap; COE #49 Shared compile fails at missing mbedtls header; COE #45 is scoped pass only.
+
+**Disposition: FROZEN.** No staging, copying, moving, overwriting, cherry-picking, rebasing, retargeting or promotion. Exact provenance, import completeness, licensing, test identity, destination CI and owner authorization remain required before any move.
