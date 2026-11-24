@@ -1,3 +1,13 @@
+## PHX-MASTER UTC20 live-head / migration provenance checkpoint — 2026-11-24T20:24:59Z
+
+- Parent Master HEAD `6fc53efce92a700b61c348b8c4d6190b4c9b95ca`; PR #288 base `main@f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; routing manifest `OWNERSHIP_ROUTES.json@e4db324315a1b3543fec17a148fbf960170fcb29` remains 11 routes / DRAFT_REVIEW_ONLY / Master target null.
+- HARDWARE #349 current PR/docs head `05d91c8ac363f9fca2134998e0c1bb4ccdf76fd6`, source/test `639635c282a88133a715e921e4dc37e6febde87e`: Relay [#45479031211](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45479031211) and Quarantine [#45479031184](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45479031184) PASS; Full [#45479031223](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45479031223) FAIL at inherited `Missing poll signature check`; 14/14 target/platform jobs pass and downstream stages are skipped. UTC20 handover/PR description refreshed.
+- RELEASE #291 current PR head `ee1562df040ef1a52840039e3dace6821a92497c`: Windows [#45474966212](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45474966212) and build [#45474966373](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45474966373) FAIL at CORE-owned CURRENT_STATE freshness; compatibility [#45474966488](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45474966488) PASS.
+- COE #26 remains FROZEN. Exact historical source/destination blob checks pass for 61 runtime rows, but SOURCE_INTAKE summary is 47/14 vs actual 46/15; current source has 20 changed/8 missing runtime blobs vs the historical pin; test/license/import map defects remain.
+- Cleanup #266 OPEN / 0-of-7. Registry v11/newer corrections NOT RECOVERED; no older snapshot substituted.
+- Full report: [UTC20 exact-head and COE provenance audit](coordination/phoenix/PHX_MASTER_UTC20_20261124_LIVE_OWNER_HEADS_COE26_SOURCE_PIN_DRIFT_AND_HANDOVER_FRESHNESS_AUDIT.md).
+- No subsystem source or destination writes. Master Python suite and verifier NOT RUN. PRODUCTION NO-GO.
+
 ## PHX-MASTER UTC19 post-checkpoint snapshot — 2026-11-24T19:26:29Z
 
 - Master HEAD 098623d07d561cb04803cc283cee63f5abda7fc7; PR #288 OPEN / DRAFT / UNMERGED, 202 paths all under coordination/phoenix/.

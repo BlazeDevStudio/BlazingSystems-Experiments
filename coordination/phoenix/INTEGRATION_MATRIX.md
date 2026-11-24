@@ -1,3 +1,14 @@
+## PHX-MASTER UTC20 COE #26 exact-tree / source-intake refresh — 2026-11-24T20:24:59Z
+
+- Source/test: Experiments #349 source/test `639635c282a88133a715e921e4dc37e6febde87e` (tree 2,527, non-truncated); final handover/docs `05d91c8ac363f9fca2134998e0c1bb4ccdf76fd6` (docs-only; source tree unchanged); historical source pin `6d4c9b487af4d768c4d7627654d119417fcc6e00` (tree 2,391, non-truncated).
+- Destination: COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12` (tree 286, non-truncated); COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`.
+- SOURCE_INTAKE `1b9018ff944f7f673934d0fc2a97e0a0090d3f5f`: 61/61 recorded historical source blobs and 61/61 destination blobs match. Actual classification 46 byte-identical / 15 derived; summary reports 47/14. Current main and current #349 source each have 20 changed / 8 missing runtime blobs relative to historical source pin.
+- Tests: 47 source / 19 destination; one exact common path, three divergent, 43 source-only, 15 destination-only. Four original mapped tests match their historical refs; 15 derived JSON test blobs match destination.
+- MIGRATION_MAP `b54fc15d83bc2269de03db8aadd0e76259fd13d9`: 18 test rows vs 19 expected; stale `run_focus.sh` and `member_txn_journal.sh` hashes; missing `voucher_txn_journal.sh`.
+- Board subtree: 64 source files (16 ESP32 + 48 ESP8266), 2 destination sketches; 52 source Python helpers have no destination counterpart. Both firmware sketch blobs differ: ESP32 `adfd2f11` vs `3cc7ec54`; ESP8266 `8a0b458b` vs `c8be98f7`.
+- Licences: product, QRCode and TailAdmin LICENSE/NOTICE counterparts match. Root NOTICE and Tabler LICENSE lack destination counterparts; BlazeRentalLauncher is a separate RENTAL route.
+- COE #26 five workflows remain queued with zero jobs/statuses. No staging/copy/move/overwrite/rebase/cherry-pick/promotion.
+
 ## PHX-MASTER UTC19 post-checkpoint owner-head refresh — 2026-11-24T19:26:29Z
 
 - HARDWARE #349 current PR/workflow head 4c99e1c846d315f795901858e94189226723627a; source/test d2565d9cc85409d93cd68109b14653257b6af944; handover/docs anchor 58c5418e92e912907967343de2f039e16b77c070. The latest workflow-only change does not alter the COE #26 source-tree comparison. Exact-head focused Relay/Quarantine PASS; Full build #45469493967 FAIL at Missing poll signature check.

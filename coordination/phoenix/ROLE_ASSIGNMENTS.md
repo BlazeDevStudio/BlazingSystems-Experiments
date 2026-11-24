@@ -1,3 +1,23 @@
+## PHX-MASTER UTC20 exact owner-head / CI refresh — 2026-11-24T20:24:59Z
+
+| Owner / PR | Current PR HEAD (source/test where separate) | Exact-head CI observation | Required owner action |
+|---|---|---|---|
+| CORE #252 | `c82705f2` | [#42698139210](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42698139210) scoped PASS | Continue CORE-owned work; no Master takeover |
+| RENTAL #328 | `0e0da62a` | [#44782114390](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44782114390) validation + ESP32 build FAIL; `mbedtls/sha256.h` unresolved | RENTAL resolves dependency and handover |
+| PISONET #255 | `d01fd164` | [#42462978704](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42462978704) synthetic Windows PASS | Retain PISONET source/test ownership |
+| HARDWARE #347 | `96018467` | [#45299741993](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45299741993) Full validation FAIL at poll-signature assertion | CORE/QA contract resolution |
+| HARDWARE #348 | `eb7afcb2` | [#45352513177](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45352513177) ESP32 build FAIL at missing `mbedtls/sha256.h` | HARDWARE resolves build dependency |
+| HARDWARE #349 | PR/docs `05d91c8ac363f9fca2134998e0c1bb4ccdf76fd6`; source/test `639635c282a88133a715e921e4dc37e6febde87e` | Relay [#45479031211](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45479031211) PASS; Quarantine [#45479031184](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45479031184) PASS; Full [#45479031223](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45479031223) FAIL at `Missing poll signature check`; all 14 targets pass | HARDWARE has refreshed UTC20 handover/PR description; CORE supplies authenticated poll contract; QA reconciles assertion |
+| QA #290 | `5c29d159` | [#43633486963](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43633486963) PASS | Independent QA remains required for critical gates |
+| QA #292 | `75a3f66d` | No PR-triggered runs returned | QA publishes exact-head review evidence |
+| RELEASE #291 | PR/docs `ee1562df040ef1a52840039e3dace6821a92497c`; source/test `343e25b8c8b1dffac83469d31b8fbcf2a0f415b7` | Windows [#45474966212](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45474966212) FAIL; build [#45474966373](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45474966373) FAIL at CORE CURRENT_STATE freshness; compatibility [#45474966488](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45474966488) PASS | CORE updates canonical CURRENT_STATE; RELEASE reruns; PISONET retains tests; QA reviews |
+| COE #26 | `b382d233ff06c8791b1028bed3c617cc7b670d12` | Five workflows QUEUED; zero jobs/statuses | Integration owner fixes exact source/test/license provenance before staging |
+| COE #35 | `e7801818` | Case guard PASS; shared Hardware/contracts FAIL; sandbox FAIL | RELEASE UTC20 task is IN_PROGRESS: correct host-CI evidence labels only; no commit yet |
+| COE #45 | `9d76a134` | Overlay/shell and case guard PASS | No promotion without candidate integration gates |
+| COE #49 | `aeb8ff11` | Stage 5.1 and case guard PASS; shared Hardware compile FAIL | COE owner resolves shared Hardware compile |
+
+HARDWARE #349's UTC20 handover now records source/test `639635c` and docs/PR `05d91c8`; exact Full remains blocked at the QA-owned poll-signature assertion. RELEASE #291 remains blocked at CORE-owned CURRENT_STATE freshness; its current PR head contains three docs-only commits after UTC19, two touching CORE-owned shared files without updating CURRENT_STATE. Master did not edit any owner source/shared handover files.
+
 ## PHX-MASTER UTC19 post-checkpoint owner/CI refresh — 2026-11-24T19:26:29Z
 
 | Owner | Current source/test / handover / PR identity | Exact-head CI and next action |
