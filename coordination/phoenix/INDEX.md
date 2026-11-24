@@ -1,3 +1,15 @@
+## PHX-MASTER UTC16 live index — 2026-11-24T16:05:40Z
+
+- Master branch/PR #288 HEAD `c915134d4d36221e02d4dd10d010bd6356392f9f`; OPEN / DRAFT / UNMERGED, 198 changed paths, all under `coordination/phoenix/`; Master Actions/statuses zero.
+- Experiments main `f4e8a891`; issue-designated development `aad3aade`; COE main `a6513ab4`; COE #26 `b382d233` remains FROZEN.
+- HARDWARE #349 source/test `4d36d08b`, final PR/docs head `7eab7194`; focused Relay/Quarantine pass, Full/build fails at QA-owned `Missing poll signature check`. PR body still pins older `c5d0ebea/a361adfa` and requires owner refresh.
+- RELEASE #291 source/test anchor `677846df`, final PR/docs head `18a7ac94`; Windows/build fail the CORE-owned CURRENT_STATE freshness gate; ESP32 compatibility passes. Current checkpoint remains `d85eb6a2`.
+- COE #26 exact tree: current #349 2,517 entries vs destination 286; board 60/48 Python vs 2/0; tests 47/19 (1 exact, 3 divergent, 43 source-only, 15 destination-only); both firmware sketches differ. Intake rows recompute 46 identical / 15 derived vs summary 47 / 14; 15 derived tests vs 14 map rows; voucher test omitted; two stale hashes.
+- License matches: product, QRCode, TailAdmin LICENSE/NOTICE. Missing destination counterparts: root NOTICE, Tabler LICENSE, BlazeRentalLauncher LICENSE. Five COE #26 workflows queued / zero jobs/statuses.
+- Ownership manifest remains `e4db3243`, 11 routes, DRAFT_REVIEW_ONLY, Master target null. Cleanup #266 OPEN / 0-of-7.
+- Private Drive v11/newer corrections NOT RECOVERED; no older registry substituted. Master Python suite/verifier NOT RUN. **PRODUCTION NO-GO.**
+- Full evidence: [UTC16 audit](PHX_MASTER_UTC16_20261124_LIVE_HEAD_ROLE_CI_COE26_PROVENANCE_AND_HANDOVER_GATE_AUDIT.md).
+
 ## PHX-MASTER UTC14 post-checkpoint refresh — 2026-11-24T14:42:27Z
 
 - Current Master branch/PR #288 HEAD: `6a297739388ea5db6f6b7a02c597e27e35a1244e`; PR OPEN / DRAFT / UNMERGED, 198 changed paths, all under `coordination/phoenix/`; Master Actions/statuses remain zero.

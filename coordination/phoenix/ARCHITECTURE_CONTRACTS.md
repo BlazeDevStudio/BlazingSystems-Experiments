@@ -1953,3 +1953,13 @@ At the same RELEASE #291 head, Windows [#45415537929](https://github.com/BlazeDe
 
 HARDWARE #349 Full validation still fails QA-owned `Missing poll signature check`; focused tests and target compiles do not authorize positive poll admission or hardware acceptance. Keep deny-only behavior until CORE's producer contract and QA's independent assertion are reconciled.
 
+
+
+## 7.10 Exact-head evidence freshness and checkpoint identity (2026-11-24 UTC16)
+
+A role PR may have three different identities: (1) source/test commit, (2) final documentation/workflow/PR head, and (3) the commit actually tested by a workflow run. Record all three separately. A CI result proves only the commit shown by that run; do not promote a focused source-head result to a later docs/PR head unless a workflow was executed at that exact head.
+
+Before integration, require the PR description and owner handover to identify the live PR head and source/test head. If the PR head advances but the description still names an older source/test/docs pair, mark the handover **STALE / BLOCKED** and request an owner refresh; do not infer that the latest source or docs were tested.
+
+Shared handover freshness is an admission gate, not a documentation preference. The canonical owner must update the authoritative `CURRENT_STATE.md` after the workflow/source changes, then the affected owner must rerun exact-head CI. Do not bypass the gate or select a last-writer handover copy. CORE owns the canonical BlazePwifi state; RELEASE owns release workflow changes; PISONET owns its SoftTimer tests; QA independently reviews.
+

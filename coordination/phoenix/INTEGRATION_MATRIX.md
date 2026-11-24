@@ -1,3 +1,15 @@
+## PHX-MASTER UTC16 exact #349 → COE #26 provenance — 2026-11-24T16:05:40Z
+
+Complete recursive trees: current #349 `7eab719485dca333f06c1cac844a3fc943564e9b` = 2,517 entries; COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12` = 286; Experiments main = 2,340; COE main = 3.
+
+- Board source: 60 files / 48 Python labs; COE destination Hardware: 2 files / 0 Python labs.
+- Tests: 47 source / 19 destination; 1 exact, 3 divergent (`config.sh`, `integration.sh`, `security.sh`), 43 source-only, 15 destination-only.
+- ESP8266 sketch source `2f87a9de` vs destination `c8be98f7`; ESP32 source `a9a1c2fe` vs destination `3cc7ec54`: both differ.
+- SOURCE_INTAKE 61 runtime rows recompute 46 identical / 15 derived vs summary 47 / 14; destination matches all 61 recorded blobs; current main drift is 33 same / 20 changed / 8 missing.
+- JSON derived tests 15 vs 14 non-original map rows; `voucher_txn_journal.sh` omitted; `run_focus.sh` and `member_txn_journal.sh` hashes stale.
+- Product, QRCode and TailAdmin LICENSE/NOTICE counterparts match. Root NOTICE and Tabler LICENSE have no destination counterpart; BlazeRentalLauncher LICENSE is a separate RENTAL route.
+- COE #26 remains five workflows QUEUED / zero jobs/statuses. Keep frozen; no staging or promotion.
+
 ## PHX-MASTER UTC14 exact source-intake and destination provenance — 2026-11-24T14:05:18Z
 
 COE #26 remains FROZEN at b382d233; current source authority is Experiments main f4e8a891; historical SOURCE_INTAKE pin is 6d4c9b48. Complete recursive tree comparison shows: 61 runtime rows all match their pinned source/destination blobs and modes, but actual classification is 46 identical / 15 derived while JSON summary says 47 / 14. Four original test rows match; 15 derived-test JSON rows match destination blobs, while MIGRATION_MAP has 14 rows, omits voucher_txn_journal.sh and has stale hashes for run_focus.sh and member_txn_journal.sh.

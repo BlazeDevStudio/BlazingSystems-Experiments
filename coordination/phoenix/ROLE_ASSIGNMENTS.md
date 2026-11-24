@@ -1,3 +1,18 @@
+## PHX-MASTER UTC16 exact owner-head / CI reconciliation — 2026-11-24T16:05:40Z
+
+| Owner / PR | Exact current PR head | Exact-head CI |
+|---|---|---|
+| CORE #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | [#42698139210](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42698139210) PASS, scoped; separate CORE continuation owner retained. |
+| RENTAL #328 | `0e0da62acd47c6a1ce287f8a30fc700d603fa070` | APK [#44782114384](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44782114384) PASS; API [#44782114393](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44782114393) PASS; build [#44782114390](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44782114390) FAIL. |
+| PISONET #255 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | Windows [#42462978704](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42462978704) PASS, synthetic only. |
+| HARDWARE #347 | `960184670379f01e20f0e7e8bc23b3e5eedacd3f` | Quarantine [#45299741995](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45299741995), Relay [#45299742437](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45299742437), build [#45299741993](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45299741993) FAIL. |
+| HARDWARE #348 | `eb7afcb2ba0d1e84054c052c8b129cb51a91d062` | Header [#45352513178](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45352513178) PASS; build [#45352513177](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45352513177) FAIL at missing `mbedtls/sha256.h`. |
+| HARDWARE #349 | source/test `4d36d08b4da5be4e6eaedc558be6e9ef38971f5d`; PR/docs `7eab719485dca333f06c1cac844a3fc943564e9b` | Relay [#45424522209](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45424522209) PASS; Quarantine [#45424522239](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45424522239) PASS; Full/build [#45424522235](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45424522235) FAIL at inherited QA-owned poll-signature assertion. |
+| QA #290 / #292 | `5c29d15994cee1279058f1eca12f2a3180704292` / `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | #290 Windows [#43633486963](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43633486963) PASS; #292 no PR-triggered runs. |
+| RELEASE #291 | source/test `677846df217d74a3d74f17499942fefa994395d5`; PR/docs `18a7ac94ac656f6bc3d712acb368b31179bd75c4` | Windows [#45431166616](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45431166616) FAIL; build [#45431166554](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45431166554) FAIL at CURRENT_STATE freshness; compatibility [#45431166853](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45431166853) PASS. |
+
+#291 accumulated diff is 30 paths: 25 RELEASE, three CORE shared handover, two PISONET tests; 0 independent reviews / 0 review threads. #349 PR description is stale relative to its live handover and current PR head. No role source was edited by Master.
+
 ## PHX-MASTER UTC14 live owner-head / CI reconciliation — 2026-11-24T14:05:18Z
 
 Read-time refs: Experiments main f4e8a891aed8af86d5fd315d28750a0ac3a7372b; development aad3aade72c1156eecba1fed30907c6d0283b2c5; Master starting HEAD ba356baf4acb3921d2fd5c7373e4dd4decfaabd4; COE main a6513ab4412b4c014eee2863e45cbe32d06cb243; COE #26 b382d233ff06c8791b1028bed3c617cc7b670d12. Master #288 remains OPEN / DRAFT / UNMERGED; current read-time diff is 197 paths, all coordination/phoenix/.

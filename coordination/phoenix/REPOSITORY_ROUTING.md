@@ -1,3 +1,11 @@
+## PHX-MASTER UTC16 ownership routing refresh — 2026-11-24T16:05:40Z
+
+- Manifest remains `OWNERSHIP_ROUTES.json@e4db324315a1b3543fec17a148fbf960170fcb29`: 11 routes, DRAFT_REVIEW_ONLY, PHX-MASTER target null. No route/owner change.
+- RELEASE #291 is at PR/docs `18a7ac94`, source/test anchor `677846df`, 30 accumulated paths: 25 RELEASE-owned, three CORE shared handover files, two PISONET SoftTimer ReleaseSigning tests. Latest commit changes only `CHANGE_LEDGER.md`; `CURRENT_STATE.md` remains blob `85dd3c1e`, last checkpoint `d85eb6a2`. CORE must refresh canonical state; RELEASE reruns; PISONET retains tests; QA reviews. No last-writer overwrite.
+- HARDWARE #349 is at source/test `4d36d08b` and PR/docs `7eab7194`; PR body still says `c5d0ebea/a361adfa`. PHX-HARDWARE must refresh its description. CORE owns poll/register producer bytes; QA owns assertion reconciliation; Hardware stays deny-only.
+- COE #26 is FROZEN and its route manifest is review-only. No file staging, copying, moving, remapping, overwrite, rebase, cherry-pick, or destination write is authorized by this audit.
+- PHX-MASTER changed only `coordination/phoenix/`; no subsystem branch or shared handover path was modified.
+
 ## PHX-MASTER UTC14 ownership and migration routing — 2026-11-24T14:05:18Z
 
 - OWNERSHIP_ROUTES.json remains blob e4db324315a1b3543fec17a148fbf960170fcb29, 11 routes, DRAFT_REVIEW_ONLY, PHX-MASTER target null. No route or owner changed.
