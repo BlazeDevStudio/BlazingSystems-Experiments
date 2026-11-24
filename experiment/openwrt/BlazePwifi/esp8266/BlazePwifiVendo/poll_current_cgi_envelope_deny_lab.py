@@ -100,6 +100,25 @@ int main() {
 """
 
 
+def _compile_and_run(board: str, code: str, label: str):
+    with tempfile.TemporaryDirectory(prefix="phx-current-cgi-envelope-") as folder:
+        cpp = Path(folder) / "current_cgi_envelope.cpp"
+        binary = Path(folder) / "current_cgi_envelope"
+        cpp.write_text(code, encoding="utf-8")
+        built = subprocess.run(
+            ["g++", "-std=c++17", "-Wall", "-Wextra", "-Werror",
+             "-Wno-unused-parameter", str(cpp), "-o", str(binary)],
+            capture_output=True, text=True, timeout=30,
+        )
+        if built.returncode:
+            raise RuntimeError(
+                f"{board} {label}: compile failed:\n{built.stderr[-3000:]}"
+            )
+        return subprocess.run(
+            [str(binary)], capture_output=True, text=True, timeout=10
+        )
+
+
 def verify(boards, extract, stubs):
     root = Path(__file__).resolve().parents[2]
     cgi_path = root / "openwrt/rootfs/www/blazepwifi/cgi-bin/vendo"
@@ -143,43 +162,6 @@ def verify(boards, extract, stubs):
         else:
             raise SystemExit(f"CGI_SOURCE_MUTATION_SURVIVED: {label}")
     print("CURRENT_CGI_SOURCE_MUTATION_REJECTION_PASS 4/4")
-
-def _compile_and_run(board: str, code: str, label: str):
-    with tempfile.TemporaryDirectory(prefix="phx-current-cgi-envelope-") as folder:
-        cpp = Path(folder) / "current_cgi_envelope.cpp"
-        binary = Path(folder) / "current_cgi_envelope"
-        cpp.write_text(code, encoding="utf-8")
-        built = subprocess.run(
-            ["g++", "-std=c++17", "-Wall", "-Wextra", "-Werror",
-             "-Wno-unused-parameter", str(cpp), "-o", str(binary)],
-            capture_output=True, text=True, timeout=30,
-        )
-        if built.returncode:
-            raise RuntimeError(
-                f"{board} {label}: compile failed:\n{built.stderr[-3000:]}"
-            )
-        return subprocess.run(
-            [str(binary)], capture_output=True, text=True, timeout=10
-        )
-
-
-def verify(boards, extract, stubs):
-    root = Path(__file__).resolve().parents[2]
-    cgi_path = root / "openwrt/rootfs/www/blazepwifi/cgi-bin/vendo"
-    if not cgi_path.is_file():
-        raise SystemExit(f"CURRENT_CGI_SOURCE_MISSING: {cgi_path}")
-    cgi = cgi_path.read_text(encoding="utf-8")
-
-    register = _action_block(cgi, "register|ping")
-    poll = _action_block(cgi, "poll")
-    snapshot = _action_block(cgi, "member_snapshot")
-    snapshot_sig_start = cgi.find("member_snapshot_sig() {")
-    if snapshot_sig_start < 0:
-        raise SystemExit("MEMBER_SNAPSHOT_SIGNATURE_FUNCTION_MISSING")
-    snapshot_sig_end = cgi.find("\n}", snapshot_sig_start)
-    if snapshot_sig_end < 0:
-        raise SystemExit("MEMBER_SNAPSHOT_SIGNATURE_FUNCTION_UNTERMINATED")
-    snapshot_sig = cgi[snapshot_sig_start:snapshot_sig_end]
 
     for board, sketch_path in boards.items():
         source = sketch_path.read_text(encoding="utf-8")
