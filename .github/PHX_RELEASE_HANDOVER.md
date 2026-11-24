@@ -3537,6 +3537,6 @@ The test-only head `2a011eb4` also triggered PR compatibility [#45355114407](htt
 
 ### Coordination and gate
 
-MASTER #288 ownership manifest remains `DRAFT_REVIEW_ONLY` (11 routes); RELEASE's BlazePwifi build workflow route to COE #26 is `reimplementation-review`, not copy/move authority. COE #26 remains frozen; COE #31 and its successor drafts remain separate. Cleanup-first #266 remains OPEN / 0-of-7. Canonical private Drive registry v11 remains unavailable through authorized Library retrieval; older snapshots are not substitutes.
+MASTER #288 ownership manifest remains `DRAFT_REVIEW_ONLY` (11 routes); RELEASE's BlazePwifi build workflow route to COE #26 is `reimplementation-review`, not copy/move authority. COE #26 remains frozen; COE #31 and its successor drafts remain separate. Cleanup-first #266 remains OPEN / 0-of-7. The authorized Library checkpoint `BLAZE_PRODUCTION_CHECKPOINT_20261109_v2.json` references the previous canonical registry `BLAZE_PROJECT_REGISTRY_v11_20261027.json` (55 projects; as-of `2026-10-27T00:32:50.937941Z`). The private registry contents themselves were not retrieved; this metadata is provenance only and does not authorize source movement. Older v3–v7 snapshots were not substituted.
 
 No merge, tag, signing, publication, hardware flashing, real payment migration or customer deployment. Physical 150 power cuts and 30-device/24-hour soak remain NOT TESTED. **PRODUCTION NO-GO.**
