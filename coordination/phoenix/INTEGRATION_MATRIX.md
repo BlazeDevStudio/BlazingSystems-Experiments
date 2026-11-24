@@ -5001,3 +5001,7 @@ COE #26 remains OPEN / DRAFT / FROZEN at b382d233ff06c8791b1028bed3c617cc7b670d1
 | Licences | Product, QRCode and TailAdmin/NOTICE present; root NOTICE, Tabler LICENSE and BlazeRentalLauncher LICENSE absent |
 
 Current #349 rootfs has 53 files versus the pinned 61: 33 same, 20 changed, eight pinned-only. The destination is a historical pinned snapshot, not a current-source mirror. Do not silently refresh or stage it. Five COE #26 workflows remain queued with zero jobs/statuses. Full per-file evidence and exact refs: [UTC12 report](coordination/phoenix/PHX_MASTER_UTC12_20261124_RELEASE291_HANDOVER_COE26_SOURCE_INTAKE_AND_HW349_RECONCILIATION.md).
+
+## UTC12 post-checkpoint owner refresh — migration candidate unchanged
+
+After the Master UTC12 checkpoint, RELEASE #291 advanced to b154e845 and HARDWARE #349 to dce158b3. COE main and integration PR #26 were re-read and remain unchanged at a6513ab4412b4c014eee2863e45cbe32d06cb243 and b382d233ff06c8791b1028bed3c617cc7b670d12 respectively. The source intake 46/15 summary mismatch, destination-only blaze-appliance-diag, test/firmware/licence gaps and five queued workflows remain exactly as audited. No COE staging or destination edit occurred. See [UTC12 Master report](coordination/phoenix/PHX_MASTER_UTC12_20261124_RELEASE291_HANDOVER_COE26_SOURCE_INTAKE_AND_HW349_RECONCILIATION.md).

@@ -1921,3 +1921,9 @@ For COE #26 at destination b382d233 and pinned source 6d4c9b48, all 61 SOURCE_IN
 ### 7.9.1 Shared handover files are path-shared but not branch-interchangeable
 
 Compare the exact PROJECT_HANDOVER, CHANGE_LEDGER and CURRENT_STATE blob identities at each final owner PR head. A successful commit to one of these files on a role branch does not update the other branches or establish the canonical shared handover. CORE owns canonical reconciliation; each workflow/source owner records its change and reruns the relevant exact-head gate. Never bypass freshness checks or select a branch snapshot by recency alone. See the [UTC12 Master audit](coordination/phoenix/PHX_MASTER_UTC12_20261124_RELEASE291_HANDOVER_COE26_SOURCE_INTAKE_AND_HW349_RECONCILIATION.md).
+
+### 7.9.2 Revalidate concurrent owner heads after a Master checkpoint
+
+A Master checkpoint is a read-time snapshot, not a lock on owner branches. Before finalizing the same activation, re-read owner PR heads and exact-head CI. If an owner advances, append a read-time correction to the existing report and update the single role/hour checkpoint in place; do not post a duplicate message or claim the earlier run set is still current.
+
+At the post-checkpoint refresh, RELEASE #291 advanced to b154e845: PROJECT_HANDOVER and CHANGE_LEDGER changed, but CURRENT_STATE remained blob 85dd3c1e / checkpoint d85eb6a2. The new Windows/build runs still fail the CURRENT_STATE freshness gate. HARDWARE #349 advanced to dce158b3 with a lab-only poll-response fixture change; focused jobs pass, while build validation still fails at Missing poll signature check. Keep source/test SHA, docs SHA and CI head distinct, and route the shared handover to CORE and the contract assertion to CORE/QA.

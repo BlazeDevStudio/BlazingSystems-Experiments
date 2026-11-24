@@ -1065,3 +1065,10 @@ UTC05 final refresh: HARDWARE owner updated PR #349 body to current source/test/
 - Master Python suite and verifier NOT RUN: local GitHub checkout blocked by DNS resolution.
 - Full evidence: [PHX-MASTER UTC12 release/handover/COE provenance report](coordination/phoenix/PHX_MASTER_UTC12_20261124_RELEASE291_HANDOVER_COE26_SOURCE_INTAKE_AND_HW349_RECONCILIATION.md).
 - No subsystem source or COE destination changes. PRODUCTION NO-GO.
+
+## UTC12 post-checkpoint owner refresh — concurrent RELEASE/HARDWARE commits (2026-11-24T13:00Z)
+
+- RELEASE #291 advanced to b154e845b27006afe16433743548fb3d0016f8e2. Windows #45397890521 and build #45397890507 now complete FAILURE at the shared CURRENT_STATE freshness gate; compatibility #45397890553 PASS (3/3). CURRENT_STATE blob remains 85dd3c1e / checkpoint d85eb6a; the latest gate names SoftTimer, BlazePwifi v0.5.3 and Rental Lineage2 release workflows as newer.
+- HARDWARE #349 advanced to dce158b3eb6c0d953900284207f349518205f1d2. New change is lab-only (poll_loop_blocking_inhibit_lab.py plus response fixture); Relay #45398283830 and Quarantine #45398283765 PASS. Build #45398283752 remains IN PROGRESS at read time with validation already FAIL at Missing poll signature check; target jobs still running.
+- This is a post-checkpoint refresh within the existing UTC12 Master activation. The single BLAZE-COMMS/1 issue #172 checkpoint is updated in place; no duplicate comment.
+- Full exact refs and run links: [UTC12 Master report](coordination/phoenix/PHX_MASTER_UTC12_20261124_RELEASE291_HANDOVER_COE26_SOURCE_INTAKE_AND_HW349_RECONCILIATION.md).

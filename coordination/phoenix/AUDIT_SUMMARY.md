@@ -2863,3 +2863,11 @@ Final-head Windows [#45388341622](https://github.com/BlazeDevStudio/BlazingSyste
 - Private Drive registry v11/newer corrections not accessible; Master Python suite/verifier not run because GitHub DNS prevented local checkout.
 - No subsystem source, destination, manifest, hardware, payment, signer, secret or release artifact changed. **PRODUCTION NO-GO.**
 - Full evidence: [UTC12 exact-head and migration provenance report](coordination/phoenix/PHX_MASTER_UTC12_20261124_RELEASE291_HANDOVER_COE26_SOURCE_INTAKE_AND_HW349_RECONCILIATION.md).
+
+## UTC12 post-checkpoint RELEASE/HARDWARE exact-head refresh — 2026-11-24T13:00Z
+
+- RELEASE #291 advanced to b154e845. Windows #45397890521 and build #45397890507 are now completed FAILURE at the shared CURRENT_STATE freshness gate; compatibility #45397890553 passes 3/3. The gate names .github/workflows/blazepisonet-softtimer-release.yml, blazepwifi-v053-release.yml and blazerental-v053-lineage2-sign.yml as newer than checkpoint d85eb6a2. CORE must update the canonical CURRENT_STATE after the workflow changes; RELEASE reruns.
+- HARDWARE #349 advanced to dce158b3 with lab-only poll-response fixture changes. Focused Relay/Quarantine #45398283830/#45398283765 pass; build #45398283752 is IN PROGRESS at read time, but validation already fails at Missing poll signature check. No firmware or financial contract change; physical hardware remains NOT TESTED.
+- COE #26 did not advance; candidate remains FROZEN with the SOURCE_INTAKE summary mismatch and provenance gaps.
+- No Master test suite was run; local GitHub checkout still fails DNS. No subsystem or destination source changed. PRODUCTION NO-GO.
+- Full evidence: [UTC12 Master report](coordination/phoenix/PHX_MASTER_UTC12_20261124_RELEASE291_HANDOVER_COE26_SOURCE_INTAKE_AND_HW349_RECONCILIATION.md).

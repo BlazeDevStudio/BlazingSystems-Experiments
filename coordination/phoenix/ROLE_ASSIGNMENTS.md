@@ -3682,3 +3682,12 @@ The ledger-only update does not advance the canonical CURRENT_STATE checkpoint c
 | COE #49 | aeb8ff11b2f5db9a5f86280ab62ab988245f3919 | Stage 5.1/case guard PASS; shared contracts FAIL |
 
 RELEASE #291's accumulated 29-path diff includes 24 RELEASE paths, three shared handover files and two PISONET-owned publisher tests. Do not treat the latest four-path commit as the whole PR ownership boundary. See [UTC12 report](coordination/phoenix/PHX_MASTER_UTC12_20261124_RELEASE291_HANDOVER_COE26_SOURCE_INTAKE_AND_HW349_RECONCILIATION.md).
+
+## UTC12 post-checkpoint owner HEAD refresh — 2026-11-24
+
+| Owner PR | Current exact head | Current exact-head CI |
+|---|---|---|
+| RELEASE #291 | b154e845b27006afe16433743548fb3d0016f8e2 | Windows #45397890521 FAIL at CURRENT_STATE freshness; build #45397890507 FAIL at validate freshness; compatibility #45397890553 PASS 3/3 |
+| HARDWARE #349 | dce158b3eb6c0d953900284207f349518205f1d2 | Relay #45398283830 PASS; Quarantine #45398283765 PASS; build #45398283752 IN PROGRESS with validate FAIL at Missing poll signature check |
+
+RELEASE #291's latest tree has PROJECT_HANDOVER blob f1c5404b, CHANGE_LEDGER df9a2804 and unchanged CURRENT_STATE blob 85dd3c1e. HARDWARE #349's new head changes only the poll-loop lab and its response fixture; its PROJECT_HANDOVER remains 4aaa9817 and it still lacks the canonical CHANGE_LEDGER/CURRENT_STATE paths. The source/test and docs heads must remain distinct in evidence.

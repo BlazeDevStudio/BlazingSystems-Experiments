@@ -1867,3 +1867,9 @@ Exact handover blobs differ at the current owner PR heads:
 RELEASE #291's 29-path accumulated diff includes three shared handover files and two PISONET-owned test files. CORE #252, PISONET #255 and QA #290 also carry distinct blobs for the shared handover set. These are divergent branch snapshots, not a safe canonical merge order.
 
 **Routing:** CORE reconciles the canonical shared handover; RELEASE owns release workflow changes and reruns after the canonical checkpoint advances; PISONET retains its publisher tests; QA independently verifies the contract and release evidence. HARDWARE retains its source/test branch and deny-only behavior. PHX-MASTER only records the exact identities and integration order; no owner files are edited.
+
+## UTC12 post-checkpoint routing — current RELEASE/HARDWARE heads (2026-11-24T13:00Z)
+
+RELEASE #291 is now b154e845. Its shared handover blobs are PROJECT_HANDOVER f1c5404b, CHANGE_LEDGER df9a2804, CURRENT_STATE 85dd3c1e. The Windows/build gate still reports CURRENT_STATE checkpoint d85eb6a2 stale against three newer release workflow paths. CORE owns the canonical CURRENT_STATE refresh; RELEASE owns the workflows and exact-head reruns.
+
+HARDWARE #349 is now dce158b3. Its only new source changes are the poll-loop lab and response fixture; PROJECT_HANDOVER remains 4aaa9817 and canonical CHANGE_LEDGER/CURRENT_STATE are absent on this branch. Focused Relay/Quarantine pass; build validation remains blocked by QA's Missing poll signature check. CORE/QA must approve the producer/consumer contract; HARDWARE retains deny-only behavior. Master does not edit these owner paths.

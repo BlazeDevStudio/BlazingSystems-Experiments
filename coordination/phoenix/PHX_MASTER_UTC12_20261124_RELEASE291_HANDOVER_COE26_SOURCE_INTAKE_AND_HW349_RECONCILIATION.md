@@ -149,3 +149,32 @@ No subsystem source, COE destination, ownership manifest, private registry, secr
 6. An authorized runner executes the Master Python suite and coordination verifier after obtaining a working checkout.
 
 **PRODUCTION NO-GO.** Independent protected signing/anti-rollback witness, crash-atomic durable financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device 24-hour soak and owner-authorized release gates remain unverified.
+
+## UTC12 post-checkpoint exact owner-head refresh — 2026-11-24T13:00:15Z
+
+This addendum supersedes the earlier read-time owner heads in Sections 2, 3 and 5; the COE #26 provenance comparison and its frozen disposition did not change.
+
+### RELEASE #291 advanced after the Master checkpoint
+
+- New final PR/docs head: b154e845b27006afe16433743548fb3d0016f8e2; three commits ahead / zero behind the previously inspected 8fe31d90 head.
+- Latest commit message: docs(phx-release): audit action-pin workflow coverage. Its latest commit changes only CHANGE_LEDGER.md; the three-commit delta also changes .github/PHX_RELEASE_HANDOVER.md and PROJECT_HANDOVER.md.
+- Current shared blobs: PROJECT_HANDOVER f1c5404b; CHANGE_LEDGER df9a2804; CURRENT_STATE remains 85dd3c1e, last checkpoint d85eb6a2766781b6cac1807cef461993d8216b84.
+- Windows [#45397890521](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45397890521) completed FAILURE at handover job 138458435778. The exact log says CURRENT_STATE checkpoint d85eb6a2 is older than three workflow paths: SoftTimer release, BlazePwifi v0.5.3 release and Rental Lineage2 signing. build-windows and publish-release are skipped.
+- BlazePwifi build [#45397890507](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45397890507) completed FAILURE at validate job 138458573494 for the same CURRENT_STATE gate; target jobs mostly succeeded, optional jobs were still being reconciled at the read, and update/simulation/signing/publication gates skipped.
+- ESP32 compatibility [#45397890553](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45397890553) PASS, 3/3 jobs. The compatibility pin still uses source commit 6ce42378; its ESP32 sketch blob is identical to the current #349 source sketch, but it does not test the newer Hardware lab fixture changes.
+
+**Action:** CORE must advance the canonical CURRENT_STATE after the workflow changes; RELEASE reruns Windows and full build at the resulting exact head. Do not bypass the gate.
+
+### HARDWARE #349 advanced after the Master checkpoint
+
+- New final PR head: dce158b3eb6c0d953900284207f349518205f1d2; two commits ahead / zero behind the previously inspected b4f03e75 docs head.
+- The delta adds/updates only the source-extracted poll-loop lab and its response fixture; no production .ino, financial contract or handover file changed.
+- Relay [#45398283830](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45398283830) PASS; Quarantine [#45398283765](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45398283765) PASS.
+- Build [#45398283752](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45398283752) remained IN PROGRESS at read time. Validation job 138459962150 had already FAILED at “Missing poll signature check” in the ESP8266 production sketch; several target jobs were still running. Do not label the build run complete or infer Full acceptance from focused passes.
+- Current #349 PROJECT_HANDOVER blob remains 4aaa9817; CHANGE_LEDGER and CURRENT_STATE are absent on this branch.
+
+**Action:** CORE/QA must reconcile the approved authenticated poll-response contract and assertion; HARDWARE keeps deny-only behavior. Physical hardware remains NOT TESTED.
+
+### Same-activation deduplication
+
+The existing UTC12 Master issue #172 comment and PR #288 comment are updated in place with this owner-head refresh. No second UTC12 Master checkpoint is created. COE #26 remains at b382d233 and its pinned-source audit is unchanged.
