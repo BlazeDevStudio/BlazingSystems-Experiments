@@ -236,6 +236,39 @@ class ReleaseWorkflowConcurrencyTests(unittest.TestCase):
             require_softtimer_signing_steps_are_protected(unsafe)
 
 
+    def test_negative_selftest_receives_shared_build_workflow_in_same_scope(self):
+        marker = "      - name: RELEASE-SIGN test fail-closed negative controls\\n"
+        start = self.windows_content.find(marker)
+        self.assertNotEqual(start, -1, "missing release negative-selftest step")
+        next_step = self.windows_content.find("\\n      - name:", start + len(marker))
+        if next_step < 0:
+            next_step = len(self.windows_content)
+        block = self.windows_content[start:next_step]
+
+        required = (
+            "$buildWorkflowPath = Join-Path $env:GITHUB_WORKSPACE '.github/workflows/blazepwifi-build.yml'",
+            "if (-not (Test-Path -LiteralPath $buildWorkflowPath -PathType Leaf))",
+            "$buildWorkflow = Get-Content -LiteralPath $buildWorkflowPath -Raw",
+            '. "$env:PROJECT_DIR/tests/ReleaseSigning/negative-selftest.ps1"',
+        )
+        positions = tuple(block.find(fragment) for fragment in required)
+        self.assertTrue(
+            all(position >= 0 for position in positions),
+            "the release-owned invocation must load the exact shared build workflow "
+            "and define $buildWorkflow before dot-sourcing the existing negative self-test",
+        )
+        self.assertEqual(
+            positions,
+            tuple(sorted(positions)),
+            "the shared workflow must be loaded and validated before the PISONET test runs",
+        )
+        self.assertNotIn(
+            'pwsh -NoProfile -File "$env:PROJECT_DIR/tests/ReleaseSigning/negative-selftest.ps1"',
+            block,
+            "a child pwsh -File process cannot inherit the caller's $buildWorkflow variable",
+        )
+
+
 def require_softtimer_tag_ref_absence_before_publish(content: str) -> None:
     """Require an absent Git tag ref, not merely an absent Release object."""
     publisher = job_block(content, "publish-release")
