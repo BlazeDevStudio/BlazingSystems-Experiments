@@ -72,6 +72,8 @@ jobs:
           fetch-depth: 1
       - name: Test release artifact provenance admission
         run: python3 .github/scripts/test_build_provenance.py
+      - name: Test ESP32 reproducibility verifier and compatibility contract
+        run: python3 .github/scripts/test_phx_release_esp32_core_compatibility.py
       - name: Test Arduino CLI archive verifier
         run: python3 .github/scripts/test_arduino_cli_archive_verifier.py
       - name: Test release workflow concurrency and publisher isolation
