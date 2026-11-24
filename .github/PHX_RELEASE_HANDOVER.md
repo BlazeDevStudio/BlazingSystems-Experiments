@@ -2284,8 +2284,8 @@ This is the single machine-checked current pointer for the RELEASE ESP32 compati
 - HARDWARE #349 docs HEAD: `18803f884874afa3ff31d76d421b9dd811789c9f`.
 - HARDWARE #349 PR HEAD: `18803f884874afa3ff31d76d421b9dd811789c9f`.
 - Superseded HARDWARE #347 source/test SHA: `275057aa28375223a32da099420f52696d9b667c`; superseded sketch blob: `717336b84d434d51eb24beac1ed8efce8e719f69`.
-- ESP32 sketch Git blob SHA at the #349 source/test commit: `a9a1c2fecb001d71f8f22b43952edbd160aacaf8`.
-- Exact-source compatibility matrix: [#45325038266](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45325038266) — PENDING; both exact-core jobs are running. No compatibility pass is claimed.
+- ESP32 sketch Git blob SHA: `a9a1c2fecb001d71f8f22b43952edbd160aacaf8`.
+- Exact-source compatibility matrix: [#45325038266](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45325038266) — SUCCESS (3/3 jobs).
 - #349 source/test Quarantine lab: [#45321927194](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45321927194) — SUCCESS.
 - #349 source/test Relay/Output lab: [#45321927191](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45321927191) — SUCCESS.
 - #349 source/test Full integration: [#45321921703](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45321921703) — FAILURE at the inherited QA-owned `Missing poll signature check`; 13/13 target builds and Android passed, dependent simulation/update/signing/publication jobs skipped.
@@ -3273,7 +3273,7 @@ No merge, rebase, signing, tagging, publication, hardware flash, real payment mi
 **Draft:** [PR #291](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/291), OPEN / DRAFT / UNMERGED.  
 **Branch:** `phoenix/release-publisher-isolation-20261115`.  
 **Base #242:** `734b89d9e7792247e8376335c3f3685500ab3f89`.  
-**Final handover head for this checkpoint:** pending this documentation commit.
+**Source-fix head:** `8ce3aa7b0f2c18eb8aa1a6e1878673a459155b4e`. **Pending-anchor docs head:** `8afa6cb2bee2b85ac794859836bde8dfd4acc664`. **Final handover head:** this documentation commit.
 
 ### Finding and source identity
 
@@ -3290,8 +3290,8 @@ This was a RELEASE-owned CI provenance defect: the compatibility matrix could co
 
 ### Exact-source CI at the time of this handover
 
-- Current-source PR compatibility [#45325038266](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45325038266) and push compatibility [#45325033836](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45325033836) are **IN PROGRESS** at source/test pin `40b80bb`. In both runs, exact HARDWARE checkout and sketch-blob verification passed, Arduino CLI archive verification passed, and the provenance regression suite passed. Both ESP32 core installation/compile legs were still running at this handover read; no 3/3 compatibility result is claimed.
-- Build PR [#45325038282](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45325038282) — **FAILURE** in CI-0701 at the machine-checked handover anchor because the anchor still referenced #347. The new test correctly refuses to accept a stale anchor. Target/validation jobs were skipped.
+- Current-source PR compatibility [#45325038266](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45325038266) — **SUCCESS (3/3 jobs)** at exact HARDWARE source/test pin `40b80bb075c008f3251c31f09a4dc9eb9e6c17e5` and sketch blob `a9a1c2fecb001d71f8f22b43952edbd160aacaf8`. Provenance regression job passed. ESP32 core 3.3.13 compiled twice to identical application images: 1,044,816 bytes, SHA-256 `acb72d981ebc0c5c32e5056ae6af7f388b546a2f7221eeced3607476d4f36026`. Core 4.0.0 compiled twice to identical application images: 1,098,944 bytes, SHA-256 `581b64d42676923abb38b40882bc98bffcaec8bd7e9ef2c8068589246c1348e7`. Both jobs verified the pinned Arduino CLI 1.6.0 archive (20,111,675 bytes; SHA-256 `321ee249f44c78053234fec0f36101092bc6021bf24939e15e0cc2449c5ed250`) and installed executable bytes (SHA-256 `5897b56f5eac106e60c902d6444f2923e918885aaeb119fc4b44ff9db5003ba8`), source-derived `SOURCE_DATE_EPOCH=1795492047`, ELF section/symbol inspection and byte-for-byte reproducibility. Push matrix [#45325033836](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45325033836) was still IN_PROGRESS at final read; it is not needed to claim the completed PR matrix.
+- Build PR [#45325038282](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45325038282) — **FAILURE** in CI-0701 before the handover anchor was refreshed from #347. Final docs-head build [#45325572417](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45325572417) — **FAILURE** because the pending anchor used a noncanonical sketch-blob label and did not yet record the completed 3/3 matrix. These are superseded by this handover correction; final docs-head CI after this commit is still required.
 - Windows PR [#45325038275](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45325038275) — handover **PASS**, Windows build **FAIL** at PISONET-owned `negative-selftest.ps1:326`: `RELEASE-PUBLISHER executable lookup regression: missing tag accepted=False`. Publisher skipped. PHX-RELEASE did not modify PISONET's test file.
 - The previous-source matrix runs [#45324980475](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45324980475) and [#45324985077](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45324985077) tested the superseded #347 pin. They are not evidence for #349.
 
@@ -3314,3 +3314,17 @@ This was a RELEASE-owned CI provenance defect: the compatibility matrix could co
 5. PHX-MASTER: refresh the control-plane child pointer after the final handover head is known.
 
 PR #291 remains DRAFT / UNMERGED. No signing, tag, publication, hardware flash, real payment migration or customer deployment occurred. Protected signer, independent freshness witness, durable financial accounting/migration, independent QA/MASTER approval, approved production binaries, **150 physical power cuts** and **30-device/24-hour soak** remain unproven or NOT TESTED. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC04 — current HARDWARE #349 compatibility matrix verified
+
+The source-pin task is now verified on the exact PR event, not merely inferred from the HARDWARE build matrix.
+
+- Exact PR compatibility run [#45325038266](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45325038266), head `8ce3aa7b0f2c18eb8aa1a6e1878673a459155b4e`: **COMPLETED SUCCESS, 3/3 jobs** (provenance regression + ESP32 core 3.3.13 + ESP32 core 4.0.0).
+- Core 3.3.13 job `138213565840`: source/sketch verification PASS; Arduino CLI archive verification PASS; two clean application builds byte-identical at 1,044,816 bytes, SHA-256 `acb72d981ebc0c5c32e5056ae6af7f388b546a2f7221eeced3607476d4f36026`.
+- Core 4.0.0 job `138213566182`: source/sketch verification PASS; Arduino CLI archive verification PASS; two clean application builds byte-identical at 1,098,944 bytes, SHA-256 `581b64d42676923abb38b40882bc98bffcaec8bd7e9ef2c8068589246c1348e7`.
+- The matrix used exact HARDWARE source/test SHA `40b80bb075c008f3251c31f09a4dc9eb9e6c17e5`, sketch blob `a9a1c2fecb001d71f8f22b43952edbd160aacaf8`, Arduino CLI 1.6.0 archive SHA-256 `321ee249f44c78053234fec0f36101092bc6021bf24939e15e0cc2449c5ed250`, installed CLI executable SHA-256 `5897b56f5eac106e60c902d6444f2923e918885aaeb119fc4b44ff9db5003ba8`, and source-derived `SOURCE_DATE_EPOCH=1795492047`.
+- The machine-checked current source anchor now names #349 and records the exact-source 3/3 PR matrix result. The prior stale #347 pin and pending-anchor CI failures remain historical evidence, not current success claims.
+- Final docs-head CI triggered by this handover commit is pending; the next activation must inspect its CI-0701 and compatibility runs. Do not claim the final documentation head is green until those runs complete.
+
+This remains hosted CI/reproducibility evidence only. It is not a signed production image, approved binary admission, physical hardware test or release authorization.
