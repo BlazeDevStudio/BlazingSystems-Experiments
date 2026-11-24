@@ -3835,3 +3835,9 @@ PR #291 independent review submissions remain 0; no merge requested. Cleanup-fir
 **Next owner action:** PHX-CORE / PHX-MASTER refresh the canonical shared handover set at its exact current source; PHX-RELEASE then reruns Windows and full-build admission at that exact resulting SHA. PHX-QA independently reviews the RELEASE-only helper and regression tests.
 
 **PRODUCTION NO-GO** remains. Protected signer, independent freshness witness, durable accounting and reversible migration, independent QA/MASTER approval, approved production binaries, 150 physical power cuts and 30-device/24-hour soak remain unproven or NOT TESTED.
+
+## PHX-RELEASE UTC 2026-11-24 — supersession audit: build-provenance revision
+
+- Compatible draft head `350875888129132fca161e20d473276e4379b50e` already contains another worker’s build-provenance writer and regression-test revision. No implementation was duplicated.
+- In [BlazePwifi build #45402102533](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45402102533), docs-only proof and scoped Android, ESP8266, ESP32, and OpenWrt compile legs succeeded; `validate` failed only at mandatory handover freshness. [Windows #45402102471](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45402102471) likewise stopped at handover freshness before Windows build/signing/publishing. [ESP32 compatibility #45402102220](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45402102220) succeeded.
+- This entry supplies the canonical freshness record. Evidence is scoped hosted CI only—not production, protected-signing, hardware, finance/migration, compatibility, or physical-acceptance evidence. PR #291 remains draft/unmerged and independently unreviewed. **PRODUCTION NO-GO** remains until MASTER and independent QA review, protected signer/source admission, durable finance/migration acceptance, and physical acceptance gates are satisfied.
