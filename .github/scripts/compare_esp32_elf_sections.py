@@ -56,11 +56,15 @@ def _difference_ranges(
 ) -> tuple[list[dict[str, Any]], int, list[dict[str, Any]]]:
     ranges: list[dict[str, Any]] = []
     first_differences: list[dict[str, Any]] = []
-    differing_count = 0
+    range_count = 0
     range_start: int | None = None
     previous: int | None = None
 
     def finish_range(start: int, end: int) -> None:
+        nonlocal range_count
+        range_count += 1
+        if len(ranges) >= _MAX_REPORTED_DIFFERENCE_RANGES:
+            return
         prefix_end = min(end + 1, start + 16)
         ranges.append(
             {
@@ -77,7 +81,6 @@ def _difference_ranges(
     for offset, (left, right) in enumerate(zip(first, second)):
         if left == right:
             continue
-        differing_count += 1
         if len(first_differences) < 16:
             first_differences.append(
                 {
@@ -98,8 +101,7 @@ def _difference_ranges(
     if range_start is not None and previous is not None:
         finish_range(range_start, previous)
 
-    total_ranges = len(ranges)
-    return ranges[:64], total_ranges, first_differences
+    return ranges, range_count, first_differences
 
 
 
@@ -109,6 +111,7 @@ _TIME_CANDIDATE = re.compile(
 _CONTEXT_RADIUS = 16
 _MAX_CONTEXT_BYTES = 64
 _MAX_TIME_CANDIDATES = 4
+_MAX_REPORTED_DIFFERENCE_RANGES = 64
 
 
 def _time_candidates(window: bytes) -> list[str]:
@@ -185,10 +188,7 @@ def compare_section_bytes(
     ranges, range_count, first_differences = _difference_ranges(
         first_bytes, second_bytes, first_offset, second_offset
     )
-    differing_count = sum(
-        item["end"] - item["start"] + 1 for item in ranges
-    )
-    # The bounded range list may be truncated; count all differing bytes directly.
+    # Count all differing bytes independently of the capped diagnostic ranges.
     differing_count = sum(left != right for left, right in zip(first_bytes, second_bytes))
     difference_context = _difference_context(first_bytes, second_bytes, ranges)
     return {
