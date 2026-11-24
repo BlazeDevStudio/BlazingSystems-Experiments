@@ -11,6 +11,7 @@ on:
       - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_response_failclosed_lab.py"
       - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_response_failclosed_lab_structure_guard.py"
       - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/cpp_fixture_runner.py"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/cpp_fixture_runner_contract_lab.py"
       - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_response_failclosed_lab_fixtures.py"
       - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_current_cgi_envelope_deny_lab.py"
       - "experiment/openwrt/BlazePwifi/openwrt/rootfs/www/blazepwifi/cgi-bin/vendo"
