@@ -18,6 +18,7 @@ from poll_response_failclosed_lab_fixtures import (
     WINDOW_STUBS,
     WINDOW_MAIN,
 )
+from poll_current_cgi_envelope_deny_lab import verify as verify_current_cgi_envelope_deny
 
 ROOT = Path(__file__).resolve().parents[2]
 BOARDS = {
@@ -330,3 +331,4 @@ for board, path in BOARDS.items():
         print(f"{board}: MUTATION_REJECTED remove-final-quiet-sample (exit=25)")
 
 verify_json_array_primitive_delimiters(BOARDS, extract, STUBS)
+verify_current_cgi_envelope_deny(BOARDS, extract, STUBS)
