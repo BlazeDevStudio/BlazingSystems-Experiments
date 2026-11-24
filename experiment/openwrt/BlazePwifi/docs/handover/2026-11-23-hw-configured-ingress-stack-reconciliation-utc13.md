@@ -547,3 +547,33 @@ This confirms the source/test SHA e69a3d and the docs-only successor 1ca5aded. I
 The runner contract is **CI VERIFIED** and the firmware labs remain **SIMULATED** source-extracted host evidence. No production `.ino` sketch or shared CORE API changed in this increment. Physical coin acceptor, relay/electrical recovery, LittleFS power-loss durability, 150 controlled power cuts, 30-device/24-hour soak, protected signer/witness, financial migration/replay and independent QA/release acceptance remain **NOT TESTED / NOT ACCEPTED**.
 
 PHX-CORE must publish the approved authenticated register/poll response contract and golden vectors; PHX-QA must reconcile the legacy poll-signature assertion independently; PHX-MASTER must refresh the exact #347 source/test/docs pins. Do not add a positive legacy `response_sig` or weaken default-deny to make Full pass.
+
+## 2026-11-24 UTC00 — strict nested JSON composite grammar
+
+**PHX-HARDWARE finding.** The prior pollJsonSkipComposite() only balanced braces/brackets and skipped nested composite contents without validating JSON grammar. A source-equivalent host reproduction showed malformed nested values such as [1,] could be accepted by the root-level ok:true structural reader. This was a parser-correctness issue only: coinPostDispositionVerified() remains hardcoded deny, acceptPollResponse() remains deny-only, and no credit/relay/poll authority was enabled.
+
+**Implementation (both ESP8266 and ESP32).**
+- Replaced delimiter-only composite skipping with bounded recursive object/array parsing (maximum composite depth 16).
+- Validate object string keys and colons, array/object separators, nested value boundaries, trailing commas, matching close delimiters, and primitive termination at ], }, comma or whitespace.
+- Retained existing pollJsonSkipComposite() / pollJsonSkipValue() wrappers and root ok:true semantics.
+- Updated source-extracted parser lab wiring with explicit forward declarations; poll_response_failclosed_lab.py remains 333 lines, below its 350-line structure guard.
+- Added strict-composite cases: 5 valid (primitive/nested/empty array and object) and 6 malformed (array/object trailing comma, missing separators/colon, mismatched close).
+- Failure injection removes the array primitive terminator, array separator and object separator; each mutation is rejected on both board sketches.
+
+**Exact source/test head:** fd4a96dc24e7f70c64b0dde63960055fc370a852  
+**Firmware parser implementation commit:** e3aa052a973edd78a2db00e7278f44adf6226cec  
+**Parent stack:** PR #347 at 960184670379f01e20f0e7e8bc23b3e5eedacd3f  
+**Child:** PR #349, OPEN / DRAFT, stacked on #347.
+
+**Focused CI — exact head fd4a96d:**
+- [PHX-HARDWARE Quarantine Byte Readback LAB](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45300689279), job 138132162937: PASS. Both board source-extracted quarantine suites reported 36/36 (72/72 combined); poll-response strict root cases 11/11, JSON root cases 13/13, coin POST ACK root status 4/4, disposition default-deny 4/4; nested composite grammar 5/5 valid + 6/6 malformed rejected and 3/3 mutations rejected per board.
+- [PHX-HARDWARE Relay Output Polarity LAB](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45300689413), job 138132163551: PASS. Both output/boot-polarity jobs passed; coin pulse capture 17/17 per board with mutation rejection; poll-window and response labs passed; nested composite grammar 5/5 + 6/6 and 3/3 mutations rejected per board.
+- [BlazePwifi build](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45300678177), push event at the same head: ESP8266 job 138132243598 PASS; ESP32 job 138132243456 PASS; Orange Pi Zero3 138132243480, Orange Pi PC 138132243462, Orange Pi One 138132243198, x86_64 138132243473, Ruijie 138132243399 PASS. Optional targets observed PASS. The separate validation job 138132243481 FAILED at the existing Controller protocol parity assertion: Missing poll signature check. This is not a parser-lab failure and was not weakened. Android job was still running at checkpoint time; release-dependent jobs were skipped after validation failure.
+
+**Local host reproduction:** old parser expected-red reproduced at exit 64 for malformed nested array; corrected source-equivalent parser passed 5/5 valid and 6/6 invalid; 3/3 mutations rejected. Local host evidence remains SIMULATED, not hardware acceptance.
+
+**Cross-role request:** PHX-CORE must publish the approved register/poll response envelope, canonical bytes and golden vectors; PHX-QA must reconcile Missing poll signature check against that contract; PHX-MASTER must refresh ROLE_ASSIGNMENTS.md and INTEGRATION_MATRIX.md to the current #347/#349 pins. Hardware did not invent a signature or edit CORE/QA/Release-owned files.
+
+**Registry limitation:** private BLAZE_PROJECT_REGISTRY_v11_20261027.json was not surfaced by the available Library search (only older v3–v7 snapshots appeared); no Google Drive connector was exposed. No older registry was substituted and no Drive promotion occurred.
+
+**Next exact Hardware action:** after CORE publishes the approved response contract and QA confirms the assertion, rerun Full integration on the approved exact source SHA; preserve default-deny until that contract is independently accepted.
