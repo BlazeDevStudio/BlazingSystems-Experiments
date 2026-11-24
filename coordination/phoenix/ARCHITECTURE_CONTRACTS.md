@@ -1703,3 +1703,18 @@ Exact identities and evidence:
 7. The test lab and parser are source-extracted/host-simulated. No native board, electrical, coin/relay, power-cut, or soak acceptance is established.
 
 COE #26 remains FROZEN: its ESP8266/ESP32 blobs differ from #349, and the new board-local parser lab has no destination counterpart. See the current integration matrix; no copy or migration is authorized by this contract.
+
+
+## 6.98 Cross-owner PR path overlap is a pre-integration review gate — PHX-RELEASE #291 (2026-11-24 UTC03)
+
+Exact tree comparison found that RELEASE PR #291 at `5222443b3747f47d440d804c4ff853eaa04686a5` changes three handover paths also changed by CORE #252, PISONET #255 and QA #290. These are the same paths but **not the same blobs** across the four candidate heads:
+
+| Shared path | CORE #252 | PISONET #255 | QA #290 | RELEASE #291 |
+|---|---|---|---|---|
+| `experiment/openwrt/BlazePwifi/PROJECT_HANDOVER.md` | `72e8e487d333a9488f77c2c3e68652d1a650ff85` | `d3e66608280644af8c42635168a7e27c8fba8f31` | `83db03cf387f280ba2d595ff6e9d58ffa23417c5` | `e07027ca323f6b7f8004f23caad716141bad5036` |
+| `experiment/openwrt/BlazePwifi/docs/handover/CHANGE_LEDGER.md` | `df50981c1596838b1abf544e94f68e89ad556b7d` | `02963d32018ea09ad2a6a5a95b487de1f65ff4f2` | `3180e1a93c852e5c983f947e8ca45a897df0479f` | `7501142206f563c1f31085622cb0fd096345565b` |
+| `experiment/openwrt/BlazePwifi/docs/handover/CURRENT_STATE.md` | `72c38aeb93377f3aedb758c91d670ff1150e87bd` | `47e07b7c0e06766d0d4ebb18bc13bfb274adfe22` | `73b9d1d6acbd8b58c13f2d1b9d17512c392f444a` | `94b9447fd8e22c427ebefae9c906959e72285573` |
+
+RELEASE #291 also changes two files inside the PHX-PISONET-owned `experiment/windows/BlazePisonet-SoftTimer/tests/ReleaseSigning/` subtree: `negative-selftest.ps1` (blob `8b69174bf519154e43f7e12e4a9fa2c0e75d350f`) and `PublisherMockCli.ps1` (blob `7d56522b4fd678a26a2d7ea39e9b51dc8e52612d`). Those paths are not in PISONET #255's 11-file diff, but the ownership manifest assigns the whole SoftTimer subtree to PHX-PISONET. Current RELEASE Windows run [#45319386947](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45319386947) fails in the PISONET-owned negative self-test at the missing-tag acceptance assertion.
+
+**Required before integration:** RELEASE must enumerate and explain every overlapping path; CORE, PISONET and QA must review the intended final handover blobs; PISONET must review the two ReleaseSigning test changes; and all required checks must run on the exact final integration head. A pass on one branch does not qualify another branch's blob. Do not silently overwrite, cherry-pick, rebase or merge these paths. This is a review gate, not a merge authorization.

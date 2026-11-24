@@ -1,5 +1,27 @@
 # Project Phoenix — Subsystem Integration Matrix & Gate Hierarchy
 
+## PHX-MASTER UTC03 exact #349-to-COE #26 provenance and current owner overlap — 2026-11-24T03:37:41Z
+
+Current HARDWARE child #349 head is `40b80bb075c008f3251c31f09a4dc9eb9e6c17e5`, based on parent #347 `960184670379f01e20f0e7e8bc23b3e5eedacd3f`. The current #349 head's last commit is test-only (`poll_json_array_primitive_lab.py`); the parser implementation remains in the child history. COE #26 remains frozen at `b382d233ff06c8791b1028bed3c617cc7b670d12`, based on COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`.
+
+Complete, non-truncated recursive tree comparison at these exact refs: Experiments #349 has 2,493 entries; COE #26 has 286. Under the two board directories, #349 has 52 files including 40 Python labs/helpers; COE #26 has two firmware files and zero Python files.
+
+| Artifact | Experiments #349 current tree | COE #26 destination tree | Result |
+|---|---|---|---|
+| ESP8266 sketch | `2f87a9de84ac53dbb0d2718b5c79a4662b63de8f`, mode 100644 | `c8be98f72596681e36a3ad1f8939bf8046c96887`, mode 100644 | Different blobs |
+| ESP32 sketch | `a9a1c2fecb001d71f8f22b43952edbd160aacaf8`, mode 100644 | `3cc7ec54b476943dc04a8d1af5e2df5fe054e422`, mode 100644 | Different blobs |
+| Current nested-JSON parser lab | `ac4b164e79da90039b0f99a22efdb6a136046442`, mode 100644 | No destination counterpart | Missing test import |
+| Hardening test | `41211b2c110ab409f6d9d1812ef12fda73b13211`, mode 100755 | `f921c56cecc19cab1989507b9b4ade1f45dac54e`, mode 100755 | Different test identity |
+| Product LICENSE | `1ee55b94183417be977ca287cd7391f9a6f7e721`, mode 100644 | Same blob at `Pisowifi/LICENSE` | This one license matches |
+| Root NOTICE | `f6d92cd21465312be5993631fe26977219be0fb9` | Missing | Repository-level notice gap |
+| Tabler LICENSE | `22ee8122400915cbff18e5f69368fa9eea6145eb` | Missing | Third-party license gap |
+| BlazeRentalLauncher LICENSE | `c5b1efa7aac764ae6d8da63476a2d5cec02a6a5d` | Missing | Third-party license gap |
+| TailAdmin NOTICE | `f0425bbbe34c1227311098173b1eae0c3e2a807b` | Same blob | This notice matches |
+
+At exact #349 head, Quarantine [#45321927194](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45321927194) and Relay [#45321927191](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45321927191) PASS; Full [#45321927236](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45321927236) FAILS at QA-owned Controller protocol parity / `Missing poll signature check`. Fourteen target/platform jobs pass; validation-dependent simulations, update, signing and publication stages skip. COE #26 has five queued workflows and zero jobs, so there is no destination CI acceptance.
+
+The previous 61-row main-to-#26 intake audit remains a historical baseline; it was not rerun here. The source/destination evidence above is a focused exact-tree revalidation, not a completed migration map. The ownership manifest remains 11 routes / `DRAFT_REVIEW_ONLY` / Master target null. **No file was staged, copied, moved, overwritten, cherry-picked, rebased, retargeted or promoted.**
+
 
 ## PHX-MASTER UTC01 live evidence refresh — 2026-11-24T01:37:42Z
 

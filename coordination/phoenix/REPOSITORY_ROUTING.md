@@ -1698,3 +1698,14 @@ The machine-readable `coordination/phoenix/OWNERSHIP_ROUTES.json` remains blob `
 - The canonical private registry v11 was not available. The Library-held 2026-11-09 checkpoint and older sync-ledger copy were read privately but are not a replacement for v11 or current Drive verification. No Google Drive connector is exposed; no Drive artifact/folder was created.
 
 **Routing decision:** preserve `DRAFT_REVIEW_ONLY` and Master target `null`. COE integration owner must reconcile the per-file source/destination/test/license map and obtain exact-head destination CI plus owner authorization before proposing a move. PHX-MASTER remains coordination-only.
+
+
+## PHX-MASTER UTC03 path-overlap and destination hold — 2026-11-24T03:37:41Z
+
+Machine-readable `OWNERSHIP_ROUTES.json` remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`: 11 routes, `DRAFT_REVIEW_ONLY`, PHX-MASTER source `coordination/phoenix/`, target null. No route, owner, target or copy permission changed.
+
+RELEASE #291 (`5222443b3747f47d440d804c4ff853eaa04686a5`) overlaps three handover paths with CORE #252, PISONET #255 and QA #290. Exact blobs differ in every branch; see Architecture §6.98. RELEASE #291 also changes two files inside the PHX-PISONET-owned SoftTimer ReleaseSigning subtree. PISONET must review those changes; the current Windows run fails at the negative-selftest missing-tag assertion. CORE and QA must review the three shared handover paths. No Master edit to those files is permitted.
+
+COE #26 remains FROZEN at `b382d233ff06c8791b1028bed3c617cc7b670d12`. Exact current #349 source/destination tree comparison confirms different firmware blobs, 40 source board-local Python labs/helpers versus zero destination, missing parser-lab counterpart, different hardening-test identity, missing root NOTICE, missing Tabler LICENSE and BlazeRentalLauncher LICENSE. The product LICENSE and TailAdmin NOTICE are matching limited correspondences; they do not establish complete licensing provenance. Five destination workflows remain queued with zero jobs.
+
+**Review-before-move hold:** no source/destination file was staged, copied, moved, overwritten, cherry-picked, rebased, retargeted or promoted. The previous 61-row audit remains historical and was not rerun in full. Registry v11/newer corrections remain unavailable; no older snapshot or public registry substitute was used.

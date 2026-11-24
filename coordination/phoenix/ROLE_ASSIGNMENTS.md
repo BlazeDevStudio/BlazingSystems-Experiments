@@ -1,5 +1,28 @@
 # Project Phoenix — Canonical Role Assignments & Directory Ownership
 
+## PHX-MASTER UTC03 live evidence refresh — 2026-11-24T03:37:41Z
+
+Starting Master HEAD: `ef05772f7c43bef545738561b208fe1af5f5d528`; Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; issue-designated development `blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE integration #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`. All four inspected branch refs report `protected=false`.
+
+PR #288 remains OPEN / DRAFT / UNMERGED against main; 192 changed paths, all under `coordination/phoenix/`. Ownership manifest blob `e4db324315a1b3543fec17a148fbf960170fcb29` remains 11 routes / `DRAFT_REVIEW_ONLY` / PHX-MASTER target null. Cleanup #266 remains OPEN, 0/7.
+
+| Owner / candidate | Exact current PR head | Exact-head evidence and interpretation |
+|---|---|---|
+| CORE #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | [Build #42698139210](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42698139210) PASS; scoped build only. CORE remains with its separate owner. |
+| RENTAL #328 | `0e0da62acd47c6a1ce287f8a30fc700d603fa070` | [APK identity #44782114384](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44782114384) and [API smoke #44782114393](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44782114393) PASS; [build #44782114390](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44782114390) FAIL. |
+| PISONET #255 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | [Windows #42462978704](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42462978704) PASS; hosted/synthetic only, native COM acceptance not established. |
+| HARDWARE parent #347 | `960184670379f01e20f0e7e8bc23b3e5eedacd3f` | Parent Quarantine [#45299741995](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45299741995), Relay [#45299742437](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45299742437) and Full [#45299741993](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45299741993) FAIL; do not inherit child results into this parent. |
+| HARDWARE child #349 | `40b80bb075c008f3251c31f09a4dc9eb9e6c17e5` | Current exact-head Quarantine [#45321927194](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45321927194) and Relay [#45321927191](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45321927191) PASS; Full [#45321927236](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45321927236) FAIL at QA-owned Controller protocol parity / `Missing poll signature check`. Fourteen target/platform jobs pass; downstream validation-dependent jobs skip. Parser labs are host/source-extracted simulations, not hardware acceptance. |
+| HARDWARE #348 | `c18826892160b1777f107e2ca0ca49aaed66ba6a` | [Focused header #45207909335](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45207909335) PASS 5/5 synthetic checks; [build #45207909463](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45207909463) FAIL at ESP32 compile / handover freshness. |
+| QA #290 / #292 | `5c29d15994cee1279058f1eca12f2a3180704292` / `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | [#290 Windows #43633486963](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43633486963) PASS; #292 has no PR-triggered runs. |
+| RELEASE #291 | `5222443b3747f47d440d804c4ff853eaa04686a5` | Final-head [BlazePwifi build #45319386785](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45319386785) SUCCESS (30 jobs; production sign handoff and publishers skipped); [ESP32 compatibility #45319386726](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45319386726) PASS 3/3; [Windows #45319386947](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45319386947) FAIL at PISONET-owned negative-selftest. Cross-owner path overlap is recorded in Architecture §6.98. |
+| COE RELEASE #35 | `e7801818b00854f34a5a88955d979c601ec96404` | [Shared #45303825436](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45303825436): 212 PASS / 2 skips, then 10/10 site-ULA /48 admission failures. [Sandbox #45303825459](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45303825459): 40/40 host preflight, then Bubblewrap unavailable (exit 125). [Case #45303825417](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45303825417) PASS. |
+| COE CORE #45 | `9d76a134c1f6512aa40c20ec4d247306a71a8cce` | [Overlay #44295049727](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44295049727) and [case #44295049903](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44295049903) PASS; scoped only. |
+| COE INTERCON #49 | `aeb8ff11b2f5db9a5f86280ab62ab988245f3919` | [Stage 5.1 #44646341873](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44646341873) and [case #44646341992](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44646341992) PASS; [Shared #44646341922](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44646341922) FAIL on missing `mbedtls/sha256.h`. |
+| COE integration #26 | `b382d233ff06c8791b1028bed3c617cc7b670d12` | Five workflows remain QUEUED / zero jobs; candidate stays FROZEN. |
+
+No owner branch or subsystem source was modified. Exact branch refs and CI are snapshots; re-read before any future integration.
+
 
 ## PHX-MASTER UTC01 live evidence refresh — 2026-11-24T01:37:42Z
 
