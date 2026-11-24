@@ -286,7 +286,7 @@ class ReleaseWorkflowConcurrencyTests(unittest.TestCase):
         marker = "      - name: RELEASE-SIGN reject actual unsigned Setup in PR"
         start = self.windows_content.find(marker)
         self.assertNotEqual(start, -1, "missing PR-only negative self-test step")
-        next_step = self.windows_content.find("\\n      - name:", start + len(marker))
+        next_step = self.windows_content.find("\n      - name:", start + len(marker))
         if next_step < 0:
             next_step = len(self.windows_content)
         block = self.windows_content[start:next_step]
@@ -297,19 +297,26 @@ class ReleaseWorkflowConcurrencyTests(unittest.TestCase):
             "-notmatch '/git/ref/tags/'",
             "Write-Output 'HTTP/2.0 404 Not Found'",
             "$global:LASTEXITCODE = 1",
-            'throw "Unexpected GitHub CLI call in synthetic negative self-test:',
-            '. \"$env:PROJECT_DIR/tests/ReleaseSigning/negative-selftest.ps1\" -ActualUnsignedSetup',
+            '. "$env:PROJECT_DIR/tests/ReleaseSigning/negative-selftest.ps1" -ActualUnsignedSetup',
         )
         positions = tuple(block.find(fragment) for fragment in required)
         self.assertTrue(
             all(position >= 0 for position in positions),
             "the PR-only negative self-test must use a local gh function that admits only "
-            "the synthetic missing-tag Git-ref response and rejects every other CLI call",
+            "the synthetic missing-tag Git-ref response",
         )
         self.assertEqual(
             positions,
             tuple(sorted(positions)),
             "the local GitHub CLI stub must be defined before the PISONET test is dot-sourced",
+        )
+        function_start = block.find("function gh {")
+        invocation_start = block.find(required[-1])
+        function_body = block[function_start:invocation_start]
+        self.assertIn(
+            'throw "Unexpected GitHub CLI call in synthetic negative self-test:',
+            function_body,
+            "the local gh stub must reject unexpected commands instead of falling through to the real executable",
         )
         self.assertNotIn(
             "Get-Command gh",
