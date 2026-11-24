@@ -49,6 +49,9 @@ from poll_loop_blocking_inhibit_lab_edge_fixtures import (
     pre_poll_active_line_main,
     late_poll_baseline_main,
 )
+from poll_loop_blocking_inhibit_lab_response_fixtures import (
+    POLL_HTTP_RESPONSE_DENY_NO_EDGE_MAIN,
+)
 
 def compile_and_run(code, board, expected=0, label="normal"):
     ran = run_cpp_fixture(
@@ -329,6 +332,50 @@ for board,path in BOARDS.items():
     if "POLL_HTTP_TIMEOUT_ISR_MULTI_EDGE_ROLLOVER_RETAINED_PASS" not in timeout_output:
         raise AssertionError(f"{board}: timeout-path ISR fault marker missing")
     print(f"{board} POLL_HTTP_TIMEOUT_ISR_MULTI_EDGE_ROLLOVER_RETAINED_PASS")
+
+    # Isolate response denial from the ISR fault latch: no edge occurs during
+    # the 3.5-second HTTP call, so only acceptPollResponse() may keep intake OFF.
+    permissive_accept = accept
+    for anchor, replacement in (
+        ("insertMode=false;", "insertMode=true;"),
+        ('activeTarget="";', 'activeTarget="spoof-target";'),
+        ("return false;", "return true;"),
+    ):
+        if permissive_accept.count(anchor) != 1:
+            raise AssertionError(f"{board}: poll-response fail-open mutation anchor is not unique: {anchor}")
+        permissive_accept = permissive_accept.replace(anchor, replacement, 1)
+
+    response_cases = (
+        ("hostile-positive", SUPPORT),
+        ("empty-timeout", timeout_support),
+    )
+    relay_cases = (
+        ("active-high", POLL_HTTP_RESPONSE_DENY_NO_EDGE_MAIN),
+        ("active-low", with_active_low_relay(POLL_HTTP_RESPONSE_DENY_NO_EDGE_MAIN)),
+    )
+    for relay_name, response_main in relay_cases:
+        for response_name, response_support in response_cases:
+            scenario = f"poll-http-no-edge-{relay_name}-{response_name}"
+            response_output = compile_and_run(
+                assemble(main_source=response_main, support_source=response_support),
+                board, 0, scenario,
+            )
+            if "POLL_HTTP_RESPONSE_DENY_NO_EDGE_PASS" not in response_output:
+                raise AssertionError(f"{board}: no-edge response-deny marker missing for {scenario}")
+            print(f"{board} {scenario.upper().replace('-', '_')}_PASS")
+
+            compile_and_run(
+                assemble(
+                    accept_source=permissive_accept,
+                    main_source=response_main,
+                    support_source=response_support,
+                ),
+                board, 90, scenario + "-fail-open-mutation",
+            )
+            print(
+                f"{board} MUTATION_REJECTED {scenario}-fail-open-mutation "
+                "expected_exit=90"
+            )
 
     # The post-HTTP ISR delta must be durably latched before the ordinary input sample.
     poll_reconcile_anchor="if(pollEdgeEnd!=pollEdgeStart){"
