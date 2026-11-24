@@ -3388,3 +3388,48 @@ Cross-repository release reconciliation:
 Only the RELEASE-owned .github/PHX_RELEASE_HANDOVER.md is updated by this reconciliation. No CORE, RENTAL, PISONET, HARDWARE, QA, MASTER or COE destination path was changed. The PR remains DRAFT/UNMERGED. The next activation must inspect CI triggered by this handover-only commit and await PHX-PISONET's fixture-controlled second lookup plus independent QA review.
 
 Evidence boundary: all reported build, compatibility, packaging and sandbox results are hosted CI/lab evidence. No approved production binary, protected signer, independent freshness witness, durable financial accounting/migration, physical hardware acceptance, 150 power cuts or 30-device/24-hour soak is established. PRODUCTION NO-GO.
+
+
+## PHX-RELEASE UTC06 — bounded ELF difference-range retention
+
+**Observed:** 2026-11-24 UTC06  
+**PR:** [#291](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/291), OPEN / DRAFT / UNMERGED.  
+**Branch:** `phoenix/release-publisher-isolation-20261115`.  
+**Starting head:** `3f92801aadf47be594fdef5a278b6aa125eaea1a`.  
+**Source/test head:** `f1553fe1cc728fee5da0eeb6db43e95f4f22a040`.
+
+### Defect and correction
+
+The RELEASE-owned `.github/scripts/compare_esp32_elf_sections.py::_difference_ranges()` built a dictionary for every disjoint byte-difference range, then sliced the list to 64 only when returning. A synthetic 32,768-byte section with 16,384 isolated differences therefore allocated thousands of diagnostic dictionaries that were never emitted. The helper now counts every range while retaining at most `_MAX_REPORTED_DIFFERENCE_RANGES = 64`; the first 16 byte samples and full differing-byte count remain intact. The redundant truncated-range count was removed.
+
+- Test-first commit: [`a7c0571d`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/a7c0571dae69fd27d82dbcf38e55082a36298af4), only `.github/scripts/test_compare_esp32_elf_sections.py`.
+- Source correction: [`f1553fe1`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/f1553fe1cc728fee5da0eeb6db43e95f4f22a040), only `.github/scripts/compare_esp32_elf_sections.py`.
+- Final compare from starting head to source/test head: **2 commits / 2 RELEASE-owned paths**. No CORE, RENTAL, PISONET, HARDWARE, QA or MASTER file was changed by this increment.
+- Local synthetic memory check: 32,768 bytes / 16,384 disjoint ranges; 64 details retained, 16 first-difference samples retained, peak traced allocation **48,050 bytes**. The pre-fix local baseline for the same shape was approximately **7.5 MB**. This is a synthetic host test, not hardware evidence.
+- The intermediate test-only commit's Actions runs were cancelled when the source-fix commit arrived; no expected-RED GitHub run is claimed. The final exact-source matrix below ran the new regression successfully on both core legs.
+
+### Exact-source GitHub Actions at `f1553fe1`
+
+- ESP32 compatibility [#45339828947](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45339828947): **SUCCESS, 3/3 jobs**.
+  - Provenance regression suite: **47/47** and Arduino CLI archive verifier **10/10** passed.
+  - ESP32 ELF section inspector: **6 synthetic parser/address cases** passed.
+  - ESP32 ELF section comparison: **11 synthetic cases** passed, including the bounded-range regression.
+  - ESP32 ELF symbol inspector: **10 synthetic cases** passed.
+  - Source-date epoch: **6 synthetic cases** passed.
+  - Core 3.3.13: two identical builds, image **1,044,816 bytes**, SHA-256 `dddde7eef4d9e0ff90ae502a528df45c000d3fb641dcd742ef9e0a316f8cece2`.
+  - Core 4.0.0: two identical builds, image **1,098,944 bytes**, SHA-256 `0e3c97db4369b2316654e489446a9504f101567287bb02d3a504adef7322d41a`.
+- BlazePwifi build [#45339828957](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45339828957): **IN PROGRESS at handover time**. CI-0701 and full validation jobs passed; 24/30 jobs were successful, 4 skipped and 2 simulations still running; no failed job had been observed.
+- Windows release [#45339828962](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45339828962): **FAILURE**. Handover, package parity and workflow security checks passed; PISONET-owned `experiment/windows/BlazePisonet-SoftTimer/tests/ReleaseSigning/negative-selftest.ps1:326` still fails `missing tag accepted=False`. Publisher was skipped. No PISONET-owned file was edited.
+
+**Source freshness limitation:** this compatibility run checked the workflow's pinned HARDWARE source/test `8dd8b12c3c32` and sketch blob `a9a1c2fecb001d71f8f22b43952edbd160aacaf8`. Live HARDWARE #349 has advanced to source/test `1247a5c7b332677ae8dca83dc94cf586a015e7a0` and PR/docs head `8639deda8d341d61efddff77be4d06ea931d040d`; the ESP32 sketch blob remains unchanged, while the newer source/test commit is an ESP8266 lab refactor. The RELEASE workflow's source/docs pins are therefore not the latest whole-repository #349 anchors. Refresh them in a separate activation before claiming current-head HARDWARE coverage.
+
+### Cross-repository and ownership reconciliation
+
+- MASTER PR #288 current head: `0fadd1019359b1b88ab24917ef3a568df375e664`; current role-assignment blob `fdb196018d729154154d65d1a3a7dd61fb3e513b`. Ownership manifest `e4db324315a1b3543fec17a148fbf960170fcb29` remains 11 routes / `DRAFT_REVIEW_ONLY`; RELEASE's COE workflow route is `reimplementation-review`, not copy/move authority. The Master RELEASE child pointer still cites an older #291 head and needs refresh.
+- #291 base #242: `734b89d9e7792247e8376335c3f3685500ab3f89`; current PR head before this handover update: `f1553fe1cc728fee5da0eeb6db43e95f4f22a040`. Base-to-head comparison shows 27 paths, including three inherited CORE handover paths and two PISONET test paths. They remain untouched and require MASTER ownership reconciliation before any merge. This PR remains draft/unmerged and has **0 independent reviews / 0 review threads**.
+- #242 remains OPEN/DRAFT at `734b89d9`; no signing or publishing authority.
+- COE #26 remains FROZEN at `b382d233`; no destination changes. COE #31 remains the packager parent at `59ed44d0`; child #35 is current at `e7801818`. On #35, shared validation recorded 212 pass / 2 intentional skips then 10/10 site-ULA admission failures; sandbox recorded 40/40 host preflight then Bubblewrap namespace failure (exit 125); case-collision passed. No site ULA was invented and no unsandboxed fallback used.
+- Cleanup-first #266 remains OPEN, 0/7 tracks complete.
+- Canonical private Drive project registry v11 was not surfaced through authorized Library retrieval; the current routing document confirms no Google Drive connector is exposed. No older registry snapshot was substituted and no private contents were copied or exposed.
+
+No migration, shared-interface change, hardware networking change, signing, tagging, publication, hardware flashing, real payment migration or customer deployment occurred. Independent QA and MASTER approval remain pending. **PRODUCTION NO-GO**; protected signer, independent freshness witness, durable financial accounting/migration, approved production binaries, 150 physical power cuts and 30-device/24-hour soak remain unproven or NOT TESTED.
