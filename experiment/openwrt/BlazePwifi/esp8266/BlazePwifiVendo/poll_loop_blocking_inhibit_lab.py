@@ -67,8 +67,8 @@ int main(){
   const uint8_t firstPendingPulses=pendingPulses;
   const std::string firstPendingTarget=pendingTarget;
   const std::string firstPendingNonce=pendingNonce;
-  const unsigned firstSaveCalls=saveCalls;
-  const unsigned firstCoinPostCalls=coinPostCalls;
+  const int firstSaveCalls=saveCalls;
+  const int firstCoinPostCalls=coinPostCalls;
 
   coinEdgeISR();
   coinEdgeISR();
