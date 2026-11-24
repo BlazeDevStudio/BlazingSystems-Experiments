@@ -193,7 +193,17 @@ for board,path in BOARDS.items():
     outputs=loop.index("applyOutputs();",post_release)
     last_poll=loop.index("lastPoll=millis()",outputs)
     assert pre_poll_guard < pre_poll_latch < pre_poll_release < poll_call < accept < post_release < outputs < last_poll, board+": poll release ordering changed"
-    parser="\n".join(extract(source,name) for name in ("pollJsonSpace","pollJsonHex","pollJsonSkipString","pollJsonSkipComposite","pollJsonSkipPrimitive","pollJsonSkipValue","pollJsonTopLevelTrue","coinPostDispositionVerified"))
+    parser_prototypes = (
+        "bool pollJsonSkipValueDepth(const String &r,int &p,uint8_t depth);\\n"
+        "bool pollJsonSkipCompositeDepth(const String &r,int &p,uint8_t depth);\\n"
+    )
+    parser = parser_prototypes + "\\n".join(extract(source,name) for name in (
+        "pollJsonSpace", "pollJsonHex", "pollJsonSkipString",
+        "pollJsonSkipPrimitive", "pollJsonSkipValueDepth",
+        "pollJsonSkipCompositeDepth", "pollJsonSkipComposite",
+        "pollJsonSkipValue", "pollJsonTopLevelTrue",
+        "coinPostDispositionVerified"
+    ))
     code=("#define TARGET_ESP32\n" if board=="ESP32" else "")+STUBS+parser+extract(source,"acceptPollResponse")+extract(source,"coinIngressConfigurationAllows")+extract(source,"applyOutputs")+MAIN
     with tempfile.TemporaryDirectory(prefix="phx-poll-response-") as folder:
         cpp=Path(folder)/"test.cpp"; binary=Path(folder)/"test"

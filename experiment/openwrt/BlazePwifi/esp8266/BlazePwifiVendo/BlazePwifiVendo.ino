@@ -1192,36 +1192,8 @@ bool pollJsonSkipString(const String &r,int &p){
   return false;
 }
 
-bool pollJsonSkipComposite(const String &r,int &p){
-  const int n=(int)r.length();
-  if(p>=n || (r[p]!=123 && r[p]!='[')) return false;
-  char closing[16];
-  int depth=0;
-  const char first=r[p++];
-  closing[depth++]=(first==123)?125:']';
-  while(depth>0 && p<n){
-    const char c=r[p];
-    if(c=='"'){
-      if(!pollJsonSkipString(r,p)) return false;
-      continue;
-    }
-    if(c==123 || c=='['){
-      if(depth>=(int)sizeof(closing)) return false;
-      closing[depth++]=(c==123)?125:']';
-      ++p;
-      continue;
-    }
-    if(c==125 || c==']'){
-      if(closing[depth-1]!=c) return false;
-      --depth;
-      ++p;
-      continue;
-    }
-    if((unsigned char)c<0x20 && !pollJsonSpace(c)) return false;
-    ++p;
-  }
-  return depth==0;
-}
+bool pollJsonSkipValueDepth(const String &r,int &p,uint8_t depth);
+bool pollJsonSkipCompositeDepth(const String &r,int &p,uint8_t depth);
 
 bool pollJsonSkipPrimitive(const String &r,int &p){
   const int n=(int)r.length();
@@ -1263,13 +1235,70 @@ bool pollJsonSkipPrimitive(const String &r,int &p){
   return q==end;
 }
 
-bool pollJsonSkipValue(const String &r,int &p){
+bool pollJsonSkipValueDepth(const String &r,int &p,uint8_t depth){
   const int n=(int)r.length();
+  while(p<n && pollJsonSpace(r[p])) ++p;
   if(p>=n) return false;
   if(r[p]=='"') return pollJsonSkipString(r,p);
-  if(r[p]==123 || r[p]=='[') return pollJsonSkipComposite(r,p);
+  if(r[p]==123 || r[p]=='[') return pollJsonSkipCompositeDepth(r,p,depth);
   return pollJsonSkipPrimitive(r,p);
 }
+
+bool pollJsonSkipCompositeDepth(const String &r,int &p,uint8_t depth){
+  const int n=(int)r.length();
+  if(p>=n || (r[p]!=123 && r[p]!='[') || depth>16) return false;
+
+  if(r[p]=='['){
+    ++p;
+    while(p<n && pollJsonSpace(r[p])) ++p;
+    if(p<n && r[p]==']'){
+      ++p;
+      return true;
+    }
+    while(true){
+      if(!pollJsonSkipValueDepth(r,p,(uint8_t)(depth+1))) return false;
+      while(p<n && pollJsonSpace(r[p])) ++p;
+      if(p<n && r[p]==']'){
+        ++p;
+        return true;
+      }
+      if(p>=n || r[p++]!=',') return false;
+      while(p<n && pollJsonSpace(r[p])) ++p;
+      if(p<n && r[p]==']') return false;
+    }
+  }
+
+  ++p;
+  while(p<n && pollJsonSpace(r[p])) ++p;
+  if(p<n && r[p]=='}'){
+    ++p;
+    return true;
+  }
+  while(true){
+    if(p>=n || r[p]!='"' || !pollJsonSkipString(r,p)) return false;
+    while(p<n && pollJsonSpace(r[p])) ++p;
+    if(p>=n || r[p++]!=':') return false;
+    while(p<n && pollJsonSpace(r[p])) ++p;
+    if(!pollJsonSkipValueDepth(r,p,(uint8_t)(depth+1))) return false;
+    while(p<n && pollJsonSpace(r[p])) ++p;
+    if(p<n && r[p]=='}'){
+      ++p;
+      return true;
+    }
+    if(p>=n || r[p++]!=',') return false;
+    while(p<n && pollJsonSpace(r[p])) ++p;
+    if(p<n && r[p]=='}') return false;
+  }
+}
+
+bool pollJsonSkipComposite(const String &r,int &p){
+  return pollJsonSkipCompositeDepth(r,p,1);
+}
+
+bool pollJsonSkipValue(const String &r,int &p){
+  return pollJsonSkipValueDepth(r,p,1);
+}
+
 
 bool pollJsonTopLevelTrue(const String &r,const char *wanted){
   if(!wanted) return false;

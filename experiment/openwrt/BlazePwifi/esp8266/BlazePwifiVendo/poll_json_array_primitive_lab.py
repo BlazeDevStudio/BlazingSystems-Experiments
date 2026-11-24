@@ -1,8 +1,8 @@
-"""Source-exact regression for primitive JSON values at array boundaries.
+"""Source-exact strict JSON composite grammar regression for both coin controllers.
 
-The production parser must stop a primitive at ']' as well as ',' and '}'.
-This lab compiles the parser extracted from both board sketches and injects a
-mutation that removes the array terminator again.
+The firmware parser must validate nested array/object separators, primitive
+terminators, and closing delimiters before a root-level status can be read.
+The host lab is simulated control-flow evidence, not controller authentication.
 """
 import subprocess
 import tempfile
@@ -12,13 +12,20 @@ PARSER_FUNCTIONS = (
     "pollJsonSpace",
     "pollJsonHex",
     "pollJsonSkipString",
-    "pollJsonSkipComposite",
     "pollJsonSkipPrimitive",
+    "pollJsonSkipValueDepth",
+    "pollJsonSkipCompositeDepth",
+    "pollJsonSkipComposite",
     "pollJsonSkipValue",
     "pollJsonTopLevelTrue",
 )
 
-ARRAY_MAIN = r"""
+PROTOTYPES = (
+    "bool pollJsonSkipValueDepth(const String &r,int &p,uint8_t depth);\n"
+    "bool pollJsonSkipCompositeDepth(const String &r,int &p,uint8_t depth);\n"
+)
+
+COMPOSITE_MAIN = r"""
 int main() {
   if (!pollJsonTopLevelTrue(
           String("{\"ok\":true,\"items\":[1,2,3]}"), "ok")) return 61;
@@ -27,16 +34,32 @@ int main() {
   if (!pollJsonTopLevelTrue(
           String("{\"ok\":true,\"meta\":[false,null,-1.25e+2,{\"nested\":[true,0]}]}"),
           "ok")) return 63;
+  if (!pollJsonTopLevelTrue(
+          String("{\"ok\":true,\"meta\":[]}"), "ok")) return 64;
+  if (!pollJsonTopLevelTrue(
+          String("{\"ok\":true,\"meta\":{}}"), "ok")) return 65;
+
   if (pollJsonTopLevelTrue(
-          String("{\"ok\":true,\"meta\":[1,2,3}"), "ok")) return 64;
-  std::cout << "POLL_JSON_ARRAY_PRIMITIVE_PASS 3/3; UNMATCHED_ARRAY_REJECTED 1/1\n";
+          String("{\"ok\":true,\"meta\":[1,]}"), "ok")) return 66;
+  if (pollJsonTopLevelTrue(
+          String("{\"ok\":true,\"meta\":[1 2]}"), "ok")) return 67;
+  if (pollJsonTopLevelTrue(
+          String("{\"ok\":true,\"meta\":{\"a\":1,}}"), "ok")) return 68;
+  if (pollJsonTopLevelTrue(
+          String("{\"ok\":true,\"meta\":{\"a\" 1}}"), "ok")) return 69;
+  if (pollJsonTopLevelTrue(
+          String("{\"ok\":true,\"meta\":[1,2,3}"), "ok")) return 70;
+  if (pollJsonTopLevelTrue(
+          String("{\"ok\":true,\"meta\":{\"a\":1 \"b\":2}}"), "ok")) return 71;
+
+  std::cout << "POLL_JSON_COMPOSITE_GRAMMAR_PASS valid=5/5 invalid=6/6\n";
   return 0;
 }
 """
 
 
 def _compile_and_run(code, board, label):
-    with tempfile.TemporaryDirectory(prefix="phx-json-array-") as folder:
+    with tempfile.TemporaryDirectory(prefix="phx-json-composite-") as folder:
         cpp = Path(folder) / f"{label}.cpp"
         binary = Path(folder) / label
         cpp.write_text(code, encoding="utf-8")
@@ -54,16 +77,27 @@ def _compile_and_run(code, board, label):
         )
 
 
+def _expect_mutation_rejected(code, board, label, expected_exit):
+    result = _compile_and_run(code, board, label)
+    if result.returncode != expected_exit:
+        raise AssertionError(
+            f"{board}: {label} mutation survived or failed unexpectedly "
+            f"(expected exit {expected_exit}, got {result.returncode}; "
+            f"stdout={result.stdout}; stderr={result.stderr})"
+        )
+    print(f"{board}: MUTATION_REJECTED {label} expected_exit={expected_exit}")
+
+
 def verify(boards, extract, stubs):
     for board, path in boards.items():
         source = path.read_text(encoding="utf-8")
-        parser = "\n\n".join(
+        parser = PROTOTYPES + "\n\n".join(
             extract(source, name) for name in PARSER_FUNCTIONS
         )
-        baseline = _compile_and_run(stubs + parser + ARRAY_MAIN, board, "baseline")
+        baseline = _compile_and_run(stubs + parser + COMPOSITE_MAIN, board, "baseline")
         if baseline.returncode:
             raise AssertionError(
-                f"{board}: valid primitive array was rejected "
+                f"{board}: strict JSON composite cases failed "
                 f"(exit={baseline.returncode}; stdout={baseline.stdout}; "
                 f"stderr={baseline.stderr})"
             )
@@ -72,22 +106,32 @@ def verify(boards, extract, stubs):
         delimiter = " && r[p]!=']'"
         if primitive.count(delimiter) != 1:
             raise AssertionError(
-                f"{board}: expected exactly one explicit array-close delimiter"
+                f"{board}: expected exactly one array primitive terminator"
             )
-        mutated_primitive = primitive.replace(delimiter, "", 1)
-        mutated_parser = parser.replace(primitive, mutated_primitive, 1)
-        if mutated_parser == parser:
-            raise AssertionError(f"{board}: array-terminator mutation was not applied")
-        mutated = _compile_and_run(
-            stubs + mutated_parser + ARRAY_MAIN, board, "missing_array_terminator"
+        _expect_mutation_rejected(
+            stubs + parser.replace(
+                primitive, primitive.replace(delimiter, "", 1), 1
+            ) + COMPOSITE_MAIN,
+            board, "missing-array-primitive-terminator", 61
         )
-        if mutated.returncode != 61:
+
+        composite = extract(source, "pollJsonSkipCompositeDepth")
+        separator = "if(p>=n || r[p++]!=',') return false;"
+        if composite.count(separator) != 2:
             raise AssertionError(
-                f"{board}: missing-array-terminator mutation survived "
-                f"(expected exit 61, got {mutated.returncode}; "
-                f"stdout={mutated.stdout}; stderr={mutated.stderr})"
+                f"{board}: expected one array and one object member separator"
             )
-        print(
-            f"{board}: POLL_JSON_ARRAY_PRIMITIVE_PASS; "
-            "MUTATION_REJECTED missing-array-terminator expected_exit=61"
+        array_mutant = composite.replace(separator, "", 1)
+        _expect_mutation_rejected(
+            stubs + parser.replace(composite, array_mutant, 1) + COMPOSITE_MAIN,
+            board, "missing-array-separator", 61
         )
+
+        object_prefix, object_suffix = composite.rsplit(separator, 1)
+        object_mutant = object_prefix + object_suffix
+        _expect_mutation_rejected(
+            stubs + parser.replace(composite, object_mutant, 1) + COMPOSITE_MAIN,
+            board, "missing-object-separator", 71
+        )
+
+        print(f"{board}: POLL_JSON_COMPOSITE_GRAMMAR_PASS valid=5/5 invalid=6/6")
