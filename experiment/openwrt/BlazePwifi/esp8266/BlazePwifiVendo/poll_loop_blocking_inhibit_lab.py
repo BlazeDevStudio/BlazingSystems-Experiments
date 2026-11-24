@@ -46,6 +46,7 @@ from poll_loop_blocking_inhibit_lab_edge_fixtures import (
     STICKY_FAULT_LATER_ISR_MAIN,
     disabled_ingress_gate_main,
     pre_poll_active_line_main,
+    late_poll_baseline_main,
 )
 
 def compile_and_run(code, board, expected=0, label="normal"):
@@ -733,13 +734,19 @@ for board,path in BOARDS.items():
         raise AssertionError(f"{board}: initial poll-edge baseline mutation anchor missing")
     late_poll_start_loop = late_poll_start_loop.replace(
         "const bool pollWindowReady=beginPollWindow();",
-        "const bool pollWindowReady=beginPollWindow();\n      pollEdgeStart=snapshotCoinEdgeSequence();",
+        "const bool pollWindowReady=beginPollWindow();\\n      pollEdgeStart=snapshotCoinEdgeSequence();",
         1,
     )
     if late_poll_start_loop == loop or "pollEdgeStart=snapshotCoinEdgeSequence();" not in late_poll_start_loop:
         raise AssertionError(f"{board}: late poll-edge baseline mutation did not apply")
+    late_baseline_main = late_poll_baseline_main()
     compile_and_run(
-        assemble(loop_source=late_poll_start_loop,begin_source=edge_hook,main_source=RACE_MAIN),
+        assemble(begin_source=edge_hook,main_source=late_baseline_main),
+        board,0,"late-poll-edge-baseline-control"
+    )
+    print(f"{board} POLL_PRE_DRAIN_BASELINE_EDGE_CONTROL_PASS")
+    compile_and_run(
+        assemble(loop_source=late_poll_start_loop,begin_source=edge_hook,main_source=late_baseline_main),
         board,22,"late-poll-edge-baseline-after-drain"
     )
     print(f"{board} MUTATION_REJECTED late-poll-edge-baseline-after-drain expected_exit=22")

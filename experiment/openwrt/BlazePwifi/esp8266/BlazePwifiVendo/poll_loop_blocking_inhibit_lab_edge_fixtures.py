@@ -170,6 +170,28 @@ int main(){{
 }}
 """
 
+def late_poll_baseline_main() -> str:
+    """Isolate an ISR edge that arrives after the quiet drain but before poll dispatch."""
+    return MAIN[:MAIN.index("int main(){")] + r"""
+int main(){
+  resetState();
+  injectAfterDrainEdge=true;
+  loop();
+  if(pollCalls!=0 || pollStartAt!=0 || !journalRecoveryRequired ||
+     !LittleFS.exists("/pollpulse.fault") || relayOn || ledOn ||
+     insertMode || !activeTarget.empty() || pollIntakeSuspended ||
+     pendingPulses!=0U || lastPoll+2!=fakeNow ||
+     backupWriteSawRelayOn || backupWriteSawLedOn ||
+     markerOpenSawRelayOn || markerOpenSawLedOn) return 22;
+  const std::string marker=LittleFS.files["/pollpulse.fault"];
+  if(marker.find("COIN_INGRESS_UNRESOLVED")==std::string::npos ||
+     marker.find("pulses=1")==std::string::npos) return 24;
+  std::cout<<"POLL_PRE_DRAIN_BASELINE_EDGE_CONTROL_PASS"<<std::endl;
+  return 0;
+}
+"""
+
+
 POLL_SAFETY_PARITY = (
     "coinEdgeISR",
     "snapshotCoinEdgeSequence",
@@ -222,5 +244,6 @@ __all__ = [
     "STICKY_FAULT_LATER_ISR_MAIN",
     "disabled_ingress_gate_main",
     "pre_poll_active_line_main",
+    "late_poll_baseline_main",
     "missing_coin_authority_helpers",
 ]
