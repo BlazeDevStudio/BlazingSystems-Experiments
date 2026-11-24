@@ -3,7 +3,7 @@
 
 ## PHX-MASTER UTC01 live evidence refresh — 2026-11-24T01:37:42Z
 
-Master final HEAD after this documentation commit: `2c10817dc2ffc847109d89e86ce5a031cbcd4060` (parent/start: `9f910426ebc25148bfd95eeb2af9b49fcf61e195`).
+UTC01 evidence commit: `2c10817dc2ffc847109d89e86ce5a031cbcd4060`; provenance-pointer correction commit: `84a2d9fc229b2f9a20a2f29c14bd0c771a070a7a`; starting head: `9f910426ebc25148bfd95eeb2af9b49fcf61e195`.
 
 ### Current verified findings
 
