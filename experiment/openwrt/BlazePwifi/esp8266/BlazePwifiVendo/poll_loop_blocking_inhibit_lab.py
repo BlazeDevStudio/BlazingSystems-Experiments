@@ -51,6 +51,7 @@ from poll_loop_blocking_inhibit_lab_edge_fixtures import (
 )
 from poll_loop_blocking_inhibit_lab_response_fixtures import (
     POLL_HTTP_RESPONSE_DENY_NO_EDGE_MAIN,
+    POLL_HTTP_KEYLESS_RESPONSE_DENY_MAIN,
 )
 
 def compile_and_run(code, board, expected=0, label="normal"):
@@ -376,6 +377,55 @@ for board,path in BOARDS.items():
                 f"{board} MUTATION_REJECTED {scenario}-fail-open-mutation "
                 "expected_exit=90"
             )
+
+    # Keyless poll responses remain deny-only even when they carry an untrusted
+    # response_sig-looking field. The placeholder below is deliberately not a
+    # protocol vector and must never be treated as a valid signature.
+    keyless_response_support = SUPPORT.replace(
+        timeout_response_anchor,
+        r'    return String("{\"ok\":true,\"insert\":true,\"target\":\"spoof-target\",\"response_sig\":\"unapproved-test-only\"}");',
+        1,
+    )
+    if keyless_response_support == SUPPORT:
+        raise AssertionError(f"{board}: keyless response-signature fixture anchor missing")
+
+    keyless_fail_open = accept.replace(
+        '  (void)response;\n  insertMode=false;\n  activeTarget="";\n  return false;',
+        '  (void)response;\n  if(controllerKeyEmpty()){ insertMode=true; activeTarget="spoof-target"; return true; }\n  insertMode=false;\n  activeTarget="";\n  return false;',
+        1,
+    )
+    if keyless_fail_open == accept:
+        raise AssertionError(f"{board}: keyless fail-open mutation anchor missing")
+
+    for relay_name, response_main in relay_cases:
+        keyless_main = response_main.replace(
+            "int main(){\n  resetState();",
+            "int main(){\n  resetState();\n  clearControllerKey();\n  if(!controllerKeyEmpty()) return 91;",
+            1,
+        ).replace(
+            "POLL_HTTP_RESPONSE_DENY_NO_EDGE_PASS",
+            "POLL_HTTP_KEYLESS_RESPONSE_DENY_PASS",
+            1,
+        )
+        if keyless_main == response_main:
+            raise AssertionError(f"{board}: keyless no-edge fixture anchor missing")
+        scenario = f"poll-http-keyless-response-{relay_name}"
+        keyless_output = compile_and_run(
+            assemble(main_source=keyless_main, support_source=keyless_response_support),
+            board, 0, scenario,
+        )
+        if "POLL_HTTP_KEYLESS_RESPONSE_DENY_PASS" not in keyless_output:
+            raise AssertionError(f"{board}: keyless response-deny marker missing for {scenario}")
+        print(f"{board} {scenario.upper().replace('-', '_')}_PASS")
+        compile_and_run(
+            assemble(
+                accept_source=keyless_fail_open,
+                main_source=keyless_main,
+                support_source=keyless_response_support,
+            ),
+            board, 90, scenario + "-fail-open-mutation",
+        )
+        print(f"{board} MUTATION_REJECTED {scenario}-fail-open-mutation expected_exit=90")
 
     # The post-HTTP ISR delta must be durably latched before the ordinary input sample.
     poll_reconcile_anchor="if(pollEdgeEnd!=pollEdgeStart){"

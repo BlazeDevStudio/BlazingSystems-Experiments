@@ -160,11 +160,25 @@ uint16_t runDebounceMs=40, runPulseGroupMs=400;
 String activeTarget="target-01", pendingTarget="", pendingNonce="";
 struct ConfigStub {
 #ifdef TARGET_ESP32
-  String ssid="test-ssid", pass="test-pass";
+  String ssid="test-ssid", pass="test-pass", key="";
 #else
-  char ssid[33]="test-ssid"; char pass[65]="test-pass";
+  char ssid[33]="test-ssid"; char pass[65]="test-pass"; char key[33]="";
 #endif
 } cfg;
+void clearControllerKey(){
+#ifdef TARGET_ESP32
+  cfg.key.clear();
+#else
+  cfg.key[0]='\0';
+#endif
+}
+bool controllerKeyEmpty(){
+#ifdef TARGET_ESP32
+  return cfg.key.isEmpty();
+#else
+  return cfg.key[0]=='\0';
+#endif
+}
 int digitalRead(int) {
   // Capture fault durability before the ordinary post-HTTP sample can mask a missing poll-edge reconciliation.
   if(pollHttpReturned && !pollPostHttpSampleObserved){

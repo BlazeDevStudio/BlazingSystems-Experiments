@@ -25,3 +25,16 @@ int main(){
   return 0;
 }
 """
+
+
+# A keyless controller must remain deny-only even when an untrusted positive
+# response includes a response_sig-looking field. This is not a protocol vector.
+POLL_HTTP_KEYLESS_RESPONSE_DENY_MAIN = POLL_HTTP_RESPONSE_DENY_NO_EDGE_MAIN.replace(
+    "int main(){\n  resetState();",
+    "int main(){\n  resetState();\n  clearControllerKey();\n  if(!controllerKeyEmpty()) return 91;",
+    1,
+).replace(
+    "POLL_HTTP_RESPONSE_DENY_NO_EDGE_PASS",
+    "POLL_HTTP_KEYLESS_RESPONSE_DENY_PASS",
+    1,
+)
