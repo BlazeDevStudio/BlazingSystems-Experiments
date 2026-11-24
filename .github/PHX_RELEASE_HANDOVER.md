@@ -2330,14 +2330,14 @@ Only RELEASE-owned test, compatibility workflow and this RELEASE handover are in
 This is the single machine-checked current pointer for the RELEASE ESP32 compatibility workflow. The source/test, latest documentation commit, and live PR head are pinned separately; the current sketch blob was read back at the exact live PR head.
 
 - HARDWARE #349 source/test SHA: `6ce423783b306411bdb7e7217081c050cb4cbec4`.
-- HARDWARE #349 latest docs HEAD: `dff053bb8fe276d3f0ba9764e845d61ebe640539`.
-- HARDWARE #349 live PR HEAD: `6ce423783b306411bdb7e7217081c050cb4cbec4`.
+- HARDWARE #349 docs HEAD: `dff053bb8fe276d3f0ba9764e845d61ebe640539`.
+- HARDWARE #349 PR HEAD: `6ce423783b306411bdb7e7217081c050cb4cbec4`.
 - ESP32 sketch Git blob SHA: `a9a1c2fecb001d71f8f22b43952edbd160aacaf8` (unchanged at the current PR head).
 - Current source/test Quarantine Byte Readback [#45354176204](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45354176204) — SUCCESS.
 - Current source/test Relay Output Polarity [#45354176057](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45354176057) — SUCCESS (both source/output and ESP32 boot jobs).
 - Current source/test Full integration [#45354176294](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45354176294) — FAILURE at the inherited QA-owned `Missing poll signature check`; 13/13 firmware target/platform jobs and Android passed; validation-dependent simulations, update bundle, signing, candidate and publication stages were skipped.
 - Prior source/test SHA `da046d5ea80a8daac7258d302ecc310cd5634b24` Quarantine [#45342525513](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45342525513) and Relay [#45342525472](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45342525472) remain historical evidence for that earlier source, not the current `6ce423` source.
-- Exact-source compatibility matrix: PENDING — no RELEASE matrix run claimed yet for the refreshed `6ce423` source pin.
+- Exact-source compatibility matrix: PENDING — no run claimed yet.
 - Hardware handover freshness: the latest published docs commit `dff053bb` still records source/test `da046d5`; PHX-HARDWARE must update its handover and PR description to account for the later `6ce423` blocking-poll fixture refactor. RELEASE uses the live branch head and exact Actions readback; it does not rewrite Hardware-owned documentation.
 - Evidence boundary: hosted CI only. Source-extracted labs and target builds are not physical hardware acceptance or approved production binaries.
 
