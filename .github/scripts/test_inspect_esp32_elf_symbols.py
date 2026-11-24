@@ -149,8 +149,8 @@ Idx Name          Size      VMA       LMA       File off  Algn
 
     def test_absolute_symbols_are_not_attributed_to_section_membership(self) -> None:
         symbols = parse_nm_symbols(
-            "absolute_global A 3f400110 00000020\\n"
-            "absolute_local a 3f400120 00000008\\n"
+            "absolute_global A 3f400110 00000020\n"
+            "absolute_local a 3f400120 00000008\n"
         )
         result = map_address(self.sections, symbols, 0x3F400125)
         self.assertEqual(result["status"], "NO_SYMBOL_AT_OR_BEFORE_ADDRESS")
