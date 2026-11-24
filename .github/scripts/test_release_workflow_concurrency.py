@@ -501,6 +501,21 @@ class BlazePwifiV053PublishPermissionTests(unittest.TestCase):
 
     def test_manual_v053_signer_requires_protected_main_and_explicit_approval(self):
         require_v053_manual_signing_gate(self.sign_content)
+
+    def test_signing_gate_guard_rejects_each_missing_admission_control(self):
+        expected = (
+            "github.event_name == 'workflow_dispatch' "
+            "&& github.ref == 'refs/heads/main' "
+            "&& github.ref_protected == true "
+            "&& vars.BLAZERENTAL_PRODUCTION_SIGNING_APPROVED == 'true'"
+        )
+        safe = self.sign_content.replace(
+            "  sign:\n    runs-on: ubuntu-22.04",
+            f"  sign:\n    if: {expected}\n    runs-on: ubuntu-22.04",
+            1,
+        )
+        self.assertNotEqual(safe, self.sign_content)
+        require_v053_manual_signing_gate(safe)
         mutations = (
             ("github.event_name == 'workflow_dispatch'", "github.event_name == 'push'"),
             ("github.ref == 'refs/heads/main'", "github.ref == 'refs/heads/feature'"),
@@ -510,10 +525,10 @@ class BlazePwifiV053PublishPermissionTests(unittest.TestCase):
                 "vars.BLAZERENTAL_PRODUCTION_SIGNING_APPROVED != 'true'",
             ),
         )
-        for old, replacement in mutations:
+        for old, new in mutations:
             with self.subTest(mutation=old):
-                unsafe = self.sign_content.replace(old, replacement, 1)
-                self.assertNotEqual(unsafe, self.sign_content)
+                unsafe = safe.replace(old, new, 1)
+                self.assertNotEqual(unsafe, safe)
                 with self.assertRaisesRegex(AssertionError, "protected main"):
                     require_v053_manual_signing_gate(unsafe)
 
@@ -550,6 +565,20 @@ class BlazePwifiV053PublishPermissionTests(unittest.TestCase):
             require_v053_release_permissions_are_isolated(unsafe)
 
     def test_guard_rejects_publisher_without_protected_main_or_approval(self):
+        expected = (
+            "inputs.publish == true "
+            "&& github.event_name == 'workflow_dispatch' "
+            "&& github.ref == 'refs/heads/main' "
+            "&& github.ref_protected == true "
+            "&& vars.BLAZEPWIFI_PRODUCTION_RELEASE_APPROVED == 'true'"
+        )
+        safe = self.content.replace(
+            "    if: inputs.publish == true",
+            f"    if: {expected}",
+            1,
+        )
+        self.assertNotEqual(safe, self.content)
+        require_v053_release_permissions_are_isolated(safe)
         mutations = (
             ("github.event_name == 'workflow_dispatch'", "github.event_name == 'push'"),
             ("github.ref == 'refs/heads/main'", "github.ref == 'refs/heads/feature'"),
@@ -559,10 +588,10 @@ class BlazePwifiV053PublishPermissionTests(unittest.TestCase):
                 "vars.BLAZEPWIFI_PRODUCTION_RELEASE_APPROVED != 'true'",
             ),
         )
-        for old, replacement in mutations:
+        for old, new in mutations:
             with self.subTest(mutation=old):
-                unsafe = self.content.replace(old, replacement, 1)
-                self.assertNotEqual(unsafe, self.content)
+                unsafe = safe.replace(old, new, 1)
+                self.assertNotEqual(unsafe, safe)
                 with self.assertRaisesRegex(AssertionError, "protected main"):
                     require_v053_release_permissions_are_isolated(unsafe)
 
