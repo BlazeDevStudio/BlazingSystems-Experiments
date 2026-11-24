@@ -22,6 +22,7 @@ concurrency:
 
 jobs:
   sign:
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && github.ref_protected == true && vars.BLAZERENTAL_PRODUCTION_SIGNING_APPROVED == 'true'
     runs-on: ubuntu-22.04
     timeout-minutes: 30
     env:
