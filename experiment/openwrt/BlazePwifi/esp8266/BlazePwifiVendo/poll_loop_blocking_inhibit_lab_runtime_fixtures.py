@@ -77,8 +77,17 @@ void loadPending(){}
 // secondary-store implementation and reboot fallback are covered separately
 // by poll_fault_dual_store_lab.py.
 bool pollFaultBackupPresentOrCorrupt(){ return false; }
+// This loop fixture observes re-entry into the sticky latch. The real EEPROM/NVS
+// first-writer implementation is source-extracted separately by the dual-store lab.
+static uint32_t backupFirstFaultPulseEdges=0;
+static unsigned backupWriteAttempts=0;
 void observeBackupWrite();
-bool writePollFaultBackup(uint32_t){ observeBackupWrite(); return false; }
+bool writePollFaultBackup(uint32_t pulseEdges){
+  observeBackupWrite();
+  ++backupWriteAttempts;
+  if(backupFirstFaultPulseEdges==0U) backupFirstFaultPulseEdges=pulseEdges;
+  return backupFirstFaultPulseEdges!=0U;
+}
 volatile uint32_t coinEdgeSequence=0;
 uint32_t lastHandledCoinEdgeSequence=0;
 struct String : std::string {

@@ -337,6 +337,9 @@ void assertBootDenied(){
   assert(!insertMode);
   assert(activeTarget.empty());
 }
+bool readStoredFaultRecord(PollFaultRecord &record){
+  READ_STORED_FAULT_RECORD
+}
 int main(){
   resetStorage();
   resetRuntime();
@@ -356,6 +359,26 @@ int main(){
   assert(pollFaultBackupPresentOrCorrupt());
   rebootStorage();
   assertBootDenied();
+
+  // The V1 secondary-store record is a first-latch snapshot, not a live counter.
+  // A later explicit latch attempt must leave the original bytes untouched.
+  resetStorage();
+  resetRuntime();
+  latchPollPulseFault(4);
+  PollFaultRecord firstFault{};
+  if(!readStoredFaultRecord(firstFault) || !validPollFaultRecord(firstFault) ||
+     firstFault.pulseEdges!=4U) return 73;
+  const unsigned firstCommitCount=backupCommitCalls();
+  latchPollPulseFault(9);
+  PollFaultRecord laterFault{};
+  if(!readStoredFaultRecord(laterFault) || !validPollFaultRecord(laterFault) ||
+     memcmp(&firstFault,&laterFault,sizeof(firstFault))!=0 ||
+     backupCommitCalls()!=firstCommitCount ||
+     !journalRecoveryRequired || insertMode || !activeTarget.empty() || !outputsInhibited){
+    std::cerr<<"POLL_FAULT_FIRST_LATCH_SNAPSHOT_CHANGED board=BOARD_NAME"<<std::endl;
+    return 74;
+  }
+  std::cout<<"POLL_FAULT_FIRST_LATCH_SNAPSHOT_STABLE_PASS board=BOARD_NAME"<<std::endl;
 
   // Boot-time GPIO quarantine runs before LittleFS mount. The secondary
   // EEPROM/NVS marker must still survive and deny after the filesystem comes up.
@@ -573,6 +596,12 @@ int main(){
     main = main.replace("WRITE_FAIL_SETUP", fail_write).replace("WRITE_FAIL_CLEAR", clear_fail)
     main = main.replace("AMBIGUOUS_COMMIT_SETUP", ambiguous_commit_setup).replace("AMBIGUOUS_COMMIT_CLEAR", clear_fail)
     main = main.replace("NO_MARKER_RESET", no_marker)
+    read_stored_fault_record = (
+        'size_t length=sizeof(record); return nvs_get_blob(pollFaultNvsHandle,"poll_fault",&record,&length)==ESP_OK && length==sizeof(record);'
+        if board == "ESP32"
+        else "return readPollFaultBackupFlash(record);"
+    )
+    main = main.replace("READ_STORED_FAULT_RECORD", read_stored_fault_record)
     main = main.replace("BOARD_NAME", board)
     return "\n".join([
         prelude,

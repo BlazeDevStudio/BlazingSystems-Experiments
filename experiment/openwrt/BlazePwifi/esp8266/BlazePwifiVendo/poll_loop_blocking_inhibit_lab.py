@@ -42,6 +42,54 @@ from poll_loop_blocking_inhibit_lab_fixtures import (
 ACTIVE_HIGH_MISSED_SAMPLE_MAIN = missed_sample_main(active_low=False, failure_code=57)
 ACTIVE_LOW_MISSED_SAMPLE_MAIN = missed_sample_main(active_low=True, failure_code=58)
 
+# Exercise the production sampleCoinPulseEdge() after the first sticky fault.
+# Later ISR edges must not rewrite the first-fault snapshot or reopen admission.
+STICKY_FAULT_LATER_ISR_MAIN = MAIN[:MAIN.index("int main(){")] + r"""
+int main(){
+  resetState();
+  allowCoinPost=true;
+  pendingPulses=2U;
+  pendingReady=false;
+  pendingTarget="pending-target";
+  pendingNonce="pending-nonce";
+  pendingPostAttempted=false;
+  coinEdgeSequence=2U;
+  lastHandledCoinEdgeSequence=0U;
+  relayOn=true;
+  ledOn=true;
+  sampleCoinPulseEdge(true);
+  if(!journalRecoveryRequired || backupFirstFaultPulseEdges!=4U ||
+     backupWriteAttempts!=1U || pendingPulses!=2U || !pendingReady ||
+     !LittleFS.exists("/pollpulse.fault") || relayOn || ledOn ||
+     insertMode || !activeTarget.empty()) return 89;
+  const std::string firstMarker=LittleFS.files["/pollpulse.fault"];
+  if(firstMarker.find("pulses=4")==std::string::npos) return 89;
+  const uint8_t firstPendingPulses=pendingPulses;
+  const std::string firstPendingTarget=pendingTarget;
+  const std::string firstPendingNonce=pendingNonce;
+  const unsigned firstSaveCalls=saveCalls;
+  const unsigned firstCoinPostCalls=coinPostCalls;
+
+  coinEdgeISR();
+  coinEdgeISR();
+  coinEdgeISR();
+  sampleCoinPulseEdge(false);
+  applyOutputs();
+
+  if(backupFirstFaultPulseEdges!=4U || backupWriteAttempts!=1U ||
+     LittleFS.files["/pollpulse.fault"]!=firstMarker) return 90;
+  if(pendingPulses!=firstPendingPulses || !pendingReady ||
+     pendingTarget!=firstPendingTarget || pendingNonce!=firstPendingNonce ||
+     pendingPostAttempted) return 91;
+  if(saveCalls!=firstSaveCalls || coinPostCalls!=firstCoinPostCalls || clearCalls!=0) return 92;
+  if(!journalRecoveryRequired || insertMode || !activeTarget.empty() ||
+     relayOn || ledOn || canAttemptCoinPost() ||
+     coinEdgeSequence!=lastHandledCoinEdgeSequence) return 93;
+  std::cout<<"POLL_FAULT_FIRST_LATCH_SNAPSHOT_STABLE_AFTER_LATER_ISR_PASS"<<std::endl;
+  return 0;
+}
+"""
+
 
 ATTEMPTED_EVIDENCE_MAIN = MAIN[:MAIN.index("int main(){")] + r"""
 int main(){
@@ -1003,6 +1051,28 @@ for board,path in BOARDS.items():
     compile_and_run(assemble(reconcile_source=missing_coin_post_latch),board,45,
                     "missing-coin-post-edge-persistence")
     print(f"{board} MUTATION_REJECTED missing-coin-post-edge-persistence")
+
+    sticky_output = compile_and_run(
+        assemble(main_source=STICKY_FAULT_LATER_ISR_MAIN),
+        board, 0, "first-fault-snapshot-after-later-isr"
+    )
+    if "POLL_FAULT_FIRST_LATCH_SNAPSHOT_STABLE_AFTER_LATER_ISR_PASS" not in sticky_output:
+        raise AssertionError(f"{board}: first-fault snapshot marker missing")
+    print(f"{board} POLL_FAULT_FIRST_LATCH_SNAPSHOT_STABLE_AFTER_LATER_ISR_PASS")
+
+    # Failure injection: re-entering latchPollPulseFault after the sticky flag
+    # is set must be rejected by the write-attempt count and immutable marker.
+    sticky_latch_guard_removed = sample.replace(
+        "if(!journalRecoveryRequired){", "if(true){", 1
+    )
+    if sticky_latch_guard_removed == sample:
+        raise AssertionError(f"{board}: sticky-latch guard mutation anchor missing")
+    compile_and_run(
+        assemble(sample_source=sticky_latch_guard_removed,
+                 main_source=STICKY_FAULT_LATER_ISR_MAIN),
+        board, 90, "later-isr-reenters-sticky-fault-latch"
+    )
+    print(f"{board} MUTATION_REJECTED later-isr-reenters-sticky-fault-latch expected_exit=90")
 
 run_remote_config_pin_recovery_lab()
 

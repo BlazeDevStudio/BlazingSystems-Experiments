@@ -355,12 +355,15 @@ def run(board: str, path: Path):
             print(exc.stderr or "", file=sys.stderr, end="")
             raise
         print(result.stdout, end="")
+        required_markers = (
+            f"POLL_FAULT_FIRST_LATCH_SNAPSHOT_STABLE_PASS board={board}",
+        )
         if board == "ESP8266":
-            required_markers = (
+            required_markers += (
                 "ESP8266_EEPROM_END_FAILURE_REBOOT_DENY_PASS",
                 "ESP8266_EEPROM_REOPEN_FAILURE_REBOOT_DENY_PASS",
             )
-            missing_markers = [marker for marker in required_markers if marker not in result.stdout]
+        missing_markers = [marker for marker in required_markers if marker not in result.stdout]
             if missing_markers:
                 raise AssertionError(
                     "POLL_FAULT_EEPROM_LIFECYCLE_FAILURE_INJECTION_MISSING "
@@ -428,6 +431,56 @@ def run_esp32_precommit_persistence_mutation(path: Path):
     print("MUTATION_REJECTED ESP32_NVS_SET_BLOB_PREMATURE_DURABILITY exit=60")
 
 
+
+
+def run_first_fault_snapshot_overwrite_mutation(board: str, path: Path):
+    """Prove the new first-latch regression rejects a writer that overwrites V1."""
+    source = path.read_text(encoding="utf-8")
+    if board == "ESP32":
+        existing_guard = (
+            "if(existing==ESP_OK) return true; // Any existing value, including malformed data, keeps the deny latch."
+        )
+        not_found_guard = "if(existing!=ESP_ERR_NVS_NOT_FOUND){"
+        if source.count(existing_guard) != 1 or source.count(not_found_guard) != 1:
+            raise AssertionError("ESP32 first-latch overwrite mutation anchors must be unique")
+        mutated_source = source.replace(
+            existing_guard,
+            "if(existing==ESP_OK){ /* mutation: permit overwriting first-fault snapshot */ }",
+            1,
+        ).replace(
+            not_found_guard,
+            "if(existing!=ESP_ERR_NVS_NOT_FOUND && existing!=ESP_OK){",
+            1,
+        )
+    else:
+        existing_guard = (
+            "for(size_t i=0;i<sizeof(existing);++i) if(existingBytes[i]!=0xFF) return true;"
+        )
+        if source.count(existing_guard) != 1:
+            raise AssertionError("ESP8266 first-latch overwrite mutation anchor must be unique")
+        mutated_source = source.replace(
+            existing_guard,
+            "for(size_t i=0;i<sizeof(existing);++i) (void)existingBytes[i];",
+            1,
+        )
+    program = harness(board, mutated_source)
+    with tempfile.TemporaryDirectory(prefix="phx-first-latch-overwrite-mutation-") as tmp:
+        cpp = Path(tmp) / "lab.cpp"
+        exe = Path(tmp) / "lab"
+        cpp.write_text(program, encoding="utf-8")
+        subprocess.run(
+            ["g++", "-std=c++17", "-Wall", "-Wextra", "-Werror", str(cpp), "-o", str(exe)],
+            check=True,
+        )
+        result = subprocess.run([str(exe)], text=True, capture_output=True)
+    expected = f"POLL_FAULT_FIRST_LATCH_SNAPSHOT_CHANGED board={board}"
+    if result.returncode != 74 or expected not in result.stderr:
+        print(result.stdout, end="")
+        print(result.stderr, file=sys.stderr, end="")
+        raise AssertionError(f"{board}: first-latch overwrite mutation was not rejected")
+    print(f"MUTATION_REJECTED {board}_FIRST_LATCH_SNAPSHOT_OVERWRITE exit=74")
+
+
 if __name__ == "__main__":
     test_external_cwd_invocation()
     test_repo_root_requires_both_board_sentinels()
@@ -436,6 +489,8 @@ if __name__ == "__main__":
     test_unknown_board_identifier_fails_closed()
     print("POLL_FAULT_EXTRACTOR_SELFTEST=PASS", flush=True)
     run("ESP32", ESP32)
+    run_first_fault_snapshot_overwrite_mutation("ESP32", ESP32)
     run_esp32_precommit_persistence_mutation(ESP32)
     run_esp32_missing_commit_mutation(ESP32)
     run("ESP8266", ESP8266)
+    run_first_fault_snapshot_overwrite_mutation("ESP8266", ESP8266)
