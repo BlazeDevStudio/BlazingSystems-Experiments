@@ -382,5 +382,103 @@ class SoftTimerTagAdmissionTests(unittest.TestCase):
 
 
 
+
+RELEASE_STAGE_WORKFLOW = ROOT / ".github/workflows/blazepwifi-v053-release.yml"
+
+
+def require_v053_release_permissions_are_isolated(content: str) -> None:
+    """Keep write scope out of candidate staging and confine it to opt-in publication."""
+    expected_default = {"contents": "read", "actions": "read"}
+    actual_default = workflow_default_permissions(content)
+    if actual_default != expected_default:
+        raise AssertionError(
+            "v0.5.3 release workflow defaults must be contents: read and actions: read; "
+            f"found {actual_default!r}"
+        )
+
+    stage = job_block(content, "stage")
+    publish = job_block(content, "publish")
+    if "permissions:\n      contents: read\n      actions: read" not in stage:
+        raise AssertionError("v0.5.3 stage job must explicitly remain read-only")
+    if "permissions:\n      contents: write\n      actions: read" not in publish:
+        raise AssertionError("only the opt-in publish job may receive contents: write")
+
+    jobs_match = re.search(r"(?ms)^jobs:\n(.*)\Z", content)
+    if jobs_match is None:
+        raise AssertionError("missing v0.5.3 release jobs section")
+    job_names = re.findall(r"(?m)^  ([A-Za-z0-9_-]+):\n", jobs_match.group(1))
+    write_jobs = {
+        name
+        for name in job_names
+        if "permissions:\n      contents: write" in job_block(content, name)
+    }
+    if write_jobs != {"publish"}:
+        raise AssertionError(
+            "the v0.5.3 publish job must be the only write-privileged job; "
+            f"found {sorted(write_jobs)!r}"
+        )
+
+    if "needs: stage" not in publish or "if: inputs.publish == true" not in publish:
+        raise AssertionError("v0.5.3 publisher must depend on successful staging and explicit opt-in")
+    if "gh release create" in stage or "gh release upload" in stage:
+        raise AssertionError("candidate staging must not execute release publication commands")
+
+    required = (
+        'gh run download "$GITHUB_RUN_ID" --repo "$GITHUB_REPOSITORY" '
+        "--name BlazePwifi-v0.5.3-release-stage --dir release-out",
+        "sha256sum -c SHA256SUMS",
+        'test "$(jq -r .commit release-out/RELEASE-MANIFEST.json)" = "$SHA"',
+        'test "$(jq -r .signing_run_id release-out/RELEASE-MANIFEST.json)" = "$SIGN_RUN"',
+        "gh release create",
+        "gh release upload",
+        "NOTES=release-out/README.md",
+    )
+    positions = tuple(publish.find(value) for value in required)
+    if any(position < 0 for position in positions):
+        raise AssertionError(
+            "publisher must download the current run's stage artifact, recheck its "
+            "checksum/manifest identity, then publish the staged README and assets"
+        )
+    if positions != tuple(sorted(positions)):
+        raise AssertionError("publisher must verify the staged artifact before any release mutation")
+
+
+class BlazePwifiV053PublishPermissionTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.content = RELEASE_STAGE_WORKFLOW.read_text(encoding="utf-8")
+
+    def test_only_opt_in_publish_job_has_write_scope_and_revalidates_stage(self):
+        require_v053_release_permissions_are_isolated(self.content)
+
+    def test_guard_rejects_workflow_wide_write_permission(self):
+        old = "permissions:\n  contents: read\n  actions: read"
+        unsafe = self.content.replace(
+            old,
+            "permissions:\n  contents: write\n  actions: read",
+            1,
+        )
+        self.assertNotEqual(unsafe, self.content)
+        with self.assertRaisesRegex(AssertionError, "defaults must be contents: read"):
+            require_v053_release_permissions_are_isolated(unsafe)
+
+    def test_guard_rejects_write_permission_on_staging_job(self):
+        old = "permissions:\n      contents: read\n      actions: read"
+        unsafe = self.content.replace(
+            old,
+            "permissions:\n      contents: write\n      actions: read",
+            1,
+        )
+        self.assertNotEqual(unsafe, self.content)
+        with self.assertRaisesRegex(AssertionError, "stage job must explicitly remain read-only"):
+            require_v053_release_permissions_are_isolated(unsafe)
+
+    def test_guard_rejects_publisher_without_explicit_opt_in(self):
+        old = "    if: inputs.publish == true"
+        unsafe = self.content.replace(old, "    if: inputs.publish == false", 1)
+        self.assertNotEqual(unsafe, self.content)
+        with self.assertRaisesRegex(AssertionError, "explicit opt-in"):
+            require_v053_release_permissions_are_isolated(unsafe)
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
