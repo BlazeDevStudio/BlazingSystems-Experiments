@@ -5,6 +5,7 @@ on:
       - "phoenix/hardware-prepoll-edge-abort-20261119"
       - "phoenix/hw-coin-ingress-config-helper-reconciled-20261123-utc13"
       - "phoenix/hw-json-array-primitive-guard-20261124-utc00"
+      - "phoenix/hw-source-extractor-contract-lab-modularization-20261124-utc09"
     paths:
       - "experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/**"
       - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/**"
@@ -26,6 +27,8 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: Verify literal head
         run: test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
+      - name: Verify shared firmware lab source-extractor contracts
+        run: python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/firmware_lab_source_contract_lab.py
       - name: Compile exact ESP32 and ESP8266 quarantine source with fault-injected fake LittleFS
         run: |
           set -euo pipefail
