@@ -9,11 +9,13 @@ on:
       - "experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/**"
       - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/**"
       - ".github/workflows/phx-hardware-quarantine-byte-readback.yml"
+      - "experiment/openwrt/BlazePwifi/docs/handover/2026-11-24-hw-default-main-fixture-modularization-utc14.md"
   pull_request:
     paths:
       - "experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/**"
       - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/**"
       - ".github/workflows/phx-hardware-quarantine-byte-readback.yml"
+      - "experiment/openwrt/BlazePwifi/docs/handover/2026-11-24-hw-default-main-fixture-modularization-utc14.md"
   workflow_dispatch:
 jobs:
   quarantine-source:
