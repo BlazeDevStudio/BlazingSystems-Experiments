@@ -119,13 +119,13 @@ def main() -> None:
         signed = extract_function(source, "signedBody")
         bounded = extract_function(source, "readBoundedControllerResponse")
         post = extract_function(source, "post")
-        limit = re.search(r"static const int MAX_CONTROLLER_RESPONSE_BYTES\\s*=\\s*\\d+\\s*;", source)
+        limit = re.search(r"static const int MAX_CONTROLLER_RESPONSE_BYTES\s*=\s*\d+\s*;", source)
         if not limit:
             print(board, "MISSING_BOUNDED_RESPONSE_LIMIT")
             failed.append(board)
             continue
-        code = ("#define TARGET_ESP32\\n" if board == "ESP32" else "")
-        code += STUBS + limit.group(0) + "\\n" + helper + "\\n" + signed + "\\n" + bounded + "\\n" + post + "\\n" + MAIN
+        code = ("#define TARGET_ESP32\n" if board == "ESP32" else "")
+        code += STUBS + limit.group(0) + "\n" + helper + "\n" + signed + "\n" + bounded + "\n" + post + "\n" + MAIN
         with tempfile.TemporaryDirectory(prefix="phx-request-digest-") as folder:
             cpp = Path(folder) / "digest_test.cpp"
             binary = Path(folder) / "digest_test"
