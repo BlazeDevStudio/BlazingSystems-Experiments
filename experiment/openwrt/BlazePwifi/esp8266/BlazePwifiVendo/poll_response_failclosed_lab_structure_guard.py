@@ -104,6 +104,53 @@ for name, expected in EXPECTED_FNV1A64.items():
     if actual != expected:
         raise AssertionError(f"POLL_RESPONSE_FIXTURE_BYTE_DRIFT: {name} {actual} != {expected}")
 
+
+# The current CGI-envelope lab is another consumer of the shared runner.
+# Keep it free of local subprocess/tempfile lifecycle code as well.
+CURRENT_CGI_LAB_PATH = HERE / "poll_current_cgi_envelope_deny_lab.py"
+if not CURRENT_CGI_LAB_PATH.is_file():
+    raise AssertionError("CURRENT_CGI_LAB_MISSING")
+current_cgi_tree = ast.parse(
+    CURRENT_CGI_LAB_PATH.read_text(encoding="utf-8")
+)
+current_cgi_runner_imports = {
+    alias.name
+    for node in current_cgi_tree.body
+    if isinstance(node, ast.ImportFrom)
+    and node.module == "cpp_fixture_runner"
+    for alias in node.names
+}
+if current_cgi_runner_imports != {"run_cpp_fixture"}:
+    raise AssertionError("CURRENT_CGI_LAB_SHARED_RUNNER_IMPORT_MISSING")
+
+current_cgi_direct_imports = {
+    alias.name.split(".")[0]
+    for node in current_cgi_tree.body
+    if isinstance(node, ast.Import)
+    for alias in node.names
+}
+if {"subprocess", "tempfile"} & current_cgi_direct_imports:
+    raise AssertionError("CURRENT_CGI_LAB_LOCAL_PROCESS_RUNNER_REMAINS")
+
+current_cgi_direct_calls = [
+    node for node in ast.walk(current_cgi_tree)
+    if isinstance(node, ast.Call)
+    and isinstance(node.func, ast.Attribute)
+    and isinstance(node.func.value, ast.Name)
+    and node.func.value.id in {"subprocess", "tempfile"}
+]
+if current_cgi_direct_calls:
+    raise AssertionError("CURRENT_CGI_LAB_LOCAL_PROCESS_CALL_REMAINS")
+
+if not any(
+    isinstance(node, ast.Call)
+    and isinstance(node.func, ast.Name)
+    and node.func.id == "run_cpp_fixture"
+    for node in ast.walk(current_cgi_tree)
+):
+    raise AssertionError("CURRENT_CGI_LAB_SHARED_RUNNER_CALL_MISSING")
+print("CURRENT_CGI_SHARED_RUNNER_GUARD_PASS")
+
 runner_lines = len(runner_source.splitlines())
 if runner_lines > 330:
     raise AssertionError(f"POLL_RESPONSE_RUNNER_NOT_COMPACT: {runner_lines} lines")
