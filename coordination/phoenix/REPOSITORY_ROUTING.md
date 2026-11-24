@@ -1851,3 +1851,19 @@ PR #291 is now at `30a41c3e956aa26a75adedee379eb9cc78dde9ed`. Its latest commit 
 The new final-head Windows run [#45388341622](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45388341622) still fails at the shared freshness gate and reports `.github/workflows/blazepisonet-softtimer-release.yml` newer than CURRENT_STATE. The build run [#45388341590](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45388341590) is pending; compatibility [#45388341562](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45388341562) remains in progress.
 
 **Routing remains:** PHX-RELEASE owns the workflow; PHX-CORE owns the shared canonical handover. A ledger-only update does not satisfy the gate's independent CURRENT_STATE checkpoint. PHX-RELEASE must coordinate a post-change CURRENT_STATE update with PHX-CORE and rerun. Master does not edit either owner's files.
+
+## PHX-MASTER UTC12 shared-handover ownership and cross-PR overlap — 2026-11-24
+
+Exact handover blobs differ at the current owner PR heads:
+
+| Role PR | PROJECT_HANDOVER | CHANGE_LEDGER | CURRENT_STATE |
+|---|---|---|---|
+| CORE #252 | 72e8e487 | df50981c | 72c38aeb |
+| PISONET #255 | d3e66608 | 02963d32 | 47e07b7c |
+| QA #290 | 83db03cf | 3180e1a9 | 73b9d1d6 |
+| RELEASE #291 | 3658da63 | 7f2ad6dd | 85dd3c1e |
+| HARDWARE #349 | 4aaa9817 | absent | absent |
+
+RELEASE #291's 29-path accumulated diff includes three shared handover files and two PISONET-owned test files. CORE #252, PISONET #255 and QA #290 also carry distinct blobs for the shared handover set. These are divergent branch snapshots, not a safe canonical merge order.
+
+**Routing:** CORE reconciles the canonical shared handover; RELEASE owns release workflow changes and reruns after the canonical checkpoint advances; PISONET retains its publisher tests; QA independently verifies the contract and release evidence. HARDWARE retains its source/test branch and deny-only behavior. PHX-MASTER only records the exact identities and integration order; no owner files are edited.

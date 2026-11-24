@@ -1053,3 +1053,15 @@ UTC05 final refresh: HARDWARE owner updated PR #349 body to current source/test/
 - New commit changes only the shared `CHANGE_LEDGER.md`; canonical `CURRENT_STATE.md` blob remains `85dd3c1e9254d947c4e75daaeaf3351ef3e105e3` at checkpoint `d85eb6a2766781b6cac1807cef461993d8216b84`.
 - Windows [#45388341622](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45388341622) still FAILS at shared handover freshness; build [#45388341590](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45388341590) PENDING; ESP32 compatibility [#45388341562](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45388341562) IN PROGRESS (provenance regression suite passed; core legs running).
 - The gate still requires a post-workflow-change `CURRENT_STATE.md` checkpoint. PHX-RELEASE + PHX-CORE must coordinate; no bypass or Master edit.
+
+## PHX-MASTER UTC12 — exact-head handover and COE source-intake reconciliation (2026-11-24T12:37Z)
+
+- Experiments main f4e8a891; development blazepwifi-v0.5.3-development @ aad3aade; Master branch start e72c47d2be6fd77628fe3882f9dc8f532da1535a; COE main a6513ab4; COE #26 head b382d233.
+- RELEASE #291 final docs head 8fe31d90: Windows #45392342756 and build #45392342882 FAIL at shared handover freshness; ESP32 compatibility #45392342904 PASS. CORE owns the canonical handover refresh.
+- HARDWARE #349 source/test bb064e1c / docs head b4f03e75: Quarantine/Relay PASS; Full #45393480768 FAIL at inherited Missing poll signature check. Hardware not physically tested.
+- COE #26 pinned-source audit found 61 mapped rootfs rows all match exact source/destination blobs and modes, but SOURCE_INTAKE summary says 47/14 while runtime/MIGRATION_MAP rows say 46/15; one destination-only appliance diagnostic is unmapped. Test/firmware/licence gaps remain; candidate stays FROZEN.
+- Ownership manifest e4db3243 remains 11 routes / DRAFT_REVIEW_ONLY / Master target null. Cleanup #266 OPEN / 0-of-7.
+- Canonical private Drive registry v11/newer corrections unavailable through connected tools; no older registry substituted and no private data copied.
+- Master Python suite and verifier NOT RUN: local GitHub checkout blocked by DNS resolution.
+- Full evidence: [PHX-MASTER UTC12 release/handover/COE provenance report](coordination/phoenix/PHX_MASTER_UTC12_20261124_RELEASE291_HANDOVER_COE26_SOURCE_INTAKE_AND_HW349_RECONCILIATION.md).
+- No subsystem source or COE destination changes. PRODUCTION NO-GO.

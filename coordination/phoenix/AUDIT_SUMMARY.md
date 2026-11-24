@@ -2853,3 +2853,13 @@ Full evidence: [PHX-MASTER UTC11 exact-head and COE provenance report](PHX_MASTE
 RELEASE #291 advanced from `20d78f9035a019536e1c1a01cefb827cf34b4767` to `30a41c3e956aa26a75adedee379eb9cc78dde9ed`. The new commit updates only the shared `CHANGE_LEDGER.md`; `CURRENT_STATE.md` remains unchanged at blob `85dd3c1e9254d947c4e75daaeaf3351ef3e105e3` and checkpoint `d85eb6a2766781b6cac1807cef461993d8216b84`.
 
 Final-head Windows [#45388341622](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45388341622) still fails the shared handover freshness gate; build [#45388341590](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45388341590) is pending; ESP32 compatibility [#45388341562](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45388341562) is in progress with provenance regression passed and core legs running. This supersedes the prior UTC11 #291 head/run snapshot. The next action remains PHX-RELEASE + PHX-CORE updating the canonical CURRENT_STATE after the workflow change, then rerunning exact-head CI. No Master or owner source change occurred.
+
+## PHX-MASTER UTC12 — current blockers and evidence (2026-11-24)
+
+- RELEASE #291 exact final head 8fe31d90 fails Windows/build at the shared handover freshness gate. The log identifies PROJECT_HANDOVER checkpoint c058e30 and newer BlazePwifi/Lineage2 release workflow paths; ESP32 compatibility passes.
+- HARDWARE #349 source/test bb064e1c / docs b4f03e75 has focused Quarantine/Relay passes but Full validation fails at inherited Missing poll signature check. No physical hardware test.
+- Shared PROJECT_HANDOVER / CHANGE_LEDGER / CURRENT_STATE blobs differ across CORE #252, PISONET #255, QA #290 and RELEASE #291; HARDWARE #349 has only PROJECT_HANDOVER. CORE owns canonical reconciliation; no Master overwrite.
+- COE #26 source intake summary is inconsistent with its own 61 runtime rows (47/14 versus 46/15); one destination-only diagnostic file and test/firmware/licence gaps remain. Candidate frozen.
+- Private Drive registry v11/newer corrections not accessible; Master Python suite/verifier not run because GitHub DNS prevented local checkout.
+- No subsystem source, destination, manifest, hardware, payment, signer, secret or release artifact changed. **PRODUCTION NO-GO.**
+- Full evidence: [UTC12 exact-head and migration provenance report](coordination/phoenix/PHX_MASTER_UTC12_20261124_RELEASE291_HANDOVER_COE26_SOURCE_INTAKE_AND_HW349_RECONCILIATION.md).

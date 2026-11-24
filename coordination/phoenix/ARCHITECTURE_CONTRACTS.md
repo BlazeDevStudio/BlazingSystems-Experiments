@@ -1911,3 +1911,13 @@ For HARDWARE #349, focused Quarantine/Relay passes at both source/test and docs 
 ### 7.8.1 A ledger entry does not substitute for the gate's canonical live-state checkpoint — 2026-11-24 UTC11
 
 When a shared handover gate computes the last committed revision of multiple canonical files independently, updating only the change ledger does not refresh an unchanged `CURRENT_STATE.md`. Verify the exact blob and last path commit for each required handover file at the final PR head. If the gate still names the previous checkpoint, the handover remains stale even if a new ledger entry exists. Coordinate the file owner and workflow owner; do not bypass the gate or infer that the entire handover is current from one updated document.
+
+### 7.9 Exact-source migration manifests must reconcile rows, summary counters and source pin
+
+A migration manifest is internally consistent only when (1) every row's exact source and destination blob SHA and Git mode match the named commits, (2) summary counters equal the row classifications, (3) destination-only files are explicitly dispositioned, and (4) the declared source commit is distinguished from current source HEAD. A historical pinned snapshot is not a live mirror. Never infer migration completeness from a summary count or copy a destination-only file into the source map without owner review.
+
+For COE #26 at destination b382d233 and pinned source 6d4c9b48, all 61 SOURCE_INTAKE runtime rows match actual source/destination blobs and modes. The actual row split is 46 exact and 15 derived, while the summary says 47 exact and 14 derived. One destination-only file, blaze-appliance-diag, is outside the intake rows. The pinned original test tree has 143 top-level files versus 19 destination tests; only two are exact and two are same-name divergent. The current #349 source tree is a different snapshot (53 rootfs files, 33 same / 20 changed / eight pinned-only). The candidate remains FROZEN pending owner correction and complete test/licence disposition.
+
+### 7.9.1 Shared handover files are path-shared but not branch-interchangeable
+
+Compare the exact PROJECT_HANDOVER, CHANGE_LEDGER and CURRENT_STATE blob identities at each final owner PR head. A successful commit to one of these files on a role branch does not update the other branches or establish the canonical shared handover. CORE owns canonical reconciliation; each workflow/source owner records its change and reruns the relevant exact-head gate. Never bypass freshness checks or select a branch snapshot by recency alone. See the [UTC12 Master audit](coordination/phoenix/PHX_MASTER_UTC12_20261124_RELEASE291_HANDOVER_COE26_SOURCE_INTAKE_AND_HW349_RECONCILIATION.md).

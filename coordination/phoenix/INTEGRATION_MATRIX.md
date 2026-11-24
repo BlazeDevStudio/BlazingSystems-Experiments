@@ -4985,3 +4985,19 @@ Firmware:
 License/notice exact matches: Product LICENSE `1ee55b94183417be977ca287cd7391f9a6f7e721`; QRCode LICENSE `150770c0fc2994865ccdbef6662735cc083e780d`; TailAdmin LICENSE `cb92d4176b21b0594e5a6caf94d79340505e3d33`; TailAdmin NOTICE `f0425bbbe34c1227311098173b1eae0c3e2a807b`. Missing at destination: root NOTICE `f6d92cd21465312be5993631fe26977219be0fb9`; Tabler LICENSE `22ee8122400915cbff18e5f69368fa9eea6145eb`; BlazeRentalLauncher LICENSE `c5b1efa7aac764ae6d8da63476a2d5cec02a6a5d`.
 
 COE #26 exact-head workflows remain five QUEUED / zero jobs / zero statuses. **FROZEN:** no staging, copy, move, overwrite, rebase, cherry-pick, retarget or promotion.
+
+## PHX-MASTER UTC12 COE #26 exact pinned-source reconciliation — 2026-11-24
+
+COE #26 remains OPEN / DRAFT / FROZEN at b382d233ff06c8791b1028bed3c617cc7b670d12; main remains a6513ab4412b4c014eee2863e45cbe32d06cb243. Its SOURCE_INTAKE schema 8 pins source commit 6d4c9b487af4d768c4d7627654d119417fcc6e00.
+
+| Area | Exact result |
+|---|---|
+| Rootfs | 61 pinned source / 62 destination; 46 exact blob+mode; 15 derived; 0 source-only; one destination-only blaze-appliance-diag |
+| Intake summary | Claims 47 exact / 14 derived; its 61 runtime rows and MIGRATION_MAP actually show 46 exact / 15 derived; all 61 row blob/mode identities match |
+| Pinned original tests | 143 top-level source files vs 19 destination; 2 exact, 2 different, 139 source-only, 15 destination-only |
+| Current #349 tests | 47 source vs 19 destination; 1 exact, 3 different, 43 source-only, 15 destination-only |
+| Board code | 54 source firmware/lab files, including 44 Python helpers; destination has two sketches and no helpers |
+| Firmware | ESP32 source a9a1c2fe vs destination 3cc7ec54; ESP8266 source 2f87a9de vs destination c8be98f7 |
+| Licences | Product, QRCode and TailAdmin/NOTICE present; root NOTICE, Tabler LICENSE and BlazeRentalLauncher LICENSE absent |
+
+Current #349 rootfs has 53 files versus the pinned 61: 33 same, 20 changed, eight pinned-only. The destination is a historical pinned snapshot, not a current-source mirror. Do not silently refresh or stage it. Five COE #26 workflows remain queued with zero jobs/statuses. Full per-file evidence and exact refs: [UTC12 report](coordination/phoenix/PHX_MASTER_UTC12_20261124_RELEASE291_HANDOVER_COE26_SOURCE_INTAKE_AND_HW349_RECONCILIATION.md).

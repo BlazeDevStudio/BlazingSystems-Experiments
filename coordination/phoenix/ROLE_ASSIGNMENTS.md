@@ -3663,3 +3663,22 @@ Current PR #291 final docs/PR HEAD advanced to `30a41c3e956aa26a75adedee379eb9cc
 - ESP32 compatibility [#45388341562](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45388341562): IN PROGRESS; provenance regression suite passed, core legs still running.
 
 The ledger-only update does not advance the canonical CURRENT_STATE checkpoint checked by the gate. PHX-RELEASE and PHX-CORE must coordinate that file update and rerun exact-head CI; do not bypass the gate.
+
+## PHX-MASTER UTC12 exact owner-head and CI refresh — 2026-11-24
+
+| Owner / PR | Exact head | Exact-head CI |
+|---|---|---|
+| CORE #252 | c82705f2de865c89ab733b10efa84f26f56a5cc4 | #42698139210 PASS (scoped) |
+| RENTAL #328 | 0e0da62acd47c6a1ce287f8a30fc700d603fa070 | #44782114384 APK PASS; #44782114393 API PASS; #44782114390 build FAIL (handover validation and missing mbedtls/sha256.h) |
+| PISONET #255 | d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | #42462978704 Windows synthetic PASS |
+| HARDWARE #347 | 960184670379f01e20f0e7e8bc23b3e5eedacd3f | #45299741995 / #45299742437 / #45299741993 FAIL |
+| HARDWARE #348 | eb7afcb2ba0d1e84054c052c8b129cb51a91d062 | #45352513178 header PASS; #45352513177 build FAIL (missing mbedtls/sha256.h) |
+| HARDWARE #349 | source/test bb064e1cd0548a476ab2b685f0f8c2b625df0cf5; docs b4f03e75cd0c5b5ebade5b82c1eb10e0a25ec9f0 | #45393480743 Quarantine PASS; #45393480540 Relay PASS; #45393480768 Full FAIL at Missing poll signature check |
+| QA #290 | 5c29d15994cee1279058f1eca12f2a3180704292 | #43633486963 PASS |
+| QA #292 | 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | no PR-triggered runs |
+| RELEASE #291 | source/test 0779a633e351f2ab3e8abdc651f530f63de772d6; docs 8fe31d906e982c147366f5cff9e4a767a96677e9 | #45392342756 Windows FAIL; #45392342882 build FAIL; #45392342904 ESP32 compatibility PASS |
+| COE #35 | e7801818b00854f34a5a88955d979c601ec96404 | case guard PASS; shared contracts/sandbox FAIL |
+| COE #45 | 9d76a134c1f6512aa40c20ec4d247306a71a8cce | overlay/shell and case guard PASS |
+| COE #49 | aeb8ff11b2f5db9a5f86280ab62ab988245f3919 | Stage 5.1/case guard PASS; shared contracts FAIL |
+
+RELEASE #291's accumulated 29-path diff includes 24 RELEASE paths, three shared handover files and two PISONET-owned publisher tests. Do not treat the latest four-path commit as the whole PR ownership boundary. See [UTC12 report](coordination/phoenix/PHX_MASTER_UTC12_20261124_RELEASE291_HANDOVER_COE26_SOURCE_INTAKE_AND_HW349_RECONCILIATION.md).
