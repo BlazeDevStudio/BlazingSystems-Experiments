@@ -4827,3 +4827,20 @@ Current source #349 docs head `8639deda8d341d61efddff77be4d06ea931d040d`, source
 Current exact-head CI remains: #349 docs-head Quarantine #45336321346 PASS, Relay #45336321352 PASS, Full #45336321274 FAIL at Missing poll signature check (13/13 firmware targets and Android PASS; downstream validation-dependent jobs skipped). #291 Windows #45336455064 FAIL, ESP32 compatibility #45336455127 PASS, build #45336455073 SUCCESS with signing/publishing skipped.
 
 The complete 61-row intake/map reconciliation was not rerun in this activation; prior row-level findings remain historical until a fresh exact-head pass. This bounded revalidation confirms that the current candidate still contains divergent firmware/test blobs and a missing parser-test import. **FROZEN:** no staging, copy, move, overwrite, rebase, cherry-pick, or promotion.
+
+
+PHX-MASTER UTC06 post-checkpoint exact-head refresh — exact-head owner matrix
+
+| Owner | PR / exact head | Exact-head CI readback | Disposition |
+|---|---|---|---|
+| CORE | #252 / `c82705f2de865c89ab733b10efa84f26f56a5cc4` | #42698139210 SUCCESS | Scoped software validation only |
+| RENTAL | #328 / `0e0da62acd47c6a1ce287f8a30fc700d603fa070` | #44782114384 APK identity PASS; #44782114393 API smoke PASS; #44782114390 build FAIL | Owner follow-up |
+| PISONET | #255 / `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | #42462978704 Windows SUCCESS | Synthetic Windows evidence only |
+| HARDWARE | #349 / `da046d5ea80a8daac7258d302ecc310cd5634b24` | #45342525513 Quarantine IN_PROGRESS; #45342525472 Relay IN_PROGRESS; #45342525544 build IN_PROGRESS; no exact-head Full result | PR body/handover stale; await owner refresh |
+| QA | #290 / `5c29d15994cee1279058f1eca12f2a3180704292` | #43633486963 Windows SUCCESS | Scoped independent test only |
+| QA | #292 / `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | No PR-triggered runs | NOT VERIFIED |
+| RELEASE | #291 / docs `b999fae50c6fa25f2c128c8f089975f76ca49753`, source/test `f1553fe1cc728fee5da0eeb6db43e95f4f22a040` | #45340630094 compatibility SUCCESS; #45340630114 build SUCCESS; #45340630145 Windows FAILURE at PISONET negative-selftest line 326; publisher SKIPPED | PISONET fixture correction + independent QA review |
+
+COE #26 remains `b382d233ff06c8791b1028bed3c617cc7b670d12`, OPEN/DRAFT/FROZEN, 205 changed paths, five workflows QUEUED / zero jobs. The 61-row source-intake audit was not rerun in this bounded refresh. No destination staging or writes.
+
+The three shared handover files remain non-identical across CORE/PISONET/QA/RELEASE; no integration may resolve those conflicts by taking the last writer or overwriting another owner's history.

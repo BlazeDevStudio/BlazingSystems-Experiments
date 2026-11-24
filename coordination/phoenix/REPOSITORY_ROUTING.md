@@ -1746,3 +1746,22 @@ The two ReleaseSigning test files changed by #291 are inside the PHX-PISONET-own
 RELEASE's two-endpoint negative test remains non-hermetic: the second Git-ref `gh api` lookup and `$tagLookupExit` are not fixture-substituted. Current Windows run #45336455064 fails; publisher skipped. Do not edit PISONET-owned files from Master or silently reconcile the shared handover blobs.
 
 COE #26 remains FROZEN at `b382d233ff06c8791b1028bed3c617cc7b670d12`; exact source/destination firmware and test identities differ. Product LICENSE matches, but destination root NOTICE is absent. No migration staging or destination write occurred.
+
+
+PHX-MASTER UTC06 post-checkpoint exact-head refresh — owner-boundary refresh
+
+The routing manifest remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`: 11 routes, `DRAFT_REVIEW_ONLY`, PHX-MASTER source `coordination/phoenix/`, target null. No owner, route, target, or copy permission changed.
+
+RELEASE #291 current head is `b999fae50c6fa25f2c128c8f089975f76ca49753`. Shared handover paths remain divergent at the exact current PR heads:
+
+| Path | CORE #252 | PISONET #255 | QA #290 | RELEASE #291 |
+|---|---|---|---|---|
+| `PROJECT_HANDOVER.md` | `72e8e487d333` | `d3e666082806` | `83db03cf387f` | `92b28dbf4a5b` |
+| `CHANGE_LEDGER.md` | `df50981c1596` | `02963d32018e` | `3180e1a93c85` | `ef6d52acbd05` |
+| `CURRENT_STATE.md` | `72c38aeb9337` | `47e07b7c0e06` | `73b9d1d6acbd` | `29fb4b85d5ef` |
+
+The #291 diff still contains PISONET-subtree test files `negative-selftest.ps1` (blob `8b69174bf519`) and `PublisherMockCli.ps1` (blob `7d56522b4fd6`). They are absent at the current PISONET #255 head (404 on exact path), but the ownership route still assigns the subtree to PHX-PISONET. PISONET review is mandatory; do not edit or replace those files from Master or RELEASE. Exact Windows run #45340630145 fails at the negative self-test; publisher is skipped.
+
+HARDWARE #349 latest commit `da046d5ea80a8daac7258d302ecc310cd5634b24` is owner-scoped fixture/test and workflow-filter cleanup. Its exact-head Quarantine/Relay/build runs were in progress; PR body still carries older source/test/docs pins and needs an owner handover refresh after CI.
+
+COE #26 remains FROZEN at `b382d233ff06c8791b1028bed3c617cc7b670d12`; no source/destination staging, copying, moving, overwriting, rebase, cherry-pick, retarget, or promotion occurred. Registry v11/newer corrections remain unavailable; no older registry or public substitute was used.

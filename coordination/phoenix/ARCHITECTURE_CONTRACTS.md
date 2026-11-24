@@ -1823,3 +1823,14 @@ RELEASE #291 also changes `negative-selftest.ps1` and `PublisherMockCli.ps1` ins
 At exact source #349 / destination COE #26 heads, ESP8266 sketch blobs differ (`2f87a9de84ac53dbb0d2718b5c79a4662b63de8f` vs `c8be98f72596681e36a3ad1f8939bf8046c96887`); ESP32 blobs differ (`a9a1c2fecb001d71f8f22b43952edbd160aacaf8` vs `3cc7ec54b476943dc04a8d1af5e2df5fe054e422`). The source parser lab `ac4b164e79da90039b0f99a22efdb6a136046442` has no destination identity; destination `Hardware/tests/test_firmware_hardening.sh` is a different blob `f921c56cecc19cab1989507b9b4ade1f45dac54e`. The product LICENSE and destination `Pisowifi/LICENSE` match exactly at `1ee55b94183417be977ca287cd7391f9a6f7e721`; destination root `NOTICE` is absent. COE #26 remains FROZEN; no staging, copy, move, overwrite, or promotion occurred.
 
 PRODUCTION NO-GO remains mandatory pending independent protected signing/anti-rollback witness, crash-atomic durable financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak, and owner-authorized release gates.
+
+
+## PHX-MASTER UTC06 post-checkpoint exact-head refresh — fixture-source and exact-head freshness contract
+
+A test-source refactor includes moving embedded C/C++ fixture strings into a separate fixture module and changing workflow path filters. The test-source anchor and PR handover must point to the final commit containing both runner and fixture module. A workflow result is usable only when its checked-out SHA equals that final commit; IN_PROGRESS, QUEUED, or a run from a previous source head is not a pass. If a workflow path filter omits a newly imported fixture, the refactor is not covered until the filter is corrected and rerun.
+
+Applied to HARDWARE #349: commit `da046d5ea80a8daac7258d302ecc310cd5634b24` moves JSON grammar fixtures into `poll_json_array_primitive_lab_fixtures.py` and updates Quarantine/Relay path filters. Quarantine #45342525513, Relay #45342525472, and build #45342525544 were in progress; no exact-head Full result returned. The PR body remains pinned to e4ab80/8dd8b12 and must be refreshed by PHX-HARDWARE. The prior `Missing poll signature check` remains a separate CORE-producer / QA-assertion dependency; do not invent a poll signature or weaken default-deny.
+
+Applied to RELEASE #291: current Windows run #45340630145 fails at PISONET-owned `negative-selftest.ps1:326` after package parity and release policy checks pass. PHX-PISONET owns the fixture correction; PHX-RELEASE owns workflow semantics. Publisher is skipped.
+
+No financial, authentication, relay-admission, firmware, or production behavior changed in this Master update.
