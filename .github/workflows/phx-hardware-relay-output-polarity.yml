@@ -9,6 +9,8 @@ on:
       - "experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino"
       - "experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/esp32_boot_polarity_lab.py"
       - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_response_failclosed_lab.py"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_response_failclosed_lab_structure_guard.py"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/cpp_fixture_runner.py"
       - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_response_failclosed_lab_fixtures.py"
       - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_current_cgi_envelope_deny_lab.py"
       - "experiment/openwrt/BlazePwifi/openwrt/rootfs/www/blazepwifi/cgi-bin/vendo"
@@ -33,6 +35,7 @@ on:
       - "experiment/openwrt/BlazePwifi/docs/handover/2026-11-24-hw-pending-identity-contract-modularization-utc16.md"
       - "experiment/openwrt/BlazePwifi/docs/handover/2026-11-24-hw-poll-response-denial-matrix-modularization-utc16.md"
       - "experiment/openwrt/BlazePwifi/docs/handover/2026-11-24-hw-poll-edge-race-and-failclosed-mutation-modularization-utc17.md"
+      - "experiment/openwrt/BlazePwifi/docs/handover/2026-11-24-hw-cpp-fixture-runner-contract-utc19.md"
       - ".github/workflows/phx-hardware-relay-output-polarity.yml"
       - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_pending_recovery_lab_fixtures.py"
   pull_request:
