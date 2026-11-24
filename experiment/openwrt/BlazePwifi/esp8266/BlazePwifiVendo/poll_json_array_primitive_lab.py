@@ -4,9 +4,9 @@ The firmware parser must validate nested array/object separators, primitive
 terminators, and closing delimiters before a root-level status can be read.
 The host lab is simulated control-flow evidence, not controller authentication.
 """
-import subprocess
-import tempfile
 from pathlib import Path
+
+from cpp_fixture_runner import run_cpp_fixture
 
 from poll_json_array_primitive_lab_fixtures import (
     COMPOSITE_MAIN,
@@ -21,23 +21,16 @@ from poll_json_array_primitive_lab_fixtures import (
 
 
 def _compile_and_run(code, board, label):
-    with tempfile.TemporaryDirectory(prefix="phx-json-composite-") as folder:
-        cpp = Path(folder) / f"{label}.cpp"
-        binary = Path(folder) / label
-        cpp.write_text(code, encoding="utf-8")
-        built = subprocess.run(
-            ["g++", "-std=c++17", "-Wall", "-Wextra", "-Werror",
-             "-Wno-unused-parameter", str(cpp), "-o", str(binary)],
-            capture_output=True, text=True, timeout=30
-        )
-        if built.returncode:
-            raise RuntimeError(
-                f"{board}: {label} compile failed:\n{built.stderr[-3000:]}"
-            )
-        return subprocess.run(
-            [str(binary)], capture_output=True, text=True, timeout=10
-        )
-
+    """Use the shared bounded compiler/runner for every source-extracted case."""
+    return run_cpp_fixture(
+        code,
+        prefix="phx-json-composite-",
+        stem=label,
+        extra_flags=("-Wno-unused-parameter",),
+        compile_timeout=30,
+        run_timeout=10,
+        context=f"{board}: {label}",
+    )
 
 def _expect_mutation_rejected(code, board, label, expected_exit):
     result = _compile_and_run(code, board, label)
