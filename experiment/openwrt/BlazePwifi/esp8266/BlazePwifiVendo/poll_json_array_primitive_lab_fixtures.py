@@ -36,7 +36,7 @@ int main() {
           String("{\"ok\":true,\"meta\":{}}"), "ok")) return 65;
 
   if (!pollJsonTopLevelTrue(
-          String("{\"ok\":true,\"meta\":\"quote\\\" slash\\\\ backspace\\b formfeed\\f newline\\n carriage\\r tab\\t unicode\\u0041\"}"),
+          String("{\"ok\":true,\"meta\":\"quote\\\" slash\\\\ backspace\\b formfeed\\f newline\n carriage\r tab\t unicode\\u0041\"}"),
           "ok")) return 72;
 
   if (pollJsonTopLevelTrue(
@@ -77,7 +77,7 @@ int main() {
           String("{\"ok\":true,\"ok\":true}"), "ok")) return 91;
   if (pollJsonTopLevelTrue(
           String("{\"ok\":true,\"ok\":false}"), "ok")) return 92;
-  std::cout << "POLL_JSON_DUPLICATE_ROOT_STATUS_DENY_PASS 2/2\\n";
+  std::cout << "POLL_JSON_DUPLICATE_ROOT_STATUS_DENY_PASS 2/2\n";
   return 0;
 }
 """
@@ -87,9 +87,9 @@ TRAILING_DATA_MAIN = r"""
 int main() {
   if (pollJsonTopLevelTrue(String("{\"ok\":true}trailing"), "ok")) return 93;
   if (pollJsonTopLevelTrue(String("{\"ok\":true}{\"ok\":true}"), "ok")) return 94;
-  if (pollJsonTopLevelTrue(String("{\"ok\":true} \\n trailing"), "ok")) return 95;
-  if (!pollJsonTopLevelTrue(String("{\"ok\":true} \\t\\r\\n"), "ok")) return 96;
-  std::cout << "POLL_JSON_TRAILING_DATA_DENY_PASS 3/3 WHITESPACE_ACCEPTED=1\\n";
+  if (pollJsonTopLevelTrue(String("{\"ok\":true} \n trailing"), "ok")) return 95;
+  if (!pollJsonTopLevelTrue(String("{\"ok\":true} \t\r\n"), "ok")) return 96;
+  std::cout << "POLL_JSON_TRAILING_DATA_DENY_PASS 3/3 WHITESPACE_ACCEPTED=1\n";
   return 0;
 }
 """
