@@ -75,6 +75,8 @@ class HTTPClient {
   bool begin(WiFiClient &,const String &) { ++httpBeginCalls; return true; }
   void setTimeout(int) {}
   void addHeader(const char *,const char *) {}
+  void collectHeaders(const char *[], size_t) {}
+  bool hasHeader(const char *) const { return false; }
   int POST(const String &body) { ++httpPostCalls; postedBody=body; return 200; }
   int getSize() const { return 2; }
   String getString() const { return String("ok"); }
