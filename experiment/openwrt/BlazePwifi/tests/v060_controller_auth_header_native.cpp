@@ -30,6 +30,7 @@ int main() {
   memset(uppercase_digest, 'A', sizeof(uppercase_digest));
   assert(!hex64(uppercase_digest, sizeof(uppercase_digest)));
   assert(!hex64(nullptr, 64));
+  assert(!hex64(nullptr, 0));
 
   unsigned char sample[32];
   for (size_t i = 0; i < sizeof(sample); ++i) sample[i] = (unsigned char)i;
@@ -50,6 +51,8 @@ int main() {
   hashhex[64]=0;
   assert(matches_policy_digest(policy.data(),policy.size(),hashhex,64));
   assert(!matches_policy_digest(policy.data(),policy.size(),hashhex,0));
+  assert(!matches_policy_digest(nullptr,policy.size(),hashhex,64));
+  assert(!matches_policy_digest(policy.data(),policy.size(),nullptr,64));
   assert(!matches_policy_digest(policy.data(),policy.size(),hashhex,63));
   assert(!matches_policy_digest((policy+" ").data(),policy.size()+1,hashhex,64));
   // Empty policy bytes are invalid even when their digest is correct.
@@ -72,6 +75,13 @@ int main() {
   std::puts("PHX-HW empty canonical span denied PASS");
   const std::vector<char> raw_canonical(good.begin(),good.end());
   const std::vector<char> raw_signature(signature.begin(),signature.end());
+  assert(!verify_mac(nullptr,strlen(key),raw_canonical.data(),raw_canonical.size(),
+                     raw_signature.data(),raw_signature.size()));
+  assert(!verify_mac(key,strlen(key),nullptr,good.size(),
+                     raw_signature.data(),raw_signature.size()));
+  assert(!verify_mac(key,strlen(key),raw_canonical.data(),raw_canonical.size(),
+                     nullptr,64));
+  std::puts("PHX-HW null parser-span pointers denied PASS");
   assert(verify_mac(key,strlen(key),raw_canonical.data(),raw_canonical.size(),
                     raw_signature.data(),raw_signature.size()));
   assert(!may_admit_coin_even_if_mac_valid());

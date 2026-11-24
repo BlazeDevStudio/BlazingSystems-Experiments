@@ -1,3 +1,12 @@
+<!-- PHX-HW-20261124-UTC07-ZERO-LENGTH-NULL-SPANS:START -->
+> **PHX-HARDWARE UTC07 — ControllerAuthV1Lab span-boundary tests — PR #348 OPEN / DRAFT / UNMERGED; Phase A DENY; PRODUCTION NO-GO.**
+> This checkpoint commit adds null-pointer failure cases to the same non-actuating native test: null raw-policy pointer, null digest pointer, null canonical-message pointer, null signature pointer, and null zero-length hex span. The preceding source/test commit `4ad6d202da4918ae244d5cb6f44176bf93e6fa3c` already added zero-length digest-hex, policy-digest and HMAC-signature assertions; focused run [#45350904157](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45350904157), job `138296790332`, passed at that exact earlier SHA.
+> Current branch: `phoenix/hw-controller-auth-nonempty-spans-20261123-utc15`; parent #254 remains `84c442a46ee2ee48dcbe68b71ff0f54edbc09ba9`; #254 remains stacked on Phase-A deny #239 `d83b715b116185107737fef721c2eece8feebf39`. No production sketch, shared CORE response contract, GPIO, relay, coin, finance, signer or witness behavior changes.
+> The prior Full run [#45350904159](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45350904159) reached the handover gate but failed it with `handover gate: CHANGE_LEDGER has no dated entries`; its exact event SHA predates this combined source+handover checkpoint. This commit adds a dated ledger entry and updates all three canonical handovers in the same commit as the test change so a new Full run can evaluate the corrected gate. No result is claimed until a new exact-head run completes.
+> Known inherited provider blocker: ESP32 Arduino core 4.0.0 lacks `mbedtls/sha256.h` required by the inherited application sketch. Mbed TLS 4/PSA provider selection remains a Master/Release coordination dependency; no provider port is included here.
+> **Next:** verify focused and Full workflows at the new exact head; retain Phase-A deny and request independent QA review. No flash, reset, live money, migration, signing, merge, release or deployment.
+<!-- PHX-HW-20261124-UTC07-ZERO-LENGTH-NULL-SPANS:END -->
+
 <!-- PHX-HW-20261124-UTC07-ZERO-LENGTH-AUTH-SPANS:START -->
 > **PHX-HARDWARE UTC07 — ControllerAuthV1Lab zero-length span coverage — PR #348 OPEN / DRAFT / UNMERGED; Phase A DENY; PRODUCTION NO-GO.**
 > Branch: `phoenix/hw-controller-auth-nonempty-spans-20261123-utc15`; parent PR #254 exact head `84c442a46ee2ee48dcbe68b71ff0f54edbc09ba9`; #254 remains stacked on Phase-A deny #239 at `d83b715b116185107737fef721c2eece8feebf39`.

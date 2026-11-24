@@ -26,3 +26,16 @@
 - **Known blocker:** prior Full [#45207909463](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45207909463) failed at inherited ESP32 core 4.0.0 missing `mbedtls/sha256.h` in `BlazePwifiVendo32.ino:6`, plus stale handover gate. Mbed TLS 4/PSA provider decision remains a Master/Release coordination dependency; no cross-stack port performed.
 - **Safety:** Phase A coin/relay admission remains DENY. No key, signer, witness, finance, migration, physical device, flash, reset, release or deployment action.
 - **NEXT ACTION:** reconcile terminal Full run #45350904159, then request Master/Release decision on the ESP32 provider path; retain exact source/head evidence and independent QA review.
+
+
+## 2026-11-24 UTC07 — #348 null-pointer span failure injection
+
+- **ID / scope:** PHX-HARDWARE / #172 / #177 / #266 / #254 / #348; non-actuating ControllerAuthV1Lab native test.
+- **Status:** source/test and all three canonical handovers committed together; exact-head focused/Full CI pending. Hardware NOT TESTED; production NO-GO.
+- **Branch / stack:** `phoenix/hw-controller-auth-nonempty-spans-20261123-utc15`, PR #348 → #254 at `84c442a46ee2ee48dcbe68b71ff0f54edbc09ba9` → #239 at `d83b715b116185107737fef721c2eece8feebf39`.
+- **Source/test:** this checkpoint commit adds null-pointer rejection cases for raw policy, digest, canonical message and signature spans, including null/zero-length hex input. Prior zero-length coverage is in `4ad6d202da4918ae244d5cb6f44176bf93e6fa3c`.
+- **Prior exact CI:** focused [#45350904157](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45350904157), job `138296790332`, SUCCESS at `4ad6d202da4918ae244d5cb6f44176bf93e6fa3c`; ASan/UBSan and Phase-A deny guard PASS. Full [#45350904159](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45350904159) failed the stale event SHA's handover gate: `CHANGE_LEDGER has no dated entries`; no Full PASS.
+- **Handover gate correction:** added dated UTC07 entry and synchronized PROJECT_HANDOVER, CURRENT_STATE and CHANGE_LEDGER in this same source+docs commit; new Full exact-head run must independently verify.
+- **Known blocker:** inherited ESP32 Arduino core 4.0.0 build cannot find `mbedtls/sha256.h` in the application sketch. Provider/PSA decision remains Master/Release coordination; no cross-stack port.
+- **Safety:** Phase A coin/relay admission DENY. No application behavior, CORE contract, key, signer, witness, finance, migration, flash, reset, release or deployment changed.
+- **NEXT ACTION:** verify new exact-head focused and Full runs; record terminal outcomes; request independent QA and Master/Release review.

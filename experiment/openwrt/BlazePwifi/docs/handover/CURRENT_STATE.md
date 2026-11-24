@@ -1,3 +1,11 @@
+<!-- PHX-HW-20261124-UTC07-ZERO-LENGTH-NULL-SPANS:START -->
+> **PHX-HARDWARE UTC07 / #348 — source+handover checkpoint committed; focused and Full exact-head CI pending. HARDWARE NOT TESTED; PRODUCTION NO-GO.**
+> This commit extends the non-actuating ControllerAuthV1Lab native test with null-pointer cases for policy, digest, canonical-message and signature spans, and synchronizes PROJECT_HANDOVER, CURRENT_STATE and CHANGE_LEDGER in the same Git commit. Earlier exact-source focused run [#45350904157](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45350904157), job `138296790332`, passed the zero-length assertions at prior source/test SHA `4ad6d202da4918ae244d5cb6f44176bf93e6fa3c`.
+> The preceding Full run [#45350904159](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45350904159) failed its handover gate because the old ledger lacked a dated heading; that run's event SHA predates this combined checkpoint. The new exact-head Full run must confirm the gate rather than inheriting prior results.
+> PR #348 remains OPEN/DRAFT/UNMERGED on `phoenix/hw-controller-auth-nonempty-spans-20261123-utc15`, stacked on #254 `84c442a46ee2ee48dcbe68b71ff0f54edbc09ba9`, itself stacked on #239 `d83b715b116185107737fef721c2eece8feebf39`. Phase-A coin/relay admission remains DENY. The inherited ESP32 Mbed TLS 4 provider incompatibility remains unresolved and requires Master/Release coordination.
+> **NEXT EXACT ACTION:** read focused and Full workflow jobs for this checkpoint's exact SHA; update this status with terminal conclusions; request QA review of the span cases and Master/Release disposition of the ESP32 provider path.
+<!-- PHX-HW-20261124-UTC07-ZERO-LENGTH-NULL-SPANS:END -->
+
 <!-- PHX-HW-20261124-UTC07-ZERO-LENGTH-AUTH-SPANS:START -->
 > **PHX-HARDWARE UTC07 / #348 — IN PROGRESS / SIMULATED HOST CI ONLY / HARDWARE NOT TESTED / PRODUCTION NO-GO.**
 > Current source/test head at this checkpoint: `4ad6d202da4918ae244d5cb6f44176bf93e6fa3c`; PR #348 remains OPEN/DRAFT/UNMERGED, base #254 `84c442a46ee2ee48dcbe68b71ff0f54edbc09ba9`, parent #239 `d83b715b116185107737fef721c2eece8feebf39`.
