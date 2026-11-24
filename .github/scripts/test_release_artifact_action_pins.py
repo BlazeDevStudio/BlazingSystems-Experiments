@@ -41,6 +41,17 @@ WORKFLOWS = {
         "actions/upload-artifact": 1,
         "actions/download-artifact": 1,
     },
+    # Manual v0.5.3 production release/signing workflows are release-capable
+    # even though they are not part of the ordinary PR build matrix.
+    ".github/workflows/blazepwifi-v053-release.yml": {
+        "actions/checkout": 1,
+        "actions/upload-artifact": 1,
+    },
+    ".github/workflows/blazerental-v053-lineage2-sign.yml": {
+        "actions/checkout": 1,
+        "actions/setup-java": 1,
+        "actions/upload-artifact": 1,
+    },
 }
 
 ARDUINO_CLI_VERSION = "1.6.0"
