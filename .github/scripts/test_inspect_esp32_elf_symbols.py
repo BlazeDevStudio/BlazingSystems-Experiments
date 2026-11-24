@@ -162,6 +162,6 @@ if __name__ == "__main__":
     suite = unittest.defaultTestLoader.loadTestsFromTestCase(ElfSymbolParserTests)
     result = unittest.TextTestRunner(verbosity=2).run(suite)
     if result.wasSuccessful():
-        print("PHX-ESP32-ELF-SYMBOL-TESTS-PASS: 10 synthetic nm/section/address attribution cases")
+        print(f"PHX-ESP32-ELF-SYMBOL-TESTS-PASS: {result.testsRun} synthetic nm/section/address attribution cases")
         raise SystemExit(0)
     raise SystemExit(1)
