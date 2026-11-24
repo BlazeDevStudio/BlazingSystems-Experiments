@@ -7,14 +7,15 @@ NVS/EEPROM helpers are stubbed here; poll_fault_dual_store_lab.py tests them
 separately. This is SIMULATED control-flow evidence, not physical coin proof.
 """
 from pathlib import Path
-import subprocess
-import tempfile
+from cpp_fixture_runner import run_cpp_fixture
+from cpp_fixture_runner_contract_lab import verify as verify_cpp_fixture_runner_contract
 
 from firmware_lab_source import extract_function, mask_active_cpp_code, mask_non_code
 from firmware_lab_source_lab import run_source_extractor_regressions
 from remote_config_pin_recovery_lab import run_remote_config_pin_recovery_lab
 from pending_clear_failure_lab import run_pending_clear_failure_lab
 
+verify_cpp_fixture_runner_contract()
 run_source_extractor_regressions()
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -27,6 +28,8 @@ from poll_loop_blocking_inhibit_lab_fixtures import (
     STUBS,
     SUPPORT,
     MAIN,
+    COIN_POST_ISR_MAIN,
+    POLL_HTTP_ISR_MAIN,
     PENDING_PRESERVATION_MAIN,
     RACE_MAIN,
     post_drain_rollover_main,
@@ -66,25 +69,110 @@ int main(){
 """
 
 
+def disabled_ingress_gate_main(disabled_flag: str, failure_code: int) -> str:
+    """Build a single-edge deny case that isolates sample admission from output gating."""
+    if disabled_flag not in {"controllerEnabled", "coinEnabled", "relayEnabled"}:
+        raise ValueError("unknown configured coin-ingress gate")
+    return MAIN[:MAIN.index("int main(){")] + f"""
+int main(){{
+  resetState();
+  fakeNow=100U;
+  lastEdge=0U;
+  runDebounceMs=40U;
+  lastCoin=false;
+  insertMode=true;
+  activeTarget="target-01";
+  fsReady=true;
+  journalRecoveryRequired=false;
+  pendingReady=false;
+  pendingPulses=0U;
+  saveCalls=0U;
+  coinEdgeSequence=1U;
+  lastHandledCoinEdgeSequence=0U;
+  {disabled_flag}=false;
+  relayOn=false;
+  ledOn=false;
+  sampleCoinPulseEdge(true);
+  applyOutputs();
+  if(pendingPulses!=0U || saveCalls!=0U || !pendingNonce.empty() ||
+     !pendingTarget.empty() || insertMode || !activeTarget.empty() ||
+     !journalRecoveryRequired || relayOn || ledOn) return {failure_code};
+  std::cout<<"DISABLED_INGRESS_BASELINE_DENY_PASS"<<std::endl;
+  return 0;
+}}
+"""
+
+def pre_poll_active_line_main(*, active_low: bool, failure_code: int) -> str:
+    """Prove a pre-existing active line is sampled and journaled before poll admission."""
+    polarity = "true" if active_low else "false"
+    label = "ACTIVE_LOW" if active_low else "ACTIVE_HIGH"
+    return MAIN[:MAIN.index("int main(){")] + rf"""
+int main(){{
+  resetState();
+  runCoinActiveLow={polarity};
+  configureRuntimePins(runCoinPin,runRelayPin,runLedPin);
+  // Re-establish the normal accepting output state after the helper's
+  // safe-pin initialization, then make the line active without an ISR edge.
+  applyOutputs();
+  pulseStart=(int)fakeNow;
+  pulseEnd=(int)fakeNow+80;
+  loop();
+  if(pollCalls!=0 || coinPostCalls!=0 || pollStartAt!=0 ||
+     coinEdgeSequence!=0U || lastHandledCoinEdgeSequence!=0U ||
+     pendingPulses!=1U || pendingReady ||
+     pendingTarget!="target-01" || pendingNonce!="nonce12345678" ||
+     saveCalls!=1 || journalRecoveryRequired || !lastCoin ||
+     !relayOn || !ledOn || pollIntakeSuspended ||
+     pollDrainAbortedOnActiveLine){{
+    std::cerr<<"PRESTART_FIRST_STATE_FAIL poll="<<pollCalls
+             <<" coinPost="<<coinPostCalls<<" edges="<<coinEdgeSequence
+             <<" handled="<<lastHandledCoinEdgeSequence
+             <<" pending="<<(unsigned)pendingPulses<<" ready="<<pendingReady
+             <<" save="<<saveCalls<<" fault="<<journalRecoveryRequired
+             <<" lastCoin="<<lastCoin<<" relay="<<relayOn<<" led="<<ledOn
+             <<" suspended="<<pollIntakeSuspended
+             <<" abort="<<pollDrainAbortedOnActiveLine<<"\\n";
+    return {failure_code};
+  }}
+  fakeNow=(uint32_t)pulseEnd;
+  loop();
+  if(pollCalls!=0 || coinPostCalls!=0 || pendingPulses!=1U ||
+     pendingReady || pendingTarget!="target-01" ||
+     pendingNonce!="nonce12345678" || saveCalls!=1 ||
+     journalRecoveryRequired || lastCoin || !relayOn || !ledOn ||
+     pollIntakeSuspended || pollDrainAbortedOnActiveLine){{
+    std::cerr<<"PRESTART_RELEASE_STATE_FAIL poll="<<pollCalls
+             <<" coinPost="<<coinPostCalls<<" pending="<<(unsigned)pendingPulses
+             <<" ready="<<pendingReady<<" save="<<saveCalls
+             <<" fault="<<journalRecoveryRequired<<" lastCoin="<<lastCoin
+             <<" relay="<<relayOn<<" led="<<ledOn
+             <<" suspended="<<pollIntakeSuspended
+             <<" abort="<<pollDrainAbortedOnActiveLine<<"\\n";
+    return {failure_code};
+  }}
+  std::cout<<"POLL_PRESTART_{label}_NO_ISR_CAPTURED_ONCE_PASS\\n";
+  return 0;
+}}
+"""
+
+
+
 def compile_and_run(code, board, expected=0, label="normal"):
-    with tempfile.TemporaryDirectory(prefix="phx-poll-loop-") as folder:
-        cpp=Path(folder)/"poll_loop.cpp"
-        binary=Path(folder)/"poll_loop"
-        cpp.write_text(code,encoding="utf-8")
-        built=subprocess.run(
-            ["g++","-std=c++17","-Wall","-Wextra","-Werror",
-             "-Wno-unused-parameter",str(cpp),"-o",str(binary)],
-            capture_output=True,text=True,timeout=30
+    ran = run_cpp_fixture(
+        code,
+        prefix="phx-poll-loop-",
+        stem="poll_loop",
+        extra_flags=("-Wno-unused-parameter",),
+        compile_timeout=30,
+        run_timeout=10,
+        context=f"{board} {label}",
+    )
+    if ran.returncode != expected:
+        raise RuntimeError(
+            f"{board} {label}: expected exit {expected}, got {ran.returncode}\n"
+            f"stdout={ran.stdout}\nstderr={ran.stderr}"
         )
-        if built.returncode:
-            raise RuntimeError(f"{board} {label}: compile failed:\n{built.stderr[-3000:]}")
-        ran=subprocess.run([str(binary)],capture_output=True,text=True,timeout=10)
-        if ran.returncode!=expected:
-            raise RuntimeError(
-                f"{board} {label}: expected exit {expected}, got {ran.returncode}\n"
-                f"stdout={ran.stdout}\nstderr={ran.stderr}"
-            )
-        return ran.stdout.strip()
+    return ran.stdout.strip()
 
 POLL_SAFETY_PARITY = (
     "coinEdgeISR",
@@ -92,6 +180,7 @@ POLL_SAFETY_PARITY = (
     "boundedCoinDebounceMs",
     "canStartPoll",
     "applyOutputs",
+    "coinIngressConfigurationAllows",
     "beginPollWindow",
     "sampleCoinPulseEdge",
     "latchPollPulseFault",
@@ -127,7 +216,6 @@ if missing_coin_authority_helpers:
         "POLL_COIN_AUTHORITY_PARITY_REQUIRED_HELPERS_MISSING: "
         + ", ".join(missing_coin_authority_helpers)
     )
-
 
 def poll_safety_helpers():
     helpers = {}
@@ -198,6 +286,7 @@ def verify_poll_safety_board_parity():
         ("pendingAttemptMarkerMatches", "return attempt.pulses==pendingPulses &&", "return true;"),
         ("clearPending", "if(!pendingAttemptMarkerMatches()){", "if(false){"),
         ("quarantinePending", "if(!appendQuarantineRecord(reason)){", "if(false){"),
+        ("coinIngressConfigurationAllows", "return controllerEnabled && coinEnabled && relayEnabled;", "return true;"),
     )
     for name, anchor, replacement in authority_mutations:
         mutated = {
@@ -316,6 +405,9 @@ for board,path in BOARDS.items():
     loop=extract_function(source, "loop")
     write=extract_function(source, "writeLogical")
     output=extract_function(source, "applyOutputs")
+    coin_ingress_config=extract_function(source, "coinIngressConfigurationAllows")
+    if not coin_ingress_config:
+        raise AssertionError(f"{board}: missing configured coin-ingress predicate")
     idle=extract_function(source, "coinLineIdle")
     can_start=extract_function(source, "canStartPoll")
     quiet=extract_function(source, "coinLineQuietAfterInhibit")
@@ -346,13 +438,90 @@ for board,path in BOARDS.items():
                  load_fault_source=load_fault,latch_fault_source=latch_fault,init_store_source=init_store,
                  begin_source=begin,sample_source=sample,main_source=MAIN,reconcile_source=reconcile,
                  handle_source=handle,drain_abort_source=drain_abort,quarantine_source=quarantine,
-                 idle_source=idle):
+                 idle_source=idle,coin_ingress_config_source=coin_ingress_config,support_source=SUPPORT):
         board_define = "#define TARGET_ESP32\n" if board=="ESP32" else "#define ESP8266\n"
-        return (board_define+STUBS+isr_source+snapshot+write+output_source+idle_source+can_start+
+        return (board_define+STUBS+isr_source+snapshot+write+coin_ingress_config_source+output_source+idle_source+can_start+
                 quiet_source+begin_source+write_fault_source+
-                load_fault_source+latch_fault_source+quarantine_source+configure_source+accept_source+reconcile_source+init_store_source+SUPPORT+handle_source+sample_source+drain_abort_source+loop_source+main_source)
+                load_fault_source+latch_fault_source+quarantine_source+configure_source+accept_source+reconcile_source+init_store_source+support_source+handle_source+sample_source+drain_abort_source+loop_source+main_source)
 
     print(board,compile_and_run(assemble(),board,0,"exact-source"))
+    coin_post_output=compile_and_run(
+        assemble(main_source=COIN_POST_ISR_MAIN),
+        board,0,"coin-post-isr-multi-edge-rollover"
+    )
+    if "COIN_POST_ISR_MULTI_EDGE_ROLLOVER_RETAINED_PASS" not in coin_post_output:
+        raise AssertionError(f"{board}: coin-POST ISR rollover marker missing")
+    print(f"{board} COIN_POST_ISR_MULTI_EDGE_ROLLOVER_RETAINED_PASS")
+
+    poll_http_output=compile_and_run(
+        assemble(main_source=POLL_HTTP_ISR_MAIN),
+        board,0,"poll-http-isr-multi-edge-rollover"
+    )
+    if "POLL_HTTP_ISR_MULTI_EDGE_ROLLOVER_RETAINED_PASS" not in poll_http_output:
+        raise AssertionError(f"{board}: blocked-poll ISR rollover marker missing")
+    print(f"{board} POLL_HTTP_ISR_MULTI_EDGE_ROLLOVER_RETAINED_PASS")
+
+    # Re-run the blocked-poll ISR case with the empty String returned when
+    # HTTPClient reports a transport timeout or another non-positive status.
+    timeout_response_anchor = r'    return String("{\"ok\":true,\"insert\":true,\"target\":\"spoof-target\"}");'
+    if SUPPORT.count(timeout_response_anchor) != 1:
+        raise AssertionError(f"{board}: blocked-poll hostile response stub is not unique")
+    timeout_support = SUPPORT.replace(timeout_response_anchor, "    return String();", 1)
+    poll_http_timeout_main = POLL_HTTP_ISR_MAIN.replace(
+        "POLL_HTTP_ISR_MULTI_EDGE_ROLLOVER_RETAINED_PASS",
+        "POLL_HTTP_TIMEOUT_ISR_MULTI_EDGE_ROLLOVER_RETAINED_PASS",
+        1,
+    )
+    timeout_output = compile_and_run(
+        assemble(support_source=timeout_support,main_source=poll_http_timeout_main),
+        board,0,"poll-http-timeout-isr-multi-edge-rollover"
+    )
+    if "POLL_HTTP_TIMEOUT_ISR_MULTI_EDGE_ROLLOVER_RETAINED_PASS" not in timeout_output:
+        raise AssertionError(f"{board}: timeout-path ISR fault marker missing")
+    print(f"{board} POLL_HTTP_TIMEOUT_ISR_MULTI_EDGE_ROLLOVER_RETAINED_PASS")
+
+    # The post-HTTP ISR delta must be durably latched before the ordinary input sample.
+    poll_reconcile_anchor="if(pollEdgeEnd!=pollEdgeStart){"
+    poll_reconcile_mutation=loop.replace(poll_reconcile_anchor,"if(false){",1)
+    if poll_reconcile_mutation==loop:
+        raise AssertionError(f"{board}: post-HTTP poll-edge reconciliation mutation anchor missing")
+    compile_and_run(
+        assemble(loop_source=poll_reconcile_mutation,main_source=POLL_HTTP_ISR_MAIN),
+        board,88,"poll-http-missing-post-response-edge-reconciliation"
+    )
+    print(f"{board} MUTATION_REJECTED poll-http-missing-post-response-edge-reconciliation expected_exit=88")
+
+    # The timeout path must also fail if the post-response ISR reconciliation is removed.
+    compile_and_run(
+        assemble(loop_source=poll_reconcile_mutation,main_source=poll_http_timeout_main),
+        board,88,"poll-http-timeout-missing-post-response-edge-reconciliation"
+    )
+    print(f"{board} MUTATION_REJECTED poll-http-timeout-missing-post-response-edge-reconciliation expected_exit=88")
+
+    # The real relay/LED gate must remain inhibited for the entire blocking HTTP call.
+    poll_output_mutation=output.replace("!pollIntakeSuspended &&","true &&",1)
+    if poll_output_mutation==output:
+        raise AssertionError(f"{board}: poll-intake output gate mutation anchor missing")
+    compile_and_run(
+        assemble(output_source=poll_output_mutation,main_source=POLL_HTTP_ISR_MAIN),
+        board,88,"poll-http-output-gate-ignores-intake-inhibit"
+    )
+    print(f"{board} MUTATION_REJECTED poll-http-output-gate-ignores-intake-inhibit expected_exit=88")
+
+    coin_post_attach_anchor=(
+        "attachInterrupt(digitalPinToInterrupt(runCoinPin),coinEdgeISR,"
+        "runCoinActiveLow?FALLING:RISING);"
+    )
+    coin_post_missing_isr=configure.replace(coin_post_attach_anchor,"")
+    if coin_post_missing_isr==configure:
+        raise AssertionError(f"{board}: coin-POST ISR attachment mutation anchor missing")
+    compile_and_run(
+        assemble(configure_source=coin_post_missing_isr,
+                 main_source=COIN_POST_ISR_MAIN),
+        board,45,"coin-post-missing-isr-attachment"
+    )
+    print(f"{board} MUTATION_REJECTED coin-post-missing-isr-attachment expected_exit=45")
+
     print(board,compile_and_run(assemble(main_source=CLEAR_WINDOW_ISR_MAIN),
                                 board,0,"coin-post-clear-window-isr-edge"))
     clear_recheck_anchor = (
@@ -462,8 +631,8 @@ for board,path in BOARDS.items():
     print(f"{board} MUTATION_REJECTED disabled-intake-pending-edge-delta expected_exit=72")
 
     relay_gate_mutation = output.replace(
-        "bool accepting=pinConfigSafe && controllerEnabled && coinEnabled && relayEnabled && insertMode",
-        "bool accepting=pinConfigSafe && controllerEnabled && coinEnabled && insertMode",
+        "bool accepting=pinConfigSafe && coinIngressConfigurationAllows() && insertMode",
+        "bool accepting=pinConfigSafe && true && insertMode",
         1,
     )
     if relay_gate_mutation == output:
@@ -482,19 +651,41 @@ for board,path in BOARDS.items():
         ("coin", "controllerEnabled && true && relayEnabled", 62),
         ("relay", "controllerEnabled && coinEnabled && true", 60),
     )
-    original_coin_ingress_gate = "const bool coinIngressConfigured=controllerEnabled && coinEnabled && relayEnabled;"
+    original_coin_ingress_gate = "return controllerEnabled && coinEnabled && relayEnabled;"
+    # Isolate sample-path admission while retaining the real output function's
+    # side effects: force only its configured-admission call false.
+    output_gate_for_sample_mutation = output.replace(
+        "coinIngressConfigurationAllows()", "false", 1
+    )
+    if output_gate_for_sample_mutation == output:
+        raise AssertionError(f"{board}: sample isolation output-gate anchor missing")
+    disabled_flags = {
+        "controller": "controllerEnabled",
+        "coin": "coinEnabled",
+        "relay": "relayEnabled",
+    }
     for gate_name, mutated_gate, expected_exit in coin_ingress_gate_mutations:
-        coin_ingress_gate_mutation = sample.replace(
+        coin_ingress_gate_mutation = coin_ingress_config.replace(
             original_coin_ingress_gate,
-            f"const bool coinIngressConfigured={mutated_gate};",
+            f"return {mutated_gate};",
             1,
         )
-        if coin_ingress_gate_mutation == sample:
+        if coin_ingress_gate_mutation == coin_ingress_config:
             raise AssertionError(
                 f"{board}: configured {gate_name} coin-ingress gate mutation anchor missing"
             )
+        gate_main = disabled_ingress_gate_main(disabled_flags[gate_name], expected_exit)
         compile_and_run(
-            assemble(sample_source=coin_ingress_gate_mutation, main_source=MAIN),
+            assemble(output_source=output_gate_for_sample_mutation, main_source=gate_main),
+            board,
+            0,
+            f"disabled-intake-{gate_name}-coin-ingress-baseline",
+        )
+        print(f"{board} BASELINE_PASS disabled-intake-{gate_name}-coin-ingress")
+        compile_and_run(
+            assemble(output_source=output_gate_for_sample_mutation,
+                     coin_ingress_config_source=coin_ingress_gate_mutation,
+                     main_source=gate_main),
             board,
             expected_exit,
             f"disabled-intake-{gate_name}-coin-ingress-gate",
@@ -751,6 +942,46 @@ for board,path in BOARDS.items():
     compile_and_run(assemble(loop_source=missing_release_sample),board,29,
                     "skip-poll-release-edge-sample")
     print(f"{board} MUTATION_REJECTED skip-poll-release-edge-sample")
+
+
+    # A pulse already active before poll admission, with no ISR transition,
+    # must be sampled once and remain pending after the line returns idle.
+    for active_low, label, failure_code in (
+        (True, "active-low", 88),
+        (False, "active-high", 89),
+    ):
+        active_line_main = pre_poll_active_line_main(
+            active_low=active_low,
+            failure_code=failure_code,
+        )
+        active_line_output = compile_and_run(
+            assemble(main_source=active_line_main),
+            board,
+            0,
+            f"pre-poll-active-line-{label}",
+        )
+        marker = f"POLL_PRESTART_{label.upper().replace('-', '_')}_NO_ISR_CAPTURED_ONCE_PASS"
+        if marker not in active_line_output:
+            raise AssertionError(f"{board}: missing {label} pre-poll active-line marker")
+        print(f"{board} {marker}")
+
+        missing_active_sample = sample.replace(
+            "if(fsReady && !journalRecoveryRequired && active && !lastCoin &&",
+            "if(false && !journalRecoveryRequired && active && !lastCoin &&",
+            1,
+        )
+        if missing_active_sample == sample:
+            raise AssertionError(f"{board}: pre-poll active-line sample mutation anchor missing")
+        compile_and_run(
+            assemble(sample_source=missing_active_sample, main_source=active_line_main),
+            board,
+            failure_code,
+            f"pre-poll-active-line-missing-sample-{label}",
+        )
+        print(
+            f"{board} MUTATION_REJECTED pre-poll-active-line-missing-sample-{label} "
+            f"expected_exit={failure_code}"
+        )
 
     pre_poll_edge_guard_removed = loop.replace(
         "if(pollEdgeStart!=lastHandledCoinEdgeSequence){",

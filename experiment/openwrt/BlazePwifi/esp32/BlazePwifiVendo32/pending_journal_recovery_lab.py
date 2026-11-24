@@ -279,7 +279,7 @@ for board, path in SKETCHES:
         "@@LOAD@@":extract(source,"void loadPending(){"),
         "@@ATTEMPT_MATCH@@":extract(source,"bool pendingAttemptMarkerMatches(){"),
         "@@CLEAR@@":extract(source,"bool clearPending(){"),
-        "@@OUTPUTS@@":extract(source,"void applyOutputs(){"),
+        "@@OUTPUTS@@":extract(source,"bool coinIngressConfigurationAllows(){")+"\n"+extract(source,"void applyOutputs(){"),
     }.items():
         cpp=cpp.replace(name,value)
     with tempfile.TemporaryDirectory(prefix="phx-pending-recovery-") as tmp:

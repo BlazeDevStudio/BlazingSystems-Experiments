@@ -12,6 +12,8 @@ from poll_pending_recovery_lab_fixtures import (
 
 from poll_loop_blocking_inhibit_lab_scenario_fixtures import (
     MAIN,
+    COIN_POST_ISR_MAIN,
+    POLL_HTTP_ISR_MAIN,
     RACE_MAIN,
     post_drain_rollover_main,
     missed_sample_main,
@@ -23,6 +25,8 @@ __all__ = [
     "STUBS",
     "SUPPORT",
     "MAIN",
+    "COIN_POST_ISR_MAIN",
+    "POLL_HTTP_ISR_MAIN",
     "PENDING_PRESERVATION_MAIN",
     "RACE_MAIN",
     "post_drain_rollover_main",

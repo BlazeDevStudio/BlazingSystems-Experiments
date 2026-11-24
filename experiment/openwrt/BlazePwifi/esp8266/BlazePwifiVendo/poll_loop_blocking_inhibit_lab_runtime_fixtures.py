@@ -106,6 +106,7 @@ static bool injectDuringHttp=false;
 static unsigned injectDuringHttpEdgeCount=1;
 static bool injectTimedPollPulse=false, timedPulseIsrInjected=false;
 static bool allowCoinPost=false, injectDuringCoinPost=false, injectDuringClear=false;
+static unsigned injectDuringCoinPostEdgeCount=1;
 static int coinPostCalls=0, clearCalls=0;
 static bool injectAfterDrainEdge=false;
 unsigned injectAfterDrainEdgeCount=1;
@@ -130,6 +131,10 @@ static uint32_t pollStartAt=0, pollEndAt=0;
 static bool pollStartRelayOn=true, pollStartSuspended=false;
 static bool pollStartCoinIdle=false, pollEndRelayOn=true, pollEndSuspended=false;
 static bool pollPulseObservedDuringHttp=false, pollPulseRelayOff=false, pollPulseSuspended=false;
+static bool pollHttpReturned=false, pollPostHttpSampleObserved=false;
+static bool pollPostHttpFaultLatchedBeforeSample=false;
+static bool pollPostHttpMarkerPresentBeforeSample=false;
+static bool pollPostHttpOutputsOffBeforeSample=false;
 bool insertMode=true, lastCoin=false;
 bool pollIntakeSuspended=false, pollDrainAbortedOnActiveLine=false, pinConfigSafe=true;
 bool outputPolarityKnown=true;
@@ -152,6 +157,13 @@ struct ConfigStub {
 #endif
 } cfg;
 int digitalRead(int) {
+  // Capture fault durability before the ordinary post-HTTP sample can mask a missing poll-edge reconciliation.
+  if(pollHttpReturned && !pollPostHttpSampleObserved){
+    pollPostHttpSampleObserved=true;
+    pollPostHttpFaultLatchedBeforeSample=journalRecoveryRequired;
+    pollPostHttpMarkerPresentBeforeSample=LittleFS.exists("/pollpulse.fault");
+    pollPostHttpOutputsOffBeforeSample=!relayOn && !ledOn;
+  }
   if(injectDuringDrainAbort){
     ++drainAbortReadCount;
     if(drainAbortReadCount==2 && !drainAbortInjected){
@@ -274,18 +286,27 @@ String post(const String &action,const String &pulses=String("0"),
     } else {
       fakeNow+=3500UL;
     }
-    // Simulate the production HTTPClient timeout. The extracted loop remains
-    // blocked while the relay and poll-inhibit state must remain unchanged.
+    // Simulate the production 3.5-second blocked poll request. The default
+    // stub returns hostile positive data; the lab derives an empty-response
+    // variant to exercise the HTTPClient transport-timeout result as well.
     pollEndAt=fakeNow;
     pollEndRelayOn=relayOn;
     pollEndSuspended=pollIntakeSuspended;
+    pollHttpReturned=true;
     // Deliberately hostile positive response: the extracted production
     // acceptPollResponse() must still deny it until CORE/QA approve the contract.
     return String("{\"ok\":true,\"insert\":true,\"target\":\"spoof-target\"}");
   }
   if(action=="coin"){
     ++coinPostCalls;
-    if(injectDuringCoinPost){ coinEdgeSequence++; injectDuringCoinPost=false; }
+    if(injectDuringCoinPost){
+      const unsigned edgeCount=injectDuringCoinPostEdgeCount;
+      injectDuringCoinPost=false;
+      for(unsigned edge=0; edge<edgeCount; ++edge){
+        if(interruptAttached && attachedIsr && attachedPin==runCoinPin &&
+           attachedMode==(runCoinActiveLow?FALLING:RISING)) attachedIsr();
+      }
+    }
     fakeNow+=3500UL;
     return String("{\"ok\":true}");
   }

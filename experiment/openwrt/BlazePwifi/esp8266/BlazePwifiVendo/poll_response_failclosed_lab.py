@@ -11,6 +11,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from firmware_lab_source import extract_function as _extract_function, mask_active_cpp_code, mask_non_code
 
 import poll_response_failclosed_lab_structure_guard  # noqa: F401
+from poll_json_array_primitive_lab import verify as verify_json_array_primitive_delimiters
 from poll_response_failclosed_lab_fixtures import (
     STUBS,
     MAIN,
@@ -193,7 +194,7 @@ for board,path in BOARDS.items():
     last_poll=loop.index("lastPoll=millis()",outputs)
     assert pre_poll_guard < pre_poll_latch < pre_poll_release < poll_call < accept < post_release < outputs < last_poll, board+": poll release ordering changed"
     parser="\n".join(extract(source,name) for name in ("pollJsonSpace","pollJsonHex","pollJsonSkipString","pollJsonSkipComposite","pollJsonSkipPrimitive","pollJsonSkipValue","pollJsonTopLevelTrue","coinPostDispositionVerified"))
-    code=("#define TARGET_ESP32\n" if board=="ESP32" else "")+STUBS+parser+extract(source,"acceptPollResponse")+extract(source,"applyOutputs")+MAIN
+    code=("#define TARGET_ESP32\n" if board=="ESP32" else "")+STUBS+parser+extract(source,"acceptPollResponse")+extract(source,"coinIngressConfigurationAllows")+extract(source,"applyOutputs")+MAIN
     with tempfile.TemporaryDirectory(prefix="phx-poll-response-") as folder:
         cpp=Path(folder)/"test.cpp"; binary=Path(folder)/"test"
         cpp.write_text(code,encoding="utf-8")
@@ -259,6 +260,7 @@ for board, path in BOARDS.items():
         raise RuntimeError(f"{board}: pre-poll abort / response / release ordering changed: {order}")
     functions = "\n".join([
         extract(source, "boundedCoinDebounceMs"),
+        extract(source, "coinIngressConfigurationAllows"),
         extract(source, "applyOutputs"),
         extract(source, "coinLineIdle"),
         extract(source, "canStartPoll"),
@@ -290,6 +292,7 @@ for board, path in BOARDS.items():
     mutated_quiet = quiet.replace("const bool idle=coinLineIdle();", "const bool idle=true;", 1)
     mutated_functions = "\n".join([
         extract(source, "boundedCoinDebounceMs"),
+        extract(source, "coinIngressConfigurationAllows"),
         extract(source, "applyOutputs"),
         extract(source, "coinLineIdle"),
         extract(source, "canStartPoll"),
@@ -316,3 +319,4 @@ for board, path in BOARDS.items():
             )
         print(f"{board}: MUTATION_REJECTED remove-final-quiet-sample (exit=25)")
 
+verify_json_array_primitive_delimiters(BOARDS, extract, STUBS)
