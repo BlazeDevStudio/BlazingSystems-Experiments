@@ -143,19 +143,19 @@ def verify():
             (
                 "missing-size-limit",
                 "responseBytes>MAX_CONTROLLER_RESPONSE_BYTES",
-                "",
+                "false",
                 64,
             ),
             (
                 "missing-unknown-length-deny",
-                "responseBytes<0 || ",
-                "",
+                "responseBytes<0",
+                "false",
                 65,
             ),
             (
                 "missing-status-deny",
-                "statusCode<200 || statusCode>=300 || ",
-                "",
+                "statusCode<200 || statusCode>=300",
+                "false",
                 66,
             ),
         )
