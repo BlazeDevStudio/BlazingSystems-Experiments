@@ -1,5 +1,30 @@
 ## PHX-MASTER UTC16 audit disposition — 2026-11-24T16:05:40Z
 
+## PHX-MASTER UTC17 disposition — 2026-11-24
+
+**Master parent:** 359ef46213e8191c4e6831fd82cc2afca03a0142. **PR #288:** OPEN / DRAFT / UNMERGED. **COE #26:** FROZEN. **Production:** NO-GO.
+
+This activation completed a source-grounded exact-head audit and a narrow architecture-contract clarification. Six existing Master coordination documents and one new audit report are updated; no subsystem source, shared CORE handover, or COE destination was changed.
+
+### Highest-priority blockers
+
+1. HARDWARE #349 at aa9ac766 has focused Relay/Quarantine PASS, but Full fails at the inherited Missing poll signature check. Its handover/PR description remains at 850f8b0 and does not cover the two later lab-module commits. CORE owns the authenticated register/poll producer contract; QA owns independent assertion reconciliation; HARDWARE keeps deny-default.
+2. RELEASE #291 at 76da627 has ESP32 compatibility PASS, Windows freshness FAIL, and a Full build whose mandatory CURRENT_STATE freshness gate fails. Canonical CURRENT_STATE remains blob 85dd3c1e, checkpoint d85eb6a2. CORE owns the canonical handover; no bypass.
+3. COE #26 SOURCE_INTAKE summary counters and MIGRATION_MAP test identities are inconsistent. Exact destination rows match, but source drift, test gaps and license/notice omissions keep the candidate frozen.
+4. COE #35 lacks approved site-scoped ULA /48 authority for all ten profiles and its mandatory Bubblewrap sandbox is unavailable. COE #49 and Experiments #328/#348 also show missing mbedtls/sha256.h compile failures.
+5. Private Drive v11 and newer corrections are unavailable. No Google Drive connector was exposed. The available Library contains only v3-v7 registry snapshots; none was substituted.
+6. Branch metadata reports protected=false for main, development, Master and COE main; detailed branch-protection endpoints return 403 and ruleset lists are empty.
+7. Independent protected signing/anti-rollback witness, crash-atomic durable financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized release gates remain unverified.
+
+### Execution distinction
+
+Executed: GitHub recursive tree inspection; exact blob/mode comparisons for 61 intake rows and test mappings; license blob comparison; current PR/issue/branch reads; exact-head Actions and failed-job log inspection; Master document blob reads.
+
+Not executed: Master Python unittest suite, verify_coordination.py, Master PR Actions, physical tests, power cuts, device soak or financial migration. No local checkout/test runner was available in this activation. No test pass is claimed for the Master documents.
+
+No merge, release, signing, secret provisioning, hardware flash, physical test, real-payment operation, customer cutover or destination migration occurred.
+
+
 - Master #288 starts at `c915134d4d36221e02d4dd10d010bd6356392f9f`, OPEN / DRAFT / UNMERGED, 198 coordination-only paths; Master CI/statuses empty.
 - #349 current focused Relay/Quarantine pass, Full fails inherited QA poll-signature assertion; PR body pins stale source/docs heads.
 - #291 Windows/build fail CORE-owned CURRENT_STATE freshness; compatibility passes. Current #291 diff includes CORE and PISONET paths and has no independent reviews.

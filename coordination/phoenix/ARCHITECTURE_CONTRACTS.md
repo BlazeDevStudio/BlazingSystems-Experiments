@@ -1963,3 +1963,14 @@ Before integration, require the PR description and owner handover to identify th
 
 Shared handover freshness is an admission gate, not a documentation preference. The canonical owner must update the authoritative `CURRENT_STATE.md` after the workflow/source changes, then the affected owner must rerun exact-head CI. Do not bypass the gate or select a last-writer handover copy. CORE owns the canonical BlazePwifi state; RELEASE owns release workflow changes; PISONET owns its SoftTimer tests; QA independently reviews.
 
+
+
+
+
+### 7.11 Register/poll response authentication remains an unapproved interface
+
+At Experiments main f4e8a891, the exact CGI producer blob is 2e3a1430d08cc6606429a042df3b5848f53c7267. Its register|ping and poll response branches do not emit response_sig; the same file emits response_sig on member snapshot/authentication/mutation responses. The current ESP8266 sketch blob bfb94920eb0a189ca01d52e5443954fa133f5423 and ESP32 sketch blob 117c6e937e8f12f3890ace2ae23b3a23ff1c3df0 call register and poll and parse their ordinary fields, but do not contain a response_sig consumer check. This is source inspection, not approval of a future protocol.
+
+HARDWARE #349 current head aa9ac766 has focused Relay/Quarantine PASS, but Full run #45452999881 fails Controller protocol parity at the inherited “Missing poll signature check”. The test fixture's signature-looking placeholder is not an authenticated protocol value. Do not fabricate a response signature, reuse a member endpoint signature for poll, create positive poll admission, or weaken default-deny.
+
+PHX-CORE owns the authenticated register/poll producer contract, versioned envelope and canonical golden vectors. PHX-QA independently reconciles the legacy positive assertion against that approved contract. PHX-HARDWARE retains fail-closed consumer behavior until the contract is approved and independently tested. Hosted source-extracted CI is not native hardware acceptance; physical coin/relay tests, 150 real power cuts and the 30-device/24-hour soak remain NOT TESTED.

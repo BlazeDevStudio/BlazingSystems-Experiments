@@ -1,5 +1,35 @@
 ## PHX-MASTER UTC16 exact #349 → COE #26 provenance — 2026-11-24T16:05:40Z
 
+## PHX-MASTER UTC17 exact-tree provenance — 2026-11-24
+
+**Exact refs:** Experiments #349 current head aa9ac766ee5316b35dfdb2942247127641647d2b; Experiments main f4e8a891aed8af86d5fd315d28750a0ac3a7372b; COE #26 b382d233ff06c8791b1028bed3c617cc7b670d12; COE main a6513ab4412b4c014eee2863e45cbe32d06cb243.
+
+| Tree | Entries | Board-local files | Python board helpers | Tests |
+|---|---:|---:|---:|---:|
+| Experiments #349 current head | 2,523 | 66 | 52 | 47 |
+| COE #26 destination | 286 | 4 | 0 | 19 |
+| Experiments main | 2,340 | 8 | — | — |
+| COE main scaffold | 3 | — | — | — |
+
+### Exact test identity
+
+The current #349 source tests versus COE #26 destination tests are 47 versus 19: 1 exact blob+mode match, 3 divergent same-path files (config.sh, integration.sh, security.sh), 43 source-only and 15 destination-only. Both firmware sketch blobs differ. A filename match or suite count is not an import identity.
+
+### SOURCE_INTAKE and MIGRATION_MAP
+
+- SOURCE_INTAKE.json blob 1b9018ff944f7f673934d0fc2a97e0a0090d3f5f has 61 runtime rows. Every destination row matches the recorded destination blob and Git mode (61/61).
+- Recomputed row status is 46 byte-identical and 15 derived; the JSON summary says 47 identical and 14 derived. The summary is wrong by one in each direction.
+- Historical source pin is 6d4c9b487af4d768c4d7627654d119417fcc6e00. Current source trees at Experiments main and #349 resolve 33 pinned blobs unchanged, 20 changed and 8 missing. The historical source pin is not current main.
+- The JSON has 15 derived_tests. MIGRATION_MAP.md blob b54fc15d83bc2269de03db8aadd0e76259fd13d9 records only 14 derived/local test rows. It omits voucher_txn_journal.sh. Its run_focus.sh hash is fa1f4f2c6393504499d50659d8bf980caf7ff85b versus JSON 2b7b861ec63cf811d18d0e63b11a65efd1bec0e9; member_txn_journal.sh is 01dc9c65ae9d74eaafb403d47aebcd20edd14390 versus JSON d04df3c6f3ada60b9fda8c8c04230dd31e37019a.
+- These are manifest/map defects requiring the COE integration owner to correct and independently revalidate; no automatic copying follows.
+
+### License and notice disposition
+
+Product LICENSE, QRCode LICENSE, TailAdmin LICENSE and TailAdmin NOTICE match exact blobs at their mapped paths. Experiments root NOTICE.md and Tabler LICENSE have no COE #26 counterpart. BlazeRentalLauncher LICENSE is a separate RENTAL route and must not be absorbed into PisoWiFi. No jsqr path exists in either current tree; no jsqr license claim is made.
+
+COE #26 has five queued workflows (#43096752609, #43096752632, #43096752800, #43096752563, #43096752557), zero jobs and zero conclusions. The destination remains FROZEN.
+
+
 Complete recursive trees: current #349 `7eab719485dca333f06c1cac844a3fc943564e9b` = 2,517 entries; COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12` = 286; Experiments main = 2,340; COE main = 3.
 
 - Board source: 60 files / 48 Python labs; COE destination Hardware: 2 files / 0 Python labs.

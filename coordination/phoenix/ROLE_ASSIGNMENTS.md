@@ -1,5 +1,31 @@
 ## PHX-MASTER UTC16 exact owner-head / CI reconciliation — 2026-11-24T16:05:40Z
 
+## PHX-MASTER UTC17 owner/CI snapshot — 2026-11-24
+
+| Owner | Current PR / exact head | Exact-head evidence | Routing / disposition |
+|---|---|---|---|
+| CORE | #252 c82705f2de865c89ab733b10efa84f26f56a5cc4 | Build #42698139210 PASS (scoped) | CORE source and canonical shared handover remain owner-only; no Master edits |
+| RENTAL | #328 0e0da62acd47c6a1ce287f8a30fc700d603fa070 | APK #44782114384 PASS; API #44782114393 PASS; build #44782114390 FAIL at PROJECT_HANDOVER freshness and ESP32 compile missing mbedtls/sha256.h | RENTAL owns its six-path draft |
+| PISONET | #255 d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | Windows synthetic #42462978704 PASS | PISONET source/tests remain owner-only |
+| HARDWARE | #347 960184670379f01e20f0e7e8bc23b3e5eedacd3f | Quarantine #45299741995 FAIL; Relay #45299742437 FAIL; build #45299741993 FAIL | Parent stack; no Master source changes |
+| HARDWARE | #348 eb7afcb2ba0d1e84054c052c8b129cb51a91d062 | Header-focused #45352513178 PASS; build #45352513177 FAIL at missing mbedtls/sha256.h | HARDWARE owns the firmware/header correction |
+| HARDWARE | #349 aa9ac766ee5316b35dfdb2942247127641647d2b | Relay #45453000020 PASS; Quarantine #45452999974 PASS; Full #45452999881 FAIL at Controller protocol parity / Missing poll signature check (job 138655025225); 14 jobs PASS, 12 downstream jobs skipped | Current source/test head advanced beyond handover 850f8b0; owner must refresh final handover and PR description |
+| QA | #290 5c29d15994cee1279058f1eca12f2a3180704292 | Windows #43633486963 PASS | QA review remains independent |
+| QA | #292 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | No PR-triggered runs | No result claimed |
+| RELEASE | #291 76da627a1a9c759ded5d74062c9f842c49a65dec; source/test a004c647e67f90269a9149f918887622bb8cc5e8 | Windows #45453527054 FAIL at handover freshness; compatibility #45453527038 PASS 3/3; build #45453527013 still running at read-time, but CI-0701 PASS and validate FAIL at freshness; 13/14 targets complete PASS, x86_64 still running | 30 paths: 25 RELEASE, 3 CORE shared handover, 2 PISONET tests; zero reviews |
+| COE integration | #26 b382d233ff06c8791b1028bed3c617cc7b670d12 | Five workflows queued; zero jobs | FROZEN; no staging or destination writes |
+| COE release infrastructure | #31 59ed44d0b911e176f1a95b9cf5585ef811ffd31b | Shared contracts #44222517238 PASS; case guard #44222517258 PASS; sandbox #44222517263 FAIL | Parent of #35; no unsandboxed fallback |
+| COE release infrastructure | #35 e7801818b00854f34a5a88955d979c601ec96404 | Shared contracts #45303825436 FAIL: all 10 appliance profiles lack approved site-scoped RFC 4193 ULA /48; case guard #45303825417 PASS; sandbox #45303825459 FAIL because Bubblewrap is not installed | No ULA invented; no privileged install or sandbox bypass |
+| COE finance/overlay | #45 9d76a134c1f6512aa40c20ec4d247306a71a8cce | Overlay/shell #44295049727 PASS; case guard #44295049903 PASS | Independent owner route |
+| COE interconnect | #49 aeb8ff11b2f5db9a5f86280ab62ab988245f3919 | Case guard #44646341992 PASS; Stage 5.1 #44646341873 PASS; shared hardware #44646341922 FAIL at missing mbedtls/sha256.h | No firmware compatibility claim |
+
+### Current handover dependencies
+
+- HARDWARE #349 source/test head is now aa9ac766. Commits fa1e1fa and aa9ac766 added two lab modules and fixed a missing poll_output_mutation argument. The fa1e1fa runs failed with NameError; aa9ac766 exact-head Relay/Quarantine now pass, while Full still fails at the inherited poll-signature assertion. The last handover and PR body still name 850f8b0 and do not cover those commits.
+- RELEASE #291 now has docs head 76da627. Its latest commit updates only RELEASE-owned PHX_RELEASE_HANDOVER, PROJECT_HANDOVER and CHANGE_LEDGER. The canonical CURRENT_STATE.md remains blob 85dd3c1e9254d947c4e75daaeaf3351ef3e105e3 with last checkpoint d85eb6a2766781b6cac1807cef461993d8216b84. Four workflow files remain newer than that checkpoint. CORE owns canonical CURRENT_STATE; RELEASE owns workflow changes; PISONET owns the two inherited tests; QA reviews independently.
+- The separate CORE continuation scope was not taken over. No CORE source or shared handover file was modified.
+
+
 | Owner / PR | Exact current PR head | Exact-head CI |
 |---|---|---|
 | CORE #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | [#42698139210](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42698139210) PASS, scoped; separate CORE continuation owner retained. |

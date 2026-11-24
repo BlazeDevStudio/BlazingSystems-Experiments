@@ -1,5 +1,23 @@
 ## PHX-MASTER UTC16 live index — 2026-11-24T16:05:40Z
 
+## PHX-MASTER UTC17 live snapshot — 2026-11-24
+
+**Current read-time:** UTC17, 2026-11-24. This snapshot supersedes older role pointers below without rewriting their history.
+
+- Experiments main: f4e8a891aed8af86d5fd315d28750a0ac3a7372b; development branch blazepwifi-v0.5.3-development: aad3aade72c1156eecba1fed30907c6d0283b2c5.
+- Master branch parent for this audit: 359ef46213e8191c4e6831fd82cc2afca03a0142. COE main: a6513ab4412b4c014eee2863e45cbe32d06cb243.
+- PR #288 remains OPEN / DRAFT / UNMERGED. Its existing 199-path diff is coordination-only; this update adds one new audit report and refreshes six existing coordination documents.
+- HARDWARE #349 advanced to aa9ac766ee5316b35dfdb2942247127641647d2b. The last handover/PR-description anchor remains 850f8b0a, so the new test-module commits are not yet covered by a current handover. Focused Relay/Quarantine pass at aa9ac766; Full fails at the inherited poll-signature assertion.
+- RELEASE #291 advanced to 76da627a1a9c759ded5d74062c9f842c49a65dec. Source/test remains a004c647e67f90269a9149f918887622bb8cc5e8. Compatibility passes; Windows fails at the CORE-owned CURRENT_STATE freshness gate; Full validation fails at the same gate.
+- COE #26 remains OPEN / DRAFT / FROZEN at b382d233ff06c8791b1028bed3c617cc7b670d12, with five workflows queued and zero completed jobs.
+- Issue #172 is OPEN; cleanup #266 is OPEN with 0/7 tracks complete. Ownership manifest remains 11 routes / DRAFT_REVIEW_ONLY / PHX-MASTER target null.
+- Branch metadata reports protected=false for Experiments main, development, Master, and COE main. Required checks enforcement is off; detailed protection endpoints are inaccessible to this integration.
+- Private Drive registry v11 and newer corrections were not recovered. No Google Drive connector was exposed; the complete available Library scan contained only registry versions v3-v7. No older snapshot was substituted.
+- Master Python tests and verify_coordination.py were NOT RUN; Master PR Actions have no runs/statuses. This is not a test pass.
+
+See [UTC17 exact-head and COE #26 provenance audit](PHX_MASTER_UTC17_20261124_LIVE_OWNER_HEADS_CI_COE26_PROVENANCE_AUDIT.md).
+
+
 - Master branch/PR #288 HEAD `c915134d4d36221e02d4dd10d010bd6356392f9f`; OPEN / DRAFT / UNMERGED, 198 changed paths, all under `coordination/phoenix/`; Master Actions/statuses zero.
 - Experiments main `f4e8a891`; issue-designated development `aad3aade`; COE main `a6513ab4`; COE #26 `b382d233` remains FROZEN.
 - HARDWARE #349 source/test `4d36d08b`, final PR/docs head `7eab7194`; focused Relay/Quarantine pass, Full/build fails at QA-owned `Missing poll signature check`. PR body still pins older `c5d0ebea/a361adfa` and requires owner refresh.
