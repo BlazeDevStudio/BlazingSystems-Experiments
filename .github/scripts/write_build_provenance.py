@@ -122,6 +122,27 @@ def _record_cleanup_failure(primary_error: BaseException, detail: str) -> None:
         pass
 
 
+def _close_descriptors_preserving_error(
+    descriptors: tuple[tuple[int, str], ...],
+    display_path: Path,
+    primary_error: BaseException,
+) -> None:
+    """Attempt every descriptor close once without replacing the open failure."""
+    for descriptor, label in descriptors:
+        if descriptor < 0:
+            continue
+        try:
+            os.close(descriptor)
+        except BaseException as exc:
+            # A close can itself be interrupted. Continue through every owned
+            # descriptor and keep the traversal/open error as the primary cause.
+            _record_cleanup_failure(
+                primary_error,
+                f"provenance descriptor cleanup failed for {label} on "
+                f"{display_path}: {type(exc).__name__}: {exc}",
+            )
+
+
 def _close_file_and_parent_descriptors(
     fd: int,
     parent_fd: int,
@@ -257,20 +278,27 @@ def _open_regular(path: Path) -> tuple[int, os.stat_result, int, str]:
             raise ProvenanceError(f"file identity changed while opening: {path}")
         return fd, opened, parent_fd, leaf
     except OSError as exc:
-        for descriptor in (fd, next_fd, parent_fd):
-            if descriptor >= 0:
-                try:
-                    os.close(descriptor)
-                except OSError:
-                    pass
-        raise ProvenanceError(f"cannot safely open {path}: {exc}") from exc
-    except BaseException:
-        for descriptor in (fd, next_fd, parent_fd):
-            if descriptor >= 0:
-                try:
-                    os.close(descriptor)
-                except OSError:
-                    pass
+        error = ProvenanceError(f"cannot safely open {path}: {exc}")
+        _close_descriptors_preserving_error(
+            (
+                (fd, "file descriptor"),
+                (next_fd, "next-directory descriptor"),
+                (parent_fd, "parent-directory descriptor"),
+            ),
+            path,
+            error,
+        )
+        raise error from exc
+    except BaseException as exc:
+        _close_descriptors_preserving_error(
+            (
+                (fd, "file descriptor"),
+                (next_fd, "next-directory descriptor"),
+                (parent_fd, "parent-directory descriptor"),
+            ),
+            path,
+            exc,
+        )
         raise
 
 
@@ -362,22 +390,27 @@ def _open_directory(path: Path, label: str) -> tuple[Path, int]:
             next_fd = -1
         return absolute, current_fd
     except OSError as exc:
-        for descriptor in (next_fd, current_fd):
-            if descriptor >= 0:
-                try:
-                    os.close(descriptor)
-                except OSError:
-                    pass
-        raise ProvenanceError(
+        error = ProvenanceError(
             f"{label} is unavailable or contains a symlink: {path}: {exc}"
-        ) from exc
-    except BaseException:
-        for descriptor in (next_fd, current_fd):
-            if descriptor >= 0:
-                try:
-                    os.close(descriptor)
-                except OSError:
-                    pass
+        )
+        _close_descriptors_preserving_error(
+            (
+                (next_fd, "next-directory descriptor"),
+                (current_fd, "current-directory descriptor"),
+            ),
+            path,
+            error,
+        )
+        raise error from exc
+    except BaseException as exc:
+        _close_descriptors_preserving_error(
+            (
+                (next_fd, "next-directory descriptor"),
+                (current_fd, "current-directory descriptor"),
+            ),
+            path,
+            exc,
+        )
         raise
 
 
