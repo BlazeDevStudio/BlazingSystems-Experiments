@@ -3720,3 +3720,49 @@ PR #291 remains OPEN / DRAFT / UNMERGED. No merge, real-key signing, release tag
 - Compatible draft head `defe09357cdf0445c5b4b0235775ad0a4a03664b` already contains another worker’s release-workflow concurrency guard and its regression test. No implementation was duplicated.
 - In [BlazePwifi build #45375135165](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45375135165), the docs-only proof and all scoped firmware/Android compile legs succeeded, while `validate` failed at the mandatory handover-freshness gate. [Windows #45375135150](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45375135150) likewise stopped at handover freshness; it did not reach signing or publisher execution. [ESP32 compatibility #45375135088](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45375135088) succeeded.
 - This entry supplies the canonical freshness record. It is scoped hosted-CI evidence only, not production, compatibility, protected-signing, finance/migration, hardware, or physical-acceptance evidence. PR #291 remains draft/unmerged and independently unreviewed. **PRODUCTION NO-GO** remains until MASTER and independent QA review, protected signer/source admission, durable finance/migration acceptance, and physical acceptance gates are satisfied.
+
+
+## PHX-RELEASE UTC11 2026-11-24 — fail closed on every unrecognized workflow uses directive
+
+**Task:** strengthen the RELEASE-owned immutable GitHub Actions pin guard. The prior parser counted only recognized `owner/repo@ref` lines and could ignore an added dynamic expression or local action path while all expected action counts remained satisfied.
+
+### Exact source and ownership
+
+- PR #291 remains OPEN / DRAFT / UNMERGED, based on #242 `734b89d9e7792247e8376335c3f3685500ab3f89`.
+- Activation starting HEAD: `4d74a64cc3dd93a67c10a2ce4bbf6f22c33bb047`.
+- RELEASE source/test commit: [`0779a633`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/0779a633e351f2ab3e8abdc651f530f63de772d6).
+- Compare from starting HEAD: 1 commit ahead / 0 behind; exactly one changed RELEASE-owned path: `.github/scripts/test_release_artifact_action_pins.py`.
+- No workflow, product, signer, publisher, CORE, PISONET, QA, HARDWARE, MASTER, or COE destination path was changed by this increment.
+
+The new parser enumerates workflow-level YAML `uses:` directives and requires an explicit `owner/repo@<40 lowercase hex SHA>`. Dynamic expressions, local action paths, mutable tags, reusable-workflow paths, and empty references fail closed. Quoted immutable refs and trailing YAML comments remain accepted. A shell-like `uses:` string inside an indented `run:` block is not misclassified.
+
+### Exact-source verification
+
+- [ESP32 compatibility run #45383498358](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45383498358), exact source/test HEAD `0779a633`: provenance regression job `138408342406` SUCCESS. Its log confirms all 8 synthetic parser cases passed and the live workflows were enumerated as:
+  - BlazePwifi build: 52 approved immutable action invocations.
+  - ESP32 compatibility: 4 approved immutable action invocations.
+  - Windows release: 6 approved immutable action invocations.
+- In the same run, ESP32 core 3.3.13 and 4.0.0 matrix jobs were still IN_PROGRESS at last observation; no terminal compile-matrix result is claimed.
+- [BlazePwifi full build #45383498304](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45383498304): CI-0701 docs-only PR sync proof SUCCESS; production import/sign-related job SKIPPED; target jobs IN_PROGRESS/QUEUED and validation QUEUED at last observation. Not terminal; no full-build success is claimed.
+- [Windows release #45383498164](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45383498164): handover job FAILURE because CORE-owned `experiment/openwrt/BlazePwifi/docs/handover/CURRENT_STATE.md` is stale relative to `.github/workflows/blazepisonet-softtimer-release.yml`; last checkpoint reported by the gate is `d85eb6a2766781b6cac1807cef461993d8216b84`. Windows build and publisher SKIPPED. The PISONET runtime self-test did not execute.
+
+### Ownership and integration status
+
+- MASTER PR #288: current observed HEAD `10a5c227775b9217dd0ffb8e5dd89d9af8e06bd9`; `OWNERSHIP_ROUTES.json` blob `e4db324315a1b3543fec17a148fbf960170fcb29`, 11 routes, `DRAFT_REVIEW_ONLY`; RELEASE workflow route remains `reimplementation-review`. No migration authorization.
+- The broader #291 diff remains 27 paths, including inherited CORE and PISONET paths requiring owner/MASTER reconciliation. The activation starting HEAD `4d74a64` itself includes an inherited change to CORE-owned `experiment/openwrt/BlazePwifi/docs/handover/CHANGE_LEDGER.md`; RELEASE did not alter that path in this increment and will not overwrite it.
+- Independent PR #291 review submissions: 0.
+- Cleanup-first #266 remains OPEN, 0/7 tracks complete.
+- COE #26 remains OPEN / DRAFT / FROZEN at `b382d233ff06c8791b1028bed3c617cc7b670d12`; its five Actions runs remain QUEUED / zero jobs executed.
+- COE #31 parent remains at `59ed44d0b911e176f1a95b9cf5585ef811ffd31b`. Its ImageBuilder sandbox run #44222517263 fails closed: Bubblewrap is installed but its unprivileged UID-map probe is denied (exit 125); shared firmware contracts and case-collision checks pass.
+- COE #35 head `e7801818b00854f34a5a88955d979c601ec96404`: all 10 appliance profiles fail closed without approved site-scoped ULA /48 authority; mandatory sandbox run #45303825459 fails because Bubblewrap is absent (exit 125). Shared-contract validation #45303825436 also fails at profile admission; case-collision passes.
+- COE #44 head `582fd5d5e83e36b36546ac28534740298ba94af4`: shared contracts and case-collision pass; mandatory sandbox run #44390136327 fails because Bubblewrap is absent (exit 125).
+- Canonical private Drive registry v11 was not surfaced by authorized Library retrieval. No older registry snapshot or private contents were substituted.
+
+### Next owner actions
+
+1. PHX-CORE / PHX-MASTER must refresh the authoritative CORE handover set before the Windows/full-build freshness gates can pass; RELEASE will not edit those CORE paths or bypass the gate.
+2. PHX-PISONET must complete its own isolated Release-object/Git-ref negative-test fixture and verify the runtime test after the CORE gate clears.
+3. PHX-QA must independently review the RELEASE-owned action-pin guard and exact-source job.
+4. PHX-MASTER must reconcile inherited cross-role paths and refresh the RELEASE child pointer before any integration decision.
+
+No merge, signing, tag, publication, hardware flash, real payment migration, or customer deployment. **PRODUCTION NO-GO** remains in force.
