@@ -7,13 +7,12 @@ responses are denied before HTTPClient::getString(). This is host simulation,
 not hardware acceptance.
 """
 import re
-import subprocess
 import sys
-import tempfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import poll_response_failclosed_lab_structure_guard  # noqa: F401
+from cpp_fixture_runner import run_cpp_fixture
 from firmware_lab_source import extract_function, mask_active_cpp_code
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -98,22 +97,15 @@ int main() {
 
 
 def compile_and_run(code, board, label):
-    with tempfile.TemporaryDirectory(prefix="phx-http-bound-") as folder:
-        cpp = Path(folder) / f"{label}.cpp"
-        binary = Path(folder) / label
-        cpp.write_text(code, encoding="utf-8")
-        built = subprocess.run(
-            ["g++", "-std=c++17", "-Wall", "-Wextra", "-Werror",
-             str(cpp), "-o", str(binary)],
-            capture_output=True, text=True, timeout=30,
-        )
-        if built.returncode:
-            raise RuntimeError(
-                f"{board}: {label} compile failed:\n{built.stderr[-3000:]}"
-            )
-        return subprocess.run(
-            [str(binary)], capture_output=True, text=True, timeout=10,
-        )
+    """Use the shared bounded runner; keep board/fixture context in failures."""
+    return run_cpp_fixture(
+        code,
+        prefix="phx-http-bound-",
+        stem=label,
+        compile_timeout=30,
+        run_timeout=10,
+        context=f"{board}: {label}",
+    )
 
 
 def expect_mutation_rejected(code, board, label, expected_exit):
