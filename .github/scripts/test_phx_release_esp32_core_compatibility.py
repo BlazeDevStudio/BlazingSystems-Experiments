@@ -424,6 +424,61 @@ def check_reproducible_build_verifier(workflow_content: str) -> list[str]:
         else:
             errors.append("reproducibility verifier accepted an incorrectly named application image")
 
+    # The reproducibility verifier must close an image descriptor even when an
+    # asynchronous BaseException interrupts validation after os.open succeeds.
+    # A close that reports an error after actually closing is ambiguous: attempt it
+    # once, preserve the original interruption, and never retry the descriptor.
+    with tempfile.TemporaryDirectory(prefix="phx-reproducible-open-interruption-") as temporary:
+        image = Path(temporary) / expected_name
+        image.write_bytes(b"synthetic-open-interruption")
+        real_open = os.open
+        real_fstat = os.fstat
+        real_close = os.close
+        opened: list[int] = []
+        close_attempts: list[int] = []
+
+        def recording_open(path, flags, *args, **kwargs):
+            descriptor = real_open(path, flags, *args, **kwargs)
+            opened.append(descriptor)
+            return descriptor
+
+        def interrupted_fstat(_descriptor):
+            raise KeyboardInterrupt("injected fstat interruption")
+
+        def close_then_fail(descriptor):
+            close_attempts.append(descriptor)
+            real_close(descriptor)
+            raise OSError("injected close failure after close")
+
+        try:
+            with patch.object(module.os, "open", side_effect=recording_open), \\
+                 patch.object(module.os, "fstat", side_effect=interrupted_fstat), \\
+                 patch.object(module.os, "close", side_effect=close_then_fail):
+                module._open_regular_image(image, expected_name)
+        except KeyboardInterrupt as exc:
+            notes = getattr(exc, "__notes__", [])
+            if not any("descriptor cleanup failure" in note.lower() for note in notes):
+                errors.append("open interruption must remain primary and retain the secondary close failure")
+        except BaseException as exc:
+            errors.append(f"open interruption was replaced by cleanup error: {exc!r}")
+        else:
+            errors.append("reproducibility verifier did not propagate the injected open interruption")
+
+        if len(opened) != 1:
+            errors.append(f"open interruption expected one descriptor, found {len(opened)}")
+        if close_attempts != opened:
+            errors.append(
+                f"open interruption must attempt one close per opened descriptor: "
+                f"opened={opened} close_attempts={close_attempts}"
+            )
+        if opened:
+            try:
+                real_fstat(opened[0])
+            except OSError:
+                pass
+            else:
+                errors.append("open interruption left the application-image descriptor open")
+
     compile_prefix = 'arduino-cli compile --clean --fqbn esp32:esp32:esp32 --build-path "$build_dir"'
     if workflow_content.count(compile_prefix) != 2:
         errors.append("compatibility workflow must perform exactly two clean builds with the same build path")
