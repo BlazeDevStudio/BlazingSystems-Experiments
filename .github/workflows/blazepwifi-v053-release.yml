@@ -183,9 +183,9 @@ jobs:
       contents: write
       actions: read
     env:
-      GH_TOKEN: \${{ github.token }}
-      SHA: \${{ inputs.candidate_sha }}
-      SIGN_RUN: \${{ inputs.signing_run_id }}
+      GH_TOKEN: ${{ github.token }}
+      SHA: ${{ inputs.candidate_sha }}
+      SIGN_RUN: ${{ inputs.signing_run_id }}
     steps:
       - name: Download and verify staged release artifact
         shell: bash
