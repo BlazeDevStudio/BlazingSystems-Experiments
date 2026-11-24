@@ -698,6 +698,10 @@ for board,path in BOARDS.items():
         raise AssertionError(f"{board}: drain-abort release mutation anchor missing")
     compile_and_run(assemble(drain_abort_source=release_on_abort),board,34,"release-while-active-drain-line")
     print(f"{board} MUTATION_REJECTED release-while-active-drain-line")
+    poll_start_snapshot = loop.find("const uint32_t pollEdgeStart=snapshotCoinEdgeSequence();")
+    begin_poll = loop.find("const bool pollWindowReady=beginPollWindow();")
+    if poll_start_snapshot < 0 or begin_poll < 0 or poll_start_snapshot > begin_poll:
+        raise AssertionError(f"{board}: ISR baseline must be captured before intake inhibit/drain")
     pre_poll_guard = loop.find("if(pollEdgeAfterDrain!=pollEdgeStart)")
     poll_call = loop.find('String r=post("poll")')
     if pre_poll_guard < 0 or poll_call < 0 or pre_poll_guard > poll_call:
@@ -717,6 +721,29 @@ for board,path in BOARDS.items():
     compile_and_run(assemble(loop_source=poll_guard_removed,begin_source=edge_hook,main_source=RACE_MAIN),
                     board,25,"missing-drain-abort-edge-reconciliation")
     print(f"{board} MUTATION_REJECTED missing-pre-poll-edge-abort")
+    # Failure injection: moving the ISR baseline until after the 250 ms drain
+    # absorbs an edge that arrived during the drain into the baseline. The
+    # post-drain comparison then misses it and incorrectly permits HTTP polling.
+    late_poll_start_loop = loop.replace(
+        "const uint32_t pollEdgeStart=snapshotCoinEdgeSequence();",
+        "uint32_t pollEdgeStart=lastHandledCoinEdgeSequence;",
+        1,
+    )
+    if late_poll_start_loop == loop:
+        raise AssertionError(f"{board}: initial poll-edge baseline mutation anchor missing")
+    late_poll_start_loop = late_poll_start_loop.replace(
+        "const bool pollWindowReady=beginPollWindow();",
+        "const bool pollWindowReady=beginPollWindow();\\n      pollEdgeStart=snapshotCoinEdgeSequence();",
+        1,
+    )
+    if late_poll_start_loop == loop or "pollEdgeStart=snapshotCoinEdgeSequence();" not in late_poll_start_loop:
+        raise AssertionError(f"{board}: late poll-edge baseline mutation did not apply")
+    compile_and_run(
+        assemble(loop_source=late_poll_start_loop,begin_source=edge_hook,main_source=RACE_MAIN),
+        board,22,"late-poll-edge-baseline-after-drain"
+    )
+    print(f"{board} MUTATION_REJECTED late-poll-edge-baseline-after-drain expected_exit=22")
+
     mutations=(
       ("remove-beginPollWindow",loop.replace("const bool pollWindowReady=beginPollWindow();","const bool pollWindowReady=true;",1),output,quiet,accept),
       ("ignore-pollIntakeSuspended",loop,output.replace(" && !pollIntakeSuspended","",1),quiet,accept),
