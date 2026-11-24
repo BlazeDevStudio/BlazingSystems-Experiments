@@ -21,6 +21,8 @@ on:
       - ".github/scripts/test_build_provenance.py"
       - ".github/scripts/verify_arduino_cli_archive.py"
       - ".github/scripts/test_arduino_cli_archive_verifier.py"
+      - ".github/scripts/test_release_workflow_concurrency.py"
+      - ".github/workflows/blazepisonet-softtimer-release.yml"
       - ".github/workflows/blazepwifi-build.yml"
       - ".github/PHX_RELEASE_HANDOVER.md"
   pull_request:
@@ -72,6 +74,8 @@ jobs:
         run: python3 .github/scripts/test_build_provenance.py
       - name: Test Arduino CLI archive verifier
         run: python3 .github/scripts/test_arduino_cli_archive_verifier.py
+      - name: Test release workflow concurrency and publisher isolation
+        run: python3 .github/scripts/test_release_workflow_concurrency.py
       - name: Verify immutable release action pins
         run: python3 .github/scripts/test_release_artifact_action_pins.py
 
