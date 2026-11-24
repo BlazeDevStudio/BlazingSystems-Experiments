@@ -68,7 +68,7 @@ The complete, non-truncated recursive trees were fetched at the exact current ca
 
 - Issue #172 OPEN; cleanup #266 OPEN / 0-of-7.
 - `OWNERSHIP_ROUTES.json`: 11 routes, `DRAFT_REVIEW_ONLY`, PHX-MASTER target null.
-- Branch API metadata reports `protected=false` for Experiments main, development, Master and COE main. Effective branch protection / required-check enforcement still requires administrator verification.
+- The Experiments branch-list endpoint returned only its first 100 entries. The listed issue-designated development branch reports `protected=false`; Experiments `main` and `phoenix/master-coordination` were not present in that page, so their protection state is UNVERIFIED in this run. COE `main` reports `protected=false`. Effective branch protection / required-check enforcement still requires administrator verification.
 - Root `AGENTS.md`, README_FIRST, BLAZE-COMMS/1, Cloud Artifact Policy and Cloud Storage Recovery Handover were read. The cloud policy requires the canonical private registry and sync ledger before mirror work.
 - Canonical private `BLAZE_PROJECT_REGISTRY_v11_20261027.json` and newer corrections were not found in Library search; surfaced registry snapshots were v3-v7 only. No Google Drive connector is exposed in this runtime. No older snapshot was substituted and no private Drive content or IDs were published.
 - **13/13 static audit assertions PASS**: complete source/destination trees, exact entry counts, 61 runtime rows, destination pin identity, 46/15 classification, 28 current-source drift rows, test counts/identities, board/helper counts, and 11-route Master-null ownership.
