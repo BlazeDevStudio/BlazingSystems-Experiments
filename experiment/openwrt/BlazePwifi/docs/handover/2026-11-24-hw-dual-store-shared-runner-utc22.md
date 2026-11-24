@@ -51,9 +51,11 @@ The first Quarantine run at prior head `a3bfae23e038865126e82a6e4dee0d104927c12f
 
 The prior Full [run #45500875722](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45500875722) checked out merge commit `35a4eab` for prior PR head `a3bfae23`; validation job `138823501834` failed at `tests/controllers.sh` with **`Missing poll signature check`**. It is superseded by the final docs-head result below.
 
-Final handover/docs HEAD `903609a3ad9ff9bdd05f1b015cc158c3eb5fdb35` Full [run #45501543802](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45501543802) checked out merge commit `f2a60e1` for PR head `903609a3`. Validation job `138825903829` failed at the same inherited QA-owned **`Missing poll signature check`**. All 13 firmware/platform target jobs and Android completed SUCCESS; production import/signing/publication and v0.4 simulations/candidate gates were skipped. Overall Full conclusion is FAILURE; no Full PASS is claimed.
+Final handover/docs HEAD `903609a3ad9ff9bdd05f1b015cc158c3eb5fdb35` Full [run #45501543802](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45501543802) checked out merge commit `f2a60e1` for PR head `903609a3`. Validation job `138825903829` failed at the inherited QA-owned **`Missing poll signature check`**. All 13 firmware/platform target jobs and Android completed SUCCESS; production import/signing/publication and v0.4 simulations/candidate gates were skipped. Overall Full conclusion is FAILURE.
 
-This is a final docs-head Full run containing source/test `0aba4cd`; it is not a direct checkout of the source commit alone. CORE owns the authenticated register/poll response contract; QA owns reconciliation of the inherited assertion. Do not synthesize `response_sig`, weaken the assertion, or enable positive poll/coin admission.
+The later docs-head Full [run #45502304116](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45502304116), PR head `c265eafe`, is also terminal **FAILURE**, not pending: validation job `138828592534` failed at the same assertion; all 13 firmware targets plus Android (14/14) completed SUCCESS and dependent release/simulation stages were skipped.
+
+This is a docs-head Full run containing source/test `0aba4cd`; it is not a direct checkout of the source commit alone. The subsequent exact-source/test SHA `353231c60fe09e4694fa73e3a3a1e64c5d21353d` adds the active-high coin / active-low relay cross-product; Quarantine and Relay pass, while exact-source Full [#45512634648](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45512634648) again fails at validation job `138863963444`, **`Missing poll signature check`**, with all `14/14` build jobs successful. CORE owns the authenticated register/poll response contract; QA owns reconciliation of the inherited assertion. Do not synthesize `response_sig`, weaken the assertion, or enable positive poll/coin admission.
 
 ## Other live stack audits
 
@@ -72,7 +74,7 @@ This is a final docs-head Full run containing source/test `0aba4cd`; it is not a
 
 **Source change:** committed.  
 **Focused Quarantine / Relay:** CI VERIFIED (SIMULATED source-extracted tests only).  
-**Full integration:** FAILED at inherited QA-owned poll-signature assertion on prior merge head; current-source Full pending.  
+**Full integration:** FAILED at inherited QA-owned `Missing poll signature check` on docs-head #45502304116 and exact-source #45512634648; all 14/14 firmware/platform + Android build jobs succeeded; dependent release stages skipped.  
 **HARDWARE ACCEPTED: NO. PRODUCTION READY: NO-GO.**
 
 ## BLAZE-COMMS/1
@@ -105,7 +107,7 @@ This is a final docs-head Full run containing source/test `0aba4cd`; it is not a
   ],
   "blockers": [
     "Full integration validation still fails at the inherited Missing poll signature check on prior merge head.",
-    "Exact-source Full run after the source correction is not yet verified.",
+    "Later docs-head #45502304116 and exact-source #45512634648 both terminally failed at the inherited Missing poll signature check; build matrices completed 14/14.",
     "Physical coin, relay, power-cut and 30-device soak acceptance remain NOT TESTED.",
     "Protected witness, durable accounting/replay and v1-to-v2 migration remain NOT ACCEPTED.",
     "Google Drive registry v11 is not accessible through the available connector surface."
