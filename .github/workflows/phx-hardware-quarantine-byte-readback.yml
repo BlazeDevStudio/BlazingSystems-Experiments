@@ -12,6 +12,7 @@ on:
       - "experiment/openwrt/BlazePwifi/docs/handover/2026-11-24-hw-default-main-fixture-modularization-utc14.md"
       - "experiment/openwrt/BlazePwifi/docs/handover/2026-11-24-hw-poll-safety-contract-modularization-utc15.md"
       - "experiment/openwrt/BlazePwifi/docs/handover/2026-11-24-hw-pending-identity-contract-modularization-utc16.md"
+      - "experiment/openwrt/BlazePwifi/docs/handover/2026-11-24-hw-poll-response-denial-matrix-modularization-utc16.md"
   pull_request:
     paths:
       - "experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/**"
