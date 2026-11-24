@@ -1,3 +1,14 @@
+# PHX-MASTER UTC08 follow-up live index — 2026-11-24T08:37:40Z
+
+- Starting Master branch/PR #288 head: `07bc60a1cefe1373581460107d9dff5ef13caf5f`; base `main@f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; PR remains OPEN / DRAFT / UNMERGED.
+- Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; development `aad3aade72c1156eecba1fed30907c6d0283b2c5`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`.
+- Exact #349 source/test `6ce423783b306411bdb7e7217081c050cb4cbec4` / docs+PR head `a994f7048673677651449eeb0a04d2bf9e91737c`; focused Quarantine/Relay PASS; build validation still fails at `Missing poll signature check`.
+- Exact #291 head `bffc4ffd86794a2df3408a099369e3d48f8b3f0b`; Windows negative self-test fails at line 326; build freshness gate fails because RELEASE handover still pins #349 docs/PR to older refs; separate compatibility run passes 3/3.
+- COE #26 remains FROZEN; current exact tree comparison is 2,501 source entries / 286 destination entries, 43 board-local Python files missing, test mapping 47/19 with 1 exact / 3 divergent / 43 source-only / 15 destination-only, and licensing gaps remain. Five workflows queued / zero jobs.
+- Ownership manifest remains 11 routes / DRAFT_REVIEW_ONLY / Master target null; cleanup #266 OPEN / 0-of-7. Private registry v11/newer corrections NOT RECOVERED; no Drive connector. Master Python suite/verifier NOT RUN.
+- Full evidence is appended to [PHX_MASTER_UTC08_20261124_RELEASE_TEST_HERMETICITY_AND_COE26_PROVENANCE.md](PHX_MASTER_UTC08_20261124_RELEASE_TEST_HERMETICITY_AND_COE26_PROVENANCE.md). This is an update to the existing UTC08 report; no duplicate report file was created.
+- PRODUCTION NO-GO; no subsystem source or COE destination changes.
+
 # PHX-MASTER UTC08 live index — 2026-11-24T08:05:17Z
 
 - Starting Master branch HEAD: `3282a7c3060b404000972084825767d40145e3d5`; this update is committed on `phoenix/master-coordination` and remains inside the existing draft PR #288.

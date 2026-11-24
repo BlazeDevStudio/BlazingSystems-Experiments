@@ -1,3 +1,17 @@
+## PHX-MASTER UTC08 follow-up live audit disposition — 2026-11-24T08:37:40Z
+
+- Master PR #288 starts at `07bc60a1cefe1373581460107d9dff5ef13caf5f`; it is OPEN / DRAFT / UNMERGED, 193 changed paths, all under `coordination/phoenix/`. Master Actions and combined statuses are zero.
+- Current #349 focused Quarantine/Relay pass, but its exact-head build validation still fails at the inherited QA-owned poll-signature assertion. The parent #347 remains a separate failing candidate.
+- #348 focused header test passes; its ESP32 compile fails on missing `mbedtls/sha256.h` under core 4.0.0.
+- #291 Windows negative self-test still fails at line 326. Its full build workflow is blocked by a stale RELEASE handover anchor after the compatibility test advanced to current #349 refs; the separate ESP32 compatibility matrix passes 3/3.
+- COE #26 remains FROZEN. Exact current source/destination trees show 43 missing board-local Python labs, 47-to-19 test mapping with 1 exact / 3 divergent / 43 missing / 15 destination-only, two divergent firmware sketches, and root NOTICE / Tabler / BlazeRentalLauncher license gaps. Five destination workflows are queued with zero jobs.
+- COE #35 still fails all ten appliance profiles without approved site ULA /48 authority and its sandbox exits 125 because Bubblewrap is absent. COE #49 Stage 5.1 passes but ESP32 compilation fails on `mbedtls/sha256.h`; COE #45 scoped overlay/case checks pass.
+- Ownership manifest remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`, 11 routes, `DRAFT_REVIEW_ONLY`, PHX-MASTER target null. Cleanup #266 remains OPEN / 0-of-7; Hardware's latest contribution is partial and does not complete a track.
+- Experiments main/development and COE main report `protected=false`; Master branch protection is not independently verified. Private Drive registry v11/newer corrections remain unavailable; no Google Drive connector is exposed. Older registry snapshots were not substituted.
+- Master Python suite and `verify_coordination.py` NOT RUN without an authenticated local checkout. Static GitHub tree/blob comparisons and ordinary JavaScript consistency checks were executed; they are not a substitute for the Master Python suite.
+
+PRODUCTION NO-GO. Independent protected signing/anti-rollback witness, crash-atomic durable financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak, and owner-authorized release gates remain mandatory. No merge, release, signer operation, secret provisioning, hardware flash, physical test, payment operation, customer cutover, or financial migration occurred.
+
 ## PHX-MASTER UTC08 live audit disposition — 2026-11-24T08:05:17Z
 
 - Current Master branch before this update: `3282a7c3060b404000972084825767d40145e3d5`; PR #288 remains OPEN / DRAFT / UNMERGED against main `f4e8a891...`.

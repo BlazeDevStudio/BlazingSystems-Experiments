@@ -1852,3 +1852,19 @@ Any test that extracts and executes a production release/publisher decision bloc
 For the SoftTimer release admission path, the Release-object lookup (`/releases/tags/$releaseTag`) and Git-tag lookup (`/git/ref/tags/$releaseTag`) are independent decisions. Synthetic tests must fixture both calls and assert that no real `gh api` process/network call occurs. Required vectors include: both lookups 404 → absent-tag path may proceed to final artifact verification; either lookup 200 → deny; 401/403/5xx, transport error, ambiguous/multiple status lines, or successful CLI exit paired with a 404 body → deny. The production publisher remains fail-closed and must still verify final shipped bytes before publication.
 
 Evidence: RELEASE #291 current head `dabfd75cdccea6ab2f5adfe5251fbc3b506e38aa`; workflow blob `61031c13aad934fb52aef3038598f8b4d6a89334`; negative test blob `8b69174bf519154e43f7e12e4a9fa2c0e75d350f`; Windows run [#45352021031](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45352021031) fails at line 326 with the missing-tag vector rejected. The test substitutes `$lookupExit = $LASTEXITCODE` only; both `gh api` commands and tag-lookup output/exit remain live. PHX-PISONET owns the test harness, PHX-RELEASE owns publisher semantics, and PHX-QA owns independent review. This contract does not authorize Master edits to those files.
+
+
+## 7.4 Upstream source/test, docs-head and PR-head anchors must advance as one release provenance tuple (2026-11-24T08:37:40Z)
+
+A downstream release/compatibility consumer that validates another role's implementation must distinguish three refs whenever they differ: (1) the exact upstream source/test commit exercised, (2) the final upstream docs/workflow commit, and (3) the upstream PR head. Pin the relevant firmware/artifact Git blob separately. The downstream handover and its machine-checked test must contain the same exact tuple with the canonical labels; a test-only expected-SHA update is not a handover refresh.
+
+When the upstream PR advances, the downstream owner must update the expected source SHA, docs/PR head, checked-out ref, and downstream handover in the same owner-controlled increment. Then rerun the exact-head compatibility workflow and the complete downstream build. A separate compatibility matrix PASS does not override a failed handover-freshness gate; downstream compile, signing, publisher, and release stages remain blocked until the tuple is consistent.
+
+Current evidence:
+- HARDWARE #349 source/test SHA: `6ce423783b306411bdb7e7217081c050cb4cbec4`.
+- HARDWARE #349 final docs/workflow/PR head: `a994f7048673677651449eeb0a04d2bf9e91737c`.
+- ESP32 sketch blob: `a9a1c2fecb001d71f8f22b43952edbd160aacaf8`.
+- RELEASE #291 head `bffc4ffd86794a2df3408a099369e3d48f8b3f0b` updates the compatibility test to expect that tuple, but `.github/PHX_RELEASE_HANDOVER.md` remains blob `500cc0be69efdb7320320595f07d5d1f37c5df63` and still records the older docs head `dff053bb8fe276d3f0ba9764e845d61ebe640539` and PR head `6ce423783b306411bdb7e7217081c050cb4cbec4`.
+- RELEASE build workflow [#45357167281](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45357167281) fails its CI-0701 freshness check with `PHX-RELEASE-HANDOVER-ANCHOR-RED`; separate ESP32 compatibility [#45357167298](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45357167298) passes 3/3. The failure is a stale handover anchor, not an ESP32 compile result.
+
+Owner action: PHX-RELEASE updates its own handover to the current #349 tuple and reruns exact-head CI; PHX-HARDWARE owns its source and handover. PHX-MASTER records the contract only and does not edit either owner's files.

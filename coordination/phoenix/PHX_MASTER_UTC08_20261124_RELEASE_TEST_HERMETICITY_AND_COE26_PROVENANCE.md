@@ -109,3 +109,68 @@ COE #26 remains OPEN / DRAFT / FROZEN with 205 changed paths. Its five workflows
 4. COE integration owner: provide a per-file source/test/license/provenance map and runnable destination CI before any staging proposal.
 5. Registry custodian: restore authorized v11/newer-correction access; repository administrator: establish effective branch protection.
 6. Authorized human runner: provide a local authenticated checkout and run the Master Python suite plus `verify_coordination.py`.
+
+
+## UTC08 follow-up — exact live refs, release handover freshness and destination recheck (2026-11-24T08:37:40Z)
+
+### Starting refs and ownership
+
+- Master branch/PR #288 starting head: `07bc60a1cefe1373581460107d9dff5ef13caf5f`; parent `3282a7c3060b404000972084825767d40145e3d5`; base `main@f4e8a891aed8af86d5fd315d28750a0ac3a7372b`.
+- Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; development `aad3aade72c1156eecba1fed30907c6d0283b2c5`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`.
+- `OWNERSHIP_ROUTES.json` remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`, 11 routes, `DRAFT_REVIEW_ONLY`, PHX-MASTER target null. Issue #172 OPEN; cleanup #266 OPEN / 0-of-7.
+
+### New actionable finding — RELEASE #291 handover freshness is now the build blocker
+
+Current RELEASE #291 head is `bffc4ffd86794a2df3408a099369e3d48f8b3f0b`. Its latest commit changes only `.github/scripts/test_phx_release_esp32_core_compatibility.py`; the test now expects HARDWARE #349 source/test `6ce423783b306411bdb7e7217081c050cb4cbec4` and docs/PR head `a994f7048673677651449eeb0a04d2bf9e91737c`.
+
+The RELEASE handover `.github/PHX_RELEASE_HANDOVER.md` remains blob `500cc0be69efdb7320320595f07d5d1f37c5df63` and its UTC07 entry still records docs head `dff053bb8fe276d3f0ba9764e845d61ebe640539` and PR head `6ce423783b306411bdb7e7217081c050cb4cbec4`. This is a concrete stale anchor.
+
+- Windows [#45357167284](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45357167284): FAIL at PISONET-owned `negative-selftest.ps1:326`, `missing tag accepted=False`; publisher skipped.
+- BlazePwifi build [#45357167281](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45357167281): FAIL at CI-0701 `PHX-RELEASE-HANDOVER-ANCHOR-RED` before firmware compilation; dependent build/release jobs skipped.
+- ESP32 compatibility [#45357167298](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45357167298): PASS 3/3, both core 3.3.13 and 4.0.0 legs.
+
+Owner actions: PHX-RELEASE refreshes its own handover and reruns exact-head build/Windows; PHX-PISONET owns the negative-selftest and PublisherMockCli paths; PHX-QA independently reviews. Master made no RELEASE or PISONET source edits.
+
+### HARDWARE exact-head results
+
+- #349 source/test `6ce423783b306411bdb7e7217081c050cb4cbec4`; docs/PR head `a994f7048673677651449eeb0a04d2bf9e91737c`; ESP32 sketch blob `a9a1c2fecb001d71f8f22b43952edbd160aacaf8`.
+- Quarantine [#45355139574](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45355139574) PASS; Relay [#45355139569](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45355139569) PASS; build [#45355139770](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45355139770) fails validation at QA-owned `Missing poll signature check`. All 14 firmware target jobs and Android pass; dependent release stages are skipped.
+- #348 `eb7afcb2ba0d1e84054c052c8b129cb51a91d062`: focused [#45352513178](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45352513178) PASS; build [#45352513177](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45352513177) fails ESP32 compilation at `mbedtls/sha256.h` under core 4.0.0.
+- Parent #347 `960184670379f01e20f0e7e8bc23b3e5eedacd3f` remains a distinct failing candidate; no child result is transferred to it.
+
+### Current cross-owner handover identities
+
+| Shared path | CORE #252 | PISONET #255 | QA #290 | RELEASE #291 |
+|---|---|---|---|---|
+| `experiment/openwrt/BlazePwifi/PROJECT_HANDOVER.md` | `72e8e487d333a9488f77c2c3e68652d1a650ff85` | `d3e66608280644af8c42635168a7e27c8fba8f31` | `83db03cf387f280ba2d595ff6e9d58ffa23417c5` | `afe7bd131afb7d8dd0e61ffda3162cfc9b6cf9bb` |
+| `experiment/openwrt/BlazePwifi/docs/handover/CHANGE_LEDGER.md` | `df50981c1596838b1abf544e94f68e89ad556b7d` | `02963d32018ea09ad2a6a5a95b487de1f65ff4f2` | `3180e1a93c852e5c983f947e8ca45a897df0479f` | `17afd0738cc1b78d348f4cc9a9d2f418cc86b6b6` |
+| `experiment/openwrt/BlazePwifi/docs/handover/CURRENT_STATE.md` | `72c38aeb93377f3aedb758c91d670ff1150e87bd` | `47e07b7c0e06766d0d4ebb18bc13bfb274adfe22` | `73b9d1d6acbd8b58c13f2d1b9d17512c392f444a` | `85dd3c1e9254d947c4e75daaeaf3351ef3e105e3` |
+
+All four role heads have different blobs on each shared handover path. RELEASE #291 also changes PISONET-owned `negative-selftest.ps1` and `PublisherMockCli.ps1`. Do not overwrite, cherry-pick, rebase, or merge to resolve these conflicts; require owner reconciliation.
+
+### COE #26 exact-tree recheck
+
+Complete recursive trees, both non-truncated: Experiments #349 `a994f704` = 2,501 entries; COE #26 `b382d233` = 286 entries. Board subtree: 57 source entries including 43 Python labs/helpers versus four destination entries and zero Python files.
+
+- Firmware: ESP8266 `2f87a9de84ac53dbb0d2718b5c79a4662b63de8f` vs `c8be98f72596681e36a3ad1f8939bf8046c96887`; ESP32 `a9a1c2fecb001d71f8f22b43952edbd160aacaf8` vs `3cc7ec54b476943dc04a8d1af5e2df5fe054e422` — both differ.
+- JSON primitive parser lab `15c0d31ef9c07c549a0ddd5cf4d26c687cac8fd3` and fixture module `b55ec6ef0ec4184c7b18b4e55bd65aeb96951812` have no destination counterparts.
+- Tests: 47 source / 19 destination; 1 exact blob+mode match, 3 divergent, 43 source-only, 15 destination-only. Divergent same-path files: `config.sh`, `integration.sh`, `security.sh`.
+- #348 ControllerAuth header `27950692147b2ec89b92505062d085deb8afb699` and native test `404ce87229ba754b08d9842315c13c99b9e1b1c7` are absent from COE #26.
+- Product LICENSE, QRCode LICENSE, TailAdmin LICENSE and NOTICE match. Root NOTICE, Tabler LICENSE and BlazeRentalLauncher LICENSE remain missing.
+- COE #26 five workflows remain QUEUED / zero jobs and zero statuses. No migration staging or destination edits.
+
+### Other COE exact-head CI
+
+- #35 `e7801818b00854f34a5a88955d979c601ec96404`: case collision [#45303825417](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45303825417) PASS; all 10 appliance profiles fail closed without approved site ULA /48 [#45303825436](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45303825436); Bubblewrap unavailable, sandbox exit 125 [#45303825459](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45303825459).
+- #45 `9d76a134c1f6512aa40c20ec4d247306a71a8cce`: overlay [#44295049727](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44295049727) and case collision [#44295049903](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44295049903) PASS.
+- #49 `aeb8ff11b2f5db9a5f86280ab62ab988245f3919`: Stage 5.1 [#44646341873](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44646341873) and case collision [#44646341992](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44646341992) PASS; ESP32 compile [#44646341922](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44646341922) fails at `mbedtls/sha256.h`.
+
+### Governance, access and test limits
+
+- `OWNERSHIP_ROUTES.json`: 11 routes / `DRAFT_REVIEW_ONLY` / PHX-MASTER target null. Cleanup #266 remains OPEN / 0-of-7.
+- Experiments main/development and COE main report `protected=false`; Master branch protection is not independently verified.
+- Private Drive registry v11 and newer corrections were not available through the authorized Library; no Google Drive connector is exposed. Older v3-v7 snapshots were not substituted; no private registry content or IDs were disclosed.
+- Root `AGENTS.md` blob `d8777e3b58efc41caa5aa3c969c932aee9103d5f`, README blob `feb909e3f74ffb7b5b22df50399ccd127ada3b95`, README_FIRST and COMMUNICATION_PROTOCOL were read. Linked Cloud Artifact Policy and Storage Handover could not be resolved through the GitHub connector.
+- Master PR #288 has zero Actions runs/statuses. Master Python suite and `verify_coordination.py` NOT RUN because no authenticated local checkout is available. Remote tree/blob comparisons and ordinary JavaScript assertions were executed; not a Python suite pass.
+
+PRODUCTION NO-GO. No merge, release, signing, secret provisioning, hardware flash, physical test, payment operation, customer cutover, COE migration, or financial migration occurred.

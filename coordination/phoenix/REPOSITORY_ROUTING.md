@@ -1,3 +1,19 @@
+## PHX-MASTER UTC08 follow-up cross-owner routing and migration hold — 2026-11-24T08:37:40Z
+
+`OWNERSHIP_ROUTES.json` remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`, 11 routes, `DRAFT_REVIEW_ONLY`, PHX-MASTER source `coordination/phoenix/`, target `null`. No owner, source prefix, destination prefix, or route kind changed.
+
+Current RELEASE #291 changes two files under the PISONET-owned SoftTimer subtree: `experiment/windows/BlazePisonet-SoftTimer/tests/ReleaseSigning/negative-selftest.ps1` and `PublisherMockCli.ps1`. PISONET must review those paths; RELEASE owns its publisher workflow and compatibility tests; QA independently reviews the corrected exact head. Master did not modify these files.
+
+Four live role PR heads have three shared handover paths with four distinct Git blobs on every path. Do not overwrite one owner's version with another:
+
+| Shared path | CORE #252 | PISONET #255 | QA #290 | RELEASE #291 |
+|---|---|---|---|---|
+| `experiment/openwrt/BlazePwifi/PROJECT_HANDOVER.md` | `72e8e487d333a9488f77c2c3e68652d1a650ff85` | `d3e66608280644af8c42635168a7e27c8fba8f31` | `83db03cf387f280ba2d595ff6e9d58ffa23417c5` | `afe7bd131afb7d8dd0e61ffda3162cfc9b6cf9bb` |
+| `experiment/openwrt/BlazePwifi/docs/handover/CHANGE_LEDGER.md` | `df50981c1596838b1abf544e94f68e89ad556b7d` | `02963d32018ea09ad2a6a5a95b487de1f65ff4f2` | `3180e1a93c852e5c983f947e8ca45a897df0479f` | `17afd0738cc1b78d348f4cc9a9d2f418cc86b6b6` |
+| `experiment/openwrt/BlazePwifi/docs/handover/CURRENT_STATE.md` | `72c38aeb93377f3aedb758c91d670ff1150e87bd` | `47e07b7c0e06766d0d4ebb18bc13bfb274adfe22` | `73b9d1d6acbd8b58c13f2d1b9d17512c392f444a` | `85dd3c1e9254d947c4e75daaeaf3351ef3e105e3` |
+
+RELEASE #291's own handover anchor is stale relative to current HARDWARE #349. PHX-RELEASE must update its handover within its own PR; PHX-HARDWARE retains its source/docs ownership. The COE #26 file-level provenance/license/test gaps remain NOT IMPORTED / UNKNOWN, not copy instructions. No staging, copy, move, overwrite, rebase, cherry-pick, destination write, or ownership transfer occurred.
+
 ## PHX-MASTER UTC08 routing/provenance refresh — 2026-11-24T08:05:17Z
 
 Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; development `aad3aade72c1156eecba1fed30907c6d0283b2c5`; Master before update `3282a7c3060b404000972084825767d40145e3d5`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`.
