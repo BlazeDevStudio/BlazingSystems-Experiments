@@ -1,3 +1,12 @@
+## PHX-MASTER UTC20 owner routing — 2026-11-24T20:24:59Z
+
+- **HARDWARE #349:** current PR/docs `05d91c8`, source/test `639635c`; Relay [#45479031211](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45479031211) and Quarantine [#45479031184](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45479031184) PASS; Full [#45479031223](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45479031223) FAIL at QA-owned `Missing poll signature check`. Hardware has refreshed its UTC20 handover and PR description; CORE owns authenticated poll producer contract; QA owns assertion reconciliation.
+- **RELEASE #291:** current PR head `ee1562df`; three commits after UTC19 add notes to `.github/PHX_RELEASE_HANDOVER.md`, CORE-owned `PROJECT_HANDOVER.md`, and CORE-owned `CHANGE_LEDGER.md`. Canonical `CURRENT_STATE.md` remains blob `85dd3c1e` / checkpoint `d85eb6a2`; Windows/build fail freshness. CORE owns CURRENT_STATE; RELEASE owns workflow changes and reruns; PISONET owns two inherited tests; QA independently reviews.
+- **COE #26:** candidate remains frozen. Integration owner corrects 46/15 counters, 18-vs-19 test map, stale run_focus/member journal hashes, missing voucher row, source-pin drift, 52 board Python helpers, sketch blobs and license gaps before proposing staging.
+- **RELEASE UTC20 / COE #35:** a new narrow host-CI evidence-label task is IN_PROGRESS on the existing draft #35, starting head `e7801818`; no new commit is yet recorded. It changes only the validator's wording and a focused regression; no hardware acceptance is implied.
+- **Private registry:** custodian must restore authorized v11/newer corrections. No public/private registry contents or IDs copied.
+- No ownership transfer, parallel CORE task, source cherry-pick, destination write or merge authorized.
+
 ## PHX-MASTER UTC19 post-checkpoint routing — 2026-11-24T19:26:29Z
 
 - PHX-HARDWARE owns #349; current PR/workflow head 4c99e1c, source/test d2565d9, handover/docs 58c5418. Relay/Quarantine PASS; Full fails at the inherited poll-signature assertion. HARDWARE refreshes its handover/PR body; CORE owns producer contract; QA owns independent assertion review.

@@ -2008,3 +2008,17 @@ No staging, copy, move, overwrite, rebase, cherry-pick or destination write is p
 After the initial UTC19 audit, HARDWARE #349 advanced to PR/workflow head 4c99e1c while retaining source/test d2565d9 and prior handover/docs anchor 58c5418. The latest change is workflow path-filter-only; it does not alter the firmware source blobs or COE #26 tree comparison. Current exact-head focused Relay and Quarantine runs pass, while Full validation fails at the inherited poll-signature assertion. Record the three refs separately and require HARDWARE to refresh the handover/PR description.
 
 RELEASE #291 advanced to docs/PR head d90e382 after source/workflow change 343e25b8. Current Windows and build runs fail the CORE-owned PROJECT_HANDOVER freshness gate; ESP32 compatibility passes. CORE owns the canonical handover; RELEASE owns the workflow and exact-head reruns. A later docs commit does not clear the gate unless the canonical owner checkpoint and exact CI are refreshed.
+
+
+## 7.14 Exact-head handover and migration source-pin reconciliation — PHX-MASTER UTC20
+
+A migration or release evidence tuple is incomplete unless it names the exact **historical source pin**, **current owner source/test head**, **destination candidate head**, and **final handover/docs head** separately. A branch name, PR number, latest handover file, or green run on a prior SHA is not a substitute for these immutable identities.
+
+1. For each migration row, compare the recorded source blob and file mode against the historical source tree and destination tree. Reconcile the intake summary from the actual rows; a summary count that differs from its rows blocks staging.
+2. Separately compare the historical source pin against the current owner source/test head. Changed or missing current paths are drift requiring owner disposition; do not silently move the historical pin to a newer branch head.
+3. Test identity must include path, blob SHA and mode. The migration map, intake JSON, actual destination tree and CI test inventory must have the same row set. Missing rows, stale hashes or extra/missing tests keep the destination frozen.
+4. License and notice checks are path-and-blob checks. A source LICENSE/NOTICE without a destination counterpart is a blocker until the correct owner provides a documented route or approved resolution.
+5. Hosted CI evidence is valid only for the exact commit it ran against. Record source/test, docs/handover and PR head separately. A later docs commit cannot make an earlier test run exact-head evidence; a stale handover cannot authorize promotion.
+6. Owner routing remains authoritative: CORE owns canonical `CURRENT_STATE.md` and authenticated financial/poll contracts; RELEASE owns release workflow logic and exact-head reruns; PISONET owns Windows tests; HARDWARE owns firmware/lab source; QA owns independent assertion review; MASTER owns coordination and integration matrices only.
+7. Any missing registry access, branch protection evidence, required owner review, exact CI, physical acceptance or migration proof is a hard hold. This section adds no product protocol, accounting, firmware or release authority.
+
