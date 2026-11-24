@@ -1136,6 +1136,83 @@ class BuildProvenanceTests(unittest.TestCase):
             os.close(directory_fd)
 
 
+    def assert_open_cleanup_preserves_primary_after_close_interruption(self, operation):
+        real_open = os.open
+        real_fstat = os.fstat
+        real_close = os.close
+        opened_fds = []
+        close_calls = []
+
+        def tracked_open(path, flags, *args, **kwargs):
+            descriptor = real_open(path, flags, *args, **kwargs)
+            opened_fds.append(descriptor)
+            return descriptor
+
+        def interrupted_fstat(descriptor):
+            if len(opened_fds) >= 2 and descriptor == opened_fds[-1]:
+                raise SystemExit("injected primary traversal failure")
+            return real_fstat(descriptor)
+
+        def close_then_interrupt(descriptor):
+            close_calls.append(descriptor)
+            real_close(descriptor)
+            if len(close_calls) == 1:
+                raise KeyboardInterrupt("injected cleanup close interruption")
+
+        supported = set(os.supports_dir_fd)
+        supported.add(tracked_open)
+        try:
+            with patch.object(provenance.os, "open", new=tracked_open), patch.object(
+                provenance.os, "supports_dir_fd", supported
+            ), patch.object(
+                provenance.os, "fstat", side_effect=interrupted_fstat
+            ), patch.object(
+                provenance.os, "close", side_effect=close_then_interrupt
+            ):
+                with self.assertRaisesRegex(
+                    SystemExit, "injected primary traversal failure"
+                ) as raised:
+                    operation()
+
+            self.assertEqual(len(opened_fds), 2)
+            self.assertEqual(len(close_calls), 2)
+            self.assertEqual(set(close_calls), set(opened_fds))
+            if callable(getattr(raised.exception, "add_note", None)):
+                self.assertTrue(
+                    any(
+                        "KeyboardInterrupt" in note
+                        for note in getattr(raised.exception, "__notes__", [])
+                    ),
+                    "cleanup interruption should be recorded on the primary exception",
+                )
+            for descriptor in opened_fds:
+                with self.subTest(descriptor=descriptor):
+                    with self.assertRaises(OSError):
+                        real_fstat(descriptor)
+        finally:
+            # Reap any descriptor left open by the pre-fix implementation.
+            for descriptor in opened_fds:
+                try:
+                    real_close(descriptor)
+                except OSError:
+                    pass
+
+    def test_regular_file_open_attempts_all_closes_after_cleanup_interruption(self):
+        parent = self.root / "cleanup-interrupt-regular-parent"
+        parent.mkdir()
+        payload = parent / "payload.bin"
+        payload.write_bytes(b"release-provenance-cleanup")
+        self.assert_open_cleanup_preserves_primary_after_close_interruption(
+            lambda: provenance._open_regular(payload)
+        )
+
+    def test_directory_open_attempts_all_closes_after_cleanup_interruption(self):
+        directory = self.root / "cleanup-interrupt-directory-parent" / "child"
+        directory.mkdir(parents=True)
+        self.assert_open_cleanup_preserves_primary_after_close_interruption(
+            lambda: provenance._open_directory(directory, "test directory")
+        )
+
     def assert_descriptors_closed_after_interrupt(self, operation, interrupt_type):
         real_open = os.open
         real_fstat = os.fstat
