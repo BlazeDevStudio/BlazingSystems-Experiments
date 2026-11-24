@@ -145,10 +145,10 @@ def _close_descriptors_preserving_error(
 
 def _close_file_and_parent_descriptors(
     fd: int,
-    parent_fd: int,
+    parent_fd: int | None,
     display_path: Path,
 ) -> None:
-    """Attempt both descriptor closes and preserve the primary read/hash failure."""
+    """Close owned descriptors once; None means the parent remains caller-owned."""
     primary_error = sys.exc_info()[1]
     close_errors: list[tuple[str, OSError]] = []
     cleanup_interruptions: list[tuple[str, BaseException]] = []
@@ -157,6 +157,8 @@ def _close_file_and_parent_descriptors(
         (fd, "file descriptor"),
         (parent_fd, "parent-directory descriptor"),
     ):
+        if descriptor is None:
+            continue
         try:
             os.close(descriptor)
         except OSError as exc:
@@ -537,7 +539,7 @@ def _hash_regular_at(parent_fd: int, name: str, display_path: str) -> tuple[str,
     except OSError as exc:
         raise ProvenanceError(f"cannot hash {display_path}: {exc}") from exc
     finally:
-        os.close(fd)
+        _close_file_and_parent_descriptors(fd, None, Path(display_path))
 
     if not _same_file_state(before, after) or not _same_file_state(after, path_after):
         raise ProvenanceError(f"file changed while hashing: {display_path}")
@@ -586,7 +588,7 @@ def _read_regular_at(parent_fd: int, name: str, display_path: str) -> bytes:
     except OSError as exc:
         raise ProvenanceError(f"cannot read {display_path}: {exc}") from exc
     finally:
-        os.close(fd)
+        _close_file_and_parent_descriptors(fd, None, Path(display_path))
 
     if not _same_file_state(before, after) or not _same_file_state(after, path_after):
         raise ProvenanceError(f"file changed while reading: {display_path}")
