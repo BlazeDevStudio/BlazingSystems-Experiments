@@ -39,3 +39,15 @@
 - **Known blocker:** inherited ESP32 Arduino core 4.0.0 build cannot find `mbedtls/sha256.h` in the application sketch. Provider/PSA decision remains Master/Release coordination; no cross-stack port.
 - **Safety:** Phase A coin/relay admission DENY. No application behavior, CORE contract, key, signer, witness, finance, migration, flash, reset, release or deployment changed.
 - **NEXT ACTION:** verify new exact-head focused and Full runs; record terminal outcomes; request independent QA and Master/Release review.
+
+
+## 2026-11-24 UTC07 — terminal exact-head CI for #348
+
+- **Branch / final source+handover head:** `phoenix/hw-controller-auth-nonempty-spans-20261123-utc15` / `b1639bde37de704708d87a085ed0d14208594e59`; PR #348 OPEN/DRAFT/UNMERGED, base #254 `84c442a46ee2ee48dcbe68b71ff0f54edbc09ba9`, parent #239 `d83b715b116185107737fef721c2eece8feebf39`.
+- **Source/test:** zero-length digest-hex, policy-digest and HMAC-signature assertions; null raw-policy, digest, canonical-message and signature pointer rejection. Canonical handovers were committed in the same source+docs commit to preserve freshness.
+- **Focused exact-head:** [#45351486951](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45351486951), job `138298749761`: SUCCESS at `b1639bde37de704708d87a085ed0d14208594e59`; ASan/UBSan, `-Wall -Wextra -Werror`, 5/5 synthetic checks, Phase-A deny guard PASS.
+- **Full exact-head:** [#45351479477](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45351479477): overall FAILURE; 23 jobs SUCCESS, 1 FAILURE, 6 SKIPPED. Validation job `138298862610` SUCCESS, including mandatory handover freshness, gate regression, controller protocol parity and financial/accounting/replay/witness host tests. ESP8266 `138298862746`, Android `138298862647`, and 11 other OpenWrt target jobs SUCCESS. ESP32 `138298862598` FAILURE: `BlazePwifiVendo32.ino:6` cannot find `mbedtls/sha256.h` on Arduino core 4.0.0. ESP32 simulation and production sign/publish/candidate jobs SKIPPED.
+- **Handover gate history:** previous event SHA `4ad6d202da4918ae244d5cb6f44176bf93e6fa3c` failed because CHANGE_LEDGER lacked a dated heading; this combined commit added the dated record and synchronized all three canonical handovers. New Full exact-head gate PASS. Prior failure is preserved as history, not transferred to this head.
+- **Blocker / ownership:** inherited ESP32 Mbed TLS 4 provider compatibility requires PHX-MASTER/PHX-RELEASE decision; no provider port or cross-stack cherry-pick performed. CORE response contract, coin/relay admission, finance, signer, witness and migration unchanged.
+- **Safety:** Phase-A coin/relay admission DENY. No physical hardware, live money, flash, reset, migration, signing, release or deployment.
+- **NEXT ACTION:** Master/Release decide the approved ESP32 provider/stack path; QA reviews span tests; Hardware reruns Full after approval.
