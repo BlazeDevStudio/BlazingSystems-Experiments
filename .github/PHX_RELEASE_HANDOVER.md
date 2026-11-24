@@ -4092,3 +4092,37 @@ No merge, signing, tag, publication, hardware flash, real payment migration or c
 - The canonical private Drive registry v11 BLAZE_PROJECT_REGISTRY_v11_20261027.json was not found after authorized Library enumeration of 1,396 entries. The owner's release prompt was retrieved and read. No older registry snapshot was substituted and no private registry contents were copied or exposed.
 
 No workflow_dispatch was run. No signing secret was accessed. No real-key signing, tag, publication, merge, hardware flash, payment migration or customer deployment occurred. Hosted CI is not hardware or production acceptance. **PRODUCTION NO-GO.**
+
+---
+
+## PHX-RELEASE UTC19 — bind v0.5.3 signing and staging to canonical main-run provenance
+
+**Task:** `#172/#266`; existing PR #291 only. Start PR #291 HEAD `ff800883d0d7f38388ebb7c58b22079196167865`; base PR #242 `734b89d9e7792247e8376335c3f3685500ab3f89`.
+
+### Defect and correction
+
+The manual v0.5.3 signer previously accepted a successful Actions run whose `head_sha` matched the supplied candidate SHA, without verifying that the run came from the canonical `.github/workflows/blazepwifi-build.yml` on `main` via a `push`. The staging workflow repeated that build-run gap and checked only the signing run's success conclusion, not its workflow path, event, branch, or workflow-source SHA. A successful PR/feature-branch or unrelated workflow run could therefore be supplied as the candidate if the other manual gates were later enabled.
+
+- Test-first commit [`e2eef92b`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/e2eef92b5eaaf2e66833b3225248335837fe53cf) added two source guards. Its first run [#45468317699](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45468317699) is **not accepted as source RED**: the step-extractor fixture used escaped delimiters and both tests failed before reaching the missing workflow checks.
+- Fixture correction [`7a1c16c2`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/7a1c16c2f935a7a6d5513a468ef02beacd4fb03c) fixed the step delimiters.
+- Corrected expected RED [#45468520359](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45468520359), CI-0701 job `138709819838`: 21 tests ran; **19 passed, exactly two new candidate-run identity tests failed** because the signer and stage did not check canonical workflow path, event and main branch.
+- Signer source correction [`72060454`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/720604548e057b87406638f50514d256337353ed) now requires the candidate run to be the canonical BlazePwifi build workflow, event `push`, branch `main`, successful conclusion, and exact candidate SHA.
+- Stage source correction [`343e25b8`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/343e25b8c8b1dffac83469d31b8fbcf2a0f415b7) independently enforces the same build-run identity and requires the supplied signing run to be the canonical Lineage 2 signer workflow, event `workflow_dispatch`, branch `main`, successful conclusion, and the same workflow-source SHA as the staging dispatch (`GITHUB_SHA`).
+
+Only the two RELEASE-owned v0.5.3 workflow files and the RELEASE-owned static test file changed in this source increment. No signing command, credential, secret, key, manifest schema, artifact payload, shared interface, or other role-owned source changed.
+
+### Exact-source CI and limitations
+
+- Exact source/test push build [#45468657105](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45468657105), HEAD `343e25b8`: CI-0701 job `138710875189` **PASS**. It reports release workflow guard **21/21**, provenance **57/57**, ESP32 image admission **3/3**, workflow concurrency **25/25**, Arduino CLI archive verifier **10/10**, action-pin and handover-reference checks PASS. The integrated build was still running when this handover was written; no terminal Full result is claimed here.
+- Exact docs/source-head Windows PR run [#45468667455](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45468667455): **FAIL** at the shared CORE-owned handover freshness gate; Windows build and publisher were **SKIPPED**. The gate reports `experiment/openwrt/BlazePwifi/PROJECT_HANDOVER.md`, last checkpoint `eb1bda38dc76ed910a7c75db3e8959e0c4a857d4`, and names the two changed RELEASE workflows. PHX-CORE must refresh the authoritative shared record; PHX-RELEASE did not edit it or bypass the gate.
+- PR full build [#45468667618](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45468667618) and PR ESP32 compatibility [#45468667463](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45468667463) were queued at handover time; no result is inferred.
+- Read-only GitHub metadata currently reports `main.protected=false` and an empty visible ruleset list. The existing `github.ref_protected == true` gates therefore remain fail-closed. No manual `workflow_dispatch` was run; no signer secret was accessed.
+
+### Ownership and next action
+
+- MASTER PR #288 is OPEN/DRAFT at `463a600c2ba4843b41bf498614a4fb76fa9f3b05`; its 11 ownership routes remain `DRAFT_REVIEW_ONLY`, with RELEASE `reimplementation-review`. MASTER `ROLE_ASSIGNMENTS.md` still contains older #291 source/docs pointers; PHX-MASTER must refresh the child pointer to the current RELEASE head after this handover commit.
+- Cleanup-first #266 remains OPEN / 0-of-7. COE #26 remains FROZEN at `b382d233ff06c8791b1028bed3c617cc7b670d12`; its five PR and three push workflow runs are queued with zero executed jobs. COE #31 remains DRAFT at `59ed44d0b911e176f1a95b9cf5585ef811ffd31b`: shared contracts and case-collision pass, mandatory Bubblewrap sandbox fails closed at UID-map setup (exit 125).
+- The canonical private Drive registry v11 was not recovered through authorized Library retrieval. The older Library registry snapshot is not a substitute and was not used as v11; no private registry contents or IDs were copied into GitHub.
+- **Next:** PHX-CORE refreshes the authoritative shared `PROJECT_HANDOVER.md`/freshness record and publishes its exact SHA; PHX-MASTER refreshes the #291 child pointer and ownership routes; PHX-QA independently reviews the run-provenance gates. PHX-RELEASE then reruns Full and Windows against the refreshed exact SHA and inspects the terminal PR compatibility result.
+
+No merge, workflow dispatch, signing, release tag, publication, hardware flash, payment migration, or customer deployment. Hosted CI is not production or physical acceptance. **PRODUCTION NO-GO.**
