@@ -11,9 +11,11 @@ from pathlib import Path
 from poll_json_array_primitive_lab_fixtures import (
     COMPOSITE_MAIN,
     DEPTH_MAIN,
+    DUPLICATE_ROOT_MAIN,
     PARSER_FUNCTIONS,
     PRIMITIVE_MAIN,
     PROTOTYPES,
+    TRAILING_DATA_MAIN,
 )
 
 
@@ -87,6 +89,57 @@ def verify(boards, extract, stubs):
         print(
             f"{board}: POLL_JSON_COMPOSITE_DEPTH_PASS "
             "max=16 rejected=17 arrays=1 objects=1"
+        )
+        duplicate_result = _compile_and_run(
+            stubs + parser + DUPLICATE_ROOT_MAIN, board, "duplicate-root-baseline"
+        )
+        if duplicate_result.returncode:
+            raise AssertionError(
+                f"{board}: duplicate root status keys were not denied "
+                f"(exit={duplicate_result.returncode}; "
+                f"stdout={duplicate_result.stdout}; stderr={duplicate_result.stderr})"
+            )
+        print(duplicate_result.stdout.strip())
+
+        trailing_result = _compile_and_run(
+            stubs + parser + TRAILING_DATA_MAIN, board, "trailing-data-baseline"
+        )
+        if trailing_result.returncode:
+            raise AssertionError(
+                f"{board}: trailing JSON data was not denied or whitespace failed "
+                f"(exit={trailing_result.returncode}; "
+                f"stdout={trailing_result.stdout}; stderr={trailing_result.stderr})"
+            )
+        print(trailing_result.stdout.strip())
+
+        top_level = extract(source, "pollJsonTopLevelTrue")
+        duplicate_guard = "if(++found!=1) return false;"
+        final_guard = "return p==n && found==1 && accepted;"
+        if top_level.count(duplicate_guard) != 1 or top_level.count(final_guard) != 1:
+            raise AssertionError(
+                f"{board}: duplicate-root or trailing-data guard anchor changed"
+            )
+        duplicate_mutant = top_level.replace(duplicate_guard, "++found;", 1)
+        duplicate_mutant = duplicate_mutant.replace(
+            final_guard, "return p==n && found>=1 && accepted;", 1
+        )
+        _expect_mutation_rejected(
+            stubs + parser.replace(top_level, duplicate_mutant, 1)
+            + DUPLICATE_ROOT_MAIN,
+            board, "allow-duplicate-root-status", 91
+        )
+
+        trailing_mutant = top_level.replace(
+            final_guard, "return found==1 && accepted;", 1
+        )
+        _expect_mutation_rejected(
+            stubs + parser.replace(top_level, trailing_mutant, 1)
+            + TRAILING_DATA_MAIN,
+            board, "accept-trailing-json-data", 93
+        )
+        print(
+            f"{board}: POLL_JSON_ROOT_ENVELOPE_PASS "
+            "duplicate=2/2 trailing=3/3; mutations=2/2 rejected"
         )
 
         primitive = extract(source, "pollJsonSkipPrimitive")
