@@ -113,3 +113,20 @@ COE #26 still has five queued workflows, zero jobs and zero commit statuses: cas
 6. An authorized runner executes the Master Python suite and coordination verifier.
 
 **Production decision: PRODUCTION NO-GO.** Protected signing/anti-rollback witness, crash-atomic durable financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized release gates remain unverified.
+
+
+## PHX-MASTER UTC11 post-checkpoint refresh — RELEASE #291 advanced to a new final head (2026-11-24T11:55Z)
+
+The RELEASE owner advanced PR #291 after the initial UTC11 Master checkpoint. The current final PR/docs head is now `30a41c3e956aa26a75adedee379eb9cc78dde9ed`; the source/test head remains `0779a633e351f2ab3e8abdc651f530f63de772d6`.
+
+The new head's latest commit message is `docs(phx-release): audit action-pin regression` and its commit diff changes only `experiment/openwrt/BlazePwifi/docs/handover/CHANGE_LEDGER.md` (six additions). At this head:
+- `PROJECT_HANDOVER.md` blob: `3658da6302d32ba927b0c66e56eedd878364dfcd`.
+- `CURRENT_STATE.md` blob remains `85dd3c1e9254d947c4e75daaeaf3351ef3e105e3`; its last committed checkpoint remains `d85eb6a2766781b6cac1807cef461993d8216b84`.
+- `CHANGE_LEDGER.md` blob: `7f2ad6ddc64a8574b6b0527ec62c6b55fc9e5d13`.
+
+**Current exact-head Actions:**
+- Windows [#45388341622](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45388341622): handover job FAIL at `Verify shared BlazePwifi and SoftTimer handover freshness`; build-windows and publish-release SKIPPED. The exact log still reports `.github/workflows/blazepisonet-softtimer-release.yml` newer than `CURRENT_STATE.md` checkpoint `d85eb6a2...`.
+- BlazePwifi build [#45388341590](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45388341590): PENDING, no jobs returned at refresh time.
+- ESP32 compatibility [#45388341562](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45388341562): IN_PROGRESS; provenance regression suite PASS; both ESP32 core legs still running.
+
+The updated ledger entry alone does not satisfy the gate because the gate checks the latest committed revision of each canonical handover file independently and the `CURRENT_STATE.md` blob/checkpoint did not advance. This is still an owner handover blocker, not permission to bypass the gate. PHX-RELEASE must coordinate with PHX-CORE to update the canonical `CURRENT_STATE.md` after the workflow change, then rerun Windows and build CI at the new final PR head. Master did not edit owner files.

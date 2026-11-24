@@ -1045,3 +1045,11 @@ UTC05 final refresh: HARDWARE owner updated PR #349 body to current source/test/
 - Manifest remains 11 routes / DRAFT_REVIEW_ONLY / Master target null; cleanup #266 OPEN / 0-of-7. Canonical private registry v11/newer corrections unavailable; no older snapshot substituted. Master Python suite/verifier NOT RUN because GitHub DNS resolution failed.
 - Full evidence: [PHX-MASTER UTC11 live role-CI, COE #26 provenance and shared handover freshness](PHX_MASTER_UTC11_20261124_LIVE_HEAD_ROLE_CI_COE26_PROVENANCE_AND_HANDOVER_FRESHNESS.md).
 - PRODUCTION NO-GO; no subsystem source or COE destination changes.
+
+
+## UTC11 post-checkpoint owner refresh — RELEASE #291 current final head (2026-11-24T11:55Z)
+
+- RELEASE #291 advanced to docs/PR head `30a41c3e956aa26a75adedee379eb9cc78dde9ed`; source/test remains `0779a633e351f2ab3e8abdc651f530f63de772d6`.
+- New commit changes only the shared `CHANGE_LEDGER.md`; canonical `CURRENT_STATE.md` blob remains `85dd3c1e9254d947c4e75daaeaf3351ef3e105e3` at checkpoint `d85eb6a2766781b6cac1807cef461993d8216b84`.
+- Windows [#45388341622](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45388341622) still FAILS at shared handover freshness; build [#45388341590](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45388341590) PENDING; ESP32 compatibility [#45388341562](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45388341562) IN PROGRESS (provenance regression suite passed; core legs running).
+- The gate still requires a post-workflow-change `CURRENT_STATE.md` checkpoint. PHX-RELEASE + PHX-CORE must coordinate; no bypass or Master edit.

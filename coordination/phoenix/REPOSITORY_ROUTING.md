@@ -1842,3 +1842,12 @@ At final docs head, build [#45384186939](https://github.com/BlazeDevStudio/Blazi
 **Ownership route:** PHX-RELEASE owns `.github/workflows/blazepisonet-softtimer-release.yml`; PHX-CORE owns the shared BlazePwifi handover. PHX-RELEASE must coordinate with PHX-CORE to record the workflow change in the shared `PROJECT_HANDOVER.md` / `CURRENT_STATE.md` / `CHANGE_LEDGER.md`, then rerun #291 on the new exact docs head. PHX-MASTER does not edit either owner's source or handover files.
 
 HARDWARE #349's current docs head is `7723fd18c2f5fcf8a6e45ebb5646782038405881`; its source/test `083bc6405634c154e491f3b13e2b5ab0ef70df9c` remains owner-controlled. Full validation still fails at QA's inherited poll-signature assertion. No role source ownership or migration route changed.
+
+
+## PHX-MASTER UTC11 post-checkpoint RELEASE handover-gate recheck — 2026-11-24T11:55Z
+
+PR #291 is now at `30a41c3e956aa26a75adedee379eb9cc78dde9ed`. Its latest commit changes only `experiment/openwrt/BlazePwifi/docs/handover/CHANGE_LEDGER.md`; the canonical `CURRENT_STATE.md` blob is still `85dd3c1e9254d947c4e75daaeaf3351ef3e105e3`, whose last commit is `d85eb6a2766781b6cac1807cef461993d8216b84`.
+
+The new final-head Windows run [#45388341622](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45388341622) still fails at the shared freshness gate and reports `.github/workflows/blazepisonet-softtimer-release.yml` newer than CURRENT_STATE. The build run [#45388341590](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45388341590) is pending; compatibility [#45388341562](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45388341562) remains in progress.
+
+**Routing remains:** PHX-RELEASE owns the workflow; PHX-CORE owns the shared canonical handover. A ledger-only update does not satisfy the gate's independent CURRENT_STATE checkpoint. PHX-RELEASE must coordinate a post-change CURRENT_STATE update with PHX-CORE and rerun. Master does not edit either owner's files.

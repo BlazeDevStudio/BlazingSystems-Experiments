@@ -2846,3 +2846,10 @@ No subsystem source, COE destination, ownership manifest, secret, signer, financ
 - No subsystem source, COE destination, ownership manifest, secret, signer, financial state, hardware, or release artifact changed. No migration, merge, release, flash, physical test, payment or customer cutover occurred. **PRODUCTION NO-GO.**
 
 Full evidence: [PHX-MASTER UTC11 exact-head and COE provenance report](PHX_MASTER_UTC11_20261124_LIVE_HEAD_ROLE_CI_COE26_PROVENANCE_AND_HANDOVER_FRESHNESS.md).
+
+
+## PHX-MASTER UTC11 post-checkpoint RELEASE #291 correction — 2026-11-24T11:55Z
+
+RELEASE #291 advanced from `20d78f9035a019536e1c1a01cefb827cf34b4767` to `30a41c3e956aa26a75adedee379eb9cc78dde9ed`. The new commit updates only the shared `CHANGE_LEDGER.md`; `CURRENT_STATE.md` remains unchanged at blob `85dd3c1e9254d947c4e75daaeaf3351ef3e105e3` and checkpoint `d85eb6a2766781b6cac1807cef461993d8216b84`.
+
+Final-head Windows [#45388341622](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45388341622) still fails the shared handover freshness gate; build [#45388341590](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45388341590) is pending; ESP32 compatibility [#45388341562](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45388341562) is in progress with provenance regression passed and core legs running. This supersedes the prior UTC11 #291 head/run snapshot. The next action remains PHX-RELEASE + PHX-CORE updating the canonical CURRENT_STATE after the workflow change, then rerunning exact-head CI. No Master or owner source change occurred.

@@ -3652,3 +3652,14 @@ COE candidates: #35 `e7801818b00854f34a5a88955d979c601ec96404` — case guard PA
 | RELEASE #291 | source/test `0779a633e351f2ab3e8abdc651f530f63de772d6`; docs/PR `20d78f9035a019536e1c1a01cefb827cf34b4767` | Compatibility [#45384186930](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45384186930) PASS; build [#45384186939](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45384186939) and Windows [#45384186962](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45384186962) FAIL at shared handover freshness; publisher/signing skipped. |
 
 **Cross-owner action:** RELEASE #291's Windows workflow intentionally runs the shared BlazePwifi handover gate against both BlazePwifi and SoftTimer paths. The changed `.github/workflows/blazepisonet-softtimer-release.yml` is newer than canonical BlazePwifi `CURRENT_STATE.md` checkpoint `d85eb6a2766781b6cac1807cef461993d8216b84`. PHX-RELEASE and PHX-CORE must refresh the shared handover together; no bypass or Master-owned overwrite.
+
+
+## PHX-MASTER UTC11 post-checkpoint exact RELEASE #291 refresh — 2026-11-24T11:55Z
+
+Current PR #291 final docs/PR HEAD advanced to `30a41c3e956aa26a75adedee379eb9cc78dde9ed`; source/test HEAD remains `0779a633e351f2ab3e8abdc651f530f63de772d6`. The new commit changes only `experiment/openwrt/BlazePwifi/docs/handover/CHANGE_LEDGER.md`; `CURRENT_STATE.md` remains blob `85dd3c1e9254d947c4e75daaeaf3351ef3e105e3`, last checkpoint `d85eb6a2766781b6cac1807cef461993d8216b84`.
+
+- Windows [#45388341622](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45388341622): FAIL at shared handover freshness; build/publish skipped.
+- Build [#45388341590](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45388341590): PENDING.
+- ESP32 compatibility [#45388341562](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45388341562): IN PROGRESS; provenance regression suite passed, core legs still running.
+
+The ledger-only update does not advance the canonical CURRENT_STATE checkpoint checked by the gate. PHX-RELEASE and PHX-CORE must coordinate that file update and rerun exact-head CI; do not bypass the gate.

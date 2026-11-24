@@ -1906,3 +1906,8 @@ Shared handover gates must identify their canonical documents and every source/w
 For the current RELEASE #291 stack, the Windows workflow invokes the shared BlazePwifi gate while monitoring both BlazePwifi and SoftTimer paths. The current final docs head fails because `.github/workflows/blazepisonet-softtimer-release.yml` is newer than the canonical BlazePwifi `CURRENT_STATE.md` checkpoint. PHX-RELEASE and PHX-CORE must coordinate that update and rerun exact-head CI. This is a handover-freshness blocker, not permission to weaken the gate.
 
 For HARDWARE #349, focused Quarantine/Relay passes at both source/test and docs heads do not clear the Full validation failure at QA-owned `Missing poll signature check`. Keep firmware deny-only until the producer/consumer contract and independent QA assertion are reconciled.
+
+
+### 7.8.1 A ledger entry does not substitute for the gate's canonical live-state checkpoint — 2026-11-24 UTC11
+
+When a shared handover gate computes the last committed revision of multiple canonical files independently, updating only the change ledger does not refresh an unchanged `CURRENT_STATE.md`. Verify the exact blob and last path commit for each required handover file at the final PR head. If the gate still names the previous checkpoint, the handover remains stale even if a new ledger entry exists. Coordinate the file owner and workflow owner; do not bypass the gate or infer that the entire handover is current from one updated document.
