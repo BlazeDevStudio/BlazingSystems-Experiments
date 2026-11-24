@@ -292,6 +292,37 @@ class BuildProvenanceTests(unittest.TestCase):
         self.assertFalse((self.artifact / "BUILD-PROVENANCE.json").exists())
         self.assertEqual(checksum_path.read_bytes(), original_checksums)
 
+    def test_openwrt_source_tree_rejects_tracked_drift_before_manifest_publication(self):
+        work = self.openwrt_fixture()
+        args = provenance.build_args(
+            kind="openwrt",
+            target="ruijie",
+            artifact_dir=self.artifact,
+            imagebuilder_workdir=work,
+        )
+        checksum_path = self.artifact / "SHA256SUMS"
+        original_checksums = checksum_path.read_bytes()
+
+        def report_tracked_drift(command, **kwargs):
+            values = [str(part) for part in command]
+            if values == ["git", "diff", "--quiet", "HEAD", "--", OPENWRT_ROOTFS]:
+                return SimpleNamespace(
+                    returncode=1,
+                    stdout="",
+                    stderr="synthetic tracked source-tree drift",
+                )
+            return fake_run(command, **kwargs)
+
+        with patch.object(provenance.subprocess, "run", side_effect=report_tracked_drift):
+            with self.assertRaisesRegex(
+                provenance.ProvenanceError,
+                "source tree differs from exact HEAD worktree content",
+            ):
+                provenance.write_provenance(args, env=self.env)
+
+        self.assertFalse((self.artifact / "BUILD-PROVENANCE.json").exists())
+        self.assertEqual(checksum_path.read_bytes(), original_checksums)
+
     def test_openwrt_toolchain_reference_parses_target_slug_and_eabi_abi(self):
         archive = (
             "openwrt-toolchain-25.12.5-sunxi-cortexa7_gcc-14.3.0_musl_eabi.Linux-x86_64.tar.zst"
