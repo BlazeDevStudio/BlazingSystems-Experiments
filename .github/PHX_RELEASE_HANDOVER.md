@@ -4018,3 +4018,9 @@ This section supersedes the in-progress snapshot in the preceding UTC17 entry; i
 **Required owner:** PHX-CORE / PHX-MASTER must refresh the canonical `experiment/openwrt/BlazePwifi/docs/handover/CURRENT_STATE.md` and shared handover set, preserving CORE ownership, then publish the exact new SHA. PHX-RELEASE reruns full-build and Windows at that SHA. Do not weaken or bypass the freshness gate.
 
 No merge, signing, tag, publication, hardware flash, real payment migration or customer deployment. **PRODUCTION NO-GO.**
+
+## PHX-RELEASE UTC 2026-11-24 — supersession audit: build-provenance regression coverage extension
+
+- Compatible draft head `0f5fbe4c89b0a4084e039fdeb02a0da8600f03c3` already contains another worker’s build-provenance writer/regression coverage extension. No implementation was duplicated.
+- In [BlazePwifi build #45447178639](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45447178639), docs-only proof and scoped Android, ESP8266, ESP32, and OpenWrt compile legs succeeded; `validate` failed only at mandatory handover freshness. [Windows #45447178494](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45447178494) likewise stopped at handover freshness before Windows build/signing/publishing. [ESP32 compatibility #45447178560](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45447178560) succeeded.
+- This entry supplies the canonical freshness record. Evidence is scoped hosted CI only—not production, protected-signing, hardware, finance/migration, compatibility, or physical-acceptance evidence. PR #291 remains draft/unmerged and independently unreviewed. **PRODUCTION NO-GO** remains until MASTER and independent QA review, protected signer/source admission, durable finance/migration acceptance, and physical acceptance gates are satisfied.
