@@ -1226,7 +1226,7 @@ bool pollJsonSkipComposite(const String &r,int &p){
 bool pollJsonSkipPrimitive(const String &r,int &p){
   const int n=(int)r.length();
   const int start=p;
-  while(p<n && r[p]!=',' && r[p]!=125 && !pollJsonSpace(r[p])) ++p;
+  while(p<n && r[p]!=',' && r[p]!=125 && r[p]!=']' && !pollJsonSpace(r[p])) ++p;
   const int end=p;
   if(start==end) return false;
   const int length=end-start;
