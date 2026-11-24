@@ -110,7 +110,7 @@ DEPTH_MAIN = r"""
 String nestedComposite(unsigned depth, bool object) {
   std::string value;
   for (unsigned i = 0; i < depth; ++i) {
-    if (object) value += "{\\"k\\":";
+    if (object) value += "{\"k\":";
     else value += "[";
   }
   value += "0";
@@ -132,7 +132,7 @@ int main() {
     p = 0;
     if (pollJsonSkipComposite(rejected, p)) return object ? 132 : 122;
   }
-  std::cout << "POLL_JSON_COMPOSITE_DEPTH_PASS max=16 rejected=17 arrays=1 objects=1\\n";
+  std::cout << "POLL_JSON_COMPOSITE_DEPTH_PASS max=16 rejected=17 arrays=1 objects=1\n";
   return 0;
 }
 """
