@@ -226,37 +226,37 @@ for board,path in BOARDS.items():
         continue
     print(board, "PASS" if ran.returncode == 0 else "FAIL",
           ran.stdout.strip(), ran.stderr.strip())
-        if ran.returncode: failed.append(board)
-        coin_post = loop.find('String r=post("coin"')
-        if coin_post < 0:
-            print(board, "COIN_POST_ACK_GUARD RED: missing production coin POST")
+    if ran.returncode: failed.append(board)
+    coin_post = loop.find('String r=post("coin"')
+    if coin_post < 0:
+        print(board, "COIN_POST_ACK_GUARD RED: missing production coin POST")
+        failed.append(board)
+    else:
+        coin_branch = loop[coin_post:]
+        handler_call = coin_branch.find("handleCoinPostResponse(r);")
+        if handler_call < 0:
+            print(board, "COIN_POST_DISPOSITION RED: loop does not delegate to source-extracted disposition helper")
+            failed.append(board)
+        elif "clearPending();" in coin_branch or "quarantinePending(" in coin_branch:
+            print(board, "COIN_POST_DISPOSITION RED: loop retains inline journal disposition bypass")
             failed.append(board)
         else:
-            coin_branch = loop[coin_post:]
-            handler_call = coin_branch.find("handleCoinPostResponse(r);")
-            if handler_call < 0:
-                print(board, "COIN_POST_DISPOSITION RED: loop does not delegate to source-extracted disposition helper")
+            handler = extract(source, "handleCoinPostResponse")
+            auth_guard = handler.find("if(!coinPostDispositionVerified(response,pendingNonce,pendingTarget,pendingPulses))")
+            coin_success = handler.find('if(pollJsonTopLevelTrue(response,"ok"))')
+            clear_pending = handler.find("clearPending();")
+            quarantine = handler.find("quarantinePending(response);")
+            if auth_guard < 0 or (clear_pending >= 0 and clear_pending < auth_guard) or (quarantine >= 0 and quarantine < auth_guard):
+                print(board, "COIN_POST_DISPOSITION RED: no authenticated-disposition deny guard before journal disposition")
                 failed.append(board)
-            elif "clearPending();" in coin_branch or "quarantinePending(" in coin_branch:
-                print(board, "COIN_POST_DISPOSITION RED: loop retains inline journal disposition bypass")
+            elif coin_success < auth_guard or clear_pending < coin_success:
+                print(board, "COIN_POST_DISPOSITION RED: positive ACK path is not ordered after the deny guard")
+                failed.append(board)
+            elif handler.find("response.indexOf(", 0, clear_pending) >= 0:
+                print(board, "COIN_POST_DISPOSITION RED: substring-based success check remains before clearPending")
                 failed.append(board)
             else:
-                handler = extract(source, "handleCoinPostResponse")
-                auth_guard = handler.find("if(!coinPostDispositionVerified(response,pendingNonce,pendingTarget,pendingPulses))")
-                coin_success = handler.find('if(pollJsonTopLevelTrue(response,"ok"))')
-                clear_pending = handler.find("clearPending();")
-                quarantine = handler.find("quarantinePending(response);")
-                if auth_guard < 0 or (clear_pending >= 0 and clear_pending < auth_guard) or (quarantine >= 0 and quarantine < auth_guard):
-                    print(board, "COIN_POST_DISPOSITION RED: no authenticated-disposition deny guard before journal disposition")
-                    failed.append(board)
-                elif coin_success < auth_guard or clear_pending < coin_success:
-                    print(board, "COIN_POST_DISPOSITION RED: positive ACK path is not ordered after the deny guard")
-                    failed.append(board)
-                elif handler.find("response.indexOf(", 0, clear_pending) >= 0:
-                    print(board, "COIN_POST_DISPOSITION RED: substring-based success check remains before clearPending")
-                    failed.append(board)
-                else:
-                    print(board, "COIN_POST_DISPOSITION PASS: source-extracted helper gates clear/quarantine")
+                print(board, "COIN_POST_DISPOSITION PASS: source-extracted helper gates clear/quarantine")
 if failed: sys.exit("poll-response fail-closed lab failed: "+",".join(failed))
 print("PHYSICAL_COIN_ACCEPTOR_VERIFIED=0")
 print("PRODUCTION_FINANCIAL_AUTHORIZED=0")
