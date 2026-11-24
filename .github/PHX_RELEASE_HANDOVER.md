@@ -3772,3 +3772,42 @@ No merge, signing, tag, publication, hardware flash, real payment migration, or 
 - Compatible draft head `20d78f9035a019536e1c1a01cefb827cf34b4767` already contains another worker’s release-artifact action-pin regression-test refinement. No implementation was duplicated.
 - In [BlazePwifi build #45384186939](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45384186939), the docs-only proof and scoped Android, ESP8266, ESP32, and OpenWrt compile legs succeeded; `validate` failed only at mandatory handover freshness. [Windows #45384186962](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45384186962) likewise stopped at handover freshness, before Windows build/signing/publishing. [ESP32 compatibility #45384186930](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45384186930) succeeded.
 - This entry supplies the freshness evidence. It is scoped hosted-CI evidence only—not production, protected-signing, hardware, finance/migration, compatibility, or physical-acceptance evidence. PR #291 remains draft/unmerged and independently unreviewed. **PRODUCTION NO-GO** remains until MASTER and independent QA review, protected signer/source admission, durable finance/migration acceptance, and physical acceptance gates are satisfied.
+
+
+## PHX-RELEASE UTC12 — manual v0.5.3 release-workflow action-pin coverage (2026-11-24T12:18Z)
+
+**PR #291:** OPEN / DRAFT / UNMERGED. Branch `phoenix/release-publisher-isolation-20261115`; base #242 `734b89d9e7792247e8376335c3f3685500ab3f89`. Starting head `30a41c3e956aa26a75adedee379eb9cc78dde9ed`; exact code/test head `492b8186f83c0e2e50ef74d2def094527ca644fa`. Compare from start to code/test head: 3 commits ahead / 0 behind, exactly three RELEASE-owned paths changed: the action-pin regression guard and the two manual v0.5.3 release workflows. No CORE, PISONET, MASTER, HARDWARE, QA or COE destination path was changed in this increment.
+
+### Release-owned change
+
+The immutable action-pin guard previously covered only the ordinary BlazePwifi build, ESP32 compatibility and Windows SoftTimer workflows. Two manual release-capable workflows were omitted even though they contain publication/signing actions:
+
+- `.github/workflows/blazepwifi-v053-release.yml` (manual v0.5.3 release stage): checkout and upload-artifact were mutable tags.
+- `.github/workflows/blazerental-v053-lineage2-sign.yml` (manual Lineage 2 signer): checkout, setup-java and upload-artifact were mutable tags.
+
+Test/guard expansion: [`0a0bf33d`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/0a0bf33d62e07d7c28a95b0b5ae035f7a59bb89b) adds both workflows to the expected immutable-pin inventory. The test-first commit did not produce a separately observed RED Actions run before the source pins were corrected; no RED result is claimed.
+
+Workflow corrections:
+- [`7245e688`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/7245e688780fd8ed39f6301e4374387b59622a8a): v0.5.3 publication workflow pins checkout v7.0.1 and upload-artifact v7.0.2.
+- [`492b8186`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/492b8186f83c0e2e50ef74d2def094527ca644fa): Lineage 2 signing workflow pins checkout v7.0.1, setup-java v6.3.0 and upload-artifact v7.0.2.
+
+Exact upstream action metadata was read at the pinned commits; each `action.yml` declares Node24:
+- checkout `3d3c42e5aac5ba805825da76410c181273ba90b1` (metadata blob `5b0524f730db83f9513c18ab31a6c086c7239076`).
+- setup-java `d1374f8ac74474200d16ef8ecee22c7ae7a51880` (metadata blob `c52732b46a5c4f97bd4e678518a7c302fa738a9f`).
+- upload-artifact `cf430e030ddbb5b0abf93d22962f4752f3646cd9` (metadata blob `7cb4d1e81db55320b41217e1a78a1a46e3d2baef`).
+
+### Exact-source CI evidence
+
+- [BlazePwifi build PR run #45391871357](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45391871357), exact code/test head `492b8186f83c0e2e50ef74d2def094527ca644fa`: **CI-0701 docs-only PR sync proof SUCCESS**. The log shows 8 synthetic `uses:` parser cases PASS and immutable pin checks PASS for all five workflows: 52 + 4 + 6 + 2 + 3 = **67 action invocations** pinned to reviewed immutable commits. Release provenance, workflow concurrency, handover refs, Arduino archive verifier and ESP32 workflow-contract checks also passed in CI-0701. At the last observation, validation was QUEUED and firmware/Android target jobs were QUEUED or IN_PROGRESS; this run is **not a terminal full-build success**.
+- [Windows release PR run #45391871358](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45391871358), same exact head: **FAILURE at the handover job**. The gate reported CORE-owned `experiment/openwrt/BlazePwifi/PROJECT_HANDOVER.md` stale at checkpoint `c058e30e2611d433e260e9eaa682c1390a5d194f`, naming the two newly changed manual release workflows. Windows build and publisher were SKIPPED; the PISONET runtime negative self-test did not execute.
+- [ESP32 compatibility run #45391871401](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45391871401) had no jobs exposed at last observation; no result is claimed.
+
+The two manual workflows remain `workflow_dispatch` only. Their existing permissions were not broadened or changed (publication workflow retains contents:write; signing workflow retains contents:read/actions:read). No workflow was dispatched. No signing secret, real key, release creation, tag, publication, customer binary or deployment was used.
+
+### Ownership and next action
+
+MASTER PR #288 is OPEN / DRAFT / UNMERGED at `e72c47d2be6fd77628fe3882f9dc8f532da1535a`; branch compare is identical. Ownership manifest has 11 routes, status `DRAFT_REVIEW_ONLY`; RELEASE workflow route remains `reimplementation-review`. The current Windows log names CORE-owned `PROJECT_HANDOVER.md` at `c058e30e...`; the latest PHX-MASTER control-plane checkpoint separately reports CORE-owned `docs/handover/CURRENT_STATE.md` stale at `d85eb6a2...`. PHX-CORE/PHX-MASTER must reconcile and refresh the authoritative shared handover set; RELEASE will not edit those paths or bypass the freshness gate.
+
+COE #26 remains FROZEN; #31 is the release-packager parent and #35/#44 are successors. Current blocker evidence remains approved site-scoped ULA authority and a Bubblewrap-capable mandatory sandbox runner. Canonical private Drive project registry v11/newer corrections were not surfaced through authorized Library retrieval; no older snapshot was substituted and no private contents were copied.
+
+PR #291 independent review submissions remain 0; no merge requested. Cleanup-first #266 remains OPEN / 0 of 7 tracks complete. No merge, release tag, signing, publication, hardware flash, financial migration or customer deployment. **PRODUCTION NO-GO.**
