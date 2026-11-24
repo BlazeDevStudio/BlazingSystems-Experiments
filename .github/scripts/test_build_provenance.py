@@ -1431,6 +1431,116 @@ class BuildProvenanceTests(unittest.TestCase):
             "_hash_regular"
         )
 
+
+    def assert_root_relative_reader_cleanup_after_close_error(
+        self,
+        operation_name: str,
+        *,
+        fail_read: bool,
+    ) -> None:
+        target = self.root / f"{operation_name}-at-close-error.bin"
+        target.write_bytes(b"release-provenance-root-relative-cleanup")
+        parent_fd = os.open(
+            self.root,
+            os.O_RDONLY | getattr(os, "O_DIRECTORY", 0),
+        )
+        real_open = os.open
+        real_close = os.close
+        real_fstat = os.fstat
+        real_read = os.read
+        opened_fds: list[int] = []
+        close_calls: list[int] = []
+
+        def tracked_open(path, flags, *args, **kwargs):
+            descriptor = real_open(path, flags, *args, **kwargs)
+            if kwargs.get("dir_fd") == parent_fd:
+                opened_fds.append(descriptor)
+            return descriptor
+
+        def close_with_failure(descriptor: int) -> None:
+            if descriptor in opened_fds:
+                close_calls.append(descriptor)
+                real_close(descriptor)
+                if fail_read:
+                    raise RuntimeError("injected root-relative close interruption")
+                raise OSError("injected root-relative close failure")
+            real_close(descriptor)
+
+        def read_with_optional_failure(descriptor: int, size: int) -> bytes:
+            if fail_read and descriptor in opened_fds:
+                raise OSError("injected root-relative read failure")
+            return real_read(descriptor, size)
+
+        operation = getattr(provenance, operation_name)
+        primary_message = "cannot read" if operation_name == "_read_regular_at" else "cannot hash"
+        try:
+            with patch.object(
+                provenance.os, "open", new=tracked_open
+            ), patch.object(
+                provenance.os, "close", side_effect=close_with_failure
+            ), patch.object(
+                provenance.os, "read", side_effect=read_with_optional_failure
+            ):
+                if fail_read:
+                    with self.assertRaisesRegex(
+                        provenance.ProvenanceError, primary_message
+                    ) as raised:
+                        operation(parent_fd, target.name, str(target))
+                    self.assertTrue(
+                        any(
+                            "injected root-relative close interruption" in note
+                            for note in getattr(raised.exception, "__notes__", [])
+                        ),
+                        "the close interruption must remain attached to the primary read/hash error",
+                    )
+                else:
+                    with self.assertRaisesRegex(
+                        provenance.ProvenanceError, "could not close"
+                    ) as raised:
+                        operation(parent_fd, target.name, str(target))
+                    self.assertIn(
+                        "injected root-relative close failure",
+                        str(raised.exception),
+                    )
+
+            self.assertEqual(len(opened_fds), 1)
+            self.assertEqual(
+                close_calls,
+                opened_fds,
+                "the helper must attempt to close its file descriptor exactly once",
+            )
+            real_fstat(parent_fd)
+        finally:
+            # The parent descriptor is caller-owned; only the opened file
+            # descriptor belongs to the root-relative reader.
+            for descriptor in opened_fds:
+                try:
+                    real_fstat(descriptor)
+                except OSError:
+                    continue
+                real_close(descriptor)
+            real_close(parent_fd)
+
+    def test_root_relative_read_preserves_primary_error_after_close_interruption(self):
+        self.assert_root_relative_reader_cleanup_after_close_error(
+            "_read_regular_at", fail_read=True
+        )
+
+    def test_root_relative_hash_preserves_primary_error_after_close_interruption(self):
+        self.assert_root_relative_reader_cleanup_after_close_error(
+            "_hash_regular_at", fail_read=True
+        )
+
+    def test_root_relative_read_reports_close_only_failure(self):
+        self.assert_root_relative_reader_cleanup_after_close_error(
+            "_read_regular_at", fail_read=False
+        )
+
+    def test_root_relative_hash_reports_close_only_failure(self):
+        self.assert_root_relative_reader_cleanup_after_close_error(
+            "_hash_regular_at", fail_read=False
+        )
+
 if __name__ == "__main__":
     suite = unittest.defaultTestLoader.loadTestsFromTestCase(BuildProvenanceTests)
     result = unittest.TextTestRunner(verbosity=2).run(suite)
