@@ -147,6 +147,16 @@ def verify():
             raise AssertionError(
                 f"{board}: post() must not read an unbounded body directly"
             )
+        compact_post = re.sub(r"\\s+", "", post)
+        collect_call = "h.collectHeaders(responseHeaders,1)"
+        if (
+            compact_post.count(collect_call) != 1
+            or compact_post.count('constchar*responseHeaders[]={"Transfer-Encoding"};') != 1
+            or compact_post.find(collect_call) > compact_post.find("h.POST(body)")
+        ):
+            raise AssertionError(
+                f"{board}: Transfer-Encoding must be collected before POST"
+            )
 
         prefix = constant.group(0) + "\n" + helper + "\n"
         baseline = compile_and_run(STUBS + prefix + MAIN, board, "baseline")
@@ -198,7 +208,7 @@ def verify():
 
         print(
             f"{board}: BOUNDED_HTTP_RESPONSE_PASS "
-            "allowed=3 denied=5 mutations=3/3"
+            "allowed=3 denied=7 mutations=4/4"
         )
 
     print("BOUNDED_HTTP_RESPONSE_BOTH_BOARDS_PASS")

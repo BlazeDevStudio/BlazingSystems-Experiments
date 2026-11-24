@@ -943,7 +943,8 @@ static const int MAX_CONTROLLER_RESPONSE_BYTES = 1024;
 String readBoundedControllerResponse(HTTPClient &h,int statusCode){
   const int responseBytes=h.getSize();
   if(statusCode<200 || statusCode>=300 ||
-     responseBytes<0 || responseBytes>MAX_CONTROLLER_RESPONSE_BYTES) return String();
+     responseBytes<0 || responseBytes>MAX_CONTROLLER_RESPONSE_BYTES ||
+     h.hasHeader("Transfer-Encoding")) return String();
   return h.getString();
 }
 
@@ -956,6 +957,8 @@ String post(const String& action,const String& pulses="0",const String& target="
   if(!h.begin(client,url)) return "";
   h.setTimeout(3500);
   h.addHeader("Content-Type","application/x-www-form-urlencoded");
+  const char *responseHeaders[] = {"Transfer-Encoding"};
+  h.collectHeaders(responseHeaders, 1);
   int code=h.POST(body);
   String r=readBoundedControllerResponse(h,code); h.end(); return r;
 }
