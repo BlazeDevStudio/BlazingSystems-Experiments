@@ -4937,3 +4937,27 @@ License/notice identity at these exact trees: product LICENSE matches (1ee55b941
 COE #26 exact-head Actions returned five QUEUED runs—case collision 43096752609, PISONET synthetic 43096752632, shared hardware 43096752800, Rental 43096752563, and PisoWiFi overlay 43096752557—with zero jobs each and zero commit statuses. COE #35 exact head: case collision [#45303825417](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45303825417) PASS; shared contracts [#45303825436](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45303825436) FAIL; ImageBuilder sandbox [#45303825459](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45303825459) FAIL. COE #45 overlay [#44295049727](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44295049727) and case [#44295049903](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44295049903) PASS. COE #49 case [#44646341992](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44646341992) and Stage 5.1 bridge [#44646341873](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44646341873) PASS; shared contracts [#44646341922](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44646341922) FAIL.
 
 FROZEN: no destination staging, copy, move, overwrite, rebase, cherry-pick, retarget, or promotion. The full historical 61-row intake reconciliation was not rerun. This bounded exact-tree audit is not a complete licensing/legal review or acceptance test.
+
+
+## PHX-MASTER UTC10 exact #349-to-COE #26 source/test/license revalidation — 2026-11-24T10:05:28Z
+
+Complete non-truncated recursive trees: Experiments #349 final docs head `861e80de8eec289ef04a84bd80484eec032a3b73` = 2,504 entries; COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12` = 286 entries; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243` = 3 entries.
+
+| Exact mapped scope | Experiments #349 | COE #26 | Result |
+|---|---:|---:|---|
+| ESP32 + ESP8266 board subtree entries | 58 | 4 | 54 fewer destination entries |
+| Board-local Python labs/helpers | 44 | 0 | All 44 source helpers absent |
+| QA tests | 47 | 19 | 1 exact blob+mode; 3 divergent; 43 source-only; 15 destination-only |
+| ESP8266 sketch | `2f87a9de84ac53dbb0d2718b5c79a4662b63de8f` | `c8be98f72596681e36a3ad1f8939bf8046c96887` | Different blobs |
+| ESP32 sketch | `a9a1c2fecb001d71f8f22b43952edbd160aacaf8` | `3cc7ec54b476943dc04a8d1af5e2df5fe054e422` | Different blobs |
+
+The three divergent same-relative-path tests are `config.sh`, `integration.sh`, and `security.sh`. The single exact match is `portal.sh`. The 43 source-only and 15 destination-only paths remain distinct; no filename-based equivalence is inferred.
+
+License/notice identity at these exact trees:
+- Product LICENSE: source `1ee55b94183417be977ca287cd7391f9a6f7e721`, destination `1ee55b94183417be977ca287cd7391f9a6f7e721` — exact match.
+- QRCode LICENSE: source/destination `150770c0fc2994865ccdbef6662735cc083e780d` — exact match.
+- TailAdmin LICENSE: source/destination `cb92d4176b21b0594e5a6caf94d79340505e3d33` — exact match.
+- TailAdmin NOTICE: source/destination `f0425bbbe34c1227311098173b1eae0c3e2a807b` — exact match.
+- Experiments root NOTICE `f6d92cd21465312be5993631fe26977219be0fb9`, Tabler LICENSE `22ee8122400915cbff18e5f69368fa9eea6145eb`, and BlazeRentalLauncher LICENSE `c5b1efa7aac764ae6d8da63476a2d5cec02a6a5d` have no mapped destination counterpart.
+
+COE #26 exact-head Actions still return five QUEUED runs (case collision 43096752609, PISONET synthetic 43096752632, Shared Hardware 43096752800, Rental 43096752563, PisoWiFi overlay 43096752557), zero jobs and zero commit statuses. The historical 61-row intake reconciliation was not rerun in this bounded audit. **FROZEN:** no staging, copy, move, overwrite, rebase, cherry-pick, retarget, or promotion.

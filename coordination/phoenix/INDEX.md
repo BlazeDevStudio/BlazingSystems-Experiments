@@ -1023,3 +1023,13 @@ UTC05 final refresh: HARDWARE owner updated PR #349 body to current source/test/
 - Current Master branch / PR #288 head: 4a21f3b6114c6242c77d2738dd6805af697ac0aa; base main f4e8a891aed8af86d5fd315d28750a0ac3a7372b; OPEN / DRAFT / UNMERGED.
 - Exact owner heads and CI: see ROLE_ASSIGNMENTS.md and INTEGRATION_MATRIX.md. Cross-owner shared handover blobs and the RELEASE #291 PISONET path overlap: see REPOSITORY_ROUTING.md.
 - COE #26 remains FROZEN; no staging or destination writes. Private registry v11/newer corrections remain unavailable. Master Python tests NOT RUN because local GitHub DNS resolution failed. PRODUCTION NO-GO.
+
+
+## Latest exact-head reconciliation — 2026-11-24 UTC10 (updated 2026-11-24T10:05:28Z)
+
+- New audit: [PHX-MASTER UTC10 Hardware #349 exact-head, COE #26 provenance and RELEASE #291 CI](PHX_MASTER_UTC10_20261124_HW349_CURRENT_HEAD_COE26_PROVENANCE_AND_RELEASE291_CI.md).
+- Current Master branch/PR #288 starting head: `08345f148162d83c2558e7823aa478be0cb7d3da`; base main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; PR OPEN/DRAFT/UNMERGED. This UTC10 commit updates six existing Master-owned coordination documents and adds one audit report; all changed paths remain under `coordination/phoenix/`.
+- Current exact owner CI: #349 Quarantine/Relay PASS, Full FAIL at QA-owned Missing poll signature; #291 build/ESP32 PASS, Windows FAIL at PISONET negative self-test; see ROLE_ASSIGNMENTS.md.
+- COE #26 remains FROZEN: 2,504 source entries vs 286 destination; 44 board Python helpers missing; 47-to-19 test mapping (1 exact, 3 divergent, 43 source-only, 15 destination-only); firmware blobs differ; root NOTICE, Tabler and BlazeRentalLauncher license gaps remain.
+- Manifest remains 11 routes / DRAFT_REVIEW_ONLY / Master target null. Cleanup #266 OPEN / 0-of-7. Private canonical Drive registry v11/newer corrections remain inaccessible; no older snapshot substituted.
+- Master Python suite and `verify_coordination.py` NOT RUN because local clone DNS failed. JavaScript static source-tree assertions executed. No subsystem or COE destination changes. **PRODUCTION NO-GO.**

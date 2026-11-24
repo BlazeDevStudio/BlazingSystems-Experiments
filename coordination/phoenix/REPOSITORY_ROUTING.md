@@ -1818,3 +1818,14 @@ The current RELEASE #291 head is 9d45ee19b2d8e3ef6623b3b0f0db3da56b1616e8. Its a
 | experiment/openwrt/BlazePwifi/docs/handover/CURRENT_STATE.md | 72c38aeb93377f3aedb758c91d670ff1150e87bd | 47e07b7c0e06766d0d4ebb18bc13bfb274adfe22 | 73b9d1d6acbd8b58c13f2d1b9d17512c392f444a | 85dd3c1e9254d947c4e75daaeaf3351ef3e105e3 |
 
 The latest #291 commit 9d45ee19 changes only .github/PHX_RELEASE_HANDOVER.md; the accumulated PR still carries these owner-overlap paths. The current routing manifest remains 11 routes, DRAFT_REVIEW_ONLY, PHX-MASTER source coordination/phoenix/ and target null. No ownership, target, or copy permission changed. Do not resolve these conflicts by last-writer selection, recursive copy, or silent overwrite; require CORE and PISONET owner review and preserve each role's handover history.
+
+
+## PHX-MASTER UTC10 exact route/ownership revalidation — 2026-11-24T10:05:28Z
+
+The canonical `OWNERSHIP_ROUTES.json` remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`, 11 routes, `DRAFT_REVIEW_ONLY`; PHX-MASTER owns only `coordination/phoenix/` and has `target: null`. No route promotion or source ownership transfer occurred.
+
+Current RELEASE #291 head `6345b71318e1ed20557c7faa88c2bdafac2c61bf` still has 27 accumulated changed paths. Its diff includes CORE-owned `PROJECT_HANDOVER.md`, `CHANGE_LEDGER.md`, `CURRENT_STATE.md` and PISONET-owned `negative-selftest.ps1` plus `PublisherMockCli.ps1`. The current PISONET #255 head remains `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09`; these are ownership overlaps in the accumulated RELEASE diff, not permission for Master or RELEASE to rewrite PISONET or CORE records. Current #291 Windows run #45370196597 still fails at the PISONET negative self-test; the build and ESP32 compatibility runs pass, while publisher remains skipped.
+
+HARDWARE #349 is now at docs/PR head `861e80de8eec289ef04a84bd80484eec032a3b73` and source/test `75b4c9a7ef923cc9f58e228d12d673ea1a31541c`. Quarantine/Relay pass; Full fails at the inherited QA-owned poll-signature assertion. CORE owns the producer envelope; QA owns the assertion review; Hardware retains deny-only behavior. Master does not edit their source branches.
+
+COE #26 remains FROZEN at `b382d233ff06c8791b1028bed3c617cc7b670d12`. Current exact-tree provenance shows incomplete board-local test imports, divergent firmware/test blobs and three missing license/notice artifacts. No staging, copy, move, overwrite, rebase, cherry-pick, retarget, or destination write is authorized or performed.
