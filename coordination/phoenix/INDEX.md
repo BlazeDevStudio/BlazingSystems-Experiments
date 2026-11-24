@@ -1015,3 +1015,11 @@ UTC05 final refresh: HARDWARE owner updated PR #349 body to current source/test/
 - COE #26 remains FROZEN; current source/destination ESP8266, ESP32 and parser-test identities differ; product LICENSE matches but destination root NOTICE is missing. No staging/copy/move.
 - Cleanup #266 remains OPEN / 0-of-7. Ownership manifest remains 11 routes / DRAFT_REVIEW_ONLY / Master target null. Private canonical Drive v11/newer corrections unavailable; no Google Drive connector exposed.
 - JavaScript static consistency assertions passed. Master Python suite and `verify_coordination.py` NOT RUN because local checkout/network access is unavailable. No subsystem or destination changes. **PRODUCTION NO-GO.**
+
+
+## Latest exact-head reconciliation — 2026-11-24 UTC09 (updated 2026-11-24T09:37:39Z)
+
+- New audit: [PHX-MASTER UTC09 release tree provenance and COE #26 reconciliation](PHX_MASTER_UTC09_20261124_RELEASE_TREE_PROVENANCE_AND_COE26_RECONCILIATION.md).
+- Current Master branch / PR #288 head: 4a21f3b6114c6242c77d2738dd6805af697ac0aa; base main f4e8a891aed8af86d5fd315d28750a0ac3a7372b; OPEN / DRAFT / UNMERGED.
+- Exact owner heads and CI: see ROLE_ASSIGNMENTS.md and INTEGRATION_MATRIX.md. Cross-owner shared handover blobs and the RELEASE #291 PISONET path overlap: see REPOSITORY_ROUTING.md.
+- COE #26 remains FROZEN; no staging or destination writes. Private registry v11/newer corrections remain unavailable. Master Python tests NOT RUN because local GitHub DNS resolution failed. PRODUCTION NO-GO.

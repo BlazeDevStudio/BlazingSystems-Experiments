@@ -3596,3 +3596,22 @@ CORE remains with its separate production-continuation owner; PHX-MASTER made no
 - Canonical private Drive registry v11 and newer corrections were not available through authorized Library search; no Google Drive connector is exposed. Older snapshots/checkpoints are not substitutes; no private contents or IDs published.
 - Master Python unittest suite and `verify_coordination.py` NOT RUN; no authenticated local checkout. Main/development/COE main report `protected=false`; ruleset lists empty; Master branch protection UNKNOWN. **PRODUCTION NO-GO.**
 
+
+
+## PHX-MASTER UTC09 exact owner heads and CI — 2026-11-24T09:37:39Z
+
+| Role | Current draft / exact head | Exact-head CI and disposition |
+|---|---|---|
+| CORE | #252 c82705f2de865c89ab733b10efa84f26f56a5cc4 | [#42698139210](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42698139210) PASS; scoped software validation only |
+| RENTAL | #328 0e0da62acd47c6a1ce287f8a30fc700d603fa070 | [APK #44782114384](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44782114384) PASS; [API #44782114393](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44782114393) PASS; [build #44782114390](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44782114390) FAIL |
+| PISONET | #255 d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | [#42462978704](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42462978704) PASS; synthetic Windows only |
+| HARDWARE | #347 960184670379f01e20f0e7e8bc23b3e5eedacd3f | Quarantine [#45299741995](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45299741995), Relay [#45299742437](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45299742437), build [#45299741993](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45299741993): all FAIL |
+| HARDWARE | #348 eb7afcb2ba0d1e84054c052c8b129cb51a91d062 | Focused [#45352513178](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45352513178) PASS; build [#45352513177](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45352513177) FAIL (ESP32 mbedtls/sha256.h unavailable) |
+| HARDWARE | #349 dbb7d5393ae40347b9d1148775c2ece9142d67ff | Quarantine [#45360524109](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45360524109) PASS; Relay [#45360524001](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45360524001) PASS; build [#45360524080](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45360524080) FAIL at inherited Missing poll signature check |
+| QA | #290 5c29d15994cee1279058f1eca12f2a3180704292 | [#43633486963](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43633486963) PASS |
+| QA | #292 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | No PR-triggered runs; NOT VERIFIED |
+| RELEASE | #291 9d45ee19b2d8e3ef6623b3b0f0db3da56b1616e8 | Windows [#45366410925](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45366410925) FAIL at PISONET negative self-test; build [#45366411182](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45366411182) 26 jobs PASS / 4 SKIPPED; ESP32 [#45366411198](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45366411198) PASS |
+
+HARDWARE #349's PR description still pins older e4ab80dc / 8dd8b12c refs, while the actual PR head is dbb7d539; its UTC08 handover says exact-head CI is pending, although the current Quarantine/Relay/build runs are terminal. PHX-HARDWARE should refresh its own PR description and handover. The producer/consumer mismatch remains: current register/poll CGI envelopes omit response_sig; Hardware stays deny-only until PHX-CORE publishes the approved versioned envelope and PHX-QA reconciles its inherited parity assertion.
+
+RELEASE #291's latest commit changes only .github/PHX_RELEASE_HANDOVER.md; its accumulated diff still includes CORE and PISONET paths listed in REPOSITORY_ROUTING.md. No ownership or route changed.

@@ -1805,3 +1805,16 @@ The #291 diff still contains PISONET-subtree test files `negative-selftest.ps1` 
 HARDWARE #349 latest commit `da046d5ea80a8daac7258d302ecc310cd5634b24` is owner-scoped fixture/test and workflow-filter cleanup. Its exact-head Quarantine/Relay/build runs were in progress; PR body still carries older source/test/docs pins and needs an owner handover refresh after CI.
 
 COE #26 remains FROZEN at `b382d233ff06c8791b1028bed3c617cc7b670d12`; no source/destination staging, copying, moving, overwriting, rebase, cherry-pick, retarget, or promotion occurred. Registry v11/newer corrections remain unavailable; no older registry or public substitute was used.
+
+
+## PHX-MASTER UTC09 exact cross-owner blob and path-overlap revalidation — 2026-11-24T09:37:39Z
+
+The current RELEASE #291 head is 9d45ee19b2d8e3ef6623b3b0f0db3da56b1616e8. Its accumulated 27-file diff contains the three shared handover paths below plus PISONET-owned tests/ReleaseSigning/negative-selftest.ps1 and PublisherMockCli.ps1. Those two PISONET files have blobs 8b69174bf519154e43f7e12e4a9fa2c0e75d350f and 7d56522b4fd678a26a2d7ea39e9b51dc8e52612d at #291; both exact paths return 404 at PISONET #255 head d01fd1642c105b3b0f6cd3343d1c9b67291f6e09.
+
+| Shared path | CORE #252 | PISONET #255 | QA #290 | RELEASE #291 |
+|---|---|---|---|---|
+| experiment/openwrt/BlazePwifi/PROJECT_HANDOVER.md | 72e8e487d333a9488f77c2c3e68652d1a650ff85 | d3e66608280644af8c42635168a7e27c8fba8f31 | 83db03cf387f280ba2d595ff6e9d58ffa23417c5 | 0c951973eefd2321acf214cc1f58b87f4fcfcc07 |
+| experiment/openwrt/BlazePwifi/docs/handover/CHANGE_LEDGER.md | df50981c1596838b1abf544e94f68e89ad556b7d | 02963d32018ea09ad2a6a5a95b487de1f65ff4f2 | 3180e1a93c852e5c983f947e8ca45a897df0479f | ec7c0bdc560006d1b5ff63940a8da6d736aa5d1a |
+| experiment/openwrt/BlazePwifi/docs/handover/CURRENT_STATE.md | 72c38aeb93377f3aedb758c91d670ff1150e87bd | 47e07b7c0e06766d0d4ebb18bc13bfb274adfe22 | 73b9d1d6acbd8b58c13f2d1b9d17512c392f444a | 85dd3c1e9254d947c4e75daaeaf3351ef3e105e3 |
+
+The latest #291 commit 9d45ee19 changes only .github/PHX_RELEASE_HANDOVER.md; the accumulated PR still carries these owner-overlap paths. The current routing manifest remains 11 routes, DRAFT_REVIEW_ONLY, PHX-MASTER source coordination/phoenix/ and target null. No ownership, target, or copy permission changed. Do not resolve these conflicts by last-writer selection, recursive copy, or silent overwrite; require CORE and PISONET owner review and preserve each role's handover history.

@@ -4915,3 +4915,25 @@ PHX-MASTER UTC06 post-checkpoint exact-head refresh — exact-head owner matrix
 COE #26 remains `b382d233ff06c8791b1028bed3c617cc7b670d12`, OPEN/DRAFT/FROZEN, 205 changed paths, five workflows QUEUED / zero jobs. The 61-row source-intake audit was not rerun in this bounded refresh. No destination staging or writes.
 
 The three shared handover files remain non-identical across CORE/PISONET/QA/RELEASE; no integration may resolve those conflicts by taking the last writer or overwriting another owner's history.
+
+
+## PHX-MASTER UTC09 exact COE #26 source/destination and CI revalidation — 2026-11-24T09:37:39Z
+
+Exact recursive Git trees: Experiments HARDWARE #349 head dbb7d5393ae40347b9d1148775c2ece9142d67ff = 2,503 entries; COE #26 head b382d233ff06c8791b1028bed3c617cc7b670d12 = 286 entries; COE main a6513ab4412b4c014eee2863e45cbe32d06cb243 = 3 entries. All three tree responses were non-truncated.
+
+| Exact source/destination comparison | Source #349 | COE #26 | Result |
+|---|---:|---:|---|
+| ESP8266 board subtree entries | 41 | 2 | Incomplete import |
+| ESP32 board subtree entries | 17 | 2 | Incomplete import |
+| Board-local Python labs | 44 | 0 | Missing |
+| QA test files | 47 | 19 | 43 source files lack same-relative-path counterparts |
+| Same-relative-path QA tests | 4 | 4 | 1 exact blob+mode; 3 divergent |
+| Destination-only QA tests | — | 15 | No source counterpart at the mapped relative path |
+
+The ESP8266 sketch source blob 2f87a9de84ac53dbb0d2718b5c79a4662b63de8f differs from destination c8be98f72596681e36a3ad1f8939bf8046c96887. The ESP32 sketch source blob a9a1c2fecb001d71f8f22b43952edbd160aacaf8 differs from destination 3cc7ec54b476943dc04a8d1af5e2df5fe054e422. The current parser/HTTP/poll lab files under the source ESP8266 tree are absent from the mapped COE Hardware subtree.
+
+License/notice identity at these exact trees: product LICENSE matches (1ee55b94183417be977ca287cd7391f9a6f7e721); QRCode LICENSE matches (150770c0fc2994865ccdbef6662735cc083e780d); TailAdmin LICENSE and NOTICE.md match (cb92d4176b21b0594e5a6caf94d79340505e3d33, f0425bbbe34c1227311098173b1eae0c3e2a807b). Root NOTICE.md is missing at destination; Tabler ui/vendor/tabler/LICENSE and BlazeRentalLauncher LICENSE are also missing at the mapped destination. Matching three license groups do not establish complete third-party or source provenance.
+
+COE #26 exact-head Actions returned five QUEUED runs—case collision 43096752609, PISONET synthetic 43096752632, shared hardware 43096752800, Rental 43096752563, and PisoWiFi overlay 43096752557—with zero jobs each and zero commit statuses. COE #35 exact head: case collision [#45303825417](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45303825417) PASS; shared contracts [#45303825436](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45303825436) FAIL; ImageBuilder sandbox [#45303825459](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45303825459) FAIL. COE #45 overlay [#44295049727](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44295049727) and case [#44295049903](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44295049903) PASS. COE #49 case [#44646341992](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44646341992) and Stage 5.1 bridge [#44646341873](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44646341873) PASS; shared contracts [#44646341922](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44646341922) FAIL.
+
+FROZEN: no destination staging, copy, move, overwrite, rebase, cherry-pick, retarget, or promotion. The full historical 61-row intake reconciliation was not rerun. This bounded exact-tree audit is not a complete licensing/legal review or acceptance test.
