@@ -451,10 +451,10 @@ def check_reproducible_build_verifier(workflow_content: str) -> list[str]:
             raise OSError("injected close failure after close")
 
         try:
-            with patch.object(module.os, "open", side_effect=recording_open), \\
-                 patch.object(module.os, "fstat", side_effect=interrupted_fstat), \\
-                 patch.object(module.os, "close", side_effect=close_then_fail):
-                module._open_regular_image(image, expected_name)
+            with patch.object(module.os, "open", side_effect=recording_open):
+                with patch.object(module.os, "fstat", side_effect=interrupted_fstat):
+                    with patch.object(module.os, "close", side_effect=close_then_fail):
+                        module._open_regular_image(image, expected_name)
         except KeyboardInterrupt as exc:
             notes = getattr(exc, "__notes__", [])
             if not any("descriptor cleanup failure" in note.lower() for note in notes):
