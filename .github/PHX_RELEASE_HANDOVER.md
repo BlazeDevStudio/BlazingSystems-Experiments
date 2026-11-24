@@ -1,3 +1,32 @@
+## PHX-RELEASE UTC07 — final docs-head reconciliation (2026-11-24)
+
+**PR #291:** OPEN / DRAFT / UNMERGED. Branch `phoenix/release-publisher-isolation-20261115`; base #242 `734b89d9e7792247e8376335c3f3685500ab3f89`. The UTC07 source-pin task was already completed on this existing branch; this note records the terminal Actions outcomes at pre-handover docs HEAD `1b50705e80c427d9d027b815d9ad2c54b9692fe4` without repeating the fix.
+
+### Release-owned change and exact source identity
+
+- Test-first stale-pin regression: [`00701e30`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/00701e30fd0b94e062bf332e991eacaa8845e260); expected RED [#45347777486](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45347777486), CI-0701 failed because the workflow still checked out the old HARDWARE source pin.
+- Workflow correction: [`8b0ba137`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/8b0ba13760d6be290c0bcd4a8a454f150be5f73b).
+- Docs/source-head commit: [`1b50705e`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/1b50705e80c427d9d027b815d9ad2c54b9692fe4).
+- Compare from the UTC07 role-lock starting head `90d32a72b0a7c2739c282fd51ec98cda37b2fc31` to `1b50705e`: 3 commits ahead / 0 behind; exactly three paths changed, all RELEASE-owned: the ESP32 compatibility test guard, its workflow, and this handover.
+- Live HARDWARE #349 source/test anchor: `da046d5ea80a8daac7258d302ecc310cd5634b24`; final PR/docs head: `dff053bb8fe276d3f0ba9764e845d61ebe640539`; ESP32 sketch Git blob: `a9a1c2fecb001d71f8f22b43952edbd160aacaf8`. HARDWARE source/test-to-docs comparison is 2 ahead / 0 behind; those two commits changed only the Hardware Relay workflow and UTC06 handover, not the ESP32 sketch. This pin is provenance-only and does not change HARDWARE source.
+
+### Terminal Actions at exact PR head `1b50705e`
+
+- ESP32 compatibility [#45349040244](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45349040244): **COMPLETED SUCCESS, 3/3 jobs**. Provenance regression, ESP32 core 3.3.13, and ESP32 core 4.0.0 all passed. Both core jobs verified the exact HARDWARE source SHA and sketch blob above and completed two clean, byte-identical application-image builds.
+- BlazePwifi build [#45349040273](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45349040273): **COMPLETED SUCCESS, 26/30 jobs successful; 4 production-only jobs skipped**. CI-0701, full validation, Android, configured firmware targets, update bundle and listed v0.4 simulations passed. Skipped: `production_import_signed_apk`, `production_sign_handoff`, `publish_release`, `publish_prerelease`. This is hosted PR CI only, not a signed or published release.
+- Windows release [#45349040240](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45349040240): **COMPLETED FAILURE**. Handover freshness and PackageParity passed. PISONET-owned `experiment/windows/BlazePisonet-SoftTimer/tests/ReleaseSigning/negative-selftest.ps1:326` failed with `RELEASE-PUBLISHER executable lookup regression: missing tag accepted=False`; publisher and downstream Windows build/sign/package steps were skipped. PHX-RELEASE did not modify PISONET paths.
+
+### Cross-repository ownership and blockers
+
+- MASTER PR #288 is OPEN / DRAFT / UNMERGED at `48b961996a0c53452f5a75a4a40d0610f8a023dc`. The 11-route ownership manifest remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`, `DRAFT_REVIEW_ONLY`; RELEASE's build-workflow route is `reimplementation-review`, not copy/move authority. No migration occurred.
+- RELEASE #242 remains OPEN / DRAFT at `734b89d9e7792247e8376335c3f3685500ab3f89`; its historical Windows run [#40882814472](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/40882814472) succeeded but grants no signing or publishing authority.
+- COE #26 remains frozen at `b382d233ff06c8791b1028bed3c617cc7b670d12`; all five workflows are queued with zero jobs. COE #31 remains OPEN / DRAFT at `59ed44d0b911e176f1a95b9cf5585ef811ffd31b`; shared validation and case-collision pass, while mandatory Bubblewrap sandbox fails closed at unprivileged namespace setup (exit 125). Superseding #35 has shared profile admission failing closed for missing approved site ULA authority and sandbox failure; #44's shared checks pass but its mandatory Bubblewrap sandbox also fails closed. No ULA was invented and no unsandboxed fallback was used.
+- Cleanup-first #266 remains OPEN, 0/7 tracks complete. Canonical private Drive project registry v11 was not surfaced through authorized Library retrieval; older v3–v7 snapshots were not substituted and no private contents were exposed.
+- PR #291 still has zero independent reviews and zero review threads. MASTER must reconcile the five inherited cross-role paths in the overall PR before any integration; this UTC07 increment itself changed only the three RELEASE-owned paths listed above.
+
+No merge, rebase, signing, tagging, publication, hardware flashing, real payment migration or customer deployment occurred. No approved production binary, protected signer, independent freshness witness, durable financial migration, independent QA/MASTER approval, 150 physical power cuts or 30-device/24-hour soak is established. **PRODUCTION NO-GO.**
+
+
 ## PHX-RELEASE UTC07 — HARDWARE #349 provenance refresh (verified)
 
 **PR #291 remains OPEN / DRAFT / UNMERGED.** Existing branch `phoenix/release-publisher-isolation-20261115`; base #242 `734b89d9e7792247e8376335c3f3685500ab3f89`. Source-pin test commit [`00701e30`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/00701e30fd0b94e062bf332e991eacaa8845e260) reproduced the stale workflow pin: [expected RED #45347777486](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45347777486), CI-0701 failed at the new expected source SHA while the workflow still checked out old `8dd8b12`. The separate pre-fix compatibility run [#45347777612](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45347777612) built the old pin and is not accepted as evidence for the new source.
