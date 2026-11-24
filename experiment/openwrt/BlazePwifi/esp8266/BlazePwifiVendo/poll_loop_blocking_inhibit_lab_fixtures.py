@@ -10,8 +10,8 @@ from poll_pending_recovery_lab_fixtures import (
     CLEAR_WINDOW_ISR_MAIN,
 )
 
-from poll_loop_blocking_inhibit_lab_scenario_fixtures import (
-    MAIN,
+from poll_loop_blocking_inhibit_lab_scenario_fixtures import MAIN
+from poll_loop_blocking_inhibit_lab_poll_window_fixtures import (
     COIN_POST_ISR_MAIN,
     POLL_HTTP_ISR_MAIN,
     RACE_MAIN,
