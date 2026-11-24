@@ -2721,3 +2721,20 @@ HARDWARE #349 docs-head Quarantine/Relay are PASS; Full is FAIL at Missing poll 
 
 ## UTC05 final owner/CI refresh
 HARDWARE #349 owner refreshed its PR body to source/test 1247a5c / docs 8639deda; current docs-head Q/R PASS and Full FAILs at Missing poll signature check. RELEASE #291 current Windows FAILs at negative-selftest.ps1:326; ESP32 compatibility PASS 3/3; build SUCCESS with all target/simulation jobs passing and sign/publish skipped. RELEASE PR body still pins f1fda47 and needs owner refresh. No production release or migration.
+## PHX-MASTER UTC06 live audit — 2026-11-24T06:04:45Z
+
+Master exact head before this update: `1c8b3ca82c9b0212f925e65145bc8bf196c5ef80`; parent `eec3f4f673e389b9776425212b5cdbed5bdce464`; Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; issue-designated development `aad3aade72c1156eecba1fed30907c6d0283b2c5`; v0.6 comparison branch `2fbd2475e9f54878c316fa7cea2f228386b0e859`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`. PR #288 OPEN / DRAFT / UNMERGED, 192 paths, all under `coordination/phoenix/`; Master CI runs/statuses zero.
+
+### Current blockers verified
+
+- RELEASE #291's exact Windows run #45336455064 fails the PISONET-owned negative test at line 326: `missing tag accepted=False`. The test stubs the release-object lookup only; the workflow also performs a separate Git-ref lookup. PublisherMockCli and publisher jobs are skipped. Build #45336455073 and ESP32 compatibility #45336455127 pass; signing/publishing are skipped.
+- HARDWARE #349's exact docs-head Quarantine/Relay pass; Full #45336321274 fails at QA-owned Controller protocol parity / `Missing poll signature check`. Firmware targets and Android pass, but dependent simulations/update/signing/publication are skipped. This remains CI/source-extracted evidence, not physical acceptance.
+- RENTAL #328 build #44782114390 fails at handover freshness and ESP32 compile; APK identity and API smoke pass.
+- COE #26 remains frozen with five queued workflows and zero jobs; exact firmware/test blobs still differ and parser lab is absent from destination.
+- Cleanup #266 remains OPEN / 0-of-7. Private canonical registry v11/newer corrections remain inaccessible; no older snapshot was substituted. No Google Drive connector is exposed.
+
+### Validation limits
+
+GitHub connector reads, exact blob comparisons and workflow/job logs were executed. JavaScript static consistency assertions were executed as part of this Master update. The Master Python unittest suite and `verify_coordination.py` were NOT RUN: no authenticated local checkout is available and direct GitHub DNS resolution from the local runner failed. No CI result is claimed for this documentation-only Master commit.
+
+No subsystem source, COE destination, ownership route, signer, secret, financial state, hardware or release artifact was changed. **PRODUCTION NO-GO.**

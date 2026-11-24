@@ -1729,3 +1729,20 @@ The product branch/version authority conflict is recorded in Architecture §7.0:
 COE #26 remains FROZEN. The exact current #349 source tree has 40 board-local Python files while #26 has zero; ESP8266/ESP32 firmware and hardening test blobs differ; the parser lab is missing; root NOTICE, Tabler LICENSE and Android Launcher LICENSE are missing. Matching product/QRCode/TailAdmin license files do not establish complete licensing provenance. Five destination workflows remain queued with zero jobs.
 
 **Review-before-move hold:** no source/destination file was staged, copied, moved, overwritten, cherry-picked, rebased, retargeted or promoted. The full historical 61-row audit was not rerun. Private registry v11/newer corrections remain unavailable, so no new Drive folder or artifact was created.
+## PHX-MASTER UTC06 exact owner-overlap and destination hold — 2026-11-24T06:04:45Z
+
+Current routing manifest remains `OWNERSHIP_ROUTES.json` blob `e4db324315a1b3543fec17a148fbf960170fcb29`, 11 routes, `DRAFT_REVIEW_ONLY`; PHX-MASTER source is `coordination/phoenix/` and target is null. No route, role, target or copy permission changed.
+
+RELEASE #291 current docs head `3f92801aadf47be594fdef5a278b6aa125eaea1a` shares three handover paths with CORE #252, PISONET #255 and QA #290. Current exact blob identities:
+
+| Shared path | CORE #252 | PISONET #255 | QA #290 | RELEASE #291 |
+|---|---|---|---|---|
+| `PROJECT_HANDOVER.md` | `72e8e487d333a9488f77c2c3e68652d1a650ff85` | `d3e66608280644af8c42635168a7e27c8fba8f31` | `83db03cf387f280ba2d595ff6e9d58ffa23417c5` | `92b28dbf4a5b5ec3c6b8f1552225ea359a05a941` |
+| `CHANGE_LEDGER.md` | `df50981c1596838b1abf544e94f68e89ad556b7d` | `02963d32018ea09ad2a6a5a95b487de1f65ff4f2` | `3180e1a93c852e5c983f947e8ca45a897df0479f` | `ef6d52acbd053b2722eb018486b6c5a996ff1205` |
+| `CURRENT_STATE.md` | `72c38aeb93377f3aedb758c91d670ff1150e87bd` | `47e07b7c0e06766d0d4ebb18bc13bfb274adfe22` | `73b9d1d6acbd8b58c13f2d1b9d17512c392f444a` | `29fb4b85d5ef8fa885f6b26982628fa5cf5abc6a` |
+
+The two ReleaseSigning test files changed by #291 are inside the PHX-PISONET-owned SoftTimer subtree: `negative-selftest.ps1` blob `8b69174bf519154e43f7e12e4a9fa2c0e75d350f` and `PublisherMockCli.ps1` blob `7d56522b4fd678a26a2d7ea39e9b51dc8e52612d`. They are not present at PISONET #255's current head, but that PR's diff does not narrow the subtree ownership route. PISONET review is still required.
+
+RELEASE's two-endpoint negative test remains non-hermetic: the second Git-ref `gh api` lookup and `$tagLookupExit` are not fixture-substituted. Current Windows run #45336455064 fails; publisher skipped. Do not edit PISONET-owned files from Master or silently reconcile the shared handover blobs.
+
+COE #26 remains FROZEN at `b382d233ff06c8791b1028bed3c617cc7b670d12`; exact source/destination firmware and test identities differ. Product LICENSE matches, but destination root NOTICE is absent. No migration staging or destination write occurred.

@@ -3509,3 +3509,17 @@ HARDWARE owner checkpoint [#7123382454](https://github.com/BlazeDevStudio/Blazin
 ### UTC05 final RELEASE CI refresh — supersedes earlier in-progress snapshot
 
 RELEASE #291 current head remains `3f92801aadf47be594fdef5a278b6aa125eaea1a`. Windows #45336455064 FAILs at PISONET `negative-selftest.ps1:326`, `missing tag accepted=False`; ESP32 compatibility #45336455127 PASSes 3/3; build #45336455073 completed SUCCESS with CI-0701, validation, all firmware targets, Android, update bundle and all v0.4 simulations PASS. Production sign handoff, release publishing and prerelease publishing are SKIPPED. The negative-test two-lookup fixture gap remains; the PR body still pins older f1fda47 and must be refreshed by PHX-RELEASE. No release was signed or published.
+## PHX-MASTER UTC06 live owner PR/CI refresh — 2026-11-24T06:04:45Z
+
+Master branch starts at `phoenix/master-coordination@1c8b3ca82c9b0212f925e65145bc8bf196c5ef80` (parent `eec3f4f673e389b9776425212b5cdbed5bdce464`), base main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`. PR #288 is OPEN / DRAFT / UNMERGED with 192 changed paths, all coordination-only. No Master Actions runs or combined statuses were returned. Main, issue-designated development and COE main report `protected=false`; Master branch protection was not established by this read.
+
+| Role | PR / exact head | Exact-head result |
+|---|---|---|
+| CORE | #252 `c82705f2de865c89ab733b10efa84f26f56a5cc4` | #42698139210 SUCCESS, scoped build only |
+| RENTAL | #328 `0e0da62acd47c6a1ce287f8a30fc700d603fa070` | #44782114384 APK identity PASS; #44782114393 API21/API23 smoke PASS; #44782114390 build FAIL (handover freshness + ESP32 compile) |
+| PISONET | #255 `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | #42462978704 Windows SUCCESS, synthetic CI only |
+| HARDWARE | #349 docs `8639deda8d341d61efddff77be4d06ea931d040d`, source/test `1247a5c7b332677ae8dca83dc94cf586a015e7a0` | #45336321346 Quarantine PASS; #45336321352 Relay PASS; #45336321274 Full FAIL at inherited QA-owned Missing poll signature assertion; all 13 target jobs + Android PASS, dependent stages skipped |
+| QA | #290 `5c29d15994cee1279058f1eca12f2a3180704292`; #292 `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | #290 Windows #43633486963 SUCCESS; #292 has zero PR-triggered runs |
+| RELEASE | #291 docs `3f92801aadf47be594fdef5a278b6aa125eaea1a`, source/workflow `1843a31236c07efa3f261ff69c278f77a1f1bfe5` | #45336455064 Windows FAIL at PISONET negative-selftest line 326; #45336455127 ESP32 compatibility PASS 3/3; #45336455073 build SUCCESS; signing/publishing SKIPPED |
+
+CORE remains with its separate production-continuation owner; PHX-MASTER made no CORE or subsystem source edits. #266 remains OPEN / 0-of-7. The ownership manifest is unchanged at 11 routes / DRAFT_REVIEW_ONLY / PHX-MASTER target null. COE #26 remains FROZEN at `b382d233ff06c8791b1028bed3c617cc7b670d12` with five queued workflows and zero jobs.

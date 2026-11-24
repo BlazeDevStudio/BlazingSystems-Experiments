@@ -1784,3 +1784,42 @@ Do not infer the active product branch or production version from a branch name,
 | Experiments main | HEAD f4e8a891aed8af86d5fd315d28750a0ac3a7372b; VERSION blob 43c05666668b2a6d1eef2c5dca9032d8c6b77869 = 0.5.3-dev.5; README blob 7990e2ecbab06cafa5f8227050929e16fff1f4a1; PROJECT_HANDOVER blob f86c0ae9b14853963b8a9b835e1100eb5178d1a6 | README says current production release 0.3.0; default-branch handover labels itself historical and directs maintainers to v0.6.0; lower handover sections also retain v0.5.3-dev.5 |
 
 These statements are not mutually authoritative. The issue-designated v0.5.3 line is internally aligned at VERSION 0.5.3-dev.1, while the v0.6 branch is separately labeled active despite VERSION 0.5.3, and main's README production label conflicts with the v0.5.2 production baseline in the v0.5.3 handover. PHX-CORE must publish one owner-approved canonical development ref, version policy and production baseline, and reconcile the control-plane and handover pointers. PHX-MASTER records the conflict only; it does not select a product branch, edit product handovers or move source.
+## 7.1 UTC06 exact-head review: release lookup fixture, cross-owner blobs and COE #26 (2026-11-24T06:04:45Z)
+
+This section is a read-only integration contract refresh. It changes no subsystem implementation, ownership route, release authority, or migration permission.
+
+### Current refs and owner evidence
+
+- Experiments main: `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; issue-designated development `blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5`; comparison-only v0.6 audit branch `2fbd2475e9f54878c316fa7cea2f228386b0e859`.
+- Master #288: `phoenix/master-coordination@1c8b3ca82c9b0212f925e65145bc8bf196c5ef80`, OPEN / DRAFT / UNMERGED, 192 changed paths, all under `coordination/phoenix/`; Master PR Actions and combined statuses returned zero.
+- COE main: `a6513ab4412b4c014eee2863e45cbe32d06cb243`; integration #26: `b382d233ff06c8791b1028bed3c617cc7b670d12`, OPEN / DRAFT / FROZEN, 205 changed files, five workflows QUEUED / zero jobs.
+- Routing manifest `OWNERSHIP_ROUTES.json` remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`, 11 routes, `DRAFT_REVIEW_ONLY`, PHX-MASTER target null. Cleanup #266 remains OPEN, 0/7.
+
+| Owner | Exact candidate head | Exact-head evidence |
+|---|---|---|
+| CORE #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | Build #42698139210 SUCCESS (scoped); CORE implementation remains separately owned |
+| RENTAL #328 | `0e0da62acd47c6a1ce287f8a30fc700d603fa070` | APK identity #44782114384 and API21/API23 smoke #44782114393 SUCCESS; build #44782114390 FAIL at mandatory handover freshness and ESP32 compile |
+| PISONET #255 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | Windows #42462978704 SUCCESS (synthetic CI only) |
+| HARDWARE #349 | docs `8639deda8d341d61efddff77be4d06ea931d040d`; source/test `1247a5c7b332677ae8dca83dc94cf586a015e7a0` | Quarantine #45336321346 and Relay #45336321352 PASS; Full #45336321274 FAIL at Controller protocol parity / `Missing poll signature check`; 13 firmware targets + Android PASS, downstream validation-dependent jobs skipped |
+| QA #290 | `5c29d15994cee1279058f1eca12f2a3180704292` | Windows #43633486963 SUCCESS; QA #292 head `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` has no PR-triggered runs |
+| RELEASE #291 | docs `3f92801aadf47be594fdef5a278b6aa125eaea1a`; source/workflow `1843a31236c07efa3f261ff69c278f77a1f1bfe5` | Windows #45336455064 FAIL; ESP32 compatibility #45336455127 PASS 3/3; BlazePwifi build #45336455073 SUCCESS; signing and publishing jobs SKIPPED |
+
+### Release admission fixture and owner overlap
+
+At RELEASE #291 source/workflow SHA `1843a312` and current docs head `3f92801`, the release workflow blob is `61031c13aad934fb52aef3038598f8b4d6a89334`. It performs independent read-only lookups at workflow lines 479 (`/releases/tags/$releaseTag`) and 494 (`/git/ref/tags/$releaseTag`), capturing `$lookupExit` and `$tagLookupExit` separately. The PISONET-owned `negative-selftest.ps1` blob remains `8b69174bf519154e43f7e12e4a9fa2c0e75d350f`; it replaces only the first `$lookupExit = $LASTEXITCODE` in its extracted decision block. It does not fixture-substitute the second Git-ref lookup or its exit capture. The current Windows job log fails at line 326 with `missing tag accepted=False`; the later PublisherMockCli and publisher steps are skipped. The separate `PublisherMockCli.ps1` blob is `7d56522b4fd678a26a2d7ea39e9b51dc8e52612d`. The workflow and both test blobs were re-read at the source/workflow SHA and current docs head; identities match. No precise second-call HTTP response is exposed by the log, so do not infer it.
+
+The three handover paths below are changed by CORE #252, PISONET #255, QA #290 and RELEASE #291. All twelve exact branch blobs differ:
+
+| Shared path | CORE #252 | PISONET #255 | QA #290 | RELEASE #291 |
+|---|---|---|---|---|
+| `PROJECT_HANDOVER.md` | `72e8e487d333a9488f77c2c3e68652d1a650ff85` | `d3e66608280644af8c42635168a7e27c8fba8f31` | `83db03cf387f280ba2d595ff6e9d58ffa23417c5` | `92b28dbf4a5b5ec3c6b8f1552225ea359a05a941` |
+| `CHANGE_LEDGER.md` | `df50981c1596838b1abf544e94f68e89ad556b7d` | `02963d32018ea09ad2a6a5a95b487de1f65ff4f2` | `3180e1a93c852e5c983f947e8ca45a897df0479f` | `ef6d52acbd053b2722eb018486b6c5a996ff1205` |
+| `CURRENT_STATE.md` | `72c38aeb93377f3aedb758c91d670ff1150e87bd` | `47e07b7c0e06766d0d4ebb18bc13bfb274adfe22` | `73b9d1d6acbd8b58c13f2d1b9d17512c392f444a` | `29fb4b85d5ef8fa885f6b26982628fa5cf5abc6a` |
+
+RELEASE #291 also changes `negative-selftest.ps1` and `PublisherMockCli.ps1` inside the PHX-PISONET-owned SoftTimer subtree. Those files are absent from PISONET #255's current diff/head, but the ownership manifest assigns the whole subtree to PISONET. PISONET must review the test files; RELEASE must review the two-endpoint production semantics; QA must independently review the corrected fixture and exact final head. Do not overwrite, cherry-pick, rebase, or merge shared paths to resolve this collision.
+
+### Destination comparison and production boundary
+
+At exact source #349 / destination COE #26 heads, ESP8266 sketch blobs differ (`2f87a9de84ac53dbb0d2718b5c79a4662b63de8f` vs `c8be98f72596681e36a3ad1f8939bf8046c96887`); ESP32 blobs differ (`a9a1c2fecb001d71f8f22b43952edbd160aacaf8` vs `3cc7ec54b476943dc04a8d1af5e2df5fe054e422`). The source parser lab `ac4b164e79da90039b0f99a22efdb6a136046442` has no destination identity; destination `Hardware/tests/test_firmware_hardening.sh` is a different blob `f921c56cecc19cab1989507b9b4ade1f45dac54e`. The product LICENSE and destination `Pisowifi/LICENSE` match exactly at `1ee55b94183417be977ca287cd7391f9a6f7e721`; destination root `NOTICE` is absent. COE #26 remains FROZEN; no staging, copy, move, overwrite, or promotion occurred.
+
+PRODUCTION NO-GO remains mandatory pending independent protected signing/anti-rollback witness, crash-atomic durable financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak, and owner-authorized release gates.

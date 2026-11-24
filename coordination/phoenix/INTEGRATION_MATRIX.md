@@ -4811,3 +4811,19 @@ Source/test #1247a5: Quarantine #45335896662 PASS, Relay #45335896640 PASS, Full
 
 ### UTC05 final owner/CI refresh
 HARDWARE PR #349 body is now refreshed by its owner and matches source/test 1247a5c / docs 8639deda. Docs-head Quarantine/Relay PASS; Full FAIL at Missing poll signature check (13/13 firmware targets + Android PASS). RELEASE #291 Windows FAILs at negative-selftest.ps1:326; ESP32 compatibility PASS 3/3; build SUCCESS with sign/publish SKIPPED. COE #26 remains FROZEN.
+## PHX-MASTER UTC06 exact source/destination revalidation — 2026-11-24T06:04:45Z
+
+Current source #349 docs head `8639deda8d341d61efddff77be4d06ea931d040d`, source/test `1247a5c7b332677ae8dca83dc94cf586a015e7a0`; destination #26 remains `b382d233ff06c8791b1028bed3c617cc7b670d12` on COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`. #26 remains OPEN / DRAFT / FROZEN, 205 changed files, five workflows QUEUED / zero jobs.
+
+| Artifact | Source #349 | Destination #26 | Result |
+|---|---|---|---|
+| ESP8266 sketch | `2f87a9de84ac53dbb0d2718b5c79a4662b63de8f` | `c8be98f72596681e36a3ad1f8939bf8046c96887` | Different blobs |
+| ESP32 sketch | `a9a1c2fecb001d71f8f22b43952edbd160aacaf8` | `3cc7ec54b476943dc04a8d1af5e2df5fe054e422` | Different blobs |
+| New ESP8266 parser lab | `ac4b164e79da90039b0f99a22efdb6a136046442` | No destination counterpart | Missing import |
+| Destination generic hardening test | No same-identity source test | `f921c56cecc19cab1989507b9b4ade1f45dac54e` | Not equivalent to parser lab |
+| Product LICENSE | `1ee55b94183417be977ca287cd7391f9a6f7e721` | `1ee55b94183417be977ca287cd7391f9a6f7e721` | Exact match |
+| Root NOTICE | Not established at this source path | Missing at destination root | Licensing provenance incomplete |
+
+Current exact-head CI remains: #349 docs-head Quarantine #45336321346 PASS, Relay #45336321352 PASS, Full #45336321274 FAIL at Missing poll signature check (13/13 firmware targets and Android PASS; downstream validation-dependent jobs skipped). #291 Windows #45336455064 FAIL, ESP32 compatibility #45336455127 PASS, build #45336455073 SUCCESS with signing/publishing skipped.
+
+The complete 61-row intake/map reconciliation was not rerun in this activation; prior row-level findings remain historical until a fresh exact-head pass. This bounded revalidation confirms that the current candidate still contains divergent firmware/test blobs and a missing parser-test import. **FROZEN:** no staging, copy, move, overwrite, rebase, cherry-pick, or promotion.

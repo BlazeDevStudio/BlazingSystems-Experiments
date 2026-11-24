@@ -956,3 +956,11 @@ The exact private `BLAZE_PROJECT_REGISTRY_v11_20261027.json` and newer correctio
 UTC05 post-run refresh: HARDWARE #349 current docs-head Quarantine/Relay PASS, Full FAIL at Missing poll signature check (13/13 targets + Android PASS); RELEASE #291 current Windows FAIL, ESP32 PASS 3/3, build still waiting only on Android emulator; signing/publishing skipped.
 
 UTC05 final refresh: HARDWARE owner updated PR #349 body to current source/test/docs pins; current Q/R PASS, Full FAIL at Missing poll signature. RELEASE #291 current Windows FAIL, ESP32 PASS 3/3, build SUCCESS; signing/publishing SKIPPED. RELEASE's own PR body still needs its owner to refresh the stale f1fda47 pin.
+## Latest exact-head reconciliation — 2026-11-24 UTC06 (updated 2026-11-24T06:04:45Z)
+
+- Master branch starts at `1c8b3ca82c9b0212f925e65145bc8bf196c5ef80`; PR #288 OPEN / DRAFT / UNMERGED, 192 changed paths, all under `coordination/phoenix/`. This UTC06 update modifies six existing Master-owned documents only; no new files.
+- Current owner CI: CORE #252 scoped build PASS; RENTAL #328 APK/API PASS but build FAIL; PISONET #255 Windows synthetic PASS; HARDWARE #349 focused Quarantine/Relay PASS but Full FAIL at QA-owned Missing poll signature check; QA #290 Windows PASS and #292 no runs; RELEASE #291 Windows FAIL at PISONET negative self-test while ESP32 compatibility and build pass with signing/publishing skipped.
+- RELEASE #291 still has three shared handover paths with different blobs across CORE/PISONET/QA/RELEASE and two changed files inside the PISONET-owned SoftTimer subtree. See [REPOSITORY_ROUTING.md](REPOSITORY_ROUTING.md) and [ARCHITECTURE_CONTRACTS.md](ARCHITECTURE_CONTRACTS.md).
+- COE #26 remains FROZEN; current source/destination ESP8266, ESP32 and parser-test identities differ; product LICENSE matches but destination root NOTICE is missing. No staging/copy/move.
+- Cleanup #266 remains OPEN / 0-of-7. Ownership manifest remains 11 routes / DRAFT_REVIEW_ONLY / Master target null. Private canonical Drive v11/newer corrections unavailable; no Google Drive connector exposed.
+- JavaScript static consistency assertions passed. Master Python suite and `verify_coordination.py` NOT RUN because local checkout/network access is unavailable. No subsystem or destination changes. **PRODUCTION NO-GO.**
