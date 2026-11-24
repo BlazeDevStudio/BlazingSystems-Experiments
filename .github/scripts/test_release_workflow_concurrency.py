@@ -383,7 +383,34 @@ class SoftTimerTagAdmissionTests(unittest.TestCase):
 
 
 
+SIGN_WORKFLOW = ROOT / ".github/workflows/blazerental-v053-lineage2-sign.yml"
 RELEASE_STAGE_WORKFLOW = ROOT / ".github/workflows/blazepwifi-v053-release.yml"
+
+
+def require_v053_manual_signing_gate(content: str) -> None:
+    """Keep the Lineage 2 secret-bearing job on approved protected main only."""
+    expected_default = {"contents": "read", "actions": "read"}
+    if workflow_default_permissions(content) != expected_default:
+        raise AssertionError(
+            "v0.5.3 signing workflow defaults must remain contents: read and actions: read"
+        )
+
+    sign = job_block(content, "sign")
+    if "contents: write" in sign:
+        raise AssertionError("v0.5.3 signing job must not receive repository write permission")
+
+    expected_condition = (
+        "github.event_name == 'workflow_dispatch' "
+        "&& github.ref == 'refs/heads/main' "
+        "&& github.ref_protected == true "
+        "&& vars.BLAZERENTAL_PRODUCTION_SIGNING_APPROVED == 'true'"
+    )
+    condition = re.search(r"(?m)^    if: (.+)$", sign)
+    if condition is None or condition.group(1) != expected_condition:
+        raise AssertionError(
+            "v0.5.3 signing job must require workflow_dispatch on protected main "
+            "and explicit BLAZERENTAL_PRODUCTION_SIGNING_APPROVED=true"
+        )
 
 
 def require_v053_release_permissions_are_isolated(content: str) -> None:
@@ -418,8 +445,23 @@ def require_v053_release_permissions_are_isolated(content: str) -> None:
             f"found {sorted(write_jobs)!r}"
         )
 
-    if "needs: stage" not in publish or "if: inputs.publish == true" not in publish:
-        raise AssertionError("v0.5.3 publisher must depend on successful staging and explicit opt-in")
+    expected_publish_condition = (
+        "inputs.publish == true "
+        "&& github.event_name == 'workflow_dispatch' "
+        "&& github.ref == 'refs/heads/main' "
+        "&& github.ref_protected == true "
+        "&& vars.BLAZEPWIFI_PRODUCTION_RELEASE_APPROVED == 'true'"
+    )
+    publish_condition = re.search(r"(?m)^    if: (.+)$", publish)
+    if (
+        "needs: stage" not in publish
+        or publish_condition is None
+        or publish_condition.group(1) != expected_publish_condition
+    ):
+        raise AssertionError(
+            "v0.5.3 publisher must depend on successful staging, explicit opt-in, "
+            "protected main and BLAZEPWIFI_PRODUCTION_RELEASE_APPROVED=true"
+        )
     if "gh release create" in stage or "gh release upload" in stage:
         raise AssertionError("candidate staging must not execute release publication commands")
 
@@ -455,6 +497,25 @@ class BlazePwifiV053PublishPermissionTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.content = RELEASE_STAGE_WORKFLOW.read_text(encoding="utf-8")
+        cls.sign_content = SIGN_WORKFLOW.read_text(encoding="utf-8")
+
+    def test_manual_v053_signer_requires_protected_main_and_explicit_approval(self):
+        require_v053_manual_signing_gate(self.sign_content)
+        mutations = (
+            ("github.event_name == 'workflow_dispatch'", "github.event_name == 'push'"),
+            ("github.ref == 'refs/heads/main'", "github.ref == 'refs/heads/feature'"),
+            ("github.ref_protected == true", "github.ref_protected == false"),
+            (
+                "vars.BLAZERENTAL_PRODUCTION_SIGNING_APPROVED == 'true'",
+                "vars.BLAZERENTAL_PRODUCTION_SIGNING_APPROVED != 'true'",
+            ),
+        )
+        for old, replacement in mutations:
+            with self.subTest(mutation=old):
+                unsafe = self.sign_content.replace(old, replacement, 1)
+                self.assertNotEqual(unsafe, self.sign_content)
+                with self.assertRaisesRegex(AssertionError, "protected main"):
+                    require_v053_manual_signing_gate(unsafe)
 
     def test_only_opt_in_publish_job_has_write_scope_and_revalidates_stage(self):
         require_v053_release_permissions_are_isolated(self.content)
@@ -487,6 +548,23 @@ class BlazePwifiV053PublishPermissionTests(unittest.TestCase):
         self.assertNotEqual(unsafe, self.content)
         with self.assertRaisesRegex(AssertionError, "explicit opt-in"):
             require_v053_release_permissions_are_isolated(unsafe)
+
+    def test_guard_rejects_publisher_without_protected_main_or_approval(self):
+        mutations = (
+            ("github.event_name == 'workflow_dispatch'", "github.event_name == 'push'"),
+            ("github.ref == 'refs/heads/main'", "github.ref == 'refs/heads/feature'"),
+            ("github.ref_protected == true", "github.ref_protected == false"),
+            (
+                "vars.BLAZEPWIFI_PRODUCTION_RELEASE_APPROVED == 'true'",
+                "vars.BLAZEPWIFI_PRODUCTION_RELEASE_APPROVED != 'true'",
+            ),
+        )
+        for old, replacement in mutations:
+            with self.subTest(mutation=old):
+                unsafe = self.content.replace(old, replacement, 1)
+                self.assertNotEqual(unsafe, self.content)
+                with self.assertRaisesRegex(AssertionError, "protected main"):
+                    require_v053_release_permissions_are_isolated(unsafe)
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
