@@ -1,3 +1,17 @@
+## PHX-MASTER UTC23 live checkpoint — 2026-11-24T23:37:39Z
+
+- Starting Master HEAD `433298c3837fe08c219035c2d74a10fa8f1aefa3`; base `main@f4e8a891aed8af86d5fd315d28750a0ac3a7372b`. UTC23 report and this index entry are coordination-only. The resulting branch/PR HEAD is the current exact head of PR #288.
+- HARDWARE #349 source/test `0aba4cd` / docs `c265eafe`: Quarantine/Relay PASS; Full #45502304116 terminal FAIL at `Missing poll signature check`. The PR body still says pending; HARDWARE must refresh its own records.
+- RELEASE #291 `53fc8a1c`: Windows/build FAIL at CORE-owned CURRENT_STATE freshness; ESP32 compatibility PASS. CORE refreshes canonical handover; RELEASE reruns.
+- COE RELEASE #35 source/test `360b284f` / docs `599476d1`: 217 host tests (2 skipped) pass, then 10/10 profiles fail closed for missing approved site ULA /48; sandbox 40 tests pass then Bubblewrap absence exits 125; case guard PASS.
+- COE #26 remains FROZEN. Exact trees 2,530 / 286; intake actual 46 identical / 15 derived vs declared 47 / 14; 28/61 current-source drift; tests 47/19 (1 exact, 3 divergent, 43 source-only, 15 destination-only); board helpers 53 / 0; both sketches differ. Five workflows queued / zero jobs.
+- Ownership manifest remains 11 routes / DRAFT_REVIEW_ONLY / PHX-MASTER target null. Cleanup #266 remains OPEN / 0-of-7. Private v11/newer corrections NOT RECOVERED; no older snapshot substituted.
+- 13/13 static source/tree assertions PASS. Master Python suite and verify_coordination.py NOT RUN; no Master Actions run evidence. No owner source or COE destination changed. **PRODUCTION NO-GO**.
+
+[UTC23 exact-head, role CI, COE #26 tree and registry-access audit](PHX_MASTER_UTC23_20261124_LIVE_HEAD_ROLE_CI_COE26_TREE_AND_REGISTRY_ACCESS_AUDIT.md)
+
+---
+
 ## PHX-MASTER UTC22 live checkpoint — 2026-11-24T22:37:40Z
 
 - Experiments refs re-read: main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; development `aad3aade72c1156eecba1fed30907c6d0283b2c5`; Master starting HEAD `66a734ee33b7fc9fca8a2dd0b95c7fdd7d29bba3`. PR #288 remains OPEN / DRAFT / UNMERGED; its live head is the authoritative post-update pointer.
