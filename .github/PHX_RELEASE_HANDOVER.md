@@ -4046,3 +4046,49 @@ No merge, signing, tag, publication, hardware flash, real payment migration or c
 - Compatible draft head `ece337b514c6134671b47d9c83fce9f7f15f532a` already contains another worker’s release-workflow concurrency regression coverage expansion. No implementation was duplicated.
 - [Windows #45463917471](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45463917471) stopped at mandatory handover freshness before Windows build/signing/publishing. [ESP32 compatibility #45463917499](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45463917499) remained in progress at audit time. [BlazePwifi build #45463917728](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45463917728) was cancelled after the documentation-only head advance; no terminal build result is claimed.
 - Evidence is scoped hosted CI only—not production, protected-signing, hardware, finance/migration, compatibility, or physical-acceptance evidence. PR #291 remains draft/unmerged and independently unreviewed. **PRODUCTION NO-GO** remains until MASTER and independent QA review, protected signer/source admission, durable finance/migration acceptance, and physical acceptance gates are satisfied.
+
+
+---
+
+## PHX-RELEASE UTC18 follow-on — protected-ref admission for manual v0.5.3 signer and publisher
+
+**Task:** PHX-RELEASE-UTC18-20261124. This is separate from the earlier UTC18 stage/publish permission split and does not duplicate it.
+
+### Starting state and finding
+
+- Follow-on started at PR #291 head 52ce6cb7bb65945da8bc66d8646e61b2908b77f5; base #242 734b89d9e7792247e8376335c3f3685500ab3f89.
+- The manual secret-bearing sign job in .github/workflows/blazerental-v053-lineage2-sign.yml had no job-level admission condition.
+- The manual write-privileged publish job in .github/workflows/blazepwifi-v053-release.yml was gated only by inputs.publish == true.
+- Read-only GitHub branch metadata reports main.protected=false. The branch-protection detail endpoint returned 403 and the visible ruleset list was empty. The new github.ref_protected == true conditions therefore fail closed; protected main is not established.
+
+### Test-first and correction history
+
+- Test-only commit bf674c84 (https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/bf674c84ee7fb91434b3377810da407d5d5789f2). Initial run #45463037425 (https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45463037425) had six failures: two missing-gate assertions plus four mutation-fixture construction failures. It is retained as an invalid/incomplete RED fixture, not accepted as clean source RED.
+- Mutation fixtures corrected in 8f08363e (https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/8f08363ebb210833921f2ce840768a3fb316ffe6). Exact expected RED #45463333066 (https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45463333066): 19 tests, exactly two failures (signer admission and publisher admission), 17 passed.
+- Source/test integration run #45463501354 (https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45463501354) still failed two mutation-fixture assertions because the safe fixtures were not idempotent after the workflow gates existed. The helper was corrected in ece337b5 (https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/ece337b514c6134671b47d9c83fce9f7f15f532a) to replace an existing job-level condition rather than assume the old one was absent.
+
+### RELEASE-owned source correction
+
+- c918634a (https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/c918634aef615daf7c7611df0a9c5c957aee095f) gates the Lineage 2 signing job on workflow_dispatch, refs/heads/main, github.ref_protected == true, and vars.BLAZERENTAL_PRODUCTION_SIGNING_APPROVED == 'true'.
+- 07dbc622 (https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/07dbc62247cab9b2c11a2be2d96d43ea91bc48d2) gates the v0.5.3 publisher on inputs.publish == true, workflow_dispatch, protected main, and vars.BLAZEPWIFI_PRODUCTION_RELEASE_APPROVED == 'true'.
+- Stage remains read-only; only the publish job has contents: write. No signing command, secret value, action pin, manifest schema, release asset or product source changed.
+- Exact final source/test HEAD: ece337b514c6134671b47d9c83fce9f7f15f532a. Source/test delta from the starting head touches only three RELEASE-owned paths: the two workflows and .github/scripts/test_release_workflow_concurrency.py.
+- Current PR documentation head advanced independently to 51c491eba913480e892deb32f70beb51d8f871f2. Subsequent changes to CORE-owned PROJECT_HANDOVER.md and CHANGE_LEDGER.md were made by another worker; PHX-RELEASE did not edit those paths.
+
+### Exact-source CI
+
+- Push build #45463902819 (https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45463902819): CI-0701 PASS, job 138693544645. Focused checks: release-workflow guard 19/19, provenance 57/57, ESP32 image-admission 3/3, workflow concurrency 25/25, Arduino CLI archive verifier 10/10; 67 action invocations remain immutable-pinned.
+- That exact-source full build is COMPLETED FAILURE: mandatory validate job 138693990292 failed at CORE-owned experiment/openwrt/BlazePwifi/PROJECT_HANDOVER.md, last checkpoint 0406ce0b0c6292a415b6318c7691c0de80b83519, because the two manual v0.5.3 workflows are newer than that handover. All 14 target/platform jobs passed. Update bundle, simulations, production import/sign handoff, candidate gate and publication were skipped.
+- Windows run #45463917471 (https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45463917471): handover failed at the same CORE-owned checkpoint; Windows build and publisher skipped.
+- PR full build #45463917728 (https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45463917728) was CANCELLED, not a pass; CI-0701 passed, validation failed, and later jobs were partly cancelled.
+- ESP32 compatibility PR run #45463917499 (https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45463917499): PASS 3/3 (provenance plus both core versions). Push compatibility #45463902831 (https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45463902831): provenance and core 4.0.0 passed; core 3.3.13 was still running at last read.
+- After the independent docs/CORE handover advances, current docs-head runs are PR build #45464748872, Windows #45464748780 and ESP32 compatibility #45464748748. At handover time the PR build and compatibility were in progress; Windows had failed. No terminal result is inferred for the in-progress runs.
+
+### Owner routing and remaining blockers
+
+- PHX-CORE owns the canonical PROJECT_HANDOVER and CURRENT_STATE freshness record. The source-head validation failure above must be reconciled by CORE and MASTER; PHX-RELEASE does not edit CORE handovers or weaken the gate. After CORE publishes the exact refreshed SHA, rerun full-build and Windows validation against that SHA.
+- MASTER #288 remains OPEN/DRAFT at 463a600c2ba4843b41bf498614a4fb76fa9f3b05. Its 11-route manifest is DRAFT_REVIEW_ONLY; RELEASE route remains reimplementation-review. ROLE_ASSIGNMENTS.md still points to older RELEASE child source 32487a57, not current PR #291 head 51c491eba913480e892deb32f70beb51d8f871f2. MASTER must refresh the child pointer and reconcile the three inherited CORE and two inherited PISONET paths. No inherited path was modified by this follow-on.
+- Cleanup-first #266 remains OPEN / 0-of-7. COE #26 remains FROZEN at b382d233ff06c8791b1028bed3c617cc7b670d12; eight associated workflows are queued with zero jobs. COE #31 remains OPEN/DRAFT at 59ed44d0b911e176f1a95b9cf5585ef811ffd31b: shared contracts and case-collision guard pass; mandatory Bubblewrap sandbox fails because the unprivileged UID-map setup is denied (bwrap: setting up uid map: Permission denied).
+- The canonical private Drive registry v11 BLAZE_PROJECT_REGISTRY_v11_20261027.json was not found after authorized Library enumeration of 1,396 entries. The owner's release prompt was retrieved and read. No older registry snapshot was substituted and no private registry contents were copied or exposed.
+
+No workflow_dispatch was run. No signing secret was accessed. No real-key signing, tag, publication, merge, hardware flash, payment migration or customer deployment occurred. Hosted CI is not hardware or production acceptance. **PRODUCTION NO-GO.**
