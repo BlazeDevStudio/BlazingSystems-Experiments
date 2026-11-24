@@ -3168,3 +3168,43 @@ The previous COE #35 snapshot in this handover referred to an older child head. 
 - Case-collision guard [#45174042568](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45174042568): **PASS**.
 
 The #35 child remains a separate COE packaging draft and does not unfreeze integration #26. PHX-RELEASE must not invent the ULA prefix or weaken the admission gate. The actionable dependencies remain approved site-scoped ULA authority from PHX-CORE/MASTER and a disposable runner with a functioning unprivileged Bubblewrap namespace from PHX-INFRA/COE. No COE file was changed by this Experiments handover update.
+
+
+## PHX-RELEASE UTC02 — Windows negative-selftest buildWorkflow scope repair
+
+**Observed:** 2026-11-24T02:24Z  
+**PR:** [#291](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/291), OPEN / DRAFT / UNMERGED.  
+**Branch:** \`phoenix/release-publisher-isolation-20261115\`.  
+**Base #242:** \`734b89d9e7792247e8376335c3f3685500ab3f89\`.  
+**Final source/workflow head before this handover update:** \`62bf68f4d8abb74cafe0152b24f08abe4ad56a5e\`.
+
+### Finding and ownership boundary
+
+The exact Windows run [#45300799060](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45300799060), job \`138132707215\`, failed at \`negative-selftest.ps1\` under StrictMode because it reads \`$buildWorkflow\` without initializing it. The workflow invoked that PISONET-owned script through a separate \`pwsh -File\` process, so no caller variable could be inherited.
+
+The test file \`experiment/windows/BlazePisonet-SoftTimer/tests/ReleaseSigning/negative-selftest.ps1\` remains PISONET-owned and was not changed. RELEASE changed only \`.github/workflows/blazepisonet-softtimer-release.yml\`: both call sites now validate and load the exact repository-root \`.github/workflows/blazepwifi-build.yml\` into \`$buildWorkflow\`, then dot-source the existing PISONET test in the same PowerShell scope. The PR negative control retains its \`-ActualUnsignedSetup\` argument. No secrets or signing commands were invoked.
+
+### Test-first history
+
+- Initial test-only commit [\`f9201e62\`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/f9201e622e24157b1ae70b696f7014fa6f941455) had an incorrectly escaped Python newline matcher. [CI #45311306332](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45311306332) failed because the fixture could not find its workflow-step marker. **Invalid harness attempt; not product RED evidence.**
+- Matcher correction [\`fa9e8ed5\`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/fa9e8ed50a39999614be1071d60639916c36c39d) produced a genuine first-invocation RED in [CI #45311445645](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45311445645).
+- Expanded regression [\`57489709\`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/57489709d40efd7bfdf05a07b549ca47dc839fa2) covered both workflow call sites. [Push #45311586724](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45311586724) and [PR #45311593942](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45311593942) each failed with the two expected missing-context subtests.
+- RELEASE workflow correction [\`62bf68f4\`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/62bf68f4d8abb74cafe0152b24f08abe4ad56a5e) updates only \`.github/workflows/blazepisonet-softtimer-release.yml\`.
+
+### Exact-source CI at \`62bf68f4\`
+
+- [BlazePwifi build PR #45311687040](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45311687040): CI-0701 docs-only proof job \`138168692837\` **PASS**, including the new two-call-site workflow regression. Overall run **FAILURE** at the independent mandatory handover freshness gate. ESP32, ESP8266, Android and listed firmware target build jobs completed **PASS**; update bundle, simulations and all sign/publisher jobs were **SKIPPED**. No production artifact or release authorization is claimed.
+- [Windows release PR #45311687072](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45311687072): handover job \`138168726393\` **FAILURE** before the Windows build. The gate reports \`.github/workflows/blazepisonet-softtimer-release.yml\` newer than CORE-owned \`experiment/openwrt/BlazePwifi/PROJECT_HANDOVER.md\`, whose last checkpoint is \`432c2af734b36f721c5b5e708e29e4fd0d8bc294\`. \`build-windows\` and \`publish-release\` were **SKIPPED**. Therefore the actual PowerShell dot-source/self-test runtime has **NOT YET BEEN EXECUTED** on this corrected source.
+- [ESP32 compatibility PR #45311687070](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45311687070): provenance regression job \`138168792957\` **PASS**; both exact-core jobs were still running at the last read. No terminal result is claimed here.
+
+### Ownership, coordination and next exact actions
+
+- MASTER #288 observed head \`ca12b1ae9c10c78f2f2ec3f19e50b013881046f9\`; \`OWNERSHIP_ROUTES.json\` blob \`e4db324315a1b3543fec17a148fbf960170fcb29\` remains \`DRAFT_REVIEW_ONLY\`; RELEASE workflow route remains \`reimplementation-review\`.
+- RELEASE #242 head \`734b89d9e7792247e8376335c3f3685500ab3f89\`; #291 is stacked on it.
+- COE #26 remains FROZEN at \`b382d233ff06c8791b1028bed3c617cc7b670d12\`; parent #31 remains \`59ed44d0b911e176f1a95b9cf5585ef811ffd31b\`; child #35 remains \`e7801818b00854f34a5a88955d979c601ec96404\`. No migration was attempted.
+- Cleanup-first #266 remains OPEN / 0-of-7; its RELEASE cleanup assignment remains #242.
+- Canonical private Drive registry v11 was not available through authorized Library retrieval; no older snapshot was substituted.
+
+**Blocker:** the mandatory shared handover gate requires the CORE-owned canonical records to checkpoint this workflow change. PHX-CORE must update its own \`experiment/openwrt/BlazePwifi/PROJECT_HANDOVER.md\`, \`docs/handover/CURRENT_STATE.md\`, and \`docs/handover/CHANGE_LEDGER.md\` with the exact workflow head and evidence. RELEASE will then rerun Windows; it will not edit CORE or bypass the gate. PHX-PISONET should review the same-scope dot-source invocation against its owned script, and PHX-QA should independently review the RELEASE-owned workflow regression.
+
+No PISONET, CORE, RENTAL, HARDWARE, QA, MASTER, COE destination, financial, or shared-interface source was changed. No merge, signing, tag, publication, hardware flash, real-payment migration or customer deployment occurred. Physical 150 power cuts and 30-device/24-hour soak remain NOT TESTED. **PRODUCTION NO-GO.**
