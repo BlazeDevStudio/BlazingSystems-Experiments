@@ -151,6 +151,52 @@ if not any(
     raise AssertionError("CURRENT_CGI_LAB_SHARED_RUNNER_CALL_MISSING")
 print("CURRENT_CGI_SHARED_RUNNER_GUARD_PASS")
 
+
+# The bounded HTTP-response lab must use the same bounded process runner.
+BOUNDED_HTTP_LAB_PATH = HERE / "bounded_http_response_lab.py"
+if not BOUNDED_HTTP_LAB_PATH.is_file():
+    raise AssertionError("BOUNDED_HTTP_LAB_MISSING")
+bounded_http_tree = ast.parse(
+    BOUNDED_HTTP_LAB_PATH.read_text(encoding="utf-8")
+)
+bounded_http_runner_imports = {
+    alias.name
+    for node in bounded_http_tree.body
+    if isinstance(node, ast.ImportFrom)
+    and node.module == "cpp_fixture_runner"
+    for alias in node.names
+}
+if bounded_http_runner_imports != {"run_cpp_fixture"}:
+    raise AssertionError("BOUNDED_HTTP_LAB_SHARED_RUNNER_IMPORT_MISSING")
+
+bounded_http_direct_imports = {
+    alias.name.split(".")[0]
+    for node in bounded_http_tree.body
+    if isinstance(node, ast.Import)
+    for alias in node.names
+}
+if {"subprocess", "tempfile"} & bounded_http_direct_imports:
+    raise AssertionError("BOUNDED_HTTP_LAB_LOCAL_PROCESS_RUNNER_REMAINS")
+
+bounded_http_direct_calls = [
+    node for node in ast.walk(bounded_http_tree)
+    if isinstance(node, ast.Call)
+    and isinstance(node.func, ast.Attribute)
+    and isinstance(node.func.value, ast.Name)
+    and node.func.value.id in {"subprocess", "tempfile"}
+]
+if bounded_http_direct_calls:
+    raise AssertionError("BOUNDED_HTTP_LAB_LOCAL_PROCESS_CALL_REMAINS")
+
+if not any(
+    isinstance(node, ast.Call)
+    and isinstance(node.func, ast.Name)
+    and node.func.id == "run_cpp_fixture"
+    for node in ast.walk(bounded_http_tree)
+):
+    raise AssertionError("BOUNDED_HTTP_LAB_SHARED_RUNNER_CALL_MISSING")
+print("BOUNDED_HTTP_SHARED_RUNNER_GUARD_PASS")
+
 runner_lines = len(runner_source.splitlines())
 if runner_lines > 330:
     raise AssertionError(f"POLL_RESPONSE_RUNNER_NOT_COMPACT: {runner_lines} lines")

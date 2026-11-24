@@ -13,6 +13,7 @@ import tempfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import poll_response_failclosed_lab_structure_guard  # noqa: F401
 from firmware_lab_source import extract_function, mask_active_cpp_code
 
 ROOT = Path(__file__).resolve().parents[2]
