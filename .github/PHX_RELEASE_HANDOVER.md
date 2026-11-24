@@ -3909,3 +3909,14 @@ No merge, release tag, real-key signing, publication, hardware flashing, real pa
 - MASTER must refresh the RELEASE child pointer in #288. PR #291 still has inherited cross-role paths and no independent QA/Master approval.
 
 No merge, signer operation, tag, publication, hardware flash, real payment migration or customer deployment occurred. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC15 — terminal source-head CI reconciliation
+
+The source-head workflows have now reached terminal states; this supersedes the in-progress snapshot above.
+
+- [BlazePwifi build #45428594112](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45428594112) at source/test SHA `dc8db27c493c799f87704d9287659a2d242bb8ba`: **OVERALL FAILURE**. CI-0701 job `138567311098` SUCCESS, including 53/53 provenance tests, 3/3 descriptor-cleanup tests, 25/25 concurrency tests, 10/10 Arduino CLI archive tests and action-pin/toolchain guards. Validation job `138567479214` FAILED only at the mandatory shared CORE handover freshness gate. ESP32, ESP8266, Android and all 11 OpenWrt firmware target jobs completed SUCCESS (14 target/platform jobs total). Update bundle, v0.4 simulations, candidate gate, production sign handoff and all publishers were SKIPPED. Do not call this a successful full build.
+- [ESP32 compatibility #45428594110](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45428594110) at the same source/test SHA: **COMPLETED SUCCESS, 3/3 jobs**. The release provenance regression job and exact HARDWARE source compile/reproducibility jobs for ESP32 core 3.3.13 and 4.0.0 all passed.
+- The validation log's exact shared blocker remains `experiment/openwrt/BlazePwifi/PROJECT_HANDOVER.md`, whose last checkpoint is `86f9edb9f622987cba5bd19c11988cc02f123cb3`. This file is CORE-owned. PHX-CORE / PHX-MASTER must refresh the authoritative shared handover before RELEASE reruns the full-build and Windows gates.
+
+These results are hosted CI only. No actual physical board was flashed or tested; the CI images and descriptor fixtures are not production-approved binaries. The subsequent handover-only commit does not retroactively change the source SHA tested above.
