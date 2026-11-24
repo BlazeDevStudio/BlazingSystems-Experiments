@@ -37,7 +37,7 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       EXPECTED_FP: "1A:18:D5:8E:1F:95:55:96:89:10:20:71:F5:6C:93:E9:B9:D2:EA:6B:E4:0E:6F:20:70:06:C9:89:62:A1:6A:25"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ inputs.candidate_sha }}
 
@@ -164,7 +164,7 @@ jobs:
           jq -n --arg release "0.5.3" --arg sha "$SHA" --arg build "$BUILD_RUN" --arg sign "$SIGN_RUN" --arg fingerprint "$EXPECTED_FP"             '{release:$release,commit:$sha,build_run_id:$build,signing_run_id:$sign,candidate_gate:"passed",production_signed:true,certificate_lineage:"BlazeRental-production-lineage2",signing_fingerprint:$fingerprint,android_package:"com.blazesystems.blazerental",version_code:50300,rollback_rescue:"0.5.2-rescue-for-0.5.3",rollback_version_code:50301,binding_qr_tool:"BlazeRental-Binding-QR.html",device_owner_qr_tool:"BlazeRental-DeviceOwner-Provisioning-QR.html",provisioning_from_signed_apk:true}'             > "$OUT/RELEASE-MANIFEST.json"
           (cd "$OUT" && find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS)
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: BlazePwifi-v0.5.3-release-stage
           path: release-out/
