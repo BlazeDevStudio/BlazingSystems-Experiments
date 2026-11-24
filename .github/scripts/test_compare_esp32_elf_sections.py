@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import sys
+import tracemalloc
 import unittest
 from pathlib import Path
 
@@ -155,6 +156,43 @@ class ElfSectionByteComparisonTests(unittest.TestCase):
         context = result["difference_context"][0]
         self.assertLessEqual(context["window_bytes"], 64)
         self.assertTrue(context["window_truncated"])
+
+    def test_difference_range_storage_is_bounded_for_many_disjoint_changes(self) -> None:
+        section_size = 32768
+        first_elf = bytearray(0x20 + section_size)
+        second_elf = bytearray(0x20 + section_size)
+        second_elf[0x20:0x20 + section_size] = bytes(
+            1 if index % 2 == 0 else 0 for index in range(section_size)
+        )
+        first_bytes = bytes(first_elf)
+        second_bytes = bytes(second_elf)
+        sections = [{
+            "name": ".flash.rodata",
+            "size": section_size,
+            "vma": 0x3F400120,
+            "lma": 0x3F400120,
+            "file_offset": 0x20,
+        }]
+
+        tracemalloc.start()
+        try:
+            result = compare_section_bytes(
+                first_bytes, second_bytes, sections, sections, ".flash.rodata"
+            )
+            _, peak_bytes = tracemalloc.get_traced_memory()
+        finally:
+            tracemalloc.stop()
+
+        expected_ranges = section_size // 2
+        self.assertEqual(result["difference_range_count"], expected_ranges)
+        self.assertEqual(result["differing_bytes"], expected_ranges)
+        self.assertEqual(len(result["difference_ranges"]), 64)
+        self.assertTrue(result["difference_ranges_truncated"])
+        self.assertLess(
+            peak_bytes,
+            1_000_000,
+            f"comparison retained unbounded difference-range details: {peak_bytes} bytes",
+        )
 
     def test_reports_app_descriptor_section_separately(self) -> None:
         self.second_elf[0x34] = ord("x")
