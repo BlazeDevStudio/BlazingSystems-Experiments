@@ -104,7 +104,7 @@ int main() {
   if (pollJsonTopLevelTrue(String("{\"meta\":1e++2,\"ok\":true}"), "ok")) return 115;
   if (pollJsonTopLevelTrue(String("{\"meta\":0x10,\"ok\":true}"), "ok")) return 116;
 
-  std::cout << "POLL_JSON_PRIMITIVE_GRAMMAR_PASS valid=9/9 invalid=16/16\\n";
+  std::cout << "POLL_JSON_PRIMITIVE_GRAMMAR_PASS valid=9/9 invalid=16/16\n";
   return 0;
 }
 """
@@ -256,7 +256,7 @@ def verify(boards, extract, stubs):
         if primitive.count(fraction_guard) != 1:
             raise AssertionError(f"{board}: expected one fraction digit guard")
         fraction_mutant = primitive.replace(
-            fraction_guard, "if(false) return false;", 1
+            fraction_guard, "if(q==fractionStart) { /* bypass */ }", 1
         )
         _expect_mutation_rejected(
             stubs + parser.replace(primitive, fraction_mutant, 1)
@@ -268,7 +268,7 @@ def verify(boards, extract, stubs):
         if primitive.count(exponent_guard) != 1:
             raise AssertionError(f"{board}: expected one exponent digit guard")
         exponent_mutant = primitive.replace(
-            exponent_guard, "if(false) return false;", 1
+            exponent_guard, "if(q==exponentStart) { /* bypass */ }", 1
         )
         _expect_mutation_rejected(
             stubs + parser.replace(primitive, exponent_mutant, 1)
