@@ -9,6 +9,8 @@ import subprocess
 import tempfile
 import sys
 
+from cpp_fixture_runner import run_cpp_fixture
+
 from firmware_lab_source import extract_block, extract_function, extract_functions, find_repo_root, mask_non_code
 from poll_fault_dual_store_lab_fixtures import constants, harness
 
@@ -337,25 +339,35 @@ static const uint32_t POLL_FAULT_EEPROM_BYTES = 32;
         )
     print("POLL_FAULT_CONSTANT_EXTRACTION_PHASE2_ELIF_SPLICE_REJECTED 1/1")
 
+def _compile_and_run(program: str, *, board: str, label: str, prefix: str):
+    """Compile and execute one C++ fixture with shared finite bounds."""
+    return run_cpp_fixture(
+        program,
+        prefix=prefix,
+        stem=label,
+        compile_timeout=30,
+        run_timeout=10,
+        context=f"{board}: {label}",
+    )
+
+
 def run(board: str, path: Path):
     source = path.read_text(encoding="utf-8")
     program = harness(board, source)
-    with tempfile.TemporaryDirectory(prefix="phx-poll-fault-") as tmp:
-        cpp = Path(tmp) / "lab.cpp"
-        exe = Path(tmp) / "lab"
-        cpp.write_text(program, encoding="utf-8")
-        subprocess.run(
-            ["g++", "-std=c++17", "-Wall", "-Wextra", "-Werror", str(cpp), "-o", str(exe)],
-            check=True,
+    result = _compile_and_run(
+        program,
+        board=board,
+        label="poll-fault",
+        prefix="phx-poll-fault-",
+    )
+    if result.returncode:
+        print(result.stdout or "", end="")
+        print(result.stderr or "", file=sys.stderr, end="")
+        raise AssertionError(
+            f"{board}: poll fault baseline failed with exit {result.returncode}"
         )
-        try:
-            result = subprocess.run([str(exe)], check=True, text=True, capture_output=True)
-        except subprocess.CalledProcessError as exc:
-            print(exc.stdout or "", end="")
-            print(exc.stderr or "", file=sys.stderr, end="")
-            raise
-        print(result.stdout, end="")
-        required_markers = (
+    print(result.stdout, end="")
+    required_markers = (
             f"POLL_FAULT_FIRST_LATCH_SNAPSHOT_STABLE_PASS board={board}",
         )
         if board == "ESP8266":
@@ -386,15 +398,12 @@ def run_esp32_missing_commit_mutation(path: Path):
         1,
     )
     program = harness("ESP32", mutated_source)
-    with tempfile.TemporaryDirectory(prefix="phx-nvs-commit-omission-") as tmp:
-        cpp = Path(tmp) / "lab.cpp"
-        exe = Path(tmp) / "lab"
-        cpp.write_text(program, encoding="utf-8")
-        subprocess.run(
-            ["g++", "-std=c++17", "-Wall", "-Wextra", "-Werror", str(cpp), "-o", str(exe)],
-            check=True,
-        )
-        result = subprocess.run([str(exe)], text=True, capture_output=True)
+    result = _compile_and_run(
+        program,
+        board="ESP32",
+        label="missing-commit",
+        prefix="phx-nvs-commit-omission-",
+    )
     expected = "POLL_FAULT_BACKUP_COMMIT_CALL_COUNT_FAIL board=ESP32 actual=0"
     if result.returncode != 61 or expected not in result.stderr:
         print(result.stdout, end="")
@@ -415,15 +424,12 @@ def run_esp32_precommit_persistence_mutation(path: Path):
     if program.count(needle) != 1:
         raise AssertionError("ESP32 NVS pre-commit mutation anchor must occur exactly once")
     mutated = program.replace(needle, replacement, 1)
-    with tempfile.TemporaryDirectory(prefix="phx-nvs-precommit-mutation-") as tmp:
-        cpp = Path(tmp) / "lab.cpp"
-        exe = Path(tmp) / "lab"
-        cpp.write_text(mutated, encoding="utf-8")
-        subprocess.run(
-            ["g++", "-std=c++17", "-Wall", "-Wextra", "-Werror", str(cpp), "-o", str(exe)],
-            check=True,
-        )
-        result = subprocess.run([str(exe)], text=True, capture_output=True)
+    result = _compile_and_run(
+        mutated,
+        board="ESP32",
+        label="precommit-persistence",
+        prefix="phx-nvs-precommit-mutation-",
+    )
     if result.returncode != 60 or "ESP32_NVS_SET_BLOB_DURABLE_BEFORE_COMMIT" not in result.stderr:
         print(result.stdout, end="")
         print(result.stderr, file=sys.stderr, end="")
@@ -464,15 +470,12 @@ def run_first_fault_snapshot_overwrite_mutation(board: str, path: Path):
             1,
         )
     program = harness(board, mutated_source)
-    with tempfile.TemporaryDirectory(prefix="phx-first-latch-overwrite-mutation-") as tmp:
-        cpp = Path(tmp) / "lab.cpp"
-        exe = Path(tmp) / "lab"
-        cpp.write_text(program, encoding="utf-8")
-        subprocess.run(
-            ["g++", "-std=c++17", "-Wall", "-Wextra", "-Werror", str(cpp), "-o", str(exe)],
-            check=True,
-        )
-        result = subprocess.run([str(exe)], text=True, capture_output=True)
+    result = _compile_and_run(
+        program,
+        board=board,
+        label="first-fault-snapshot-overwrite",
+        prefix="phx-first-latch-overwrite-mutation-",
+    )
     expected = f"POLL_FAULT_FIRST_LATCH_SNAPSHOT_CHANGED board={board}"
     if result.returncode != 74 or expected not in result.stderr:
         print(result.stdout, end="")
