@@ -525,3 +525,10 @@ Exact docs/source/test head `18f61977ba374b90d4002887bce29cb7921bee78` passed [W
 - Compatible head `c5a566fd04a59a3c4a4bbbaa9524f8a9b97e6b7d` already includes another release worker's provenance, toolchain, concurrency, and handover-contract expansion. No implementation was duplicated.
 - [ESP32 #45209288305](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45209288305) completed both exact-core legs and the release-artifact provenance regression suite successfully for source `275057aa2837`; this is scoped CI evidence only, not compatibility, signing, hardware, or production acceptance. [Build #45209288533](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45209288533) and [Windows #45209288746](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45209288746) fail closed at mandatory handover freshness after the source-only update; this entry supplies the required canonical handover evidence. Publisher paths remained skipped.
 - PR #291 remains draft/unmerged and independently unreviewed. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC2026-11-24 — terminal recheck: provenance and handover-contract expansion
+
+- The compatible source head `c5a566fd04a59a3c4a4bbbaa9524f8a9b97e6b7d` remains superseded implementation; no code was duplicated.
+- The refreshed documentation head `9d8e7b79dab2af8fe9c138853bdf3999bafbc596` reached terminal scoped CI: [Build #45292627097](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45292627097) completed validation, Android, and ESP32 build jobs; [ESP32 #45292627282](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45292627282) completed both exact-core legs and provenance regression. Production signing and publishing stayed skipped. This is not production, compatibility, signing, or hardware acceptance.
+- [Windows #45292627205](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45292627205) completed handover then remains fail-closed at signing-negative controls; publisher skipped. PR #291 remains draft/unmerged and independently unreviewed. **PRODUCTION NO-GO.**
