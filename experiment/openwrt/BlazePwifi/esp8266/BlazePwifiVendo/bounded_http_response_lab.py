@@ -90,7 +90,7 @@ int main() {
   if (readBoundedControllerResponse(informational, 199) != "" ||
       informational.getStringCalls != 0) return 68;
 
-  std::cout << "BOUNDED_CONTROLLER_HTTP_RESPONSE_PASS allowed=3 denied=5\n";
+  std::cout << "BOUNDED_CONTROLLER_HTTP_RESPONSE_PASS allowed=3 denied=7\n";
   return 0;
 }
 """
@@ -138,7 +138,8 @@ def verify():
             )
 
         helper = extract_function(source, "readBoundedControllerResponse")
-        post = mask_active_cpp_code(extract_function(source, "post"))
+        post_source = extract_function(source, "post")
+        post = mask_active_cpp_code(post_source)
         if post.count("readBoundedControllerResponse(h,code)") != 1:
             raise AssertionError(
                 f"{board}: post() must call the bounded reader exactly once"
@@ -148,10 +149,11 @@ def verify():
                 f"{board}: post() must not read an unbounded body directly"
             )
         compact_post = re.sub(r"\\s+", "", post)
+        compact_post_source = re.sub(r"\\s+", "", post_source)
         collect_call = "h.collectHeaders(responseHeaders,1)"
         if (
             compact_post.count(collect_call) != 1
-            or compact_post.count('constchar*responseHeaders[]={"Transfer-Encoding"};') != 1
+            or compact_post_source.count('constchar*responseHeaders[]={"Transfer-Encoding"};') != 1
             or compact_post.find(collect_call) > compact_post.find("h.POST(body)")
         ):
             raise AssertionError(
