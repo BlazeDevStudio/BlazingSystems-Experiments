@@ -1,5 +1,30 @@
 # Project Phoenix — Canonical Role Assignments & Directory Ownership
 
+
+## PHX-MASTER UTC01 live evidence refresh — 2026-11-24T01:37:42Z
+
+Exact refs re-read at activation start; this section supersedes older owner pins above for current work while preserving history.
+
+- Experiments: main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; issue #172 development `blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5`; Master `phoenix/master-coordination@9f910426ebc25148bfd95eeb2af9b49fcf61e195`; PR #288 OPEN / DRAFT / UNMERGED against main.
+- COE: main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; integration #26 `b382d233ff06c8791b1028bed3c617cc7b670d12` OPEN / DRAFT / FROZEN.
+- Ownership manifest `OWNERSHIP_ROUTES.json` blob `e4db324315a1b3543fec17a148fbf960170fcb29`: 11 routes, `DRAFT_REVIEW_ONLY`, PHX-MASTER target null. Cleanup #266 remains OPEN / 0-of-7.
+
+| Owner / candidate | Exact current PR head | Exact-head CI and interpretation |
+|---|---|---|
+| CORE #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | [Build #42698139210](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42698139210) PASS; scoped build only. CORE remains with its separate owner. |
+| RENTAL #328 | `0e0da62acd47c6a1ce287f8a30fc700d603fa070` | [APK identity #44782114384](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44782114384) PASS; [API smoke #44782114393](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44782114393) PASS; [build #44782114390](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44782114390) FAIL. |
+| PISONET #255 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | [Windows #42462978704](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42462978704) PASS; hosted/synthetic CI only, native COM acceptance not established. |
+| HARDWARE #347 | `960184670379f01e20f0e7e8bc23b3e5eedacd3f` | [Quarantine #45299741995](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45299741995) FAIL and [Relay #45299742437](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45299742437) FAIL at the shared JSON-array primitive lab; [build #45299741993](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45299741993) has successful listed target builds but validation FAILS at QA-owned Controller protocol parity / Missing poll signature check. |
+| HARDWARE #348 | `c18826892160b1777f107e2ca0ca49aaed66ba6a` | [Focused header #45207909335](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45207909335) PASS 5/5 synthetic checks; [build #45207909463](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45207909463) FAIL at ESP32 compile / handover freshness. |
+| QA #290 / #292 | `5c29d15994cee1279058f1eca12f2a3180704292` / `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | [#290 Windows #43633486963](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43633486963) PASS; #292 has no PR-triggered runs. |
+| RELEASE #291 | `8c55b107b7c2f86e765d85b0066102275f366b0a` | [BlazePwifi build #45300799357](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45300799357) PASS; [ESP32 compatibility #45300799137](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45300799137) PASS; [Windows #45300799060](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45300799060) FAIL in `negative-selftest.ps1` because `$buildWorkflow` is unset. |
+| COE RELEASE #35 | `e7801818b00854f34a5a88955d979c601ec96404` | [Shared #45303825436](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45303825436) FAILS closed: 10/10 appliance profiles lack approved site ULA /48; [sandbox #45303825459](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45303825459) host preflight passes then Bubblewrap is absent (exit 125); [case #45303825417](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45303825417) PASS. |
+| COE CORE #45 | `9d76a134c1f6512aa40c20ec4d247306a71a8cce` | [Overlay #44295049727](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44295049727) and [case #44295049903](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44295049903) PASS; scoped only. |
+| COE INTERCON #49 | `aeb8ff11b2f5db9a5f86280ab62ab988245f3919` | [Stage 5.1 #44646341873](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44646341873) and [case #44646341992](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44646341992) PASS; [Shared compile #44646341922](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44646341922) FAILS on missing `mbedtls/sha256.h`. |
+| COE integration #26 | `b382d233ff06c8791b1028bed3c617cc7b670d12` | Five workflows QUEUED / zero jobs. FROZEN; no integration acceptance. |
+
+No owner branch was changed. No subsystem ownership was transferred.
+
 ## PHX-MASTER UTC23 owner pins — 2026-11-23T23:37:42Z
 
 Live refs: Experiments main f4e8a891aed8af86d5fd315d28750a0ac3a7372b; issue #172 development blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5; comparison-only v0.6 audit foundation 2fbd2475e9f54878c316fa7cea2f228386b0e859; Master PR #288 starting head 56f1d68e55d675abcd622cab6ba7f9ec2427ab72; COE main a6513ab4412b4c014eee2863e45cbe32d06cb243; COE #26 b382d233ff06c8791b1028bed3c617cc7b670d12.

@@ -1,6 +1,17 @@
 # Project Phoenix — Coordination Index
 
 
+## PHX-MASTER UTC01 live evidence refresh — 2026-11-24T01:37:42Z
+
+- Exact refs: Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; development `aad3aade72c1156eecba1fed30907c6d0283b2c5`; Master `9f910426ebc25148bfd95eeb2af9b49fcf61e195`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`.
+- PR #288 remains OPEN / DRAFT / UNMERGED, 192 changed paths, all under `coordination/phoenix/`. This UTC01 update changes five existing coordination documents; no new report or artifact.
+- New exact-head blocker: HARDWARE #347 Quarantine/Relay fail because `pollJsonSkipPrimitive` in both board sketches does not stop on `]`; Full validation also fails at QA's Missing poll signature check. See [ROLE_ASSIGNMENTS](ROLE_ASSIGNMENTS.md) and [INTEGRATION_MATRIX](INTEGRATION_MATRIX.md).
+- RELEASE #291 Windows self-test fails because `$buildWorkflow` is unset; BlazePwifi build and ESP32 compatibility checks pass. COE #35 remains blocked by missing approved ULA /48 and Bubblewrap; COE #49 Shared ESP32 compile fails; #45 scoped checks pass.
+- COE #26 remains FROZEN with five queued workflows / zero jobs. Ownership manifest remains 11 routes / DRAFT_REVIEW_ONLY / Master target null. No migration staging or destination edits.
+- Cleanup #266 remains OPEN / 0-of-7. Private registry v11/newer corrections and Google Drive access remain unavailable; no older registry substituted. Master Python suite and `verify_coordination.py` NOT RUN.
+- **PRODUCTION NO-GO.** No subsystem source, COE destination, owner route, secrets, signing, release, hardware flash, physical test, real-payment operation, or customer cutover changed.
+
+
 ## Latest live state — PHX-MASTER UTC00 (2026-11-24T00:37:40Z)
 
 - Exact refs: Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; issue #172 development `blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5`; separate v0.6 audit-foundation `2fbd2475e9f54878c316fa7cea2f228386b0e859`; Master start `4e08f521e4d0c1501dfa61ad7594ca6c39d6b664`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`. PR #288 remains OPEN / DRAFT / UNMERGED, 192 paths, all under coordination/phoenix/.

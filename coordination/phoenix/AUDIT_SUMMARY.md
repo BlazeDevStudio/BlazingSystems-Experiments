@@ -1,5 +1,20 @@
 # Project Phoenix — Master Audit Summary & Repository Ground Truth
 
+
+## PHX-MASTER UTC01 live evidence refresh — 2026-11-24T01:37:42Z
+
+### Current verified findings
+
+1. **HARDWARE parser delimiter defect, confirmed by exact source inspection and current CI:** #347 head `960184670379f01e20f0e7e8bc23b3e5eedacd3f` fails both Quarantine [#45299741995](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45299741995) and Relay [#45299742437](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45299742437). The shared lab requires `&& r[p]!=']'`, but `pollJsonSkipPrimitive` in both sketches currently omits that delimiter. Exact sketch blobs: ESP8266 `fa8ed828026396db89aab2889bf6a61d6cf6bbac`; ESP32 `717336b84d434d51eb24beac1ed8efce8e719f69`. HARDWARE must correct both implementations and rerun exact-source tests. Master did not touch source.
+2. **HARDWARE Full remains blocked:** [#45299741993](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45299741993) fails validation at QA-owned Controller protocol parity / `Missing poll signature check`. Keep firmware deny-only until CORE defines the signed response envelope and QA verifies positive/negative vectors.
+3. **RELEASE Windows self-test blocker:** [#45300799060](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45300799060) fails at `negative-selftest.ps1` because `$buildWorkflow` is unset at first use; `$workflow` is loaded earlier. RELEASE must repair its own test/workflow contract.
+4. **COE RELEASE #35 remains fail-closed:** [#45303825436](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45303825436) rejects all 10 appliance profiles without approved ULA /48 authority; [#45303825459](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45303825459) exits 125 because Bubblewrap is absent after host preflight. No appliance binary or sandbox execution is established.
+5. **COE #26 remains frozen:** main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; PR #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`, 205 changed paths, five queued workflows / zero jobs. Existing 61-row provenance baseline was not fully rerun. No staging or migration.
+6. **Governance/access:** cleanup #266 remains OPEN / 0-of-7; ownership manifest remains 11 routes / DRAFT_REVIEW_ONLY / Master target null. Experiments main and development plus COE main report `protected=false`; administrator verification is required. Private registry v11 and newer corrections were not found in the connected Library; no Google Drive connector is exposed. Older v3-v7 snapshots were not substituted.
+7. **Master execution boundary:** GitHub tree/blob and CI inspection executed. Master Python suite and `verify_coordination.py` NOT RUN because no authenticated local checkout is available. No Master PR Actions run was found for the starting head.
+
+**Disposition: PRODUCTION NO-GO.** Independent protected signing/anti-rollback witness, crash-atomic durable financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak, and owner-authorized release gates remain mandatory.
+
 ## PHX-MASTER UTC23 live state — 2026-11-23T23:37:42Z
 
 Experiments main f4e8a891aed8af86d5fd315d28750a0ac3a7372b; issue #172-designated development blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5; comparison-only v0.6 audit foundation 2fbd2475e9f54878c316fa7cea2f228386b0e859. Master PR #288 remains OPEN/DRAFT/UNMERGED on phoenix/master-coordination, starting parent 56f1d68e55d675abcd622cab6ba7f9ec2427ab72. COE main a6513ab4412b4c014eee2863e45cbe32d06cb243; integration #26 b382d233ff06c8791b1028bed3c617cc7b670d12 remains FROZEN.

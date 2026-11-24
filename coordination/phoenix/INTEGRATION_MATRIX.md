@@ -1,5 +1,19 @@
 # Project Phoenix — Subsystem Integration Matrix & Gate Hierarchy
 
+
+## PHX-MASTER UTC01 live evidence refresh — 2026-11-24T01:37:42Z
+
+### Current exact-head integration blockers — 2026-11-24T01:37:42Z
+
+- Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`, development `aad3aade72c1156eecba1fed30907c6d0283b2c5`, Master `9f910426ebc25148bfd95eeb2af9b49fcf61e195`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`.
+- HARDWARE #347 exact head `960184670379f01e20f0e7e8bc23b3e5eedacd3f`: Quarantine and Relay both fail because `poll_json_array_primitive_lab.py` expects one explicit array-close delimiter. Source inspection confirms `pollJsonSkipPrimitive` in both ESP8266 and ESP32 sketches currently stops at comma, `}`, or whitespace, but not `]` (ESP8266 source blob `fa8ed828026396db89aab2889bf6a61d6cf6bbac`; ESP32 source blob `717336b84d434d51eb24beac1ed8efce8e719f69`). This is a source-grounded parser defect requiring HARDWARE owner correction in both sketches and exact-source reruns; Master did not edit firmware. Full validation also fails at the inherited QA-owned `Missing poll signature check`; preserve deny-only behavior.
+- RELEASE #291 exact head `8c55b107b7c2f86e765d85b0066102275f366b0a`: Windows negative self-test fails because `negative-selftest.ps1` reads `$buildWorkflow` under StrictMode without assigning it; the script currently loads `$workflow` only. This is RELEASE/PISONET-owned scope; no Master edit.
+- COE RELEASE #35 exact head `e7801818b00854f34a5a88955d979c601ec96404`: 10/10 appliance profiles fail closed without approved site-scoped RFC 4193 ULA /48 authority; mandatory Bubblewrap runner is absent (exit 125). Host preflight success is not sandbox execution.
+- COE #49 still fails Shared ESP32 compile on missing `mbedtls/sha256.h`; Stage 5.1 and case checks are scoped passes. COE #45 passes overlay/case checks only.
+- COE #26 remains frozen with five queued workflows and zero jobs. The previous 61-row provenance audit remains a historical baseline; this activation did not rerun all 61 rows or stage any destination changes.
+
+No source/destination compatibility, physical acceptance, financial safety, or production readiness is inferred from partial CI. All migration routes remain review-only.
+
 ## PHX-MASTER UTC23 exact-head integration reconciliation — 2026-11-23T23:37:42Z
 
 - Experiments main f4e8a891aed8af86d5fd315d28750a0ac3a7372b; issue #172 development blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5; comparison-only v0.6 audit foundation 2fbd2475e9f54878c316fa7cea2f228386b0e859.
