@@ -131,15 +131,26 @@ def _close_file_and_parent_descriptors(
             # from receiving its one close attempt.
             cleanup_interruptions.append((label, exc))
 
+    if cleanup_interruptions and primary_error is not None:
+        # A cleanup interruption must not replace an already-active read/hash
+        # failure. Record every cleanup diagnostic on the primary exception,
+        # then return so the original exception continues propagating.
+        for failed_label, interruption in cleanup_interruptions:
+            _record_cleanup_failure(
+                primary_error,
+                f"provenance descriptor cleanup interruption for {failed_label} "
+                f"on {display_path}: {type(interruption).__name__}: {interruption}",
+            )
+        for failed_label, error in close_errors:
+            _record_cleanup_failure(
+                primary_error,
+                f"could not close {failed_label} for {display_path}: "
+                f"{type(error).__name__}: {error}",
+            )
+        return
+
     if cleanup_interruptions:
         label, interruption = cleanup_interruptions[0]
-        if primary_error is not None:
-            _record_cleanup_failure(
-                interruption,
-                "provenance read/hash failure also occurred before "
-                f"{label} cleanup for {display_path}: "
-                f"{type(primary_error).__name__}: {primary_error}",
-            )
         for failed_label, error in close_errors:
             _record_cleanup_failure(
                 interruption,
@@ -152,7 +163,7 @@ def _close_file_and_parent_descriptors(
                 f"additional {failed_label} cleanup interruption for {display_path}: "
                 f"{type(error).__name__}: {error}",
             )
-        raise interruption from primary_error
+        raise interruption
 
     if close_errors:
         detail = "; ".join(
