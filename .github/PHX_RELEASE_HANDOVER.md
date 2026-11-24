@@ -3994,3 +3994,27 @@ No merge, tag, signing, publication, hardware flash, real payment migration or c
 - The canonical private Drive project registry v11 was not surfaced through authorized Library retrieval. No older snapshot was substituted and no private contents were copied.
 
 No merge, release tag, signing, publication, hardware flash, payment migration or customer deployment occurred. Hosted CI and synthetic descriptor fault injection only; no physical acceptance is implied. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC17 — final source-head and docs-head run-state correction (2026-11-24T17:18:44.669Z)
+
+This section supersedes the in-progress snapshot in the preceding UTC17 entry; it does not change source/test code.
+
+### Source-fix head `a004c647e67f90269a9149f918887622bb8cc5e8`
+
+- PR full-build [#45446420114](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45446420114): final overall **CANCELLED** by the later handover-only successor. CI-0701 job `138631321289` **PASS** (provenance 57/57); mandatory `validate` job `138631481582` **FAIL** at CORE freshness; two target jobs succeeded and the remaining target jobs were cancelled. This is not a full-build pass.
+- Push full-build [#45446410456](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45446410456): **COMPLETED FAILURE**. CI-0701 job `138631286782` **PASS** (provenance 57/57); `validate` job `138631474733` **FAIL** at the same CORE freshness gate; all 14 target/platform jobs **PASS**. Update bundle, simulations and all signing/publication/import jobs were skipped.
+- Windows [#45446420077](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45446420077): **COMPLETED FAILURE** at the shared handover gate; Windows build and publisher skipped.
+- ESP32 compatibility [#45446420032](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45446420032): still **IN PROGRESS** at last read; provenance regression job passed; ESP32 core 3.3.13 and 4.0.0 legs remained in progress.
+
+### Final docs-head `f55812dc29d150771f530cbdacbb97084d539492`
+
+- PR BlazePwifi build [#45446838639](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45446838639): CI-0701 job `138633020738` **PASS**; mandatory `validate` job `138633156203` **FAIL** at CORE `CURRENT_STATE.md`, last checkpoint `d85eb6a2766781b6cac1807cef461993d8216b84`; 14 target/platform jobs were still in progress at last read. Run remained IN_PROGRESS; no full-build success.
+- PR Windows [#45446838617](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45446838617): **COMPLETED FAILURE** at the same freshness gate; build-windows and publisher skipped.
+- PR ESP32 compatibility [#45446838637](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45446838637): PENDING.
+- Push BlazePwifi [#45446819316](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45446819316): QUEUED; docs-head push ESP32 compatibility [#45446819111](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45446819111): PENDING.
+- The docs-head CI-0701 success is a handover/docs-head verification, while the source-fix test result remains the exact `a004c647` 57/57 pass above. The full-build freshness failure remains independent and unresolved.
+
+**Required owner:** PHX-CORE / PHX-MASTER must refresh the canonical `experiment/openwrt/BlazePwifi/docs/handover/CURRENT_STATE.md` and shared handover set, preserving CORE ownership, then publish the exact new SHA. PHX-RELEASE reruns full-build and Windows at that SHA. Do not weaken or bypass the freshness gate.
+
+No merge, signing, tag, publication, hardware flash, real payment migration or customer deployment. **PRODUCTION NO-GO.**
