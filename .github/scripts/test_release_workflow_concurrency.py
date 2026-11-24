@@ -442,6 +442,13 @@ def require_v053_release_permissions_are_isolated(content: str) -> None:
         raise AssertionError("publisher must verify the staged artifact before any release mutation")
     if "NOTES=release-out/README.md" not in publish:
         raise AssertionError("publisher must use the staged release notes, not a second checkout")
+    expected_expressions = (
+        "GH_TOKEN: " + chr(36) + "{{ github.token }}",
+        "SHA: " + chr(36) + "{{ inputs.candidate_sha }}",
+        "SIGN_RUN: " + chr(36) + "{{ inputs.signing_run_id }}",
+    )
+    if any(expression not in publish for expression in expected_expressions):
+        raise AssertionError("publish job must use live GitHub expressions, not escaped literal strings")
 
 
 class BlazePwifiV053PublishPermissionTests(unittest.TestCase):
