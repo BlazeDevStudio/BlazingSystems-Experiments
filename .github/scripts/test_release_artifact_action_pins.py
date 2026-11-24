@@ -121,10 +121,65 @@ def check_arduino_core_version_assertions(content: str) -> list[str]:
     return errors
 
 
-ACTION_PATTERN = re.compile(
-    r"^\s*(?:-\s*)?uses:\s*([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)@([^\s#]+)(?:\s+#.*)?$",
+USES_DIRECTIVE_PATTERN = re.compile(
+    r"^ {2,8}(?:- )?uses:[ \t]*(?P<value>[^\r\n]*)$",
     re.MULTILINE,
 )
+PINNED_ACTION_VALUE_PATTERN = re.compile(
+    r"(?P<action>[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)@(?P<sha>[0-9a-f]{40})"
+)
+
+
+def parse_pinned_uses_directives(content: str) -> tuple[dict[str, list[str]], list[str]]:
+    """Parse every YAML action-use directive and reject anything not immutably pinned."""
+    found: dict[str, list[str]] = {}
+    errors: list[str] = []
+    for line_number, line in enumerate(content.splitlines(), start=1):
+        match = USES_DIRECTIVE_PATTERN.fullmatch(line)
+        if match is None:
+            continue
+
+        raw_value = match.group("value").strip()
+        value = re.split(r"[ \t]+#", raw_value, maxsplit=1)[0].strip()
+        if len(value) >= 2 and value[0] == value[-1] and value[0] in {"'", '"'}:
+            value = value[1:-1]
+
+        pin = PINNED_ACTION_VALUE_PATTERN.fullmatch(value)
+        if pin is None:
+            errors.append(
+                f"line {line_number}: uses: must be an explicit owner/repo@40-hex "
+                f"immutable action ref; found {raw_value!r}"
+            )
+            continue
+        found.setdefault(pin.group("action"), []).append(pin.group("sha"))
+    return found, errors
+
+
+def check_uses_parser_regressions() -> list[str]:
+    """Exercise accepted and rejected uses: forms before inspecting live workflows."""
+    sha = "a" * 40
+    cases = (
+        ("pinned action with comment", f"      - uses: actions/checkout@{sha} # immutable", False),
+        ("quoted pinned action", f"        uses: 'actions/checkout@{sha}'", False),
+        ("dynamic expression", "      - uses: ${{ matrix.action }}", True),
+        ("local action path", "      - uses: ./.github/actions/publish", True),
+        ("mutable tag", "      - uses: actions/checkout@v4", True),
+        ("reusable workflow path", f"    uses: BlazeDevStudio/BlazingSystems-Experiments/.github/workflows/release.yml@{sha}", True),
+        ("empty uses directive", "      - uses:", True),
+    )
+    errors: list[str] = []
+    for label, fixture, should_reject in cases:
+        _, fixture_errors = parse_pinned_uses_directives(fixture)
+        if should_reject and not fixture_errors:
+            errors.append(f"{label}: unpinned directive was accepted")
+        elif not should_reject and fixture_errors:
+            errors.append(f"{label}: immutable pin was rejected: {fixture_errors[0]}")
+
+    # A command inside a YAML run: block is not a workflow-level uses: directive.
+    _, shell_errors = parse_pinned_uses_directives("          echo 'uses: ./not-a-step'")
+    if shell_errors:
+        errors.append("shell text inside run: was incorrectly parsed as an action directive")
+    return errors
 
 
 def check_arduino_cli_archive_verification(content: str) -> list[str]:
@@ -163,6 +218,13 @@ def check_arduino_cli_archive_verification(content: str) -> list[str]:
 
 def main() -> int:
     errors: list[str] = []
+    parser_errors = check_uses_parser_regressions()
+    if parser_errors:
+        errors.extend(parser_errors)
+        for error in parser_errors:
+            print(f"RELEASE-ACTION-PARSER-RED: {error}")
+    else:
+        print("RELEASE-ACTION-PARSER-PASS: 8 synthetic uses: directive cases")
     for relative_path, expected_counts in WORKFLOWS.items():
         path = ROOT / relative_path
         if not path.is_file():
@@ -170,11 +232,7 @@ def main() -> int:
             continue
 
         content = path.read_text(encoding="utf-8")
-        found: dict[str, list[str]] = {}
-        for action, ref in ACTION_PATTERN.findall(content):
-            found.setdefault(action, []).append(ref)
-
-        workflow_errors: list[str] = []
+        found, workflow_errors = parse_pinned_uses_directives(content)
         unexpected = sorted(set(found) - set(expected_counts))
         if unexpected:
             workflow_errors.append(
