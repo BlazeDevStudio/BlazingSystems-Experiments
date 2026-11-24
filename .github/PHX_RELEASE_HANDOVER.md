@@ -3959,3 +3959,9 @@ These results are hosted CI only. No actual physical board was flashed or tested
 - Read-only branch-protection endpoint returned 403 to the current integration; the repository rulesets endpoint returned an empty list. Effective main-branch protection cannot be independently established from this access and must not be assumed.
 
 No merge, tag, signing, publication, hardware flash, real payment migration or customer deployment occurred. **PRODUCTION NO-GO.** Protected signer, independent freshness witness, durable financial accounting/migration, independent QA/MASTER approval, approved production binaries, 150 physical power cuts and 30-device/24-hour soak remain unproven or NOT TESTED.
+
+## PHX-RELEASE UTC 2026-11-24 — supersession audit: ESP32 reproducible-build/source-date-epoch refinement
+
+- Compatible draft head `4249d8c3694bced9614690d73d063463467e8c60` already contains another worker’s ESP32 reproducible-build/source-date-epoch verifier and regression-test refinement. No implementation was duplicated.
+- [ESP32 compatibility #45441447941](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45441447941) succeeded. [Windows #45441447694](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45441447694) stopped at mandatory handover freshness before Windows build/signing/publishing. BlazePwifi build [#45441447730](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45441447730) was queued at audit time; no successful build result is claimed.
+- Evidence is scoped hosted CI only—not production, protected-signing, hardware, finance/migration, compatibility, or physical-acceptance evidence. PR #291 remains draft/unmerged and independently unreviewed. **PRODUCTION NO-GO** remains until MASTER and independent QA review, protected signer/source admission, durable finance/migration acceptance, and physical acceptance gates are satisfied.
