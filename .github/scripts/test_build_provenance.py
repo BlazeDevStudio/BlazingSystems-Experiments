@@ -26,6 +26,9 @@ except Exception as exc:  # The test-first commit must fail before the helper ex
 
 SOURCE_SHA = "a" * 40
 BLOB_SHA = "b" * 40
+TREE_SHA = "d" * 40
+OPENWRT_ROOTFS = "experiment/openwrt/BlazePwifi/openwrt/rootfs"
+OPENWRT_LINUX_AGENT = "experiment/openwrt/BlazePwifi/linux-agent"
 ENV = {
     "GITHUB_SHA": SOURCE_SHA,
     "PHX_SOURCE_HEAD_SHA": SOURCE_SHA,
@@ -81,7 +84,14 @@ def fake_run(command, **kwargs):
     if args[:3] == ["git", "rev-parse", "HEAD"]:
         return SimpleNamespace(returncode=0, stdout=SOURCE_SHA + "\n", stderr="")
     if args[:2] == ["git", "rev-parse"] and len(args) == 3 and args[2].startswith("HEAD:"):
-        return SimpleNamespace(returncode=0, stdout=BLOB_SHA + "\n", stderr="")
+        path = args[2][5:]
+        digest = TREE_SHA if path in {OPENWRT_ROOTFS, OPENWRT_LINUX_AGENT} else BLOB_SHA
+        return SimpleNamespace(returncode=0, stdout=digest + "\n", stderr="")
+    if args[:3] == ["git", "ls-files", "--others"] and len(args) == 5:
+        return SimpleNamespace(returncode=0, stdout="", stderr="")
+    if args[:3] == ["git", "cat-file", "-t"] and len(args) == 4:
+        object_type = "tree" if args[3] == TREE_SHA else "blob"
+        return SimpleNamespace(returncode=0, stdout=object_type + "\n", stderr="")
     if args[:3] == ["git", "diff", "--quiet"]:
         return SimpleNamespace(returncode=0, stdout="", stderr="")
     if args == ["arduino-cli", "version"]:
@@ -212,6 +222,75 @@ class BuildProvenanceTests(unittest.TestCase):
         self.assertFalse(reference["compiler_invoked"])
         self.assertIsNone(result["toolchain"]["compiler_version"])
         self.assertIn("does not invoke", result["toolchain"]["compiler_version_note"])
+
+    def test_openwrt_source_inputs_include_overlay_and_target_specific_helpers(self):
+        base = "experiment/openwrt/BlazePwifi"
+        ruijie_files, ruijie_trees = provenance._openwrt_source_inputs("ruijie")
+        self.assertEqual(
+            set(ruijie_files),
+            {f"{base}/build/build-openwrt-image.sh", f"{base}/VERSION"},
+        )
+        self.assertEqual(set(ruijie_trees), {OPENWRT_ROOTFS})
+
+        x86_files, x86_trees = provenance._openwrt_source_inputs("x86_64")
+        self.assertTrue(
+            {
+                f"{base}/build/prepare-tabler.sh",
+                f"{base}/tools/verify-firmware-gzip.py",
+            }.issubset(set(x86_files))
+        )
+        self.assertEqual(set(x86_trees), {OPENWRT_ROOTFS})
+
+        sbc_files, sbc_trees = provenance._openwrt_source_inputs("orangepi_zero3")
+        self.assertTrue(
+            {
+                f"{base}/build/prepare-tabler.sh",
+                f"{base}/tools/verify-firmware-gzip.py",
+            }.issubset(set(sbc_files))
+        )
+        self.assertEqual(set(sbc_trees), {OPENWRT_ROOTFS, OPENWRT_LINUX_AGENT})
+
+    def test_openwrt_manifest_records_exact_overlay_git_tree(self):
+        work = self.openwrt_fixture()
+        args = provenance.build_args(
+            kind="openwrt",
+            target="ruijie",
+            artifact_dir=self.artifact,
+            imagebuilder_workdir=work,
+        )
+        result = provenance.write_provenance(args, env=self.env)
+        self.assertEqual(
+            result["source"]["trees"],
+            [{"path": OPENWRT_ROOTFS, "git_tree": TREE_SHA}],
+        )
+
+    def test_openwrt_source_tree_rejects_untracked_inputs_before_manifest_publication(self):
+        work = self.openwrt_fixture()
+        args = provenance.build_args(
+            kind="openwrt",
+            target="ruijie",
+            artifact_dir=self.artifact,
+            imagebuilder_workdir=work,
+        )
+        checksum_path = self.artifact / "SHA256SUMS"
+        original_checksums = checksum_path.read_bytes()
+        original_run = provenance._run
+
+        def report_untracked(command, **kwargs):
+            values = [str(part) for part in command]
+            if values[:3] == ["git", "ls-files", "--others"]:
+                return f"{OPENWRT_ROOTFS}/untracked-overlay.conf"
+            return original_run(command, **kwargs)
+
+        with patch.object(provenance, "_run", side_effect=report_untracked):
+            with self.assertRaisesRegex(
+                provenance.ProvenanceError,
+                "untracked source tree input",
+            ):
+                provenance.write_provenance(args, env=self.env)
+
+        self.assertFalse((self.artifact / "BUILD-PROVENANCE.json").exists())
+        self.assertEqual(checksum_path.read_bytes(), original_checksums)
 
     def test_openwrt_toolchain_reference_parses_target_slug_and_eabi_abi(self):
         archive = (
