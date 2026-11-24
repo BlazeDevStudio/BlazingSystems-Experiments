@@ -3665,3 +3665,52 @@ No merge, signing, release tag, publication, hardware flash, real payment migrat
 - Compatible draft head `766c764cb000610b81409f9884ae76c3b8e68e0b` already contains another worker’s build-provenance writer and regression-test refinement. No implementation was duplicated.
 - [ESP32 core compatibility #45369304837](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45369304837) succeeded. [Windows #45369304874](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45369304874) passed handover checks and intentionally failed closed at the `RELEASE-SIGN` negative control; publisher skipped. BlazePwifi build [#45369304863](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45369304863) was cancelled after the documentation-only head advance; no successful build result is claimed.
 - These are scoped CI observations only, not production, signing, hardware, compatibility, finance/migration, or physical-acceptance evidence. PR #291 remains draft/unmerged and independently unreviewed. **PRODUCTION NO-GO** remains until MASTER and independent QA review, protected signer/source admission, durable finance/migration acceptance, and physical acceptance gates are satisfied.
+
+
+## PHX-RELEASE UTC10 2026-11-24 — Windows PR negative-selftest Git-ref lookup isolation
+
+**Scope:** one RELEASE-owned CI harness correction on the existing draft branch. No PISONET test file, CORE handover, production publisher, financial path, hardware path, or shared interface was edited.
+
+### Exact source identity
+
+- PR #291 base #242: `734b89d9e7792247e8376335c3f3685500ab3f89`.
+- Activation starting HEAD: `6345b71318e1ed20557c7faa88c2bdafac2c61bf`.
+- Exact source HEAD verified by the focused CI and full-build runs: `f3ded71061fa8e7351a7457f0333a2db2a3aba76`.
+- Increment from starting HEAD: 4 commits, 0 behind; exactly three RELEASE-owned paths:
+  - `.github/scripts/test_release_workflow_concurrency.py`
+  - `.github/workflows/blazepisonet-softtimer-release.yml`
+  - `.github/workflows/phx-release-esp32-core-compatibility.yml`
+
+### Test-first, correction and CI coverage commits
+
+1. Test-first guard: [`e04071cd`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/e04071cd6fb65bee355a550e67963ea6132724cb).
+2. PR-only local GitHub CLI shim: [`a7e4ea8b`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/a7e4ea8b6b8301d192fa61eaa50982fc8a1cf4c1).
+3. Test assertion/newline correction: [`6fba0738`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/6fba07387eb4d73ac79a1c4d36704fa03f999529).
+4. Focused compatibility workflow now runs the release-workflow contract test and triggers on the relevant workflow/test paths: [`f3ded710`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/f3ded71061fa8e7351a7457f0333a2db2a3aba76).
+
+The original failing PISONET negative-selftest substituted the Release-object lookup but left the second Git-tag-ref `gh api` lookup live. The RELEASE-owned PR-only test step now defines a local `gh` function: it admits only the expected `api -i .../git/ref/tags/...` call, returns one synthetic `HTTP/2.0 404 Not Found` with exit code 1, and throws on every unexpected command. This prevents the synthetic PR negative test from falling through to the real GitHub CLI/network. The function is confined to the pull-request test step; the write-privileged production publisher is unchanged.
+
+The PISONET-owned `negative-selftest.ps1` was read-only and remains unchanged. The current fixed 404 makes the missing-tag vector hermetic; independent per-case Git-ref responses (existing tag, 401/403/500, transport failure and ambiguous status) remain a PISONET-owned fixture expansion, not claimed here.
+
+### Exact-source Actions evidence
+
+- Expected RED: [full build #45373358549](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45373358549), job `138372996746`: 12 workflow-contract tests ran; the new hermetic-stub assertion failed as expected before the workflow correction. This is the recorded regression reproduction.
+- Focused PR compatibility: [#45374100103](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45374100103), exact HEAD `f3ded710`: **3/3 jobs PASS**.
+  - Provenance suite: 51/51 PASS.
+  - Arduino CLI archive verifier: 10/10 PASS.
+  - Release workflow concurrency/publisher isolation: 12/12 PASS, including `test_pr_negative_selftest_stubs_git_tag_lookup_without_network`.
+  - ESP32 core 3.3.13: PASS.
+  - ESP32 core 4.0.0: PASS.
+- Full build: [#45374109383](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45374109383), exact HEAD `f3ded710`: **overall FAILURE** at the separate CORE-owned handover freshness gate. CI-0701 docs-only proof passed. The validate job failed when `experiment/openwrt/BlazePwifi/tests/handover_gate.sh` reported that `.github/workflows/blazepisonet-softtimer-release.yml` was newer than `experiment/openwrt/BlazePwifi/PROJECT_HANDOVER.md`; the last root handover checkpoint reported by the gate was `94b3d5bf2a45566bbd842c12c31f5a488422920b`. The independent firmware/target jobs completed successfully (ESP32, ESP8266, Ruijie, Android, Orange Pi One, Orange Pi Zero 3, x86_64, Orange Pi PC, and the listed optional Orange Pi targets). Update-bundle, simulations, production import/sign handoff and publication jobs were skipped. This is not a successful full build or release.
+- Windows release: [#45374109100](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45374109100), exact HEAD `f3ded710`: **FAILURE** at the handover job for the same stale CORE-owned handover; Windows build and publisher were skipped. The new PowerShell shim was therefore **not runtime-executed** by this Windows job. The focused static contract test passed, but runtime verification remains blocked.
+
+### Exact next owner actions
+
+1. **PHX-CORE / PHX-MASTER:** update the authoritative BlazePwifi handover set — `experiment/openwrt/BlazePwifi/PROJECT_HANDOVER.md`, `docs/handover/CURRENT_STATE.md`, and `docs/handover/CHANGE_LEDGER.md` — to record the release workflow change at exact source HEAD `f3ded71061fa8e7351a7457f0333a2db2a3aba76` and its focused CI evidence. The gate checks each document; do not bypass or edit these CORE-owned files from RELEASE.
+2. **PHX-PISONET:** extend its own negative-test fixture to independently control the Release-object and Git-ref lookup responses; the current RELEASE shim supplies only the synthetic missing-tag 404.
+3. **PHX-QA:** independently review the three RELEASE-owned paths and the exact-source compatibility evidence.
+4. **PHX-MASTER:** refresh the RELEASE child pointer and reconcile the five inherited non-RELEASE paths in PR #291 before any integration decision.
+
+The canonical private Drive project registry v11 itself was not surfaced through authorized Library retrieval. The available 2026-11-09 checkpoint only references its canonical filename and historical project count; it is provenance context, not a substitute for the registry. No older registry snapshot or private contents were copied.
+
+PR #291 remains OPEN / DRAFT / UNMERGED. No merge, real-key signing, release tag, publication, hardware flashing, payment migration or customer deployment occurred. **PRODUCTION NO-GO.**
