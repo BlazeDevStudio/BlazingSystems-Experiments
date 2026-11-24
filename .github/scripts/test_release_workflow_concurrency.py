@@ -21,6 +21,20 @@ def job_block(content: str, name: str) -> str:
     return match.group(1)
 
 
+def with_job_condition(content: str, name: str, condition: str) -> str:
+    """Return a fixture with one exact job-level condition, replacing any prior one."""
+    block = job_block(content, name)
+    existing = re.search(r"(?m)^    if: .+$", block)
+    replacement = f"    if: {condition}"
+    if existing is not None:
+        return content.replace(existing.group(0), replacement, 1)
+
+    marker = f"  {name}:\n"
+    if marker not in content:
+        raise AssertionError(f"missing workflow job: {name}")
+    return content.replace(marker, marker + replacement + "\n", 1)
+
+
 def workflow_default_permissions(content: str) -> dict[str, str]:
     """Read only the top-level workflow permissions, not job overrides."""
     lines = content.splitlines()
@@ -509,12 +523,7 @@ class BlazePwifiV053PublishPermissionTests(unittest.TestCase):
             "&& github.ref_protected == true "
             "&& vars.BLAZERENTAL_PRODUCTION_SIGNING_APPROVED == 'true'"
         )
-        safe = self.sign_content.replace(
-            "  sign:\n    runs-on: ubuntu-22.04",
-            f"  sign:\n    if: {expected}\n    runs-on: ubuntu-22.04",
-            1,
-        )
-        self.assertNotEqual(safe, self.sign_content)
+        safe = with_job_condition(self.sign_content, "sign", expected)
         require_v053_manual_signing_gate(safe)
         mutations = (
             ("github.event_name == 'workflow_dispatch'", "github.event_name == 'push'"),
@@ -572,12 +581,7 @@ class BlazePwifiV053PublishPermissionTests(unittest.TestCase):
             "&& github.ref_protected == true "
             "&& vars.BLAZEPWIFI_PRODUCTION_RELEASE_APPROVED == 'true'"
         )
-        safe = self.content.replace(
-            "    if: inputs.publish == true",
-            f"    if: {expected}",
-            1,
-        )
-        self.assertNotEqual(safe, self.content)
+        safe = with_job_condition(self.content, "publish", expected)
         require_v053_release_permissions_are_isolated(safe)
         mutations = (
             ("github.event_name == 'workflow_dispatch'", "github.event_name == 'push'"),
