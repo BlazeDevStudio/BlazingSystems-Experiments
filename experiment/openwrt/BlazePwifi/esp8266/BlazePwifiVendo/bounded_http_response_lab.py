@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Source-exact bounded HTTP response allocation guard for both ESP controllers.
 
-Only known-length 2xx bodies at or below 1024 bytes may be materialized as a
-String. Unknown/chunked, oversized and non-2xx responses are denied before
-HTTPClient::getString(). This is host simulation, not hardware acceptance.
+Only known-length 2xx bodies at or below 1024 bytes with no Transfer-Encoding
+header may be materialized as a String. Unknown/chunked, oversized and non-2xx
+responses are denied before HTTPClient::getString(). This is host simulation,
+not hardware acceptance.
 """
 import re
 import subprocess
@@ -27,13 +28,20 @@ using String = std::string;
 
 class HTTPClient {
  public:
-  HTTPClient(int size, const String &body) : size_(size), body_(body) {}
+  HTTPClient(int size, const String &body, bool transferEncoding = false)
+      : size_(size), body_(body), transferEncoding_(transferEncoding) {}
   int getSize() { return size_; }
+  bool hasHeader(const char *name) {
+    ++hasHeaderCalls;
+    return std::string(name) == "Transfer-Encoding" && transferEncoding_;
+  }
   String getString() { ++getStringCalls; return body_; }
   int getStringCalls = 0;
+  int hasHeaderCalls = 0;
  private:
   int size_;
   String body_;
+  bool transferEncoding_;
 };
 """
 
@@ -51,6 +59,16 @@ int main() {
   HTTPClient empty(0, "");
   if (readBoundedControllerResponse(empty, 204) != "" ||
       empty.getStringCalls != 1) return 63;
+
+  // HTTPClient may still decode a chunked body when Content-Length is also
+  // present. The declared size alone must never authorize getString().
+  HTTPClient chunkedZero(0, "chunked-zero-body", true);
+  if (readBoundedControllerResponse(chunkedZero, 200) != "" ||
+      chunkedZero.getStringCalls != 0) return 69;
+
+  HTTPClient chunkedSmall(1, "chunked-body-larger-than-one", true);
+  if (readBoundedControllerResponse(chunkedSmall, 200) != "" ||
+      chunkedSmall.getStringCalls != 0) return 70;
 
   HTTPClient oversized(1025, String(1025, 'y'));
   if (readBoundedControllerResponse(oversized, 200) != "" ||
@@ -157,6 +175,12 @@ def verify():
                 "statusCode<200 || statusCode>=300",
                 "((void)statusCode, false)",
                 66,
+            ),
+            (
+                "missing-transfer-encoding-deny",
+                'h.hasHeader("Transfer-Encoding")',
+                "false",
+                69,
             ),
         )
         for label, old, new, expected_exit in mutations:
