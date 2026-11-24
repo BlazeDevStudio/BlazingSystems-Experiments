@@ -4,6 +4,7 @@ on:
     branches:
       - "phoenix/hardware-poll-fault-dual-store-20261118"
       - "phoenix/hw-coin-ingress-config-helper-reconciled-20261123-utc13"
+      - "phoenix/hw-json-array-primitive-guard-20261124-utc00"
     paths:
       - "experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino"
       - "experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/esp32_boot_polarity_lab.py"
@@ -20,6 +21,7 @@ on:
       - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_loop_blocking_inhibit_lab.py"
       - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/coin_pulse_capture_lab.py"
       - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_response_failclosed_lab.py"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/bounded_http_response_lab.py"
       - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_window_timeline_guard_lab.py"
       - ".github/workflows/phx-hardware-relay-output-polarity.yml"
   workflow_dispatch:
@@ -60,6 +62,8 @@ jobs:
       - name: Compile exact-source poll response and pulse-window guards (child stack only)
         if: ${{ hashFiles('experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_window_timeline_guard_lab.py') != '' }}
         run: python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_response_failclosed_lab.py
+      - name: Verify bounded controller HTTP response reads on both boards
+        run: python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/bounded_http_response_lab.py
       - name: Report child poll-window suite absence on this exact SHA
         if: ${{ hashFiles('experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_window_timeline_guard_lab.py') == '' }}
         run: |

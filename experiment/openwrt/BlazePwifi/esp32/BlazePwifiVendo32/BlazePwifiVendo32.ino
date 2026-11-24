@@ -1178,6 +1178,17 @@ String signedBody(const String &action,const String &pulses,const String &target
   return "action="+action+"&id="+esc(cfg.id)+"&nonce="+n+"&pulses="+pulses+"&target="+esc(target)+"&sig="+digest;
 }
 
+static const int MAX_CONTROLLER_RESPONSE_BYTES = 1024;
+
+// Reject error, unknown-length and oversized bodies before allocating a String.
+// Chunked/unknown-length responses remain deny-only until a bounded contract exists.
+String readBoundedControllerResponse(HTTPClient &h,int statusCode){
+  const int responseBytes=h.getSize();
+  if(statusCode<200 || statusCode>=300 ||
+     responseBytes<0 || responseBytes>MAX_CONTROLLER_RESPONSE_BYTES) return String();
+  return h.getString();
+}
+
 String post(const String &action,const String &pulses="0",const String &target="",const String &forcedNonce=""){
   if(WiFi.status()!=WL_CONNECTED) return "";
   String body=signedBody(action,pulses,target,forcedNonce);
@@ -1187,7 +1198,7 @@ String post(const String &action,const String &pulses="0",const String &target="
   if(!h.begin(client,url)) return "";
   h.setTimeout(3500); h.addHeader("Content-Type","application/x-www-form-urlencoded");
   int code=h.POST(body);
-  String r=code>0?h.getString():""; h.end(); return r;
+  String r=readBoundedControllerResponse(h,code); h.end(); return r;
 }
 
 void writeLogical(int pin,bool on,bool activeHigh){ digitalWrite(pin,(on==activeHigh)?HIGH:LOW); }
