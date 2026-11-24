@@ -45,6 +45,9 @@ jobs:
           test "$(cat experiment/openwrt/BlazePwifi/VERSION)" = 0.5.3
           B="$(gh api "repos/${{ github.repository }}/actions/runs/$RUN_ID")"
           test "$(printf '%s' "$B" | jq -r .conclusion)" = success
+          test "$(printf '%s' "$B" | jq -r .path)" = ".github/workflows/blazepwifi-build.yml"
+          test "$(printf '%s' "$B" | jq -r .event)" = "push"
+          test "$(printf '%s' "$B" | jq -r .head_branch)" = "main"
           test "$(printf '%s' "$B" | jq -r .head_sha)" = "$SHA"
           mkdir -p candidate/gate candidate/android
           gh run download "$RUN_ID" --repo "${{ github.repository }}" --name BlazePwifi-current-candidate-gate --dir candidate/gate
