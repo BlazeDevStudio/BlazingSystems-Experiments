@@ -59,8 +59,15 @@ jobs:
           B="$(gh api "repos/${{ github.repository }}/actions/runs/$BUILD_RUN")"
           S="$(gh api "repos/${{ github.repository }}/actions/runs/$SIGN_RUN")"
           test "$(printf '%s' "$B" | jq -r .conclusion)" = success
+          test "$(printf '%s' "$B" | jq -r .path)" = ".github/workflows/blazepwifi-build.yml"
+          test "$(printf '%s' "$B" | jq -r .event)" = "push"
+          test "$(printf '%s' "$B" | jq -r .head_branch)" = "main"
           test "$(printf '%s' "$B" | jq -r .head_sha)" = "$SHA"
           test "$(printf '%s' "$S" | jq -r .conclusion)" = success
+          test "$(printf '%s' "$S" | jq -r .path)" = ".github/workflows/blazerental-v053-lineage2-sign.yml"
+          test "$(printf '%s' "$S" | jq -r .event)" = "workflow_dispatch"
+          test "$(printf '%s' "$S" | jq -r .head_branch)" = "main"
+          test "$(printf '%s' "$S" | jq -r .head_sha)" = "$GITHUB_SHA"
 
       - name: Download exact build and signed artifacts
         shell: bash
