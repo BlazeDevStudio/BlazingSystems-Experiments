@@ -3208,3 +3208,59 @@ The test file \`experiment/windows/BlazePisonet-SoftTimer/tests/ReleaseSigning/n
 **Blocker:** the mandatory shared handover gate requires the CORE-owned canonical records to checkpoint this workflow change. PHX-CORE must update its own \`experiment/openwrt/BlazePwifi/PROJECT_HANDOVER.md\`, \`docs/handover/CURRENT_STATE.md\`, and \`docs/handover/CHANGE_LEDGER.md\` with the exact workflow head and evidence. RELEASE will then rerun Windows; it will not edit CORE or bypass the gate. PHX-PISONET should review the same-scope dot-source invocation against its owned script, and PHX-QA should independently review the RELEASE-owned workflow regression.
 
 No PISONET, CORE, RENTAL, HARDWARE, QA, MASTER, COE destination, financial, or shared-interface source was changed. No merge, signing, tag, publication, hardware flash, real-payment migration or customer deployment occurred. Physical 150 power cuts and 30-device/24-hour soak remain NOT TESTED. **PRODUCTION NO-GO.**
+
+## PHX-RELEASE UTC03 — preserve provenance read/hash failures across descriptor cleanup interruptions
+
+**Observed:** 2026-11-24T03:23Z  
+**PR:** [#291](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/291), OPEN / DRAFT / UNMERGED.  
+**Branch:** `phoenix/release-publisher-isolation-20261115`.  
+**Base #242:** `734b89d9e7792247e8376335c3f3685500ab3f89`.  
+**Source/test head:** `467c3cd8ceca11b8f58b7bd6153dadd2b48c3ba5`.
+
+### Finding and ownership boundary
+
+RELEASE-owned `.github/scripts/write_build_provenance.py::_close_file_and_parent_descriptors()` preserved ordinary close-time `OSError` diagnostics when a primary read/hash failure was active, but it re-raised a cleanup `KeyboardInterrupt` or `SystemExit` from its `finally` path. That replaced the original `ProvenanceError` and hid the actual artifact-read/hash failure.
+
+The distinct bug was not previously covered by the existing ordinary-`OSError` close tests. The fix is limited to the RELEASE-owned provenance helper and its RELEASE-owned tests. No CORE, RENTAL, PISONET, HARDWARE, QA, MASTER, COE destination, financial, networking, firmware-source, or manifest-schema path was edited.
+
+### Test-first evidence
+
+- Regression-only commit [`870f5285`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/870f52858f790ad4ff3055f92f24c2a52a6bcc07) changed only `.github/scripts/test_build_provenance.py`.
+- Expected RED push [#45318492487](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45318492487), CI-0701 job `138191015297`: **47 tests ran, 2 failed**. The new read and hash regressions each observed `KeyboardInterrupt('injected file descriptor cleanup interruption')` instead of the primary `ProvenanceError`.
+- Expected RED compatibility [#45318492620](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45318492620), provenance job `138191016233`: **47 tests ran, 2 failed** with the same primary-error masking. This is the intended product RED, not a fixture/import failure.
+
+### Source correction
+
+- Source commit [`467c3cd8`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/467c3cd8ceca11b8f58b7bd6153dadd2b48c3ba5) changed only `.github/scripts/write_build_provenance.py`.
+- When a primary read/hash exception is active, every cleanup interruption and ordinary close error is attached to that primary exception through the existing cleanup-diagnostic helper; the descriptor cleanup function then returns so the original exception continues propagating.
+- When there is no primary operation failure, the existing fail-closed behavior remains: the first cleanup interruption is raised after both descriptors receive a close attempt, with later cleanup diagnostics attached to it.
+- The new tests cover both `_read_regular` and `_hash_regular`, inject both `KeyboardInterrupt` and `SystemExit` during descriptor cleanup, and assert the primary error remains the surfaced failure.
+
+### Exact-source GitHub Actions at source/test head `467c3cd8`
+
+- BlazePwifi build [#45318597993](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45318597993), CI-0701 job `138191362386`: **PASS**. The provenance suite ran **47 tests PASS**; the current handover-ref suite ran **25 tests PASS**; Arduino CLI archive-verifier suite ran **10 tests PASS**; concurrency, immutable action-pin, provenance and handover checks passed. At this handover snapshot, **13 target/platform jobs had completed PASS, one optional target job was still in progress, and the full `validate` job was still in progress**. The workflow is not yet credited as terminal success.
+- Windows release [#45318597642](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45318597642): handover job `138191394109` **PASS**; build-windows job `138191501758` **FAIL** in the inherited PISONET-owned `experiment/windows/BlazePisonet-SoftTimer/tests/ReleaseSigning/negative-selftest.ps1:326`, with `RELEASE-PUBLISHER executable lookup regression: missing tag accepted=False`. The earlier uninitialized `$buildWorkflow` invocation issue is no longer the failing assertion: the RELEASE workflow now supplies the shared workflow content and the PISONET self-test reaches its own lookup decision. No PISONET file was edited. Windows compilation, publisher mock, signing, package upload and release publication were not reached after the failure.
+- ESP32 compatibility [#45318597690](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45318597690): release-artifact provenance regression job `138192194135` **PASS**; both exact-core compile/reproducibility jobs were still in progress at this handover snapshot. No terminal matrix result is claimed.
+
+The CI above is hosted/synthetic evidence only. It does not establish approved production binaries or physical hardware acceptance.
+
+### Live cross-repository and governance readback
+
+- MASTER #288: `ef05772f7c43bef545738561b208fe1af5f5d528`, OPEN / DRAFT. `OWNERSHIP_ROUTES.json` blob `e4db324315a1b3543fec17a148fbf960170fcb29` remains `DRAFT_REVIEW_ONLY`; PHX-RELEASE's build workflow route remains `reimplementation-review`. No migration or destination write was attempted.
+- RELEASE #242: `734b89d9e7792247e8376335c3f3685500ab3f89`; Windows run [#40882814472](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/40882814472) passed; signing and publication were skipped.
+- RELEASE #291: source/test head `467c3cd8ceca11b8f58b7bd6153dadd2b48c3ba5`; draft remains unmerged.
+- COE integration #26: `b382d233ff06c8791b1028bed3c617cc7b670d12`, OPEN / DRAFT / FROZEN; five workflows are queued with zero jobs executed.
+- COE release-packager #31: `59ed44d0b911e176f1a95b9cf5585ef811ffd31b`; shared/board validation [#44222517238](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44222517238) **PASS**; mandatory sandbox [#44222517263](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44222517263) **FAIL** at unprivileged Bubblewrap namespace setup; case-collision [#44222517258](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44222517258) **PASS**.
+- COE child #35: `e7801818b00854f34a5a88955d979c601ec96404`; shared validation [#45303825436](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45303825436) completed **212 PASS / 2 intentional skips**, then failed closed at **10/10** profile admission because approved site-scoped RFC 4193 ULA /48 authority is absent; ESP compiles skipped. Sandbox [#45303825459](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45303825459) passed **40/40 host preflight tests**, then failed because Bubblewrap is unavailable (exit 125); namespace and mandatory sandbox packaging tests skipped. Case-collision [#45303825417](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45303825417) **PASS**.
+- Cleanup-first #266 remains OPEN / 0-of-7; its RELEASE cleanup assignment remains #242. This provenance helper correction does not complete that cleanup track.
+- Canonical private Drive project registry v11 was not surfaced through authorized Library retrieval. No older registry snapshot was substituted; no private contents were copied or exposed.
+- Independent reviews and review threads on #291: **0 / 0** at this read.
+
+### Next owners and release disposition
+
+1. **PHX-PISONET:** own the `missing tag accepted=False` negative-selftest assertion and decide whether the fixture or its publisher lookup contract is wrong; RELEASE will not modify PISONET-owned paths.
+2. **PHX-QA:** independently review the provenance helper's primary-error precedence and the two new interruption regressions.
+3. **PHX-CORE / MASTER:** retain ownership of canonical handover freshness and site-scoped ULA authority; RELEASE will not edit those records or invent the prefix.
+4. **PHX-INFRA / COE:** supply an authorized disposable runner with unprivileged Bubblewrap namespaces for mandatory sandbox acceptance.
+
+No merge, rebase, signing, tagging, publication, hardware flash, real payment migration, or customer deployment occurred. Protected signer, independent freshness witness, durable financial accounting/migration, independent QA/MASTER approval, approved production binaries, **150 physical power cuts** and **30-device/24-hour soak** remain unproven or NOT TESTED. **PRODUCTION NO-GO.**
