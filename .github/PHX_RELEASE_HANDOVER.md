@@ -2327,19 +2327,19 @@ Only RELEASE-owned test, compatibility workflow and this RELEASE handover are in
 ---
 ## PHX-RELEASE CURRENT SOURCE ANCHOR (machine-checked)
 
-This is the single machine-checked current pointer for the RELEASE ESP32 compatibility workflow. It is refreshed to the live HARDWARE #349 source/test tree and current PR/docs head. The RELEASE compatibility matrix completed SUCCESS 3/3 at exact source-fix head 8b0ba137 (run #45347969410).
+This is the single machine-checked current pointer for the RELEASE ESP32 compatibility workflow. The source/test, latest documentation commit, and live PR head are pinned separately; the current sketch blob was read back at the exact live PR head.
 
-- HARDWARE #349 source/test SHA: `da046d5ea80a8daac7258d302ecc310cd5634b24`.
-- HARDWARE #349 docs HEAD: `dff053bb8fe276d3f0ba9764e845d61ebe640539`.
-- HARDWARE #349 PR HEAD: `dff053bb8fe276d3f0ba9764e845d61ebe640539`.
-- ESP32 sketch Git blob SHA: `a9a1c2fecb001d71f8f22b43952edbd160aacaf8` (read back at both source/test SHA and final PR head).
-- HARDWARE #349 source/test Quarantine: [#45342525513](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45342525513) — SUCCESS.
-- HARDWARE #349 source/test Relay/Output: [#45342525472](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45342525472) — SUCCESS.
-- HARDWARE #349 final docs-head Quarantine: [#45343153318](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45343153318) — SUCCESS.
-- HARDWARE #349 final docs-head Relay/Output: [#45343153313](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45343153313) — SUCCESS.
-- HARDWARE #349 final docs-head Full integration: [#45343153346](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45343153346) — FAILURE at inherited QA-owned `Missing poll signature check`; 13/13 firmware target/platform jobs and Android passed; validation-dependent simulation/update/signing/candidate/publication stages skipped.
-- Exact-source compatibility matrix: [#45347969410](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45347969410) — SUCCESS (3/3 jobs).
-- Evidence boundary: hosted CI only. These source-extracted labs and target builds are not physical hardware acceptance or production binaries.
+- HARDWARE #349 source/test SHA: `6ce423783b306411bdb7e7217081c050cb4cbec4`.
+- HARDWARE #349 latest docs HEAD: `dff053bb8fe276d3f0ba9764e845d61ebe640539`.
+- HARDWARE #349 live PR HEAD: `6ce423783b306411bdb7e7217081c050cb4cbec4`.
+- ESP32 sketch Git blob SHA: `a9a1c2fecb001d71f8f22b43952edbd160aacaf8` (unchanged at the current PR head).
+- Current source/test Quarantine Byte Readback [#45354176204](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45354176204) — SUCCESS.
+- Current source/test Relay Output Polarity [#45354176057](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45354176057) — SUCCESS (both source/output and ESP32 boot jobs).
+- Current source/test Full integration [#45354176294](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45354176294) — FAILURE at the inherited QA-owned `Missing poll signature check`; 13/13 firmware target/platform jobs and Android passed; validation-dependent simulations, update bundle, signing, candidate and publication stages were skipped.
+- Prior source/test SHA `da046d5ea80a8daac7258d302ecc310cd5634b24` Quarantine [#45342525513](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45342525513) and Relay [#45342525472](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45342525472) remain historical evidence for that earlier source, not the current `6ce423` source.
+- Exact-source compatibility matrix: PENDING — no RELEASE matrix run claimed yet for the refreshed `6ce423` source pin.
+- Hardware handover freshness: the latest published docs commit `dff053bb` still records source/test `da046d5`; PHX-HARDWARE must update its handover and PR description to account for the later `6ce423` blocking-poll fixture refactor. RELEASE uses the live branch head and exact Actions readback; it does not rewrite Hardware-owned documentation.
+- Evidence boundary: hosted CI only. Source-extracted labs and target builds are not physical hardware acceptance or approved production binaries.
 
 
 ## PHX-RELEASE UTC09 — exact-head Full workflow follow-through
@@ -3490,3 +3490,39 @@ No migration, shared-interface change, hardware networking change, signing, tagg
 - Compatible draft head `ed21a277dd413b9bc9c12b99cbed1f53679860a0` already contains another release worker’s ESP32 core-compatibility test and workflow refinement. No implementation was duplicated.
 - [ESP32 core compatibility #45350924849](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45350924849) completed successfully. [Windows #45350924841](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45350924841) passed handover validation and correctly failed closed at the `RELEASE-SIGN` negative control; its publisher job was skipped. BlazePwifi build [#45350924930](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45350924930) was cancelled after the documentation-only head advance; no successful build result is claimed. These are scoped CI observations only—not compatibility, protected-signing, hardware, or production acceptance.
 - PR #291 remains draft/unmerged and independently unreviewed. **PRODUCTION NO-GO** remains until PHX-MASTER and independent QA review, protected signer/source admission, durable finance/migration, and physical acceptance gates are satisfied.
+
+## PHX-RELEASE UTC08 — HARDWARE #349 source/test pin refresh
+
+**Role lock:** #172 comment 7125972373 (updated in place).  
+**PR:** [#291](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/291), OPEN / DRAFT / UNMERGED.  
+**Branch:** `phoenix/release-publisher-isolation-20261115`.  
+**Starting branch HEAD:** `dabfd75cdccea6ab2f5adfe5251fbc3b506e38aa`.
+
+### Provenance finding
+
+The live HARDWARE #349 branch advanced after the previous RELEASE pin:
+- Current source/test commit and PR head: `6ce423783b306411bdb7e7217081c050cb4cbec4` (`refactor(hw): separate blocking-poll scenario fixtures`).
+- Latest Hardware docs commit: `dff053bb8fe276d3f0ba9764e845d61ebe640539`.
+- Current ESP32 sketch Git blob: `a9a1c2fecb001d71f8f22b43952edbd160aacaf8`, unchanged.
+- The later Hardware commit changes the host regression lab, fixture module and focused workflow path filter; it does not change the ESP32 firmware sketch. The latest Hardware handover has not yet been refreshed after this source/test commit.
+
+### RELEASE-owned test-first correction
+
+- Test guard expected-anchor commit: [`2a011eb4`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/2a011eb4c200cffb15ea4e74e3b8e91f67c6c46c), only `.github/scripts/test_phx_release_esp32_core_compatibility.py`.
+- Expected RED push full build [#45355107102](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45355107102), CI-0701 job `138310876373`: failed exactly because the workflow still contained old `da046d5` source/label while the guard expected `6ce423`. This is the intended test-first failure; other CI-0701 pin, concurrency, provenance, handover and Arduino CLI checks passed before the compatibility contract step failed.
+- Workflow correction: [`725ef3c6`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/725ef3c67a0984379d48b73e4c66ee1b63032a76), only `.github/workflows/phx-release-esp32-core-compatibility.yml`. It updates the matrix label, expected source SHA and exact checkout ref to `6ce423783b306411bdb7e7217081c050cb4cbec4`; sketch blob and immutable action pins remain unchanged.
+- This handover update is RELEASE-owned only. No Hardware, CORE, RENTAL, PISONET, QA, MASTER, firmware, financial, networking or production file was edited.
+
+### Exact-source evidence and pending validation
+
+The current Hardware #349 exact-source focused runs at `6ce423` are Quarantine SUCCESS [#45354176204](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45354176204) and Relay SUCCESS [#45354176057](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45354176057). Its Full build [#45354176294](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45354176294) is FAILURE at the inherited `Missing poll signature check`; CORE owns the producer contract and QA owns assertion reconciliation. No positive signature was invented and default-deny was not weakened.
+
+The test-only head `2a011eb4` also triggered PR compatibility [#45355114407](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45355114407) and push compatibility [#45355107192](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45355107192), both IN PROGRESS at last read. PR BlazePwifi build [#45355114521](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45355114521) failed the same expected CI-0701 contract; Windows [#45355114501](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45355114501) was queued. These are test-only-head results, not final source-fix results.
+
+The corrected workflow and this handover will trigger fresh exact-source PR/push compatibility and build runs. No terminal success is claimed for the corrected head until those runs complete.
+
+### Coordination and gate
+
+MASTER #288 ownership manifest remains `DRAFT_REVIEW_ONLY` (11 routes); RELEASE's BlazePwifi build workflow route to COE #26 is `reimplementation-review`, not copy/move authority. COE #26 remains frozen; COE #31 and its successor drafts remain separate. Cleanup-first #266 remains OPEN / 0-of-7. Canonical private Drive registry v11 remains unavailable through authorized Library retrieval; older snapshots are not substitutes.
+
+No merge, tag, signing, publication, hardware flashing, real payment migration or customer deployment. Physical 150 power cuts and 30-device/24-hour soak remain NOT TESTED. **PRODUCTION NO-GO.**
