@@ -19,13 +19,13 @@ REPRODUCIBLE_HELPER = ROOT / ".github/scripts/verify_esp32_reproducible_build.py
 SYMBOL_HELPER = ROOT / ".github/scripts/inspect_esp32_elf_symbols.py"
 SYMBOL_TEST = ROOT / ".github/scripts/test_inspect_esp32_elf_symbols.py"
 # Exact live PHX-HARDWARE #349 source/test and PR/docs heads; the latest handover/doc head is recorded separately.
-HARDWARE_SOURCE_SHA = "8dd8b12c3c32da76c7a087c44f3cbb32d5ac6a64"
-HARDWARE_DOCS_HEAD_SHA = "e4ab80dc012f2e2c4551213f85c844edc75c4149"
+HARDWARE_SOURCE_SHA = "da046d5ea80a8daac7258d302ecc310cd5634b24"
+HARDWARE_DOCS_HEAD_SHA = "dff053bb8fe276d3f0ba9764e845d61ebe640539"
 HARDWARE_SKETCH_PATH = (
     "experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino"
 )
 HARDWARE_SKETCH_BLOB = "a9a1c2fecb001d71f8f22b43952edbd160aacaf8"
-HARDWARE_PR_HEAD_SHA = "e4ab80dc012f2e2c4551213f85c844edc75c4149"
+HARDWARE_PR_HEAD_SHA = "dff053bb8fe276d3f0ba9764e845d61ebe640539"
 CHECKOUT_SHA = "3d3c42e5aac5ba805825da76410c181273ba90b1"
 ARDUINO_SETUP_SHA = "b3cda96fddef6af6c56b4c5efb5c47e2357935db"
 
@@ -818,12 +818,22 @@ def check_current_source_handover_anchor() -> list[str]:
     if missing:
         errors.append("handover current source anchor is missing exact source identity: " + ", ".join(missing))
 
-    matrix_evidence = re.search(
-        r"(?m)^- Exact-source compatibility matrix: \[#\d+\]\(https://github\.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/\d+\) — SUCCESS \(3/3 jobs\)\.?$",
-        section,
+    matrix_lines = [
+        line for line in section.splitlines()
+        if line.startswith("- Exact-source compatibility matrix:")
+    ]
+    success_pattern = re.compile(
+        r"- Exact-source compatibility matrix: \[#\d+\]\(https://github\.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/\d+\) — SUCCESS \(3/3 jobs\)\.?$"
     )
-    if matrix_evidence is None:
-        errors.append("handover current source anchor must record one exact-source 3/3 compatibility Actions run")
+    pending_line = "- Exact-source compatibility matrix: PENDING — no run claimed yet."
+    if len(matrix_lines) != 1 or (
+        success_pattern.fullmatch(matrix_lines[0]) is None
+        and matrix_lines[0] != pending_line
+    ):
+        errors.append(
+            "handover current source anchor must contain exactly one truthful matrix state: "
+            "a 3/3 exact-source Actions success or an explicit pending/no-result line"
+        )
 
     if "Evidence boundary: hosted CI only" not in section:
         errors.append("handover current source anchor must distinguish hosted CI from physical hardware acceptance")

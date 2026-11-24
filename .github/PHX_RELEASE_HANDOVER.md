@@ -1,3 +1,7 @@
+## PHX-RELEASE UTC07 — HARDWARE #349 provenance refresh (in progress)
+
+The live #349 source/test anchor advanced to `da046d5ea80a8daac7258d302ecc310cd5634b24`; final PR/docs head is `dff053bb8fe276d3f0ba9764e845d61ebe640539`. The ESP32 sketch blob remains `a9a1c2fecb001d71f8f22b43952edbd160aacaf8`. RELEASE is updating only its own compatibility workflow, static guard and this handover on the existing #291 draft branch. The new compatibility matrix is pending; no result is claimed yet. HARDWARE Full remains failed at QA's inherited poll-signature assertion; no physical acceptance is implied.
+
 # PHX-RELEASE UTC04 — Arduino CLI archive byte verification
 
 **Checkpoint:** 2026-11-19 UTC04  
@@ -2278,19 +2282,21 @@ Only RELEASE-owned test, compatibility workflow and this RELEASE handover are in
 ---
 ## PHX-RELEASE CURRENT SOURCE ANCHOR (machine-checked)
 
-This is the single machine-checked current pointer for the RELEASE ESP32 compatibility workflow. The pin now tracks the live HARDWARE #349 source/test tree; the exact-source matrix is terminal SUCCESS at the source-fix head.
+This is the single machine-checked current pointer for the RELEASE ESP32 compatibility workflow. It is refreshed to the live HARDWARE #349 source/test tree and current PR/docs head. The new RELEASE compatibility matrix is pending; no new-source result is claimed before Actions completes.
 
-- HARDWARE #349 source/test SHA: `8dd8b12c3c32da76c7a087c44f3cbb32d5ac6a64`.
-- HARDWARE #349 docs HEAD: `e4ab80dc012f2e2c4551213f85c844edc75c4149`.
-- HARDWARE #349 PR HEAD: `e4ab80dc012f2e2c4551213f85c844edc75c4149`.
-- Superseded HARDWARE #347 source/test SHA: `275057aa28375223a32da099420f52696d9b667c`; superseded sketch blob: `717336b84d434d51eb24beac1ed8efce8e719f69`.
-- ESP32 sketch Git blob SHA: `a9a1c2fecb001d71f8f22b43952edbd160aacaf8` (unchanged from the prior #349 source/test head).
-- Exact-source compatibility matrix: [#45332829709](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45332829709) — SUCCESS (3/3 jobs).
-- Exact-source push compatibility matrix: [#45332824398](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45332824398) — SUCCESS (3/3 jobs).
-- #349 source/test Quarantine: [#45328981016](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45328981016) — SUCCESS.
-- #349 source/test Relay/Output: [#45328980994](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45328980994) — SUCCESS.
-- #349 source/test Full integration: [#45328980967](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45328980967) — FAILURE at the inherited QA-owned `Missing poll signature check`; 14/14 target/platform jobs passed, downstream simulation/update/signing/publication jobs skipped.
-- Evidence boundary: hosted CI only. These are reproducible synthetic/CI build results, not physical hardware acceptance, signer evidence or production binary approval.
+- HARDWARE #349 source/test SHA: `da046d5ea80a8daac7258d302ecc310cd5634b24`.
+- HARDWARE #349 docs HEAD: `dff053bb8fe276d3f0ba9764e845d61ebe640539`.
+- HARDWARE #349 PR HEAD: `dff053bb8fe276d3f0ba9764e845d61ebe640539`.
+- ESP32 sketch Git blob SHA: `a9a1c2fecb001d71f8f22b43952edbd160aacaf8` (read back at both source/test SHA and final PR head).
+- HARDWARE #349 source/test Quarantine: [#45342525513](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45342525513) — SUCCESS.
+- HARDWARE #349 source/test Relay/Output: [#45342525472](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45342525472) — SUCCESS.
+- HARDWARE #349 final docs-head Quarantine: [#45343153318](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45343153318) — SUCCESS.
+- HARDWARE #349 final docs-head Relay/Output: [#45343153313](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45343153313) — SUCCESS.
+- HARDWARE #349 final docs-head Full integration: [#45343153346](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45343153346) — FAILURE at inherited QA-owned `Missing poll signature check`; 13/13 firmware target/platform jobs and Android passed; validation-dependent simulation/update/signing/candidate/publication stages skipped.
+- Exact-source compatibility matrix: PENDING — no run claimed yet.
+- Evidence boundary: hosted CI only. These source-extracted labs and target builds are not physical hardware acceptance or production binaries.
+
+
 ## PHX-RELEASE UTC09 — exact-head Full workflow follow-through
 
 - After the current source anchor was committed at [`f24edd05`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/f24edd05dca30eba7f6dc5bacfda5346e73dde0f), exact-head push Full run [#44889720882](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44889720882) completed **FAILURE**.
