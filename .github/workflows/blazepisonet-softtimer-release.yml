@@ -295,6 +295,19 @@ jobs:
           if ([string]::IsNullOrWhiteSpace($buildWorkflow)) {
             throw 'RELEASE-SIGN: shared BlazePwifi build workflow is empty'
           }
+          # The PISONET self-test supplies the Release-object lookup fixture itself.
+          # This local gh function supplies the separate missing Git-tag response;
+          # it prevents the synthetic test from reaching the real GitHub CLI/network.
+          function gh {
+            if ($args.Count -ne 3 -or
+                $args[0] -ne 'api' -or
+                $args[1] -ne '-i' -or
+                $args[2] -notmatch '/git/ref/tags/') {
+              throw "Unexpected GitHub CLI call in synthetic negative self-test: $($args -join ' ')"
+            }
+            Write-Output 'HTTP/2.0 404 Not Found'
+            $global:LASTEXITCODE = 1
+          }
           . "$env:PROJECT_DIR/tests/ReleaseSigning/negative-selftest.ps1" -ActualUnsignedSetup "release/BlazePisonet-SoftTimer-Setup-v$env:VERSION.exe"
 
       - name: Smoke-test Setup EXE install and uninstall
