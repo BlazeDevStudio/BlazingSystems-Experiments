@@ -64,7 +64,7 @@ Push-triggered [run #45321921703](https://github.com/BlazeDevStudio/BlazingSyste
 - Validation job 138202355678 failed at the inherited **Missing poll signature check** in tests/controllers.sh.
 - The 12 dependent simulation/update/signing/candidate/publication stages were skipped.
 
-The PR-triggered Full run [#45321927236](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45321927236) also failed its validation job 138202367440 at the same assertion; its remaining target jobs were still completing when this handover was written. No Full integration PASS is claimed.
+The PR-triggered Full run [#45321927236](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45321927236) is terminal **FAILURE** at validation job 138202367440 with the same assertion. All **13/13 firmware target/platform jobs** and Android succeeded; all **12 dependent simulation/update/signing/candidate/publication jobs** were skipped. No Full integration PASS is claimed.
 
 ## Contract, ownership and safety
 
