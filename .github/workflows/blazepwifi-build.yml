@@ -63,6 +63,8 @@ jobs:
         run: python3 .github/scripts/test_release_workflow_concurrency.py
       - name: RELEASE-PROVENANCE manifest and checksum negative controls
         run: python3 .github/scripts/test_build_provenance.py
+      - name: RELEASE-IMAGE-ADMISSION ESP32 application-image descriptor cleanup regressions
+        run: python3 .github/scripts/test_verify_esp32_application_image.py
       - name: RELEASE-HANDOVER exact source and cross-repository refs
         run: python3 .github/scripts/test_phx_release_handover_current_refs.py
       - name: RELEASE-TOOLCHAIN Arduino CLI archive verifier negative controls
