@@ -176,7 +176,7 @@ jobs:
 
   publish:
     needs: stage
-    if: inputs.publish == true
+    if: inputs.publish == true && github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && github.ref_protected == true && vars.BLAZEPWIFI_PRODUCTION_RELEASE_APPROVED == 'true'
     runs-on: ubuntu-22.04
     timeout-minutes: 15
     permissions:
