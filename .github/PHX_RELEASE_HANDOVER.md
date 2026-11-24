@@ -2278,19 +2278,19 @@ Only RELEASE-owned test, compatibility workflow and this RELEASE handover are in
 ---
 ## PHX-RELEASE CURRENT SOURCE ANCHOR (machine-checked)
 
-This is the single machine-checked current pointer for the RELEASE ESP32 compatibility workflow. Older anchors above are historical and superseded.
+This is the single machine-checked current pointer for the RELEASE ESP32 compatibility workflow. The current HARDWARE source identity is refreshed; the compatibility matrix is pending and this guard deliberately remains fail-closed until the exact-source matrix is terminal SUCCESS.
 
-- HARDWARE #347 source/test SHA: `275057aa28375223a32da099420f52696d9b667c`.
-- HARDWARE #347 docs HEAD: `c256098dc84574d87321b81bdfd602e6f71b7c78`.
-- HARDWARE #347 PR HEAD: `c256098dc84574d87321b81bdfd602e6f71b7c78`.
-- Superseded HARDWARE #345 source/test SHA: `6eb3e9ba82fdbdcfe4fb6dc8ab1c38c9ffdc3043`; docs/PR HEAD: `01916c89ae6718d3991c778b676d06718155d6a2`.
-- Previous RELEASE pin (superseded): `a2d690b511524f8c710813fe4b4fc06cd52de3a8`.
-- Previous HARDWARE #327 source/test pin (superseded): `3110a42886bb595e28ba7ddeac16a51c2b86bd1c`; previous sketch blob: `7ffb7b534c7163678726902946a17b04992950a0`.
-- Superseded HARDWARE #345 ESP32 sketch blob: `2a5bad5904a1f6afabdcac95e762482975ebd886`.
-- ESP32 sketch Git blob SHA: `717336b84d434d51eb24beac1ed8efce8e719f69`.
-- Exact-source compatibility matrix: [#45203591352](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45203591352) — SUCCESS (3/3 jobs).
-- Push exact-source compatibility matrix: [#45203577135](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45203577135) — SUCCESS (3/3 jobs).
-- **Evidence boundary: hosted CI only.** The application images are CI-generated, not approved production binaries; no physical hardware acceptance is implied.
+- HARDWARE #349 source/test SHA: `40b80bb075c008f3251c31f09a4dc9eb9e6c17e5`.
+- HARDWARE #349 docs HEAD: `18803f884874afa3ff31d76d421b9dd811789c9f`.
+- HARDWARE #349 PR HEAD: `18803f884874afa3ff31d76d421b9dd811789c9f`.
+- Superseded HARDWARE #347 source/test SHA: `275057aa28375223a32da099420f52696d9b667c`; superseded sketch blob: `717336b84d434d51eb24beac1ed8efce8e719f69`.
+- ESP32 sketch Git blob SHA at the #349 source/test commit: `a9a1c2fecb001d71f8f22b43952edbd160aacaf8`.
+- Exact-source compatibility matrix: [#45325038266](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45325038266) — PENDING; both exact-core jobs are running. No compatibility pass is claimed.
+- #349 source/test Quarantine lab: [#45321927194](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45321927194) — SUCCESS.
+- #349 source/test Relay/Output lab: [#45321927191](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45321927191) — SUCCESS.
+- #349 source/test Full integration: [#45321921703](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45321921703) — FAILURE at the inherited QA-owned `Missing poll signature check`; 13/13 target builds and Android passed, dependent simulation/update/signing/publication jobs skipped.
+- Final #349 docs-head Quarantine [#45322486386](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45322486386) and Relay [#45322486479](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45322486479) — SUCCESS. Docs-head Full [#45322486442](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45322486442) — FAILURE at the same inherited QA-owned assertion.
+- **Evidence boundary: hosted CI only.** No approved production binary or physical hardware acceptance is implied.
 ---
 
 ## PHX-RELEASE UTC09 — exact-head Full workflow follow-through
@@ -3264,3 +3264,53 @@ The CI above is hosted/synthetic evidence only. It does not establish approved p
 4. **PHX-INFRA / COE:** supply an authorized disposable runner with unprivileged Bubblewrap namespaces for mandatory sandbox acceptance.
 
 No merge, rebase, signing, tagging, publication, hardware flash, real payment migration, or customer deployment occurred. Protected signer, independent freshness witness, durable financial accounting/migration, independent QA/MASTER approval, approved production binaries, **150 physical power cuts** and **30-device/24-hour soak** remain unproven or NOT TESTED. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC04 — refresh ESP32 compatibility matrix to live HARDWARE #349
+
+**Observed:** 2026-11-24T04:10Z.  
+**Repository:** `BlazeDevStudio/BlazingSystems-Experiments`.  
+**Draft:** [PR #291](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/291), OPEN / DRAFT / UNMERGED.  
+**Branch:** `phoenix/release-publisher-isolation-20261115`.  
+**Base #242:** `734b89d9e7792247e8376335c3f3685500ab3f89`.  
+**Final handover head for this checkpoint:** pending this documentation commit.
+
+### Finding and source identity
+
+The RELEASE-owned ESP32 compatibility matrix still checked out HARDWARE #347 source/test `275057aa28375223a32da099420f52696d9b667c` and sketch blob `717336b84d434d51eb24beac1ed8efce8e719f69`. Live HARDWARE PR #349 now carries the current parser source/test at `40b80bb075c008f3251c31f09a4dc9eb9e6c17e5`, with docs/PR head `18803f884874afa3ff31d76d421b9dd811789c9f`. The exact ESP32 sketch blob at the source/test commit is `a9a1c2fecb001d71f8f22b43952edbd160aacaf8`. Compare from source/test SHA `40b80bb` to docs head `18803f` contains only the new HARDWARE handover document; no firmware source changed after the recorded source/test SHA.
+
+This was a RELEASE-owned CI provenance defect: the compatibility matrix could continue compiling an older HARDWARE source while the active hardware PR had moved on. No HARDWARE firmware, source-extracted lab, network or shared-interface file was edited.
+
+### Test-first and source correction
+
+- Test-first commit [`5fdd8366`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/5fdd83661bddbe4d7fd1abe1279853df471de6b0) updates only `.github/scripts/test_phx_release_esp32_core_compatibility.py` to require the #349 source/test SHA, docs/PR head and exact sketch blob.
+- Expected RED push [#45324980500](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45324980500), CI-0701 job `138212301592`: **FAIL** at the new guard because the workflow still contained the old #347 source SHA, old sketch blob and old matrix name. The log emitted `PHX-RELEASE-ESP32-COMPAT-RED` with the exact missing #349 values. This was the intended stale-pin regression, not a harness/import failure.
+- Workflow correction [`8ce3aa7b`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/8ce3aa7b0f2c18eb8aa1a6e1878673a459155b4e) updates only `.github/workflows/phx-release-esp32-core-compatibility.yml`: matrix label, checkout ref, expected source SHA and expected sketch blob now pin #349.
+- The branch comparison from starting head `738b8b4e` to source-fix head `8ce3aa7b` is exactly two commits and two RELEASE-owned paths. The three CORE-owned handover files already present in the parent advance were preserved; no CORE/PISONET path was changed.
+
+### Exact-source CI at the time of this handover
+
+- Current-source PR compatibility [#45325038266](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45325038266) and push compatibility [#45325033836](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45325033836) are **IN PROGRESS** at source/test pin `40b80bb`. In both runs, exact HARDWARE checkout and sketch-blob verification passed, Arduino CLI archive verification passed, and the provenance regression suite passed. Both ESP32 core installation/compile legs were still running at this handover read; no 3/3 compatibility result is claimed.
+- Build PR [#45325038282](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45325038282) — **FAILURE** in CI-0701 at the machine-checked handover anchor because the anchor still referenced #347. The new test correctly refuses to accept a stale anchor. Target/validation jobs were skipped.
+- Windows PR [#45325038275](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45325038275) — handover **PASS**, Windows build **FAIL** at PISONET-owned `negative-selftest.ps1:326`: `RELEASE-PUBLISHER executable lookup regression: missing tag accepted=False`. Publisher skipped. PHX-RELEASE did not modify PISONET's test file.
+- The previous-source matrix runs [#45324980475](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45324980475) and [#45324985077](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45324985077) tested the superseded #347 pin. They are not evidence for #349.
+
+### Live governance and cross-repository readback
+
+- MASTER #288: current head `05ddac5bfd1dad40914f67ee9acc2aff17abcb60`; ownership route manifest blob `e4db324315a1b3543fec17a148fbf960170fcb29` remains `DRAFT_REVIEW_ONLY`; RELEASE build workflow route remains `reimplementation-review`. No migration was attempted.
+- RELEASE #242: `734b89d9e7792247e8376335c3f3685500ab3f89`.
+- RELEASE #291: source-fix head `8ce3aa7b0f2c18eb8aa1a6e1878673a459155b4e` before this handover-only commit.
+- COE integration #26: `b382d233ff06c8791b1028bed3c617cc7b670d12`, FROZEN; five PR workflows remain queued with zero jobs executed.
+- COE release-packager #31: `59ed44d0b911e176f1a95b9cf5585ef811ffd31b`; shared/board validation [#44222517238](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44222517238) PASS; case-collision [#44222517258](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44222517258) PASS; mandatory Bubblewrap sandbox [#44222517263](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44222517263) FAIL at unprivileged namespace setup.
+- Cleanup-first #266 remains OPEN / 0-of-7; its RELEASE cleanup assignment remains #242.
+- Authorized Library search did not surface private Drive project registry v11. Older v4/v6/v7 snapshots are not substitutes and were not used as provenance for this activation.
+
+### Next exact action and disposition
+
+1. PHX-RELEASE: wait for current-source PR matrix #45325038266 (and push matrix #45325033836). If both core legs and provenance job pass, replace the pending current-source anchor above with the exact 3/3 PR matrix result, then rerun final docs-head CI. If either core leg fails, diagnose only the RELEASE-owned compatibility workflow and preserve the failure.
+2. PHX-QA: independently review the source-pin test and workflow change.
+3. PHX-HARDWARE: no source action requested; #349 source/test anchor is read-only provenance.
+4. PHX-PISONET: own the missing-tag negative-selftest failure; RELEASE will not edit that subtree.
+5. PHX-MASTER: refresh the control-plane child pointer after the final handover head is known.
+
+PR #291 remains DRAFT / UNMERGED. No signing, tag, publication, hardware flash, real payment migration or customer deployment occurred. Protected signer, independent freshness witness, durable financial accounting/migration, independent QA/MASTER approval, approved production binaries, **150 physical power cuts** and **30-device/24-hour soak** remain unproven or NOT TESTED. **PRODUCTION NO-GO.**
