@@ -1150,14 +1150,14 @@ class BuildProvenanceTests(unittest.TestCase):
 
         def interrupted_fstat(descriptor):
             if len(opened_fds) >= 2 and descriptor == opened_fds[-1]:
-                raise SystemExit("injected primary traversal failure")
+                raise RuntimeError("injected primary traversal failure")
             return real_fstat(descriptor)
 
         def close_then_interrupt(descriptor):
             close_calls.append(descriptor)
             real_close(descriptor)
             if len(close_calls) == 1:
-                raise KeyboardInterrupt("injected cleanup close interruption")
+                raise RuntimeError("injected cleanup close interruption")
 
         supported = set(os.supports_dir_fd)
         supported.add(tracked_open)
@@ -1170,7 +1170,7 @@ class BuildProvenanceTests(unittest.TestCase):
                 provenance.os, "close", side_effect=close_then_interrupt
             ):
                 with self.assertRaisesRegex(
-                    SystemExit, "injected primary traversal failure"
+                    RuntimeError, "injected primary traversal failure"
                 ) as raised:
                     operation()
 
@@ -1180,7 +1180,7 @@ class BuildProvenanceTests(unittest.TestCase):
             if callable(getattr(raised.exception, "add_note", None)):
                 self.assertTrue(
                     any(
-                        "KeyboardInterrupt" in note
+                        "RuntimeError" in note
                         for note in getattr(raised.exception, "__notes__", [])
                     ),
                     "cleanup interruption should be recorded on the primary exception",
