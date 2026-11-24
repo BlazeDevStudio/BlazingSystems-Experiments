@@ -41,16 +41,23 @@ def parse_source_date_epoch(value: str) -> int:
 
 
 def expected_compile_metadata(epoch: int) -> dict[str, str]:
-    """Return GCC's C-locale UTC __DATE__ and __TIME__ spellings for an epoch."""
+    """Return GCC's locale-independent C-locale UTC __DATE__ and __TIME__ spellings."""
     if not isinstance(epoch, int) or isinstance(epoch, bool) or epoch < 0:
         raise ValueError("epoch must be a nonnegative integer")
     try:
         moment = dt.datetime.fromtimestamp(epoch, tz=dt.timezone.utc)
     except (OverflowError, OSError, ValueError) as exc:
         raise ValueError("epoch is outside the supported UTC datetime range") from exc
+    month_abbreviations = (
+        "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+    )
     return {
-        "date": moment.strftime("%b %e %Y"),
-        "time": moment.strftime("%H:%M:%S"),
+        "date": (
+            f"{month_abbreviations[moment.month - 1]} "
+            f"{moment.day:2d} {moment.year:04d}"
+        ),
+        "time": f"{moment.hour:02d}:{moment.minute:02d}:{moment.second:02d}",
     }
 
 
