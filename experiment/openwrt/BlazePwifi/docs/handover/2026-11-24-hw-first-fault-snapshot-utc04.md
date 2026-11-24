@@ -8,7 +8,7 @@
 **PR:** [#349 — OPEN / DRAFT / UNMERGED](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/349)  
 **Base:** `960184670379f01e20f0e7e8bc23b3e5eedacd3f` (#347)  
 **Source/test SHA:** `8dd8b12c3c32da76c7a087c44f3cbb32d5ac6a64`  
-**Final documentation SHA:** pending this handover commit.
+**Handover creation commit:** `2ed2d99edf5d3b7baea31b226929d01594ed5d9b` (this file); the current PR head is the latest documentation pin.
 
 ## Scope and finding
 
