@@ -1881,3 +1881,13 @@ RELEASE #291's 29-path accumulated diff includes three shared handover files and
 RELEASE #291 is now b154e845. Its shared handover blobs are PROJECT_HANDOVER f1c5404b, CHANGE_LEDGER df9a2804, CURRENT_STATE 85dd3c1e. The Windows/build gate still reports CURRENT_STATE checkpoint d85eb6a2 stale against three newer release workflow paths. CORE owns the canonical CURRENT_STATE refresh; RELEASE owns the workflows and exact-head reruns.
 
 HARDWARE #349 is now dce158b3. Its only new source changes are the poll-loop lab and response fixture; PROJECT_HANDOVER remains 4aaa9817 and canonical CHANGE_LEDGER/CURRENT_STATE are absent on this branch. Focused Relay/Quarantine pass; build validation remains blocked by QA's Missing poll signature check. CORE/QA must approve the producer/consumer contract; HARDWARE retains deny-only behavior. Master does not edit these owner paths.
+
+
+## PHX-MASTER UTC14 post-checkpoint ownership routing — 2026-11-24T14:42:27Z
+
+- Routing manifest remains `OWNERSHIP_ROUTES.json@e4db324315a1b3543fec17a148fbf960170fcb29`: 11 routes, `DRAFT_REVIEW_ONLY`; PHX-MASTER owns only `coordination/phoenix/`, target null.
+- RELEASE #291 current head `b97a360c107d1d28ab99e7376d5ba0a79fb276f0` has 29 accumulated paths: 24 RELEASE paths, three CORE-owned shared BlazePwifi handover files and two PISONET-owned SoftTimer ReleaseSigning tests. Current PR has zero independent reviews. The latest commit changes only the RELEASE symbol-test case-count output; do not treat that as a handover refresh.
+- Current RELEASE Windows/build gates reject the shared CURRENT_STATE checkpoint; CORE owns the canonical handover, RELEASE owns workflow changes and reruns, PISONET owns `PublisherMockCli.ps1` and `negative-selftest.ps1`, QA owns independent review. No last-writer selection or recursive overwrite.
+- HARDWARE #349 remains child of #347 at `960184670379f01e20f0e7e8bc23b3e5eedacd3f`. CORE owns authenticated poll/register producer bytes; QA owns the inherited signature assertion; HARDWARE remains deny-only.
+- COE #26 is a destination candidate only. PHX-MASTER route target is null; no role route is promoted, no owner is reassigned, and no destination staging/copy is authorized by this audit.
+

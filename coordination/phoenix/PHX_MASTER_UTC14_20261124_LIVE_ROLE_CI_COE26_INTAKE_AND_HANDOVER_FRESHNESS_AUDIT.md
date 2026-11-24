@@ -1,6 +1,6 @@
 # PHX-MASTER UTC14 — live role CI, COE #26 intake reconciliation and handover freshness
 
-**Updated:** 2026-11-24T14:05:18Z  
+**Updated:** 2026-11-24T14:42:27Z (original UTC14 audit 14:05:18Z; post-checkpoint refresh appended)  
 **Role:** PHX-MASTER — coordination, architecture/interface contracts, migration provenance and integration matrix only  
 **Status:** Coordination update committed; COE #26 remains frozen; production remains NO-GO.
 
@@ -123,3 +123,74 @@ HARDWARE #349 keeps deny-only behavior. CORE owns the authenticated register/pol
 ## Scope correction — preserved commit history
 
 The first UTC14 coordination commit 1c27aacc6102a6b2bb8fc733f569973df9faa00d placed the seven intended blobs at repository root because the tree-entry paths were mistakenly made relative to the repository root. Immediate remote PR/tree readback detected seven out-of-scope paths before any PR or control-plane checkpoint was posted. This corrective commit deletes those root entries and installs the same six coordination-document blobs plus this report under coordination/phoenix/. No subsystem source, COE destination, ownership manifest, secret, payment or hardware path was touched. Both commits remain in history; no force-push was used. The final PR diff is required to contain only coordination/phoenix/.
+## Post-checkpoint exact-head refresh — 2026-11-24T14:42:27Z
+
+This is a same-hour read-time correction to the existing UTC14 audit, not a new report or role task. The Master branch already contained the UTC14 scope-correction commit `6a297739388ea5db6f6b7a02c597e27e35a1244e`; this refresh preserves that history and updates the same report in place.
+
+### Current branch and PR refs
+
+- Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; issue-designated development `aad3aade72c1156eecba1fed30907c6d0283b2c5`.
+- Master branch and PR #288 HEAD at refresh start: `6a297739388ea5db6f6b7a02c597e27e35a1244e`; PR OPEN / DRAFT / UNMERGED, base main `f4e8a891`, 198 changed paths, all under `coordination/phoenix/`.
+- COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE #26 OPEN / DRAFT / FROZEN at `b382d233ff06c8791b1028bed3c617cc7b670d12`.
+- Ownership manifest remains `e4db324315a1b3543fec17a148fbf960170fcb29`, 11 routes, `DRAFT_REVIEW_ONLY`, PHX-MASTER target null. Issue #266 remains OPEN / 0-of-7.
+
+### Latest owner PR and CI state
+
+| Owner / PR | Current exact head | Exact-head CI |
+|---|---|---|
+| CORE #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | #42698139210 PASS, scoped |
+| RENTAL #328 | `0e0da62acd47c6a1ce287f8a30fc700d603fa070` | APK #44782114384 PASS; API #44782114393 PASS; build #44782114390 FAIL |
+| PISONET #255 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | #42462978704 PASS, synthetic |
+| HARDWARE #347 | `960184670379f01e20f0e7e8bc23b3e5eedacd3f` | #45299741995 / #45299742437 / #45299741993 all FAIL |
+| HARDWARE #348 | `eb7afcb2ba0d1e84054c052c8b129cb51a91d062` | Focused #45352513178 PASS; build #45352513177 FAIL at `mbedtls/sha256.h` |
+| HARDWARE #349 | source/test `839c72ac68bb1f0a8fd9a2fc74a166cec15b624e`; docs/PR `16a51a995f2c2ed52c35969f19a4adaf857c3910` | Relay #45407965381 PASS; Quarantine #45407965439 PASS; Full #45407965339 FAIL at QA-owned `Missing poll signature check`; all 14 target/platform jobs and Android PASS |
+| QA #290 | `5c29d15994cee1279058f1eca12f2a3180704292` | #43633486963 PASS |
+| QA #292 | `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | No PR-triggered runs |
+| RELEASE #291 | `b97a360c107d1d28ab99e7376d5ba0a79fb276f0` | Windows #45415537929 FAIL at shared handover freshness; build #45415537818 FAIL at mandatory handover freshness; ESP32 compatibility #45415537967 PASS; zero independent reviews |
+
+The current RELEASE UTC14 lock is `PHX-RELEASE-20261124T14-ELF-ABSOLUTE-SYMBOL-EXCLUSION`. It remains RELEASE-owned and was not duplicated or edited by Master.
+
+### RELEASE source/test and handover freshness
+
+At #291 head `b97a360c`, the latest commit changes only `.github/scripts/test_inspect_esp32_elf_symbols.py` to print the actual test count. The accumulated PR still has 29 paths: 24 RELEASE-owned, three shared CORE handover paths, and two PISONET-owned SoftTimer ReleaseSigning tests.
+
+Windows run [#45415537929](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45415537929), handover job `138520603590`, fails because these workflow paths are newer than the shared `CURRENT_STATE.md` checkpoint:
+- `.github/workflows/blazepisonet-softtimer-release.yml`
+- `.github/workflows/blazepwifi-v053-release.yml`
+- `.github/workflows/blazerental-v053-lineage2-sign.yml`
+
+Build [#45415537818](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45415537818) fails at `Mandatory handover freshness gate`; Android, ESP8266, ESP32 and all enumerated OpenWrt build jobs pass, but update/simulation/sign/publish stages are skipped. Compatibility [#45415537967](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45415537967) passes both ESP32 core legs and the provenance regression suite.
+
+The current #291 `CURRENT_STATE.md` remains blob `85dd3c1e9254d947c4e75daaeaf3351ef3e105e3`, last checkpoint `d85eb6a2766781b6cac1807cef461993d8216b84`. CORE owns canonical handover reconciliation; RELEASE owns workflow changes and exact-head reruns. PISONET retains its two test paths; QA independently reviews. No gate bypass.
+
+### Firmware commit/blob/test identity clarification
+
+The current #291 compatibility workflow blob is `a127d06cd0a5784e026716c1feb18554f328329d`. It checks out HARDWARE commit `6ce423783b306411bdb7e7217081c050cb4cbec4` and verifies ESP32 sketch blob `a9a1c2fecb001d71f8f22b43952edbd160aacaf8`. Current #349 source/test `839c72ac` resolves the same sketch blob. Thus the compatibility run proves the pinned firmware sketch identity and pinned timestamp, not that the newer #349 test/lab tree was checked out. The new Architecture §7.9.4 records this distinction.
+
+### HARDWARE #349
+
+The exact docs-head focused Relay and Quarantine runs pass. Full [#45407965339](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45407965339) has all 14 target/platform jobs and Android passing, but validation job `138493698662` fails at `Controller protocol parity` / `Missing poll signature check`; dependent stages skip. This remains a CORE producer-contract / QA assertion dependency. No positive poll signature or hardware acceptance is claimed.
+
+### COE #26 exact migration revalidation
+
+Complete recursive trees at exact refs: pinned source `6d4c9b48` = 2,391 entries; Experiments main = 2,340; current #349 source/test = 2,513; COE #26 = 286.
+
+- SOURCE_INTAKE blob `1b9018ff944f7f673934d0fc2a97e0a0090d3f5f` pins source commit `6d4c9b487af4d768c4d7627654d119417fcc6e00`, rootfs tree `f4a923aaacf1374e90c7bab5f335efe6c6ec55cf`, and original tests tree `7e3b16f2a981c1c8ecab3b1da0d34a82b4e44f17`; all declared tree IDs match.
+- Its 61 runtime rows resolve to actual source/destination blob and mode pairs. Recomputed status is 46 identical / 15 derived; summary says 47 / 14.
+- For the 61 pinned rootfs paths, current main has 33 same, 20 changed and 8 missing. COE destination has 46 identical, 15 derived and zero missing relative to the historical pin.
+- Current #349 tests are 47 source / 19 destination: 1 exact, 3 divergent (`config.sh`, `integration.sh`, `security.sh`), 43 source-only, 15 destination-only.
+- Current board subtrees contain 58 files, 46 Python labs/helpers; destination has two sketches and zero Python helpers. Both sketch blobs differ from current #349.
+- MIGRATION_MAP contains 18 test rows total: four original rows plus 14 added rows (11 labelled locally derived, three locally authored). SOURCE_INTAKE JSON has 15 `derived_tests`. The map has stale hashes for `run_focus.sh` (map `fa1f4f2c...`, JSON/destination `2b7b861e...`) and `member_txn_journal.sh` (map `01dc9c65...`, JSON/destination `d04df3c6...`), and omits `voucher_txn_journal.sh` (JSON/destination `4277a56a...`).
+- Product LICENSE, QRCode LICENSE and TailAdmin LICENSE/NOTICE have exact destination counterparts. Experiments root `NOTICE.md` and `ui/vendor/tabler/LICENSE` have no destination counterpart. BlazeRentalLauncher LICENSE belongs to the separate RENTAL route. **Correction:** no `jsqr` path exists in either complete current tree; the earlier UTC14 statement about a jsqr test-vendor license is withdrawn.
+- COE #26 has five QUEUED workflows, zero jobs and zero statuses. Candidate remains FROZEN; no staging, copy, move, overwrite, rebase, cherry-pick or promotion.
+
+### Governance, tests and limitations
+
+- Branch APIs report `protected=false` for Experiments main, issue-designated development, Master coordination and COE main. Both repositories' rulesets endpoints return empty arrays; classic protection details return 403. Effective protected required-check enforcement is not established.
+- Root AGENTS.md blob `d8777e3b58efc41caa5aa3c969c932aee9103d5f` was read. Its linked Cloud Artifact Policy and Cloud Storage Handover could not be retrieved through the connected GitHub surface.
+- The private `BLAZE_PROJECT_REGISTRY_v11_20261027.json` and newer corrections were not available through the connected Library; no Google Drive connector was exposed. Older registry snapshots were not substituted and no private data was copied.
+- Exact tree/blob/mode inspections and JavaScript source/destination comparisons were executed. Master Python unit suite and `verify_coordination.py` were NOT RUN because no authenticated local checkout was available. Master PR #288 has zero Actions runs/statuses.
+- No subsystem source, COE destination, ownership manifest, secrets, signer, financial state, hardware, payment system or release artifact changed.
+
+**PRODUCTION NO-GO.** Protected signing/anti-rollback witness, crash-atomic durable financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized release gates remain outstanding.
+

@@ -1941,3 +1941,15 @@ A destination candidate is not migration-ready until all of the following are in
 7. A historical source pin is compared separately with current source authority; a historical snapshot must never be silently represented as current main.
 
 Any counter mismatch, stale map entry, missing source path, unaccounted license, incomplete test import or current-source drift keeps the candidate FROZEN. Do not stage, copy, rebase, cherry-pick, overwrite or promote until the owning integration role corrects the manifest/map and reviewers re-run exact-head CI. QUEUED workflows are not test evidence; CI at one SHA does not validate a different final docs/source head.
+
+
+### 7.9.4 Release artifact provenance separates pinned commit, firmware blob and current test head
+
+A reproducible firmware compatibility run must record the immutable source commit, the exact firmware sketch blob, and the test/lab head separately. A successful compile against an older source commit may still verify the same firmware blob at a newer test head, but it does **not** prove that the newer lab/test files were checked out or executed.
+
+At current RELEASE #291 head `b97a360c107d1d28ab99e7376d5ba0a79fb276f0`, workflow blob `a127d06cd0a5784e026716c1feb18554f328329d` pins HARDWARE source commit `6ce423783b306411bdb7e7217081c050cb4cbec4` and ESP32 sketch blob `a9a1c2fecb001d71f8f22b43952edbd160aacaf8`. Current HARDWARE #349 source/test head `839c72ac68bb1f0a8fd9a2fc74a166cec15b624e` resolves the same sketch blob. Therefore compatibility run [#45415537967](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45415537967) is valid for that exact firmware sketch identity and pinned source timestamp; it is not evidence that the latest #349 lab/test commit was checked out. If the sketch blob changes, update the release pin and rerun both exact-core legs.
+
+At the same RELEASE #291 head, Windows [#45415537929](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45415537929) and build [#45415537818](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45415537818) fail at the shared handover freshness gate. The gate names `.github/workflows/blazepisonet-softtimer-release.yml`, `.github/workflows/blazepwifi-v053-release.yml`, and `.github/workflows/blazerental-v053-lineage2-sign.yml` as newer than the canonical `CURRENT_STATE.md` checkpoint. The file remains blob `85dd3c1e9254d947c4e75daaeaf3351ef3e105e3`, last checkpoint `d85eb6a2766781b6cac1807cef461993d8216b84`. CORE owns canonical reconciliation; RELEASE owns workflow changes and exact-head reruns. Do not bypass the gate.
+
+HARDWARE #349 Full validation still fails QA-owned `Missing poll signature check`; focused tests and target compiles do not authorize positive poll admission or hardware acceptance. Keep deny-only behavior until CORE's producer contract and QA's independent assertion are reconciled.
+

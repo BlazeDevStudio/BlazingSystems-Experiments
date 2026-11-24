@@ -3709,3 +3709,27 @@ RELEASE #291's accumulated 29-path diff includes 24 RELEASE paths, three shared 
 | HARDWARE #349 | dce158b3eb6c0d953900284207f349518205f1d2 | Relay #45398283830 PASS; Quarantine #45398283765 PASS; build #45398283752 IN PROGRESS with validate FAIL at Missing poll signature check |
 
 RELEASE #291's latest tree has PROJECT_HANDOVER blob f1c5404b, CHANGE_LEDGER df9a2804 and unchanged CURRENT_STATE blob 85dd3c1e. HARDWARE #349's new head changes only the poll-loop lab and its response fixture; its PROJECT_HANDOVER remains 4aaa9817 and it still lacks the canonical CHANGE_LEDGER/CURRENT_STATE paths. The source/test and docs heads must remain distinct in evidence.
+
+
+## PHX-MASTER UTC14 post-checkpoint owner-head / CI refresh — 2026-11-24T14:42:27Z
+
+| Owner / PR | Exact head | Current exact-head CI |
+|---|---|---|
+| CORE #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | #42698139210 PASS, scoped. |
+| RENTAL #328 | `0e0da62acd47c6a1ce287f8a30fc700d603fa070` | APK #44782114384 PASS; API #44782114393 PASS; build #44782114390 FAIL. |
+| PISONET #255 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | Windows #42462978704 PASS, synthetic only. |
+| HARDWARE #347 | `960184670379f01e20f0e7e8bc23b3e5eedacd3f` | Quarantine #45299741995, Relay #45299742437 and build #45299741993 FAIL. |
+| HARDWARE #348 | `eb7afcb2ba0d1e84054c052c8b129cb51a91d062` | Header #45352513178 PASS; build #45352513177 FAIL at missing `mbedtls/sha256.h`. |
+| HARDWARE #349 | source/test `839c72ac68bb1f0a8fd9a2fc74a166cec15b624e`; docs/PR `16a51a995f2c2ed52c35969f19a4adaf857c3910` | Relay #45407965381 PASS; Quarantine #45407965439 PASS; Full #45407965339 FAIL at QA-owned `Missing poll signature check`; 14/14 target/platform jobs plus Android PASS. |
+| QA #290 | `5c29d15994cee1279058f1eca12f2a3180704292` | Windows #43633486963 PASS. |
+| QA #292 | `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | No PR-triggered runs. |
+| RELEASE #291 | `b97a360c107d1d28ab99e7376d5ba0a79fb276f0` | Windows #45415537929 FAIL at shared handover freshness; build #45415537818 FAIL at mandatory handover freshness; ESP32 compatibility #45415537967 PASS. Zero independent PR reviews. |
+
+COE supporting candidates:
+- #35 `e7801818b00854f34a5a88955d979c601ec96404`: case guard #45303825417 PASS; shared Hardware/contracts #45303825436 FAIL; ImageBuilder sandbox #45303825459 FAIL.
+- #45 `9d76a134c1f6512aa40c20ec4d247306a71a8cce`: overlay/shell #44295049727 and case guard #44295049903 PASS.
+- #49 `aeb8ff11b2f5db9a5f86280ab62ab988245f3919`: Stage 5.1 #44646341873 and case guard #44646341992 PASS; shared Hardware compile #44646341922 FAIL.
+- COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`: five workflows QUEUED, zero jobs and zero commit statuses.
+
+The current RELEASE UTC14 role lock is `PHX-RELEASE-20261124T14-ELF-ABSOLUTE-SYMBOL-EXCLUSION`; Master did not claim or edit its scope. The separate CORE continuation owner remains untouched.
+

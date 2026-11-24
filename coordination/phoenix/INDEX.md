@@ -1,3 +1,15 @@
+## PHX-MASTER UTC14 post-checkpoint refresh — 2026-11-24T14:42:27Z
+
+- Current Master branch/PR #288 HEAD: `6a297739388ea5db6f6b7a02c597e27e35a1244e`; PR OPEN / DRAFT / UNMERGED, 198 changed paths, all under `coordination/phoenix/`; Master Actions/statuses remain zero.
+- Experiments main `f4e8a891`; issue-designated development `aad3aade`; COE main `a6513ab4`; COE #26 `b382d233` remains FROZEN.
+- RELEASE #291 advanced to `b97a360c107d1d28ab99e7376d5ba0a79fb276f0`. Windows #45415537929 and build #45415537818 fail at the shared handover freshness gate; ESP32 compatibility #45415537967 passes for its explicitly pinned sketch blob. CORE owns canonical CURRENT_STATE reconciliation.
+- HARDWARE #349 source/test `839c72ac68bb1f0a8fd9a2fc74a166cec15b624e`, docs/PR `16a51a995f2c2ed52c35969f19a4adaf857c3910`: Relay #45407965381 and Quarantine #45407965439 pass; Full #45407965339 fails QA-owned `Missing poll signature check`; all 14 target/platform jobs and Android pass, downstream gates skip.
+- COE #26 exact-tree refresh: Experiments current #349 tree 2,513 entries, pinned source 2,391, Experiments main 2,340, destination 286. Current test map 47/19 (1 exact, 3 divergent, 43 source-only, 15 destination-only); 58 board files include 46 Python helpers, while destination has only two sketches and zero helpers.
+- SOURCE_INTAKE has 61 runtime rows; exact row recomputation is 46 identical / 15 derived, not its 47/14 summary. MIGRATION_MAP has 14 non-original test rows (11 locally derived + 3 locally authored) versus 15 JSON derived-test entries; two map hashes are stale and `voucher_txn_journal.sh` is omitted.
+- License correction: the current complete source/destination trees contain no `jsqr` path. Product, QRCode and TailAdmin LICENSE/NOTICE counterparts match; root NOTICE and Tabler LICENSE lack destination counterparts. BlazeRentalLauncher LICENSE belongs to the separate RENTAL route.
+- Rulesets endpoints are empty; branch APIs report `protected=false` for Experiments main/development/Master and COE main. Classic protection details return 403. Private Drive registry v11/newer corrections and AGENTS-linked cloud policy/storage handover remain NOT_RECOVERED; no older registry substituted.
+- Master Python suite and `verify_coordination.py` NOT RUN. Source/tree/blob/mode inspection was executed; no Master test pass is claimed. Full details are appended to the existing UTC14 audit report in place.
+
 # PHX-MASTER UTC14 live index — 2026-11-24T14:05:18Z
 
 - Starting Master branch HEAD ba356baf4acb3921d2fd5c7373e4dd4decfaabd4; current PR #288 OPEN / DRAFT / UNMERGED, 197 read-time paths all under coordination/phoenix/.

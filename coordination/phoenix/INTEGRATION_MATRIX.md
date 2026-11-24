@@ -5014,3 +5014,18 @@ Current #349 rootfs has 53 files versus the pinned 61: 33 same, 20 changed, eigh
 ## UTC12 post-checkpoint owner refresh — migration candidate unchanged
 
 After the Master UTC12 checkpoint, RELEASE #291 advanced to b154e845 and HARDWARE #349 to dce158b3. COE main and integration PR #26 were re-read and remain unchanged at a6513ab4412b4c014eee2863e45cbe32d06cb243 and b382d233ff06c8791b1028bed3c617cc7b670d12 respectively. The source intake 46/15 summary mismatch, destination-only blaze-appliance-diag, test/firmware/licence gaps and five queued workflows remain exactly as audited. No COE staging or destination edit occurred. See [UTC12 Master report](coordination/phoenix/PHX_MASTER_UTC12_20261124_RELEASE291_HANDOVER_COE26_SOURCE_INTAKE_AND_HW349_RECONCILIATION.md).
+
+
+## PHX-MASTER UTC14 post-checkpoint exact migration provenance — 2026-11-24T14:42:27Z
+
+Complete, non-truncated recursive trees at exact refs: pinned source `6d4c9b487af4d768c4d7627654d119417fcc6e00` = 2,391 entries; Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b` = 2,340; current HARDWARE #349 source/test `839c72ac68bb1f0a8fd9a2fc74a166cec15b624e` = 2,513; COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12` = 286.
+
+- Pinned source rootfs tree `f4a923aaacf1374e90c7bab5f335efe6c6ec55cf` and original tests tree `7e3b16f2a981c1c8ecab3b1da0d34a82b4e44f17` match SOURCE_INTAKE's declared tree IDs.
+- All 61 SOURCE_INTAKE runtime rows resolve to exact pinned source and destination blob/mode pairs. Actual row split is 46 byte-identical / 15 derived; JSON summary claims 47 / 14.
+- The 61 pinned rootfs files compare with current Experiments main as 33 same, 20 changed and 8 missing. Against COE #26, 46 are byte-identical, 15 are derived and none are missing. The historical pin is not current main.
+- Current #349 tests: 47 source / 19 destination; 1 exact blob+mode, 3 divergent same-path (`config.sh`, `integration.sh`, `security.sh`), 43 source-only and 15 destination-only.
+- Current #349 ESP32/ESP8266 subtrees contain 58 files, including 46 Python labs/helpers. COE has only two firmware sketches and zero board-local Python helpers; both sketch blobs differ from current #349.
+- MIGRATION_MAP has 18 test rows total (four original plus 14 added: 11 labelled locally derived and 3 locally authored). SOURCE_INTAKE JSON has 15 `derived_tests`. The map has stale hashes for `run_focus.sh` (map `fa1f4f2c...`, JSON/destination `2b7b861e...`) and `member_txn_journal.sh` (map `01dc9c65...`, JSON/destination `d04df3c6...`), and omits `voucher_txn_journal.sh` (JSON/destination `4277a56a...`).
+- Product LICENSE, QRCode LICENSE and TailAdmin LICENSE/NOTICE have exact destination counterparts. Experiments root NOTICE.md and `ui/vendor/tabler/LICENSE` have no COE #26 counterpart. BlazeRentalLauncher LICENSE is under the separate RENTAL route. The current complete source and destination trees contain no `jsqr` path; the earlier UTC14 line naming a jsqr test-vendor license is corrected and must not be used.
+- Five COE #26 workflows remain QUEUED with zero jobs/statuses. Candidate remains FROZEN. No staging, copy, move, overwrite, rebase, cherry-pick, retarget or promotion occurred.
+
