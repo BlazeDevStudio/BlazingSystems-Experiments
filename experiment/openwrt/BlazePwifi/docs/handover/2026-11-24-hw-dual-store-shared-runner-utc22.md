@@ -1,59 +1,76 @@
 # PHX-HARDWARE — dual-store lab shared C++ runner
 
-**Checkpoint:** 2026-11-24T22:14:37Z  
+**Checkpoint:** 2026-11-24T22:29:29Z  
 **Role:** PHX-HARDWARE  
 **Tasks:** #172 / #177 / #266 / PR #349  
 **Repository:** `BlazeDevStudio/BlazingSystems-Experiments`  
 **Branch:** `phoenix/hw-json-array-primitive-guard-20261124-utc00`  
 **PR:** [#349 — OPEN / DRAFT / UNMERGED](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/349)  
 **Base #347:** `960184670379f01e20f0e7e8bc23b3e5eedacd3f`  
-**Source/test commit:** [`213c39942eb0c0a611655c5edd52bdee56249a78`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/213c39942eb0c0a611655c5edd52bdee56249a78)
+**Current source/test commit:** [`0aba4cd66deae4c358dec950ace1e86be3241674`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/0aba4cd66deae4c358dec950ace1e86be3241674)
 
 ## Selected owned task
 
-Continue cleanup-first #266 in the Hardware-owned source-extracted dual-store poll-fault lab. The lab still used its own unbounded `g++` compile and executable subprocess calls for the baseline and three failure-injection variants. Those C++ processes had no compile or execution timeout, unlike other labs already using the shared bounded runner.
+Continue cleanup-first #266 in the Hardware-owned source-extracted dual-store poll-fault lab. The lab had four local C++ compile/run paths with no compile or execution timeout. The repository already had a shared bounded runner, so this duplicated process lifecycle was unnecessary and could leave CI blocked indefinitely.
 
 ## Concrete source changes
 
 - Added `_compile_and_run()` to delegate C++ source writing, compilation and execution to `cpp_fixture_runner.run_cpp_fixture()`.
-- Replaced the four C++ compile/run paths: ESP32/ESP8266 baseline, missing-NVS-commit mutation, pre-commit-persistence mutation, and first-fault-snapshot-overwrite mutation.
-- Preserved `-std=c++17 -Wall -Wextra -Werror`, source extraction, expected exit codes, stdout/stderr marker checks, board-specific prefixes, and all existing mutation payloads.
-- Added explicit 30-second compile and 10-second execution bounds.
-- Retained `subprocess` and `tempfile` only for the Python child-process external-CWD and temporary root-sentinel tests; those are not C++ fixture compilation paths.
-- Added `poll_fault_dual_store_runner_guard.py`. It requires the shared import/helper, verifies both timeout bounds and all four callsites, and rejects direct `subprocess.run(["g++", ...])` calls.
-- Updated `.github/workflows/phx-hardware-quarantine-byte-readback.yml` to run the structural guard and the existing `cpp_fixture_runner_contract_lab.py` before the dual-store lab. The existing contract lab contains eight timeout/diagnostic/temp-cleanup assertions.
+- Replaced the four C++ compile/run paths: baseline, missing-NVS-commit mutation, pre-commit-persistence mutation, and first-fault-snapshot-overwrite mutation.
+- Preserved C++17, `-Wall -Wextra -Werror`, source extraction, expected exit codes, stdout/stderr marker checks, board-specific prefixes, and mutation payloads.
+- Set explicit 30-second compilation and 10-second execution bounds.
+- Retained `subprocess` and `tempfile` only for the Python external-CWD and root-sentinel self-tests.
+- Added `poll_fault_dual_store_runner_guard.py`, which requires the shared import/helper, all four callsites and timeout bounds, and rejects direct C++ compiler subprocess calls.
+- Updated `.github/workflows/phx-hardware-quarantine-byte-readback.yml` to run the structural guard and existing `cpp_fixture_runner_contract_lab.py` before the dual-store lab.
 
-No ESP8266/ESP32 sketch, CGI producer, CORE contract, QA-owned assertion, financial state, signer, witness, migration, release workflow or COE destination was modified.
+No ESP8266/ESP32 production sketch, CGI producer, CORE contract, QA-owned assertion, financial state, signer, witness, migration, Release workflow or COE destination was modified.
 
-## Validation and exact limitations
+## Exact-source validation
 
-- GitHub source readback at PR head `213c39942eb0c0a611655c5edd52bdee56249a78`: static checks confirmed the shared import, 30s/10s bounds, four helper callsites, absence of direct C++ compiler subprocess calls, and both workflow invocations.
-- The structural guard's expected RED condition is encoded as `POLL_FAULT_SHARED_RUNNER_IMPORT_MISSING`; **no RED Actions result is claimed** because no new PR-triggered Actions run was returned for the test/workflow commits.
-- No new exact-head Quarantine, Relay or Full run was returned for `213c39942eb0c0a611655c5edd52bdee56249a78`. Combined commit status returned no statuses. The prior `8dbb2015` run is not transferable to this new source head.
-- Local execution: **NOT RUN**. The available container could not resolve `github.com` for a local checkout. No local C++ or Python test result is claimed.
-- Existing contract lab is wired into the workflow, but its 8/8 result is **NOT RUN on this head**.
+<badge>CI VERIFIED — source-extracted only</badge>
 
-## Prior-head evidence (not transferred)
+At exact source/test SHA `0aba4cd66deae4c358dec950ace1e86be3241674`:
 
-At prior PR head `8dbb2015b11651f6d9864f53bb1368b5baa26790`:
-- Quarantine [#45497219145](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45497219145) — SUCCESS.
-- Relay [#45497219207](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45497219207) — SUCCESS.
-- Full [#45497219108](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45497219108) — FAILURE at inherited `tests/controllers.sh` / `Missing poll signature check`; all 14 firmware/platform + Android jobs succeeded, validation failed, and dependent simulations/signing/publication were skipped.
+- Quarantine [run #45500875662](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45500875662), job `138823500132`: **SUCCESS**.
+  - `POLL_FAULT_SHARED_RUNNER_STRUCTURE_PASS`.
+  - `CPP_FIXTURE_RUNNER_CONTRACT_PASS 8/8`.
+  - `POLL_FAULT_DUAL_STORE_LAB=PASS` on ESP32 and ESP8266.
+  - Existing first-fault snapshot, NVS commit failure, poll-drain and persistence mutation checks passed.
+  - Remaining Quarantine job steps, including EEPROM/config recovery, pulse-capture and boot-polarity checks, also completed SUCCESS.
+- Relay [run #45500875749](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45500875749): **SUCCESS**.
+  - Source/output job `138823500384` and ESP32 boot-polarity job `138823501283` both SUCCESS.
+  - Relay output polarity: 48/48 source-extracted scenarios per board.
+  - Bounded HTTP response: both boards PASS.
+  - Logs explicitly retain `SIMULATED_ONLY=1`, `PHYSICAL_RELAY_POLARITY_VERIFIED=0`, and `PHYSICAL_POWER_CUT_VERIFIED=0`.
 
-These results validate only the previous SHA, not the new dual-store runner refactor.
+### Failure and correction
+
+The first Quarantine run at prior head `a3bfae23e038865126e82a6e4dee0d104927c12f`, [run #45500156896](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45500156896), failed in the new guard's AST parse because the initial `run()` replacement left the required-marker block over-indented (`IndentationError`, line 373). This was a real failure introduced by the first refactor, not an expected RED. It was corrected in [commit `0aba4cd`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/0aba4cd66deae4c358dec950ace1e86be3241674); the exact-source Quarantine and Relay runs above passed after that correction.
+
+### Full integration status
+
+[Full run #45500875722](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45500875722) checked out merge commit `35a4eab` for prior PR head `a3bfae23`, not source SHA `0aba4cd`. Its validation job `138823501834` failed at `tests/controllers.sh` with **`Missing poll signature check`**. All 13 firmware/platform target jobs completed SUCCESS; Android was still in progress at last poll. Simulations, signed import, signing and publication were skipped. This Full result is prior-head evidence and does not transfer to `0aba4cd`.
+
+No exact-source Full run on `0aba4cd` has been verified yet. CORE owns the authenticated register/poll response contract; QA owns reconciliation of the inherited assertion. Do not synthesize `response_sig`, weaken the assertion, or enable positive poll/coin admission.
+
+## Other live stack audits
+
+- #239 Phase A deny: OPEN / DRAFT / UNMERGED at `d83b715b116185107737fef721c2eece8feebf39`.
+- #254 ControllerAuthV1Lab: OPEN / DRAFT / UNMERGED at `84c442a46ee2ee48dcbe68b71ff0f54edbc09ba9`, stacked on #239. Focused exact-head sanitizer run #44683629378 PASS; Full #44683629491 FAIL at ESP32 core 4.0.0 missing `mbedtls/sha256.h` and validation CHANGE_LEDGER freshness. Helper remains non-actuating and unwired.
+- #283 parallel sketches: OPEN / DRAFT / UNMERGED at `4dd0b01bf04cf80aec6d4dd6fc93b2fdc633da30`. The original unconditional-clear lead from comment #6883020442 is **not present**: failed quarantine append returns false before `clearPending()`; `quarantinePending()` is definition-only with no active callsite. Current main CGI `register|ping` and `poll` still lack the approved `response_sig`; member endpoint signatures do not authenticate controller poll. Physical LittleFS torn-write/power-loss recovery remains NOT TESTED.
+- Parent #347 remains the base for #349 at `960184670379f01e20f0e7e8bc23b3e5eedacd3f`; no cross-stack cherry-pick, retarget, rebase or merge.
 
 ## Ownership / release status
 
-- #239 Phase A deny remains OPEN / DRAFT / UNMERGED.
-- #254 ControllerAuthV1Lab remains OPEN / DRAFT / UNMERGED, stacked on #239.
-- #283 remains a separate OPEN / DRAFT / UNMERGED parallel stack.
-- #349 remains OPEN / DRAFT / UNMERGED, child of #347. No retarget, rebase, cherry-pick, merge or force-push.
-- CORE owns the authenticated register/poll and event-bound receipt contract. QA owns reconciliation of the inherited poll-signature assertion. Keep poll/coin admission deny-default.
-- Physical coin/relay/electrical acceptance, 150 controlled power cuts and 30-device 24-hour soak remain **NOT TESTED**.
-- Protected anti-rollback signer/witness, durable accounting/replay, v1-to-v2 migration and independent QA/release acceptance remain **NOT ACCEPTED**.
+- #266 remains OPEN / **0-of-7** role tracks complete; this is one bounded Hardware contribution.
+- #177 P0 synchronous poll/coin-pulse loss remains open. These lab checks do not certify physical coin capture.
+- #31 durable prepaid event idempotency / crash-atomic member transfer, #32 rental lease/receipt consistency, #43 independent freshness witness, and #34 physical acceptance remain release blockers.
+- 150 controlled power cuts, 30-device/24-hour soak, electrical pulse/recovery, protected anti-rollback signer/witness, durable accounting/replay, v1-to-v2 migration and independent QA/release signoff remain NOT TESTED or NOT ACCEPTED.
+- Private `BLAZE_PROJECT_REGISTRY_v11_20261027.json` was not found in the accessible Library search/list; only an older v7 registry was visible. No Google Drive connector is exposed in this activation. The older registry was not substituted.
 
-**Source change status:** committed; CI verification pending.  
-**SIMULATED:** no new simulation run on this head.  
+**Source change:** committed.  
+**Focused Quarantine / Relay:** CI VERIFIED (SIMULATED source-extracted tests only).  
+**Full integration:** FAILED at inherited QA-owned poll-signature assertion on prior merge head; current-source Full pending.  
 **HARDWARE ACCEPTED: NO. PRODUCTION READY: NO-GO.**
 
 ## BLAZE-COMMS/1
@@ -63,29 +80,35 @@ These results validate only the previous SHA, not the new dual-store runner refa
   "protocol": "BLAZE-COMMS/1",
   "message_id": "PHX-HARDWARE-20261124T22-DUAL-STORE-SHARED-RUNNER",
   "from": "PHX-HARDWARE",
-  "to": ["PHX-MASTER", "PHX-QA"],
+  "to": ["PHX-MASTER", "PHX-CORE", "PHX-QA"],
   "type": "PROGRESS",
   "priority": "P2",
   "task_id": "#172/#177/#266/#349",
   "branch": "phoenix/hw-json-array-primitive-guard-20261124-utc00",
   "base_sha": "960184670379f01e20f0e7e8bc23b3e5eedacd3f",
+  "source_test_sha": "0aba4cd66deae4c358dec950ace1e86be3241674",
   "scope": [
     "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_fault_dual_store_lab.py",
     "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_fault_dual_store_runner_guard.py",
     ".github/workflows/phx-hardware-quarantine-byte-readback.yml"
   ],
-  "status": "IN_PROGRESS",
+  "status": "VERIFIED",
   "evidence": [
-    "https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/4bebcf21d9f56ad59ad3168d4c9ae4492413b918",
-    "https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/940403f472568f2bae9a6d4586146f4d6bc9b0f9",
-    "https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/213c39942eb0c0a611655c5edd52bdee56249a78"
+    "https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/0aba4cd66deae4c358dec950ace1e86be3241674",
+    "https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45500875662",
+    "https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45500875749",
+    "POLL_FAULT_SHARED_RUNNER_STRUCTURE_PASS",
+    "CPP_FIXTURE_RUNNER_CONTRACT_PASS 8/8",
+    "POLL_FAULT_DUAL_STORE_LAB=PASS on ESP32 and ESP8266"
   ],
   "blockers": [
-    "No exact-head GitHub Actions run/status was returned for the new source SHA.",
-    "Local clone/test execution is unavailable because the container cannot resolve github.com.",
-    "CORE/QA register-poll response-signature contract mismatch remains an inherited Full validation blocker."
+    "Full integration validation still fails at the inherited Missing poll signature check on prior merge head.",
+    "Exact-source Full run after the source correction is not yet verified.",
+    "Physical coin, relay, power-cut and 30-device soak acceptance remain NOT TESTED.",
+    "Protected witness, durable accounting/replay and v1-to-v2 migration remain NOT ACCEPTED.",
+    "Google Drive registry v11 is not accessible through the available connector surface."
   ],
-  "next_action": "Trigger Quarantine, Relay and Full workflows at exact head 213c39942eb0c0a611655c5edd52bdee56249a78; then inspect terminal jobs and request QA review.",
-  "updated_utc": "2026-11-24T22:14:37Z"
+  "next_action": "Refresh the exact-source Full result after handover pinning; Master to update its coordination pins; CORE/QA to publish and reconcile the authenticated register/poll contract without weakening deny-default.",
+  "updated_utc": "2026-11-24T22:29:29Z"
 }
 ```
