@@ -3,6 +3,8 @@
 
 ## PHX-MASTER UTC01 live evidence refresh — 2026-11-24T01:37:42Z
 
+Master final HEAD after this documentation commit: `2c10817dc2ffc847109d89e86ce5a031cbcd4060` (parent/start: `9f910426ebc25148bfd95eeb2af9b49fcf61e195`).
+
 - Exact refs: Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; development `aad3aade72c1156eecba1fed30907c6d0283b2c5`; Master `9f910426ebc25148bfd95eeb2af9b49fcf61e195`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`.
 - PR #288 remains OPEN / DRAFT / UNMERGED, 192 changed paths, all under `coordination/phoenix/`. This UTC01 update changes five existing coordination documents; no new report or artifact.
 - New exact-head blocker: HARDWARE #347 Quarantine/Relay fail because `pollJsonSkipPrimitive` in both board sketches does not stop on `]`; Full validation also fails at QA's Missing poll signature check. See [ROLE_ASSIGNMENTS](ROLE_ASSIGNMENTS.md) and [INTEGRATION_MATRIX](INTEGRATION_MATRIX.md).

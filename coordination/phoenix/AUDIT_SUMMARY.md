@@ -3,6 +3,8 @@
 
 ## PHX-MASTER UTC01 live evidence refresh — 2026-11-24T01:37:42Z
 
+Master final HEAD after this documentation commit: `2c10817dc2ffc847109d89e86ce5a031cbcd4060` (parent/start: `9f910426ebc25148bfd95eeb2af9b49fcf61e195`).
+
 ### Current verified findings
 
 1. **HARDWARE parser delimiter defect, confirmed by exact source inspection and current CI:** #347 head `960184670379f01e20f0e7e8bc23b3e5eedacd3f` fails both Quarantine [#45299741995](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45299741995) and Relay [#45299742437](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45299742437). The shared lab requires `&& r[p]!=']'`, but `pollJsonSkipPrimitive` in both sketches currently omits that delimiter. Exact sketch blobs: ESP8266 `fa8ed828026396db89aab2889bf6a61d6cf6bbac`; ESP32 `717336b84d434d51eb24beac1ed8efce8e719f69`. HARDWARE must correct both implementations and rerun exact-source tests. Master did not touch source.
