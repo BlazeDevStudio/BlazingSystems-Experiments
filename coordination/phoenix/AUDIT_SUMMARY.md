@@ -1,3 +1,15 @@
+## PHX-MASTER UTC08 live audit disposition — 2026-11-24T08:05:17Z
+
+- Current Master branch before this update: `3282a7c3060b404000972084825767d40145e3d5`; PR #288 remains OPEN / DRAFT / UNMERGED against main `f4e8a891...`.
+- Current owner PR/CI heads are pinned in the UTC08 section of ROLE_ASSIGNMENTS.md. New blockers: HARDWARE #348 ESP32 compile fails on missing `mbedtls/sha256.h`; HARDWARE #349 Full fails at QA-owned poll-signature parity; RELEASE #291 synthetic missing-tag vector fails because the extracted lookup block still contains two real `gh api` calls.
+- COE #26 remains FROZEN. Exact tree comparison: 2,499 source entries / 286 destination entries; board subtree 56 / 4 entries; 42 source Python labs missing; both firmware sketches differ; 47 source tests map to 19 destination tests (1 identical, 3 divergent, 43 missing, 15 destination-only); root NOTICE, Tabler and BlazeRentalLauncher license gaps remain.
+- Ownership manifest unchanged: 11 routes / DRAFT_REVIEW_ONLY / PHX-MASTER target null. Cleanup #266 OPEN / 0-of-7. No source ownership transfer.
+- Branch protection: Experiments main/development and COE main report protected=false; rulesets list empty; Master branch protection detail not independently readable through the current connector path.
+- Private canonical registry v11/newer corrections remain unavailable in Library; older v3–v7 snapshots are not substitutes. No Google Drive connector is exposed; no private content or IDs were published.
+- Master Python suite and `verify_coordination.py` NOT RUN; no authenticated local checkout. Master PR #288 has zero PR-triggered runs/statuses at its current starting head. Remote tree/blob/CI inspections and ordinary JavaScript consistency checks were executed.
+
+**PRODUCTION NO-GO.** Independent protected signing/anti-rollback witness, crash-atomic durable financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized release gates remain mandatory. No merge, release, signer operation, secret provisioning, hardware flash, physical test, payment operation or customer cutover occurred.
+
 ## PHX-MASTER UTC07 live audit disposition — 2026-11-24T07:37:39Z
 
 ### Governance and execution limits

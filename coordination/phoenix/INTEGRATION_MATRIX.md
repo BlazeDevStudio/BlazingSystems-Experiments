@@ -1,3 +1,25 @@
+## PHX-MASTER UTC08 exact #349/#348 → COE #26 tree and license revalidation — 2026-11-24T08:05:17Z
+
+Complete, non-truncated recursive trees: Experiments #349 `dff053bb8fe276d3f0ba9764e845d61ebe640539` = 2,499 entries; COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12` = 286 entries; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243` = 3 entries.
+
+| Artifact / scope | Source | COE #26 destination | Result |
+|---|---|---|---|
+| Board subtree entries | 56 entries; 42 Python labs/helpers | 4 entries; 0 Python labs | 42 source labs absent |
+| ESP8266 sketch | `2f87a9de84ac53dbb0d2718b5c79a4662b63de8f` | `c8be98f72596681e36a3ad1f8939bf8046c96887` | Different blobs |
+| ESP32 sketch | `a9a1c2fecb001d71f8f22b43952edbd160aacaf8` | `3cc7ec54b476943dc04a8d1af5e2df5fe054e422` | Different blobs |
+| ESP8266 parser lab | `15c0d31ef9c07c549a0ddd5cf4d26c687cac8fd3` | Missing | Not imported |
+| Parser fixture module | `b55ec6ef0ec4184c7b18b4e55bd65aeb96951812` | Missing | Not imported |
+| Tests `BlazePwifi/tests → Pisowifi/tests` | 47 files | 19 files | 1 identical, 3 divergent, 43 source files missing, 15 destination-only |
+| Product LICENSE | `1ee55b94183417be977ca287cd7391f9a6f7e721` | Same blob at `Pisowifi/LICENSE` | Match |
+| QRCode / TailAdmin license + notice | Exact source blobs | Same mapped blobs | Match |
+| Root `NOTICE.md` | `f6d92cd21465312be5993631fe26977219be0fb9` | Missing | Gap |
+| Tabler LICENSE | `22ee8122400915cbff18e5f69368fa9eea6145eb` | Missing | Gap |
+| BlazeRentalLauncher LICENSE | `c5b1efa7aac764ae6d8da63476a2d5cec02a6a5d` | Missing | Gap |
+| #348 `ControllerAuthV1Lab.h` | `27950692147b2ec89b92505062d085deb8afb699` | Missing | Not imported |
+| #348 `v060_controller_auth_header_native.cpp` | `404ce87229ba754b08d9842315c13c99b9e1b1c7` | Missing | Not imported |
+
+The earlier 61-row intake audit remains a historical baseline; it was not rerun in full. COE #26 has five queued workflows and zero completed jobs/statuses. No staging, copy, move, overwrite, rebase, cherry-pick, or destination write occurred. Missing artifacts are provenance gaps, not instructions to copy.
+
 ## PHX-MASTER UTC07 exact #349 → COE #26 source-intake and CI revalidation — 2026-11-24T07:37:39Z
 
 ### Cross-repository #349 → COE #26 exact-tree audit

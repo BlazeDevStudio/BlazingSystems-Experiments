@@ -1,3 +1,21 @@
+## PHX-MASTER UTC08 owner/CI reconciliation — 2026-11-24T08:05:17Z
+
+| Owner / candidate | Exact current PR head | Exact-head CI result |
+|---|---|---|
+| CORE #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | [#42698139210](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42698139210) PASS, scoped. CORE remains with its separate continuation owner. |
+| RENTAL #328 | `0e0da62acd47c6a1ce287f8a30fc700d603fa070` | APK [#44782114384](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44782114384) + API [#44782114393](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44782114393) PASS; build [#44782114390](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44782114390) FAIL. |
+| PISONET #255 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | Windows [#42462978704](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42462978704) PASS; synthetic only. |
+| HARDWARE parent #347 | `960184670379f01e20f0e7e8bc23b3e5eedacd3f` | Quarantine [#45299741995](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45299741995), Relay [#45299742437](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45299742437), Full [#45299741993](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45299741993) all FAIL. |
+| HARDWARE #349 | docs `dff053bb8fe276d3f0ba9764e845d61ebe640539`; source/test checkpoint `da046d5ea80a8daac7258d302ecc310cd5634b24` | Quarantine [#45343153318](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45343153318) + Relay [#45343153313](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45343153313) PASS; Full [#45343153346](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45343153346) FAIL at QA-owned `Missing poll signature check`. |
+| HARDWARE #348 | `eb7afcb2ba0d1e84054c052c8b129cb51a91d062` | Focused [#45352513178](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45352513178) PASS; build [#45352513177](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45352513177) FAIL at ESP32 `mbedtls/sha256.h` include; validate job itself PASS. |
+| QA #290 | `5c29d15994cee1279058f1eca12f2a3180704292` | Windows [#43633486963](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43633486963) PASS. |
+| QA #292 | `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | No PR-triggered runs. |
+| RELEASE #291 | `dabfd75cdccea6ab2f5adfe5251fbc3b506e38aa` | Windows [#45352021031](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45352021031) FAIL at `negative-selftest.ps1:326`; build [#45352021135](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45352021135) + ESP32 [#45352021234](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45352021234) PASS. Publisher skipped. |
+
+COE: #35 `e7801818b00854f34a5a88955d979c601ec96404` validation/sandbox FAIL and case PASS; #45 `9d76a134c1f6512aa40c20ec4d247306a71a8cce` overlay/case PASS; #49 `aeb8ff11b2f5db9a5f86280ab62ab988245f3919` Stage 5.1/case PASS, Shared ESP32 compile FAIL. COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`: five queued workflows, zero completed jobs/statuses.
+
+RELEASE #291 test-harness finding: the negative test executes the extracted production lookup block but substitutes only `$lookupExit = $LASTEXITCODE`; both real `gh api` commands and the second tag-lookup output/exit remain unsimulated. Current CI fails the expected missing-tag vector at line 326. PHX-PISONET/PHX-RELEASE own the correction; Master made no owner-source changes.
+
 ## PHX-MASTER UTC07 owner/CI reconciliation — 2026-11-24T07:37:39Z
 
 ### Current exact owner heads and CI

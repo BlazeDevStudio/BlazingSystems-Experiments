@@ -1,3 +1,15 @@
+## PHX-MASTER UTC08 routing/provenance refresh — 2026-11-24T08:05:17Z
+
+Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; development `aad3aade72c1156eecba1fed30907c6d0283b2c5`; Master before update `3282a7c3060b404000972084825767d40145e3d5`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`.
+
+The machine-readable manifest remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`, 11 routes, `DRAFT_REVIEW_ONLY`, PHX-MASTER target null. CORE, RENTAL, PISONET, HARDWARE, QA and RELEASE retain their source branches. The CORE continuation owner remains separate; Master made no CORE or subsystem source changes.
+
+COE #26 remains FROZEN. The exact #349/#348 source-vs-destination mapping, firmware blob differences, missing board labs, test identity gaps and license gaps are recorded in INTEGRATION_MATRIX.md. They are review findings, not copy authorization. No staging, copy, move, overwrite, rebase, cherry-pick, destination write, ownership transfer or migration proposal occurred.
+
+RELEASE #291's failing negative self-test is PISONET/RELEASE-owned: the extracted production lookup block retains two live `gh api` invocations while only one exit-code assignment is fixture-substituted. PHX-PISONET and PHX-RELEASE must repair their own test/workflow boundary; QA independently reviews.
+
+Private v11 registry/newer corrections are not available in the connected Library; no Google Drive connector is exposed. Older snapshots were not substituted and no private content or IDs were published.
+
 ## PHX-MASTER UTC07 routing and provenance refresh — 2026-11-24T07:37:39Z
 
 Current source/destination refs: Experiments main f4e8a891aed8af86d5fd315d28750a0ac3a7372b; development aad3aade72c1156eecba1fed30907c6d0283b2c5; Master before update 48b961996a0c53452f5a75a4a40d0610f8a023dc; COE main a6513ab4412b4c014eee2863e45cbe32d06cb243; COE #26 b382d233ff06c8791b1028bed3c617cc7b670d12.

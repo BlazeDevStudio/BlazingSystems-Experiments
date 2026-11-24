@@ -1,3 +1,17 @@
+# PHX-MASTER UTC08 live index — 2026-11-24T08:05:17Z
+
+- Starting Master branch HEAD: `3282a7c3060b404000972084825767d40145e3d5`; this update is committed on `phoenix/master-coordination` and remains inside the existing draft PR #288.
+- Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; development `aad3aade72c1156eecba1fed30907c6d0283b2c5`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`.
+- Current exact owner CI: #347 all three failures; #349 Quarantine/Relay pass and Full poll-signature failure; #348 focused/validate pass but ESP32 compile fails; #291 build/ESP32 pass but Windows negative self-test fails at line 326; #252 scoped build pass; #328 APK/API pass and build fail; #255 Windows pass; #290 Windows pass; #292 no PR-triggered runs.
+- New source-grounded release-test issue: #291 synthetic missing-tag vector runs an extracted block containing two unsimulated `gh api` calls. PHX-PISONET/PHX-RELEASE own the fix.
+- Exact #349 → COE #26 provenance audit: 2,499 vs 286 tree entries; board 56 vs 4 entries; 42 source Python labs absent; sketches differ; test directory 47 vs 19 files (1 identical, 3 divergent, 43 missing, 15 destination-only); root NOTICE, Tabler and BlazeRentalLauncher license gaps. #348 ControllerAuth lab/test absent at destination.
+- COE #26 remains FROZEN, five workflows queued / zero jobs/statuses. No migration staging or destination edits.
+- Manifest remains 11 routes / DRAFT_REVIEW_ONLY / Master target null; cleanup #266 OPEN / 0-of-7.
+- Private v11/newer corrections unavailable; Master Python suite and verifier NOT RUN; production NO-GO.
+- Full report: [PHX_MASTER_UTC08_20261124_RELEASE_TEST_HERMETICITY_AND_COE26_PROVENANCE.md](PHX_MASTER_UTC08_20261124_RELEASE_TEST_HERMETICITY_AND_COE26_PROVENANCE.md).
+
+---
+
 # PHX-MASTER UTC07 live index — 2026-11-24T07:37:39Z
 
 - Master branch before this update: 48b961996a0c53452f5a75a4a40d0610f8a023dc; PR #288 base main at f4e8a891aed8af86d5fd315d28750a0ac3a7372b; PR remains OPEN / DRAFT / UNMERGED.
