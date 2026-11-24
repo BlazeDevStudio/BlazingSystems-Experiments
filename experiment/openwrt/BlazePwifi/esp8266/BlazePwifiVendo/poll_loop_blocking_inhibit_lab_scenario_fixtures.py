@@ -766,11 +766,11 @@ def with_active_low_relay(main_source: str) -> str:
     if main_source.count(polarity_anchor) != 1:
         raise AssertionError("active-low relay reset anchor is not unique")
     main_source = main_source.replace(polarity_anchor, "runRelayActiveHigh=false;", 1)
-    startup_anchor = "int main(){\\n  resetState();"
+    startup_anchor = "int main(){\n  resetState();"
     if main_source.count(startup_anchor) != 1:
         raise AssertionError("active-low relay main startup anchor is not unique")
     return main_source.replace(
         startup_anchor,
-        "int main(){\\n  resetState();\\n  if(!relayOn || relayLevelHigh) return 46;",
+        "int main(){\n  resetState();\n  if(!relayOn || relayLevelHigh) return 46;",
         1,
     )
