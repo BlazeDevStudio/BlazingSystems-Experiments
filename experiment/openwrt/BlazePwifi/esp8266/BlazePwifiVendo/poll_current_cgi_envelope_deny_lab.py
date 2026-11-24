@@ -145,7 +145,7 @@ def verify(boards, extract, stubs):
         ("poll-response-sig-injection",
          register, poll + "\nresponse_sig=unapproved", snapshot, snapshot_sig),
         ("member-snapshot-signature-removal",
-         register, poll, snapshot.replace("response_sig", "missing_sig", 1), snapshot_sig),
+         register, poll, snapshot.replace("response_sig", "missing_sig"), snapshot_sig),
         ("member-snapshot-domain-confusion",
          register, poll, snapshot,
          snapshot_sig.replace("|member_snapshot|", "|poll|", 1)),
