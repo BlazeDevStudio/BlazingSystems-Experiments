@@ -603,11 +603,11 @@ class BlazePwifiV053PublishPermissionTests(unittest.TestCase):
 def workflow_step_block(content: str, job_name: str, step_name: str) -> str:
     """Return one named step from a release workflow job."""
     job = job_block(content, job_name)
-    marker = f"      - name: {step_name}\\n"
+    marker = f"      - name: {step_name}\n"
     start = job.find(marker)
     if start < 0:
         raise AssertionError(f"missing {job_name} step: {step_name}")
-    end = job.find("\\n      - name:", start + len(marker))
+    end = job.find("\n      - name:", start + len(marker))
     if end < 0:
         end = len(job)
     return job[start:end]
