@@ -1171,6 +1171,79 @@ class BuildProvenanceTests(unittest.TestCase):
         )
 
 
+
+    def assert_regular_reader_preserves_primary_error_after_cleanup_interruptions(
+        self, operation_name: str
+    ) -> None:
+        target = self.root / f"{operation_name}-cleanup-interruptions.bin"
+        target.write_bytes(b"release-provenance-primary-read-failure")
+        fd, before, parent_fd, leaf = provenance._open_regular(target)
+        real_close = os.close
+        real_fstat = os.fstat
+        real_read = os.read
+        close_calls: list[int] = []
+
+        def close_then_interrupt(descriptor: int) -> None:
+            close_calls.append(descriptor)
+            real_close(descriptor)
+            if descriptor == fd:
+                raise KeyboardInterrupt("injected file descriptor cleanup interruption")
+            if descriptor == parent_fd:
+                raise SystemExit("injected parent-directory cleanup interruption")
+
+        def read_with_primary_failure(descriptor: int, size: int) -> bytes:
+            if descriptor == fd:
+                raise OSError("injected primary read failure")
+            return real_read(descriptor, size)
+
+        operation = getattr(provenance, operation_name)
+        primary_message = "cannot read" if operation_name == "_read_regular" else "cannot hash"
+        try:
+            with patch.object(
+                provenance, "_open_regular", return_value=(fd, before, parent_fd, leaf)
+            ), patch.object(
+                provenance.os, "close", side_effect=close_then_interrupt
+            ), patch.object(
+                provenance.os, "read", side_effect=read_with_primary_failure
+            ):
+                with self.assertRaises(BaseException) as raised:
+                    operation(target)
+
+            self.assertIsInstance(
+                raised.exception,
+                provenance.ProvenanceError,
+                "cleanup interruptions must not replace the primary read/hash failure",
+            )
+            self.assertIn(primary_message, str(raised.exception))
+            self.assertEqual(
+                close_calls,
+                [fd, parent_fd],
+                "both descriptors must receive one close attempt after cleanup interruptions",
+            )
+            if callable(getattr(raised.exception, "add_note", None)):
+                notes = getattr(raised.exception, "__notes__", [])
+                self.assertTrue(any("KeyboardInterrupt" in note for note in notes))
+                self.assertTrue(any("SystemExit" in note for note in notes))
+        finally:
+            # The failing implementation may leave descriptors open. Reap only
+            # descriptors that remain live, using the unpatched close function.
+            for descriptor in (fd, parent_fd):
+                try:
+                    real_fstat(descriptor)
+                except OSError:
+                    continue
+                real_close(descriptor)
+
+    def test_regular_read_preserves_primary_error_when_cleanup_interrupts(self):
+        self.assert_regular_reader_preserves_primary_error_after_cleanup_interruptions(
+            "_read_regular"
+        )
+
+    def test_regular_hash_preserves_primary_error_when_cleanup_interrupts(self):
+        self.assert_regular_reader_preserves_primary_error_after_cleanup_interruptions(
+            "_hash_regular"
+        )
+
 if __name__ == "__main__":
     suite = unittest.defaultTestLoader.loadTestsFromTestCase(BuildProvenanceTests)
     result = unittest.TextTestRunner(verbosity=2).run(suite)
