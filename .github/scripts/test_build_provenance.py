@@ -1457,6 +1457,8 @@ class BuildProvenanceTests(unittest.TestCase):
                 opened_fds.append(descriptor)
             return descriptor
 
+        supported = set(os.supports_dir_fd)
+
         def close_with_failure(descriptor: int) -> None:
             if descriptor in opened_fds:
                 close_calls.append(descriptor)
@@ -1465,6 +1467,8 @@ class BuildProvenanceTests(unittest.TestCase):
                     raise RuntimeError("injected root-relative close interruption")
                 raise OSError("injected root-relative close failure")
             real_close(descriptor)
+
+        supported.add(tracked_open)
 
         def read_with_optional_failure(descriptor: int, size: int) -> bytes:
             if fail_read and descriptor in opened_fds:
@@ -1476,6 +1480,8 @@ class BuildProvenanceTests(unittest.TestCase):
         try:
             with patch.object(
                 provenance.os, "open", new=tracked_open
+            ), patch.object(
+                provenance.os, "supports_dir_fd", supported
             ), patch.object(
                 provenance.os, "close", side_effect=close_with_failure
             ), patch.object(
