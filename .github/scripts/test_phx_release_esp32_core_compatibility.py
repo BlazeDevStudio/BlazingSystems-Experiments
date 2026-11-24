@@ -690,7 +690,7 @@ def check_reproducible_build_verifier(workflow_content: str) -> list[str]:
         return errors
     print(
         "PHX-ESP32-REPRODUCIBILITY-TESTS-PASS: identical, changed bytes, "
-        "size mismatch, symlink, hard-link, wrong filename and two-clean-build workflow"
+        "size mismatch, symlink, hard-link, wrong filename, one-shot open-interruption cleanup and two-clean-build workflow"
     )
     return errors
 
