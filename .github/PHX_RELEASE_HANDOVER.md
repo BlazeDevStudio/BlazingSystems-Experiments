@@ -3484,3 +3484,9 @@ The RELEASE-owned `.github/scripts/compare_esp32_elf_sections.py::_difference_ra
 - Canonical private Drive project registry v11 was not surfaced through authorized Library retrieval; the current routing document confirms no Google Drive connector is exposed. No older registry snapshot was substituted and no private contents were copied or exposed.
 
 No migration, shared-interface change, hardware networking change, signing, tagging, publication, hardware flashing, real payment migration or customer deployment occurred. Independent QA and MASTER approval remain pending. **PRODUCTION NO-GO**; protected signer, independent freshness witness, durable financial accounting/migration, approved production binaries, 150 physical power cuts and 30-device/24-hour soak remain unproven or NOT TESTED.
+
+## PHX-RELEASE UTC 2026-11-24 — supersession audit: ESP32 core-check refinement
+
+- Compatible draft head `ed21a277dd413b9bc9c12b99cbed1f53679860a0` already contains another release worker’s ESP32 core-compatibility test and workflow refinement. No implementation was duplicated.
+- [ESP32 core compatibility #45350924849](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45350924849) completed successfully. [Windows #45350924841](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45350924841) passed handover validation and correctly failed closed at the `RELEASE-SIGN` negative control; its publisher job was skipped. BlazePwifi build [#45350924930](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45350924930) is still in progress. These are scoped CI observations only—not compatibility, protected-signing, hardware, or production acceptance.
+- PR #291 remains draft/unmerged and independently unreviewed. **PRODUCTION NO-GO** remains until PHX-MASTER and independent QA review, protected signer/source admission, durable finance/migration, and physical acceptance gates are satisfied.
