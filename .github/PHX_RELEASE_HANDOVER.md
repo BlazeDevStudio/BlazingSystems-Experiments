@@ -3568,3 +3568,9 @@ ESP32 sketch Git blob SHA: `a9a1c2fecb001d71f8f22b43952edbd160aacaf8`
 - Exact-source compatibility matrix: [#45357167298](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45357167298) — SUCCESS (3/3 jobs).
 
 Evidence boundary: hosted CI only
+
+## PHX-RELEASE UTC 2026-11-24 — terminal supersession audit: ESP32 compatibility adjustment
+
+- Compatible draft head `ca753580117a74860f99d349a09bcbe0dc61539a` already contains another worker’s narrow ESP32 compatibility test/workflow adjustment. No implementation was duplicated.
+- Scoped evidence on that head: [BlazePwifi build #45358930000](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45358930000) and [ESP32 core compatibility #45358930031](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45358930031) succeeded. [Windows #45358929998](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45358929998) passed handover checks and intentionally failed closed at the `RELEASE-SIGN` negative control; publisher skipped. This is hosted, scoped CI evidence only—not production, compatibility, protected-signing, or physical-acceptance evidence.
+- PR #291 remains open, draft, unmerged, and independently unreviewed. **PRODUCTION NO-GO** remains until MASTER and independent QA review, protected signer/source admission, durable finance/migration acceptance, and physical acceptance gates are complete.
