@@ -1659,3 +1659,14 @@ At Experiments HARDWARE #347 head `e69a3d715aca6724dd0390e925e48a7510009ab1` vs 
 The source root `NOTICE.md` is present (blob `f6d92cd2...`); COE #26 has no root `NOTICE.md`. Existing COE PisoWiFi / QRCode / TailAdmin license files are not a substitute for a complete per-file dependency notice review. COE #26 still has five queued workflows / zero jobs.
 
 **Review-before-move hold:** no route target, copy permission, owner, or destination path changed. No source/destination file was staged, copied, moved, overwritten, cherry-picked, rebased, retargeted or promoted. Integration owner must provide a per-file source/test/license map and exact-head destination CI before any migration proposal.
+
+
+## PHX-MASTER 2026-11-24 UTC00 route and ownership revalidation — 2026-11-24T00:37:40Z
+
+The exact machine-readable `OWNERSHIP_ROUTES.json` remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`: 11 routes, `DRAFT_REVIEW_ONLY`, PHX-MASTER source `coordination/phoenix/`, destination `null`. No route, target, copy permission, owner or destination path changed.
+
+COE main remains the three-entry scaffold at `a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE #26 remains the 286-entry frozen candidate at `b382d233ff06c8791b1028bed3c617cc7b670d12`, with five workflows QUEUED / zero jobs. The current HARDWARE #347 source/test and firmware anchors were compared directly against #26: ESP32 and ESP8266 sketch blobs differ; 38 board-local Python files have no destination counterparts; the source hardening test and destination generic test are different blobs; root NOTICE is absent from #26. The matching BlazePwifi/Pisowifi LICENSE blob is only one license correspondence, not complete dependency/license provenance.
+
+COE RELEASE #35 is a separate RELEASE-owned child of #31. Its source/test correction at `1abe0164` and final docs head `0019593` do not grant a #26 route or migration authority. RELEASE #291 currently includes three CORE handover files and two PISONET test files among 27 changed paths; those owners must review the overlap. MASTER only records the exact scope and current CI; it does not modify worker files or reassign ownership.
+
+**Review-before-move hold:** no source/destination file was staged, copied, moved, overwritten, cherry-picked, rebased, retargeted or promoted. The private Drive v11 registry and newer corrections remain unavailable; no older snapshot or public registry substitute was used.

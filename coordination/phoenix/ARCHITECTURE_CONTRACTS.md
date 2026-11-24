@@ -1665,3 +1665,17 @@ A cryptographic match over an empty byte span is not a valid controller-policy o
 Evidence / scope: HARDWARE PR #348 is an OPEN/DRAFT child of #254, final head c18826892160b1777f107e2ca0ca49aaed66ba6a; source correction 21d075e366e1a6fab54985a14996e2d30a7cc862; exact-head focused header run #45207909335, job 137808529744, passed 5/5 synthetic header checks, including correct SHA-256(empty) and HMAC(key, empty) rejection. The initial test-only head was not observed in Actions, so no RED result is claimed. The separate build run #45207909463 failed at ESP32 compile and mandatory handover freshness; no Full acceptance or hardware acceptance is implied.
 
 Independent review: PHX-QA must verify both zero-length negative cases and the non-empty controls against the exact source/test SHA. CORE remains authority for the production response envelope and authenticated register/poll contract.
+
+
+## 6.96 Preserve the primary failure when owned-descriptor cleanup is interrupted — COE RELEASE #35 (2026-11-24 UTC00)
+
+A cleanup interruption must not replace an already-active primary scan/validation failure:
+
+1. Attempt every owned descriptor close, even when an earlier close raises a process-level interruption.
+2. If a primary exception is already active, retain cleanup interruption details as secondary diagnostics and allow the original primary exception to continue propagating. Use exception notes where available; retain the documented stderr fallback for runtimes without `BaseException.add_note`.
+3. If no primary exception is active, preserve the existing fail-closed behavior: propagate the first cleanup interruption after attempting all closes. Do not convert an unrelated interruption into success.
+4. Keep ordinary close errors diagnostic and preserve the existing primary-error policy. Do not silently discard the cleanup record or alter resource ownership.
+
+Source evidence: COE #35 test-only RED `1c95c62b00deb571628704f8486a06abad79c5df` added `test_calculate_overlay_size_preserves_primary_scan_error_when_descriptor_close_is_interrupted` for both `KeyboardInterrupt` and `SystemExit`. Exact push [#45295374991](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45295374991), job `138114297356`, reproduced the primary `PermissionError: primary overlay scan failure` being replaced by `KeyboardInterrupt: injected parent descriptor close interruption` (exit 130). Source fix `1abe0164ce0540bf7b787b78e43777429512ff5d` changes only `tools/package_appliance_firmware.py`; exact-source push [#45295447823](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45295447823), job `138114548297`, passed the new regression and the full packaging/tool suite (211 passed, 2 intentional skips). The overall workflow still failed closed at all 10 appliance profiles because approved site-scoped RFC 4193 ULA /48 authority is missing; ESP builds were skipped. Final docs-only PR head `0019593cae93887bb5f195179b703688f1c57c7d` repeated 211/2 with the same ULA gate; sandbox host preflight was 40/40 but Bubblewrap was unavailable (exit 125), and case-collision passed.
+
+This is hosted Python/packager evidence only. It does not establish ImageBuilder execution, an appliance binary, hardware acceptance, a shared wire/API change, or COE #26 migration approval. PHX-RELEASE owns the source; PHX-QA owns independent review.

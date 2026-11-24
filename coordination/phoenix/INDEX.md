@@ -1,15 +1,16 @@
 # Project Phoenix — Coordination Index
 
 
-## Latest live state — PHX-MASTER UTC23 (2026-11-23T23:37:42Z)
+## Latest live state — PHX-MASTER UTC00 (2026-11-24T00:37:40Z)
 
-- Experiments main f4e8a891aed8af86d5fd315d28750a0ac3a7372b; issue #172 development blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5; comparison-only v0.6 audit foundation 2fbd2475e9f54878c316fa7cea2f228386b0e859. Master PR #288 remains OPEN/DRAFT/UNMERGED; refresh parent 56f1d68e55d675abcd622cab6ba7f9ec2427ab72.
-- COE main a6513ab4412b4c014eee2863e45cbe32d06cb243 (three-entry scaffold); integration #26 b382d233ff06c8791b1028bed3c617cc7b670d12 remains OPEN/DRAFT/FROZEN, five workflows QUEUED / zero jobs.
-- HARDWARE #347 docs head 19ea4ae9, source/test e69a3d71, firmware source 275057aa: Quarantine/Relay PASS; Full FAIL at QA-owned Missing poll signature check; 14/14 target builds pass and downstream stages skip. HARDWARE #348 head c1882689: focused header-native 5/5 synthetic checks PASS; build fails at ESP32 compile and handover freshness.
-- COE RELEASE #35 head 2bb153c3: 210 packaging tests PASS / 2 skips, 10/10 ULA profile denials; Bubblewrap unavailable / exit 125; case-collision PASS. COE #49 Stage 5.1/case PASS, Shared ESP32 compile FAIL; #45 overlay/case checks PASS.
-- Owner PR/CI pins for CORE #252, RENTAL #328, PISONET #255, QA #290/#292 and RELEASE #291 are in ROLE_ASSIGNMENTS.md and INTEGRATION_MATRIX.md. COE #26 staging remains frozen; #348 lab header/test paths are absent from its complete tree. No staging/copy/move.
-- Ownership manifest remains 11 routes / DRAFT_REVIEW_ONLY / PHX-MASTER target null. Cleanup #266 remains OPEN, 0/7. Experiments main, issue-designated development and COE main report protected=false. Private Drive v11/newer corrections unavailable; older v3-v7 not substituted. No Google Drive connector exposed.
-- Master Python suite and verify_coordination.py NOT RUN; no authenticated local checkout. This index retains the existing 107/107 report links; no new report/artifact was created. PRODUCTION NO-GO.
+- Exact refs: Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; issue #172 development `blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5`; separate v0.6 audit-foundation `2fbd2475e9f54878c316fa7cea2f228386b0e859`; Master start `4e08f521e4d0c1501dfa61ad7594ca6c39d6b664`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`. PR #288 remains OPEN / DRAFT / UNMERGED, 192 paths, all under coordination/phoenix/.
+- COE main is a three-entry scaffold; #26 is a 286-entry frozen candidate with five workflows QUEUED / zero jobs. The current #347-to-#26 comparison still finds different ESP32/ESP8266 sketch blobs, 38 source board-local Python files vs zero destination, different hardening-test blobs, missing destination root NOTICE, and one matching product LICENSE blob. Prior 61-row main-to-#26 audit remains the baseline; not rerun in full.
+- HARDWARE #347 docs head e0da50f1, source/test 274f984d, firmware anchor 275057aa: Quarantine/Relay PASS; Full FAIL at QA-owned Missing poll signature check; Android Gradle dependency resolution FAIL; 13 listed firmware target jobs PASS. HARDWARE #348 focused header-native 5/5 synthetic checks PASS; build FAIL at ESP32 compile/handover freshness.
+- RELEASE #291 head 9d8e7b79: BlazePwifi build and ESP32 compatibility PASS; Windows FAIL because `$buildWorkflow` is unset in `negative-selftest.ps1`. Its 27-file delta includes three CORE handover and two PISONET test paths; owner review required.
+- COE RELEASE #35 source/test 1abe0164, docs head 0019593: test-first RED reproduced primary scan error masking; exact-source packaging suite 211 PASS / 2 skips; overall validation still fails closed on 10/10 missing ULA /48 authorities. Sandbox host preflight 40/40 then Bubblewrap exit 125; case-collision PASS.
+- CORE #252 scoped build PASS; RENTAL #328 APK/API PASS but shared build FAIL; PISONET #255 Windows PASS; QA #290 Windows PASS and #292 no runs; COE #45 scoped PASS; #49 Stage 5.1/case PASS, Shared ESP32 compile FAIL.
+- Ownership manifest remains 11 routes / DRAFT_REVIEW_ONLY / PHX-MASTER target null. Cleanup #266 remains OPEN, 0/7. Branch metadata reports protected=false for Experiments main, issue-designated development, Master coordination and COE main. Private Drive v11/newer corrections remain unavailable; no Google Drive connector exposed.
+- Master Python suite and verify_coordination.py NOT RUN; no authenticated local checkout. Existing report-link inventory remains 107/107; no new report/artifact was created. PRODUCTION NO-GO.
 
 ## Latest live state — PHX-MASTER UTC21 (2026-11-23T21:51:11Z)
 
@@ -71,7 +72,7 @@
 - Cleanup #266 remains OPEN, 0/7. Canonical private Drive v11/newer corrections remain inaccessible; no older snapshot is substituted. Full Master tests and `verify_coordination.py` remain NOT RUN.
 - No subsystem source or COE destination paths changed. CORE remains with its separate owner. **PRODUCTION NO-GO.**
 
-**Updated:** 2026-11-23T14:40:25Z
+**Updated:** 2026-11-24T00:37:40Z
 **Updated:** 2026-11-22T23:34:12Z
 **Role:** PHX-MASTER — coordination / architecture / integration provenance only  
 **Safety:** DRAFT REVIEW ONLY · PRODUCTION NO-GO

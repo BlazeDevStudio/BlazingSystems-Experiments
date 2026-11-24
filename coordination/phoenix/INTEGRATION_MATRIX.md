@@ -4646,3 +4646,23 @@ The #347 Full failure is not a firmware acceptance pass. The #35 source/test pas
 | COE integration #26 | `b382d233ff06c8791b1028bed3c617cc7b670d12` | Five workflows QUEUED / zero jobs; main remains three-entry scaffold `a6513ab4...`. | FROZEN; no staging, copy, move, overwrite, rebase, retarget or promotion. |
 
 Source Experiments root `NOTICE.md` exists (blob `f6d92cd2...`); COE #26 has no root `NOTICE.md`. The destination has PisoWiFi, QRCode and TailAdmin license/notice files, but that does not replace the missing repository-level notice or prove every dependency's license completeness. Exact private registry v11/newer corrections remain inaccessible; no older snapshot was substituted.
+
+
+## PHX-MASTER 2026-11-24 UTC00 exact owner CI and COE #26 destination recheck — 2026-11-24T00:37:40Z
+
+The source refs are Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`, current HARDWARE #347 PR/docs head `e0da50f1b4e75d11d39aae0683b3c601802f1074`, COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`, and frozen COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`. Recursive tree reads were complete/non-truncated: Experiments main 2,340 entries, HARDWARE #347 head 2,489 entries, COE main 3 entries, COE #26 286 entries. COE main still contains only README and Pisonet placeholder paths; #26 is a separate draft candidate, not main integration.
+
+### Exact current HARDWARE #347 to COE #26 comparison
+
+| Item | Experiments #347 | COE #26 | Result |
+|---|---|---|---|
+| ESP32 sketch | `717336b84d434d51eb24beac1ed8efce8e719f69`, mode 100644 | `3cc7ec54b476943dc04a8d1af5e2df5fe054e422`, mode 100644 | Different blob |
+| ESP8266 sketch | `fa8ed828026396db89aab2889bf6a61d6cf6bbac`, mode 100644 | `c8be98f72596681e36a3ad1f8939bf8046c96887`, mode 100644 | Different blob |
+| Board-local Python labs/helpers | 38 files | 0 files | Import completeness not established |
+| Hardening test | `v05_firmware_hardening_test.sh`, blob `41211b2c110ab409f6d9d1812ef12fda73b13211`, mode 100755 | `test_firmware_hardening.sh`, blob `f921c56cecc19cab1989507b9b4ade1f45dac54e`, mode 100755 | Different test identity; names do not establish parity |
+| Root NOTICE | Experiments main has `NOTICE.md`, blob `f6d92cd21465312be5993631fe26977219be0fb9` | No root `NOTICE.md` in #26 | Repository-level notice gap |
+| Product license | BlazePwifi `LICENSE` blob `1ee55b94183417be977ca287cd7391f9a6f7e721` | `Pisowifi/LICENSE` same blob | This one license matches; it does not close the root NOTICE or third-party dependency review |
+
+The previous 61-row main-to-#26 audit remains the baseline because Experiments main and COE #26 pins are unchanged: computed 46 identical / 15 derived versus recorded 47 / 14; 15 derived tests versus 14 mapped; missing `voucher_txn_journal.sh`; two stale test blob IDs; and unresolved root NOTICE / Tabler / Android Launcher license counterparts. That full 61-row audit was not rerun in this activation. The focused #347 comparison above is at its current owner PR head and does not grant copy permission.
+
+COE #26's five workflows remain QUEUED with zero jobs. The ownership manifest remains 11 routes / `DRAFT_REVIEW_ONLY` / PHX-MASTER target null. No file was staged, copied, moved, overwritten, cherry-picked, rebased, retargeted or promoted. Require per-file provenance, licenses, test identity/import completeness, exact-head destination CI and owner approval before proposing any move.
