@@ -577,3 +577,14 @@ PHX-CORE must publish the approved authenticated register/poll response contract
 **Registry limitation:** private BLAZE_PROJECT_REGISTRY_v11_20261027.json was not surfaced by the available Library search (only older v3–v7 snapshots appeared); no Google Drive connector was exposed. No older registry was substituted and no Drive promotion occurred.
 
 **Next exact Hardware action:** after CORE publishes the approved response contract and QA confirms the assertion, rerun Full integration on the approved exact source SHA; preserve default-deny until that contract is independently accepted.
+
+## 2026-11-24 UTC00 — final Full build result (supersedes the in-progress note above)
+
+Full build run [#45300678177](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45300678177) completed at exact source/test SHA fd4a96dc24e7f70c64b0dde63960055fc370a852 with overall conclusion FAILURE.
+
+- All 13 firmware target jobs completed SUCCESS: ESP8266 138132243598, ESP32 138132243456, Orange Pi Zero3 138132243480, Orange Pi PC 138132243462, Orange Pi One 138132243198, x86_64 138132243473, Ruijie 138132243399, and six optional Orange Pi jobs 138132243412 / 138132243433 / 138132243489 / 138132243526 / 138132243699 / 138132243718.
+- Android job 138132243506 completed SUCCESS.
+- Validation job 138132243481 completed FAILURE at tests/controllers.sh with exact message: Missing poll signature check in the ESP8266 controller sketch.
+- Twelve downstream simulation, update, signing, candidate and publication jobs were SKIPPED after validation failure.
+
+This confirms target compilation at this SHA, not controller protocol integration or release acceptance. The missing authenticated register/poll producer contract remains with PHX-CORE; the assertion remains with PHX-QA. No positive response_sig was added, no default-deny check was relaxed, and no Release-owned workflow was edited.
