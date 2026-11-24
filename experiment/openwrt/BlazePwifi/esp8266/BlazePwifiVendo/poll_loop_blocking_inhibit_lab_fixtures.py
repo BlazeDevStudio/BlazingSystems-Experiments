@@ -19,6 +19,7 @@ from poll_loop_blocking_inhibit_lab_scenario_fixtures import (
     missed_sample_main,
     TIMING_MAIN,
     RELEASE_EDGE_MAIN,
+    with_active_low_relay,
 )
 
 __all__ = [
@@ -32,6 +33,7 @@ __all__ = [
     "post_drain_rollover_main",
     "missed_sample_main",
     "TIMING_MAIN",
+    "with_active_low_relay",
     "RELEASE_EDGE_MAIN",
     "CLEAR_WINDOW_ISR_MAIN",
 ]

@@ -36,6 +36,7 @@ from poll_loop_blocking_inhibit_lab_fixtures import (
     missed_sample_main,
     TIMING_MAIN,
     RELEASE_EDGE_MAIN,
+    with_active_low_relay,
     CLEAR_WINDOW_ISR_MAIN,
 )
 from poll_loop_blocking_inhibit_lab_edge_fixtures import (
@@ -560,6 +561,37 @@ for board,path in BOARDS.items():
     compile_and_run(assemble(loop_source=unsafe_timing_loop,main_source=TIMING_MAIN),
                     board,47,"issue-177-missing-prepoll-inhibit")
     print(f"{board} MUTATION_REJECTED issue-177-missing-prepoll-inhibit expected_exit=47")
+
+    # Cross-check the complete blocking-poll path with an active-low acceptor relay.
+    # The separate polarity lab covers applyOutputs() in isolation; this scenario
+    # composes the configured polarity with the 1501/1600/1680 timing and HTTP path.
+    active_low_timing_main = with_active_low_relay(TIMING_MAIN)
+    active_low_timing_output = compile_and_run(
+        assemble(main_source=active_low_timing_main),
+        board, 0, "issue-177-active-low-relay-original-timing",
+    )
+    if "PHX_177_ORIGINAL_1501_1600_1680_PULSE_ABORTED_BEFORE_HTTP_PASS" not in active_low_timing_output:
+        raise AssertionError(f"{board}: active-low #177 timing marker missing")
+    print(f"{board} PHX_177_ACTIVE_LOW_RELAY_1501_1600_1680_TIMING_PASS")
+    compile_and_run(
+        assemble(loop_source=unsafe_timing_loop, main_source=active_low_timing_main),
+        board, 47, "issue-177-active-low-relay-missing-prepoll-inhibit",
+    )
+    print(f"{board} MUTATION_REJECTED issue-177-active-low-relay-missing-prepoll-inhibit expected_exit=47")
+
+    active_low_http_main = with_active_low_relay(POLL_HTTP_ISR_MAIN)
+    active_low_http_output = compile_and_run(
+        assemble(main_source=active_low_http_main),
+        board, 0, "poll-http-active-low-relay",
+    )
+    if "POLL_HTTP_ISR_MULTI_EDGE_ROLLOVER_RETAINED_PASS" not in active_low_http_output:
+        raise AssertionError(f"{board}: active-low blocked-poll marker missing")
+    print(f"{board} POLL_HTTP_ACTIVE_LOW_RELAY_INHIBIT_PASS")
+    compile_and_run(
+        assemble(output_source=poll_output_mutation, main_source=active_low_http_main),
+        board, 88, "poll-http-active-low-relay-output-gate-mutation",
+    )
+    print(f"{board} MUTATION_REJECTED poll-http-active-low-relay-output-gate expected_exit=88")
     non_wrap_safe_loop=loop.replace(
         "latchPollPulseFault(pollEdgeEnd-pollEdgeStart);",
         "latchPollPulseFault(pollEdgeEnd>pollEdgeStart ? pollEdgeEnd-pollEdgeStart : 0U);",
