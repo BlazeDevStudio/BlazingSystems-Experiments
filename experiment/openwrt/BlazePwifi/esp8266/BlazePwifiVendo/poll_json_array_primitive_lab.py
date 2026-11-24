@@ -69,7 +69,7 @@ int main() {
   if (pollJsonTopLevelTrue(
           String("{\"ok\":true,\"meta\":\"dangling\\"), "ok")) return 78;
 
-  std::cout << "POLL_JSON_COMPOSITE_GRAMMAR_PASS valid=5/5 invalid=6/6\n";
+  std::cout << "POLL_JSON_COMPOSITE_GRAMMAR_PASS valid=6/6 invalid=12/12\n";
   return 0;
 }
 """
@@ -162,18 +162,19 @@ def verify(boards, extract, stubs):
             board, "accept-raw-control-in-string", 76
         )
 
-        escape_guard = (
-            "else if(e!='\\\"' && e!='\\\\\\\\' && e!='/' && e!='b' &&\\n"
-            "                e!='f' && e!='n' && e!='r' && e!='t'){"
+        escape_start = string_parser.find("} else if(e!='")
+        if escape_start < 0 or string_parser.count("} else if(e!='") != 1:
+            raise AssertionError(f"{board}: expected one unsupported-escape branch")
+        escape_end = string_parser.find("{", escape_start) + 1
+        if escape_end <= escape_start:
+            raise AssertionError(f"{board}: unsupported-escape branch is incomplete")
+        mutated_string_parser = (
+            string_parser[:escape_start] + "} else if(false){"
+            + string_parser[escape_end:]
         )
-        if string_parser.count(escape_guard) != 1:
-            raise AssertionError(f"{board}: expected one unsupported-escape guard")
         _expect_mutation_rejected(
-            stubs + parser.replace(
-                string_parser,
-                string_parser.replace(escape_guard, "else if(false){", 1),
-                1
-            ) + COMPOSITE_MAIN,
+            stubs + parser.replace(string_parser, mutated_string_parser, 1)
+            + COMPOSITE_MAIN,
             board, "accept-unsupported-string-escape", 73
         )
 
