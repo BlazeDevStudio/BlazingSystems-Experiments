@@ -30,21 +30,11 @@ from poll_loop_blocking_inhibit_lab_fixtures import (
     MAIN,
     COIN_POST_ISR_MAIN,
     POLL_HTTP_ISR_MAIN,
-    RACE_MAIN,
-    post_drain_rollover_main,
-    missed_sample_main,
-    TIMING_MAIN,
-    RELEASE_EDGE_MAIN,
     with_active_low_relay,
     CLEAR_WINDOW_ISR_MAIN,
 )
-from poll_loop_blocking_inhibit_lab_edge_fixtures import (
-    ACTIVE_HIGH_MISSED_SAMPLE_MAIN,
-    ACTIVE_LOW_MISSED_SAMPLE_MAIN,
-    STICKY_FAULT_LATER_ISR_MAIN,
-    pre_poll_active_line_main,
-    late_poll_baseline_main,
-)
+# Edge-race fixtures are owned by poll_loop_blocking_inhibit_lab_edge_race_contracts;
+# fail-closed fixtures are owned by poll_loop_blocking_inhibit_lab_failclosed_mutation_contracts.
 from poll_loop_blocking_inhibit_lab_response_contracts import run_poll_response_denial_matrix
 from poll_loop_blocking_inhibit_lab_source_contracts import (
     verify_poll_safety_board_parity,
