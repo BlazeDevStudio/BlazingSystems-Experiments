@@ -439,7 +439,8 @@ void denyRemoteControl(){
 
 // Compatibility sentinel only: register/poll responses are not an authenticated
 // configuration envelope. Never parse remote fields or enable actuation here.
-// config_revision is intentionally ignored until CORE publishes an authenticated envelope.
+// Reserved v0.4 config fields: config_revision, coin_debounce_ms, pulse_group_ms, max_wifi_retries.
+// They are intentionally ignored until CORE publishes an authenticated configuration envelope.
 void applyRemoteConfig(const String &response){
   (void)response;
   denyRemoteControl();
