@@ -3714,3 +3714,9 @@ The PISONET-owned `negative-selftest.ps1` was read-only and remains unchanged. T
 The canonical private Drive project registry v11 itself was not surfaced through authorized Library retrieval. The available 2026-11-09 checkpoint only references its canonical filename and historical project count; it is provenance context, not a substitute for the registry. No older registry snapshot or private contents were copied.
 
 PR #291 remains OPEN / DRAFT / UNMERGED. No merge, real-key signing, release tag, publication, hardware flashing, payment migration or customer deployment occurred. **PRODUCTION NO-GO.**
+
+## PHX-RELEASE UTC 2026-11-24 — supersession audit: release-workflow concurrency guard
+
+- Compatible draft head `defe09357cdf0445c5b4b0235775ad0a4a03664b` already contains another worker’s release-workflow concurrency guard and its regression test. No implementation was duplicated.
+- In [BlazePwifi build #45375135165](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45375135165), the docs-only proof and all scoped firmware/Android compile legs succeeded, while `validate` failed at the mandatory handover-freshness gate. [Windows #45375135150](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45375135150) likewise stopped at handover freshness; it did not reach signing or publisher execution. [ESP32 compatibility #45375135088](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45375135088) succeeded.
+- This entry supplies the canonical freshness record. It is scoped hosted-CI evidence only, not production, compatibility, protected-signing, finance/migration, hardware, or physical-acceptance evidence. PR #291 remains draft/unmerged and independently unreviewed. **PRODUCTION NO-GO** remains until MASTER and independent QA review, protected signer/source admission, durable finance/migration acceptance, and physical acceptance gates are satisfied.
