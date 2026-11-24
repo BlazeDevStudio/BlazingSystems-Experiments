@@ -2337,7 +2337,7 @@ This is the single machine-checked current pointer for the RELEASE ESP32 compati
 - Current source/test Relay Output Polarity [#45354176057](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45354176057) — SUCCESS (both source/output and ESP32 boot jobs).
 - Current source/test Full integration [#45354176294](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45354176294) — FAILURE at the inherited QA-owned `Missing poll signature check`; 13/13 firmware target/platform jobs and Android passed; validation-dependent simulations, update bundle, signing, candidate and publication stages were skipped.
 - Prior source/test SHA `da046d5ea80a8daac7258d302ecc310cd5634b24` Quarantine [#45342525513](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45342525513) and Relay [#45342525472](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45342525472) remain historical evidence for that earlier source, not the current `6ce423` source.
-- Exact-source compatibility matrix: PENDING — no run claimed yet.
+- Exact-source compatibility matrix: [#45355556952](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45355556952) — SUCCESS (3/3 jobs).
 - Hardware handover freshness: the latest published docs commit `dff053bb` still records source/test `da046d5`; PHX-HARDWARE must update its handover and PR description to account for the later `6ce423` blocking-poll fixture refactor. RELEASE uses the live branch head and exact Actions readback; it does not rewrite Hardware-owned documentation.
 - Evidence boundary: hosted CI only. Source-extracted labs and target builds are not physical hardware acceptance or approved production binaries.
 
@@ -3519,7 +3519,21 @@ The current Hardware #349 exact-source focused runs at `6ce423` are Quarantine S
 
 The test-only head `2a011eb4` also triggered PR compatibility [#45355114407](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45355114407) and push compatibility [#45355107192](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45355107192), both IN PROGRESS at last read. PR BlazePwifi build [#45355114521](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45355114521) failed the same expected CI-0701 contract; Windows [#45355114501](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45355114501) was queued. These are test-only-head results, not final source-fix results.
 
-The corrected workflow and this handover will trigger fresh exact-source PR/push compatibility and build runs. No terminal success is claimed for the corrected head until those runs complete.
+### Exact-source RELEASE matrix at source-fix head `92eaff326ad1136218f5aca99170490b96440b6c`
+
+- PR compatibility [#45355556952](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45355556952): **SUCCESS, 3/3 jobs** (provenance suite and both ESP32 core builds).
+- Push compatibility [#45355549185](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45355549185): **SUCCESS, 3/3 jobs**.
+- ESP32 core 3.3.13: two byte-identical builds; application image **1,044,816 bytes**, SHA-256 `6cb3a11bf64301732e14336a436ba46dc024ee5e5bbbffe884d29bdb50234c3b`.
+- ESP32 core 4.0.0: two byte-identical builds; application image **1,098,944 bytes**, SHA-256 `6b7c5329ee3f678a1f1c0c84c7b4e7aad5fc0742918a620e9f3f4993a4e673d6`.
+- Both core jobs checked out exact HARDWARE source/test `6ce423783b306411bdb7e7217081c050cb4cbec4`, verified unchanged sketch blob `a9a1c2fecb001d71f8f22b43952edbd160aacaf8`, verified Arduino CLI archive provenance, and passed two-build reproducibility. Hosted CI only; these are not approved production binaries.
+
+### Documentation-head CI reconciliation
+
+- First handover-head `92eaff` BlazePwifi PR build [#45355556860](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45355556860) and push build [#45355549238](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45355549238) **FAILED at CI-0701** because the machine-checked anchor requires the exact labels `HARDWARE #349 docs HEAD`, `HARDWARE #349 PR HEAD`, and the exact pending sentinel. The initial UTC08 handover used descriptive label variants and a suffixed pending line. This was a handover-format regression, not a compile or firmware failure.
+- Exact correction: [`e3108d69`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/e3108d6968c31b191e2c313e5527e9dd192b47dd). At corrected head `e3108d`, CI-0701 passed in PR build [#45355829227](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45355829227) and push build [#45355822098](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45355822098).
+- Corrected-head PR compatibility [#45355829234](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45355829234) and push compatibility [#45355822053](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45355822053) were **IN PROGRESS** at this read. The source-fix-head 3/3 passes above are not substituted for these final docs-head runs.
+- Corrected-head full BlazePwifi PR build [#45355829227](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45355829227) and push build [#45355822098](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45355822098) had CI-0701 PASS and target/validation jobs still running; no terminal full-build success is claimed.
+- Corrected-head Windows [#45355829238](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45355829238): handover PASS; Windows build FAILED at the PISONET-owned negative self-test, `RELEASE-PUBLISHER executable lookup regression: missing tag accepted=False`; publisher SKIPPED. No PISONET path was edited by RELEASE.
 
 ### Coordination and gate
 
