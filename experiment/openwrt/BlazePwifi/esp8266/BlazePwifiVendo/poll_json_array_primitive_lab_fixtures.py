@@ -36,7 +36,7 @@ int main() {
           String("{\"ok\":true,\"meta\":{}}"), "ok")) return 65;
 
   if (!pollJsonTopLevelTrue(
-          String("{\"ok\":true,\"meta\":\"quote\\\" slash\\\\ backspace\\b formfeed\\f newline\n carriage\r tab\t unicode\\u0041\"}"),
+          String("{\"ok\":true,\"meta\":\"quote\\\" slash\\\\ backspace\\b formfeed\\f newline\\n carriage\\r tab\\t unicode\\u0041\"}"),
           "ok")) return 72;
 
   if (pollJsonTopLevelTrue(
