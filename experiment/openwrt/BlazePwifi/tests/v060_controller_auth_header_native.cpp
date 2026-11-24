@@ -21,6 +21,7 @@ int main() {
   char raw_digest[64];
   memset(raw_digest, 'a', sizeof(raw_digest));
   assert(hex64(raw_digest, sizeof(raw_digest)));
+  assert(!hex64(raw_digest, 0));
   assert(!hex64(raw_digest, sizeof(raw_digest) - 1));
   char oversized_digest[65];
   memset(oversized_digest, 'a', sizeof(oversized_digest));
@@ -48,6 +49,7 @@ int main() {
   for(size_t i=0;i<32;i++) snprintf(hashhex+i*2,3,"%02x",hash[i]);
   hashhex[64]=0;
   assert(matches_policy_digest(policy.data(),policy.size(),hashhex,64));
+  assert(!matches_policy_digest(policy.data(),policy.size(),hashhex,0));
   assert(!matches_policy_digest(policy.data(),policy.size(),hashhex,63));
   assert(!matches_policy_digest((policy+" ").data(),policy.size()+1,hashhex,64));
   // Empty policy bytes are invalid even when their digest is correct.
@@ -59,6 +61,9 @@ int main() {
   const std::string suffix=std::string("|7|")+hashhex+"|0||0|DENY";
   const std::string good=prefix+"vendo-01|0011223344556677"+suffix;
   const std::string signature=mac(good);
+  assert(!verify_mac(key,strlen(key),good.data(),good.size(),
+                     signature.data(),0));
+  std::puts("PHX-HW zero-length digest and signature spans denied PASS");
   // An empty message cannot be a canonical controller response.
   const std::string emptyCanonical;
   const std::string emptyCanonicalMac=mac(emptyCanonical);
