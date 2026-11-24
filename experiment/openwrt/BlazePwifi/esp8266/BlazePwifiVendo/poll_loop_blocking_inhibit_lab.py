@@ -255,6 +255,7 @@ for board,path in BOARDS.items():
         compile_and_run=compile_and_run,
         loop=loop,
         output=output,
+        poll_output_mutation=poll_output_mutation,
         quiet=quiet,
         accept=accept,
         configure=configure,

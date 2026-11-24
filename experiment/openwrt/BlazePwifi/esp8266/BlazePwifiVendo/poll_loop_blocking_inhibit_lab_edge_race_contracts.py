@@ -29,6 +29,7 @@ def run_poll_edge_race_contracts(
     compile_and_run,
     loop,
     output,
+    poll_output_mutation,
     quiet,
     accept,
     configure,
