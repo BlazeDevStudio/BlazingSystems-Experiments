@@ -1,3 +1,23 @@
+## PHX-MASTER UTC19 live owner/CI routing — 2026-11-24
+
+| Owner | Exact current source/test / docs / PR head | Exact-head CI and next action |
+|---|---|---|
+| CORE #252 | c82705f2de865c89ab733b10efa84f26f56a5cc4 | Scoped build #42698139210 PASS. CORE retains register/poll producer and canonical handover; separate Blaze Production Continuation remains its owner. |
+| RENTAL #328 | 0e0da62acd47c6a1ce287f8a30fc700d603fa070 | APK #44782114384 PASS; API #44782114393 PASS; build #44782114390 FAIL. |
+| PISONET #255 | d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | Synthetic Windows #42462978704 PASS; PISONET retains two inherited tests in #291. |
+| HARDWARE #347/#348 | 960184670379f01e20f0e7e8bc23b3e5eedacd3f / eb7afcb2ba0d1e84054c052c8b129cb51a91d062 | #347 Quarantine/Relay/build FAIL; #348 focused header PASS, build #45352513177 FAIL at missing mbedtls/sha256.h. |
+| HARDWARE #349 | source/test and PR head d2565d9cc85409d93cd68109b14653257b6af944; prior handover/docs 58c5418e92e912907967343de2f039e16b77c070 | Relay #45468435045 PASS; Quarantine #45468435046 PASS; Full #45468435107 FAIL at Missing poll signature check. PR description and handover must be refreshed after d2565d9. |
+| QA #290/#292 | 5c29d15994cee1279058f1eca12f2a3180704292 / 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | #290 Windows #43633486963 PASS; #292 no PR-triggered runs. QA independently reconciles poll assertion. |
+| RELEASE #291 | source/workflow change 343e25b8c8b1dffac83469d31b8fbcf2a0f415b7; final docs/PR head d90e382f3b5fc05e331c6be316c80d59a3e3a61b | Windows #45469265465 FAIL at CORE PROJECT_HANDOVER freshness (checkpoint eb1bda38); build #45469265411 IN PROGRESS; compatibility #45469265445 PENDING. CORE refreshes canonical handover; RELEASE reruns exact head. |
+| COE RELEASE #35 | e7801818b00854f34a5a88955d979c601ec96404 | Case guard PASS; shared hardware/ULA gate FAIL; Bubblewrap sandbox FAIL. |
+| COE CORE #45 | 9d76a134c1f6512aa40c20ec4d247306a71a8cce | Overlay/shell and case guard PASS. |
+| COE #49 | aeb8ff11b2f5db9a5f86280ab62ab988245f3919 | Stage 5.1 and case guard PASS; shared hardware CI FAIL at missing mbedtls/sha256.h. |
+| COE integration #26 | b382d233ff06c8791b1028bed3c617cc7b670d12 | Five workflows QUEUED / zero completed jobs. FROZEN; no staging. |
+
+Ownership remains non-overlapping. PHX-MASTER owns only coordination/phoenix/, architecture/interface contracts and cross-repo provenance.
+
+---
+
 ## PHX-MASTER UTC18 owner/CI routing — 2026-11-24
 
 | Owner | Exact PR head / source anchor | Exact CI / next owner action |

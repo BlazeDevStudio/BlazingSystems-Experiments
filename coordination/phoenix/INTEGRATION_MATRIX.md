@@ -1,3 +1,19 @@
+## PHX-MASTER UTC19 exact source/destination snapshot — 2026-11-24
+
+- Experiments main f4e8a891; development aad3aade; current HARDWARE #349 PR/source-test head d2565d9 (2,527 entries); COE main a6513ab4; COE #26 b382d233 (286 entries, 205 changed paths).
+- OWNERSHIP_ROUTES.json blob e4db324315a1b3543fec17a148fbf960170fcb29 identifies source_ref main@f4e8 and destination candidate #26@b382d233. SOURCE_INTAKE.json blob 1b9018ff944f7f673934d0fc2a97e0a0090d3f5f pins historical source commit 6d4c9b. The per-file source authority must be reconciled; do not treat these refs as interchangeable.
+- Complete trees: historical intake source 2,391 entries; current main 2,340; current #349 head 2,527; COE #26 destination 286.
+- Runtime intake: 61/61 source blobs and modes match historical 6d4c9b; 61/61 destination blobs and modes match COE #26. Summary says 47 identical / 14 derived; actual rows are 46 / 15. Current main drift from the historical runtime pin is 20 changed / 8 missing.
+- Current #349 test tree 47 files vs COE 19: 1 exact, 3 divergent (config.sh, integration.sh, security.sh), 43 source-only, 15 destination-only. Historical intake pin has 149 entries under tests/; current main has 38. Do not conflate the three source refs.
+- SOURCE_INTAKE derived_tests has 15 rows and all 15 destination blobs match. MIGRATION_MAP has 14 derived rows, omits voucher_txn_journal.sh, and has stale run_focus.sh / member_txn_journal.sh hashes.
+- Board subtrees: #349 source ESP32/ESP8266 16/48 entries; COE destination 1/1 sketches. Both sketch blobs differ. Exact hashes and license/notice findings are in the UTC19 audit report below.
+- Exact license matches: PisoWiFi product, QRCode, TailAdmin LICENSE and TailAdmin NOTICE. Missing destination counterparts: root NOTICE.md and Tabler LICENSE. BlazeRentalLauncher LICENSE remains a separate RENTAL route.
+- COE #26 remains FROZEN; five workflows queued, zero jobs/statuses. No staging or destination writes.
+
+[UTC19 exact owner, test, license and handover audit](PHX_MASTER_UTC19_20261124_LIVE_OWNER_HEADS_COE26_SOURCEPIN_TEST_LICENSE_AND_HANDOVER_AUDIT.md)
+
+---
+
 ## PHX-MASTER UTC18 exact-source / COE #26 integration snapshot — 2026-11-24
 
 - Experiments main f4e8a891aed8af86d5fd315d28750a0ac3a7372b; development aad3aade72c1156eecba1fed30907c6d0283b2c5; current HARDWARE #349 source/test tree 32c026538e737870ea8bb1e22143e438f9d61f7a (2,524 entries); historical intake pin 6d4c9b487af4d768c4d7627654d119417fcc6e00 (2,391 entries).

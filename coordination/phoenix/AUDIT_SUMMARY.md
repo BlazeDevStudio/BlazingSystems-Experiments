@@ -1,3 +1,19 @@
+## PHX-MASTER UTC19 live disposition — 2026-11-24
+
+**Master branch start:** 463a600c2ba4843b41bf498614a4fb76fa9f3b05. **PR #288:** OPEN / DRAFT / UNMERGED; 201 existing changed paths, all coordination/phoenix/. **COE #26:** FROZEN. **Production:** NO-GO.
+
+- Current HARDWARE #349 head d2565d9: Relay/Quarantine PASS; Full #45468435107 FAIL at Missing poll signature check. The new head's structure-guard change is not covered by the prior 58c5418 handover.
+- Current RELEASE #291 PR/docs head d90e382, source/workflow change 343e25b8: Windows #45469265465 FAIL at CORE-owned PROJECT_HANDOVER freshness (checkpoint eb1bda38); build #45469265411 in progress; ESP32 compatibility #45469265445 pending.
+- COE #26 source refs differ between route manifest main@f4e8 and SOURCE_INTAKE historical pin 6d4c9b. Runtime rows are 61/61 exact to the historical source and destination, but summary counters are wrong (46/15 actual vs 47/14 claimed); test map omits voucher and has two stale hashes; board imports and two license/notice counterparts remain incomplete.
+- Cleanup #266 OPEN / 0-of-7. Ownership manifest e4db3243, 11 routes, DRAFT_REVIEW_ONLY, Master target null.
+- Private Drive v11/newer corrections NOT RECOVERED; no Google Drive connector exposed. AGENTS-linked cloud policy and storage handover could not be retrieved.
+- Executed exact tree/blob/mode/license comparisons, owner PR/CI inspection and failed-job logs. Master Python suite and verify_coordination.py NOT RUN; Master PR Actions zero runs/statuses. No Master test pass is claimed.
+- No subsystem source, shared CORE handover or COE destination changed. No merge, release, signing, secrets, flash, physical test, payment, cutover or migration.
+
+See [UTC19 exact live audit](PHX_MASTER_UTC19_20261124_LIVE_OWNER_HEADS_COE26_SOURCEPIN_TEST_LICENSE_AND_HANDOVER_AUDIT.md).
+
+---
+
 ## PHX-MASTER UTC18 disposition — 2026-11-24T18:29:01.314Z
 
 **Master-only coordination update planned on existing PR #288; production remains NO-GO.**

@@ -1,3 +1,17 @@
+## PHX-MASTER UTC19 live snapshot — 2026-11-24
+
+**Master HEAD before this audit:** 463a600c2ba4843b41bf498614a4fb76fa9f3b05. **PR #288:** OPEN / DRAFT / UNMERGED; 201 existing paths, all coordination/phoenix/. **Production:** NO-GO.
+
+- Experiments main f4e8a891; development aad3aade; Master 463a600c2ba4843b41bf498614a4fb76fa9f3b05; COE main a6513ab4; COE #26 b382d233 FROZEN.
+- HARDWARE #349 current head d2565d9: focused Relay/Quarantine PASS; Full #45468435107 FAIL at Missing poll signature check.
+- RELEASE #291 source/workflow 343e25b8, docs/PR d90e382: Windows #45469265465 FAIL at PROJECT_HANDOVER freshness; build #45469265411 IN PROGRESS; compatibility #45469265445 PENDING.
+- COE #26 exact provenance: historical source 6d4c9b vs route manifest source_ref main@f4e8; 61 runtime rows match historical source/destination but summary counters are 46/15 vs 47/14; test map has one missing row and two stale hashes; board/license gaps remain.
+- Issue #172 OPEN; cleanup #266 OPEN / 0-of-7. Manifest e4db3243, 11 routes, DRAFT_REVIEW_ONLY, Master target null.
+- Private Drive v11/newer corrections NOT RECOVERED; no Google Drive connector. Master Python tests/verifier NOT RUN; Master PR Actions zero runs.
+- Full evidence: [UTC19 owner/CI, source-pin, test and license audit](PHX_MASTER_UTC19_20261124_LIVE_OWNER_HEADS_COE26_SOURCEPIN_TEST_LICENSE_AND_HANDOVER_AUDIT.md).
+
+---
+
 ## PHX-MASTER UTC18 live snapshot — 2026-11-24T18:24Z
 
 **Starting Master HEAD:** e793eb6a820a032537d54ee09c4526a51ad608c5. **Current PR #288:** OPEN / DRAFT / UNMERGED; 200 changed paths, all coordination/phoenix/. **Production:** NO-GO.

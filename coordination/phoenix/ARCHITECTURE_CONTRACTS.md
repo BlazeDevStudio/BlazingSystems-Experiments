@@ -1984,3 +1984,20 @@ A role handover must distinguish (1) source/test commit, (2) final handover/docs
 - RELEASE #291: source/test anchor a004c647e67f90269a9149f918887622bb8cc5e8; current workflow/PR head 32487a5720040b8fb8374a7ab6efd224aeac7207. Latest commit changes only the BlazePwifi release workflow expression wiring. Windows and build validation fail the mandatory PROJECT_HANDOVER freshness gate at checkpoint 0406ce0b; compatibility is pending. Current PROJECT_HANDOVER blob ce00cabad64364c2255dc5a5a2fc29f4af0bcb17 and CURRENT_STATE blob 85dd3c1e9254d947c4e75daaeaf3351ef3e105e3 remain unrefreshed for this workflow change.
 - A successful older compatibility run is not current-head proof. RELEASE compatibility #45453527038 was pinned to source 6ce423783b30, not current source/test a004c647.
 - Freshness gates are admission controls. Do not bypass them, synthesize response_sig, reuse member signatures for poll, or weaken deny-default. CORE owns producer contract/canonical handover; QA owns independent assertion review; HARDWARE owns consumer labs; RELEASE owns release workflow and handover update.
+
+
+## 7.13 Migration source refs, intake counters and test identities must reconcile before staging — 2026-11-24 UTC19
+
+A cross-repository route manifest, a historical source-intake pin, a current source branch, a role PR source/test head, and a destination PR head are distinct provenance anchors. They must be recorded separately and tied to each mapped file. A high-level manifest source_ref does not silently replace a historical per-file source pin; a current role PR does not silently replace either.
+
+For COE #26, OWNERSHIP_ROUTES.json records Experiments main@f4e8a891 while Pisowifi/SOURCE_INTAKE.json records historical source commit 6d4c9b487af4d768c4d7627654d119417fcc6e00. The current HARDWARE #349 head d2565d9 is a separate role/test reference. The integration owner must state which source ref governs each path and document source drift before any staging proposal.
+
+Recompute summary counters from rows, not from a copied summary. The 61 runtime rows yield 46 byte-identical and 15 derived, while the JSON summary says 47/14. All 61 recorded historical source blobs/modes and all 61 destination blobs/modes match; current main nevertheless has 20 changed and 8 missing paths relative to the historical runtime pin.
+
+Test counts are meaningful only with an exact source ref and path scope: historical 6d4c9b has 149 entries under the project tests subtree; current main f4e8 has 38; current HARDWARE #349 d2565d9 has 47; COE #26 has 19. For the current #349-to-COE comparison, one test is exact, three same-path tests diverge, 43 are source-only and 15 destination-only. Do not collapse these inventories into one source count.
+
+SOURCE_INTAKE derived_tests has 15 entries and all 15 recorded destination blobs match the exact destination tree. MIGRATION_MAP records only 14 derived rows, omits voucher_txn_journal.sh, and has stale run_focus.sh and member_txn_journal.sh hashes. These are owner-correctable manifest defects, not permission for Master to edit the destination.
+
+The board route also remains incomplete: current #349 source ESP32/ESP8266 subtrees have 16/48 entries, while COE #26 has one sketch in each. Both destination sketches differ from the exact source blobs. Product, QRCode and TailAdmin LICENSE/NOTICE counterparts match; root NOTICE.md and Tabler LICENSE lack destination counterparts. BlazeRentalLauncher LICENSE remains a separate RENTAL route.
+
+No staging, copy, move, overwrite, rebase, cherry-pick or destination write is permitted while these provenance, test, import and licensing dispositions remain unresolved. COE #26 stays FROZEN and DRAFT_REVIEW_ONLY.
