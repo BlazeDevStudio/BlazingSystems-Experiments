@@ -1,7 +1,7 @@
 ## PHX-MASTER UTC22 live checkpoint — 2026-11-24T22:37:40Z
 
 - Experiments refs re-read: main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; development `aad3aade72c1156eecba1fed30907c6d0283b2c5`; Master starting HEAD `66a734ee33b7fc9fca8a2dd0b95c7fdd7d29bba3`. PR #288 remains OPEN / DRAFT / UNMERGED; its live head is the authoritative post-update pointer.
-- HARDWARE #349: source/test `0aba4cd66deae4c358dec950ace1e86be3241674`, final docs/PR `c265eafe83c472ba5355b584454f0fa76f379393`; focused Quarantine/Relay PASS; Full #45502304116 terminal FAIL at inherited `Missing poll signature check`. PR body still says pending; HARDWARE owner must correct it.
+- HARDWARE #349: source/test `0aba4cd66deae4c358dec950ace1e86be3241674`, final docs/PR `c265eafe83c472ba5355b584454f0fa76f379393`; focused Quarantine/Relay PASS; Full #45502304116 terminal FAIL at inherited `Missing poll signature check`. PR body still says pending; HARDWARE owner must refresh the PR body, PROJECT_HANDOVER.md and narrow UTC22 handover to record the terminal Full failure.
 - RELEASE #291 remains at `53fc8a1c558f80adde19dc675b879c78797f0cd5`; Windows/build fail CORE-owned CURRENT_STATE freshness; ESP32 compatibility PASS.
 - COE #35 source/test `39ff80f005ce7ed39e851f3b63ad905c5bce2b16`, final docs/PR `23dcae0cace76c35dbad0217755af57aec033482`; 216 host tests pass before 10/10 ULA authority failures; sandbox 40/40 host preflight passes before Bubblewrap exit 125; case guard PASS.
 - COE #26 remains FROZEN at `b382d233ff06c8791b1028bed3c617cc7b670d12`. Current exact trees: source 2,530 / destination 286; test, board-helper, sketch, SOURCE_INTAKE, migration-map and license differences remain. No staging or destination write.

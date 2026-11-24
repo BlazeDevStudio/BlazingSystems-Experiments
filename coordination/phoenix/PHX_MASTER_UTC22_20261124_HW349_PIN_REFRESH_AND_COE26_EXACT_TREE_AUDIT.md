@@ -28,7 +28,7 @@ This is a bounded coordination-only refresh requested by the new HARDWARE UTC22 
 - Final docs-head Relay [#45502304004](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45502304004): SUCCESS.
 - Final docs-head Full [#45502304116](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45502304116): terminal FAILURE. Validation job `138828592534` logs `Missing poll signature check`. All 14 firmware/platform jobs and Android passed; dependent validation/release stages were skipped.
 
-The live PR body still calls Full #45502304116 pending. HARDWARE must refresh its own description/handover to record the terminal failure. Master does not edit Hardware-owned files. CORE owns the authenticated poll producer contract; QA owns independent assertion reconciliation. Preserve default-deny. Physical coin/relay/power-cut acceptance remains NOT TESTED.
+The live PR body, PROJECT_HANDOVER.md and narrow UTC22 handover still cite earlier Full #45501543802 and say current-source Full is pending. HARDWARE must refresh all three to record #45502304116 as terminal failure. Master does not edit Hardware-owned files. CORE owns the authenticated poll producer contract; QA owns independent assertion reconciliation. Preserve default-deny. Physical coin/relay/power-cut acceptance remains NOT TESTED.
 
 ## 3. COE #26 exact source/destination tree audit
 
