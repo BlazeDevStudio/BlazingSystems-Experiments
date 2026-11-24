@@ -194,10 +194,10 @@ for board,path in BOARDS.items():
     last_poll=loop.index("lastPoll=millis()",outputs)
     assert pre_poll_guard < pre_poll_latch < pre_poll_release < poll_call < accept < post_release < outputs < last_poll, board+": poll release ordering changed"
     parser_prototypes = (
-        "bool pollJsonSkipValueDepth(const String &r,int &p,uint8_t depth);\\n"
-        "bool pollJsonSkipCompositeDepth(const String &r,int &p,uint8_t depth);\\n"
+        "bool pollJsonSkipValueDepth(const String &r,int &p,uint8_t depth);\n"
+        "bool pollJsonSkipCompositeDepth(const String &r,int &p,uint8_t depth);\n"
     )
-    parser = parser_prototypes + "\\n".join(extract(source,name) for name in (
+    parser = parser_prototypes + "\n".join(extract(source,name) for name in (
         "pollJsonSpace", "pollJsonHex", "pollJsonSkipString",
         "pollJsonSkipPrimitive", "pollJsonSkipValueDepth",
         "pollJsonSkipCompositeDepth", "pollJsonSkipComposite",
