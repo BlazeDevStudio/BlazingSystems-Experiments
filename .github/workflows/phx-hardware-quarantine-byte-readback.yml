@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - "phoenix/hardware-prepoll-edge-abort-20261119"
+      - "phoenix/hw-coin-ingress-config-helper-reconciled-20261123-utc13"
     paths:
       - "experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/**"
       - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/**"
