@@ -1178,3 +1178,10 @@ No firmware source, finance, signer, publisher permission, hardware, CORE, RENTA
 - Compatible head `5222443b3747f47d440d804c4ff853eaa04686a5` already includes another release worker's provenance-completeness refinement. No implementation was duplicated.
 - [Build #45319386785](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45319386785) completed scoped validation, Android, and ESP32 build jobs successfully; production signing and publishing jobs remained skipped. Both exact-core legs and the provenance regression suite in [ESP32 #45319386726](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45319386726) completed successfully for source `275057aa2837`; all are scoped CI evidence only, not compatibility, signing, hardware, or production acceptance. [Windows #45319386947](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45319386947) remains fail-closed at signing-negative controls; publisher skipped.
 - PR #291 remains draft/unmerged and independently unreviewed. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC2026-11-24 — supersession audit: exact-core source rebase
+
+- Compatible head `f1fda47b1ebd5c4eafe8d8c450ab1eafcb037528` already includes another release worker's exact-core matrix source rebase. No implementation was duplicated.
+- [Build #45326528447](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45326528447) completed scoped validation, Android, and ESP32 build jobs successfully; production signing and publishing jobs remained skipped. Both exact-core legs and the provenance regression suite in [ESP32 #45326528385](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45326528385) completed successfully for newer source `40b80bb075c0`; all are scoped CI evidence only, not compatibility, signing, hardware, or production acceptance. [Windows #45326528399](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45326528399) remains fail-closed at signing-negative controls; publisher skipped.
+- PR #291 remains draft/unmerged and independently unreviewed. **PRODUCTION NO-GO.**
