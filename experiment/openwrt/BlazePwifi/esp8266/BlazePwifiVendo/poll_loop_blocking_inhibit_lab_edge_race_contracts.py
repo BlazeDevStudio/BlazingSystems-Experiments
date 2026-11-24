@@ -155,7 +155,33 @@ def run_poll_edge_race_contracts(
         board,56,"active-high-post-drain-edge-polarity"
     )
     print(f"{board} MUTATION_REJECTED active-high-post-drain-edge-polarity expected_exit=56")
-    
+
+    # Cross-product the active-high coin input with an active-low acceptor relay.
+    # The relay must be physically de-energized (HIGH) while the RISING-edge
+    # pulse is fault-latched; the normal active-low-relay scenario uses the
+    # default active-low coin input and does not cover this combination.
+    active_high_low_relay_main = with_active_low_relay(
+        post_drain_rollover_main(active_low=False)
+    )
+    relay_off_level_anchor = "if(attachedMode!=RISING || pollCalls!=0 ||"
+    if relay_off_level_anchor not in active_high_low_relay_main:
+        raise AssertionError(f"{board}: active-high/active-low relay assertion anchor missing")
+    active_high_low_relay_main = active_high_low_relay_main.replace(
+        relay_off_level_anchor,
+        "if(attachedMode!=RISING || !relayLevelHigh || pollCalls!=0 ||",
+        1,
+    )
+    compile_and_run(
+        assemble(configure_source=configure,begin_source=edge_hook,main_source=active_high_low_relay_main),
+        board,0,"active-high-coin-active-low-relay-post-drain-rollover"
+    )
+    print(f"{board} POLL_POST_DRAIN_ACTIVE_HIGH_COIN_ACTIVE_LOW_RELAY_OFF_LEVEL_PASS")
+    compile_and_run(
+        assemble(configure_source=active_high_wrong_edge,begin_source=edge_hook,main_source=active_high_low_relay_main),
+        board,56,"active-high-coin-active-low-relay-wrong-isr-polarity"
+    )
+    print(f"{board} MUTATION_REJECTED active-high-coin-active-low-relay-wrong-isr-polarity expected_exit=56")
+
     # The active-low counterpart uses the real FALLING ISR across the same wrap race.
     compile_and_run(assemble(begin_source=edge_hook,main_source=post_drain_rollover_main(active_low=True)),
                     board,0,"active-low-post-drain-multi-edge-rollover")
