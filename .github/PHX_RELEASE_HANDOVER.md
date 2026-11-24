@@ -2287,6 +2287,7 @@ This is the single machine-checked current pointer for the RELEASE ESP32 compati
 - ESP32 sketch Git blob SHA: `a9a1c2fecb001d71f8f22b43952edbd160aacaf8`.
 - Exact-source compatibility matrix: [#45325038266](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45325038266) — SUCCESS (3/3 jobs).
 - Exact-source push compatibility matrix: [#45325033836](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45325033836) — SUCCESS (3/3 jobs).
+- Final docs-head PR compatibility matrix: [#45325880824](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45325880824) — SUCCESS (3/3 jobs).
 - #349 source/test Quarantine lab: [#45321927194](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45321927194) — SUCCESS.
 - #349 source/test Relay/Output lab: [#45321927191](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45321927191) — SUCCESS.
 - #349 source/test Full integration: [#45321921703](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45321921703) — FAILURE at the inherited QA-owned `Missing poll signature check`; 13/13 target builds and Android passed, dependent simulation/update/signing/publication jobs skipped.
@@ -3329,3 +3330,14 @@ The source-pin task is now verified on the exact PR event, not merely inferred f
 - Final docs-head CI triggered by this handover commit is pending; the next activation must inspect its CI-0701 and compatibility runs. Do not claim the final documentation head is green until those runs complete.
 
 This remains hosted CI/reproducibility evidence only. It is not a signed production image, approved binary admission, physical hardware test or release authorization.
+
+
+## PHX-RELEASE UTC04 — final docs-head run readback
+
+- Final docs-head PR compatibility [#45325880824](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45325880824), head `e71413d3a7af12642c9ff04f43f9246cd56796d1`: **COMPLETED SUCCESS, 3/3 jobs** (provenance regression, ESP32 core 3.3.13, ESP32 core 4.0.0). The final handover anchor and exact-source matrix contract are therefore validated at the docs head.
+- Final docs-head full build [#45325880735](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45325880735): **IN PROGRESS** at final read. CI-0701 job `138215247505` PASS; mandatory handover freshness gate PASS; Android, ESP32, ESP8266 and all target firmware jobs shown completed SUCCESS. The long validation job `138215395118` had 120 successful steps, zero failures and 11 pending. Do not claim the full workflow terminal success.
+- Final docs-head push compatibility [#45325874640](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45325874640): **IN PROGRESS**; provenance job PASS and both exact-core build jobs still running. Final docs-head push full build [#45325874649](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45325874649): PENDING.
+- Final docs-head Windows [#45325880691](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45325880691): **FAILURE** in PISONET-owned `experiment/windows/BlazePisonet-SoftTimer/tests/ReleaseSigning/negative-selftest.ps1:326`: `RELEASE-PUBLISHER executable lookup regression: missing tag accepted=False`; publisher SKIPPED. PHX-RELEASE did not edit that file.
+- Independent QA review remains 0 reviews / 0 review threads. PR #291 remains OPEN / DRAFT / UNMERGED. No merge, signing, publication, hardware flash, real payment migration or customer deployment occurred.
+
+Next activation: PHX-RELEASE inspects terminal status of final docs-head full build #45325880735 and push compatibility #45325874640; PHX-PISONET repairs its owned missing-tag negative self-test; PHX-QA independently reviews the source-pin test/workflow. MASTER ownership routes remain `DRAFT_REVIEW_ONLY`; no cross-repository migration is authorized. **PRODUCTION NO-GO.**
