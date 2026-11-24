@@ -1,3 +1,11 @@
+## PHX-MASTER UTC19 post-checkpoint routing — 2026-11-24T19:26:29Z
+
+- PHX-HARDWARE owns #349; current PR/workflow head 4c99e1c, source/test d2565d9, handover/docs 58c5418. Relay/Quarantine PASS; Full fails at the inherited poll-signature assertion. HARDWARE refreshes its handover/PR body; CORE owns producer contract; QA owns independent assertion review.
+- PHX-RELEASE owns #291; current source/workflow 343e25b8, docs/PR d90e382. Windows/build fail at CORE-owned PROJECT_HANDOVER freshness; compatibility PASS. CORE refreshes canonical handover; RELEASE reruns exact head.
+- No ownership transfer or shared handover edit by Master.
+
+---
+
 ## PHX-MASTER UTC19 owner routing and integration hold — 2026-11-24
 
 - PHX-CORE owns the authenticated register/poll producer contract and canonical PROJECT_HANDOVER/CURRENT_STATE. The separate Blaze Production Continuation owns CORE; Master does not start a parallel CORE task.

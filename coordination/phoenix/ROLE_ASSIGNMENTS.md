@@ -1,3 +1,12 @@
+## PHX-MASTER UTC19 post-checkpoint owner/CI refresh — 2026-11-24T19:26:29Z
+
+| Owner | Current source/test / handover / PR identity | Exact-head CI and next action |
+|---|---|---|
+| HARDWARE #349 | Source/test d2565d9cc85409d93cd68109b14653257b6af944; handover/docs 58c5418e92e912907967343de2f039e16b77c070; current PR/workflow head 4c99e1c846d315f795901858e94189226723627a | Relay #45469493976 PASS; Quarantine #45469493996 PASS; Full #45469493967 FAIL at Missing poll signature check. 13 firmware targets + Android PASS; dependent stages skipped. Latest commit only updates Relay workflow path filters. Refresh handover and PR body. |
+| RELEASE #291 | Source/workflow 343e25b8c8b1dffac83469d31b8fbcf2a0f415b7; docs/PR head d90e382f3b5fc05e331c6be316c80d59a3e3a61b | Windows #45469265465 FAIL at CORE PROJECT_HANDOVER freshness, checkpoint eb1bda38; build #45469265411 FAIL at mandatory handover freshness (CI-0701 PASS, 14/14 target/platform jobs PASS, downstream skipped); ESP32 compatibility #45469265445 PASS. CORE refreshes canonical handover; RELEASE reruns exact head. |
+
+---
+
 ## PHX-MASTER UTC19 live owner/CI routing — 2026-11-24
 
 | Owner | Exact current source/test / docs / PR head | Exact-head CI and next action |

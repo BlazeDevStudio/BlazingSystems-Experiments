@@ -2001,3 +2001,10 @@ SOURCE_INTAKE derived_tests has 15 entries and all 15 recorded destination blobs
 The board route also remains incomplete: current #349 source ESP32/ESP8266 subtrees have 16/48 entries, while COE #26 has one sketch in each. Both destination sketches differ from the exact source blobs. Product, QRCode and TailAdmin LICENSE/NOTICE counterparts match; root NOTICE.md and Tabler LICENSE lack destination counterparts. BlazeRentalLauncher LICENSE remains a separate RENTAL route.
 
 No staging, copy, move, overwrite, rebase, cherry-pick or destination write is permitted while these provenance, test, import and licensing dispositions remain unresolved. COE #26 stays FROZEN and DRAFT_REVIEW_ONLY.
+
+
+### 7.13.1 Concurrent owner advances must supersede only the exact evidence tuple — UTC19 post-checkpoint
+
+After the initial UTC19 audit, HARDWARE #349 advanced to PR/workflow head 4c99e1c while retaining source/test d2565d9 and prior handover/docs anchor 58c5418. The latest change is workflow path-filter-only; it does not alter the firmware source blobs or COE #26 tree comparison. Current exact-head focused Relay and Quarantine runs pass, while Full validation fails at the inherited poll-signature assertion. Record the three refs separately and require HARDWARE to refresh the handover/PR description.
+
+RELEASE #291 advanced to docs/PR head d90e382 after source/workflow change 343e25b8. Current Windows and build runs fail the CORE-owned PROJECT_HANDOVER freshness gate; ESP32 compatibility passes. CORE owns the canonical handover; RELEASE owns the workflow and exact-head reruns. A later docs commit does not clear the gate unless the canonical owner checkpoint and exact CI are refreshed.

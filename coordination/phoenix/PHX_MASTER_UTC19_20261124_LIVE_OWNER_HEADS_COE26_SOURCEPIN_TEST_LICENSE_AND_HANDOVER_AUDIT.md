@@ -1,3 +1,25 @@
+## Post-checkpoint owner refresh — 2026-11-24T19:26:29Z
+
+This section supersedes the earlier #349 and #291 run snapshots below without creating a second UTC19 report.
+
+### HARDWARE #349
+
+- Current PR/workflow head: 4c99e1c846d315f795901858e94189226723627a.
+- Source/test head: d2565d9cc85409d93cd68109b14653257b6af944.
+- Prior handover/docs anchor: 58c5418e92e912907967343de2f039e16b77c070.
+- Latest commit changes only .github/workflows/phx-hardware-relay-output-polarity.yml to watch the dedicated fixture-runner contract lab.
+- Relay #45469493976 PASS; Quarantine #45469493996 PASS; Full build #45469493967 FAIL at Controller protocol parity / Missing poll signature check. All 13 firmware targets plus Android pass; validation-dependent stages are skipped.
+- PR description remains stale at aa9ac766/d9adf204. HARDWARE must refresh the handover and PR body after the current workflow/test changes.
+
+### RELEASE #291
+
+- Source/workflow change: 343e25b8c8b1dffac83469d31b8fbcf2a0f415b7.
+- Current docs/PR head: d90e382f3b5fc05e331c6be316c80d59a3e3a61b.
+- Windows #45469265465 FAIL: CORE-owned PROJECT_HANDOVER freshness, checkpoint eb1bda38; the log names blazepwifi-v053-release.yml and blazerental-v053-lineage2-sign.yml as newer.
+- Build #45469265411 FAIL: mandatory handover freshness; CI-0701 docs-only sync proof PASS; all 14 target/platform jobs PASS; downstream update, simulation, signing and publication skipped.
+- ESP32 compatibility #45469265445 PASS.
+- CORE must publish the canonical PROJECT_HANDOVER checkpoint after the workflow change; RELEASE reruns exact-head Windows/build/compatibility. No freshness bypass.
+
 # PHX-MASTER UTC19 — live owner heads, COE #26 source-pin, test, license and handover audit
 
 **Observed:** 2026-11-24 UTC19  
