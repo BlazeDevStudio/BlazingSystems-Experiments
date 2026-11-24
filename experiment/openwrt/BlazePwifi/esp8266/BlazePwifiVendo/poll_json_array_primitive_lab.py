@@ -39,6 +39,10 @@ int main() {
   if (!pollJsonTopLevelTrue(
           String("{\"ok\":true,\"meta\":{}}"), "ok")) return 65;
 
+  if (!pollJsonTopLevelTrue(
+          String("{\"ok\":true,\"meta\":\"quote\\\" slash\\\\ backspace\\b formfeed\\f newline\\n carriage\\r tab\\t unicode\\u0041\"}"),
+          "ok")) return 72;
+
   if (pollJsonTopLevelTrue(
           String("{\"ok\":true,\"meta\":[1,]}"), "ok")) return 66;
   if (pollJsonTopLevelTrue(
@@ -51,6 +55,19 @@ int main() {
           String("{\"ok\":true,\"meta\":[1,2,3}"), "ok")) return 70;
   if (pollJsonTopLevelTrue(
           String("{\"ok\":true,\"meta\":{\"a\":1 \"b\":2}}"), "ok")) return 71;
+
+  if (pollJsonTopLevelTrue(
+          String("{\"ok\":true,\"meta\":\"bad\\x41\"}"), "ok")) return 73;
+  if (pollJsonTopLevelTrue(
+          String("{\"ok\":true,\"meta\":\"bad\\u12\"}"), "ok")) return 74;
+  if (pollJsonTopLevelTrue(
+          String("{\"ok\":true,\"meta\":\"bad\\u12G4\"}"), "ok")) return 75;
+  if (pollJsonTopLevelTrue(
+          String("{\"ok\":true,\"meta\":\"bad\nline\"}"), "ok")) return 76;
+  if (pollJsonTopLevelTrue(
+          String("{\"ok\":true,\"meta\":\"unterminated}"), "ok")) return 77;
+  if (pollJsonTopLevelTrue(
+          String("{\"ok\":true,\"meta\":\"dangling\\"), "ok")) return 78;
 
   std::cout << "POLL_JSON_COMPOSITE_GRAMMAR_PASS valid=5/5 invalid=6/6\n";
   return 0;
@@ -134,4 +151,42 @@ def verify(boards, extract, stubs):
             board, "missing-object-separator", 71
         )
 
-        print(f"{board}: POLL_JSON_COMPOSITE_GRAMMAR_PASS valid=5/5 invalid=6/6")
+        string_parser = extract(source, "pollJsonSkipString")
+        control_guard = "if(c<0x20) return false;"
+        if string_parser.count(control_guard) != 1:
+            raise AssertionError(f"{board}: expected one raw-control guard")
+        _expect_mutation_rejected(
+            stubs + parser.replace(
+                string_parser, string_parser.replace(control_guard, "", 1), 1
+            ) + COMPOSITE_MAIN,
+            board, "accept-raw-control-in-string", 76
+        )
+
+        escape_guard = (
+            "else if(e!='\\\"' && e!='\\\\\\\\' && e!='/' && e!='b' &&\\n"
+            "                e!='f' && e!='n' && e!='r' && e!='t'){"
+        )
+        if string_parser.count(escape_guard) != 1:
+            raise AssertionError(f"{board}: expected one unsupported-escape guard")
+        _expect_mutation_rejected(
+            stubs + parser.replace(
+                string_parser,
+                string_parser.replace(escape_guard, "else if(false){", 1),
+                1
+            ) + COMPOSITE_MAIN,
+            board, "accept-unsupported-string-escape", 73
+        )
+
+        unicode_guard = "!pollJsonHex(r[p])"
+        if string_parser.count(unicode_guard) != 1:
+            raise AssertionError(f"{board}: expected one Unicode hex guard")
+        _expect_mutation_rejected(
+            stubs + parser.replace(
+                string_parser,
+                string_parser.replace(unicode_guard, "false", 1),
+                1
+            ) + COMPOSITE_MAIN,
+            board, "accept-nonhex-unicode-escape", 75
+        )
+
+        print(f"{board}: POLL_JSON_COMPOSITE_GRAMMAR_PASS valid=6/6 invalid=12/12")
