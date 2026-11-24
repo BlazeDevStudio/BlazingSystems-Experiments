@@ -5,10 +5,13 @@ from __future__ import annotations
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
+
+import verify_esp32_source_date_epoch as source_date_epoch  # noqa: E402
 
 from verify_esp32_source_date_epoch import (  # noqa: E402
     expected_compile_metadata,
@@ -35,6 +38,33 @@ class Esp32SourceDateEpochTests(unittest.TestCase):
             expected_compile_metadata(946684860),
             {"date": "Jan  1 2000", "time": "00:01:00"},
         )
+
+    def test_expected_metadata_is_independent_of_process_locale(self) -> None:
+        class LocalizedMoment:
+            month = 2
+            day = 1
+            year = 2000
+            hour = 0
+            minute = 1
+            second = 2
+
+            @staticmethod
+            def strftime(pattern: str) -> str:
+                if pattern == "%b %e %Y":
+                    return "févr.  1 2000"
+                if pattern == "%H:%M:%S":
+                    return "00:01:02"
+                raise AssertionError(f"unexpected format string: {pattern}")
+
+        class LocalizedDateTime:
+            @staticmethod
+            def fromtimestamp(epoch: int, tz: object) -> LocalizedMoment:
+                return LocalizedMoment()
+
+        with patch.object(source_date_epoch.dt, "datetime", LocalizedDateTime):
+            actual = expected_compile_metadata(951868862)
+
+        self.assertEqual(actual, {"date": "Feb  1 2000", "time": "00:01:02"})
 
     def test_finds_core_compile_time_metadata_source_and_live_call(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
