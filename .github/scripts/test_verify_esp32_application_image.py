@@ -50,9 +50,12 @@ class ApplicationImageDescriptorCleanupTests(unittest.TestCase):
                 raise RuntimeError("simulated image descriptor close interruption")
             real_close(descriptor)
 
-        with patch.object(verifier.os, "open", side_effect=tracked_open), patch.object(
-            verifier.os, "read", side_effect=fail_image_read
-        ), patch.object(verifier.os, "close", side_effect=close_with_interruption):
+        supported_dir_fd = set(os.supports_dir_fd) | {tracked_open}
+        with patch.object(verifier.os, "supports_dir_fd", supported_dir_fd), patch.object(
+            verifier.os, "open", new=tracked_open
+        ), patch.object(verifier.os, "read", side_effect=fail_image_read), patch.object(
+            verifier.os, "close", side_effect=close_with_interruption
+        ):
             with self.assertRaisesRegex(OSError, "primary image read failure") as raised:
                 verifier.inspect_application_image(self.output_dir, "Sketch")
 
