@@ -71,3 +71,56 @@ All results below are on source/test/workflow SHA `4c99e1c846d315f795901858e9418
 Next exact action: PHX-MASTER refresh its coordination pins; PHX-CORE publish the approved authenticated register/poll and event-bound receipt contract; PHX-QA reconcile the inherited Full assertion without weakening deny-default. PHX-HARDWARE revalidates all live heads on the next activation before choosing another owned task.
 
 No Codex, merge, force-push, physical flash, device reset, live-money operation, production migration, signer provisioning, release tag or deployment occurred.
+
+
+---
+
+## PHX-HARDWARE UTC20 — request-digest lab shared-runner consolidation (2026-11-24T20:15Z)
+
+**Role:** PHX-HARDWARE  
+**Repository:** `BlazeDevStudio/BlazingSystems-Experiments`  
+**PR:** [#349 — OPEN / DRAFT / UNMERGED](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/349)  
+**Branch:** `phoenix/hw-json-array-primitive-guard-20261124-utc00`  
+**Base #347:** `960184670379f01e20f0e7e8bc23b3e5eedacd3f`  
+**Source/test SHA:** `639635c282a88133a715e921e4dc37e6febde87e`
+
+### One bounded cleanup-first change
+
+`request_digest_failure_lab.py` now uses the established `cpp_fixture_runner.run_cpp_fixture` instead of maintaining its own `TemporaryDirectory`, `g++` command, `subprocess.run` calls and timeout handling.
+
+- Removed direct `subprocess` and `tempfile` imports and local compile/run code.
+- Preserved C++17, `-Wall -Wextra -Werror`, `-Wno-unused-parameter`, 30-second compile and 10-second execution bounds.
+- Preserved source extraction of `validSha256Hex`, `signedBody`, `readBoundedControllerResponse` and `post` from both sketches.
+- Preserved failure injection: empty, short and non-hex digests must dispatch zero HTTP requests; a valid 64-character hexadecimal digest dispatches one request.
+- The shared runner owns temporary-file lifecycle, bounded process execution and bounded diagnostics. No production sketch, CGI, wire contract, coin/finance, signer, witness or migration source changed.
+
+### Exact-head CI
+
+- Quarantine PR [#45478127449](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45478127449), job `138743697596`: **SUCCESS**. Logs show `REQUEST_DIGEST_FAILURE_DENY_PASS` for ESP8266 and ESP32; empty/short/non-hex digest paths dispatch zero HTTP requests and valid SHA-256 dispatches one. The wider quarantine, pulse-capture and boot-polarity labs also pass.
+- Relay PR [#45478127630](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45478127630), jobs `138743697824` and `138743698353`: **SUCCESS**.
+- Full PR [#45478127804](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45478127804): **FAILURE** at validation job `138743700087`, inherited `Missing poll signature check` in the ESP8266 controller source. 14 jobs succeeded, 1 failed, 12 downstream jobs skipped. This is the existing CORE producer / QA assertion contract blocker; this Hardware cleanup did not weaken deny-default or invent a signature.
+- Push Quarantine [#45478114685](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45478114685), job `138743648705`: **SUCCESS**.
+
+All runs checked out literal source/test SHA `639635c282a88133a715e921e4dc37e6febde87e`. The workflow logs explicitly report `SIMULATED_ONLY=1`, physical coin/relay/power-cut acceptance flags zero, and financial production authorization zero.
+
+### Ownership and acceptance
+
+- Cleanup-first #266 remains OPEN; **0/7 role tracks complete**. This is one bounded Hardware contribution only.
+- P0 #177 remains OPEN; this change does not fix the synchronous-poll pulse-loss hazard.
+- #239 Phase A deny, #254 ControllerAuthV1Lab, and parallel #283 remain OPEN / DRAFT / UNMERGED. Their source and ancestry were revalidated this activation; no retarget, rebase or cherry-pick occurred.
+- #283 audit comment [#6883020442](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/283#issuecomment-6883020442) remains an audit lead: append-failure clear is not present at the current #283 head, but `quarantinePending()` has no active callsite and register/poll still lacks the approved `response_sig` contract.
+- Master #288 owns `coordination/phoenix/`; its ROLE_ASSIGNMENTS / INTEGRATION_MATRIX pins remain behind the live #349 head and require Master refresh.
+- Private Drive registry v11 remains **NOT RECOVERED** through authorized Library search; no Google Drive connector is exposed. No older registry snapshot was substituted.
+
+### Status and next exact action
+
+- Shared-runner cleanup: **CI VERIFIED**.
+- Digest, poll, quarantine and pulse labs: **SIMULATED / CI VERIFIED** only.
+- Local independent execution: **NOT RUN**.
+- Physical coin, relay/electrical recovery, 150 power cuts and 30-device 24-hour soak: **NOT TESTED**.
+- Durable accounting/replay, protected anti-rollback signer/witness, reversible v1-to-v2 migration and independent QA/release signoff: **NOT ACCEPTED**.
+- **HARDWARE ACCEPTED: NO. PRODUCTION READY: NO-GO.**
+
+Next: PHX-CORE publishes the approved authenticated register/poll response and event-bound receipt contract; PHX-QA reconciles the Full validation assertion without weakening deny-default; PHX-MASTER refreshes its exact #349 pins. Hardware revalidates all heads before the next owned task.
+
+No Codex, merge, force-push, physical flash, device reset, live-money operation, production migration, secret provisioning, release tag or deployment occurred.
