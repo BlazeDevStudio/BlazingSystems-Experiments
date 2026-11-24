@@ -14,6 +14,7 @@ on:
       - "experiment/openwrt/BlazePwifi/docs/handover/2026-11-24-hw-pending-identity-contract-modularization-utc16.md"
       - "experiment/openwrt/BlazePwifi/docs/handover/2026-11-24-hw-poll-response-denial-matrix-modularization-utc16.md"
       - "experiment/openwrt/BlazePwifi/docs/handover/2026-11-24-hw-poll-edge-race-and-failclosed-mutation-modularization-utc17.md"
+      - "experiment/openwrt/BlazePwifi/docs/handover/2026-11-24-hw-cpp-fixture-runner-contract-utc19.md"
   pull_request:
     paths:
       - "experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/**"
