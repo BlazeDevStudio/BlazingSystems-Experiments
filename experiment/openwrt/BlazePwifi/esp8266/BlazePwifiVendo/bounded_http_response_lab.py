@@ -148,8 +148,8 @@ def verify():
             raise AssertionError(
                 f"{board}: post() must not read an unbounded body directly"
             )
-        compact_post = re.sub(r"\\s+", "", post)
-        compact_post_source = re.sub(r"\\s+", "", post_source)
+        compact_post = re.sub(r"\s+", "", post)
+        compact_post_source = re.sub(r"\s+", "", post_source)
         collect_call = "h.collectHeaders(responseHeaders,1)"
         if (
             compact_post.count(collect_call) != 1
