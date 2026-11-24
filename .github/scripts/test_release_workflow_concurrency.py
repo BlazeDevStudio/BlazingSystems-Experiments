@@ -431,7 +431,6 @@ def require_v053_release_permissions_are_isolated(content: str) -> None:
         'test "$(jq -r .signing_run_id release-out/RELEASE-MANIFEST.json)" = "$SIGN_RUN"',
         "gh release create",
         "gh release upload",
-        "NOTES=release-out/README.md",
     )
     positions = tuple(publish.find(value) for value in required)
     if any(position < 0 for position in positions):
@@ -441,6 +440,8 @@ def require_v053_release_permissions_are_isolated(content: str) -> None:
         )
     if positions != tuple(sorted(positions)):
         raise AssertionError("publisher must verify the staged artifact before any release mutation")
+    if "NOTES=release-out/README.md" not in publish:
+        raise AssertionError("publisher must use the staged release notes, not a second checkout")
 
 
 class BlazePwifiV053PublishPermissionTests(unittest.TestCase):

@@ -22,7 +22,7 @@ on:
         type: boolean
 
 permissions:
-  contents: write
+  contents: read
   actions: read
 
 concurrency:
@@ -33,6 +33,9 @@ jobs:
   stage:
     runs-on: ubuntu-22.04
     timeout-minutes: 45
+    permissions:
+      contents: read
+      actions: read
     env:
       GH_TOKEN: ${{ github.token }}
       EXPECTED_FP: "1A:18:D5:8E:1F:95:55:96:89:10:20:71:F5:6C:93:E9:B9:D2:EA:6B:E4:0E:6F:20:70:06:C9:89:62:A1:6A:25"
@@ -171,15 +174,41 @@ jobs:
           retention-days: 90
           if-no-files-found: error
 
-      - name: Publish production v0.5.3
-        if: inputs.publish == true
+  publish:
+    needs: stage
+    if: inputs.publish == true
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: \${{ github.token }}
+      SHA: \${{ inputs.candidate_sha }}
+      SIGN_RUN: \${{ inputs.signing_run_id }}
+    steps:
+      - name: Download and verify staged release artifact
         shell: bash
-        env:
-          SHA: ${{ inputs.candidate_sha }}
+        run: |
+          set -euo pipefail
+          mkdir -p release-out
+          gh run download "$GITHUB_RUN_ID" --repo "$GITHUB_REPOSITORY" --name BlazePwifi-v0.5.3-release-stage --dir release-out
+          test -s release-out/SHA256SUMS
+          (cd release-out && sha256sum -c SHA256SUMS)
+          test "$(jq -r .commit release-out/RELEASE-MANIFEST.json)" = "$SHA"
+          test "$(jq -r .signing_run_id release-out/RELEASE-MANIFEST.json)" = "$SIGN_RUN"
+          test "$(jq -r .candidate_gate release-out/RELEASE-MANIFEST.json)" = passed
+          test "$(jq -r .production_signed release-out/RELEASE-MANIFEST.json)" = true
+          test "$(jq -r .status release-out/CANDIDATE-GATE.json)" = passed
+          test "$(jq -r .commit release-out/CANDIDATE-GATE.json)" = "$SHA"
+          test -s release-out/README.md
+
+      - name: Publish production v0.5.3
+        shell: bash
         run: |
           set -euo pipefail
           TAG=v0.5.3
-          NOTES=experiment/openwrt/BlazePwifi/releases/0.5.3/README.md
+          NOTES=release-out/README.md
           if gh release view "$TAG" --repo "${{ github.repository }}" >/dev/null 2>&1; then
             R="$(gh api "repos/${{ github.repository }}/releases/tags/$TAG")"
             test "$(printf '%s' "$R" | jq -r .target_commitish)" = "$SHA"
