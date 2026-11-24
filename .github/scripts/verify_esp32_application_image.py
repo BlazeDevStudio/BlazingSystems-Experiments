@@ -140,6 +140,10 @@ def inspect_application_image(output_dir: str | Path, sketch_name: str) -> tuple
         raise ValueError("sketch name must be a simple filename stem")
 
     directory, parent_fd, root_fd = _open_output_directory(output_dir)
+    # This function owns all three descriptors after _open_output_directory returns.
+    # Pop/close them together so one failed close cannot skip later descriptors.
+    owned_descriptors = [parent_fd, root_fd]
+    primary_error: BaseException | None = None
     try:
         root_before = os.fstat(root_fd)
         path_before = os.stat(directory.name, dir_fd=parent_fd, follow_symlinks=False)
@@ -171,36 +175,42 @@ def inspect_application_image(output_dir: str | Path, sketch_name: str) -> tuple
 
         file_flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW") | getattr(os, "O_CLOEXEC", 0)
         descriptor = os.open(candidate_name, file_flags, dir_fd=root_fd)
-        try:
-            before_read = os.fstat(descriptor)
-            if not stat.S_ISREG(before_read.st_mode) or before_read.st_nlink != 1:
-                raise ValueError("opened application image is not a unique regular file")
-            if not _same_file_state(before_path, before_read):
-                raise ValueError("application image changed between validation and open")
+        owned_descriptors.append(descriptor)
 
-            digest = hashlib.sha256()
-            total = 0
-            while True:
-                chunk = os.read(descriptor, 1024 * 1024)
-                if not chunk:
-                    break
-                total += len(chunk)
-                digest.update(chunk)
+        before_read = os.fstat(descriptor)
+        if not stat.S_ISREG(before_read.st_mode) or before_read.st_nlink != 1:
+            raise ValueError("opened application image is not a unique regular file")
+        if not _same_file_state(before_path, before_read):
+            raise ValueError("application image changed between validation and open")
 
-            after_read = os.fstat(descriptor)
-            after_path = os.stat(candidate_name, dir_fd=root_fd, follow_symlinks=False)
-            if not _same_file_state(before_read, after_read) or not _same_file_state(after_read, after_path):
-                raise ValueError("application image changed while hashing")
-            if total != after_read.st_size:
-                raise ValueError("application image byte count changed while hashing")
-            _verify_output_directory_identity(directory, parent_fd, root_fd, root_before)
-        finally:
-            os.close(descriptor)
+        digest = hashlib.sha256()
+        total = 0
+        while True:
+            chunk = os.read(descriptor, 1024 * 1024)
+            if not chunk:
+                break
+            total += len(chunk)
+            digest.update(chunk)
 
+        after_read = os.fstat(descriptor)
+        after_path = os.stat(candidate_name, dir_fd=root_fd, follow_symlinks=False)
+        if not _same_file_state(before_read, after_read) or not _same_file_state(after_read, after_path):
+            raise ValueError("application image changed while hashing")
+        if total != after_read.st_size:
+            raise ValueError("application image byte count changed while hashing")
+        _verify_output_directory_identity(directory, parent_fd, root_fd, root_before)
         return candidate_name, total, digest.hexdigest()
+    except BaseException as exc:
+        primary_error = exc
+        raise
     finally:
-        os.close(root_fd)
-        os.close(parent_fd)
+        cleanup_error = _close_descriptors_once(owned_descriptors)
+        if cleanup_error is not None:
+            if primary_error is not None:
+                _attach_cleanup_failure(primary_error, cleanup_error)
+            else:
+                raise cleanup_error
+
 
 
 def main() -> int:
