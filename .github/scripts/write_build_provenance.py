@@ -20,6 +20,20 @@ SCHEMA = "blaze.phx-release.build-provenance/v1"
 HEX_SHA = re.compile(r"^[0-9a-f]{64}$")
 GIT_SHA = re.compile(r"^[0-9a-f]{40}$")
 PROVENANCE_COMMAND_TIMEOUT_SECONDS = 120
+OPENWRT_SBC_TARGETS = frozenset(
+    {
+        "orangepi_zero3",
+        "orangepi_one",
+        "orangepi_pc",
+        "orangepi_pc_plus",
+        "orangepi_pc2",
+        "orangepi_zero",
+        "orangepi_zero2",
+        "orangepi_zero2w",
+        "orangepi_one_plus",
+    }
+)
+OPENWRT_TARGETS = frozenset({"ruijie", "x86_64"}) | OPENWRT_SBC_TARGETS
 
 
 class ProvenanceError(RuntimeError):
@@ -717,6 +731,38 @@ def _source_context(env: dict[str, str], source_paths: list[str]) -> dict[str, A
     }
 
 
+
+def _source_tree_context(source_tree_paths: list[str]) -> list[dict[str, str]]:
+    """Record exact Git tree identities after rejecting tracked and untracked drift."""
+    trees: list[dict[str, str]] = []
+    for source_path in source_tree_paths:
+        relative = _normalize_checksum_path(source_path)
+        try:
+            _run(["git", "diff", "--quiet", "HEAD", "--", relative])
+        except ProvenanceError as exc:
+            raise ProvenanceError(
+                f"source tree differs from exact HEAD worktree content: {relative}"
+            ) from exc
+
+        untracked = _run(["git", "ls-files", "--others", "--", relative])
+        if untracked:
+            raise ProvenanceError(
+                f"untracked source tree input: {relative}: {untracked}"
+            )
+
+        tree_sha = _run(["git", "rev-parse", f"HEAD:{relative}"])
+        if not GIT_SHA.fullmatch(tree_sha):
+            raise ProvenanceError(f"invalid Git tree identity for {relative}")
+        object_type = _run(["git", "cat-file", "-t", tree_sha])
+        if object_type != "tree":
+            raise ProvenanceError(
+                f"source input is not a Git tree object: {relative} ({object_type})"
+            )
+        trees.append({"path": relative, "git_tree": tree_sha})
+
+    return sorted(trees, key=lambda entry: entry["path"])
+
+
 def _parse_build_manifest(path: Path) -> dict[str, str]:
     raw = _read_regular(path)
     try:
@@ -809,6 +855,32 @@ def _openwrt_toolchain_reference(
     }
 
 
+
+def _openwrt_source_inputs(target: str) -> tuple[list[str], list[str]]:
+    """Return every tracked OpenWrt build helper and overlay tree for a target."""
+    if target not in OPENWRT_TARGETS:
+        raise ProvenanceError(f"unsupported OpenWrt source provenance target: {target}")
+
+    project = "experiment/openwrt/BlazePwifi"
+    source_paths = [
+        f"{project}/build/build-openwrt-image.sh",
+        f"{project}/VERSION",
+    ]
+    source_tree_paths = [f"{project}/openwrt/rootfs"]
+
+    if target == "x86_64" or target in OPENWRT_SBC_TARGETS:
+        source_paths.extend(
+            [
+                f"{project}/build/prepare-tabler.sh",
+                f"{project}/tools/verify-firmware-gzip.py",
+            ]
+        )
+    if target in OPENWRT_SBC_TARGETS:
+        source_tree_paths.append(f"{project}/linux-agent")
+
+    return sorted(source_paths), sorted(source_tree_paths)
+
+
 def _openwrt_toolchain(args: argparse.Namespace) -> tuple[dict[str, Any], list[str]]:
     fields = _parse_build_manifest(Path(args.artifact_dir) / "BUILD-MANIFEST.txt")
     if fields["Target"] != args.target:
@@ -881,10 +953,7 @@ def _openwrt_toolchain(args: argparse.Namespace) -> tuple[dict[str, Any], list[s
         ),
         "upstream_toolchain": upstream_toolchain,
     }
-    source_paths = [
-        "experiment/openwrt/BlazePwifi/build/build-openwrt-image.sh",
-        "experiment/openwrt/BlazePwifi/VERSION",
-    ]
+    source_paths, _ = _openwrt_source_inputs(args.target)
     return toolchain, source_paths
 
 
@@ -1425,8 +1494,10 @@ def write_provenance(args: argparse.Namespace, env: dict[str, str] | None = None
         _verify_checksum_manifest_at(root_fd, initial_files)
         _verify_directory_identity(root, root_fd, "artifact directory")
 
+        source_tree_paths: list[str] = []
         if args.kind == "openwrt":
             toolchain, source_paths = _openwrt_toolchain(args)
+            _, source_tree_paths = _openwrt_source_inputs(args.target)
             artifact_kind = "openwrt-imagebuilder-preview"
         elif args.kind in ("esp8266", "esp32"):
             toolchain, source_paths = _arduino_toolchain(args)
@@ -1435,6 +1506,8 @@ def write_provenance(args: argparse.Namespace, env: dict[str, str] | None = None
             raise ProvenanceError(f"unsupported artifact kind: {args.kind}")
 
         source = _source_context(environment, source_paths)
+        if source_tree_paths:
+            source["trees"] = _source_tree_context(source_tree_paths)
         manifest: dict[str, Any] = {
             "schema": SCHEMA,
             "artifact": {
