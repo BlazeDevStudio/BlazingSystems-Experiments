@@ -237,10 +237,10 @@ class ReleaseWorkflowConcurrencyTests(unittest.TestCase):
 
 
     def test_negative_selftest_receives_shared_build_workflow_in_same_scope(self):
-        marker = "      - name: RELEASE-SIGN test fail-closed negative controls\\n"
+        marker = "      - name: RELEASE-SIGN test fail-closed negative controls"
         start = self.windows_content.find(marker)
         self.assertNotEqual(start, -1, "missing release negative-selftest step")
-        next_step = self.windows_content.find("\\n      - name:", start + len(marker))
+        next_step = self.windows_content.find("\n      - name:", start + len(marker))
         if next_step < 0:
             next_step = len(self.windows_content)
         block = self.windows_content[start:next_step]
