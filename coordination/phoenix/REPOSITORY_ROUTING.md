@@ -1,3 +1,11 @@
+## PHX-MASTER UTC14 ownership and migration routing — 2026-11-24T14:05:18Z
+
+- OWNERSHIP_ROUTES.json remains blob e4db324315a1b3543fec17a148fbf960170fcb29, 11 routes, DRAFT_REVIEW_ONLY, PHX-MASTER target null. No route or owner changed.
+- RELEASE #291's 29-path accumulated diff contains 24 RELEASE paths, three shared BlazePwifi handover files and two PISONET-owned ReleaseSigning tests. The two PISONET tests are PublisherMockCli.ps1 and negative-selftest.ps1; PISONET review remains required. RELEASE has zero independent PR reviews.
+- Exact shared handover blobs diverge: PROJECT_HANDOVER CORE 72e8e487 / PISONET d3e66608 / RELEASE 31e1fdbc; CHANGE_LEDGER CORE df50981c / PISONET 02963d32 / RELEASE e954dd70; CURRENT_STATE CORE 72c38aeb / PISONET 47e07b7c / RELEASE 85dd3c1e. CORE reconciles the canonical shared handover; RELEASE reruns after it advances; PISONET retains its tests; QA independently reviews.
+- HARDWARE #349 source/test 839c72ac and docs head 16a51a99 remain Hardware-owned. CORE owns authenticated register/poll producer bytes; QA owns assertion reconciliation. Hardware remains deny-only.
+- COE #26 remains FROZEN. No file staging, copying, path remapping, overwrite, rebasing, cherry-picking or destination mutation is authorized by this audit.
+- Master records exact identities only; no owner branch or source path was modified.
 ## PHX-MASTER UTC08 follow-up cross-owner routing and migration hold — 2026-11-24T08:37:40Z
 
 `OWNERSHIP_ROUTES.json` remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`, 11 routes, `DRAFT_REVIEW_ONLY`, PHX-MASTER source `coordination/phoenix/`, target `null`. No owner, source prefix, destination prefix, or route kind changed.

@@ -118,3 +118,8 @@ HARDWARE #349 keeps deny-only behavior. CORE owns the authenticated register/pol
 5. Registry custodian restores authorized v11 Drive access; repository administrators establish effective branch protection; an authorized human runner executes the Master Python suite and coordination verifier.
 
 **PRODUCTION NO-GO.** Independent protected signing/anti-rollback witness, crash-atomic durable financial state, reversible financial migration tests, independent QA, native hardware acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized release gates remain outstanding.
+
+
+## Scope correction — preserved commit history
+
+The first UTC14 coordination commit 1c27aacc6102a6b2bb8fc733f569973df9faa00d placed the seven intended blobs at repository root because the tree-entry paths were mistakenly made relative to the repository root. Immediate remote PR/tree readback detected seven out-of-scope paths before any PR or control-plane checkpoint was posted. This corrective commit deletes those root entries and installs the same six coordination-document blobs plus this report under coordination/phoenix/. No subsystem source, COE destination, ownership manifest, secret, payment or hardware path was touched. Both commits remain in history; no force-push was used. The final PR diff is required to contain only coordination/phoenix/.

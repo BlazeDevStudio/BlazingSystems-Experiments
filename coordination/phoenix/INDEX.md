@@ -1,3 +1,15 @@
+# PHX-MASTER UTC14 live index — 2026-11-24T14:05:18Z
+
+- Starting Master branch HEAD ba356baf4acb3921d2fd5c7373e4dd4decfaabd4; current PR #288 OPEN / DRAFT / UNMERGED, 197 read-time paths all under coordination/phoenix/.
+- Experiments main f4e8a891; development aad3aade; COE main a6513ab; COE #26 b382d233 FROZEN.
+- Current #291: source/test 57c0844a; docs 35087588; current PR head 0b186e11. Windows/build fail at stale CORE-owned CURRENT_STATE checkpoint d85eb6a; ESP32 compatibility passes.
+- Current #349: source/test 839c72ac; docs/PR 16a51a99. Focused Relay/Quarantine pass; Full fails at Missing poll signature check; physical acceptance NOT TESTED.
+- COE #26 exact intake: 61 runtime rows actual 46 identical / 15 derived, but summary says 47/14; MIGRATION_MAP has 14 derived rows vs JSON 15, omits voucher_txn_journal.sh and has two stale hashes. Current main drift: 20 changed / 8 missing from pinned snapshot.
+- Ownership manifest e4db324: 11 routes / DRAFT_REVIEW_ONLY / Master target null. Cleanup #266 OPEN / 0-of-7.
+- Private Drive registry v11/newer corrections NOT RECOVERED; no older snapshot substituted. Master Python suite/verifier NOT RUN.
+- Full evidence: [UTC14 live role CI, COE intake and handover audit](PHX_MASTER_UTC14_20261124_LIVE_ROLE_CI_COE26_INTAKE_AND_HANDOVER_FRESHNESS_AUDIT.md).
+- No subsystem source or COE destination changes. **PRODUCTION NO-GO.**
+
 # PHX-MASTER UTC08 follow-up live index — 2026-11-24T08:37:40Z
 
 - Starting Master branch/PR #288 head: `07bc60a1cefe1373581460107d9dff5ef13caf5f`; base `main@f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; PR remains OPEN / DRAFT / UNMERGED.

@@ -1,3 +1,21 @@
+## PHX-MASTER UTC14 live owner-head / CI reconciliation — 2026-11-24T14:05:18Z
+
+Read-time refs: Experiments main f4e8a891aed8af86d5fd315d28750a0ac3a7372b; development aad3aade72c1156eecba1fed30907c6d0283b2c5; Master starting HEAD ba356baf4acb3921d2fd5c7373e4dd4decfaabd4; COE main a6513ab4412b4c014eee2863e45cbe32d06cb243; COE #26 b382d233ff06c8791b1028bed3c617cc7b670d12. Master #288 remains OPEN / DRAFT / UNMERGED; current read-time diff is 197 paths, all coordination/phoenix/.
+
+| Owner / PR | Exact source/test and PR heads | Current exact-head CI |
+|---|---|---|
+| CORE #252 | c82705f2de865c89ab733b10efa84f26f56a5cc4 | #42698139210 PASS, scoped; separate CORE owner retained. |
+| RENTAL #328 | 0e0da62acd47c6a1ce287f8a30fc700d603fa070 | APK #44782114384 + API #44782114393 PASS; build #44782114390 FAIL. |
+| PISONET #255 | d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | Windows #42462978704 PASS, synthetic only. |
+| HARDWARE #345 / #347 | ca72497ed386c9ac4e50d3f811827bef51e296ad / 960184670379f01e20f0e7e8bc23b3e5eedacd3f | #345 focused Relay/Quarantine PASS, build FAIL; #347 all three inspected workflows FAIL. |
+| HARDWARE #348 | eb7afcb2ba0d1e84054c052c8b129cb51a91d062 | Focused #45352513178 PASS; build #45352513177 FAIL at mbedtls/sha256.h. |
+| HARDWARE #349 | source/test 839c72ac68bb1f0a8fd9a2fc74a166cec15b624e; docs/PR 16a51a995f2c2ed52c35969f19a4adaf857c3910 | Relay #45407965381 + Quarantine #45407965439 PASS; Full #45407965339 FAIL at Missing poll signature check; 14/14 target/platform jobs pass, downstream stages skip. |
+| QA #290 / #292 | 5c29d15994cee1279058f1eca12f2a3180704292 / 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | #290 Windows #43633486963 PASS; #292 no PR-triggered runs. |
+| RELEASE #291 | source/test 57c0844a8b49e5bb98f84729276da7b42b0074d3; docs 350875888129132fca161e20d473276e4379b50e; current PR head 0b186e11676cd26d863b87d03e5d9b8a75e68a39 | Earlier CI-0701 jobs 53/53 PASS, but overall source run cancelled and docs-head build/Windows fail at stale CURRENT_STATE. Current-head Windows #45408109183 and build #45408109177 fail freshness; ESP32 compatibility #45408109178 PASS. |
+| COE #35 / #45 / #49 | e7801818b00854f34a5a88955d979c601ec96404 / 9d76a134c1f6512aa40c20ec4d247306a71a8cce / aeb8ff11b2f5db9a5f86280ab62ab988245f3919 | #35 case guard PASS, profile ULA gate FAIL, Bubblewrap absent exit 125; #45 overlay/case PASS; #49 Stage 5.1/case PASS, ESP32 mbedtls compile FAIL. |
+| COE #26 | b382d233ff06c8791b1028bed3c617cc7b670d12 | Five workflows QUEUED; zero jobs/statuses. |
+
+The private Drive registry v11/newer corrections remain NOT RECOVERED; no Google Drive connector is exposed. No subsystem source ownership changed. Full exact migration and shared-handover evidence is in the UTC14 audit report.
 ## PHX-MASTER UTC08 follow-up owner/CI reconciliation — 2026-11-24T08:37:40Z
 
 Current refs: Experiments `main@f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; issue-designated development `blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5`; Master starting head `07bc60a1cefe1373581460107d9dff5ef13caf5f`; COE `main@a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`.

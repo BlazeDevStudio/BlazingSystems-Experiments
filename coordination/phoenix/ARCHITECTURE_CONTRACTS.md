@@ -1927,3 +1927,17 @@ Compare the exact PROJECT_HANDOVER, CHANGE_LEDGER and CURRENT_STATE blob identit
 A Master checkpoint is a read-time snapshot, not a lock on owner branches. Before finalizing the same activation, re-read owner PR heads and exact-head CI. If an owner advances, append a read-time correction to the existing report and update the single role/hour checkpoint in place; do not post a duplicate message or claim the earlier run set is still current.
 
 At the post-checkpoint refresh, RELEASE #291 advanced to b154e845: PROJECT_HANDOVER and CHANGE_LEDGER changed, but CURRENT_STATE remained blob 85dd3c1e / checkpoint d85eb6a2. The new Windows/build runs still fail the CURRENT_STATE freshness gate. HARDWARE #349 advanced to dce158b3 with a lab-only poll-response fixture change; focused jobs pass, while build validation still fails at Missing poll signature check. Keep source/test SHA, docs SHA and CI head distinct, and route the shared handover to CORE and the contract assertion to CORE/QA.
+
+### 7.9.3 Source-intake and migration-map reconciliation is a hard staging gate
+
+A destination candidate is not migration-ready until all of the following are independently checked at exact source and destination commits:
+
+1. The manifest's source commit and original subtree tree IDs resolve to the stated recursive source trees.
+2. Every SOURCE_INTAKE row resolves to the exact source and destination blob SHA and Git mode.
+3. Summary counters are recomputed from the rows and equal the actual identical/derived/missing counts.
+4. MIGRATION_MAP rows reconcile one-to-one with the manifest's derived-test list; no omitted path or stale blob SHA is allowed.
+5. Test identity is established by path, blob and mode, not filename similarity. Firmware sketches and test fixtures require the same exact-blob discipline.
+6. Every applicable LICENSE/NOTICE and third-party asset has an explicit destination or exclusion disposition.
+7. A historical source pin is compared separately with current source authority; a historical snapshot must never be silently represented as current main.
+
+Any counter mismatch, stale map entry, missing source path, unaccounted license, incomplete test import or current-source drift keeps the candidate FROZEN. Do not stage, copy, rebase, cherry-pick, overwrite or promote until the owning integration role corrects the manifest/map and reviewers re-run exact-head CI. QUEUED workflows are not test evidence; CI at one SHA does not validate a different final docs/source head.

@@ -1,3 +1,12 @@
+## PHX-MASTER UTC14 exact source-intake and destination provenance — 2026-11-24T14:05:18Z
+
+COE #26 remains FROZEN at b382d233; current source authority is Experiments main f4e8a891; historical SOURCE_INTAKE pin is 6d4c9b48. Complete recursive tree comparison shows: 61 runtime rows all match their pinned source/destination blobs and modes, but actual classification is 46 identical / 15 derived while JSON summary says 47 / 14. Four original test rows match; 15 derived-test JSON rows match destination blobs, while MIGRATION_MAP has 14 rows, omits voucher_txn_journal.sh and has stale hashes for run_focus.sh and member_txn_journal.sh.
+
+For the 61 historical runtime paths, current main has 33 same blobs, 20 changed blobs and eight absent paths. Current main versus COE #26 has 25 exact, 28 divergent and eight missing. The manifest's historical source pin is not current main.
+
+At current HARDWARE #349 source/test 839c72ac versus COE #26: tests 47/19, 1 exact, 3 divergent, 43 source-only and 15 destination-only; board subtrees 58 source files versus two destination sketches; 46 board-local Python labs/helpers versus zero; both firmware sketch blobs differ. Product LICENSE, QRCode and TailAdmin LICENSE/NOTICE have exact destination counterparts. Root NOTICE, Tabler LICENSE and jsqr test-vendor LICENSE have no destination counterpart; BlazeRentalLauncher LICENSE remains on the separate RENTAL route.
+
+Five COE #26 workflows remain QUEUED with zero jobs/statuses. No staging, copying, moving or destination changes occurred. Full row counts, exact blob identities, current-main drift and CI links: PHX_MASTER_UTC14_20261124_LIVE_ROLE_CI_COE26_INTAKE_AND_HANDOVER_FRESHNESS_AUDIT.md.
 ## PHX-MASTER UTC08 follow-up exact-tree and destination CI reconciliation — 2026-11-24T08:37:40Z
 
 Complete non-truncated recursive trees at the current candidate heads: Experiments HARDWARE #349 docs/PR `a994f7048673677651449eeb0a04d2bf9e91737c` = 2,501 entries; COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12` = 286 entries.
