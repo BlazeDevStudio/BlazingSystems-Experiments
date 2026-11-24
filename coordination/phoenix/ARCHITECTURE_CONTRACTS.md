@@ -1714,6 +1714,10 @@ COE #26 remains FROZEN: its ESP8266/ESP32 blobs differ from #349, and the new bo
 
 Current docs/PR head `8639deda8d341d61efddff77be4d06ea931d040d`; source/test head `1247a5c7b332677ae8dca83dc94cf586a015e7a0`; parent #347 base `960184670379f01e20f0e7e8bc23b3e5eedacd3f`. The UTC05 handover is `571a6d66de41620e26eab0457d620fddc2bb3a96`. Source/test adds pending-clear fixture `5b10b47f4994bb053ebad5c7c1dd6c56900ea0a6` and refactors runner to `a18ada4da4809af93f9d18d4834a13f5c3cadd29`; parser lab `ac4b164e...`, first-fault lab `aacba2e...`, and production sketch blobs remain unchanged. Source/test Q/R PASS and Full FAIL; current docs-head Q/R are in progress and Full validation already fails at the inherited poll-signature assertion. No current docs-head pass, physical acceptance or production authority is established. CORE owns signed register/poll producer contract and golden vectors; QA owns assertion reconciliation. Hardware must not invent a signature or weaken default-deny.
 
+### UTC05 final owner/CI refresh — supersedes earlier body/CI snapshots
+
+HARDWARE owner checkpoint [#7123382454](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/172#issuecomment-7123382454) and live PR #349 body now pin source/test `1247a5c7b332677ae8dca83dc94cf586a015e7a0` and final handover/docs `8639deda8d341d61efddff77be4d06ea931d040d`; the previous e4ab80/8dd8b12 top-level pin is superseded. Current docs-head Quarantine #45336321346 and Relay #45336321352 PASS; Full #45336321274 FAILs at validation job 138249136286 / `Missing poll signature check`, with 13/13 firmware targets and Android PASS and downstream jobs skipped. The failure is the existing CORE/QA authenticated poll-signature contract mismatch; do not weaken default-deny or invent a Hardware-side signature. #266 remains OPEN / 0-of-7.
+
 ## 6.98 Cross-owner PR path overlap is a pre-integration review gate — PHX-RELEASE #291 (2026-11-24 UTC03)
 
 Exact tree comparison found that RELEASE PR #291 at `5222443b3747f47d440d804c4ff853eaa04686a5` changes three handover paths also changed by CORE #252, PISONET #255 and QA #290. These are the same paths but **not the same blobs** across the four candidate heads:
@@ -1761,6 +1765,10 @@ HARDWARE #349 docs/PR head `8639deda8d341d61efddff77be4d06ea931d040d`: Quarantin
 ### UTC05 post-run CI refresh — supersedes earlier pending/queued snapshot
 RELEASE #291 current head `3f92801aadf47be594fdef5a278b6aa125eaea1a`: Windows [#45336455064](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45336455064) completed FAIL at PISONET `negative-selftest.ps1:326`, `missing tag accepted=False`; ESP32 compatibility [#45336455127](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45336455127) completed PASS 3/3. Build [#45336455073](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45336455073) remains IN_PROGRESS only because `v04_android_emulator` is still running; CI-0701, validate, firmware targets, update bundle and the other v0.4 simulations passed. Production sign handoff and publish jobs are SKIPPED. No release was signed or published.
 
+
+### UTC05 final RELEASE CI refresh — supersedes earlier in-progress snapshot
+
+RELEASE #291 current head remains `3f92801aadf47be594fdef5a278b6aa125eaea1a`. Windows #45336455064 FAILs at PISONET `negative-selftest.ps1:326`, `missing tag accepted=False`; ESP32 compatibility #45336455127 PASSes 3/3; build #45336455073 completed SUCCESS with CI-0701, validation, all firmware targets, Android, update bundle and all v0.4 simulations PASS. Production sign handoff, release publishing and prerelease publishing are SKIPPED. The negative-test two-lookup fixture gap remains; the PR body still pins older f1fda47 and must be refreshed by PHX-RELEASE. No release was signed or published.
 
 ## 7.0 Canonical product branch/version authority must be explicit before integration
 

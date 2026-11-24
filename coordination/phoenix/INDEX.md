@@ -954,3 +954,5 @@ The exact private `BLAZE_PROJECT_REGISTRY_v11_20261027.json` and newer correctio
 
 
 UTC05 post-run refresh: HARDWARE #349 current docs-head Quarantine/Relay PASS, Full FAIL at Missing poll signature check (13/13 targets + Android PASS); RELEASE #291 current Windows FAIL, ESP32 PASS 3/3, build still waiting only on Android emulator; signing/publishing skipped.
+
+UTC05 final refresh: HARDWARE owner updated PR #349 body to current source/test/docs pins; current Q/R PASS, Full FAIL at Missing poll signature. RELEASE #291 current Windows FAIL, ESP32 PASS 3/3, build SUCCESS; signing/publishing SKIPPED. RELEASE's own PR body still needs its owner to refresh the stale f1fda47 pin.

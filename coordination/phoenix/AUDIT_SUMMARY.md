@@ -2717,3 +2717,7 @@ Experiments main `f4e8a891...`, development `aad3aade...`, v0.6 branch `2fbd2475
 
 ## UTC05 post-run CI terminal refresh
 HARDWARE #349 docs-head Quarantine/Relay are PASS; Full is FAIL at Missing poll signature check, with all 13 firmware targets and Android PASS and downstream skipped. RELEASE #291 current-head Windows is FAIL at negative-selftest.ps1:326; ESP32 compatibility PASS 3/3; build remains in progress only on Android emulator. Signing/publishing remain skipped. No production release or migration.
+
+
+## UTC05 final owner/CI refresh
+HARDWARE #349 owner refreshed its PR body to source/test 1247a5c / docs 8639deda; current docs-head Q/R PASS and Full FAILs at Missing poll signature check. RELEASE #291 current Windows FAILs at negative-selftest.ps1:326; ESP32 compatibility PASS 3/3; build SUCCESS with all target/simulation jobs passing and sign/publish skipped. RELEASE PR body still pins f1fda47 and needs owner refresh. No production release or migration.

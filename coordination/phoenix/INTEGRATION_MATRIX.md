@@ -4807,3 +4807,7 @@ Source/test #1247a5: Quarantine #45335896662 PASS, Relay #45335896640 PASS, Full
 
 ### UTC05 post-run exact-head CI refresh
 #349 docs head 8639deda: Quarantine/Relay #45336321346/#45336321352 PASS; Full #45336321274 FAIL at validation job 138249136286 / Missing poll signature check; all 13 firmware targets and Android PASS, downstream skipped. #291 head 3f92801: Windows #45336455064 FAIL at the PISONET negative self-test; ESP32 compatibility #45336455127 PASS 3/3; build #45336455073 still runs only the Android emulator job, with signing/publishing skipped. These CI results do not change the COE #26 FROZEN migration disposition.
+
+
+### UTC05 final owner/CI refresh
+HARDWARE PR #349 body is now refreshed by its owner and matches source/test 1247a5c / docs 8639deda. Docs-head Quarantine/Relay PASS; Full FAIL at Missing poll signature check (13/13 firmware targets + Android PASS). RELEASE #291 Windows FAILs at negative-selftest.ps1:326; ESP32 compatibility PASS 3/3; build SUCCESS with sign/publish SKIPPED. COE #26 remains FROZEN.

@@ -3499,3 +3499,13 @@ Exhaustive Library listing (15 pages) found v3-v7 snapshots and baseline registr
 ## UTC05 post-run CI terminal refresh
 - HARDWARE #349 docs head 8639deda: Quarantine #45336321346 PASS; Relay #45336321352 PASS; Full #45336321274 FAIL at Controller protocol parity / Missing poll signature check; 13/13 targets and Android PASS, downstream skipped.
 - RELEASE #291 head 3f92801: Windows #45336455064 FAIL at negative-selftest.ps1:326; ESP32 #45336455127 PASS 3/3; build #45336455073 remains in progress only on v04_android_emulator. CI-0701, validate, targets, update bundle and other simulations PASS; sign/publish SKIPPED.
+
+
+## UTC05 final owner/CI refresh
+### UTC05 final owner/CI refresh — supersedes earlier body/CI snapshots
+
+HARDWARE owner checkpoint [#7123382454](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/172#issuecomment-7123382454) and live PR #349 body now pin source/test `1247a5c7b332677ae8dca83dc94cf586a015e7a0` and final handover/docs `8639deda8d341d61efddff77be4d06ea931d040d`; the previous e4ab80/8dd8b12 top-level pin is superseded. Current docs-head Quarantine #45336321346 and Relay #45336321352 PASS; Full #45336321274 FAILs at validation job 138249136286 / `Missing poll signature check`, with 13/13 firmware targets and Android PASS and downstream jobs skipped. The failure is the existing CORE/QA authenticated poll-signature contract mismatch; do not weaken default-deny or invent a Hardware-side signature. #266 remains OPEN / 0-of-7.
+
+### UTC05 final RELEASE CI refresh — supersedes earlier in-progress snapshot
+
+RELEASE #291 current head remains `3f92801aadf47be594fdef5a278b6aa125eaea1a`. Windows #45336455064 FAILs at PISONET `negative-selftest.ps1:326`, `missing tag accepted=False`; ESP32 compatibility #45336455127 PASSes 3/3; build #45336455073 completed SUCCESS with CI-0701, validation, all firmware targets, Android, update bundle and all v0.4 simulations PASS. Production sign handoff, release publishing and prerelease publishing are SKIPPED. The negative-test two-lookup fixture gap remains; the PR body still pins older f1fda47 and must be refreshed by PHX-RELEASE. No release was signed or published.
