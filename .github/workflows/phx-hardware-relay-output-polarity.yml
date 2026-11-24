@@ -25,6 +25,7 @@ on:
       - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_loop_blocking_inhibit_lab_response_fixtures.py"
       - "experiment/openwrt/BlazePwifi/docs/handover/2026-11-24-hw-poll-window-fixture-modularization-utc13.md"
       - "experiment/openwrt/BlazePwifi/docs/handover/2026-11-24-hw-default-main-fixture-modularization-utc14.md"
+      - "experiment/openwrt/BlazePwifi/docs/handover/2026-11-24-hw-poll-safety-contract-modularization-utc15.md"
       - ".github/workflows/phx-hardware-relay-output-polarity.yml"
       - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_pending_recovery_lab_fixtures.py"
   pull_request:
@@ -58,6 +59,7 @@ on:
       - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_pending_recovery_lab_fixtures.py"
       - "experiment/openwrt/BlazePwifi/docs/handover/2026-11-24-hw-poll-window-fixture-modularization-utc13.md"
       - "experiment/openwrt/BlazePwifi/docs/handover/2026-11-24-hw-default-main-fixture-modularization-utc14.md"
+      - "experiment/openwrt/BlazePwifi/docs/handover/2026-11-24-hw-poll-safety-contract-modularization-utc15.md"
   workflow_dispatch:
 permissions:
   contents: read
