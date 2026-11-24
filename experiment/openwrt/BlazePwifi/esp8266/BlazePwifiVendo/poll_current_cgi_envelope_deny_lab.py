@@ -8,8 +8,7 @@ register/poll contract. Candidate signature state is adversarial input, not a
 verified signature. Host compilation is simulated control-flow evidence.
 """
 from pathlib import Path
-import subprocess
-import tempfile
+from cpp_fixture_runner import run_cpp_fixture
 
 
 def _action_block(source: str, label: str) -> str:
@@ -101,23 +100,15 @@ int main() {
 
 
 def _compile_and_run(board: str, code: str, label: str):
-    with tempfile.TemporaryDirectory(prefix="phx-current-cgi-envelope-") as folder:
-        cpp = Path(folder) / "current_cgi_envelope.cpp"
-        binary = Path(folder) / "current_cgi_envelope"
-        cpp.write_text(code, encoding="utf-8")
-        built = subprocess.run(
-            ["g++", "-std=c++17", "-Wall", "-Wextra", "-Werror",
-             "-Wno-unused-parameter", str(cpp), "-o", str(binary)],
-            capture_output=True, text=True, timeout=30,
-        )
-        if built.returncode:
-            raise RuntimeError(
-                f"{board} {label}: compile failed:\n{built.stderr[-3000:]}"
-            )
-        return subprocess.run(
-            [str(binary)], capture_output=True, text=True, timeout=10
-        )
-
+    return run_cpp_fixture(
+        code,
+        prefix="phx-current-cgi-envelope-",
+        stem="current_cgi_envelope",
+        extra_flags=("-Wno-unused-parameter",),
+        compile_timeout=30,
+        run_timeout=10,
+        context=f"{board} {label}",
+    )
 
 def verify(boards, extract, stubs):
     root = Path(__file__).resolve().parents[2]
