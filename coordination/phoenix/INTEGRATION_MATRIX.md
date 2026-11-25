@@ -1,3 +1,15 @@
+## PHX-MASTER UTC04 HARDWARE #349 post-checkpoint refresh — 2026-11-25T04:56:08Z
+
+Current exact tuple: source/test `f591cb85ba032e4f2c30e5008c71de9ce8d17f2e`; handover/docs `dc6ef11c104fdd9b73dfdd1120ca3a2bc3f86dcf`; PR/workflow head `56de0761ca67b54feb4889401a810b0069f50614`. The handover now identifies the current source/test SHA and the PR body is refreshed.
+
+- Docs-head Quarantine [#45549636102](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45549636102) PASS.
+- Docs-head Relay [#45549636112](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45549636112) PASS.
+- Docs-head Full [#45549636091](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45549636091) FAIL at Controller protocol parity / Missing poll signature check. All fourteen target/platform and Android jobs PASS; twelve dependent stages SKIPPED.
+
+This supersedes the initial UTC04 stale-handover observation. The remaining Full failure is not cleared by focused passes; CORE owns the authenticated producer contract and QA owns independent assertion review. Hardware retains deny-default. No Master source change.
+
+---
+
 ## PHX-MASTER UTC04 COE #26 exact candidate revalidation — 2026-11-25T04:48:35Z
 
 **Candidate:** COE PR #26, head `b382d233ff06c8791b1028bed3c617cc7b670d12`, base `main@a6513ab4412b4c014eee2863e45cbe32d06cb243`, OPEN / DRAFT / UNMERGED / FROZEN. Candidate main remains a structure-only baseline; this PR is not an approved integration.
