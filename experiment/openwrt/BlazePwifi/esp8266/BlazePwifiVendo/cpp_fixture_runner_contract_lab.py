@@ -149,7 +149,7 @@ class CppFixtureRunnerContractTests(unittest.TestCase):
             r"..\\escape",
             r"C:\\escape",
             "C:relative",
-            "\\x00",
+            chr(0),
         )
         for prefix in invalid_prefixes:
             with self.subTest(prefix=prefix):
@@ -159,7 +159,8 @@ class CppFixtureRunnerContractTests(unittest.TestCase):
                 ) as temporary_directory, patch(
                     "cpp_fixture_runner.Path.write_text"
                 ) as write_text, patch(
-                    "cpp_fixture_runner.subprocess.run"
+                    "cpp_fixture_runner.subprocess.run",
+                    side_effect=[completed(), completed()],
                 ) as process_run:
                     with self.assertRaisesRegex(
                         ValueError,
