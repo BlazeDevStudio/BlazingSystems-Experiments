@@ -273,7 +273,43 @@ class CppFixtureRunnerContractTests(unittest.TestCase):
         self.assertFalse(temp_dirs[0].exists())
 
 
+
+def verify_poll_fault_latch_lab_uses_shared_runner():
+    """Keep the first-fault edge lab on the shared bounded C++ runner."""
+    lab = Path(__file__).with_name("poll_fault_latch_edge_count_lab.py")
+    source = lab.read_text(encoding="utf-8")
+    forbidden = (
+        "import subprocess",
+        "import tempfile",
+        "subprocess.run(",
+        "tempfile.TemporaryDirectory(",
+    )
+    for token in forbidden:
+        if token in source:
+            raise AssertionError(
+                "poll_fault_latch_edge_count_lab.py duplicates shared runner mechanics: "
+                + token
+            )
+    required = (
+        "from cpp_fixture_runner import run_cpp_fixture",
+        "run_cpp_fixture(",
+        'prefix="phx-second-isr-"',
+        'extra_flags=("-pedantic", "-O2")',
+        "compile_timeout=30",
+        "run_timeout=10",
+        "context=",
+    )
+    for token in required:
+        if token not in source:
+            raise AssertionError(
+                "poll_fault_latch_edge_count_lab.py missing shared-runner contract: "
+                + token
+            )
+    print("POLL_FAULT_LATCH_SHARED_RUNNER_GUARD_PASS")
+
+
 def verify():
+    verify_poll_fault_latch_lab_uses_shared_runner()
     suite = unittest.defaultTestLoader.loadTestsFromTestCase(
         CppFixtureRunnerContractTests
     )
