@@ -128,6 +128,82 @@ def expect_mutation_rejected(code, board, label, expected_exit):
     print(f"{board}: MUTATION_REJECTED {label} expected_exit={expected_exit}")
 
 
+def _board_parity_problem(sources):
+    """Return a readable mismatch when the two bounded readers drift."""
+    missing = [board for board in BOARDS if board not in sources]
+    if missing:
+        return "missing board source(s): " + ", ".join(missing)
+
+    normalized = {
+        board: re.sub(
+            r"\\s+",
+            "",
+            extract_function(sources[board], "readBoundedControllerResponse"),
+        )
+        for board in BOARDS
+    }
+    if normalized["ESP8266"] != normalized["ESP32"]:
+        return "ESP8266/ESP32 readBoundedControllerResponse bodies differ"
+    return None
+
+
+def verify_board_parity(sources):
+    problem = _board_parity_problem(sources)
+    if problem:
+        raise AssertionError(problem)
+    print("BOUNDED_HTTP_RESPONSE_BOARD_PARITY_PASS")
+
+
+def verify_board_parity_mutations(sources):
+    """Prove each fail-closed reader invariant is protected by the parity guard."""
+    mutations = (
+        (
+            "status-deny",
+            "statusCode<200 || statusCode>=300 ||",
+            "statusCode<200 ||",
+        ),
+        ("unknown-length-deny", "responseBytes<0 ||", ""),
+        (
+            "declared-size-cap",
+            "responseBytes>MAX_CONTROLLER_RESPONSE_BYTES ||",
+            "",
+        ),
+        ('transfer-encoding-deny', 'h.hasHeader("Transfer-Encoding")', "false"),
+        (
+            "exact-length-readback",
+            "if((int)body.length()!=responseBytes) return String();",
+            "",
+        ),
+    )
+
+    for board in BOARDS:
+        source = sources[board]
+        helper = extract_function(source, "readBoundedControllerResponse")
+        if source.count(helper) != 1:
+            raise AssertionError(
+                f"{board}: bounded reader must have one exact source occurrence"
+            )
+        for label, old, new in mutations:
+            if helper.count(old) != 1:
+                raise AssertionError(
+                    f"{board}: expected one parity mutation anchor for {label}"
+                )
+            mutated_helper = helper.replace(old, new, 1)
+            mutated_sources = dict(sources)
+            mutated_sources[board] = source.replace(helper, mutated_helper, 1)
+            problem = _board_parity_problem(mutated_sources)
+            if problem is None:
+                raise AssertionError(
+                    f"{board}: board parity accepted {label} drift"
+                )
+            print(
+                f"{board}: BOUNDED_HTTP_RESPONSE_BOARD_PARITY_MUTATION_REJECTED "
+                f"{label}"
+            )
+
+    print("BOUNDED_HTTP_RESPONSE_BOARD_PARITY_MUTATIONS_PASS 10/10")
+
+
 def verify():
     sources = {
         board: path.read_text(encoding="utf-8")
