@@ -70,12 +70,12 @@ jobs:
           output="$RUNNER_TEMP/esp8266-core-3.1.2"
           mkdir -p "$output"
           arduino-cli compile --warnings all --fqbn esp8266:esp8266:nodemcuv2 --output-dir "$output" experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo
-          find "$output" -type f -name '*.bin' -printf '%f %s bytes\\n' | sort
+          find "$output" -type f -name '*.bin' -printf '%f %s bytes\n' | sort
           mapfile -t firmware_bins < <(find "$output" -type f -name '*.ino.bin' -print)
           test "${#firmware_bins[@]}" -eq 1
           binary="${firmware_bins[0]}"
           test -s "$binary"
-          printf 'FIRMWARE_BINARY=%s\\n' "$(basename "$binary")"
+          printf 'FIRMWARE_BINARY=%s\n' "$(basename "$binary")"
           stat -c 'FIRMWARE_BYTES=%s' "$binary"
           sha256sum "$binary"
           printf 'ARDUINO_ESP8266_CORE=3.1.2\nSIMULATED_ONLY=1\nPHYSICAL_ACCEPTANCE=0\n'
