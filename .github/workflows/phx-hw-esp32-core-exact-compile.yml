@@ -47,7 +47,7 @@ jobs:
           set -euo pipefail
           expected="${{ github.event.pull_request.head.sha || github.sha }}"
           actual="$(git rev-parse HEAD)"
-          printf 'EXPECTED_SHA=%s\\nACTUAL_SHA=%s\\n' "$expected" "$actual"
+          printf 'EXPECTED_SHA=%s\nACTUAL_SHA=%s\n' "$expected" "$actual"
           test "$actual" = "$expected"
 
       - uses: arduino/setup-arduino-cli@v2
@@ -75,12 +75,10 @@ jobs:
           set -euo pipefail
           output="$RUNNER_TEMP/esp32-core-${{ matrix.core_version }}"
           mkdir -p "$output"
-          arduino-cli compile --warnings all --fqbn esp32:esp32:esp32 \\
-            --output-dir "$output" \\
-            experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32
+          arduino-cli compile --warnings all --fqbn esp32:esp32:esp32 --output-dir "$output" experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32
           binary="$(find "$output" -type f -name '*.bin' -print -quit)"
           test -n "$binary"
           test -s "$binary"
           stat -c 'BINARY_BYTES=%s' "$binary"
           sha256sum "$binary"
-          printf 'ARDUINO_ESP32_CORE=${{ matrix.core_version }}\\nSIMULATED_ONLY=1\\nPHYSICAL_ACCEPTANCE=0\\n'
+          printf 'ARDUINO_ESP32_CORE=${{ matrix.core_version }}\nSIMULATED_ONLY=1\nPHYSICAL_ACCEPTANCE=0\n'
