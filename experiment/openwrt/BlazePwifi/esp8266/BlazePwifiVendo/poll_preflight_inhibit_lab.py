@@ -52,6 +52,20 @@ def poll_guard_locations(source: str):
     if not poll_matches:
         raise AssertionError("missing synchronous poll request")
 
+    # Until CORE publishes an authenticated poll/configuration contract, the
+    # response must be explicitly discarded and no remote config may be applied
+    # anywhere in this loop. This closes a transient relay-enable window between
+    # the pre-poll and post-poll deny calls.
+    for match in poll_matches:
+        prefix = masked_poll_block[max(0, match.start() - 32):match.start()]
+        suffix = masked_poll_block[match.end():]
+        if not re.search(r"\\(\\s*void\\s*\\)\\s*$", prefix):
+            raise AssertionError("poll response must be explicitly discarded until authenticated contract approval")
+        if not re.match(r"\\s*;", suffix):
+            raise AssertionError("poll response must not be consumed before post-poll deny")
+    if re.search(r"\\bapplyRemoteConfig\\s*\\(", masked_loop):
+        raise AssertionError("remote configuration must remain unapplied until authenticated contract approval")
+
     first_pre_guard = -1
     last_post_guard = -1
     for index, match in enumerate(poll_matches):
@@ -281,18 +295,17 @@ void loop() {
     const char *note = "post(\"poll\");";
     if (WiFi.status() == WL_CONNECTED && millis() - lastPoll > 1500) {
         denyRemoteControl();
-        post("poll");
+        (void)post("poll");
         denyRemoteControl();
     }
     digitalRead(runCoinPin);
 }
 '''
     poll_guard_locations(poll_source)
-    # Test-first: a poll reply must remain unused until CORE/QA approve a
-    # canonical authenticated response contract. The current guard does not
-    # yet reject this mutation, so this commit is expected to fail.
+    # Failure injection: both response consumption and independent remote-config
+    # application must be rejected until the authenticated contract is approved.
     unsafe_poll_source = poll_source.replace(
-        '        post("poll");',
+        '        (void)post("poll");',
         '        String response = post("poll");\\n        applyRemoteConfig(response);',
     )
     try:
@@ -301,6 +314,16 @@ void loop() {
         pass
     else:
         raise AssertionError("poll-response consumption mutation was not rejected")
+    unsafe_config_source = poll_source.replace(
+        '        (void)post("poll");',
+        '        (void)post("poll");\\n        applyRemoteConfig(staleResponse);',
+    )
+    try:
+        poll_guard_locations(unsafe_config_source)
+    except AssertionError:
+        pass
+    else:
+        raise AssertionError("remote-config application mutation was not rejected")
     if not has_empty_string_assignment('void f() { activeTarget = ""; }', "activeTarget"):
         raise AssertionError("empty-target assignment was not recognized")
     if has_empty_string_assignment('void f() { /* activeTarget = ""; */ }', "activeTarget"):
