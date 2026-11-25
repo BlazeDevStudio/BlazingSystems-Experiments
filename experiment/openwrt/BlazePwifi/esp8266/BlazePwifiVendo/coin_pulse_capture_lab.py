@@ -31,6 +31,14 @@ BOARDS = (
 
 
 
+def active_isr_definition_index(board):
+    if board == "ESP8266":
+        return 0
+    if board == "ESP32":
+        return 1
+    raise RuntimeError(f"unsupported board for conditional coinEdgeISR selection: {board}")
+
+
 def extract_board_coin_edge_isr(source, board):
     definitions = extract_functions(source, "coinEdgeISR")
     if len(definitions) != 2:
@@ -48,7 +56,24 @@ def extract_board_coin_edge_isr(source, board):
             f"{board} coinEdgeISR must use IRAM_ATTR in both conditional definitions, "
             f"found {iram_count}"
         )
-    return definitions[0][1]
+    return definitions[active_isr_definition_index(board)][1]
+
+
+def mutate_active_isr_attribute(source, board):
+    definitions = extract_functions(source, "coinEdgeISR")
+    if len(definitions) != 2:
+        raise RuntimeError(f"{board} expected both conditional coinEdgeISR definitions, found {len(definitions)}")
+    active_offset = definitions[active_isr_definition_index(board)][0]
+    prefix = source[:active_offset]
+    active_source = source[active_offset:]
+    mutated_active = active_source.replace(
+        "IRAM_ATTR coinEdgeISR",
+        "ICACHE_RAM_ATTR coinEdgeISR",
+        1,
+    )
+    if mutated_active == active_source:
+        raise RuntimeError(f"{board} could not inject deprecated ISR attribute into active branch")
+    return prefix + mutated_active
 
 
 def compile_and_run(functions):
@@ -226,14 +251,7 @@ def main():
             if len(functions) != len(FUNCTION_SPECS):
                 continue
             isr_body = extract_board_coin_edge_isr(source, board)
-            legacy_mutation = source.replace(
-                "IRAM_ATTR coinEdgeISR",
-                "ICACHE_RAM_ATTR coinEdgeISR",
-                1,
-            )
-            if legacy_mutation == source:
-                failures.append(f"{board} could not inject deprecated ISR attribute mutation")
-                continue
+            legacy_mutation = mutate_active_isr_attribute(source, board)
             try:
                 extract_board_coin_edge_isr(legacy_mutation, board)
             except RuntimeError as error:
