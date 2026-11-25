@@ -35,20 +35,20 @@ def extract_board_coin_edge_isr(source, board):
     definitions = extract_functions(source, "coinEdgeISR")
     if len(definitions) != 2:
         raise RuntimeError(f"{board} expected both conditional coinEdgeISR definitions, found {len(definitions)}")
-    attributes = {
-        "ICACHE_RAM_ATTR": [
-            body for _, body in definitions
-            if "ICACHE_RAM_ATTR" in body.split("{", 1)[0]
-        ],
-        "IRAM_ATTR": [
-            body for _, body in definitions
-            if "IRAM_ATTR" in body.split("{", 1)[0]
-        ],
-    }
-    if len(attributes["ICACHE_RAM_ATTR"]) != 1 or len(attributes["IRAM_ATTR"]) != 1:
-        raise RuntimeError(f"{board} coinEdgeISR must have exactly one ICACHE_RAM_ATTR and one IRAM_ATTR definition")
-    expected = "ICACHE_RAM_ATTR" if board == "ESP8266" else "IRAM_ATTR"
-    return attributes[expected][0]
+    prefixes = [body.split("{", 1)[0] for _, body in definitions]
+    legacy_count = sum("ICACHE_RAM_ATTR" in prefix for prefix in prefixes)
+    iram_count = sum("IRAM_ATTR" in prefix for prefix in prefixes)
+    if legacy_count:
+        raise RuntimeError(
+            f"{board} coinEdgeISR still uses deprecated ICACHE_RAM_ATTR "
+            f"in {legacy_count} conditional definition(s); use IRAM_ATTR"
+        )
+    if iram_count != 2:
+        raise RuntimeError(
+            f"{board} coinEdgeISR must use IRAM_ATTR in both conditional definitions, "
+            f"found {iram_count}"
+        )
+    return definitions[0][1]
 
 
 def compile_and_run(functions):
