@@ -20,13 +20,13 @@ SYMBOL_HELPER = ROOT / ".github/scripts/inspect_esp32_elf_symbols.py"
 SYMBOL_TEST = ROOT / ".github/scripts/test_inspect_esp32_elf_symbols.py"
 # Last focused-pass PHX-HARDWARE #349 source/test snapshot. The current PR head is
 # recorded separately and must not be built until its own focused jobs pass.
-HARDWARE_SOURCE_SHA = "059e3bbde935a86de0fa0e31e06d1ebb36755c4f"
-HARDWARE_DOCS_HEAD_SHA = "de75e6166a9023b5f6e75c39141201282cac58f1"
+HARDWARE_SOURCE_SHA = "9b20d0a6e520d78423250636b3ea0fe983b35294"
+HARDWARE_DOCS_HEAD_SHA = "b5b44d2afa62de0077b2d04e687499b103a1e3b8"
 HARDWARE_SKETCH_PATH = (
     "experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino"
 )
 HARDWARE_SKETCH_BLOB = "c07aba7d518ef7eb5d536aafdd77ef6193e676cb"
-HARDWARE_PR_HEAD_SHA = "de75e6166a9023b5f6e75c39141201282cac58f1"
+HARDWARE_PR_HEAD_SHA = "b5b44d2afa62de0077b2d04e687499b103a1e3b8"
 HARDWARE_PR_HEAD_SKETCH_BLOB = "c07aba7d518ef7eb5d536aafdd77ef6193e676cb"
 CHECKOUT_SHA = "3d3c42e5aac5ba805825da76410c181273ba90b1"
 ARDUINO_SETUP_SHA = "b3cda96fddef6af6c56b4c5efb5c47e2357935db"
@@ -872,7 +872,7 @@ def check_current_source_handover_anchor() -> list[str]:
         f"ESP32 sketch Git blob SHA (last focused-pass source): `{HARDWARE_SKETCH_BLOB}`",
         f"Latest PR-head ESP32 sketch Git blob SHA (not release-qualified): `{HARDWARE_PR_HEAD_SKETCH_BLOB}`",
         "Release pin advanced to the latest focused-pass source/test SHA after exact-source Quarantine and Relay passed; the current docs/PR head retains the same sketch blob.",
-        "Current PR-head Quarantine: #45574159279 — SUCCESS; Relay #45574159323 — SUCCESS; Full #45574159334 — FAILURE at QA-owned Missing poll signature check; no Full or production qualification.",
+        "Latest exact-source Quarantine: #45587094891 — SUCCESS; Relay #45587106298 — SUCCESS; Full #45587106766 — FAILURE at QA-owned Missing poll signature check; no Full or production qualification.",
     )
     missing = [value for value in required if value not in section]
     if missing:
