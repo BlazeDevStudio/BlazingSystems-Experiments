@@ -2,8 +2,8 @@
 
 [UTC14 audit with current HARDWARE #352 source/test tuple, exact current-head CI, COE #35 refresh and frozen COE #26 provenance](PHX_MASTER_UTC14_20261125_LIVE_HEAD_ROLE_CI_HW352_TEST_FIDELITY_AND_COE26_EXACT_BLOB_AUDIT.md)
 
-- Master pre-update HEAD a7efd4e1; Experiments main 6be5d19b; active development 2fbd2475; legacy development aad3aade; COE main a6513ab4; COE #26 b382d233.
-- PR #288 remains OPEN / DRAFT / UNMERGED, base main@f4e8a891; exact compare 557 ahead / 1 behind; 215 changed paths, all coordination/phoenix/. No synchronization.
+- Previous audit base a7efd4e1; Experiments main 6be5d19b; active development 2fbd2475; legacy development aad3aade; COE main a6513ab4; COE #26 b382d233. Re-read current Master HEAD and PR #288 base comparison at every activation.
+- PR #288 remains OPEN / DRAFT / UNMERGED, base main@f4e8a891; 215 changed paths, all coordination/phoenix/. Ahead/behind is deliberately not pinned here because each coordination commit changes it; use the live compare linked in PR #288.
 - HARDWARE #352 current PR HEAD a19cb235; source/test d3e36ae; production ISR source delta ec9547f8 affects both sketches. Four focused exact-head workflows PASS; Full #45636378501 FAILS at inherited Missing poll signature check.
 - COE RELEASE #35 current HEAD 845e6e90: 10/10 profiles fail closed without approved site ULA /48; case guard PASS; sandbox exits 125. COE #26 remains FROZEN with five queued workflows / zero jobs.
 - Ownership manifest remains 11 routes / DRAFT_REVIEW_ONLY / Master target null; cleanup #266 OPEN / 0-of-7.

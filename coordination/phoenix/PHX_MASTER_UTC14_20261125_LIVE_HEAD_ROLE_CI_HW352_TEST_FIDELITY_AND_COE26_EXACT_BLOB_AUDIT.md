@@ -150,3 +150,8 @@ The active branch LARGE_ARTIFACT_DRIVE_POLICY.md (blob 87ce2b673d53b5f278ab0ee5d
 ## Final remote-state correction — 2026-11-25T14:53Z
 
 After the two post-checkpoint coordination commits, the exact final comparison is Experiments main 6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5 versus Master 3d435b7790c2ad54b3b3c8b2f1818691bf38929b: **559 ahead / 1 behind**, merge base f4e8a891aed8af86d5fd315d28750a0ac3a7372b. The earlier 557-ahead count was the pre-handover-follow-up snapshot and is superseded. PR #288 remains OPEN / DRAFT / UNMERGED, base main@f4e8a891, 215 changed paths, all under coordination/phoenix/.
+
+
+## Volatile branch-count handling
+
+The 559-ahead / 1-behind figure above is the exact parent snapshot at Master HEAD 3d435b7790c2ad54b3b3c8b2f1818691bf38929b. This final documentation-only update advances the Master branch by one commit. ROLE_ASSIGNMENTS.md and INDEX.md now intentionally avoid pinning a moving ahead/behind count; re-read the live GitHub compare at each activation. PR #288 description and the single control-plane checkpoint are refreshed after this commit with the verified final count.
