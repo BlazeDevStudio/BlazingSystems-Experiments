@@ -85,7 +85,8 @@ The #349 source/test and docs trees differ only at two file paths: `experiment/o
 
 - **14/14 static audit assertions PASS** for complete trees, exact source/destination blob+mode pins, actual vs declared runtime classification, source drift, historical/current test identities, board/helper parity, migration-map rows/hashes, and license counterpart identities.
 - Recursive Git trees, Git blob/mode identities, JSON/Markdown migration rows, owner PR heads, exact-head workflow runs and failed-job logs were inspected.
-- Master Python unittest suite: NOT RUN. `verify_coordination.py`: NOT RUN. No authenticated local checkout or dedicated Master validation workflow is available. No Master Actions run is claimed.
+- Targeted exact-source synthetic verifier tests: **23/23 PASS**. The four fetched files were Git-blob verified against this Master commit before execution: `verify_migration_map.py` `55c01b75b5597eb46426f7c6406396c16eb58990`, `test_verify_migration_map.py` `88d24f9b85218d3546500f18e3ff70d76248f6aa`, `verify_source_intake_manifest.py` `f85c3005ba907c726d8270f10e0451b381e2a544`, and `test_verify_source_intake_manifest.py` `c4b097930bf5deaebe0bf186b515f140161c1c93`. Tests ran in an isolated temporary directory; they exercise verifier logic and are not a full repository checkout or product test.
+- Full Master Python unittest discovery and `verify_coordination.py`: **NOT RUN**; no full authenticated checkout or dedicated Master validation workflow. No Master Actions run is claimed.
 - This is a source/tree/provenance audit plus owner CI inspection, not a product build, independent QA pass, hardware acceptance or production approval.
 
 ## 6. Next owner actions
