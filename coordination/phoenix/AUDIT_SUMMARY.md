@@ -1,3 +1,22 @@
+## PHX-MASTER UTC05 disposition — 2026-11-25T05:34:49Z
+
+**Master parent:** 544a76ead141de4c2c257ac3dcea3e54984889e8. **Experiments main:** f4e8a891aed8af86d5fd315d28750a0ac3a7372b. **Development:** aad3aade72c1156eecba1fed30907c6d0283b2c5. **COE main:** a6513ab4412b4c014eee2863e45cbe32d06cb243. **COE #26:** b382d233ff06c8791b1028bed3c617cc7b670d12.
+
+- PR #288 remains OPEN / DRAFT / UNMERGED. Its 209 current changed paths are all under coordination/phoenix/. The Master parent has zero Actions runs and zero commit statuses; no Master test pass is claimed.
+- 32/32 read-only source/tree/CI consistency assertions PASS; these are not product tests.
+- HARDWARE #349 exact current tuple and CI are recorded in ROLE_ASSIGNMENTS.md. Focused Quarantine/Relay pass; Full fails at Controller protocol parity / Missing poll signature check. No physical hardware acceptance.
+- RELEASE #291 exact current PR head is c624251ef9072d5caf8032142edad2882ea84aee. Its exact-source ESP32 compatibility matrix passes 3/3, but Full and Windows fail closed at CORE-owned CURRENT_STATE freshness checkpoint d85eb6a2766781b6cac1807cef461993d8216b84. PR body remains stale; RELEASE must refresh it.
+- COE #26 remains FROZEN. Candidate Hardware firmware contains format-on-mount, unchecked quarantine clearing, remote quarantine deletion, keyless signature bypass and remote-config application from register/poll responses. Current #349 source has materially different fail-closed behavior. Hardware provenance map and test identity are absent/incomplete; license/NOTICE gaps remain.
+- SOURCE_INTAKE recount remains 46 identical / 15 derived versus declared 47 / 14. The candidate is pinned to historical source 6d4c9b, not current #349.
+- Cleanup #266 remains OPEN / 0-of-7. Routing manifest remains 11 routes / DRAFT_REVIEW_ONLY / Master target null.
+- Canonical private Drive registry v11 and newer corrections NOT RECOVERED through authorized connected sources. No older snapshot substituted; no private registry data disclosed.
+- Branch metadata reports protected=false for Experiments main, development and COE main. Effective required-check enforcement is not established.
+- Master Python suite and verify_coordination.py NOT RUN: no authenticated local checkout/runner is available. Source/tree inspection and owner CI were reviewed separately; no local product test execution is claimed.
+
+**PRODUCTION NO-GO.** No subsystem source, COE destination, shared CORE handover, signer, secret, financial state, release artifact, hardware or payment system was modified.
+
+---
+
 ## PHX-MASTER UTC04 post-checkpoint correction — 2026-11-25T04:56:08Z
 
 HARDWARE independently refreshed PR #349 after the initial Master snapshot: source/test `f591cb85ba032e4f2c30e5008c71de9ce8d17f2e`, handover `dc6ef11c104fdd9b73dfdd1120ca3a2bc3f86dcf`, PR/workflow head `56de0761ca67b54feb4889401a810b0069f50614`. Current docs-head Quarantine #45549636102 and Relay #45549636112 PASS; Full #45549636091 FAILS at Controller protocol parity / Missing poll signature check; 14 target/platform + Android jobs pass and 12 dependent stages skip. The current PROJECT_HANDOVER blob is `311b31559a3ff98a8ee3f469fd0e663ff58634f0`; the earlier 25351479 snapshot is superseded. The raw 27-path overlap count is unchanged. CORE and QA retain producer/assertion ownership; no Master Hardware edits.

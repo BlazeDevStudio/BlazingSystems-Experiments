@@ -1,3 +1,28 @@
+## PHX-MASTER UTC05 exact-head owner / CI refresh — 2026-11-25T05:34:49Z
+
+Snapshot only; subsystem branches remain owner-controlled. Experiments main f4e8a891aed8af86d5fd315d28750a0ac3a7372b; development blazepwifi-v0.5.3-development aad3aade72c1156eecba1fed30907c6d0283b2c5; Master parent 544a76ead141de4c2c257ac3dcea3e54984889e8; COE main a6513ab4412b4c014eee2863e45cbe32d06cb243; COE integration #26 b382d233ff06c8791b1028bed3c617cc7b670d12.
+
+| Owner / PR | Exact PR head | Exact-head CI and owner action |
+|---|---|---|
+| CORE #252 | c82705f2de865c89ab733b10efa84f26f56a5cc4 | Build #42698139210 PASS (older scoped evidence). CORE retains poll/register producer, durable finance and canonical handover. Separate CORE continuation untouched. |
+| RENTAL #328 | 0e0da62acd47c6a1ce287f8a30fc700d603fa070 | APK #44782114384 PASS; API #44782114393 PASS; build #44782114390 FAIL. RENTAL owns build/header/handover correction. |
+| PISONET #255 | d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | Synthetic Windows #42462978704 PASS; not native acceptance. |
+| HARDWARE #340 | 38f3e9419f37109443c806a2362577d9efc50e4d | Build, ESP32, Mbed TLS guard, ESP8266, quarantine and pre-poll inhibit runs #45530901795/#45530901830/#45530901893/#45530901919/#45530901824/#45530901908 PASS. |
+| HARDWARE #347 | 960184670379f01e20f0e7e8bc23b3e5eedacd3f | Quarantine #45299741995, Relay #45299742437 and build #45299741993 FAIL. Parent failure is not replaced by child evidence. |
+| HARDWARE #348 | eb7afcb2ba0d1e84054c052c8b129cb51a91d062 | Focused header #45352513178 PASS; build #45352513177 FAIL at missing mbedtls/sha256.h. |
+| HARDWARE #349 | PR 56de0761ca67b54feb4889401a810b0069f50614; source/test f591cb85ba032e4f2c30e5008c71de9ce8d17f2e; docs dc6ef11c104fdd9b73dfdd1120ca3a2bc3f86dcf | Quarantine #45549636102 PASS; Relay #45549636112 PASS; Full #45549636091 FAIL at Controller protocol parity / Missing poll signature check. Fourteen target/platform + Android jobs PASS; twelve dependent stages SKIPPED. CORE owns producer; QA owns independent assertion review. |
+| QA #290 | 5c29d15994cee1279058f1eca12f2a3180704292 | Windows #43633486963 PASS. |
+| QA #292 | 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | No PR-triggered runs; no pass claimed. |
+| RELEASE #291 | PR/docs c624251ef9072d5caf8032142edad2882ea84aee; source/workflow 1c99aa9b2eac493cfec2a965a7c2572dc8e73b55; base #242 734b89d9e7792247e8376335c3f3685500ab3f89 | Full #45553954529 FAIL and Windows #45553954963 FAIL at CORE-owned CURRENT_STATE freshness; ESP32 compatibility #45553954953 PASS 3/3 on exact HARDWARE source f591cb85 / sketch adfd2f11. PR body omits current head and UTC05; zero independent reviews. RELEASE must refresh its own PR description; CORE owns canonical freshness. |
+| COE RELEASE #35 | f611c96091a1014ad36bf64251c180bcbc2d1f65 | Shared #45541598251 FAIL after 223 tests (2 skipped), then 10/10 site profiles fail for missing approved ULA /48. Sandbox #45541598267: 40/40 host preflight PASS, then Bubblewrap unavailable / exit 125. Case guard #45541598250 PASS. |
+| COE CORE #45 | 9d76a134c1f6512aa40c20ec4d247306a71a8cce | Overlay #44295049727 and case guard #44295049903 PASS. |
+| COE INTERCON #49 | aeb8ff11b2f5db9a5f86280ab62ab988245f3919 | Stage 5.1 #44646341873 and case guard #44646341992 PASS; shared Hardware #44646341922 FAIL. |
+| COE integration #26 | b382d233ff06c8791b1028bed3c617cc7b670d12 | Five workflows QUEUED with zero jobs. No destination CI pass. Keep FROZEN. |
+
+PR #288 remains OPEN / DRAFT / UNMERGED. The current routing manifest remains 11 routes / DRAFT_REVIEW_ONLY / PHX-MASTER target null. No subsystem source or destination path was changed.
+
+---
+
 ## PHX-MASTER UTC04 owner follow-up — HARDWARE #349 final docs/PR tuple (2026-11-25T04:56:08Z)
 
 This owner update supersedes the earlier UTC04 #349 docs/PR pin below; source/test remains unchanged.

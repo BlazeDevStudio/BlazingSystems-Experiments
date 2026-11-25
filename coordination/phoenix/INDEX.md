@@ -1,3 +1,16 @@
+## PHX-MASTER UTC05 — 2026-11-25 live role CI and COE Hardware candidate audit
+
+[UTC05 exact-head owner CI, COE #26 Hardware fail-closed firmware parity, provenance and registry-access report](PHX_MASTER_UTC05_20261125_COE26_HARDWARE_IMPORT_FAILCLOSED_PARITY_AND_ROLE_CI_AUDIT.md)
+
+- Master parent 544a76ead141de4c2c257ac3dcea3e54984889e8; Experiments main f4e8a891aed8af86d5fd315d28750a0ac3a7372b; development aad3aade72c1156eecba1fed30907c6d0283b2c5; COE main a6513ab4412b4c014eee2863e45cbe32d06cb243; COE #26 b382d233ff06c8791b1028bed3c617cc7b670d12.
+- HARDWARE #349 source/test f591cb85ba032e4f2c30e5008c71de9ce8d17f2e, handover/docs dc6ef11c104fdd9b73dfdd1120ca3a2bc3f86dcf, PR head 56de0761ca67b54feb4889401a810b0069f50614: Quarantine/Relay PASS; Full FAIL at Missing poll signature check.
+- RELEASE #291 head c624251ef9072d5caf8032142edad2882ea84aee: exact-source ESP32 compatibility 3/3 PASS; Full and Windows FAIL at CORE-owned CURRENT_STATE freshness. Its PR body needs owner refresh.
+- COE #26 remains FROZEN: current source and destination sketches differ; destination retains format-on-mount, unverified quarantine clearing, remote quarantine deletion and keyless response acceptance; Hardware provenance map is absent; SOURCE_INTAKE recount 46/15 vs declared 47/14; license/NOTICE gaps remain.
+- 32/32 read-only source/tree/CI consistency assertions PASS; these are not product tests. No Master Actions or local product tests ran. Private Drive v11/newer corrections NOT RECOVERED.
+- No subsystem source or COE destination changes. **PRODUCTION NO-GO.**
+
+---
+
 ## PHX-MASTER UTC04 post-checkpoint owner refresh — 2026-11-25T04:56:08Z
 
 HARDWARE #349 now has a consistent owner-authored tuple: source/test `f591cb85ba032e4f2c30e5008c71de9ce8d17f2e`, handover `dc6ef11c104fdd9b73dfdd1120ca3a2bc3f86dcf`, PR/workflow head `56de0761ca67b54feb4889401a810b0069f50614`. Current docs-head Quarantine #45549636102 and Relay #45549636112 PASS; Full #45549636091 FAILS at Controller protocol parity. Its handover blob is now `311b31559a3ff98a8ee3f469fd0e663ff58634f0`, replacing the earlier overlap snapshot. The 27-path overlap count remains unchanged.

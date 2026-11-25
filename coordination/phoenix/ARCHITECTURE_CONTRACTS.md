@@ -2075,3 +2075,19 @@ To reduce merge conflicts and stale cross-role evidence, propose the following c
 5. PRs already carrying inherited shared paths retain their history; do not rewrite, rebase, force-push, cherry-pick or merge them merely to apply this proposal. Obtain CORE/PISONET/HARDWARE/QA/RELEASE acknowledgement before merge sequencing.
 
 This section is a coordination proposal, not an automatic source ownership transfer, code behavior change, merge permission or release gate waiver. Until affected owners acknowledge it, classify shared-file integration as `REVIEW_REQUIRED / STALE_RISK` and preserve each exact branch blob as evidence.
+
+## 7.19 COE Hardware candidate admission fence — PROPOSED / owner acknowledgement required (2026-11-25 UTC05)
+
+The exact COE #26 Hardware candidate is not an acceptable migration destination for the current #349 source. The two destination sketches are divergent and retain unsafe behavior not present in current deny-only source: format-on-mount, pending-record clearing after an unverified quarantine append, remote quarantine deletion, and a keyless signature-gate bypass followed by remote configuration application.
+
+Before any Hardware destination staging can be proposed, require all of the following at exact pinned SHAs:
+
+1. A Hardware-specific per-file source/destination map recording source commit, source path/blob/mode, destination path/blob/mode, license/NOTICE counterpart, test identity and owner disposition. The current Pisowifi SOURCE_INTAKE does not cover the Hardware subtree.
+2. Both board sketches reviewed against current owner source. Filesystem mount failure must preserve the journal and latch deny; it must never format a possibly recoverable financial journal automatically.
+3. Pending coin state may only be cleared after a durable quarantine append has been opened, fully written, flushed/closed, read back and validated. Any uncertainty preserves pending and quarantine evidence.
+4. Network-visible quarantine clearing remains denied unless a separate authenticated operator recovery contract and durable receipt exist.
+5. Missing/empty controller keys, missing signatures, malformed responses, stale revisions and unapproved response envelopes must deny poll/config admission. Do not call remote configuration application from an unsigned or unversioned register/poll response.
+6. Source-exact negative tests cover mount failure, append/flush/readback failure, keyless response, malformed/missing signature, quarantine-delete attempt and reboot recovery. Destination test identity must be pinned and independently reviewed; a differently named or smaller grep script is not equivalent evidence.
+7. Required CI must complete at the exact final destination SHA. Queued workflows with zero jobs are not a pass. CORE producer contract, HARDWARE consumer implementation, QA independent vectors and integration-owner provenance review must be recorded before staging review.
+
+This is a coordination admission proposal, not a source change, ownership transfer, copy authorization, merge permission or production approval. COE #26 remains FROZEN / NO-GO.

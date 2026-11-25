@@ -1,3 +1,13 @@
+## PHX-MASTER UTC05 routing refresh — current RELEASE child and COE Hardware candidate
+
+- Exact manifest: OWNERSHIP_ROUTES.json@e4db324315a1b3543fec17a148fbf960170fcb29; 11 routes, DRAFT_REVIEW_ONLY, PHX-MASTER source coordination/phoenix/ with target null.
+- RELEASE #291 is now c624251ef9072d5caf8032142edad2882ea84aee, stacked on parent #242 base 734b89d9. The current PR body still omits its UTC05 head and exact c624251e pin; RELEASE must refresh its own PR description. Master records the child pointer only. Full/Windows remain blocked by CORE-owned CURRENT_STATE freshness; RELEASE compatibility is 3/3 PASS against HARDWARE source f591cb85.
+- HARDWARE #349 remains source/test f591cb85ba032e4f2c30e5008c71de9ce8d17f2e, handover/docs dc6ef11c104fdd9b73dfdd1120ca3a2bc3f86dcf, PR/workflow 56de0761ca67b54feb4889401a810b0069f50614. Its docs-head Quarantine/Relay pass; Full fails at the inherited poll-signature assertion. CORE and QA retain producer/assertion ownership.
+- COE #26 remains a draft-only candidate. Hardware routes are selective-review only; the destination has no Hardware-specific SOURCE_INTAKE or MIGRATION_MAP. Do not infer a recursive copy plan from route prefixes.
+- No ownership route, branch base, source path, destination path, merge state or migration authorization changed. Preserve history; no rebase, force-push, cherry-pick or last-writer selection.
+
+---
+
 ## PHX-MASTER UTC04 correction — current HARDWARE #349 shared-handover blob (2026-11-25T04:56:08Z)
 
 HARDWARE refreshed #349 after the initial Master overlap snapshot. Current tuple: source/test `f591cb85ba032e4f2c30e5008c71de9ce8d17f2e`, handover `dc6ef11c104fdd9b73dfdd1120ca3a2bc3f86dcf`, PR/workflow head `56de0761ca67b54feb4889401a810b0069f50614`. The current `PROJECT_HANDOVER.md` blob at the PR head is now `311b31559a3ff98a8ee3f469fd0e663ff58634f0`, replacing the earlier observed `25351479` snapshot in the overlap table below. It remains divergent from CORE/PISONET/QA/RELEASE blobs. The raw overlap count remains 27 paths; current docs-head Quarantine and Relay PASS, Full fails at Controller protocol parity. The owner refreshed its PR body and handover; Master did not edit Hardware.

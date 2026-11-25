@@ -1,3 +1,30 @@
+## PHX-MASTER UTC05 exact candidate Hardware import audit — 2026-11-25T05:34:49Z
+
+COE #26 candidate b382d233ff06c8791b1028bed3c617cc7b670d12 remains FROZEN. Its recursive tree is complete (286 entries); current HARDWARE #349 source tree 56de0761ca67b54feb4889401a810b0069f50614 is complete (2,540 entries). The current source board subtrees contain 16 ESP32 files, 54 ESP8266 files, 47 project test files, and 58 Python labs/helpers across the two board trees. The destination Hardware subtree has two firmware sketches and one hardening test, no board-local Python labs, and no Hardware-specific SOURCE_INTAKE/MIGRATION_MAP.
+
+| Board | Current source #349 blob | COE #26 destination blob | Source / destination lines |
+|---|---|---|---:|
+| ESP32 | adfd2f110d88243d03f2195658fb456b154dcb84 | 3cc7ec54b476943dc04a8d1af5e2df5fe054e422 | 1,915 / 410 |
+| ESP8266 | 8a0b458b6c7fb99c0913df16c5b4ca94dbcdc50e | c8be98f72596681e36a3ad1f8939bf8046c96887 | 2,036 / 489 |
+
+### Exact behavior differences in the COE candidate
+- COE ESP32 calls LittleFS.begin(true) at line 337; COE ESP8266 calls LittleFS.format() on mount failure at line 143. Current source uses LittleFS.begin(false) on ESP32 and latches journalRecoveryRequired rather than formatting.
+- Both destination quarantinePending implementations clear pending state after the append attempt, even if append could not be verified. Current source validates the durable path and returns clearPending() only after successful quarantine handling.
+- Both destination /quarantine/clear handlers remove the quarantine log and return success. Current source preserves unpaid-coin evidence and denies deletion absent an approved durable receipt and authenticated recovery contract.
+- Both destination register/poll paths start with sigOk=true, verify only inside a non-empty-key branch, and apply remote configuration from those responses. With an empty key, the signature gate remains true. Current source has no applyRemoteConfig call sites; poll response acceptance remains hard-deny pending CORE/QA contract evidence.
+- Destination Hardware test blob f921c56cecc19cab1989507b9b4ade1f45dac54e (103 lines) differs from current source test blob 41211b2c110ab409f6d9d1812ef12fda73b13211 (181 lines). Exact test identity/parity is not established.
+
+### Manifest and license reconciliation
+- SOURCE_INTAKE.json blob 1b9018ff944f7f673934d0fc2a97e0a0090d3f5f pins historical source commit 6d4c9b487af4d768c4d7627654d119417fcc6e00. It lists 61 runtime rows; summary says 47 identical / 14 derived, but exact row recount is 46 identical / 15 derived. Fifteen derived tests are declared.
+- MIGRATION_MAP.md blob b54fc15d83bc2269de03db8aadd0e76259fd13d9 uses the same historical source pin. It does not map current #349 Hardware files or tests.
+- Pisowifi/LICENSE exactly matches source project LICENSE blob 1ee55b94183417be977ca287cd7391f9a6f7e721.
+- Source root NOTICE.md blob f6d92cd21465312be5993631fe26977219be0fb9 and source Tabler LICENSE blob 22ee8122400915cbff18e5f69368fa9eea6145eb have no destination counterparts. QRCode/TailAdmin license counterparts remain present.
+- Five #26 workflows remain QUEUED with zero jobs; no destination CI result is established.
+
+No staging, copying, moving, overwriting, path remapping, cherry-pick, merge or candidate promotion occurred.
+
+---
+
 ## PHX-MASTER UTC04 HARDWARE #349 post-checkpoint refresh — 2026-11-25T04:56:08Z
 
 Current exact tuple: source/test `f591cb85ba032e4f2c30e5008c71de9ce8d17f2e`; handover/docs `dc6ef11c104fdd9b73dfdd1120ca3a2bc3f86dcf`; PR/workflow head `56de0761ca67b54feb4889401a810b0069f50614`. The handover now identifies the current source/test SHA and the PR body is refreshed.
