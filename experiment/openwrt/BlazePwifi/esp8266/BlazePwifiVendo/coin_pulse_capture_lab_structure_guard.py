@@ -105,12 +105,12 @@ if "CPP" not in fixture_names:
 cpp = literal_assignment(fixture_tree, "CPP")
 if not isinstance(cpp, str) or "@@FUNCTIONS@@" not in cpp:
     fail("CPP fixture lost its exact-source insertion point")
-for marker in ("COIN_PULSE_CAPTURE_PASS", "SIMULATED_ONLY=1",
-               "PHYSICAL_COIN_PULSE_ACCEPTANCE=0",
-               "PHYSICAL_RELAY_ACCEPTANCE=0",
-               "PHYSICAL_POWER_CUT_ACCEPTANCE=0"):
-    if marker not in cpp:
-        fail(f"CPP fixture lost evidence marker: {marker}")
+if "COIN_PULSE_CAPTURE_PASS" not in cpp:
+    fail("CPP fixture lost the 17-scenario pass marker")
+for marker in ("SIMULATED_ONLY=1", "PHYSICAL_COIN_PULSE_ACCEPTANCE=0",
+               "PHYSICAL_RELAY_ACCEPTANCE=0", "PHYSICAL_POWER_CUT_ACCEPTANCE=0"):
+    if marker not in runner_source:
+        fail(f"runner lost evidence marker: {marker}")
 
 specs = literal_assignment(contract_tree, "FUNCTION_SPECS")
 mutation_names = tuple_first_strings(contract_tree, "MUTATIONS")
