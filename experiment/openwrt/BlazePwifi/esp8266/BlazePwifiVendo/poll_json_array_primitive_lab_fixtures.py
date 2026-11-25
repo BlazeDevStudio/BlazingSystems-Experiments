@@ -168,6 +168,10 @@ int main() {
   if (!pollJsonTopLevelTrue(String("{\"ok\":true,\"meta\":\"\xE2\x82\xAC\"}"), "ok")) return 132;
   if (!pollJsonTopLevelTrue(String("{\"ok\":true,\"meta\":\"\xF0\x9F\x92\xB0\"}"), "ok")) return 133;
 
+  // Well-formed UTF-16 surrogate pairs are accepted as one escaped scalar.
+  if (!pollJsonTopLevelTrue(String("{\"ok\":true,\"meta\":\"\\uD800\\uDC00\"}"), "ok")) return 134;
+  if (!pollJsonTopLevelTrue(String("{\"ok\":true,\"meta\":\"\\uDBFF\\uDFFF\"}"), "ok")) return 135;
+
   if (pollJsonTopLevelTrue(String("{\"ok\":true,\"meta\":\"\xC0\xAF\"}"), "ok")) return 141;
   if (pollJsonTopLevelTrue(String("{\"ok\":true,\"meta\":\"\x80\"}"), "ok")) return 142;
   if (pollJsonTopLevelTrue(String("{\"ok\":true,\"meta\":\"\xE2\x82\"}"), "ok")) return 143;
@@ -178,7 +182,13 @@ int main() {
   if (pollJsonTopLevelTrue(String("{\"ok\":true,\"meta\":\"\xE0\x80\x80\"}"), "ok")) return 148;
   if (pollJsonTopLevelTrue(String("{\"ok\":true,\"meta\":\"\xF0\x80\x80\x80\"}"), "ok")) return 149;
 
-  std::cout << "POLL_JSON_UTF8_VALIDATION_PASS valid=3/3 invalid=9/9\n";
+  // Reject isolated or incorrectly paired UTF-16 surrogates.
+  if (pollJsonTopLevelTrue(String("{\"ok\":true,\"meta\":\"\\uD800\"}"), "ok")) return 151;
+  if (pollJsonTopLevelTrue(String("{\"ok\":true,\"meta\":\"\\uDC00\"}"), "ok")) return 152;
+  if (pollJsonTopLevelTrue(String("{\"ok\":true,\"meta\":\"\\uD800\\u0041\"}"), "ok")) return 153;
+  if (pollJsonTopLevelTrue(String("{\"ok\":true,\"meta\":\"\\uDC00\\uD800\"}"), "ok")) return 154;
+
+  std::cout << "POLL_JSON_UTF8_VALIDATION_PASS valid=5/5 invalid=13/13\\n";
   return 0;
 }
 """
