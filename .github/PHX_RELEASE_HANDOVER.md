@@ -1,3 +1,53 @@
+## PHX-RELEASE UTC09 post-run reconciliation — 2026-11-25
+
+**This note supersedes the earlier statement that the pinned HARDWARE source was still current.** The descriptor-close/fd-reuse task is complete; this is a documentation-only reconciliation of the exact run results and the newly advanced HARDWARE source anchor. No second RELEASE source task was started in this UTC hour.
+
+### Exact task result and branch identity
+
+- Repository: `BlazeDevStudio/BlazingSystems-Experiments`.
+- Existing PR #291 branch: `phoenix/release-publisher-isolation-20261115`; base / PR #242: `734b89d9e7792247e8376335c3f3685500ab3f89`.
+- PR #291 head before this handover-only update: `4c2840e2054569c7b47f48184278ad8d783b9ac1`; PR remains OPEN / DRAFT / UNMERGED.
+- Test-only commit: [`c52b4cfe`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/c52b4cfe3b57488d68bce12aa503cdda61f26960).
+- Expected RED: [run #45584837884](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45584837884), provenance job `139103678859`: 60 tests, exactly three new fd-reuse errors; each showed EBADF on the sentinel descriptor after the old cleanup path closed a reused descriptor. Both ESP32 core compile jobs in that RED run succeeded; the overall workflow failure was the intended regression result.
+- Source correction: [`2fbaaa55`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/2fbaaa5581b545f4ced3c518d39f0d0800a5aaed). Ownership is removed from the cleanup inventory before each ambiguous close; rejected child descriptors use one common cleanup path; no ambiguous raw descriptor close is retried.
+- The source/test increment changed exactly two RELEASE-owned files: `.github/scripts/test_build_provenance.py` and `.github/scripts/write_build_provenance.py`. No CORE, RENTAL, PISONET, HARDWARE, QA, MASTER or COE destination source was changed.
+
+### Exact-source and documentation-head CI
+
+- Source/test push compatibility [#45585016605](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45585016605): **SUCCESS, 3/3**.
+- Source/test PR compatibility [#45585028850](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45585028850): **SUCCESS, 3/3**.
+- At source/test head `2fbaaa55`, provenance regression suite: 60 PASS; Arduino CLI archive verifier: 10 PASS; ESP32 reproducible-image descriptor suite: 5 PASS; release publisher/concurrency suite: 22 PASS; immutable action-pin guard: PASS.
+- Documentation-head compatibility at `4159ee7f1b94bacabfa234ce75c9f66aae7539ba`: [#45586294044](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45586294044) **SUCCESS, 3/3**. Provenance job `139108633209`, core 3.3.13 job `139108633567`, core 4.0.0 job `139108633560`. Provenance: 60 tests PASS, archive verifier 10 PASS, descriptor suite 5 PASS, publisher suite 22 PASS, immutable action pins PASS.
+- Both core jobs built twice and reproduced identical application images on the then-pinned HARDWARE source `059e3bbde935a86de0fa0e31e06d1ebb36755c4f`, sketch blob `c07aba7d518ef7eb5d536aafdd77ef6193e676cb`: core 3.3.13, 1,045,808 bytes, SHA-256 `6f6e0f7baf0028ed66fe32c52588166ef61ed815746733224a4e450419f2e999`; core 4.0.0, 1,100,016 bytes, SHA-256 `01091a265b17d796ae14dcd6f765a99296932e06da607e3d8e021cd5edf0ad38`. These are hosted-CI reproducibility results, not approved production binaries or hardware acceptance.
+- Full PR [#45586294127](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45586294127): **OVERALL FAILURE**. Mandatory validate job `139108745019` failed because the CORE-owned `experiment/openwrt/BlazePwifi/docs/handover/CURRENT_STATE.md` is stale; the gate reported checkpoint `d85eb6a2766781b6cac1807cef461993d8216b84`. All 14 target/platform jobs succeeded; 13 downstream update/simulation/candidate/sign/publish jobs were skipped.
+- Windows PR [#45586293974](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45586293974): **FAILURE** at handover job `139108632973`; Windows build and publisher were skipped.
+- The later documentation-only audit commit [`4c2840e2`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/4c2840e2054569c7b47f48184278ad8d783b9ac1) recorded the above run state. The following handover update changes no executable source.
+
+### Current HARDWARE source pin is now stale
+
+- Live HARDWARE PR #349 is OPEN / DRAFT at docs/PR head [`b5b44d2a`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/b5b44d2afa62de0077b2d04e687499b103a1e3b8); current source/test anchor is [`9b20d0a6`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/9b20d0a6e520d78423250636b3ea0fe983b35294).
+- The ESP32 sketch blob is still `c07aba7d518ef7eb5d536aafdd77ef6193e676cb` at both current HARDWARE source/test and docs head.
+- Comparing the prior RELEASE pin `059e3bbde935a86de0fa0e31e06d1ebb36755c4f` to current source/test `9b20d0a6e520d78423250636b3ea0fe983b35294` shows seven commits ahead and two changed paths: the UTC08 handover addition and the ESP8266 bounded-HTTP response lab. The ESP32 sketch blob is unchanged, but the repository source/test anchor has advanced.
+- The compatibility run #45586294044 therefore proves the pinned `059e3bb` snapshot only. It is **not current-source qualification for HARDWARE #349 at `9b20d0a6`**. The workflow and its regression guard still contain the old `EXPECTED_SOURCE_SHA` / source label. Do not describe the old pin as current.
+- **Next RELEASE task:** test-first refresh the release-owned compatibility pin/guard to HARDWARE source/test `9b20d0a6`, preserve the verified sketch blob `c07aba7`, then rerun both ESP32 core jobs against that exact source. Do not change HARDWARE files. This is not included in the completed fd-reuse task.
+
+### Live coordination and external blockers
+
+- Control plane #172: reuse and update the single UTC09 RELEASE role-lock comment `7158323987`; no second UTC09 lock.
+- Cleanup-first #266 remains OPEN, 0/7.
+- MASTER PR #288 remains OPEN / DRAFT at `025aadaa71aadf7fc09d53e0b623356c5550fe17`; `OWNERSHIP_ROUTES.json` blob `e4db324315a1b3543fec17a148fbf960170fcb29` has 11 `DRAFT_REVIEW_ONLY` routes. RELEASE remains `reimplementation-review`, not copy/move/merge authority.
+- Experiments PR #242 remains OPEN / DRAFT at `734b89d9e7792247e8376335c3f3685500ab3f89`; observed parent run #40882814472 is a historical Windows workflow success, not production acceptance.
+- COE #26 remains OPEN / DRAFT / FROZEN at `b382d233ff06c8791b1028bed3c617cc7b670d12`; five workflows remain QUEUED with zero jobs/statuses.
+- COE parent packager #31 remains OPEN / DRAFT at `59ed44d0b911e176f1a95b9cf5585ef811ffd31b`: shared contracts #44222517238 PASS, case-collision #44222517258 PASS, mandatory Bubblewrap sandbox #44222517263 FAIL at unprivileged namespace preflight; packaging regressions were skipped.
+- COE child #35 remains OPEN / DRAFT at `f611c96091a1014ad36bf64251c180bcbc2d1f65`: case-collision #45541598250 PASS; shared contracts #45541598251 FAIL CLOSED for all 10 profiles because approved site-scoped RFC 4193 ULA /48 authority is missing; sandbox #45541598267 host preflight 40/40 PASS then Bubblewrap unavailable / exit 125, so namespace and packaging regressions were not run.
+- Branch-protection read returned 403; visible repository rulesets returned an empty list. Effective production protection is not established by this read.
+- Authorized Library retrieval did not surface private Drive registry v11; older v3–v7 snapshots are not substitutes and were not used. No private contents or identifiers were copied into GitHub.
+- PR #291 has zero independent submitted reviews and zero review threads at this inspection. MASTER child-pointer refresh and independent QA review remain pending.
+
+**Production:** NO-GO. Protected signer and independent freshness witness are not established; durable financial accounting/migration and independent QA/MASTER approval are not accepted; approved production binaries are not established; 150 physical power cuts and 30-device/24-hour soak are NOT TESTED. No merge, tag, signing, publication, hardware flash, real payment migration or customer deployment occurred.
+
+---
+
 ## PHX-RELEASE UTC 2026-11-25 — supersession audit: build-provenance regression hardening
 
 - Compatible draft head `4159ee7f1b94bacabfa234ce75c9f66aae7539ba` already contains RELEASE-owned build-provenance regression hardening in `.github/scripts/write_build_provenance.py` and `.github/scripts/test_build_provenance.py`. No implementation was duplicated and no non-RELEASE source was changed.
