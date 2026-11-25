@@ -676,30 +676,49 @@ class BlazePwifiV053RunProvenanceTests(unittest.TestCase):
 
 
 def require_v053_tag_ref_absence_before_publish(content: str) -> None:
-    """Require a provably absent immutable tag before first v0.5.3 publication."""
+    """Require an absent immutable tag and a draft-first, verify-before-publish sequence."""
     step = workflow_step_block(content, "publish", "Publish production v0.5.3")
     required = (
         "set +e",
         'TAG_LOOKUP_OUTPUT="$(gh api -i "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" 2>&1)"',
         "TAG_LOOKUP_EXIT=$?",
         "set -e",
-        "TAG_HTTP_STATUSES=\"$(printf '%s\\\\n' \"$TAG_LOOKUP_OUTPUT\" | sed -nE 's/^HTTP\\\\/[0-9.]+ ([0-9]{3})([[:space:]].*)?$/\\\\1/p')\"",
-        "TAG_HTTP_COUNT=\"$(printf '%s\\\\n' \"$TAG_HTTP_STATUSES\" | awk 'NF { count++ } END { print count + 0 }')\"",
+        "TAG_HTTP_STATUSES=\"$(printf '%s\\n' \"$TAG_LOOKUP_OUTPUT\" | sed -nE 's/^HTTP\\/[0-9.]+ ([0-9]{3})([[:space:]].*)?$/\\1/p')\"",
+        "TAG_HTTP_COUNT=\"$(printf '%s\\n' \"$TAG_HTTP_STATUSES\" | awk 'NF { count++ } END { print count + 0 }')\"",
         'if [ "$TAG_LOOKUP_EXIT" -eq 0 ]; then',
         'if [ "$TAG_HTTP_COUNT" -ne 1 ] || [ "$TAG_HTTP_STATUSES" != "404" ]; then',
         'gh release create "$TAG"',
+        "--draft",
         'gh release upload "$TAG" --repo "$GITHUB_REPOSITORY"',
+        'R="$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG")"',
+        'RELEASE_ID="$(printf \'%s\' "$R" | jq -r .id)"',
+        'test "$(printf \'%s\' "$R" | jq -r .draft)" = true',
+        "for asset in BlazeRental.apk",
+        'gh api --method PATCH "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" -F draft=false -F prerelease=false -F make_latest=true',
+        'test "$(printf \'%s\' "$R" | jq -r .draft)" = false',
+        'test "$(printf \'%s\' "$R" | jq -r .prerelease)" = false',
     )
-    positions = tuple(step.find(fragment) for fragment in required)
+    positions = []
+    cursor = 0
+    for fragment in required:
+        position = step.find(fragment, cursor)
+        positions.append(position)
+        if position >= 0:
+            cursor = position + len(fragment)
     if any(position < 0 for position in positions):
         raise AssertionError(
-            "v0.5.3 publisher must prove exactly one HTTP 404 for the Git tag ref "
-            "before creating a new release"
+            "v0.5.3 publisher must prove exactly one HTTP 404, create a draft, "
+            "verify all assets, then publish"
         )
-    if positions != tuple(sorted(positions)):
+    if positions != sorted(positions):
         raise AssertionError(
-            "v0.5.3 tag-absence proof must complete before release creation and asset upload"
+            "v0.5.3 tag-absence, draft upload, asset verification and final publish "
+            "must occur in that order"
         )
+    create_start = step.find('gh release create "$TAG"')
+    create_end = step.find("\n", create_start)
+    if "--draft" not in step[create_start:create_end]:
+        raise AssertionError("v0.5.3 release must remain a draft until every asset is verified")
     if "gh release edit" in step or "--clobber" in step:
         raise AssertionError(
             "v0.5.3 publisher must never edit an existing release or clobber published assets"
@@ -715,21 +734,17 @@ class BlazePwifiV053ImmutableReleaseTests(unittest.TestCase):
         require_v053_tag_ref_absence_before_publish(self.stage_content)
 
         mutations = (
-            (
-                'TAG_HTTP_STATUSES" != "404"',
-                'TAG_HTTP_STATUSES" != "200"',
-            ),
-            (
-                'TAG_HTTP_COUNT" -ne 1',
-                'TAG_HTTP_COUNT" -lt 1',
-            ),
-            (
-                'gh release create "$TAG"',
-                'gh release edit "$TAG"\\n          gh release create "$TAG"',
-            ),
+            ('TAG_HTTP_STATUSES" != "404"', 'TAG_HTTP_STATUSES" != "200"'),
+            ('TAG_HTTP_COUNT" -ne 1', 'TAG_HTTP_COUNT" -lt 1'),
+            (" --draft\n", " --latest\n"),
+            ('gh release edit "$TAG"', 'gh release edit "$TAG"'),
             (
                 'gh release upload "$TAG" --repo "$GITHUB_REPOSITORY"',
                 'gh release upload "$TAG" --repo "$GITHUB_REPOSITORY" --clobber',
+            ),
+            (
+                "for asset in BlazeRental.apk",
+                'gh api --method PATCH "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" -F draft=false -F prerelease=false -F make_latest=true\n          for asset in BlazeRental.apk',
             ),
         )
         for old, new in mutations:
@@ -738,6 +753,7 @@ class BlazePwifiV053ImmutableReleaseTests(unittest.TestCase):
                 self.assertNotEqual(unsafe, self.stage_content)
                 with self.assertRaises(AssertionError):
                     require_v053_tag_ref_absence_before_publish(unsafe)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
