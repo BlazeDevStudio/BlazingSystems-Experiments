@@ -75,6 +75,15 @@ The current-head Full build [44232877624](https://github.com/BlazeDevStudio/Blaz
 
 See §6.23 for exact source, candidate, fixture and CI evidence.
 
+### 2.2.1 UTC22 exact branch clarification — deny-only consumer and lab helper are not a response contract (2026-11-25)
+
+- HARDWARE #340 exact head 547148eeb4384df7971d17d762e3f12bc5dcab3c: both board sketches bracket synchronous poll with denyRemoteControl(), explicitly discard the response, and retain applyRemoteConfig() only as a no-op deny stub. This is a conservative consumer-side mitigation, not authenticated response verification.
+- HARDWARE #348 exact head 8bdddfb88630c0c9675f7e4a47ab640f5d17f699: ControllerAuthV1Lab.h is a non-actuating helper with null/empty-span guards and a synthetic native test. It supports Mbed TLS 2.x/3.x only; the exact focused run used Mbed TLS 2.28.8. It does not define the full producer envelope, key provisioning, protected freshness, or monetary authority.
+- Active v0.6 producer at 2fbd2475e9f54878c316fa7cea2f228386b0e859 still emits unsigned register/ping and poll bodies. Do not infer that #340 or #348 resolves this contract.
+- COE #26 remains a separate frozen candidate; its empty-key verification bypass is not repaired by either Hardware branch.
+
+No new signature format, key derivation, response schema, or positive coin/relay admission is approved by this clarification. CORE owns producer schema/key provisioning; HARDWARE owns its consumer; QA owns independent positive/negative golden-vector review.
+
 ### 2.3 Swallowed Coin Quarantine (LittleFS)
 - If the router returns an error (e.g. `"coin window expired"`, `"controller disabled"`), coins MUST NOT be deleted uncredited.
 - The firmware MUST append uncredited coin events to `/quarantine.log` in LittleFS with timestamp, nonce, target, pulse count, and error reason for physical operator auditing.

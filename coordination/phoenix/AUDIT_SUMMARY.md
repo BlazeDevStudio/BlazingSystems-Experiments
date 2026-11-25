@@ -1,3 +1,15 @@
+## PHX-MASTER UTC22 — Hardware stack and response-auth boundary — 2026-11-25T22:51Z
+
+Committed a source-grounded coordination update for three separate Hardware stacks. #340 has six exact-head workflows PASS and a 26-success / 4-skip Full build, but its base is 4 commits behind current #283; its sketches explicitly discard poll responses and remain deny-only. #348 has a focused C++17/ASan/UBSan native-header PASS, but its Full run is CANCELLED; it is a non-actuating helper only. #353 remains 11 commits behind current #352 parent and has no exact-head PR runs.
+
+The active v0.6 register/poll response path remains unsigned. COE #26 still has a keyless response-verification bypass and incomplete migration provenance; candidate stays FROZEN. Current owner PR/CI pins are recorded in ROLE_ASSIGNMENTS.md and INTEGRATION_MATRIX.md. No subsystem or destination source was modified.
+
+Coordinator-side source/metadata assertions passed. Master Python tests and Master CI were not run. Private Drive registry v11/newer corrections NOT_RECOVERED. Cleanup #266 OPEN / 0-of-7. **PRODUCTION NO-GO.**
+
+Full evidence: [UTC22 Hardware stack, response trust-boundary and COE #26 reconciliation](PHX_MASTER_UTC22_20261125_HARDWARE_STACK_AUTH_AND_COE26_RECONCILIATION.md).
+
+---
+
 ## PHX-MASTER UTC21 — COE #26 keyless response-auth and migration-provenance blocker — 2026-11-25T21:33Z
 
 Exact candidate blobs show both board sketches skip response verification when the controller key is empty; the setup portal does not require that key. The candidate test is token/fixture based and does not exercise the empty-key path. The README labels a raw SHA-256 concatenation as HMAC, the CGI signature omits the nested controller object, and the firmware parser expects top-level flags. Active v0.6 source remains unsigned for register/poll. See [UTC21 audit report](PHX_MASTER_UTC21_20261125_COE26_KEYLESS_RESPONSE_AUTH_AND_MIGRATION_AUDIT.md).

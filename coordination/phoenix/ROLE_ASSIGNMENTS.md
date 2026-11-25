@@ -1,3 +1,29 @@
+## PHX-MASTER UTC22 — live role routing and exact CI reconciliation — 2026-11-25T22:51Z
+
+PHX-MASTER owns only coordination/phoenix/. CORE remains reserved to the separate Blaze Production Continuation. Hardware work is three independent stacks; no Master rebase or source-branch takeover.
+
+| Owner / PR | Exact current PR HEAD | Current CI / disposition |
+|---|---|---|
+| CORE #252 | c82705f2de865c89ab733b10efa84f26f56a5cc4 | Build #42698139210 PASS; scoped, not financial acceptance. CORE ownership remains separate. |
+| RENTAL #328 | 10fc200b6dbf470a95e679d3acc58aff4ab2a67f | APK identity #45622918340, API21/23 #45622918364, auth/recovery #45622918551 PASS; shared #45622918468 FAIL at CORE freshness / missing ESP32 mbedtls/sha256.h. |
+| PISONET #255 | d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | Synthetic Windows #42462978704 PASS; native COM not invoked. |
+| HARDWARE #340 | 547148eeb4384df7971d17d762e3f12bc5dcab3c; source/test 0dcd64f5 | Five focused checks and Full #45708073607 PASS (26 success, 4 production import/sign/publication skips); base is 4 commits behind current #283. HARDWARE owns refresh. |
+| HARDWARE #348 | 8bdddfb88630c0c9675f7e4a47ab640f5d17f699; source/test 659b1e64 | Focused native sanitizer #45715616078 PASS; Full #45715616079 CANCELLED / no jobs. Lab helper only; parent #254 -> #239. |
+| HARDWARE #349 | 2a5c997add4f49fcd74f753101d3a9daac0040bf | Focused Quarantine/Relay PASS; Full #45603969181 FAIL at poll-signature assertion. |
+| HARDWARE #352 | 0e984e267b3a8fb10c314800d1a7f120806354b7; source/test 8eab8260 | Quarantine/Relay/ESP8266/ESP32 focused PASS; Full #45683122413 FAIL at Controller protocol parity. |
+| HARDWARE #353 | dc9cf634248ecc23f51f1477bd1769d63d3fe5ea; source/test 4f361e03 | No current PR-triggered runs; captured base 6d743ae is 11 commits behind current #352 0e984e. HARDWARE owns stack refresh. |
+| QA #290 | 5c29d15994cee1279058f1eca12f2a3180704292 | Synthetic Windows #43633486963 PASS; native COM not invoked. |
+| QA #292 | 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | No PR-triggered runs. |
+| RELEASE #291 | 9b928c9eaa72cb26fdcf3f0e50a0ec024f4e3c30 | Windows #45669599214 and Full #45669599438 FAIL at CORE CURRENT_STATE freshness; ESP32 compatibility #45669599322 PASS. |
+| COE RELEASE #35 | 6a783576297dd612176289cfb0f654e4ff8eb6a1 | Shared #45711676706 FAIL at site-ULA gate; sandbox #45711676601 FAIL (Bubblewrap/timeout); case guard #45711676365 PASS. Latest checkpoint: host preflight 42/42; shared suite 236 run, 234 pass + 2 skips; 10/10 site-ULA profiles fail closed. |
+| COE CORE #45 | 9d76a134c1f6512aa40c20ec4d247306a71a8cce | Overlay/Shell #44295049727 and case guard #44295049903 PASS; focused only. |
+| COE INTERCON #49 | aeb8ff11b2f5db9a5f86280ab62ab988245f3919 | Stage 5.1 #44646341873 and case guard #44646341992 PASS; shared #44646341922 FAIL at missing mbedtls/sha256.h. |
+| COE integration #26 | b382d233ff06c8791b1028bed3c617cc7b670d12 | Five workflows queued / zero jobs; FROZEN. |
+
+Active refs: Experiments main 6be5d19b; active v0.6 2fbd2475; legacy v0.5.3 development aad3aade; COE main a6513ab4. PR #288 start HEAD 22c20eeb. OWNERSHIP_ROUTES blob e4db3243: 11 routes, DRAFT_REVIEW_ONLY, Master target null. Cleanup #266 OPEN / 0-of-7. Private registry v11/newer corrections NOT_RECOVERED. **PRODUCTION NO-GO.**
+
+---
+
 ## PHX-MASTER UTC21 — live owner routing and CI reconciliation — 2026-11-25T21:33Z
 
 PHX-MASTER remains limited to `coordination/phoenix/`; CORE is reserved to its separate continuation. No subsystem source branch or COE destination was modified.

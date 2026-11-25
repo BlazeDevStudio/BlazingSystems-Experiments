@@ -1,3 +1,19 @@
+## PHX-MASTER UTC22 — branch dependency and trust-boundary matrix — 2026-11-25T22:51Z
+
+| Integration edge | Exact observation | Gate / owner |
+|---|---|---|
+| #340 → #283 | #340 base 88581eef is 4 commits behind current #283 4dd0b01; #340 head is 43 ahead / 4 behind current #283. | HARDWARE refresh; no Master rebase. |
+| #348 → #254 → #239 | #348 8bdddfb is based on current #254 84c442a, stacked on Phase-A deny #239 d83b715. | Focused helper CI only; QA review; no Full or hardware acceptance. |
+| #349 → #352 → #353 | #353 captured base 6d743ae is 11 commits behind #352 0e984e2. | HARDWARE refresh; no Master rebase. |
+| Active v0.6 producer/consumer | ESP32/ESP8266 blobs 29f1125d / 12c4bb82 have no response_sig and consume poll fields; CGI db58041c register/ping and poll bodies are unsigned. | P0; CORE response contract, HARDWARE consumer, QA independent vectors. |
+| HARDWARE #340 deny branch | Both sketches deny before/after synchronous poll and discard response; applyRemoteConfig is a no-op deny stub. | Consumer-side deny mitigation only; not an authenticated protocol. |
+| COE #26 candidate | Keyless signature bypass persists on both boards; candidate tree/provenance/license/test parity incomplete; five CI workflows queued with zero jobs. | FROZEN; no staging or destination writes. |
+| COE RELEASE #35 | Site-ULA admission remains 10/10 fail-closed; Bubblewrap sandbox unavailable/timeouts. | RELEASE/INFRA; no release admission. |
+
+The three Hardware stacks remain independent. No shared API/schema was approved or modified. No source move is permitted from this matrix alone.
+
+---
+
 ## PHX-MASTER UTC21 — COE #26 response-auth candidate audit and migration hold — 2026-11-25T21:33Z
 
 **Live refs:** Experiments main `6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5`; product development `blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5`; active v0.6 `blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859`; Master start `fe33a297108d8a3b0dc812f7b2a133fb78a14230`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`.

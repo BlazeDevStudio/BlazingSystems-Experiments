@@ -1,3 +1,14 @@
+## PHX-MASTER UTC22 — Hardware stack / response-auth / COE #26 reconciliation — 2026-11-25T22:51Z
+
+[UTC22 exact-head Hardware #340/#348/#349/#352/#353 stack audit, active v0.6 unsigned poll boundary, COE #26 keyless candidate recheck and current role CI](PHX_MASTER_UTC22_20261125_HARDWARE_STACK_AUTH_AND_COE26_RECONCILIATION.md)
+
+- #340 Full build #45708073607 PASS (26 success / 4 production import-sign-publish skips), but base 88581eef is 4 commits behind #283 4dd0b01. Its current sketches discard poll responses and keep remote configuration deny-only.
+- #348 focused native header sanitizer #45715616078 PASS; Full #45715616079 CANCELLED/no jobs. Lab helper only, parent #254 -> #239.
+- #353 base 6d743ae is 11 commits behind current #352 0e984e2; no current exact-head PR runs.
+- Active v0.6 register/poll responses remain unsigned. COE #26 keyless response-auth bypass and provenance/license/test gaps remain; candidate FROZEN.
+- Cleanup #266 OPEN / 0-of-7; private Drive registry v11/newer corrections NOT_RECOVERED. **PRODUCTION NO-GO.**
+
+---
 ## PHX-MASTER UTC21 — COE #26 keyless response-auth and migration-provenance blocker — 2026-11-25T21:33Z
 
 Exact candidate blobs show both board sketches skip response verification when the controller key is empty; the setup portal does not require that key. The candidate test is token/fixture based and does not exercise the empty-key path. The README labels a raw SHA-256 concatenation as HMAC, the CGI signature omits the nested controller object, and the firmware parser expects top-level flags. Active v0.6 source remains unsigned for register/poll. See [UTC21 audit report](PHX_MASTER_UTC21_20261125_COE26_KEYLESS_RESPONSE_AUTH_AND_MIGRATION_AUDIT.md).
