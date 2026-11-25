@@ -812,7 +812,7 @@ class BlazePwifiV053ArtifactAssemblyTests(unittest.TestCase):
 
             script = (
                 "set -euo pipefail\n"
-                f"OUT={shlex.quote(str(output))}\\n"
+                f"OUT={shlex.quote(str(output))}\n"
                 f"{loop}\n"
             )
             completed = subprocess.run(
