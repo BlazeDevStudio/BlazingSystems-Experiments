@@ -186,7 +186,28 @@ def main():
                 functions.append(body)
             if len(functions) != len(FUNCTION_SPECS):
                 continue
-            functions.append(extract_board_coin_edge_isr(source, board))
+            isr_body = extract_board_coin_edge_isr(source, board)
+            legacy_mutation = source.replace(
+                "IRAM_ATTR coinEdgeISR",
+                "ICACHE_RAM_ATTR coinEdgeISR",
+                1,
+            )
+            if legacy_mutation == source:
+                failures.append(f"{board} could not inject deprecated ISR attribute mutation")
+                continue
+            try:
+                extract_board_coin_edge_isr(legacy_mutation, board)
+            except RuntimeError as error:
+                if "deprecated ICACHE_RAM_ATTR" not in str(error):
+                    failures.append(
+                        f"{board} deprecated ISR attribute mutation failed for the wrong reason: {error}"
+                    )
+                    continue
+                print(f"{board}_MUTATION_REJECTED deprecated-isr-attribute")
+            else:
+                failures.append(f"{board} deprecated ISR attribute mutation was not rejected")
+                continue
+            functions.append(isr_body)
             result = compile_and_run(functions)
             if result.returncode:
                 failures.append(f"{board} exact-source failure: {result.stderr or result.stdout}")
