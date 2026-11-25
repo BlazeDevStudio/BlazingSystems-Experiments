@@ -10,6 +10,7 @@ import ast
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
+REPO_ROOT = HERE.parents[4]
 RUNNER = HERE / "coin_pulse_capture_lab.py"
 FIXTURES = HERE / "coin_pulse_capture_lab_fixtures.py"
 CONTRACTS = HERE / "coin_pulse_capture_lab_contracts.py"
@@ -199,6 +200,30 @@ if 'CPP.replace("@@FUNCTIONS@@"' not in runner_source:
     fail("runner no longer composes the exact-source fixture")
 if "for name, helper_name, old, new, expected in MUTATIONS" not in runner_source:
     fail("runner no longer executes the complete mutation matrix")
+
+
+def workflow_event_block(source: str, event: str, next_event: str) -> str:
+    start = source.find(f"  {event}:")
+    end = source.find(f"\\n  {next_event}:", start)
+    if start < 0 or end < 0:
+        fail(f"workflow is missing the {event} path-filter block")
+    return source[start:end]
+
+
+for workflow_name in (
+    "phx-hardware-quarantine-byte-readback.yml",
+    "phx-hardware-relay-output-polarity.yml",
+):
+    workflow_source = (REPO_ROOT / ".github" / "workflows" / workflow_name).read_text(encoding="utf-8")
+    for event, next_event in (("push", "pull_request"), ("pull_request", "workflow_dispatch")):
+        event_source = workflow_event_block(workflow_source, event, next_event)
+        for module, _, _ in SECTION_SPECS:
+            module_path = (
+                "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/"
+                f"{module}.py"
+            )
+            if f'      - "{module_path}"' not in event_source:
+                fail(f"{workflow_name} {event} does not trigger for {module}.py")
 
 print("COIN_PULSE_CAPTURE_LAB_MODULE_BOUNDARIES_PASS")
 print(f"FIXTURE_SECTIONS={len(SECTION_SPECS)} FUNCTION_SPECS={len(specs)} MUTATIONS={len(mutation_names)}")
