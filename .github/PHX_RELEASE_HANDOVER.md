@@ -2335,12 +2335,12 @@ Only RELEASE-owned test, compatibility workflow and this RELEASE handover are in
 
 This is the single machine-checked current pointer for the RELEASE ESP32 compatibility workflow. The source/test, latest documentation commit, and live PR head are pinned separately.
 
-- HARDWARE #349 source/test SHA: `6ce423783b306411bdb7e7217081c050cb4cbec4`.
-- HARDWARE #349 docs HEAD: `a994f7048673677651449eeb0a04d2bf9e91737c`.
-- HARDWARE #349 PR HEAD: `a994f7048673677651449eeb0a04d2bf9e91737c`.
-- ESP32 sketch Git blob SHA: `a9a1c2fecb001d71f8f22b43952edbd160aacaf8`.
-- Exact-source compatibility matrix: [#45357167298](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45357167298) — SUCCESS (3/3 jobs).
-- Source/test-to-docs comparison: one later commit, zero behind; the later commit changes the HARDWARE relay/output workflow path filter and adds the UTC08 handover. The ESP32 sketch blob is unchanged.
+- HARDWARE #349 source/test SHA: `f591cb85ba032e4f2c30e5008c71de9ce8d17f2e`.
+- HARDWARE #349 docs HEAD: `dc6ef11c104fdd9b73dfdd1120ca3a2bc3f86dcf`.
+- HARDWARE #349 PR HEAD: `56de0761ca67b54feb4889401a810b0069f50614`.
+- ESP32 sketch Git blob SHA: `adfd2f110d88243d03f2195658fb456b154dcb84`.
+- Exact-source compatibility matrix: PENDING — no run claimed yet.
+- Source/test-to-docs comparison: source/test `f591cb85ba032e4f2c30e5008c71de9ce8d17f2e` contains the current HARDWARE #349 code snapshot; docs commit `dc6ef11c104fdd9b73dfdd1120ca3a2bc3f86dcf` adds the current handover; PR head `56de0761ca67b54feb4889401a810b0069f50614` adds the subsequent focused-workflow path-filter correction. The ESP32 sketch blob is unchanged between the source/test commit and current PR head.
 - Evidence boundary: hosted CI only. This matrix does not establish physical hardware acceptance or production binary approval.
 
 ## PHX-RELEASE UTC09 — exact-head Full workflow follow-through
@@ -4190,3 +4190,22 @@ Only RELEASE-owned files for this increment changed: `.github/workflows/blazepwi
 - **PHX-RELEASE:** after CORE's freshness update, rerun exact-head Full, Windows and ESP32 compatibility; inspect terminal jobs and preserve any failures.
 
 Protected signer and independent freshness witness, durable financial accounting/migration, independent QA/MASTER approval, approved production binaries, 150 physical power cuts and 30-device/24-hour soak remain unestablished or NOT TESTED. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC05 — exact HARDWARE #349 ESP32 compatibility pin refresh
+
+**Task:** Correct the stale release-owned ESP32 compatibility matrix source pin. PR #291 remains OPEN / DRAFT / UNMERGED; no upstream HARDWARE source was modified.
+
+**Identity**
+- PR #291 branch: `phoenix/release-publisher-isolation-20261115`; starting HEAD `0273f0ea2748dddcff0b0fb6f13868ef50633e57`; base #242 `734b89d9e7792247e8376335c3f3685500ab3f89`.
+- Current HARDWARE #349 source/test: `f591cb85ba032e4f2c30e5008c71de9ce8d17f2e`; docs: `dc6ef11c104fdd9b73dfdd1120ca3a2bc3f86dcf`; PR head: `56de0761ca67b54feb4889401a810b0069f50614`; sketch blob: `adfd2f110d88243d03f2195658fb456b154dcb84`.
+- Test-only commit: `0273f0ea2748dddcff0b0fb6f13868ef50633e57`.
+- Expected RED: [Full PR run #45553071775](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45553071775), CI-0701 job `138998546175`, failed the exact-source workflow contract because the workflow still pinned the older HARDWARE source/blob. This is the intended test-first failure.
+- Prior compatibility run [#45550156931](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45550156931) passed 3/3 on the old source `6ce423783b306411bdb7e7217081c050cb4cbec4` / blob `a9a1c2fecb001d71f8f22b43952edbd160aacaf8`; it is not current #349 evidence.
+- On test-only head, Windows [#45553071582](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45553071582) failed the inherited CORE-owned handover freshness gate; build/publisher skipped. Full [#45553071775](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45553071775) stopped at CI-0701 before downstream target jobs; no integrated build success is claimed.
+
+**Source correction:** the compatibility workflow now checks out the exact current HARDWARE #349 source/test SHA and independently verifies its sketch blob. The job label and environment pins match the same source identity. The machine-checked handover anchor separately records source/test, docs and PR heads; exact-source matrix remains pending until the new run completes.
+
+**Scope:** RELEASE-owned compatibility test, compatibility workflow and RELEASE handover only. No HARDWARE, CORE, PISONET, QA, MASTER or COE destination source was changed. No signer, tag, publication, device flash, payment migration or deployment was invoked.
+
+**Evidence boundary:** hosted CI only; physical hardware acceptance remains NOT TESTED; PRODUCTION NO-GO.
