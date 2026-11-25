@@ -5,7 +5,7 @@ stay in each lab. This module owns only temporary files and compiler/process
 execution so those mechanics remain consistent and easy to debug.
 """
 
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 import math
 from numbers import Real
 import subprocess
@@ -66,6 +66,20 @@ def _validate_stem(stem):
         raise ValueError("stem must be a single safe filename component")
 
 
+def _validate_prefix(prefix):
+    """Keep TemporaryDirectory prefixes inside its default temporary root."""
+    if (
+        not isinstance(prefix, str)
+        or prefix in {".", ".."}
+        or "\x00" in prefix
+        or "/" in prefix
+        or "\\" in prefix
+        or Path(prefix).is_absolute()
+        or PureWindowsPath(prefix).drive
+    ):
+        raise ValueError("prefix must be a safe filename prefix")
+
+
 def run_cpp_fixture(
     source,
     *,
@@ -83,6 +97,7 @@ def run_cpp_fixture(
     """
     _validate_timeout("compile_timeout", compile_timeout)
     _validate_timeout("run_timeout", run_timeout)
+    _validate_prefix(prefix)
     _validate_stem(stem)
 
     with tempfile.TemporaryDirectory(prefix=prefix) as folder:

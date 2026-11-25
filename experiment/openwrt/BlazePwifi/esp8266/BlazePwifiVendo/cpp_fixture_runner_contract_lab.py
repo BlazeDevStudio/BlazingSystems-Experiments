@@ -176,6 +176,34 @@ class CppFixtureRunnerContractTests(unittest.TestCase):
                     write_text.assert_not_called()
                     process_run.assert_not_called()
 
+    def test_empty_prefix_is_allowed(self):
+        class FakeTemporaryDirectory:
+            def __enter__(self):
+                return "/tmp/phx-runner-contract-safe"
+
+            def __exit__(self, *args):
+                return False
+
+        with patch(
+            "cpp_fixture_runner.tempfile.TemporaryDirectory",
+            return_value=FakeTemporaryDirectory(),
+        ) as temporary_directory, patch(
+            "cpp_fixture_runner.Path.write_text"
+        ) as write_text, patch(
+            "cpp_fixture_runner.subprocess.run",
+            side_effect=[completed(), completed(stdout="fixture-ok")],
+        ) as process_run:
+            result = run_cpp_fixture(
+                "int main() { return 0; }",
+                prefix="",
+                stem="fixture",
+            )
+
+        self.assertEqual(result.stdout, "fixture-ok")
+        temporary_directory.assert_called_once_with(prefix="")
+        write_text.assert_called_once()
+        self.assertEqual(process_run.call_count, 2)
+
     def test_compile_timeout_is_reported_with_context(self):
         timeout = subprocess.TimeoutExpired(cmd=["g++"], timeout=30)
         temp_dirs = []
@@ -393,7 +421,7 @@ def verify():
     result = unittest.TextTestRunner(verbosity=1).run(suite)
     if not result.wasSuccessful():
         raise SystemExit(1)
-    print("CPP_FIXTURE_RUNNER_CONTRACT_PASS 10/10")
+    print("CPP_FIXTURE_RUNNER_CONTRACT_PASS 11/11")
 
 
 if __name__ == "__main__":
