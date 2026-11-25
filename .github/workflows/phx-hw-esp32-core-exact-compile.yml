@@ -22,14 +22,13 @@ on:
 permissions:
   contents: read
 
-concurrency:
-  group: phx-hw-esp32-core-exact-${{ github.ref }}-${{ matrix.core_version }}
-  cancel-in-progress: false
-
 jobs:
   exact-source-core-matrix:
     runs-on: ubuntu-24.04
     timeout-minutes: 35
+    concurrency:
+      group: phx-hw-esp32-core-exact-${{ github.ref }}-${{ matrix.core_version }}
+      cancel-in-progress: false
     strategy:
       fail-fast: false
       matrix:
