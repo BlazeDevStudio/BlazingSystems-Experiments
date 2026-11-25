@@ -8,6 +8,9 @@ on:
     paths:
       - "experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/**"
       - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/**"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/coin_pulse_capture_lab_structure_guard.py"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/coin_pulse_capture_lab_fixtures.py"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/coin_pulse_capture_lab_contracts.py"
       - ".github/workflows/phx-hardware-quarantine-byte-readback.yml"
       - "experiment/openwrt/BlazePwifi/PROJECT_HANDOVER.md"
       - "experiment/openwrt/BlazePwifi/docs/handover/2026-11-25-hw-cpp-fixture-prefix-containment-utc04.md"
@@ -67,6 +70,8 @@ jobs:
           python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/boot_polarity_workflow_wiring_lab.py
       - name: Verify ESP8266 EEPROM config-read failure and local config migration recovery
         run: python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/config_load_read_failure_lab.py
+      - name: Enforce modular coin pulse lab boundaries
+        run: python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/coin_pulse_capture_lab_structure_guard.py
       - name: Verify pulse capture after poll-drain abort (both board sketches)
         run: python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/coin_pulse_capture_lab.py
       - name: Verify ESP8266 cold-boot output polarity remains deny until locally configured
