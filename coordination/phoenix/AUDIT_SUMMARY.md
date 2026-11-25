@@ -1,3 +1,9 @@
+## PHX-MASTER UTC04 post-checkpoint correction — 2026-11-25T04:56:08Z
+
+HARDWARE independently refreshed PR #349 after the initial Master snapshot: source/test `f591cb85ba032e4f2c30e5008c71de9ce8d17f2e`, handover `dc6ef11c104fdd9b73dfdd1120ca3a2bc3f86dcf`, PR/workflow head `56de0761ca67b54feb4889401a810b0069f50614`. Current docs-head Quarantine #45549636102 and Relay #45549636112 PASS; Full #45549636091 FAILS at Controller protocol parity / Missing poll signature check; 14 target/platform + Android jobs pass and 12 dependent stages skip. The current PROJECT_HANDOVER blob is `311b31559a3ff98a8ee3f469fd0e663ff58634f0`; the earlier 25351479 snapshot is superseded. The raw 27-path overlap count is unchanged. CORE and QA retain producer/assertion ownership; no Master Hardware edits.
+
+---
+
 ## PHX-MASTER UTC04 disposition — 2026-11-25T04:48:35Z
 
 **Starting Master HEAD:** `6762bcf50c5cbedb5d09117e76749b0a66a7779b`. **PR #288:** OPEN / DRAFT / UNMERGED. **COE #26:** FROZEN. **Production:** NO-GO.
