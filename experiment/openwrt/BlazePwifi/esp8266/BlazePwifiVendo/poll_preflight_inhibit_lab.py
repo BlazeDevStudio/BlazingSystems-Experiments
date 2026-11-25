@@ -11,7 +11,7 @@ import re
 import subprocess
 import tempfile
 
-from firmware_source_extract import (\n    extract_braced, extract_function, has_empty_string_assignment, mask_non_code,\n)
+from firmware_source_extract import extract_braced, extract_function, has_empty_string_assignment, mask_non_code
 
 
 BLAZEPWIFI = Path(__file__).resolve().parents[2]
