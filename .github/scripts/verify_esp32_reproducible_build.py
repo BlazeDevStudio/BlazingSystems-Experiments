@@ -126,11 +126,25 @@ def _read_at(descriptor: int, size: int, offset: int) -> bytes:
     if hasattr(os, "pread"):
         return os.pread(descriptor, size, offset)
     current = os.lseek(descriptor, 0, os.SEEK_CUR)
+    primary_error: BaseException | None = None
     try:
         os.lseek(descriptor, offset, os.SEEK_SET)
         return os.read(descriptor, size)
+    except BaseException as exc:
+        primary_error = exc
+        raise
     finally:
-        os.lseek(descriptor, current, os.SEEK_SET)
+        try:
+            os.lseek(descriptor, current, os.SEEK_SET)
+        except BaseException as cleanup_error:
+            if primary_error is not None:
+                _record_cleanup_failure(
+                    primary_error,
+                    "ESP32 image cursor restoration failure: "
+                    f"{type(cleanup_error).__name__}: {cleanup_error}",
+                )
+            else:
+                raise
 
 
 def _read_esp_app_elf_sha256(descriptor: int) -> str | None:
