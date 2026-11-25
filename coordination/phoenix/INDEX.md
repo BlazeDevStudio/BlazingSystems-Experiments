@@ -1,3 +1,14 @@
+## PHX-MASTER UTC15 — 2026-11-25T15:09Z live role/CI and COE #26 provenance
+
+[UTC15 live owner CI, exact Hardware source/destination blobs, SOURCE_INTAKE recount, registry-access and no-staging audit](PHX_MASTER_UTC15_20261125_LIVE_ROLE_CI_COE26_EXACT_BLOB_AND_REGISTRY_ACCESS_AUDIT.md)
+
+- Starting Master HEAD `8c25645`; Experiments main `6be5d19`; active development `2fbd2475`; legacy development `aad3aade`; COE main `a6513ab`; COE #26 `b382d233`.
+- PR #288 remains OPEN / DRAFT / UNMERGED, base `main@f4e8a891`. Main is one unrelated CallerID commit ahead of the merge base; no synchronization was performed.
+- HARDWARE #352 focused current-head CI passes, but Full fails at the inherited `Missing poll signature check`. COE RELEASE #35 is now at `50f5fa17`; 227 source tests pass / 2 skips, then all 10 site-ULA profiles fail closed; Bubblewrap remains unavailable.
+- COE #26 remains FROZEN: source #352 ESP32/ESP8266 blobs differ from destination, a current pulse-capture lab is absent, root NOTICE is absent, and SOURCE_INTAKE actual classification is 46/15 versus declared 47/14. Five destination workflows remain queued with zero jobs.
+- Routing manifest remains 11 routes / `DRAFT_REVIEW_ONLY` / PHX-MASTER target null. Private registry v11/newer corrections remain NOT_RECOVERED. Cleanup #266 remains OPEN / 0-of-7. **PRODUCTION NO-GO.**
+
+---
 ## PHX-MASTER UTC14 — post-checkpoint live owner / source-pin update (2026-11-25T14:45Z)
 
 [UTC14 audit with current HARDWARE #352 source/test tuple, exact current-head CI, COE #35 refresh and frozen COE #26 provenance](PHX_MASTER_UTC14_20261125_LIVE_HEAD_ROLE_CI_HW352_TEST_FIDELITY_AND_COE26_EXACT_BLOB_AUDIT.md)
