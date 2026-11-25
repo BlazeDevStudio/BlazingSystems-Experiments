@@ -197,37 +197,45 @@ def verify_board_specific_isr_selection(source, board):
     if len(definitions) != 2:
         raise RuntimeError(f"{board} expected both conditional coinEdgeISR definitions, found {len(definitions)}")
 
-    marker = "coinEdgeSequence = coinEdgeSequence + 1U;"
-    positions = []
-    offset = 0
-    while True:
-        position = source.find(marker, offset)
-        if position < 0:
-            break
-        positions.append(position)
-        offset = position + len(marker)
-    if len(positions) != 2:
-        raise RuntimeError(f"{board} expected one increment in each conditional ISR branch, found {len(positions)}")
-
-    first = source.find("void IRAM_ATTR coinEdgeISR")
-    second = source.find("void IRAM_ATTR coinEdgeISR", first + 1)
-    conditional = source.rfind("#if defined(ESP8266)", 0, first)
-    alternate = source.find("#else", first, second)
-    terminator = source.find("#endif", second)
-    if not (0 <= conditional < first < alternate < second < terminator):
-        raise RuntimeError(f"{board} coinEdgeISR conditional branches are not in the expected order")
-
-    # Make the #else branch observably different without touching repository
-    # source. ESP8266 must select the first branch; ESP32 must select #else.
-    position = positions[1]
-    changed_marker = "coinEdgeSequence = coinEdgeSequence + 2U;"
-    probe = source[:position] + changed_marker + source[position + len(marker):]
+    # The selector must ignore an inactive decoy even when it appears before
+    # the real board branches. A position-based [0]/[1] choice is not safe.
+    probe = (
+        "#if 0\\n"
+        "void IRAM_ATTR coinEdgeISR(){ ++disabledDecoy; }\\n"
+        "#endif\\n"
+        "#if defined(ESP8266)\\n"
+        "void IRAM_ATTR coinEdgeISR(){ ++esp8266Edges; }\\n"
+        "#else\\n"
+        "void IRAM_ATTR coinEdgeISR(){ ++esp32Edges; }\\n"
+        "#endif\\n"
+    )
     selected = extract_board_coin_edge_isr(probe, board)
-    expected = marker if board == "ESP8266" else changed_marker
-    if expected not in selected:
-        raise RuntimeError(f"{board} lab selected the inactive conditional coinEdgeISR branch")
-    print(f"{board}_ACTIVE_ISR_BRANCH_SELECTION_PASS")
+    expected = "++esp8266Edges;" if board == "ESP8266" else "++esp32Edges;"
+    if expected not in selected or "disabledDecoy" in selected:
+        raise RuntimeError(f"{board} lab selected an inactive or wrong conditional coinEdgeISR branch")
 
+    mutated = mutate_active_isr_attribute(probe, board)
+    if mutated.count("ICACHE_RAM_ATTR coinEdgeISR") != 1:
+        raise RuntimeError(f"{board} deprecated-attribute injection did not mutate exactly one active ISR")
+    if mutated.count("IRAM_ATTR coinEdgeISR") != 2:
+        raise RuntimeError(f"{board} deprecated-attribute injection changed an inactive ISR")
+
+    # Unknown preprocessor branches are conservatively considered possible.
+    # If one adds a second candidate ISR, selection must fail closed.
+    ambiguous = probe + (
+        "#if PHX_UNKNOWN_BOARD_MACRO\\n"
+        "void IRAM_ATTR coinEdgeISR(){ ++unknownBoardEdges; }\\n"
+        "#endif\\n"
+    )
+    try:
+        extract_board_coin_edge_isr(ambiguous, board)
+    except RuntimeError as error:
+        if "exactly one active" not in str(error):
+            raise RuntimeError(f"{board} ambiguous ISR branch failed for the wrong reason: {error}") from error
+    else:
+        raise RuntimeError(f"{board} selector accepted an ambiguous unknown-macro ISR branch")
+
+    print(f"{board}_ACTIVE_ISR_BRANCH_SELECTION_PASS")
 
 
 def main():
