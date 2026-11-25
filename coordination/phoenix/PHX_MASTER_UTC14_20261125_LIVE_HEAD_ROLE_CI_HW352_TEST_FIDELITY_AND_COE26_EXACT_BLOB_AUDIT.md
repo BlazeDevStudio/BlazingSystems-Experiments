@@ -145,3 +145,8 @@ The same active branch's docs/handover/CHANGE_LEDGER.md is zero bytes at the cur
 
 The active branch LARGE_ARTIFACT_DRIVE_POLICY.md (blob 87ce2b673d53b5f278ab0ee5de8da01bd00bb2fe) requires Google Drive handoff for ecosystem artifacts >=200,000,000 bytes with pre/post-upload full-byte SHA-256 verification and preservation of originals. No Drive connector/action was exposed in this run; no upload or registry read is claimed. The canonical private v11 registry and newer corrections remain NOT RECOVERED.
 
+
+
+## Final remote-state correction — 2026-11-25T14:53Z
+
+After the two post-checkpoint coordination commits, the exact final comparison is Experiments main 6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5 versus Master 3d435b7790c2ad54b3b3c8b2f1818691bf38929b: **559 ahead / 1 behind**, merge base f4e8a891aed8af86d5fd315d28750a0ac3a7372b. The earlier 557-ahead count was the pre-handover-follow-up snapshot and is superseded. PR #288 remains OPEN / DRAFT / UNMERGED, base main@f4e8a891, 215 changed paths, all under coordination/phoenix/.
