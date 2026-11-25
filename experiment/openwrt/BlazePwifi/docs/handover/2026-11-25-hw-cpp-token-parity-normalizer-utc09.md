@@ -50,7 +50,7 @@ All results below are on source/test SHA \`9b20d0a6e520d78423250636b3ea0fe983b35
 
 - Quarantine [#45587094891](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45587094891), job \`139111358382\`: **PASS**. Log markers: \`BOUNDED_HTTP_RESPONSE_TOKEN_NORMALIZER_PASS 8/8\`, \`BOUNDED_HTTP_RESPONSE_BOARD_PARITY_PASS\`, and \`BOUNDED_HTTP_RESPONSE_BOARD_PARITY_MUTATIONS_PASS 10/10\`.
 - Relay [#45587106298](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45587106298), jobs \`139111393546\` and \`139111394133\`: **PASS**. Exact bounded-response check and board-parity mutation checks passed.
-- Full BlazePwifi [#45587106766](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45587106766), validation job \`139111540259\`: **FAIL** at inherited \`Missing poll signature check\` in the ESP8266 sketch. All 14 firmware/platform build jobs plus Android completed successfully; dependent simulations, candidate, signing and publication stages were skipped.
+- Full BlazePwifi [#45587106766](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45587106766), validation job \`139111540259\`: **FAIL** at inherited \`Missing poll signature check\` in the ESP8266 sketch. All 13 firmware/platform target jobs plus Android completed successfully; dependent simulations, candidate, signing and publication stages were skipped.
 
 The Full validation failure is not fixed here: the authenticated register/poll response contract belongs to PHX-CORE and independent assertion reconciliation belongs to PHX-QA. No comment/string sentinel or fake signature was added to make the gate pass.
 
