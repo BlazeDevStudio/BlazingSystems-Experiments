@@ -373,8 +373,8 @@ class ReleaseHandoverUTC07CurrentRefsTests(unittest.TestCase):
         self.assertIn("30-device/24-hour soak", self.section)
 
     def test_utc07_section_stops_at_next_heading(self):
-        sample = f"{UTC07_MARKER}\\nkeep-this\\n## NEXT SECTION\\nleaked-sentinel"
-        self.assertEqual(_utc07_section(sample), "\\nkeep-this")
+        sample = f"{UTC07_MARKER}\nkeep-this\n## NEXT SECTION\nleaked-sentinel"
+        self.assertEqual(_utc07_section(sample), "\nkeep-this")
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
