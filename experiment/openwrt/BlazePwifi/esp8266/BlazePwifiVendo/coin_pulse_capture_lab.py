@@ -274,20 +274,20 @@ def verify_board_specific_isr_selection(source, board):
     # Directive-shaped text inside comments and raw strings must not count as
     # a second board gate. This proves the gate search uses the lexical mask.
     decoy_prefix = (
-        "/*\\n#if defined(ESP8266)\\n*/\\n"
-        'const char *gateText = R"PHX(\\n#if defined(ESP8266)\\n)PHX";\\n'
+        "/*\n#if defined(ESP8266)\n*/\n"
+        'const char *gateText = R"PHX(\n#if defined(ESP8266)\n)PHX";\n'
     )
     decoy_selected = extract_board_coin_edge_isr(decoy_prefix + probe, board)
     if expected not in decoy_selected or "disabledDecoy" in decoy_selected:
         raise RuntimeError(f"{board} selector counted a comment/raw-string board-gate decoy")
     print(f"{board}_BOARD_GATE_COMMENT_RAW_STRING_DECOYS_IGNORED")
 
-    # Two real board gates are ambiguous even if one appears in an inactive
-    # branch; fail closed rather than choosing whichever definition is first.
+    # A second real board gate is ambiguous; fail closed instead of selecting
+    # whichever definition happens to appear first.
     duplicate_gate = probe + (
-        "#if defined(ESP8266)\\n"
-        "void IRAM_ATTR coinEdgeISR(){ ++duplicateGateEdges; }\\n"
-        "#endif\\n"
+        "#if defined(ESP8266)\n"
+        "void IRAM_ATTR coinEdgeISR(){ ++duplicateGateEdges; }\n"
+        "#endif\n"
     )
     try:
         extract_board_coin_edge_isr(duplicate_gate, board)
