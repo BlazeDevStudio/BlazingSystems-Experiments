@@ -191,6 +191,51 @@ class ArduinoCliArchiveVerifierTests(unittest.TestCase):
 
             download.assert_not_called()
 
+    def test_preserves_primary_read_failure_when_descriptor_close_fails(self):
+        with tempfile.TemporaryDirectory() as directory:
+            binary = Path(directory) / "arduino-cli"
+            binary.write_bytes(b"synthetic executable bytes")
+            binary.chmod(0o755)
+            expected_info = binary.stat()
+            real_close = os.close
+            close_attempts = []
+
+            def close_then_fail(fd):
+                close_attempts.append(fd)
+                real_close(fd)
+                raise OSError("synthetic descriptor close failure")
+
+            with patch.object(
+                verifier.os, "read", side_effect=OSError("synthetic primary read failure")
+            ), patch.object(verifier.os, "close", side_effect=close_then_fail):
+                with self.assertRaisesRegex(
+                    VerificationError,
+                    "cannot safely read installed Arduino CLI binary: synthetic primary read failure",
+                ):
+                    verifier._read_installed_binary(binary, expected_info)
+
+            self.assertEqual(len(close_attempts), 1)
+
+    def test_surfaces_descriptor_close_failure_without_primary_error(self):
+        with tempfile.TemporaryDirectory() as directory:
+            binary = Path(directory) / "arduino-cli"
+            binary.write_bytes(b"synthetic executable bytes")
+            binary.chmod(0o755)
+            expected_info = binary.stat()
+            real_close = os.close
+            close_attempts = []
+
+            def close_then_fail(fd):
+                close_attempts.append(fd)
+                real_close(fd)
+                raise OSError("synthetic descriptor close failure")
+
+            with patch.object(verifier.os, "close", side_effect=close_then_fail):
+                with self.assertRaisesRegex(OSError, "synthetic descriptor close failure"):
+                    verifier._read_installed_binary(binary, expected_info)
+
+            self.assertEqual(len(close_attempts), 1)
+
     def test_rejects_installed_binary_changed_during_descriptor_read(self):
         with tempfile.TemporaryDirectory() as directory:
             binary = Path(directory) / "arduino-cli"
