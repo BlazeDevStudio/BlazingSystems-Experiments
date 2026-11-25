@@ -5,7 +5,7 @@ import re
 import subprocess
 import tempfile
 
-from firmware_source_extract import extract_function, mask_non_code
+from firmware_source_extract import extract_function, has_empty_string_assignment, mask_non_code
 
 BLAZEPWIFI = Path(__file__).resolve().parents[2]
 SKETCHES = {
@@ -142,7 +142,7 @@ def verify_board(board: str, path: Path) -> None:
     for token in required:
         if token not in compact_deny:
             raise AssertionError(f"{board}: deny function missing {token}")
-    if 'activeTarget=""' not in compact_deny:
+    if not has_empty_string_assignment(deny_fn, "activeTarget"):
         raise AssertionError(f"{board}: active target is not cleared")
 
     safe = harness(write_fn, outputs_fn, deny_fn, apply_fn)

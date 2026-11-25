@@ -11,7 +11,7 @@ import re
 import subprocess
 import tempfile
 
-from firmware_source_extract import extract_braced, extract_function, mask_non_code
+from firmware_source_extract import (\n    extract_braced, extract_function, has_empty_string_assignment, mask_non_code,\n)
 
 
 BLAZEPWIFI = Path(__file__).resolve().parents[2]
@@ -196,7 +196,7 @@ def verify_board(name: str, path: Path):
     for token in required:
         if token not in deny_code:
             raise AssertionError(f"{name}: denyRemoteControl missing {token!r}")
-    if not re.search(r'activeTarget\s*=\s*""', deny_code):
+    if not has_empty_string_assignment(deny_fn, "activeTarget"):
         raise AssertionError(f"{name}: denyRemoteControl does not clear active target")
     if "bool accepting=controllerEnabled && coinEnabled && insertMode && fsReady && !pendingReady;" not in apply_code:
         raise AssertionError(f"{name}: relay acceptance predicate changed unexpectedly")
