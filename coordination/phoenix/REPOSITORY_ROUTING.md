@@ -1,3 +1,35 @@
+## PHX-MASTER UTC04 cleanup-first path-overlap and routing refresh — 2026-11-25T04:48:35Z
+
+Read current changed-file lists for 14 open owner/integration PRs. The raw intersection is 27 paths across PRs with different base refs; this is not 27 confirmed merge conflicts. Expected same-role stacks and frozen COE candidate overlaps are separated from cross-role shared-file hazards.
+
+### Cross-role canonical handover overlap
+
+| Path | Active PRs | Exact branch blob prefixes |
+|---|---|---|
+| `experiment/openwrt/BlazePwifi/PROJECT_HANDOVER.md` | CORE #252; PISONET #255; HARDWARE #348; QA #290; RELEASE #291; HARDWARE #349 | `72e8e487`, `d3e66608`, `e9cd677c`, `83db03cf`, `db45e853`, `25351479` (all different). |
+| `experiment/openwrt/BlazePwifi/docs/handover/CHANGE_LEDGER.md` | CORE #252; PISONET #255; HARDWARE #348; QA #290; RELEASE #291 | `df50981c` (zero-byte on CORE #252), `02963d32`, `91100098`, `3180e1a9`, `f1e94148` (all different). |
+| `experiment/openwrt/BlazePwifi/docs/handover/CURRENT_STATE.md` | CORE #252; PISONET #255; HARDWARE #348; QA #290; RELEASE #291 | `72c38aeb`, `47e07b7c`, `29b6ac8b`, `73b9d1d6`, `85dd3c1e` (all different). |
+
+These exact blob identities prove divergent snapshots of the same shared files. Master role records already assign canonical `PROJECT_HANDOVER.md` and `CURRENT_STATE.md` to CORE. `CHANGE_LEDGER.md` lacks a sufficiently explicit single writer.
+
+### Expected stack/candidate overlaps
+
+- PISONET #255 / QA #290 share two NativeComInterfaceHandleLab files; QA #290 is based on #255 and is an expected QA-on-PISONET stack.
+- HARDWARE #340 / #347 / #349 share sketches, workflows and fixture/lab helpers inside the same Hardware stack. Preserve parent/child base order.
+- COE #35 / #26 overlap four paths; COE #45 / #26 overlap three migration paths. #26 is frozen and these overlaps do not authorize destination copying.
+- RELEASE #291 carries inherited CORE canonical handover and PISONET release-test paths. The current docs-only commit does not transfer their ownership; require CORE/PISONET review before any future merge.
+
+### Proposed single-writer boundary — pending owner acknowledgement
+
+1. CORE is the sole canonical writer for source `PROJECT_HANDOVER.md` and `CURRENT_STATE.md`.
+2. Propose CORE as the canonical writer for `CHANGE_LEDGER.md` as well; if rejected, split it into role-scoped append-only ledgers rather than allowing concurrent whole-file rewrites.
+3. Other roles publish dated role-scoped handover documents and reference exact source/test SHA, final docs SHA and workflow checkout SHA. They submit canonical changes to CORE for incorporation instead of overwriting shared files in their own PRs.
+4. This is a coordination proposal, not an automatic reassignment. Affected owners must acknowledge or amend it. No source file, ownership route, PR base or merge state was changed.
+
+The routing manifest remains 11 routes / `DRAFT_REVIEW_ONLY` / PHX-MASTER target null. No move, copy, mass rename, deletion, rebase or cherry-pick is proposed.
+
+---
+
 ## PHX-MASTER UTC01 owner routing — 2026-11-25T01:34:05Z
 
 - **PHX-CORE:** retains authenticated poll/register producer, financial state and canonical CURRENT_STATE / PROJECT_HANDOVER. #252 scoped build passes; #291 Windows/build remain blocked at handover freshness. The separate CORE continuation owns CORE source; Master does not edit it.
