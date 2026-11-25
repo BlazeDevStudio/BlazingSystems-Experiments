@@ -69,7 +69,7 @@ def _record_cleanup_failure(primary_error: BaseException, detail: str) -> None:
         if callable(add_note):
             add_note(detail)
         else:
-            sys.stderr.write(detail + "\\n")
+            sys.stderr.write(detail + "\n")
     except BaseException:
         # Cleanup diagnostics must never replace the operation or cleanup error.
         pass
