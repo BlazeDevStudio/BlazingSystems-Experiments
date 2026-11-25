@@ -1,3 +1,9 @@
+## PHX-RELEASE UTC 2026-11-25 — supersession audit: build-provenance regression hardening
+
+- Compatible draft head `4159ee7f1b94bacabfa234ce75c9f66aae7539ba` already contains RELEASE-owned build-provenance regression hardening in `.github/scripts/write_build_provenance.py` and `.github/scripts/test_build_provenance.py`. No implementation was duplicated and no non-RELEASE source was changed.
+- Exact-head [BlazePwifi build #45586294127](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45586294127) completed docs-only proof plus scoped Android, ESP32, and ESP8266 jobs successfully; `validate` failed, and production import, signing, and publishing were skipped. [Windows #45586293974](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45586293974) failed at `handover` before Windows build and publication. [ESP32 compatibility #45586294044](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45586294044) succeeded on both pinned core legs against source `059e3bbde935`.
+- This is scoped CI evidence only, not a production claim. PR #291 remains OPEN / DRAFT / UNMERGED with zero independent reviews. **PRODUCTION NO-GO** remains pending MASTER and independent QA approval, protected signing and durable finance/migration controls, and physical acceptance.
+
 ## PHX-RELEASE UTC09 — provenance traversal descriptor ownership and fd-reuse safety
 
 **Disposition:** one RELEASE-owned build-provenance descriptor bug was reproduced test-first and corrected. Exact source/test push and PR compatibility matrices passed 3/3. Full BlazePwifi integration remains blocked by the CORE-owned canonical handover freshness gate. PR #291 remains OPEN / DRAFT / UNMERGED. Strict NO Codex. No merge, tag, signing, publication, hardware flash, real payment migration or customer deployment.
