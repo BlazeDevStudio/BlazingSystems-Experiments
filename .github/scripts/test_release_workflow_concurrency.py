@@ -771,12 +771,11 @@ class BlazePwifiV053ImmutableReleaseTests(unittest.TestCase):
 
 def extract_v053_artifact_copy_loop(content: str) -> str:
     """Extract the real release-stage shell loop so the fixture tests its behavior."""
-    marker = 'find artifacts/build -type f \\( '
     start = content.find("find artifacts/build -type f \\(")
     if start < 0:
         raise AssertionError("missing v0.5.3 firmware artifact collection loop")
-    line_start = content.rfind("\\n", 0, start) + 1
-    end = content.find("\\n\\n          GATE=", start)
+    line_start = content.rfind("\n", 0, start) + 1
+    end = content.find("\n\n          GATE=", start)
     if end < 0:
         raise AssertionError("cannot find the end of the v0.5.3 artifact collection loop")
     return textwrap.dedent(content[line_start:end]).rstrip()
@@ -812,9 +811,9 @@ class BlazePwifiV053ArtifactAssemblyTests(unittest.TestCase):
                 source.write_bytes(payload)
 
             script = (
-                "set -euo pipefail\\n"
+                "set -euo pipefail\n"
                 f"OUT={shlex.quote(str(output))}\\n"
-                f"{loop}\\n"
+                f"{loop}\n"
             )
             completed = subprocess.run(
                 ["bash", "-c", script],
