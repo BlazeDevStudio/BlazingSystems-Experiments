@@ -31,8 +31,14 @@
 
 ### Exact-source RELEASE compatibility
 
-- Exact-source compatibility matrix: PENDING — no run claimed yet.
-- The machine-checked source anchor below is updated to the current HARDWARE tuple and the latest focused Quarantine/Relay/Full outcomes. The next exact-source 3-job matrix must pass before this source is marked RELEASE-qualified.
+- Source/test-head PR compatibility [#45594257874](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45594257874): **SUCCESS, 3/3**. Provenance job `139136149496`, ESP32 core 3.3.13 job `139136148825`, and ESP32 core 4.0.0 job `139136149656` all completed successfully against HARDWARE source/test `9b20d0a6`.
+- Core 3.3.13: two clean builds produced identical application images, 1,045,808 bytes, SHA-256 `90d67c9c29096f5fb8e0b328fd86354461c2cdd0bfafc864c459837a5d6f10de`.
+- Core 4.0.0: two clean builds produced identical application images, 1,100,016 bytes, SHA-256 `efee6bc85c620748bd84e4082c2ce9354a42422c42a14b1514cc0f7f1e6ab80b`.
+- Both images are reproducible within their respective core versions; different core versions are not expected to produce the same image. These are hosted-CI outputs, not approved production binaries.
+- Documentation-head compatibility successor [#45594602608](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45594602608) was IN PROGRESS at this handover update: provenance job passed; both core jobs were still running. No terminal result is claimed.
+- Final docs-head Full [#45594602556](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45594602556): CI-0701 PASS; mandatory validation FAIL at CORE-owned CURRENT_STATE freshness checkpoint `d85eb6a2766781b6cac1807cef461993d8216b84`; target matrix was still running and downstream release stages were skipped. This is not a Full build pass.
+- Final docs-head Windows [#45594602401](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45594602401): handover gate FAIL at the same CORE-owned freshness record; Windows build and publisher skipped.
+- The machine-checked source anchor below pins the current HARDWARE tuple and exact-source matrix result. Re-run Full/Windows only after PHX-CORE publishes the canonical freshness SHA.
 
 ### Live coordination and blockers
 
@@ -47,7 +53,7 @@
 - CORE-owned `experiment/openwrt/BlazePwifi/docs/handover/CURRENT_STATE.md` freshness remains stale at checkpoint `d85eb6a2766781b6cac1807cef461993d8216b84`; do not edit this CORE-owned file to force a green gate.
 - Independent QA review, MASTER child-pointer refresh and protected branch/signing authority remain pending.
 
-**Next actions:** await terminal exact-source RELEASE compatibility runs for the new `9b20d0a6` pin; then inspect final docs-head successor. PHX-CORE must publish the canonical freshness SHA before Full/Windows integration reruns. PHX-QA independently reviews the pin and poll-signature assertion; PHX-MASTER refreshes its #291 child pointer. Registry custodian restores authorized v11 provenance access.
+**Next actions:** inspect terminal state of docs-head compatibility successor #45594602608; retain the source/test-head 3/3 PASS as the qualification evidence for `9b20d0a6`. PHX-CORE must publish the canonical freshness SHA before Full/Windows integration reruns. PHX-QA independently reviews the pin and poll-signature assertion; PHX-MASTER refreshes its #291 child pointer. Registry custodian restores authorized v11 provenance access.
 
 **PRODUCTION NO-GO.** Protected signer and independent freshness witness, durable financial accounting and reversible migration, independent QA/MASTER approval, approved production binaries, 150 physical power cuts and 30-device/24-hour soak remain unestablished or NOT TESTED.
 
@@ -2623,7 +2629,7 @@ This is the single machine-checked current pointer for the RELEASE ESP32 compati
 - Latest PR-head ESP32 sketch Git blob SHA (not release-qualified): `c07aba7d518ef7eb5d536aafdd77ef6193e676cb`.
 - Release pin advanced to the latest focused-pass source/test SHA after exact-source Quarantine and Relay passed; the current docs/PR head retains the same sketch blob.
 - Latest exact-source Quarantine: #45587094891 — SUCCESS; Relay #45587106298 — SUCCESS; Full #45587106766 — FAILURE at QA-owned Missing poll signature check; no Full or production qualification.
-- Exact-source compatibility matrix: PENDING — no run claimed yet.
+- Exact-source compatibility matrix: [#45594257874](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45594257874) — SUCCESS (3/3 jobs).
 - Source/test-to-docs comparison: source/test `9b20d0a6e520d78423250636b3ea0fe983b35294` is the exact focused-pass code snapshot; docs/PR head `b5b44d2afa62de0077b2d04e687499b103a1e3b8` is a three-commit documentation-only descendant. The ESP32 sketch blob is identical at both refs.
 - Evidence boundary: hosted CI only. This matrix does not establish physical hardware acceptance or production binary approval.
 
