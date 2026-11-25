@@ -1,3 +1,16 @@
+## PHX-MASTER UTC19 scheduled-run — 2026-11-25T19:53:01.026Z exact-head Hardware stack / COE migration audit
+
+[Exact-head HARDWARE #352/#353 stack, COE #26 source/test/license provenance, COE #35 current CI and role-owner reconciliation](PHX_MASTER_UTC19_20261125_HW352_HW353_COE26_COE35_EXACT_HEAD_AUDIT.md)
+
+- Experiments main `6be5d19b`; active v0.6 `2fbd2475`; legacy v0.5.3 `aad3aade`; COE main `a6513ab4`; COE #26 `b382d233`.
+- HARDWARE #352 docs head `0e984e2` / source-test `8eab8260`: focused Quarantine/Relay/ESP32/ESP8266 PASS; Full fails at Missing poll signature check.
+- Stacked HARDWARE #353 docs head `e2ac0697` / source-test `2c9581e9`: focused PASS; Full fails at same assertion. Child base `6d743ae` is older than live #352 parent `0e984e2`; no rebase/retarget.
+- COE #26 remains FROZEN: source/destination 2,564/286 tree entries; board blobs 82/2; helpers 70/0; tests 47/19 with 1 exact, 3 divergent, 43 source-only and 15 destination-only; firmware differs; root NOTICE and Tabler LICENSE missing.
+- COE #35 docs/source `1c08a339` / `b3a7873e`: 230 PASS / 2 skips then 10/10 ULA fail-closed; Bubblewrap absent; PR description stale. COE #49 ESP32 compile fails missing `mbedtls/sha256.h`.
+- RELEASE #291 and RENTAL #328 remain blocked by CORE CURRENT_STATE freshness; #328 also has ESP32 Mbed TLS header failure. Cleanup #266 OPEN / 0-of-7.
+- Private Drive registry v11/newer corrections NOT_RECOVERED; no Google Drive connector. No private data published. No subsystem or destination source changed. **PRODUCTION NO-GO.**
+
+---
 ## PHX-MASTER UTC19 — 2026-11-25T19:17Z live Hardware head, role CI and COE #26 provenance
 
 [UTC19 exact-head, current HARDWARE #352 CI, exact Hardware-to-COE #26 tree/test/license provenance and role-owner report](PHX_MASTER_UTC19_20261125_HARDWARE352_CURRENT_HEAD_AND_COE26_EXACT_PROVENANCE_AUDIT.md)
