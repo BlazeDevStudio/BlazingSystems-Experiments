@@ -77,8 +77,17 @@ void loadPending(){}
 // secondary-store implementation and reboot fallback are covered separately
 // by poll_fault_dual_store_lab.py.
 bool pollFaultBackupPresentOrCorrupt(){ return false; }
+// This loop fixture observes re-entry into the sticky latch. The real EEPROM/NVS
+// first-writer implementation is source-extracted separately by the dual-store lab.
+static uint32_t backupFirstFaultPulseEdges=0;
+static unsigned backupWriteAttempts=0;
 void observeBackupWrite();
-bool writePollFaultBackup(uint32_t){ observeBackupWrite(); return false; }
+bool writePollFaultBackup(uint32_t pulseEdges){
+  observeBackupWrite();
+  ++backupWriteAttempts;
+  if(backupFirstFaultPulseEdges==0U) backupFirstFaultPulseEdges=pulseEdges;
+  return backupFirstFaultPulseEdges!=0U;
+}
 volatile uint32_t coinEdgeSequence=0;
 uint32_t lastHandledCoinEdgeSequence=0;
 struct String : std::string {
@@ -151,11 +160,25 @@ uint16_t runDebounceMs=40, runPulseGroupMs=400;
 String activeTarget="target-01", pendingTarget="", pendingNonce="";
 struct ConfigStub {
 #ifdef TARGET_ESP32
-  String ssid="test-ssid", pass="test-pass";
+  String ssid="test-ssid", pass="test-pass", key="";
 #else
-  char ssid[33]="test-ssid"; char pass[65]="test-pass";
+  char ssid[33]="test-ssid"; char pass[65]="test-pass"; char key[33]="";
 #endif
 } cfg;
+void clearControllerKey(){
+#ifdef TARGET_ESP32
+  cfg.key.clear();
+#else
+  cfg.key[0]='\0';
+#endif
+}
+bool controllerKeyEmpty(){
+#ifdef TARGET_ESP32
+  return cfg.key.isEmpty();
+#else
+  return cfg.key[0]=='\0';
+#endif
+}
 int digitalRead(int) {
   // Capture fault durability before the ordinary post-HTTP sample can mask a missing poll-edge reconciliation.
   if(pollHttpReturned && !pollPostHttpSampleObserved){

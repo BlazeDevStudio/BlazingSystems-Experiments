@@ -1178,6 +1178,20 @@ String signedBody(const String &action,const String &pulses,const String &target
   return "action="+action+"&id="+esc(cfg.id)+"&nonce="+n+"&pulses="+pulses+"&target="+esc(target)+"&sig="+digest;
 }
 
+static const int MAX_CONTROLLER_RESPONSE_BYTES = 1024;
+
+// Reject error, unknown-length and oversized bodies before allocating a String.
+// Chunked/unknown-length responses remain deny-only until a bounded contract exists.
+String readBoundedControllerResponse(HTTPClient &h,int statusCode){
+  const int responseBytes=h.getSize();
+  if(statusCode<200 || statusCode>=300 ||
+     responseBytes<0 || responseBytes>MAX_CONTROLLER_RESPONSE_BYTES ||
+     h.hasHeader("Transfer-Encoding")) return String();
+  String body=h.getString();
+  if((int)body.length()!=responseBytes) return String();
+  return body;
+}
+
 String post(const String &action,const String &pulses="0",const String &target="",const String &forcedNonce=""){
   if(WiFi.status()!=WL_CONNECTED) return "";
   String body=signedBody(action,pulses,target,forcedNonce);
@@ -1186,8 +1200,10 @@ String post(const String &action,const String &pulses="0",const String &target="
   String url="http://"+cfg.server+":4455/cgi-bin/vendo";
   if(!h.begin(client,url)) return "";
   h.setTimeout(3500); h.addHeader("Content-Type","application/x-www-form-urlencoded");
+  const char *responseHeaders[] = {"Transfer-Encoding"};
+  h.collectHeaders(responseHeaders, 1);
   int code=h.POST(body);
-  String r=code>0?h.getString():""; h.end(); return r;
+  String r=readBoundedControllerResponse(h,code); h.end(); return r;
 }
 
 void writeLogical(int pin,bool on,bool activeHigh){ digitalWrite(pin,(on==activeHigh)?HIGH:LOW); }
@@ -1409,6 +1425,83 @@ bool pollJsonHex(char c){
   return (c>='0' && c<='9') || (c>='a' && c<='f') || (c>='A' && c<='F');
 }
 
+// JSON \u escapes must form Unicode scalar values. A high surrogate is
+// valid only when immediately followed by a low-surrogate \u escape.
+bool pollJsonReadHex4(const String &r,int &p,uint16_t &value){
+  const int n=(int)r.length();
+  if(p<0 || p>n || n-p<4) return false;
+  uint16_t decoded=0;
+  for(int i=0;i<4;i++){
+    const char c=r[p];
+    if(!pollJsonHex(c)) return false;
+    ++p;
+    int digit=0;
+    if(c>='0' && c<='9') digit=c-'0';
+    else if(c>='a' && c<='f') digit=c-'a'+10;
+    else digit=c-'A'+10;
+    decoded=(uint16_t)((decoded<<4) | (uint16_t)digit);
+  }
+  value=decoded;
+  return true;
+}
+
+bool pollJsonSkipUnicodeEscape(const String &r,int &p){
+  uint16_t first=0;
+  if(!pollJsonReadHex4(r,p,first)) return false;
+  if(first>=0xD800 && first<=0xDBFF){
+    const int n=(int)r.length();
+    if(p<0 || p>n || n-p<6 || r[p]!='\\' || r[p+1]!='u') return false;
+    p+=2;
+    uint16_t second=0;
+    if(!pollJsonReadHex4(r,p,second)) return false;
+    return second>=0xDC00 && second<=0xDFFF;
+  }
+  return !(first>=0xDC00 && first<=0xDFFF);
+}
+
+bool pollJsonSkipUtf8Continuation(const String &r,int &p,unsigned char lead){
+  const int n=(int)r.length();
+  int remaining=0;
+  unsigned char minimumSecond=0x80;
+  unsigned char maximumSecond=0xBF;
+
+  if(lead>=0xC2 && lead<=0xDF){
+    remaining=1;
+  } else if(lead==0xE0){
+    remaining=2;
+    minimumSecond=0xA0;
+  } else if(lead>=0xE1 && lead<=0xEC){
+    remaining=2;
+  } else if(lead==0xED){
+    remaining=2;
+    maximumSecond=0x9F;
+  } else if(lead>=0xEE && lead<=0xEF){
+    remaining=2;
+  } else if(lead==0xF0){
+    remaining=3;
+    minimumSecond=0x90;
+  } else if(lead>=0xF1 && lead<=0xF3){
+    remaining=3;
+  } else if(lead==0xF4){
+    remaining=3;
+    maximumSecond=0x8F;
+  } else {
+    return false;
+  }
+
+  if(p<0 || p>n || n-p<remaining) return false;
+  const unsigned char second=(unsigned char)r[p];
+  if(second<minimumSecond) return false;
+  if(second>maximumSecond) return false;
+  ++p;
+
+  for(int i=1;i<remaining;i++){
+    const unsigned char next=(unsigned char)r[p++];
+    if(next<0x80 || next>0xBF) return false;
+  }
+  return true;
+}
+
 bool pollJsonSkipString(const String &r,int &p){
   const int n=(int)r.length();
   if(p>=n || r[p]!='"') return false;
@@ -1417,14 +1510,12 @@ bool pollJsonSkipString(const String &r,int &p){
     const unsigned char c=(unsigned char)r[p++];
     if(c=='"') return true;
     if(c<0x20) return false;
+    if(c>=0x80 && !pollJsonSkipUtf8Continuation(r,p,c)) return false;
     if(c=='\\'){
       if(p>=n) return false;
       const char e=r[p++];
       if(e=='u'){
-        for(int i=0;i<4;i++){
-          if(p>=n || !pollJsonHex(r[p])) return false;
-          ++p;
-        }
+        if(!pollJsonSkipUnicodeEscape(r,p)) return false;
       } else if(e!='"' && e!='\\' && e!='/' && e!='b' &&
                 e!='f' && e!='n' && e!='r' && e!='t'){
         return false;
@@ -1434,41 +1525,13 @@ bool pollJsonSkipString(const String &r,int &p){
   return false;
 }
 
-bool pollJsonSkipComposite(const String &r,int &p){
-  const int n=(int)r.length();
-  if(p>=n || (r[p]!=123 && r[p]!='[')) return false;
-  char closing[16];
-  int depth=0;
-  const char first=r[p++];
-  closing[depth++]=(first==123)?125:']';
-  while(depth>0 && p<n){
-    const char c=r[p];
-    if(c=='"'){
-      if(!pollJsonSkipString(r,p)) return false;
-      continue;
-    }
-    if(c==123 || c=='['){
-      if(depth>=(int)sizeof(closing)) return false;
-      closing[depth++]=(c==123)?125:']';
-      ++p;
-      continue;
-    }
-    if(c==125 || c==']'){
-      if(closing[depth-1]!=c) return false;
-      --depth;
-      ++p;
-      continue;
-    }
-    if((unsigned char)c<0x20 && !pollJsonSpace(c)) return false;
-    ++p;
-  }
-  return depth==0;
-}
+bool pollJsonSkipValueDepth(const String &r,int &p,uint8_t depth);
+bool pollJsonSkipCompositeDepth(const String &r,int &p,uint8_t depth);
 
 bool pollJsonSkipPrimitive(const String &r,int &p){
   const int n=(int)r.length();
   const int start=p;
-  while(p<n && r[p]!=',' && r[p]!=125 && !pollJsonSpace(r[p])) ++p;
+  while(p<n && r[p]!=',' && r[p]!=125 && r[p]!=']' && !pollJsonSpace(r[p])) ++p;
   const int end=p;
   if(start==end) return false;
   const int length=end-start;
@@ -1505,13 +1568,70 @@ bool pollJsonSkipPrimitive(const String &r,int &p){
   return q==end;
 }
 
-bool pollJsonSkipValue(const String &r,int &p){
+bool pollJsonSkipValueDepth(const String &r,int &p,uint8_t depth){
   const int n=(int)r.length();
+  while(p<n && pollJsonSpace(r[p])) ++p;
   if(p>=n) return false;
   if(r[p]=='"') return pollJsonSkipString(r,p);
-  if(r[p]==123 || r[p]=='[') return pollJsonSkipComposite(r,p);
+  if(r[p]==123 || r[p]=='[') return pollJsonSkipCompositeDepth(r,p,depth);
   return pollJsonSkipPrimitive(r,p);
 }
+
+bool pollJsonSkipCompositeDepth(const String &r,int &p,uint8_t depth){
+  const int n=(int)r.length();
+  if(p>=n || (r[p]!=123 && r[p]!='[') || depth>16) return false;
+
+  if(r[p]=='['){
+    ++p;
+    while(p<n && pollJsonSpace(r[p])) ++p;
+    if(p<n && r[p]==']'){
+      ++p;
+      return true;
+    }
+    while(true){
+      if(!pollJsonSkipValueDepth(r,p,(uint8_t)(depth+1))) return false;
+      while(p<n && pollJsonSpace(r[p])) ++p;
+      if(p<n && r[p]==']'){
+        ++p;
+        return true;
+      }
+      if(p>=n || r[p++]!=',') return false;
+      while(p<n && pollJsonSpace(r[p])) ++p;
+      if(p<n && r[p]==']') return false;
+    }
+  }
+
+  ++p;
+  while(p<n && pollJsonSpace(r[p])) ++p;
+  if(p<n && r[p]=='}'){
+    ++p;
+    return true;
+  }
+  while(true){
+    if(p>=n || r[p]!='"' || !pollJsonSkipString(r,p)) return false;
+    while(p<n && pollJsonSpace(r[p])) ++p;
+    if(p>=n || r[p++]!=':') return false;
+    while(p<n && pollJsonSpace(r[p])) ++p;
+    if(!pollJsonSkipValueDepth(r,p,(uint8_t)(depth+1))) return false;
+    while(p<n && pollJsonSpace(r[p])) ++p;
+    if(p<n && r[p]=='}'){
+      ++p;
+      return true;
+    }
+    if(p>=n || r[p++]!=',') return false;
+    while(p<n && pollJsonSpace(r[p])) ++p;
+    if(p<n && r[p]=='}') return false;
+  }
+}
+
+bool pollJsonSkipComposite(const String &r,int &p){
+  return pollJsonSkipCompositeDepth(r,p,1);
+}
+
+bool pollJsonSkipValue(const String &r,int &p){
+  return pollJsonSkipValueDepth(r,p,1);
+}
+
 
 bool pollJsonTopLevelTrue(const String &r,const char *wanted){
   if(!wanted) return false;

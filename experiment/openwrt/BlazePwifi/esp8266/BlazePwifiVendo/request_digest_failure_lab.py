@@ -7,10 +7,10 @@ provider output. The real signedBody() and post() functions are compiled from bo
 ESP sketches. A failed digest must not create an HTTP session or dispatch a request.
 """
 from pathlib import Path
-import subprocess
-import tempfile
+import re
 
 from firmware_lab_source import extract_function
+from cpp_fixture_runner import run_cpp_fixture
 
 ROOT = Path(__file__).resolve().parents[2]
 BOARDS = {
@@ -74,7 +74,10 @@ class HTTPClient {
   bool begin(WiFiClient &,const String &) { ++httpBeginCalls; return true; }
   void setTimeout(int) {}
   void addHeader(const char *,const char *) {}
+  void collectHeaders(const char *[], size_t) {}
+  bool hasHeader(const char *) const { return false; }
   int POST(const String &body) { ++httpPostCalls; postedBody=body; return 200; }
+  int getSize() const { return 2; }
   String getString() const { return String("ok"); }
   void end() {}
 };
@@ -115,28 +118,36 @@ def main() -> None:
         source = path.read_text(encoding="utf-8")
         helper = extract_function(source, "validSha256Hex", required=False)
         signed = extract_function(source, "signedBody")
+        bounded = extract_function(source, "readBoundedControllerResponse")
         post = extract_function(source, "post")
+        limit = re.search(r"static const int MAX_CONTROLLER_RESPONSE_BYTES\s*=\s*\d+\s*;", source)
+        if not limit:
+            print(board, "MISSING_BOUNDED_RESPONSE_LIMIT")
+            failed.append(board)
+            continue
         code = ("#define TARGET_ESP32\n" if board == "ESP32" else "")
-        code += STUBS + helper + "\n" + signed + "\n" + post + "\n" + MAIN
-        with tempfile.TemporaryDirectory(prefix="phx-request-digest-") as folder:
-            cpp = Path(folder) / "digest_test.cpp"
-            binary = Path(folder) / "digest_test"
-            cpp.write_text(code, encoding="utf-8")
-            built = subprocess.run(
-                ["g++", "-std=c++17", "-Wall", "-Wextra", "-Werror",
-                 "-Wno-unused-parameter", str(cpp), "-o", str(binary)],
-                capture_output=True, text=True, timeout=30,
+        code += STUBS + limit.group(0) + "\n" + helper + "\n" + signed + "\n" + bounded + "\n" + post + "\n" + MAIN
+        try:
+            ran = run_cpp_fixture(
+                code,
+                prefix="phx-request-digest-",
+                stem="digest_test",
+                extra_flags=("-Wno-unused-parameter",),
+                compile_timeout=30,
+                run_timeout=10,
+                context=f"{board} request digest",
             )
-            if built.returncode:
-                print(board, "COMPILE_FAIL", built.stderr[-4000:])
-                failed.append(board)
-                continue
-            ran = subprocess.run([str(binary)], capture_output=True, text=True, timeout=10)
-            print(board, "PASS" if ran.returncode == 0 else "FAIL",
-                  ran.stdout.strip(), ran.stderr.strip())
-            if ran.returncode:
-                print(board, "EXPECTED_DENY_EXIT", ran.returncode)
-                failed.append(board)
+        except RuntimeError as exc:
+            phase = "COMPILE_FAIL" if ": compile failed:" in str(exc) else "FIXTURE_FAIL"
+            print(board, phase, str(exc))
+            failed.append(board)
+            continue
+
+        print(board, "PASS" if ran.returncode == 0 else "FAIL",
+              ran.stdout.strip(), ran.stderr.strip())
+        if ran.returncode:
+            print(board, "EXPECTED_DENY_EXIT", ran.returncode)
+            failed.append(board)
     if failed:
         raise SystemExit("request digest failure lab failed: " + ",".join(failed))
 

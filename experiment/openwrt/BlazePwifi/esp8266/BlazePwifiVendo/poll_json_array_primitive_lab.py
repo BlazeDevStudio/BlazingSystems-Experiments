@@ -1,93 +1,133 @@
-"""Source-exact regression for primitive JSON values at array boundaries.
+"""Source-exact strict JSON composite grammar regression for both coin controllers.
 
-The production parser must stop a primitive at ']' as well as ',' and '}'.
-This lab compiles the parser extracted from both board sketches and injects a
-mutation that removes the array terminator again.
+The firmware parser must validate nested array/object separators, primitive
+terminators, and closing delimiters before a root-level status can be read.
+The host lab is simulated control-flow evidence, not controller authentication.
 """
-import subprocess
-import tempfile
 from pathlib import Path
 
-PARSER_FUNCTIONS = (
-    "pollJsonSpace",
-    "pollJsonHex",
-    "pollJsonSkipString",
-    "pollJsonSkipComposite",
-    "pollJsonSkipPrimitive",
-    "pollJsonSkipValue",
-    "pollJsonTopLevelTrue",
-)
+from cpp_fixture_runner import run_cpp_fixture
 
-ARRAY_MAIN = r"""
-int main() {
-  if (!pollJsonTopLevelTrue(
-          String("{\"ok\":true,\"items\":[1,2,3]}"), "ok")) return 61;
-  if (!pollJsonTopLevelTrue(
-          String("{\"items\":[1,2,3],\"ok\":true}"), "ok")) return 62;
-  if (!pollJsonTopLevelTrue(
-          String("{\"ok\":true,\"meta\":[false,null,-1.25e+2,{\"nested\":[true,0]}]}"),
-          "ok")) return 63;
-  if (pollJsonTopLevelTrue(
-          String("{\"ok\":true,\"meta\":[1,2,3}"), "ok")) return 64;
-  std::cout << "POLL_JSON_ARRAY_PRIMITIVE_PASS 3/3; UNMATCHED_ARRAY_REJECTED 1/1\n";
-  return 0;
-}
-"""
+from poll_json_array_primitive_lab_fixtures import (
+    COMPOSITE_MAIN,
+    DEPTH_MAIN,
+    DUPLICATE_ROOT_MAIN,
+    PARSER_FUNCTIONS,
+    PRIMITIVE_MAIN,
+    PROTOTYPES,
+    TRAILING_DATA_MAIN,
+    UTF8_MAIN,
+)
+from poll_json_array_primitive_lab_root_contracts import (
+    verify_root_envelope_contracts,
+)
+from poll_json_array_primitive_lab_composite_contracts import (
+    verify_composite_contracts,
+)
+from poll_json_array_primitive_lab_primitive_contracts import (
+    verify_primitive_contracts,
+)
+from poll_json_array_primitive_lab_utf8_contracts import (
+    verify_utf8_contracts,
+)
 
 
 def _compile_and_run(code, board, label):
-    with tempfile.TemporaryDirectory(prefix="phx-json-array-") as folder:
-        cpp = Path(folder) / f"{label}.cpp"
-        binary = Path(folder) / label
-        cpp.write_text(code, encoding="utf-8")
-        built = subprocess.run(
-            ["g++", "-std=c++17", "-Wall", "-Wextra", "-Werror",
-             "-Wno-unused-parameter", str(cpp), "-o", str(binary)],
-            capture_output=True, text=True, timeout=30
+    """Use the shared bounded compiler/runner for every source-extracted case."""
+    return run_cpp_fixture(
+        code,
+        prefix="phx-json-composite-",
+        stem=label,
+        extra_flags=("-Wno-unused-parameter",),
+        compile_timeout=30,
+        run_timeout=10,
+        context=f"{board}: {label}",
+    )
+
+
+def _expect_mutation_rejected(code, board, label, expected_exit):
+    result = _compile_and_run(code, board, label)
+    if result.returncode != expected_exit:
+        raise AssertionError(
+            f"{board}: {label} mutation survived or failed unexpectedly "
+            f"(expected exit {expected_exit}, got {result.returncode}; "
+            f"stdout={result.stdout}; stderr={result.stderr})"
         )
-        if built.returncode:
-            raise RuntimeError(
-                f"{board}: {label} compile failed:\n{built.stderr[-3000:]}"
-            )
-        return subprocess.run(
-            [str(binary)], capture_output=True, text=True, timeout=10
+    print(f"{board}: MUTATION_REJECTED {label} expected_exit={expected_exit}")
+
+
+def _require_baseline(board, label, description, result):
+    if result.returncode:
+        raise AssertionError(
+            f"{board}: {description} "
+            f"(exit={result.returncode}; stdout={result.stdout}; "
+            f"stderr={result.stderr})"
         )
 
 
 def verify(boards, extract, stubs):
     for board, path in boards.items():
         source = path.read_text(encoding="utf-8")
-        parser = "\n\n".join(
+        parser = PROTOTYPES + "\n\n".join(
             extract(source, name) for name in PARSER_FUNCTIONS
         )
-        baseline = _compile_and_run(stubs + parser + ARRAY_MAIN, board, "baseline")
-        if baseline.returncode:
-            raise AssertionError(
-                f"{board}: valid primitive array was rejected "
-                f"(exit={baseline.returncode}; stdout={baseline.stdout}; "
-                f"stderr={baseline.stderr})"
-            )
 
-        primitive = extract(source, "pollJsonSkipPrimitive")
-        delimiter = " && r[p]!=']'"
-        if primitive.count(delimiter) != 1:
-            raise AssertionError(
-                f"{board}: expected exactly one explicit array-close delimiter"
-            )
-        mutated_primitive = primitive.replace(delimiter, "", 1)
-        mutated_parser = parser.replace(primitive, mutated_primitive, 1)
-        if mutated_parser == parser:
-            raise AssertionError(f"{board}: array-terminator mutation was not applied")
-        mutated = _compile_and_run(
-            stubs + mutated_parser + ARRAY_MAIN, board, "missing_array_terminator"
+        baselines = (
+            (
+                "baseline",
+                "strict JSON composite cases failed",
+                COMPOSITE_MAIN,
+            ),
+            (
+                "primitive-baseline",
+                "strict JSON primitive cases failed",
+                PRIMITIVE_MAIN,
+            ),
+            (
+                "utf8-baseline",
+                "strict JSON UTF-8 cases failed",
+                UTF8_MAIN,
+            ),
+            (
+                "depth-baseline",
+                "composite nesting-depth boundary failed",
+                DEPTH_MAIN,
+            ),
+            (
+                "duplicate-root-baseline",
+                "duplicate root status keys were not denied",
+                DUPLICATE_ROOT_MAIN,
+            ),
+            (
+                "trailing-data-baseline",
+                "trailing JSON data was not denied or whitespace failed",
+                TRAILING_DATA_MAIN,
+            ),
         )
-        if mutated.returncode != 61:
-            raise AssertionError(
-                f"{board}: missing-array-terminator mutation survived "
-                f"(expected exit 61, got {mutated.returncode}; "
-                f"stdout={mutated.stdout}; stderr={mutated.stderr})"
-            )
+        for label, description, fixture in baselines:
+            result = _compile_and_run(stubs + parser + fixture, board, label)
+            _require_baseline(board, label, description, result)
+            if label == "depth-baseline":
+                print(
+                    f"{board}: POLL_JSON_COMPOSITE_DEPTH_PASS "
+                    "max=16 rejected=17 arrays=1 objects=1"
+                )
+            elif label in ("duplicate-root-baseline", "trailing-data-baseline", "utf8-baseline"):
+                print(result.stdout.strip())
+
+        verify_root_envelope_contracts(
+            board, source, parser, stubs, extract, _expect_mutation_rejected
+        )
+        verify_composite_contracts(
+            board, source, parser, stubs, extract, _expect_mutation_rejected
+        )
+        verify_primitive_contracts(
+            board, source, parser, stubs, extract, _expect_mutation_rejected
+        )
+        verify_utf8_contracts(
+            board, source, parser, stubs, extract, _expect_mutation_rejected
+        )
         print(
-            f"{board}: POLL_JSON_ARRAY_PRIMITIVE_PASS; "
-            "MUTATION_REJECTED missing-array-terminator expected_exit=61"
+            f"{board}: POLL_JSON_COMPOSITE_GRAMMAR_PASS "
+            "valid=6/6 invalid=12/12"
         )

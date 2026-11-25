@@ -4,12 +4,59 @@ on:
     branches:
       - "phoenix/hardware-poll-fault-dual-store-20261118"
       - "phoenix/hw-coin-ingress-config-helper-reconciled-20261123-utc13"
+      - "phoenix/hw-json-array-primitive-guard-20261124-utc00"
     paths:
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/cpp_token_normalizer_contract_lab.py"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/cpp_token_normalizer.py"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/bounded_http_response_lab.py"
       - "experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino"
       - "experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/esp32_boot_polarity_lab.py"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_response_failclosed_lab.py"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_response_failclosed_lab_structure_guard.py"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/cpp_fixture_runner.py"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/cpp_fixture_runner_contract_lab.py"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_response_failclosed_lab_fixtures.py"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_current_cgi_envelope_deny_lab.py"
+      - "experiment/openwrt/BlazePwifi/openwrt/rootfs/www/blazepwifi/cgi-bin/vendo"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_json_array_primitive_lab.py"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_json_array_primitive_lab_fixtures.py"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_loop_blocking_inhibit_lab.py"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_loop_blocking_inhibit_lab_source_contracts.py"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_loop_blocking_inhibit_lab_edge_race_contracts.py"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_loop_blocking_inhibit_lab_failclosed_mutation_contracts.py"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_loop_blocking_inhibit_lab_pending_identity_contracts.py"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_loop_blocking_inhibit_lab_fixtures.py"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_loop_blocking_inhibit_lab_runtime_fixtures.py"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_loop_blocking_inhibit_lab_scenario_fixtures.py"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_loop_blocking_inhibit_lab_default_main_fixtures.py"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_loop_blocking_inhibit_lab_poll_window_fixtures.py"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_loop_blocking_inhibit_lab_edge_fixtures.py"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_loop_blocking_inhibit_lab_response_fixtures.py"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_loop_blocking_inhibit_lab_response_contracts.py"
+      - "experiment/openwrt/BlazePwifi/docs/handover/2026-11-24-hw-poll-window-fixture-modularization-utc13.md"
+      - "experiment/openwrt/BlazePwifi/docs/handover/2026-11-24-hw-default-main-fixture-modularization-utc14.md"
+      - "experiment/openwrt/BlazePwifi/docs/handover/2026-11-24-hw-poll-safety-contract-modularization-utc15.md"
+      - "experiment/openwrt/BlazePwifi/docs/handover/2026-11-24-hw-pending-identity-contract-modularization-utc16.md"
+      - "experiment/openwrt/BlazePwifi/docs/handover/2026-11-24-hw-poll-response-denial-matrix-modularization-utc16.md"
+      - "experiment/openwrt/BlazePwifi/docs/handover/2026-11-24-hw-poll-edge-race-and-failclosed-mutation-modularization-utc17.md"
+      - "experiment/openwrt/BlazePwifi/docs/handover/2026-11-24-hw-cpp-fixture-runner-contract-utc19.md"
+      - "experiment/openwrt/BlazePwifi/docs/handover/2026-11-25-hw-first-fault-edge-runner-shared-utc00.md"
       - ".github/workflows/phx-hardware-relay-output-polarity.yml"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/coin_pulse_capture_lab.py"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/coin_pulse_capture_lab_structure_guard.py"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/coin_pulse_capture_lab_fixtures.py"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/coin_pulse_capture_lab_contracts.py"
+      - "experiment/openwrt/BlazePwifi/docs/handover/2026-11-25-hw-coin-pulse-lab-modularization-utc05.md"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/coin_pulse_capture_lab_structure_guard.py"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/coin_pulse_capture_lab_fixtures.py"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/coin_pulse_capture_lab_contracts.py"
+      - "experiment/openwrt/BlazePwifi/PROJECT_HANDOVER.md"
+      - "experiment/openwrt/BlazePwifi/docs/handover/2026-11-25-hw-cpp-fixture-prefix-containment-utc04.md"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_pending_recovery_lab_fixtures.py"
   pull_request:
     paths:
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/cpp_token_normalizer_contract_lab.py"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/cpp_token_normalizer.py"
       - "experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino"
       - "experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/esp32_boot_polarity_lab.py"
       - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/BlazePwifiVendo.ino"
@@ -18,10 +65,41 @@ on:
       - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/output_enable_sequence_lab.py"
       - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_window_drain_lab.py"
       - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_loop_blocking_inhibit_lab.py"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_loop_blocking_inhibit_lab_source_contracts.py"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_loop_blocking_inhibit_lab_edge_race_contracts.py"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_loop_blocking_inhibit_lab_failclosed_mutation_contracts.py"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_loop_blocking_inhibit_lab_pending_identity_contracts.py"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_loop_blocking_inhibit_lab_edge_fixtures.py"
       - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/coin_pulse_capture_lab.py"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/coin_pulse_capture_lab_structure_guard.py"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/coin_pulse_capture_lab_fixtures.py"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/coin_pulse_capture_lab_contracts.py"
+      - "experiment/openwrt/BlazePwifi/docs/handover/2026-11-25-hw-coin-pulse-lab-modularization-utc05.md"
       - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_response_failclosed_lab.py"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_response_failclosed_lab_fixtures.py"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_current_cgi_envelope_deny_lab.py"
+      - "experiment/openwrt/BlazePwifi/openwrt/rootfs/www/blazepwifi/cgi-bin/vendo"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_json_array_primitive_lab.py"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_json_array_primitive_lab_fixtures.py"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/bounded_http_response_lab.py"
       - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_window_timeline_guard_lab.py"
       - ".github/workflows/phx-hardware-relay-output-polarity.yml"
+      - "experiment/openwrt/BlazePwifi/PROJECT_HANDOVER.md"
+      - "experiment/openwrt/BlazePwifi/docs/handover/2026-11-25-hw-cpp-fixture-prefix-containment-utc04.md"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_loop_blocking_inhibit_lab_fixtures.py"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_loop_blocking_inhibit_lab_runtime_fixtures.py"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_loop_blocking_inhibit_lab_scenario_fixtures.py"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_loop_blocking_inhibit_lab_default_main_fixtures.py"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_loop_blocking_inhibit_lab_poll_window_fixtures.py"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_loop_blocking_inhibit_lab_response_fixtures.py"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_loop_blocking_inhibit_lab_response_contracts.py"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_pending_recovery_lab_fixtures.py"
+      - "experiment/openwrt/BlazePwifi/docs/handover/2026-11-24-hw-poll-window-fixture-modularization-utc13.md"
+      - "experiment/openwrt/BlazePwifi/docs/handover/2026-11-24-hw-default-main-fixture-modularization-utc14.md"
+      - "experiment/openwrt/BlazePwifi/docs/handover/2026-11-24-hw-poll-safety-contract-modularization-utc15.md"
+      - "experiment/openwrt/BlazePwifi/docs/handover/2026-11-24-hw-pending-identity-contract-modularization-utc16.md"
+      - "experiment/openwrt/BlazePwifi/docs/handover/2026-11-24-hw-poll-response-denial-matrix-modularization-utc16.md"
+      - "experiment/openwrt/BlazePwifi/docs/handover/2026-11-24-hw-poll-edge-race-and-failclosed-mutation-modularization-utc17.md"
   workflow_dispatch:
 permissions:
   contents: read
@@ -46,6 +124,8 @@ jobs:
         run: python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_window_drain_lab.py
       - name: Verify fault latch inhibits outputs before secondary-store and LittleFS persistence
         run: python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_loop_blocking_inhibit_lab.py
+      - name: Enforce modular coin pulse lab boundaries
+        run: python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/coin_pulse_capture_lab_structure_guard.py
       - name: Compile parent pulse-capture lab and reject edge/persistence regressions
         if: ${{ hashFiles('experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/coin_pulse_capture_lab.py') != '' }}
         run: python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/coin_pulse_capture_lab.py
@@ -60,6 +140,10 @@ jobs:
       - name: Compile exact-source poll response and pulse-window guards (child stack only)
         if: ${{ hashFiles('experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_window_timeline_guard_lab.py') != '' }}
         run: python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_response_failclosed_lab.py
+      - name: Verify bounded controller HTTP response reads on both boards
+        run: |
+          python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/cpp_token_normalizer_contract_lab.py
+          python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/bounded_http_response_lab.py
       - name: Report child poll-window suite absence on this exact SHA
         if: ${{ hashFiles('experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_window_timeline_guard_lab.py') == '' }}
         run: |
