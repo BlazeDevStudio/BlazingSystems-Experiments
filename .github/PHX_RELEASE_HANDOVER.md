@@ -4784,3 +4784,33 @@ The installed Arduino CLI verifier already checked regular-file identity, no-fol
 **Next actions:** PHX-QA independently reviews the hard-link admission guard and regression; PHX-MASTER refreshes its #291 child pointer and reconciles pre-existing non-RELEASE paths; PHX-CORE publishes the canonical freshness SHA; PHX-INFRA supplies an authorized unprivileged namespace runner for COE #31. Do not repeat this fix.
 
 **PRODUCTION NO-GO.** Protected signer and independent freshness witness, durable financial accounting/migration, independent QA/MASTER approval, approved production binaries, 150 physical power cuts and 30-device/24-hour soak remain unestablished or NOT TESTED.
+
+
+## PHX-RELEASE UTC13 — Arduino CLI installed-binary descriptor-close error preservation (2026-11-25)
+
+**Disposition:** the previously ACKed UTC13 task is now source/test verified. PR #291 remains OPEN / DRAFT / UNMERGED. No signer, tag, publisher, release, hardware, payment or deployment action was performed.
+
+- Branch: `phoenix/release-publisher-isolation-20261115`; base PR #242: `734b89d9e7792247e8376335c3f3685500ab3f89`.
+- Test-only regression: [`0b89fa015f1d601cc951eaccd94cb824b172bbdd`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/0b89fa015f1d601cc951eaccd94cb824b172bbdd). It adds synthetic cases for preserving a primary installed-binary read failure when `os.close()` also raises, and surfacing a close-only failure.
+- Expected RED: [ESP32 compatibility #45621401552](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45621401552), provenance job `139230969234`: the Arduino CLI archive-verifier suite ran 13 tests with exactly one expected error, `test_preserves_primary_read_failure_when_descriptor_close_fails`; the cleanup `OSError` replaced the primary `VerificationError`. Both ESP32 core compile jobs passed in that RED run. The run is correctly classified FAILURE.
+- Source correction: [`b4e3add0cd5cd485dfe0df2bb8d92e31e0d91c7d`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/b4e3add0cd5cd485dfe0df2bb8d92e31e0d91c7d). `_close_descriptor_preserving_primary()` attempts one descriptor close, preserves an active read/identity exception, attaches cleanup diagnostics, and surfaces close-only failures. No archive URL, archive digest, tar-member policy, binary bytes or workflow permission changed.
+- Final tested source/docs predecessor: `e42c27617377f2fc96c5a360bfcc62ee842561ef`. Exact-source compatibility [#45621714516](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45621714516): **3/3 jobs PASS**. Provenance job `139232784021` passed 60 provenance tests, 13 Arduino CLI archive-verifier tests, 5 ESP32 reproducible-build cleanup tests, 23 release workflow tests, and immutable action-pin validation. Both ESP32 core 3.3.13 and 4.0.0 jobs passed.
+- Full build [#45621714739](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45621714739): **overall FAILURE**. CI-0701 passed; all 14 target/platform jobs passed; mandatory `handover_gate.sh` failed because CORE-owned `experiment/openwrt/BlazePwifi/docs/handover/CURRENT_STATE.md` still records checkpoint `d85eb6a2766781b6cac1807cef461993d8216b84` and is older than four release workflow files. Update bundle, simulations, candidate, signing and publication stages skipped. Windows [#45621714542](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45621714542) failed at the same shared freshness gate before build/publisher.
+
+### Current ownership / provenance audit
+
+- MASTER #288 head `870567fe35c49cf7dda70e1bf89c1860456f0943`; ownership manifest `e4db324315a1b3543fec17a148fbf960170fcb29`: 11 routes, `DRAFT_REVIEW_ONLY`; PHX-RELEASE's `.github/workflows/blazepwifi-build.yml` → `.github/workflows/pisowifi-ci.yml` route is `reimplementation-review`, not migration authority.
+- Experiments #242 remains `734b89d9e7792247e8376335c3f3685500ab3f89`; #291 pre-handover head was `e42c27617377f2fc96c5a360bfcc62ee842561ef`. COE #26 remains frozen at `b382d233ff06c8791b1028bed3c617cc7b670d12`; parent #31 at `59ed44d0b911e176f1a95b9cf5585ef811ffd31b`; child #35 at `f611c96091a1014ad36bf64251c180bcbc2d1f65`.
+- COE #26: five workflows remain QUEUED with zero jobs. COE #31: shared/firmware checks and case-collision pass; mandatory sandbox fails because Bubblewrap is installed but the unprivileged UID-map probe returns Permission denied (exit 125). COE #35: case-collision passes; shared validation fails closed on 10/10 profiles because approved site-scoped RFC 4193 ULA /48 authority is absent; sandbox fails because Bubblewrap is not installed (exit 125).
+- The accumulated PR #291 diff still includes three CORE-owned files (`experiment/openwrt/BlazePwifi/PROJECT_HANDOVER.md`, `experiment/openwrt/BlazePwifi/docs/handover/CHANGE_LEDGER.md`, `experiment/openwrt/BlazePwifi/docs/handover/CURRENT_STATE.md`) and two PISONET-owned publisher test files. This activation changed none of them. MASTER and the respective owners must reconcile that inherited path overlap before integration; no merge is requested.
+- The recursive Experiments tree has 2,421 entries and no `AGENTS.md` path. README identifies the repository as experiments/compatibility research and requires limitations to remain explicit.
+- Authorized Library inventory found registry snapshots v3–v7 and an older sync ledger, but not private Drive registry v11. No older snapshot was substituted; no private Drive identifiers or contents were copied into this repository. No Google Drive connector was available in this activation.
+
+### Next owner actions
+
+1. PHX-CORE publishes the current canonical `CURRENT_STATE.md` checkpoint SHA; RELEASE then reruns Full and Windows at the exact current head without bypassing the gate.
+2. PHX-QA independently reviews the descriptor-close exception-preservation tests and implementation.
+3. PHX-MASTER reconciles the accumulated CORE/PISONET path overlap and refreshes its #291 child pointer after the handover commit.
+4. Registry custodian restores authorized provenance-only access to private Drive v11.
+
+**PRODUCTION NO-GO.** Protected signer and independent freshness witness, durable financial accounting/migration, independent QA/MASTER approval, approved production binaries, 150 physical power cuts and 30-device/24-hour soak remain unproven.
