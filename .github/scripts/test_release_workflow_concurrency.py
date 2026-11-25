@@ -797,13 +797,17 @@ class BlazePwifiV053ArtifactAssemblyTests(unittest.TestCase):
             # Three separate target artifacts share a filename and the same
             # immediate parent name. The legacy fallback prefixes only that
             # parent, so the third copy silently overwrites the second.
-            for index, payload in enumerate((b"target-a", b"target-b", b"target-c"), start=1):
+            for artifact, payload in (
+                ("artifact-c", b"target-c"),
+                ("artifact-a", b"target-a"),
+                ("artifact-b", b"target-b"),
+            ):
                 source = (
                     build
-                    / f"artifact-{index}"
+                    / artifact
                     / "bin"
                     / "targets"
-                    / f"target-{index}"
+                    / artifact
                     / "generic"
                     / "same.bin"
                 )
@@ -833,9 +837,14 @@ class BlazePwifiV053ArtifactAssemblyTests(unittest.TestCase):
             outputs = sorted(output.iterdir())
             self.assertEqual([path.name for path in outputs], ["generic-same.bin", "same.bin"])
             self.assertEqual(
-                len({path.read_bytes() for path in outputs}),
-                2,
-                "the failed third copy must not overwrite either admitted artifact",
+                (output / "same.bin").read_bytes(),
+                b"target-a",
+                "sorted source paths must receive the stable unprefixed name",
+            )
+            self.assertEqual(
+                (output / "generic-same.bin").read_bytes(),
+                b"target-b",
+                "the failed third copy must not overwrite the second admitted artifact",
             )
 
 

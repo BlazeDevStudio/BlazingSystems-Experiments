@@ -25,6 +25,8 @@ on:
       - ".github/scripts/test_release_workflow_concurrency.py"
       - ".github/workflows/blazepisonet-softtimer-release.yml"
       - ".github/workflows/blazepwifi-build.yml"
+      - ".github/workflows/blazepwifi-v053-release.yml"
+      - ".github/PHX_RELEASE_UTC10_ARTIFACT_ASSEMBLY.md"
       - ".github/PHX_RELEASE_HANDOVER.md"
   pull_request:
     branches:
@@ -48,7 +50,10 @@ on:
       - ".github/scripts/test_build_provenance.py"
       - ".github/scripts/verify_arduino_cli_archive.py"
       - ".github/scripts/test_arduino_cli_archive_verifier.py"
+      - ".github/scripts/test_release_workflow_concurrency.py"
       - ".github/workflows/blazepwifi-build.yml"
+      - ".github/workflows/blazepwifi-v053-release.yml"
+      - ".github/PHX_RELEASE_UTC10_ARTIFACT_ASSEMBLY.md"
       - ".github/PHX_RELEASE_HANDOVER.md"
   workflow_dispatch:
 

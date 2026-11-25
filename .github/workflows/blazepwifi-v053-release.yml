@@ -158,12 +158,16 @@ jobs:
           test "$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["android.app.extra.PROVISIONING_ADMIN_EXTRAS_BUNDLE"]["server_url"])' "$OUT/BlazeRental-provisioning-SAMPLE.json")" = "https://192.168.1.1:8443"
           test "$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["android.app.extra.PROVISIONING_ADMIN_EXTRAS_BUNDLE"]["server_cert_sha256"])' "$OUT/BlazeRental-provisioning-SAMPLE.json")" = "0000000000000000000000000000000000000000000000000000000000000000"
 
-          find artifacts/build -type f \( -name "*.bin" -o -name "*.img" -o -name "*.img.gz" -o -name "*.tar.gz" -o -name "*.ino" \) -print0 | while IFS= read -r -d "" f; do
+          find artifacts/build -type f \( -name "*.bin" -o -name "*.img" -o -name "*.img.gz" -o -name "*.tar.gz" -o -name "*.ino" \) -print0 | sort -z | while IFS= read -r -d "" f; do
             base="$(basename "$f")"
             dest="$OUT/$base"
             if [ -e "$dest" ]; then
               parent="$(basename "$(dirname "$f")" | tr " /" "--")"
               dest="$OUT/${parent}-${base}"
+            fi
+            if [ -e "$dest" ] || [ -L "$dest" ]; then
+              echo "RELEASE-BLOCKED: artifact filename collision after parent disambiguation: $dest (source=$f)" >&2
+              exit 1
             fi
             cp "$f" "$dest"
           done
