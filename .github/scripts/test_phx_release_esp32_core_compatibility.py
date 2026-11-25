@@ -18,14 +18,16 @@ HELPER = ROOT / ".github/scripts/verify_esp32_application_image.py"
 REPRODUCIBLE_HELPER = ROOT / ".github/scripts/verify_esp32_reproducible_build.py"
 SYMBOL_HELPER = ROOT / ".github/scripts/inspect_esp32_elf_symbols.py"
 SYMBOL_TEST = ROOT / ".github/scripts/test_inspect_esp32_elf_symbols.py"
-# Exact live PHX-HARDWARE #349 source/test, latest docs commit, and current PR head.
-HARDWARE_SOURCE_SHA = "f591cb85ba032e4f2c30e5008c71de9ce8d17f2e"
-HARDWARE_DOCS_HEAD_SHA = "dc6ef11c104fdd9b73dfdd1120ca3a2bc3f86dcf"
+# Last focused-pass PHX-HARDWARE #349 source/test snapshot. The current PR head is
+# recorded separately and must not be built until its own focused jobs pass.
+HARDWARE_SOURCE_SHA = "4ba665b5c36b1828735242b35de4302d3e2f6068"
+HARDWARE_DOCS_HEAD_SHA = "e8c0321b9ba827bd9cc5dad572a1c09f864e1440"
 HARDWARE_SKETCH_PATH = (
     "experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino"
 )
-HARDWARE_SKETCH_BLOB = "adfd2f110d88243d03f2195658fb456b154dcb84"
-HARDWARE_PR_HEAD_SHA = "56de0761ca67b54feb4889401a810b0069f50614"
+HARDWARE_SKETCH_BLOB = "643f35399fe7e614b948207a326416ea175bcadc"
+HARDWARE_PR_HEAD_SHA = "06c5597d3ca921dd9302ce56f099ee054a893cbb"
+HARDWARE_PR_HEAD_SKETCH_BLOB = "c07aba7d518ef7eb5d536aafdd77ef6193e676cb"
 CHECKOUT_SHA = "3d3c42e5aac5ba805825da76410c181273ba90b1"
 ARDUINO_SETUP_SHA = "b3cda96fddef6af6c56b4c5efb5c47e2357935db"
 
@@ -864,10 +866,13 @@ def check_current_source_handover_anchor() -> list[str]:
 
     section = handover.split(marker, 1)[1].split("\n## ", 1)[0]
     required = (
-        f"HARDWARE #349 source/test SHA: `{HARDWARE_SOURCE_SHA}`",
+        f"HARDWARE #349 source/test SHA (last focused-pass): `{HARDWARE_SOURCE_SHA}`",
         f"HARDWARE #349 docs HEAD: `{HARDWARE_DOCS_HEAD_SHA}`",
-        f"HARDWARE #349 PR HEAD: `{HARDWARE_PR_HEAD_SHA}`",
-        f"ESP32 sketch Git blob SHA: `{HARDWARE_SKETCH_BLOB}`",
+        f"HARDWARE #349 PR HEAD (current, not qualified): `{HARDWARE_PR_HEAD_SHA}`",
+        f"ESP32 sketch Git blob SHA (last focused-pass source): `{HARDWARE_SKETCH_BLOB}`",
+        f"Latest PR-head ESP32 sketch Git blob SHA (not release-qualified): `{HARDWARE_PR_HEAD_SKETCH_BLOB}`",
+        "Release pin held at the last focused-pass source/test SHA until the current PR-head source/test passes Quarantine/Relay.",
+        "Current PR-head Quarantine: #45571470480 — FAILURE at the poll JSON lab contract; do not promote this head.",
     )
     missing = [value for value in required if value not in section]
     if missing:
