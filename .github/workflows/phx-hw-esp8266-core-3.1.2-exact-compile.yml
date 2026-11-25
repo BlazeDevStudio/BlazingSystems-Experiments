@@ -1,0 +1,80 @@
+name: PHX-HARDWARE ESP8266 Arduino core 3.1.2 exact-source compile
+
+on:
+  push:
+    branches:
+      - phoenix/hw-exact-arduino-core-matrix-20261125-utc11
+    paths:
+      - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/BlazePwifiVendo.ino'
+      - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_loop_blocking_inhibit_lab.py'
+      - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/esp8266_boot_polarity_lab.py'
+      - '.github/workflows/phx-hw-esp8266-core-3.1.2-exact-compile.yml'
+  pull_request:
+    branches:
+      - phoenix/hw-json-array-primitive-guard-20261124-utc00
+    paths:
+      - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/BlazePwifiVendo.ino'
+      - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_loop_blocking_inhibit_lab.py'
+      - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/esp8266_boot_polarity_lab.py'
+      - '.github/workflows/phx-hw-esp8266-core-3.1.2-exact-compile.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: phx-hw-esp8266-core-3-1-2-exact-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  exact-source-core-3-1-2:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Verify exact source checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected="${{ github.event.pull_request.head.sha || github.sha }}"
+          actual="$(git rev-parse HEAD)"
+          printf 'EXPECTED_SHA=%s\\nACTUAL_SHA=%s\\n' "$expected" "$actual"
+          test "$actual" = "$expected"
+
+      - uses: arduino/setup-arduino-cli@v2
+
+      - name: Install pinned Arduino ESP8266 core 3.1.2
+        shell: bash
+        run: |
+          set -euo pipefail
+          arduino-cli config init --overwrite
+          arduino-cli config add board_manager.additional_urls https://arduino.esp8266.com/stable/package_esp8266com_index.json
+          arduino-cli core update-index
+          arduino-cli core install esp8266:esp8266@3.1.2
+          arduino-cli core list
+          arduino-cli core list | awk '$1 == "esp8266:esp8266" && $2 == "3.1.2" { found=1 } END { exit !found }'
+
+      - name: Run poll-window and failure-injection lab for both boards
+        run: python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_loop_blocking_inhibit_lab.py
+
+      - name: Run ESP8266 cold-boot polarity lab
+        run: python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/esp8266_boot_polarity_lab.py
+
+      - name: Compile the actual ESP8266 Vendo sketch against core 3.1.2
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$RUNNER_TEMP/esp8266-core-3.1.2"
+          mkdir -p "$output"
+          arduino-cli compile --warnings all --fqbn esp8266:esp8266:nodemcuv2 \\
+            --output-dir "$output" \\
+            experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo
+          binary="$(find "$output" -type f -name '*.bin' -print -quit)"
+          test -n "$binary"
+          test -s "$binary"
+          stat -c 'BINARY_BYTES=%s' "$binary"
+          sha256sum "$binary"
+          printf 'ARDUINO_ESP8266_CORE=3.1.2\\nSIMULATED_ONLY=1\\nPHYSICAL_ACCEPTANCE=0\\n'
