@@ -54,7 +54,7 @@ These are CI builds of the existing sketches; this task did not modify their run
 
 [BlazePwifi build #45529524001](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45529524001) completed **SUCCESS on attempt 2**, checked out at the exact source/test SHA `11531195a522048b9a4285768b35f7313533fa12`. Attempt 1 was cancelled while the Android emulator was still running after the docs-only handover commit advanced the branch; only the cancelled Android emulator job was explicitly rerun. Attempt 2 then completed with every required non-release job successful:
 
-- All 14 firmware/platform targets: PASS, including ESP8266, ESP32, x86_64, Orange Pi family and Ruijie
+- All 13 listed firmware/platform build jobs: PASS, including ESP8266, ESP32, x86_64, Orange Pi family and Ruijie; Android build and Android emulator also PASS
 - Android build: PASS
 - Validation: PASS
 - Browser simulation: PASS
