@@ -200,14 +200,14 @@ def verify_board_specific_isr_selection(source, board):
     # The selector must ignore an inactive decoy even when it appears before
     # the real board branches. A position-based [0]/[1] choice is not safe.
     probe = (
-        "#if 0\\n"
-        "void IRAM_ATTR coinEdgeISR(){ ++disabledDecoy; }\\n"
-        "#endif\\n"
-        "#if defined(ESP8266)\\n"
-        "void IRAM_ATTR coinEdgeISR(){ ++esp8266Edges; }\\n"
-        "#else\\n"
-        "void IRAM_ATTR coinEdgeISR(){ ++esp32Edges; }\\n"
-        "#endif\\n"
+        "#if 0\n"
+        "void IRAM_ATTR coinEdgeISR(){ ++disabledDecoy; }\n"
+        "#endif\n"
+        "#if defined(ESP8266)\n"
+        "void IRAM_ATTR coinEdgeISR(){ ++esp8266Edges; }\n"
+        "#else\n"
+        "void IRAM_ATTR coinEdgeISR(){ ++esp32Edges; }\n"
+        "#endif\n"
     )
     selected = extract_board_coin_edge_isr(probe, board)
     expected = "++esp8266Edges;" if board == "ESP8266" else "++esp32Edges;"
@@ -223,9 +223,9 @@ def verify_board_specific_isr_selection(source, board):
     # Unknown preprocessor branches are conservatively considered possible.
     # If one adds a second candidate ISR, selection must fail closed.
     ambiguous = probe + (
-        "#if PHX_UNKNOWN_BOARD_MACRO\\n"
-        "void IRAM_ATTR coinEdgeISR(){ ++unknownBoardEdges; }\\n"
-        "#endif\\n"
+        "#if PHX_UNKNOWN_BOARD_MACRO\n"
+        "void IRAM_ATTR coinEdgeISR(){ ++unknownBoardEdges; }\n"
+        "#endif\n"
     )
     try:
         extract_board_coin_edge_isr(ambiguous, board)
