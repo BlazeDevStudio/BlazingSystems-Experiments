@@ -1,3 +1,14 @@
+## PHX-MASTER UTC20 scheduled-run — 2026-11-25T20:54Z P0 poll-response contract / HARDWARE #353 stack / COE #26 provenance
+
+[Active v0.6 poll-response source audit, #353 exact-head CI and 11-commit stale parent, COE #26 exact recursive-tree/test/license comparison, and current owner CI](PHX_MASTER_UTC20_20261125_POLL_RESPONSE_CONTRACT_HW353_COE26_AUDIT.md)
+
+- Active v0.6 source blobs: ESP32 \`29f1125d\`, ESP8266 \`12c4bb82\`, CGI \`db58041c\`. Register/ping and poll responses lack response_sig; sketches consume unsigned insert/target_nonce and apply permissive config defaults. Not verified deny-only.
+- HARDWARE #353 docs/source \`dc9cf634\`/\`4f361e03\`; base \`6d743ae\` is 11 commits behind parent #352 \`0e984e2\`. Focused CI PASS; Full validation FAIL.
+- COE #26 remains FROZEN: source/destination trees 2,560/286; board blobs 77/2; helpers 65/0; tests 47/19 (1 exact, 3 divergent, 43 source-only, 15 destination-only); root NOTICE and Tabler LICENSE missing.
+- COE #35 ULA/Bubblewrap blockers and RELEASE #291 / RENTAL #328 CORE freshness blockers remain open. Cleanup #266 OPEN / 0-of-7.
+- Private Drive registry v11/newer corrections NOT_RECOVERED; no Google Drive connector. **PRODUCTION NO-GO.**
+
+---
 ## PHX-MASTER UTC19 scheduled-run — 2026-11-25T19:53:01.026Z exact-head Hardware stack / COE migration audit
 
 [Exact-head HARDWARE #352/#353 stack, COE #26 source/test/license provenance, COE #35 current CI and role-owner reconciliation](PHX_MASTER_UTC19_20261125_HW352_HW353_COE26_COE35_EXACT_HEAD_AUDIT.md)

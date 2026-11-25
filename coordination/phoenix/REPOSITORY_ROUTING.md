@@ -1,3 +1,14 @@
+## PHX-MASTER UTC20 — route admission and stack hold — 2026-11-25T20:54Z
+
+Live \`OWNERSHIP_ROUTES.json\` remains blob \`e4db324315a1b3543fec17a148fbf960170fcb29\`: 11 routes, \`DRAFT_REVIEW_ONLY\`, PHX-MASTER source \`coordination/phoenix/\`, destination null. No route grants recursive copy or migration authority.
+
+HARDWARE #353 current docs/source heads are \`dc9cf634\`/\`4f361e03\`; captured base \`6d743ae\` is 11 commits behind parent #352 live \`0e984e2\` (13 changed paths). HARDWARE owns PR body/handover refresh and parent-stack reconciliation. Master did not rebase, retarget, cherry-pick or modify Hardware source.
+
+COE #26 remains FROZEN at \`b382d233\`. Exact source/destination tree/test/license comparison is in the UTC20 report and INTEGRATION_MATRIX. No Hardware-specific source intake/map exists; no staging or destination writes.
+
+The active v0.6 poll/register response is unauthenticated at the current source blobs. CORE owns the approved response envelope/golden vectors; HARDWARE owns fail-closed consumption; QA owns independent source-linked tests. Do not weaken the Full poll-signature gate or synthesize a response signature.
+
+Private Drive registry v11 and newer corrections remain NOT_RECOVERED. The Cloud Artifact Policy requires exact registry/ledger read before mirroring; no Google Drive connector is exposed. No private content or identifiers were copied to GitHub.
 ## PHX-MASTER UTC19 scheduled-run routing / stack admission — 2026-11-25T19:52:30.511Z
 
 Live `OWNERSHIP_ROUTES.json` remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`: 11 routes, `DRAFT_REVIEW_ONLY`, PHX-MASTER source `coordination/phoenix/`, destination null. No route grants recursive copy or migration authority.

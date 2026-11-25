@@ -2091,3 +2091,35 @@ Before any Hardware destination staging can be proposed, require all of the foll
 7. Required CI must complete at the exact final destination SHA. Queued workflows with zero jobs are not a pass. CORE producer contract, HARDWARE consumer implementation, QA independent vectors and integration-owner provenance review must be recorded before staging review.
 
 This is a coordination admission proposal, not a source change, ownership transfer, copy authorization, merge permission or production approval. COE #26 remains FROZEN / NO-GO.
+
+
+## 7.20 Active v0.6 register/poll response is unauthenticated and cannot be treated as deny-only — P0 BLOCKER (2026-11-25 UTC20)
+
+**Exact active development source:** \`blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859\`. This is the live development branch, not Experiments main \`6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5\`.
+
+| Source | Exact Git blob |
+|---|---|
+| ESP32 sketch | \`29f1125d52ff474a0d028ad41f7af201be1f0f9d\` |
+| ESP8266 sketch | \`12c4bb82b6fddafe813674a0b5f692c1d3634073\` |
+| CGI \`vendo\` | \`db58041c0575ad0a1101d99cb85403e03c8dcb22\` |
+
+### Source facts — inspection only, no runtime attack or hardware test
+
+1. CGI \`register|ping\` returns \`ok\`, \`server_time\`, and a nested \`controller\` object. The response has no \`response_sig\`.
+2. CGI \`poll\` returns \`ok\`, \`insert\`, \`target_nonce\`, \`expires\`, and a nested \`controller\` object. The response has no \`response_sig\`.
+3. The same CGI emits \`response_sig\` for member snapshot/authentication/mutation endpoints. Those endpoint-specific signatures are not a poll-response contract and must not be reused as one.
+4. Both sketches contain zero \`response_sig\` tokens. \`signedBody()\` authenticates the outbound request; \`post()\` returns the HTTP response body without authenticating it.
+5. Both poll loops assign \`insertMode\` from \`jsonTrue(r,"insert")\`, assign \`activeTarget\` from \`jsonString(r,"target_nonce")\`, and then call \`applyRemoteConfig(r)\`.
+6. Both \`applyRemoteConfig()\` implementations read top-level \`enabled\`, \`coin_enabled\`, \`relay_enabled\`, and \`led_enabled\` fields with permissive default value \`1\`. The CGI poll response places controller state inside a nested \`controller\` object rather than those top-level fields. A missing \`config_revision\` falls back to the initial \`remoteRevision == 0\`; the early-return guard only applies when the revision is already nonzero. Therefore the initial missing-field case does not prevent the permissive defaults from being applied.
+7. Both \`applyOutputs()\` implementations define acceptance as \`controllerEnabled && coinEnabled && insertMode && fsReady && !pendingReady\`; when \`relayEnabled\` is true, that result controls the relay output. The unauthenticated poll body therefore influences the device's insert/target/configuration and output decision path.
+
+**Disposition:** the current active v0.6 source is **not verified deny-only**. This source inspection establishes an unauthenticated response-to-actuation/admission influence path; it does **not** claim that an unauthorized financial credit was achieved, and no dynamic exploit test was run. The server-side coin-request validation was not audited in this check.
+
+### Required owner resolution
+
+- **PHX-CORE:** publish and approve the versioned register/poll response envelope, authentication/freshness rules, and exact golden vectors. Request signing does not authenticate the response.
+- **PHX-HARDWARE:** consume only an approved response contract; fail closed before changing \`insertMode\`, \`activeTarget\`, remote configuration, or relay/coin output state. Do not call remote configuration application on an unauthenticated response.
+- **PHX-QA:** independently verify both boards with source-linked negative tests for missing, malformed, stale, replayed, wrong-controller, wrong-target, and invalid-authentication responses.
+- **PHX-MASTER:** retain the interface blocker and release gate. Do not invent a signature, reuse a member endpoint signature, or remove/relax the inherited \`Missing poll signature check\`.
+
+The current HARDWARE #353 Full failure at \`Missing poll signature check\` is a valid blocking signal, not a test to bypass. This section supersedes any earlier coordination wording that treated the current v0.6 implementation as verified deny-only. No source owner or branch was changed by this audit. **PRODUCTION NO-GO.**

@@ -192,5 +192,27 @@ class PollResponseArchitectureTests(unittest.TestCase):
             with self.subTest(required=required):
                 self.assertIn(required, section)
 
+
+    def test_current_v06_poll_response_is_not_authenticated_and_not_deny_only(self):
+        section = DOC[DOC.index("## 7.20 Active v0.6 register/poll response"):]
+        for required in (
+            "blazepwifi-v0.6.0-audit-foundation",
+            "2fbd2475e9f54878c316fa7cea2f228386b0e859",
+            "29f1125d52ff474a0d028ad41f7af201be1f0f9d",
+            "12c4bb82b6fddafe813674a0b5f692c1d3634073",
+            "db58041c0575ad0a1101d99cb85403e03c8dcb22",
+            "response_sig",
+            "applyRemoteConfig",
+            "controllerEnabled",
+            "coinEnabled",
+            "relayEnabled",
+            "insertMode",
+            "Missing poll signature check",
+            "not verified deny-only",
+            "PRODUCTION NO-GO",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, section)
+
 if __name__ == "__main__":
     unittest.main()

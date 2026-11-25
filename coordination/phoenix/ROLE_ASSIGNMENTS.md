@@ -1,3 +1,33 @@
+## PHX-MASTER UTC20 scheduled-run owner / CI reconciliation — 2026-11-25T20:54:03Z
+
+This section supersedes the UTC19 owner table. PHX-MASTER owns only \`coordination/phoenix/\`; CORE remains reserved to its separate continuation. No subsystem source or COE destination was changed.
+
+**Live refs:** Experiments main \`6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5\`; active v0.6 \`2fbd2475e9f54878c316fa7cea2f228386b0e859\`; legacy v0.5.3 \`aad3aade72c1156eecba1fed30907c6d0283b2c5\`; Master start \`5ce9361a2e23f21af99ef54f5e33066ac37fe024\`; COE main \`a6513ab4412b4c014eee2863e45cbe32d06cb243\`; COE #26 \`b382d233ff06c8791b1028bed3c617cc7b670d12\`; OWNERSHIP_ROUTES \`e4db324315a1b3543fec17a148fbf960170fcb29\` (11 routes, DRAFT_REVIEW_ONLY, Master target null).
+
+| Owner / PR | Current exact head | Exact-head CI / disposition |
+|---|---|---|
+| CORE #252 | \`c82705f2\` | Build #42698139210 and focused #42698124709 PASS; scoped/older, not financial acceptance. CORE source remains reserved. |
+| RENTAL #328 | \`10fc200b\` | APK/API/auth #45622918340/#45622918364/#45622918551 PASS; shared #45622918468 FAIL: CORE CURRENT_STATE freshness and missing ESP32 \`mbedtls/sha256.h\`. |
+| PISONET #255 | \`d01fd164\` | Synthetic Windows #42462978704 PASS; native COM not invoked. |
+| HARDWARE #349 | \`2a5c997a\` | Quarantine/Relay PASS; Full #45603969181 FAIL at Missing poll signature check. |
+| HARDWARE #352 | docs \`0e984e26\`; source/test \`8eab8260\` | Quarantine/Relay/ESP8266/ESP32 #45683122459/#45683122371/#45683122364/#45683122379 PASS; Full #45683122413 FAIL at Missing poll signature check. |
+| HARDWARE child #353 | docs \`dc9cf634\`; source/test \`4f361e03\` | Quarantine #45698465435 and Relay #45698465398 PASS; source Full #45698465506 FAIL at Missing poll signature check; docs-head Full #45699196969 FAIL at Controller protocol parity. PR body stale at \`e2ac0697\`/\`2c9581e9\`. Captured base \`6d743ae\` is 11 commits behind live #352 \`0e984e2\` (13 changed paths); no rebase/retarget by Master. |
+| QA #290 | \`5c29d159\` | Synthetic Windows #43633486963 PASS; native COM not invoked. |
+| QA #292 | \`75a3f66d\` | No PR-triggered runs. |
+| RELEASE #291 | \`9b928c9e\` | Windows #45669599214 and Full #45669599438 FAIL at CORE CURRENT_STATE freshness; ESP32 compatibility #45669599322 PASS. |
+| COE RELEASE #35 | docs \`ac343dc4\`; source/test \`10fa6ff1\` | Shared #45694876586: 232 PASS / 2 skips then 10/10 ULA profiles fail closed; sandbox #45694876614: 40/40 preflight then Bubblewrap unavailable / exit 125; case guard #45694876828 PASS. |
+| COE CORE #45 | \`9d76a134\` | Overlay/Shell #44295049727 and case guard #44295049903 PASS; focused only. |
+| COE INTERCON #49 | \`aeb8ff11\` | Stage 5.1 #44646341873 and case guard #44646341992 PASS; shared #44646341922 FAIL: missing \`mbedtls/sha256.h\`. |
+| COE integration #26 | \`b382d233\` | Five workflows queued / zero jobs; FROZEN. |
+
+**New P0 interface finding:** active v0.6 source blobs ESP32 \`29f1125d\`, ESP8266 \`12c4bb82\`, CGI \`db58041c\` show no authenticated poll/register response. Both sketches consume unsigned \`insert\`/\`target_nonce\`, call \`applyRemoteConfig\`, default top-level enable flags to 1, and feed \`applyOutputs\`. The current implementation is not verified deny-only. Keep Full poll-signature validation blocking; CORE owns response contract, HARDWARE consumer, QA independent tests. Full source facts are in the UTC20 audit report.
+
+HARDWARE #353 host-lab extraction is simulated-only; no production sketch changed. COE #26 exact current tree: 2,560 entries / 1,981 blobs vs 286 / 207; board blobs 77/2; board Python helpers 65/0; tests 47/19 (1 exact, 3 divergent, 43 source-only, 15 destination-only); root NOTICE and Tabler LICENSE missing. Candidate remains FROZEN.
+
+Cleanup #266 remains OPEN / 0-of-7. Private registry v11/newer corrections NOT_RECOVERED; no Google Drive connector. Master Python tests NOT RUN; no authenticated local checkout. **PRODUCTION NO-GO.**
+
+Full evidence: [UTC20 P0 poll-response, #353 ancestry, COE #26 exact-tree and role-CI audit](PHX_MASTER_UTC20_20261125_POLL_RESPONSE_CONTRACT_HW353_COE26_AUDIT.md).
+
 ## PHX-MASTER UTC19 scheduled-run reconciliation — 2026-11-25T19:52:30.511Z
 
 This section supersedes the prior UTC19 owner table. PHX-MASTER owns only `coordination/phoenix/`; CORE remains reserved to its separate continuation. No subsystem source or COE destination was changed.

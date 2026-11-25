@@ -1,3 +1,16 @@
+## PHX-MASTER UTC20 scheduled-run disposition — 2026-11-25T20:54:03Z
+
+Starting Master HEAD \`5ce9361a2e23f21af99ef54f5e33066ac37fe024\`; Experiments main \`6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5\`; active v0.6 \`2fbd2475e9f54878c316fa7cea2f228386b0e859\`; legacy v0.5.3 \`aad3aade72c1156eecba1fed30907c6d0283b2c5\`; COE main \`a6513ab4412b4c014eee2863e45cbe32d06cb243\`; COE #26 \`b382d233ff06c8791b1028bed3c617cc7b670d12\`.
+
+- New P0 source finding: active v0.6 CGI register/ping and poll responses have no response_sig; ESP32/ESP8266 sketches consume unsigned insert/target_nonce and apply permissive top-level config defaults before relay-output decisions. The current implementation is not verified deny-only. Full poll-signature validation remains a valid blocker; CORE/HARDWARE/QA own resolution.
+- HARDWARE #353 is docs/source \`dc9cf634\`/\`4f361e03\`; its captured base is 11 commits behind current #352 parent \`0e984e2\`. Focused runs PASS; source Full and docs-head Full fail at poll protocol validation. No stack rewrite.
+- COE #26 exact tree: 2,560/286 entries; board blobs 77/2; board Python helpers 65/0; tests 47/19 (1 exact, 3 divergent, 43 source-only, 15 destination-only); root NOTICE and Tabler LICENSE missing. Candidate remains FROZEN.
+- COE RELEASE #35 \`ac343dc4\`: 232 PASS / 2 skips then 10/10 ULA fail-closed; Bubblewrap absent / exit 125; case guard PASS.
+- RELEASE #291 and RENTAL #328 remain blocked by CORE CURRENT_STATE freshness; #328 and COE #49 also have missing ESP32 \`mbedtls/sha256.h\`.
+- Cleanup #266 OPEN / 0-of-7. Private registry v11/newer corrections NOT_RECOVERED; no Google Drive connector. Master Python suite NOT RUN; local DNS prevented a checkout.
+- No subsystem source or COE destination changed. **PRODUCTION NO-GO.**
+
+Full evidence: [UTC20 P0 poll-response, #353 ancestry, COE #26 exact-tree and role-CI audit](PHX_MASTER_UTC20_20261125_POLL_RESPONSE_CONTRACT_HW353_COE26_AUDIT.md).
 ## PHX-MASTER UTC19 scheduled-run disposition — 2026-11-25T19:52:30.511Z
 
 Starting Master HEAD `7aa4c3bd5248a31f12d089a1ec40a46a9d941f06`; Experiments main `6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5`; active v0.6 `2fbd2475e9f54878c316fa7cea2f228386b0e859`; legacy v0.5.3 `aad3aade72c1156eecba1fed30907c6d0283b2c5`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`.

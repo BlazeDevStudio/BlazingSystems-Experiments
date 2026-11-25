@@ -1,3 +1,25 @@
+## PHX-MASTER UTC20 — exact #353 source / COE #26 candidate reconciliation and P0 poll-response contract — 2026-11-25T20:54Z
+
+Exact complete recursive trees: Experiments HARDWARE child #353 docs head \`dc9cf634248ecc23f51f1477bd1769d63d3fe5ea\` (2560 entries / 1981 blobs); COE #26 \`b382d233ff06c8791b1028bed3c617cc7b670d12\` (286 entries / 207 blobs).
+
+| Measure | #353 source | COE #26 |
+|---|---:|---:|
+| ESP32 subtree blobs | 16 | 1 |
+| ESP8266 subtree blobs | 61 | 1 |
+| Board-local Python helpers | 65 | 0 |
+| Mapped tests | 47 | 19 |
+
+Test identity: 1 exact same-path blob+mode, 3 divergent same-path, 43 source-only, 15 destination-only. The source/destination ESP32 and ESP8266 sketches are divergent (no exact sketch match). Root NOTICE and Tabler LICENSE are source-only; Product, QRCode and TailAdmin license/notice counterparts match. Hardware-specific SOURCE_INTAKE/MIGRATION_MAP is absent.
+
+The route manifest remains 11 routes / DRAFT_REVIEW_ONLY / PHX-MASTER target null. COE #26 remains FROZEN; no staging, copy, move, overwrite, cherry-pick, or destination write.
+
+### P0 poll-response contract status
+
+Active v0.6 source blobs: ESP32 \`29f1125d52ff474a0d028ad41f7af201be1f0f9d\`, ESP8266 \`12c4bb82b6fddafe813674a0b5f692c1d3634073\`, CGI \`db58041c0575ad0a1101d99cb85403e03c8dcb22\`. CGI register/ping and poll do not emit response_sig; both sketches consume insert/target_nonce without response authentication, then call applyRemoteConfig with permissive top-level enable defaults. This is not verified deny-only. Full #353 poll-signature validation remains a legitimate blocker. See ARCHITECTURE_CONTRACTS §7.20 and the UTC20 report.
+
+### Current stack and CI
+
+#353 docs/source heads \`dc9cf634\`/\`4f361e03\`; captured base \`6d743ae\`; parent #352 \`0e984e2\` is 11 commits ahead / 13 changed paths. Focused #45698465435/#45698465398 PASS; Full #45698465506 and docs-head Full #45699196969 fail at poll protocol validation. No stack rewrite was performed.
 ## PHX-MASTER UTC19 scheduled-run exact tree / test / license reconciliation — 2026-11-25T19:52:30.511Z
 
 Source tree: Experiments HARDWARE #352 docs head `0e984e267b3a8fb10c314800d1a7f120806354b7` (2,564 entries / 1,985 blobs; recursive tree not truncated). Destination: COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12` (286 entries / 207 blobs; not truncated).
