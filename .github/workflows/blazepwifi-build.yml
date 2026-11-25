@@ -11,6 +11,8 @@ on:
       - '!experiment/openwrt/BlazePwifi/AUDIT.md'
       - '!experiment/openwrt/BlazePwifi/README.md'
       - '.github/workflows/blazepwifi-build.yml'
+      - '.github/scripts/**'
+      - '.github/PHX_RELEASE_HANDOVER.md'
       - '.github/workflows/blazepwifi-v053-release.yml'
       - '.github/workflows/blazerental-v053-lineage2-sign.yml'
   pull_request:
@@ -23,12 +25,21 @@ on:
       - '!experiment/openwrt/BlazePwifi/AUDIT.md'
       - '!experiment/openwrt/BlazePwifi/README.md'
       - '.github/workflows/blazepwifi-build.yml'
+      - '.github/scripts/**'
+      - '.github/PHX_RELEASE_HANDOVER.md'
       - '.github/workflows/blazepwifi-v053-release.yml'
       - '.github/workflows/blazerental-v053-lineage2-sign.yml'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+env:
+  PHX_SOURCE_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+  PHX_SOURCE_BASE_SHA: ${{ github.event.pull_request.base.sha || '' }}
 
 jobs:
 
@@ -41,10 +52,62 @@ jobs:
     outputs:
       run_heavy: ${{ steps.filter.outputs.run_heavy }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: RELEASE-ACTIONS enforce immutable external action pins
+        run: python3 .github/scripts/test_release_artifact_action_pins.py
+      - name: RELEASE-CONCURRENCY protect active OpenWrt publisher runs
+        run: python3 .github/scripts/test_release_workflow_concurrency.py
+      - name: RELEASE-PROVENANCE manifest and checksum negative controls
+        run: python3 .github/scripts/test_build_provenance.py
+      - name: RELEASE-IMAGE-ADMISSION ESP32 application-image descriptor cleanup regressions
+        run: python3 .github/scripts/test_verify_esp32_application_image.py
+      - name: RELEASE-HANDOVER exact source and cross-repository refs
+        run: python3 .github/scripts/test_phx_release_handover_current_refs.py
+      - name: RELEASE-TOOLCHAIN Arduino CLI archive verifier negative controls
+        run: python3 .github/scripts/test_arduino_cli_archive_verifier.py
+      - name: RELEASE-TOOLCHAIN exact ESP32 core compatibility workflow contract
+        run: python3 .github/scripts/test_phx_release_esp32_core_compatibility.py
+      - name: RELEASE-TOOLCHAIN enforce observed board-core pins
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          lines = Path(".github/workflows/blazepwifi-build.yml").read_text(encoding="utf-8").splitlines()
+
+          def install_block(step_name):
+              marker = f"      - name: {step_name}"
+              try:
+                  start = lines.index(marker)
+              except ValueError:
+                  raise SystemExit(f"RELEASE-TOOLCHAIN-RED: missing step {step_name}")
+              end = next(
+                  (index for index in range(start + 1, len(lines)) if lines[index].startswith("      - name: ")),
+                  len(lines),
+              )
+              return lines[start:end]
+
+          cases = (
+              ("Install ESP8266 core", "esp8266:esp8266@3.1.2"),
+              ("Install ESP32 core", "esp32:esp32@3.3.13"),
+          )
+          for step_name, expected in cases:
+              installs = [
+                  line.strip()
+                  for line in install_block(step_name)
+                  if line.strip().startswith("arduino-cli core install ")
+              ]
+              expected_line = f"arduino-cli core install {expected}"
+              if installs != [expected_line]:
+                  raise SystemExit(
+                      f"RELEASE-TOOLCHAIN-RED: {step_name} must install exactly {expected}; found {installs}"
+                  )
+          print("RELEASE-TOOLCHAIN-PASS: ESP8266 3.1.2 and ESP32 3.3.13 are uniquely pinned")
+          PY
       - name: CI-0701 negative classifier contract (no API, no hardware)
         run: python3 experiment/openwrt/BlazePwifi/tests/v060_ci_docs_classifier.py
       - name: Verify previous exact Full success before suppressing expensive jobs
@@ -58,8 +121,9 @@ jobs:
     if: needs.ci_decision.outputs.run_heavy == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
           fetch-depth: 0
       - name: Mandatory handover freshness gate
         run: sh experiment/openwrt/BlazePwifi/tests/handover_gate.sh
@@ -333,7 +397,7 @@ jobs:
           VERSION=$(cat experiment/openwrt/BlazePwifi/VERSION)
           tar -czf "BlazePwifi-${VERSION}.tar.gz" experiment/openwrt/BlazePwifi
           sha256sum "BlazePwifi-${VERSION}.tar.gz" > "BlazePwifi-${VERSION}.tar.gz.sha256"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: BlazePwifi-bundle
           path: |
@@ -376,7 +440,7 @@ jobs:
           echo "Authoritative repo handover: experiment/openwrt/BlazePwifi/docs/handover/CURRENT_STATE.md" >> "$GITHUB_STEP_SUMMARY"
       - name: Archive handover state and evidence even on failure
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: BlazePwifi-ci-handover-evidence
           path: |
@@ -392,20 +456,42 @@ jobs:
     if: needs.ci_decision.outputs.run_heavy == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: arduino/setup-arduino-cli@v2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: arduino/setup-arduino-cli@b3cda96fddef6af6c56b4c5efb5c47e2357935db # current @v2 resolution, signed Node24 commit
+        with:
+          version: "1.6.0"
+      - name: Verify Arduino CLI binary against upstream release digest
+        run: python3 .github/scripts/verify_arduino_cli_archive.py --binary "$(command -v arduino-cli)"
       - name: Install ESP8266 core
         run: |
+          version_output="$(arduino-cli version)"
+          printf '%s\n' "$version_output"
+          if ! printf '%s\n' "$version_output" | grep -Eq 'Version: 1\.6\.0([[:space:]]|$)'; then
+            printf 'RELEASE-TOOLCHAIN-RED: expected Arduino CLI 1.6.0, got: %s\n' "$version_output" >&2
+            exit 1
+          fi
           arduino-cli config init --overwrite
           arduino-cli config add board_manager.additional_urls https://arduino.esp8266.com/stable/package_esp8266com_index.json
           arduino-cli core update-index
-          arduino-cli core install esp8266:esp8266
+          arduino-cli core install esp8266:esp8266@3.1.2
+          core_list="$(arduino-cli core list)"
+          printf '%s\n' "$core_list"
+          installed_core_versions="$(printf '%s\n' "$core_list" | awk '$1 == "esp8266:esp8266" {print $2}')"
+          if [ "$installed_core_versions" != "3.1.2" ]; then
+            printf 'RELEASE-TOOLCHAIN-RED: expected esp8266:esp8266@3.1.2, got: %s\n' "$installed_core_versions" >&2
+            exit 1
+          fi
+          printf 'RELEASE-TOOLCHAIN-CORE-PASS: esp8266:esp8266@3.1.2\n'
       - name: Compile BlazePwifi Vendo
         run: |
           python3 experiment/openwrt/BlazePwifi/tools/package-vendo-source.py esp8266 experiment/openwrt/BlazePwifi/dist/esp8266
           arduino-cli compile --fqbn esp8266:esp8266:nodemcuv2 --libraries experiment/openwrt/BlazePwifi/dist/esp8266/source/libraries --output-dir experiment/openwrt/BlazePwifi/dist/esp8266 experiment/openwrt/BlazePwifi/dist/esp8266/source/BlazePwifiVendo
           (cd experiment/openwrt/BlazePwifi/dist/esp8266 && find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS)
-      - uses: actions/upload-artifact@v4
+      - name: Record exact-source ESP8266 artifact provenance
+        run: python3 .github/scripts/write_build_provenance.py --kind esp8266 --target esp8266 --artifact-dir experiment/openwrt/BlazePwifi/dist/esp8266 --core-package esp8266:esp8266 --core-version 3.1.2 --fqbn esp8266:esp8266:nodemcuv2 --sketch experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/BlazePwifiVendo.ino --libraries experiment/openwrt/BlazePwifi/dist/esp8266/source/libraries
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: BlazePwifi-esp8266-firmware
           path: experiment/openwrt/BlazePwifi/dist/esp8266/
@@ -419,7 +505,9 @@ jobs:
       matrix:
         target: [ruijie, x86_64, orangepi_zero3, orangepi_one, orangepi_pc]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - run: sudo apt-get update && sudo apt-get install -y zstd
       - name: Build OpenWrt image
         run: sh experiment/openwrt/BlazePwifi/build/build-openwrt-image.sh ${{ matrix.target }}
@@ -427,7 +515,9 @@ jobs:
         run: |
           cd experiment/openwrt/BlazePwifi/dist/${{ matrix.target }}
           sha256sum -c SHA256SUMS
-      - uses: actions/upload-artifact@v4
+      - name: Record exact-source OpenWrt artifact provenance
+        run: python3 .github/scripts/write_build_provenance.py --kind openwrt --target "${{ matrix.target }}" --artifact-dir "experiment/openwrt/BlazePwifi/dist/${{ matrix.target }}" --imagebuilder-workdir /tmp/blazepwifi-imagebuilder
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: BlazePwifi-${{ matrix.target }}-firmware
           path: experiment/openwrt/BlazePwifi/dist/${{ matrix.target }}/
@@ -438,20 +528,42 @@ jobs:
     if: needs.ci_decision.outputs.run_heavy == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: arduino/setup-arduino-cli@v2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: arduino/setup-arduino-cli@b3cda96fddef6af6c56b4c5efb5c47e2357935db # current @v2 resolution, signed Node24 commit
+        with:
+          version: "1.6.0"
+      - name: Verify Arduino CLI binary against upstream release digest
+        run: python3 .github/scripts/verify_arduino_cli_archive.py --binary "$(command -v arduino-cli)"
       - name: Install ESP32 core
         run: |
+          version_output="$(arduino-cli version)"
+          printf '%s\n' "$version_output"
+          if ! printf '%s\n' "$version_output" | grep -Eq 'Version: 1\.6\.0([[:space:]]|$)'; then
+            printf 'RELEASE-TOOLCHAIN-RED: expected Arduino CLI 1.6.0, got: %s\n' "$version_output" >&2
+            exit 1
+          fi
           arduino-cli config init --overwrite
           arduino-cli config add board_manager.additional_urls https://espressif.github.io/arduino-esp32/package_esp32_index.json
           arduino-cli core update-index
-          arduino-cli core install esp32:esp32
+          arduino-cli core install esp32:esp32@3.3.13
+          core_list="$(arduino-cli core list)"
+          printf '%s\n' "$core_list"
+          installed_core_versions="$(printf '%s\n' "$core_list" | awk '$1 == "esp32:esp32" {print $2}')"
+          if [ "$installed_core_versions" != "3.3.13" ]; then
+            printf 'RELEASE-TOOLCHAIN-RED: expected esp32:esp32@3.3.13, got: %s\n' "$installed_core_versions" >&2
+            exit 1
+          fi
+          printf 'RELEASE-TOOLCHAIN-CORE-PASS: esp32:esp32@3.3.13\n'
       - name: Compile BlazePwifi Vendo ESP32
         run: |
           python3 experiment/openwrt/BlazePwifi/tools/package-vendo-source.py esp32 experiment/openwrt/BlazePwifi/dist/esp32
           arduino-cli compile --fqbn esp32:esp32:esp32 --libraries experiment/openwrt/BlazePwifi/dist/esp32/source/libraries --output-dir experiment/openwrt/BlazePwifi/dist/esp32 experiment/openwrt/BlazePwifi/dist/esp32/source/BlazePwifiVendo32
           (cd experiment/openwrt/BlazePwifi/dist/esp32 && find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS)
-      - uses: actions/upload-artifact@v4
+      - name: Record exact-source ESP32 artifact provenance
+        run: python3 .github/scripts/write_build_provenance.py --kind esp32 --target esp32 --artifact-dir experiment/openwrt/BlazePwifi/dist/esp32 --core-package esp32:esp32 --core-version 3.3.13 --fqbn esp32:esp32:esp32 --sketch experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino --libraries experiment/openwrt/BlazePwifi/dist/esp32/source/libraries
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: BlazePwifi-esp32-firmware
           path: experiment/openwrt/BlazePwifi/dist/esp32/
@@ -467,7 +579,9 @@ jobs:
       matrix:
         target: [orangepi_pc_plus, orangepi_pc2, orangepi_zero, orangepi_zero2, orangepi_zero2w, orangepi_one_plus]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - run: sudo apt-get update && sudo apt-get install -y zstd
       - name: Build optional OpenWrt image
         run: sh experiment/openwrt/BlazePwifi/build/build-openwrt-image.sh ${{ matrix.target }}
@@ -475,7 +589,9 @@ jobs:
         run: |
           cd experiment/openwrt/BlazePwifi/dist/${{ matrix.target }}
           sha256sum -c SHA256SUMS
-      - uses: actions/upload-artifact@v4
+      - name: Record exact-source OpenWrt artifact provenance
+        run: python3 .github/scripts/write_build_provenance.py --kind openwrt --target "${{ matrix.target }}" --artifact-dir "experiment/openwrt/BlazePwifi/dist/${{ matrix.target }}" --imagebuilder-workdir /tmp/blazepwifi-imagebuilder
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: BlazePwifi-${{ matrix.target }}-firmware
           path: experiment/openwrt/BlazePwifi/dist/${{ matrix.target }}/
@@ -487,8 +603,9 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 55
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
           fetch-depth: 0
       - name: Install Android SDK 27 and isolate legacy SDK root
         shell: bash
@@ -504,10 +621,11 @@ jobs:
           cp -a "${ANDROID_SDK_ROOT}/build-tools/27.0.3" /tmp/android-sdk-27/build-tools/
           printf 'sdk.dir=/tmp/android-sdk-27\n' > experiment/openwrt/BlazePwifi/android/BlazeRentalLauncher/local.properties
       - name: Set up JDK 8 for Launcher3
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0, Node24
         with:
           distribution: temurin
           java-version: '8'
+          problem-matcher: true
       - name: Install Gradle 4.4.1
         shell: bash
         run: |
@@ -574,7 +692,7 @@ jobs:
               "BlazeRental-v0.5.2-rescue-for-$VERSION-TEST.apk" \
               "BlazeRental-v0.5.2-rescue-for-$VERSION-release-unsigned.apk" > SHA256SUMS
           )
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: BlazePwifi-android-current
           path: experiment/openwrt/BlazePwifi/dist/android/
@@ -583,7 +701,9 @@ jobs:
     needs: [validate]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Build current no-reflash update assets
         shell: bash
         run: |
@@ -595,7 +715,7 @@ jobs:
             cd "$ROOT/dist/update"
             sha256sum BlazePwifi-v0.5.2-update-bootstrap.sh > BlazePwifi-v0.5.2-update-bootstrap.sh.sha256
           )
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: BlazePwifi-current-update
           path: experiment/openwrt/BlazePwifi/dist/update/
@@ -606,8 +726,10 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 25
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0, Node24
         with:
           python-version: '3.12'
       - run: |
@@ -616,7 +738,7 @@ jobs:
       - run: python experiment/openwrt/BlazePwifi/simulation/browser_v04_audit.py simulation-out/browser
       - run: python experiment/openwrt/BlazePwifi/simulation/standalone_fusion_browser.py simulation-out/browser
       - run: python experiment/openwrt/BlazePwifi/simulation/easymode_fusion_browser.py simulation-out/browser
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
           name: BlazePwifi-v0.5-browser-simulation
@@ -628,8 +750,10 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: BlazePwifi-android-current
           path: candidate/android
@@ -650,7 +774,7 @@ jobs:
             sudo chmod 666 /dev/kvm
             test -r /dev/kvm -a -w /dev/kvm
           fi
-      - uses: reactivecircus/android-emulator-runner@v2
+      - uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0, Node24; upstream commit unsigned
         with:
           api-level: 27
           arch: x86
@@ -660,7 +784,7 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot -no-metrics
           emulator-boot-timeout: 300
           script: timeout 180s bash experiment/openwrt/BlazePwifi/simulation/android_v05_audit.sh "$APK" simulation-out/android
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
           name: BlazePwifi-v0.5-android-simulation
@@ -676,18 +800,20 @@ jobs:
       matrix:
         kind: [esp8266, esp32]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: BlazePwifi-${{ matrix.kind }}-firmware
           path: candidate/${{ matrix.kind }}
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0, Node24
         with:
           python-version: '3.12'
       - run: python -m pip install --disable-pip-version-check esptool
       - run: bash experiment/openwrt/BlazePwifi/simulation/esp_v04_audit.sh "candidate/${{ matrix.kind }}" "${{ matrix.kind }}" "simulation-out/${{ matrix.kind }}"
       - run: sh experiment/openwrt/BlazePwifi/tests/v04_controller_compat.sh
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
           name: BlazePwifi-v0.5-${{ matrix.kind }}-simulation
@@ -699,14 +825,16 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: BlazePwifi-ruijie-firmware
           path: candidate/ruijie
       - run: sudo apt-get update && sudo apt-get install -y squashfs-tools
       - run: bash experiment/openwrt/BlazePwifi/simulation/ruijie_v04_audit.sh candidate/ruijie simulation-out/ruijie
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
           name: BlazePwifi-v0.5-ruijie-simulation
@@ -722,14 +850,16 @@ jobs:
       matrix:
         target: [orangepi_zero3, orangepi_one, orangepi_pc]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: BlazePwifi-${{ matrix.target }}-firmware
           path: candidate/${{ matrix.target }}
       - run: sudo apt-get update && sudo apt-get install -y qemu-user-static util-linux
       - run: bash experiment/openwrt/BlazePwifi/simulation/orangepi_v04_userspace_audit.sh "candidate/${{ matrix.target }}" "${{ matrix.target }}" "simulation-out/${{ matrix.target }}"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
           name: BlazePwifi-v0.5-${{ matrix.target }}-simulation
@@ -741,14 +871,16 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: BlazePwifi-x86_64-firmware
           path: candidate/x86
       - run: sudo apt-get update && sudo apt-get install -y qemu-system-x86 ovmf util-linux
       - run: bash experiment/openwrt/BlazePwifi/simulation/x86_v04_qemu_audit.sh candidate/x86 simulation-out/x86
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
           name: BlazePwifi-v0.5-x86-simulation
@@ -771,7 +903,9 @@ jobs:
       - v04_x86_simulation
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Record passing candidate
         shell: bash
         run: |
@@ -787,7 +921,7 @@ jobs:
             "simulation": "passed"
           }
           JSON
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: BlazePwifi-current-candidate-gate
           path: candidate-gate/CANDIDATE-GATE.json
@@ -798,15 +932,18 @@ jobs:
     needs: [validate, android]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: BlazePwifi-android-BlazeRental
           path: android-artifact
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0, Node24
         with:
           distribution: temurin
           java-version: '17'
+          problem-matcher: true
       - name: Install Android build tools
         run: |
           SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
@@ -860,7 +997,7 @@ jobs:
           cp "$RUNNER_TEMP/aes.iv" "$OUT/BlazeRental-signing-aes-iv.bin"
           sha256sum "$OUT/BlazeRental.apk" "$OUT/BlazeRental-signing-cert.pem" > "$OUT/SHA256SUMS"
           rm -f "$OUT/BlazeRental-production.p12" "$OUT/BlazeRental-aligned.apk"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: BlazeRental-production-signing-handoff
           path: ${{ runner.temp }}/blazerental-sign/
@@ -869,7 +1006,7 @@ jobs:
 
 
   production_import_signed_apk:
-    if: github.ref == 'refs/heads/blazepwifi-v0.3.0-production' && contains(github.event.head_commit.message, '[import-sign]')
+    if: github.event_name == 'push' && github.ref == 'refs/heads/blazepwifi-v0.3.0-production' && github.ref_protected == true && vars.BLAZEPWIFI_PRODUCTION_RELEASE_APPROVED == 'true' && contains(github.event.head_commit.message, '[import-sign]')
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -880,8 +1017,9 @@ jobs:
       APK_SHA256: '2062c0ad1245b1a5dbfec8fea1cfef4286906f943ba54c6a7005ca7ca872bac0'
       CERT_SHA256: '49b2f1ad1c8214b35935fa266f6afdd5db12f9739dee0eef0b31c69848dcd09e'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
           ref: blazepwifi-v0.3.0-production
       - name: Download verified production signing handoff
         run: |
@@ -905,10 +1043,20 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add "$DEST"
           git commit -m "release(blazepwifi): add signed BlazeRental.apk [skip ci]"
-          git push origin HEAD:blazepwifi-v0.3.0-production
+          cat > "$RUNNER_TEMP/git-askpass.sh" <<'ASKPASS'
+          #!/bin/sh
+          case "$1" in
+            *Username*) printf '%s\n' 'x-access-token' ;;
+            *Password*) printf '%s\n' "$GH_TOKEN" ;;
+            *) exit 1 ;;
+          esac
+          ASKPASS
+          chmod 700 "$RUNNER_TEMP/git-askpass.sh"
+          trap 'rm -f "$RUNNER_TEMP/git-askpass.sh"' EXIT
+          GIT_ASKPASS="$RUNNER_TEMP/git-askpass.sh" GIT_TERMINAL_PROMPT=0 git push origin HEAD:blazepwifi-v0.3.0-production
 
   publish_prerelease:
-    if: github.ref == 'refs/heads/blazepwifi-v0.3.0-design' && contains(github.event.head_commit.message, '[release]')
+    if: github.event_name == 'push' && github.ref == 'refs/heads/blazepwifi-v0.3.0-design' && github.ref_protected == true && vars.BLAZEPWIFI_PRERELEASE_APPROVED == 'true' && contains(github.event.head_commit.message, '[release]')
     needs: [validate, esp8266, esp32, android, firmware, firmware_optional]
     runs-on: ubuntu-latest
     permissions:
@@ -917,8 +1065,10 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       TAG: v0.3.0-rc.1
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           pattern: BlazePwifi-*
           path: downloaded
@@ -959,7 +1109,7 @@ jobs:
 
 
   publish_release:
-    if: github.ref == 'refs/heads/blazepwifi-v0.3.0-production' && contains(github.event.head_commit.message, '[release]')
+    if: github.event_name == 'push' && github.ref == 'refs/heads/blazepwifi-v0.3.0-production' && github.ref_protected == true && vars.BLAZEPWIFI_PRODUCTION_RELEASE_APPROVED == 'true' && contains(github.event.head_commit.message, '[release]')
     needs: [validate, esp8266, esp32, android, firmware, firmware_optional]
     runs-on: ubuntu-latest
     permissions:
@@ -968,11 +1118,13 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       TAG: v0.3.0
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0, Node24
         with:
           python-version: '3.x'
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           pattern: BlazePwifi-*
           path: downloaded
@@ -1041,7 +1193,7 @@ jobs:
 
   # Executable lab-only release, never a production v0.6.0.
   publish_v060_lab_preview:
-    if: github.ref == 'refs/heads/blazepwifi-v0.6.0-audit-foundation' && contains(github.event.head_commit.message, '[v060-lab-release]')
+    if: github.event_name == 'push' && github.ref == 'refs/heads/blazepwifi-v0.6.0-audit-foundation' && github.ref_protected == true && vars.BLAZEPWIFI_LAB_PREVIEW_APPROVED == 'true' && contains(github.event.head_commit.message, '[v060-lab-release]')
     needs: [v04_candidate_gate, firmware_optional]
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -1053,7 +1205,7 @@ jobs:
       LAB_TAG: v0.6.0-alpha.4
       NOTES: experiment/openwrt/BlazePwifi/releases/0.6.0-alpha.4/RELEASE_NOTES.md
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 1
           persist-credentials: false

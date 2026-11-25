@@ -1,0 +1,335 @@
+name: PHX Release ESP32 core compatibility
+on:
+  push:
+    branches:
+      - "phoenix/release-publisher-isolation-20261115"
+    paths:
+      - ".github/workflows/phx-release-esp32-core-compatibility.yml"
+      - ".github/scripts/test_phx_release_esp32_core_compatibility.py"
+      - ".github/scripts/inspect_esp32_elf_sections.py"
+      - ".github/scripts/test_inspect_esp32_elf_sections.py"
+      - ".github/scripts/compare_esp32_elf_sections.py"
+      - ".github/scripts/test_compare_esp32_elf_sections.py"
+      - ".github/scripts/verify_esp32_source_date_epoch.py"
+      - ".github/scripts/test_verify_esp32_source_date_epoch.py"
+      - ".github/scripts/inspect_esp32_elf_symbols.py"
+      - ".github/scripts/test_inspect_esp32_elf_symbols.py"
+      - ".github/scripts/verify_esp32_application_image.py"
+      - ".github/scripts/verify_esp32_reproducible_build.py"
+      - ".github/scripts/test_verify_esp32_reproducible_build.py"
+      - ".github/scripts/test_release_artifact_action_pins.py"
+      - ".github/scripts/write_build_provenance.py"
+      - ".github/scripts/test_build_provenance.py"
+      - ".github/scripts/verify_arduino_cli_archive.py"
+      - ".github/scripts/test_arduino_cli_archive_verifier.py"
+      - ".github/scripts/test_release_workflow_concurrency.py"
+      - ".github/workflows/blazepisonet-softtimer-release.yml"
+      - ".github/workflows/blazepwifi-build.yml"
+      - ".github/workflows/blazepwifi-v053-release.yml"
+      - ".github/PHX_RELEASE_UTC10_ARTIFACT_ASSEMBLY.md"
+      - ".github/PHX_RELEASE_HANDOVER.md"
+  pull_request:
+    branches:
+      - "draft/softtimer-future-release-signing-pipeline-20261029"
+    paths:
+      - ".github/workflows/phx-release-esp32-core-compatibility.yml"
+      - ".github/scripts/test_phx_release_esp32_core_compatibility.py"
+      - ".github/scripts/inspect_esp32_elf_sections.py"
+      - ".github/scripts/test_inspect_esp32_elf_sections.py"
+      - ".github/scripts/compare_esp32_elf_sections.py"
+      - ".github/scripts/test_compare_esp32_elf_sections.py"
+      - ".github/scripts/verify_esp32_source_date_epoch.py"
+      - ".github/scripts/test_verify_esp32_source_date_epoch.py"
+      - ".github/scripts/inspect_esp32_elf_symbols.py"
+      - ".github/scripts/test_inspect_esp32_elf_symbols.py"
+      - ".github/scripts/verify_esp32_application_image.py"
+      - ".github/scripts/verify_esp32_reproducible_build.py"
+      - ".github/scripts/test_verify_esp32_reproducible_build.py"
+      - ".github/scripts/test_release_artifact_action_pins.py"
+      - ".github/scripts/write_build_provenance.py"
+      - ".github/scripts/test_build_provenance.py"
+      - ".github/scripts/verify_arduino_cli_archive.py"
+      - ".github/scripts/test_arduino_cli_archive_verifier.py"
+      - ".github/scripts/test_release_workflow_concurrency.py"
+      - ".github/workflows/blazepwifi-build.yml"
+      - ".github/workflows/blazepwifi-v053-release.yml"
+      - ".github/PHX_RELEASE_UTC10_ARTIFACT_ASSEMBLY.md"
+      - ".github/PHX_RELEASE_HANDOVER.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: phx-release-esp32-core-compatibility-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  provenance:
+    name: Release artifact provenance regression suite
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout release tooling
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Test release artifact provenance admission
+        run: python3 .github/scripts/test_build_provenance.py
+      - name: Test Arduino CLI archive verifier
+        run: python3 .github/scripts/test_arduino_cli_archive_verifier.py
+      - name: Test ESP32 reproducible-build descriptor cleanup
+        run: python3 .github/scripts/test_verify_esp32_reproducible_build.py
+      - name: Test release workflow concurrency and publisher isolation
+        run: python3 .github/scripts/test_release_workflow_concurrency.py
+      - name: Verify immutable release action pins
+        run: python3 .github/scripts/test_release_artifact_action_pins.py
+
+  build:
+    name: "ESP32 core ${{ matrix.esp32_core }} / source 7da74f9d1768"
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        esp32_core: ["3.3.13", "4.0.0"]
+    env:
+      EXPECTED_SOURCE_SHA: "7da74f9d1768a42fc6c15be368eeddae29035d4f"
+      EXPECTED_SKETCH_PATH: "experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino"
+      EXPECTED_SKETCH_BLOB: "c07aba7d518ef7eb5d536aafdd77ef6193e676cb"
+    steps:
+      - name: Checkout release tooling
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Checkout exact PHX-HARDWARE source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: 7da74f9d1768a42fc6c15be368eeddae29035d4f
+          path: hardware-source
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Verify exact hardware source and sketch blob
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual_source_sha="$(git -C hardware-source rev-parse HEAD)"
+          actual_sketch_blob="$(git -C hardware-source rev-parse "HEAD:${EXPECTED_SKETCH_PATH}")"
+          test "$actual_source_sha" = "$EXPECTED_SOURCE_SHA"
+          test "$actual_sketch_blob" = "$EXPECTED_SKETCH_BLOB"
+          printf 'PHX-HARDWARE-SOURCE-PASS: commit=%s sketch_blob=%s\n' "$actual_source_sha" "$actual_sketch_blob"
+
+      - name: Set up pinned Arduino CLI
+        uses: arduino/setup-arduino-cli@b3cda96fddef6af6c56b4c5efb5c47e2357935db # verified Node24 action commit
+        with:
+          version: "1.6.0"
+
+      - name: Verify Arduino CLI against pinned upstream archive
+        run: python3 .github/scripts/verify_arduino_cli_archive.py --binary "$(command -v arduino-cli)"
+
+      - name: Install and verify exact ESP32 core
+        shell: bash
+        run: |
+          set -euo pipefail
+          arduino-cli config init --overwrite
+          arduino-cli config add board_manager.additional_urls https://espressif.github.io/arduino-esp32/package_esp32_index.json
+          arduino-cli core update-index
+          arduino-cli core install "esp32:esp32@${{ matrix.esp32_core }}"
+          installed_core="$(arduino-cli core list | awk '$1 == "esp32:esp32" {print $2}')"
+          test "$installed_core" = "${{ matrix.esp32_core }}"
+          arduino-cli core list
+
+      - name: Verify pinned ESP32 compile-time date/time source and SOURCE_DATE_EPOCH
+        shell: bash
+        run: |
+          set -euo pipefail
+          core_root="$HOME/.arduino15/packages/esp32/hardware/esp32/${{ matrix.esp32_core }}"
+          toolchain_root="$HOME/.arduino15/packages/esp32/tools/esp-x32"
+          mapfile -t toolchain_versions < <(
+            find "$toolchain_root" -mindepth 1 -maxdepth 1 -type d -print | sort
+          )
+          if [ "${#toolchain_versions[@]}" -ne 1 ]; then
+            printf 'PHX-ESP32-SOURCE-DATE-EPOCH-RED: expected one esp-x32 package, found %s\n' "${#toolchain_versions[@]}" >&2
+            exit 1
+          fi
+          toolchain_version="${toolchain_versions[0]##*/}"
+          case "${{ matrix.esp32_core }}:$toolchain_version" in
+            "3.3.13:2610"|"4.0.0:2512") ;;
+            *)
+              printf 'PHX-ESP32-SOURCE-DATE-EPOCH-RED: unexpected core/toolchain pair core=%s esp-x32=%s\n' "${{ matrix.esp32_core }}" "$toolchain_version" >&2
+              exit 1
+              ;;
+          esac
+          compiler_binary="${toolchain_versions[0]}/bin/xtensa-esp32-elf-gcc"
+          test -x "$compiler_binary"
+          source_date_epoch="$(git -C hardware-source show -s --format=%ct HEAD)"
+          if [[ ! "$source_date_epoch" =~ ^[0-9]+$ ]]; then
+            printf 'PHX-ESP32-SOURCE-DATE-EPOCH-RED: invalid pinned source commit timestamp\n' >&2
+            exit 1
+          fi
+          python3 .github/scripts/test_verify_esp32_source_date_epoch.py
+          python3 .github/scripts/verify_esp32_source_date_epoch.py --compiler "$compiler_binary" --core-root "$core_root" --core-version "${{ matrix.esp32_core }}" --source-date-epoch "$source_date_epoch"
+
+      - name: Test release-owned ESP32 ELF section inspector
+        run: |
+          python3 .github/scripts/test_inspect_esp32_elf_sections.py
+          python3 .github/scripts/test_compare_esp32_elf_sections.py
+          python3 .github/scripts/test_verify_esp32_source_date_epoch.py
+
+      - name: Test release-owned ESP32 ELF symbol inspector
+        run: |
+          python3 .github/scripts/test_inspect_esp32_elf_symbols.py
+
+      - name: Compile twice and compare exact PHX-HARDWARE application image
+        shell: bash
+        run: |
+          set -euo pipefail
+          source_date_epoch="$(git -C hardware-source show -s --format=%ct HEAD)"
+          if [[ ! "$source_date_epoch" =~ ^[0-9]+$ ]]; then
+            printf 'PHX-ESP32-SOURCE-DATE-EPOCH-RED: invalid pinned source commit timestamp\n' >&2
+            exit 1
+          fi
+          export SOURCE_DATE_EPOCH="$source_date_epoch"
+          export LC_ALL=C
+          export TZ=UTC
+          printf 'PHX-ESP32-SOURCE-DATE-EPOCH-APPLIED: source=%s epoch=%s locale=%s tz=%s\n' "$EXPECTED_SOURCE_SHA" "$SOURCE_DATE_EPOCH" "$LC_ALL" "$TZ"
+          output_root="$RUNNER_TEMP/phx-esp32-${{ matrix.esp32_core }}"
+          build_dir="$output_root/build"
+          first_output_dir="$output_root/first"
+          second_output_dir="$output_root/second"
+          sketch_dir="hardware-source/experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32"
+          mkdir -p "$output_root" "$build_dir" "$first_output_dir" "$second_output_dir"
+
+          preserve_elf() {
+            local output_dir="$1"
+            local destination="$output_dir/BlazePwifiVendo32.ino.elf"
+            local source=""
+            source="$(find "$build_dir" -type f -name 'BlazePwifiVendo32.ino.elf' -print -quit)"
+            if [ -z "$source" ]; then
+              source="$(find "$output_dir" -type f -name 'BlazePwifiVendo32.ino.elf' -print -quit)"
+            fi
+            if [ -z "$source" ]; then
+              printf 'PHX-ESP32-ELF-RED: expected build ELF was not found in %s or %s\n' "$build_dir" "$output_dir" >&2
+              return 1
+            fi
+            if [ "$source" != "$destination" ]; then
+              cp -- "$source" "$destination"
+            fi
+            test -s "$destination"
+            printf 'PHX-ESP32-ELF-PRESERVED: %s\n' "$destination"
+          }
+
+          arduino-cli compile --clean --fqbn esp32:esp32:esp32 --build-path "$build_dir" --output-dir "$first_output_dir" "$sketch_dir"
+          python3 .github/scripts/verify_esp32_application_image.py --output-dir "$first_output_dir" --sketch-name "BlazePwifiVendo32"
+          preserve_elf "$first_output_dir"
+
+          arduino-cli compile --clean --fqbn esp32:esp32:esp32 --build-path "$build_dir" --output-dir "$second_output_dir" "$sketch_dir"
+          python3 .github/scripts/verify_esp32_application_image.py --output-dir "$second_output_dir" --sketch-name "BlazePwifiVendo32"
+          preserve_elf "$second_output_dir"
+
+          run_elf_mapping() {
+            local toolchain_root="$HOME/.arduino15/packages/esp32/tools/esp-x32"
+            local -a toolchain_versions=()
+            mapfile -t toolchain_versions < <(
+              find "$toolchain_root" -mindepth 1 -maxdepth 1 -type d -print | sort
+            )
+            if [ "${#toolchain_versions[@]}" -ne 1 ]; then
+              printf 'PHX-ESP32-ELF-MAP-RED: expected one installed esp-x32 package version, found %s\n' "${#toolchain_versions[@]}" >&2
+              return 1
+            fi
+
+            local toolchain_version="${toolchain_versions[0]##*/}"
+            case "${{ matrix.esp32_core }}:$toolchain_version" in
+              "3.3.13:2610"|"4.0.0:2512") ;;
+              *)
+                printf 'PHX-ESP32-ELF-MAP-RED: unexpected core/toolchain pair core=%s esp-x32=%s\n' "${{ matrix.esp32_core }}" "$toolchain_version" >&2
+                return 1
+                ;;
+            esac
+
+            local compiler_path="${toolchain_versions[0]}/bin"
+            local compiler_binary="$compiler_path/xtensa-esp32-elf-gcc"
+            local objdump_path="$compiler_path/xtensa-esp32-elf-objdump"
+            local nm_path="$compiler_path/xtensa-esp32-elf-nm"
+            if [ ! -x "$compiler_binary" ] || [ ! -x "$objdump_path" ] || [ ! -x "$nm_path" ]; then
+              printf 'PHX-ESP32-ELF-MAP-RED: pinned esp-x32 compiler/objdump/nm missing compiler=%s objdump=%s nm=%s\n' "$compiler_binary" "$objdump_path" "$nm_path" >&2
+              return 1
+            fi
+            printf 'PHX-ESP32-TOOLCHAIN: core=%s esp-x32=%s compiler=%s objdump=%s nm=%s\n' "${{ matrix.esp32_core }}" "$toolchain_version" "$compiler_binary" "$objdump_path" "$nm_path"
+            "$objdump_path" --version | sed -n '1p'
+            "$nm_path" --version | sed -n '1p'
+            local first_elf="$first_output_dir/BlazePwifiVendo32.ino.elf"
+            local second_elf="$second_output_dir/BlazePwifiVendo32.ino.elf"
+            "$objdump_path" -h "$first_elf" > "$first_output_dir/elf-sections.txt" || return 1
+            "$objdump_path" -h "$second_elf" > "$second_output_dir/elf-sections.txt" || return 1
+            "$nm_path" --format=posix --print-size --numeric-sort --defined-only "$first_elf" > "$first_output_dir/elf-symbols.txt" || return 1
+            awk 'NR == 1 { first_kind = ($1 ~ /^(0[xX])?[0-9a-fA-F]+$/ ? "HEX" : "NAME"); printf "PHX-ESP32-ELF-NM-SHAPE: fields=%d first=%s token2=%s token3=%s token4=%s\\n", NF, first_kind, $2, $3, $4; exit }' "$first_output_dir/elf-symbols.txt"
+            "$nm_path" --format=posix --print-size --numeric-sort --defined-only "$second_elf" > "$second_output_dir/elf-symbols.txt" || return 1
+
+            local -a addresses=(
+              --address app_elf_sha_first=0x3f4000b0
+              --address app_elf_sha_last=0x3f4000cf
+            )
+            local -a symbol_addresses=()
+            if [ "${{ matrix.esp32_core }}" = "3.3.13" ]; then
+              addresses+=(
+                --address segment0_diff_9670=0x3f4025c6
+                --address segment0_diff_9671=0x3f4025c7
+              )
+              symbol_addresses=(
+                --address segment0_diff_9670=0x3f4025c6
+                --address segment0_diff_9671=0x3f4025c7
+              )
+            else
+              addresses+=(
+                --address segment0_diff_9714=0x3f4025f2
+                --address segment0_diff_9716=0x3f4025f4
+                --address segment0_diff_9717=0x3f4025f5
+              )
+              symbol_addresses=(
+                --address segment0_diff_9714=0x3f4025f2
+                --address segment0_diff_9716=0x3f4025f4
+                --address segment0_diff_9717=0x3f4025f5
+              )
+            fi
+
+            printf 'PHX-ESP32-ELF-SECTION-MAP: core=%s objdump=%s\n' "${{ matrix.esp32_core }}" "$objdump_path"
+            python3 .github/scripts/inspect_esp32_elf_sections.py --objdump-output "$first_output_dir/elf-sections.txt" "${addresses[@]}" || return 1
+            python3 .github/scripts/inspect_esp32_elf_sections.py --objdump-output "$second_output_dir/elf-sections.txt" "${addresses[@]}" || return 1
+
+            printf 'PHX-ESP32-ELF-SYMBOL-MAP: core=%s nm=%s section=.flash.rodata\n' "${{ matrix.esp32_core }}" "$nm_path"
+            python3 .github/scripts/inspect_esp32_elf_symbols.py --nm-output "$first_output_dir/elf-symbols.txt" --objdump-output "$first_output_dir/elf-sections.txt" --section ".flash.rodata" "${symbol_addresses[@]}" || return 1
+            python3 .github/scripts/inspect_esp32_elf_symbols.py --nm-output "$second_output_dir/elf-symbols.txt" --objdump-output "$second_output_dir/elf-sections.txt" --section ".flash.rodata" "${symbol_addresses[@]}" || return 1
+            python3 .github/scripts/compare_esp32_elf_sections.py \
+              --first-elf "$first_elf" \
+              --second-elf "$second_elf" \
+              --first-objdump "$first_output_dir/elf-sections.txt" \
+              --second-objdump "$second_output_dir/elf-sections.txt" \
+              --section ".flash.appdesc" \
+              --section ".flash.rodata" || return 1
+          }
+
+          mapping_status=0
+          set +e
+          run_elf_mapping
+          mapping_status=$?
+          set -e
+
+          comparison_status=0
+          set +e
+          python3 .github/scripts/verify_esp32_reproducible_build.py --first "$first_output_dir/BlazePwifiVendo32.ino.bin" --second "$second_output_dir/BlazePwifiVendo32.ino.bin" --sketch-name "BlazePwifiVendo32"
+          comparison_status=$?
+          set -e
+
+          if [ "$mapping_status" -ne 0 ]; then
+            exit "$mapping_status"
+          fi
+          exit "$comparison_status"

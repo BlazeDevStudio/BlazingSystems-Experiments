@@ -22,13 +22,14 @@ concurrency:
 
 jobs:
   sign:
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && github.ref_protected == true && vars.BLAZERENTAL_PRODUCTION_SIGNING_APPROVED == 'true'
     runs-on: ubuntu-22.04
     timeout-minutes: 30
     env:
       GH_TOKEN: ${{ github.token }}
       EXPECTED_FP: "1A:18:D5:8E:1F:95:55:96:89:10:20:71:F5:6C:93:E9:B9:D2:EA:6B:E4:0E:6F:20:70:06:C9:89:62:A1:6A:25"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ inputs.candidate_sha }}
 
@@ -44,6 +45,9 @@ jobs:
           test "$(cat experiment/openwrt/BlazePwifi/VERSION)" = 0.5.3
           B="$(gh api "repos/${{ github.repository }}/actions/runs/$RUN_ID")"
           test "$(printf '%s' "$B" | jq -r .conclusion)" = success
+          test "$(printf '%s' "$B" | jq -r .path)" = ".github/workflows/blazepwifi-build.yml"
+          test "$(printf '%s' "$B" | jq -r .event)" = "push"
+          test "$(printf '%s' "$B" | jq -r .head_branch)" = "main"
           test "$(printf '%s' "$B" | jq -r .head_sha)" = "$SHA"
           mkdir -p candidate/gate candidate/android
           gh run download "$RUN_ID" --repo "${{ github.repository }}" --name BlazePwifi-current-candidate-gate --dir candidate/gate
@@ -54,7 +58,7 @@ jobs:
           test "$(jq -r .release "$GATE")" = 0.5.3
           test "$(jq -r .commit "$GATE")" = "$SHA"
 
-      - uses: actions/setup-java@v5
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
         with:
           distribution: temurin
           java-version: '17'
@@ -140,7 +144,7 @@ jobs:
           rm -f "$OUT/current-aligned.apk" "$OUT/rescue-aligned.apk"
           (cd "$OUT" && sha256sum * > SHA256SUMS)
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: BlazeRental-v0.5.3-production-signed
           path: ${{ runner.temp }}/v053-signed/

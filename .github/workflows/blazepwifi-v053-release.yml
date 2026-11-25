@@ -22,7 +22,7 @@ on:
         type: boolean
 
 permissions:
-  contents: write
+  contents: read
   actions: read
 
 concurrency:
@@ -33,11 +33,14 @@ jobs:
   stage:
     runs-on: ubuntu-22.04
     timeout-minutes: 45
+    permissions:
+      contents: read
+      actions: read
     env:
       GH_TOKEN: ${{ github.token }}
       EXPECTED_FP: "1A:18:D5:8E:1F:95:55:96:89:10:20:71:F5:6C:93:E9:B9:D2:EA:6B:E4:0E:6F:20:70:06:C9:89:62:A1:6A:25"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ inputs.candidate_sha }}
 
@@ -56,8 +59,15 @@ jobs:
           B="$(gh api "repos/${{ github.repository }}/actions/runs/$BUILD_RUN")"
           S="$(gh api "repos/${{ github.repository }}/actions/runs/$SIGN_RUN")"
           test "$(printf '%s' "$B" | jq -r .conclusion)" = success
+          test "$(printf '%s' "$B" | jq -r .path)" = ".github/workflows/blazepwifi-build.yml"
+          test "$(printf '%s' "$B" | jq -r .event)" = "push"
+          test "$(printf '%s' "$B" | jq -r .head_branch)" = "main"
           test "$(printf '%s' "$B" | jq -r .head_sha)" = "$SHA"
           test "$(printf '%s' "$S" | jq -r .conclusion)" = success
+          test "$(printf '%s' "$S" | jq -r .path)" = ".github/workflows/blazerental-v053-lineage2-sign.yml"
+          test "$(printf '%s' "$S" | jq -r .event)" = "workflow_dispatch"
+          test "$(printf '%s' "$S" | jq -r .head_branch)" = "main"
+          test "$(printf '%s' "$S" | jq -r .head_sha)" = "$GITHUB_SHA"
 
       - name: Download exact build and signed artifacts
         shell: bash
@@ -148,12 +158,16 @@ jobs:
           test "$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["android.app.extra.PROVISIONING_ADMIN_EXTRAS_BUNDLE"]["server_url"])' "$OUT/BlazeRental-provisioning-SAMPLE.json")" = "https://192.168.1.1:8443"
           test "$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["android.app.extra.PROVISIONING_ADMIN_EXTRAS_BUNDLE"]["server_cert_sha256"])' "$OUT/BlazeRental-provisioning-SAMPLE.json")" = "0000000000000000000000000000000000000000000000000000000000000000"
 
-          find artifacts/build -type f \( -name "*.bin" -o -name "*.img" -o -name "*.img.gz" -o -name "*.tar.gz" -o -name "*.ino" \) -print0 | while IFS= read -r -d "" f; do
+          find artifacts/build -type f \( -name "*.bin" -o -name "*.img" -o -name "*.img.gz" -o -name "*.tar.gz" -o -name "*.ino" \) -print0 | sort -z | while IFS= read -r -d "" f; do
             base="$(basename "$f")"
             dest="$OUT/$base"
             if [ -e "$dest" ]; then
               parent="$(basename "$(dirname "$f")" | tr " /" "--")"
               dest="$OUT/${parent}-${base}"
+            fi
+            if [ -e "$dest" ] || [ -L "$dest" ]; then
+              echo "RELEASE-BLOCKED: artifact filename collision after parent disambiguation: $dest (source=$f)" >&2
+              exit 1
             fi
             cp "$f" "$dest"
           done
@@ -164,33 +178,100 @@ jobs:
           jq -n --arg release "0.5.3" --arg sha "$SHA" --arg build "$BUILD_RUN" --arg sign "$SIGN_RUN" --arg fingerprint "$EXPECTED_FP"             '{release:$release,commit:$sha,build_run_id:$build,signing_run_id:$sign,candidate_gate:"passed",production_signed:true,certificate_lineage:"BlazeRental-production-lineage2",signing_fingerprint:$fingerprint,android_package:"com.blazesystems.blazerental",version_code:50300,rollback_rescue:"0.5.2-rescue-for-0.5.3",rollback_version_code:50301,binding_qr_tool:"BlazeRental-Binding-QR.html",device_owner_qr_tool:"BlazeRental-DeviceOwner-Provisioning-QR.html",provisioning_from_signed_apk:true}'             > "$OUT/RELEASE-MANIFEST.json"
           (cd "$OUT" && find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS)
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: BlazePwifi-v0.5.3-release-stage
           path: release-out/
           retention-days: 90
           if-no-files-found: error
 
-      - name: Publish production v0.5.3
-        if: inputs.publish == true
+  publish:
+    needs: stage
+    if: inputs.publish == true && github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && github.ref_protected == true && vars.BLAZEPWIFI_PRODUCTION_RELEASE_APPROVED == 'true'
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SHA: ${{ inputs.candidate_sha }}
+      SIGN_RUN: ${{ inputs.signing_run_id }}
+    steps:
+      - name: Download and verify staged release artifact
         shell: bash
-        env:
-          SHA: ${{ inputs.candidate_sha }}
+        run: |
+          set -euo pipefail
+          mkdir -p release-out
+          gh run download "$GITHUB_RUN_ID" --repo "$GITHUB_REPOSITORY" --name BlazePwifi-v0.5.3-release-stage --dir release-out
+          test -s release-out/SHA256SUMS
+          (cd release-out && sha256sum -c SHA256SUMS)
+          test "$(jq -r .commit release-out/RELEASE-MANIFEST.json)" = "$SHA"
+          test "$(jq -r .signing_run_id release-out/RELEASE-MANIFEST.json)" = "$SIGN_RUN"
+          test "$(jq -r .candidate_gate release-out/RELEASE-MANIFEST.json)" = passed
+          test "$(jq -r .production_signed release-out/RELEASE-MANIFEST.json)" = true
+          test "$(jq -r .status release-out/CANDIDATE-GATE.json)" = passed
+          test "$(jq -r .commit release-out/CANDIDATE-GATE.json)" = "$SHA"
+          test -s release-out/README.md
+
+      - name: Publish production v0.5.3
+        shell: bash
         run: |
           set -euo pipefail
           TAG=v0.5.3
-          NOTES=experiment/openwrt/BlazePwifi/releases/0.5.3/README.md
-          if gh release view "$TAG" --repo "${{ github.repository }}" >/dev/null 2>&1; then
-            R="$(gh api "repos/${{ github.repository }}/releases/tags/$TAG")"
-            test "$(printf '%s' "$R" | jq -r .target_commitish)" = "$SHA"
-            gh release edit "$TAG" --repo "${{ github.repository }}" --target "$SHA"               --title "BlazePwifi v0.5.3 — Rental Hardening, Remote Operations & Central Members"               --notes-file "$NOTES" --prerelease=false
-          else
-            gh release create "$TAG" --repo "${{ github.repository }}" --target "$SHA"               --title "BlazePwifi v0.5.3 — Rental Hardening, Remote Operations & Central Members"               --notes-file "$NOTES" --latest
+          NOTES=release-out/README.md
+          # Confirm repository visibility before interpreting any 404 as absence.
+          gh api "repos/$GITHUB_REPOSITORY" >/dev/null
+
+          # A release tag is a one-time immutable identity. Only one exact HTTP 404
+          # permits first publication; existing tags, auth/network errors, redirects,
+          # and ambiguous responses fail closed.
+          set +e
+          TAG_LOOKUP_OUTPUT="$(gh api -i "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" 2>&1)"
+          TAG_LOOKUP_EXIT=$?
+          set -e
+          TAG_HTTP_STATUSES="$(printf '%s\n' "$TAG_LOOKUP_OUTPUT" | sed -nE 's/^HTTP\/[0-9.]+ ([0-9]{3})([[:space:]].*)?$/\1/p')"
+          TAG_HTTP_COUNT="$(printf '%s\n' "$TAG_HTTP_STATUSES" | awk 'NF { count++ } END { print count + 0 }')"
+          if [ "$TAG_LOOKUP_EXIT" -eq 0 ]; then
+            echo "RELEASE-BLOCKED: v0.5.3 Git tag already exists; refusing to modify it." >&2
+            exit 1
           fi
-          find release-out -maxdepth 1 -type f -print0 | xargs -0 -r gh release upload "$TAG" --repo "${{ github.repository }}" --clobber
-          R="$(gh api "repos/${{ github.repository }}/releases/tags/$TAG")"
-          test "$(printf '%s' "$R" | jq -r .draft)" = false
+          if [ "$TAG_HTTP_COUNT" -ne 1 ] || [ "$TAG_HTTP_STATUSES" != "404" ]; then
+            echo "RELEASE-BLOCKED: cannot prove v0.5.3 tag absence; expected exactly one HTTP 404 (count=$TAG_HTTP_COUNT, status=${TAG_HTTP_STATUSES:-none}, exit=$TAG_LOOKUP_EXIT)." >&2
+            exit 1
+          fi
+
+          # A Release object may outlive a deleted tag; reject it as well.
+          set +e
+          RELEASE_LOOKUP_OUTPUT="$(gh api -i "repos/$GITHUB_REPOSITORY/releases/tags/$TAG" 2>&1)"
+          RELEASE_LOOKUP_EXIT=$?
+          set -e
+          RELEASE_HTTP_STATUSES="$(printf '%s\n' "$RELEASE_LOOKUP_OUTPUT" | sed -nE 's/^HTTP\/[0-9.]+ ([0-9]{3})([[:space:]].*)?$/\1/p')"
+          RELEASE_HTTP_COUNT="$(printf '%s\n' "$RELEASE_HTTP_STATUSES" | awk 'NF { count++ } END { print count + 0 }')"
+          if [ "$RELEASE_LOOKUP_EXIT" -eq 0 ]; then
+            echo "RELEASE-BLOCKED: v0.5.3 Release object already exists; refusing to modify it." >&2
+            exit 1
+          fi
+          if [ "$RELEASE_HTTP_COUNT" -ne 1 ] || [ "$RELEASE_HTTP_STATUSES" != "404" ]; then
+            echo "RELEASE-BLOCKED: cannot prove v0.5.3 Release absence; expected exactly one HTTP 404 (count=$RELEASE_HTTP_COUNT, status=${RELEASE_HTTP_STATUSES:-none}, exit=$RELEASE_LOOKUP_EXIT)." >&2
+            exit 1
+          fi
+
+          # Create a draft only after proving both the tag and Release object are absent.
+          gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --target "$SHA" --title "BlazePwifi v0.5.3 — Rental Hardening, Remote Operations & Central Members" --notes-file "$NOTES" --draft
+          find release-out -maxdepth 1 -type f -print0 | xargs -0 -r gh release upload "$TAG" --repo "$GITHUB_REPOSITORY"
+          R="$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG")"
+          RELEASE_ID="$(printf '%s' "$R" | jq -r .id)"
+          test -n "$RELEASE_ID" && test "$RELEASE_ID" != "null"
+          test "$(printf '%s' "$R" | jq -r .target_commitish)" = "$SHA"
+          test "$(printf '%s' "$R" | jq -r .draft)" = true
           test "$(printf '%s' "$R" | jq -r .prerelease)" = false
           for asset in BlazeRental.apk BlazeRental-v0.5.2-rescue-for-v0.5.3.apk BlazeRental-Binding-QR.html BlazeRental-DeviceOwner-Provisioning-QR.html BlazeRental-provisioning-SAMPLE.json RELEASE-MANIFEST.json CANDIDATE-GATE.json SHA256SUMS; do
-            printf '%s' "$R" | jq -e --arg a "$asset" '.assets[] | select(.name==$a)' >/dev/null
+            printf '%s' "$R" | jq -e --arg a "$asset" '.assets[] | select(.name==$a and .state=="uploaded" and .size>0)' >/dev/null
           done
+          gh api --method PATCH "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" -F draft=false -F prerelease=false -F make_latest=true
+          R="$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG")"
+          test "$(printf '%s' "$R" | jq -r .id)" = "$RELEASE_ID"
+          test "$(printf '%s' "$R" | jq -r .target_commitish)" = "$SHA"
+          test "$(printf '%s' "$R" | jq -r .draft)" = false
+          test "$(printf '%s' "$R" | jq -r .prerelease)" = false
