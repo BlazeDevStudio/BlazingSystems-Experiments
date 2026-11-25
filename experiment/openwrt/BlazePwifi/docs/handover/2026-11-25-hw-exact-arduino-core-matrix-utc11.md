@@ -78,3 +78,27 @@ No production sketch behavior changed. No coin/relay admission, poll signature, 
 3. PHX-QA independently reconciles the full-validation assertion without weakening deny-default.
 4. Next PHX-HARDWARE activation revalidates branch heads and chooses one new Hardware-owned task; the volatile ISR increment warning is a candidate only after checking race/rollover coverage.
 5. Physical coin/relay/electrical recovery, LittleFS/EEPROM power-loss, 150 controlled power cuts and 30-device/24-hour soak remain NOT TESTED.
+
+
+## UTC15 follow-up — ISR IRAM attribute cleanup
+
+Source/test HEAD: `bb519e6a2129f79723b9f7fb5903b4443149fcd0`. PR #352 remains OPEN / DRAFT / UNMERGED, stacked on #349 at `2a5c997add4f49fcd74f753101d3a9daac0040bf`.
+
+The pinned ESP8266 core 3.1.2 baseline warned: `Use IRAM_ATTR in place of ICACHE_RAM_ATTR to move functions into IRAM` ([#45636378388](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45636378388), job `139282821711`). Both sketches now use `IRAM_ATTR` for both conditional ISR definitions. IRAM placement is preserved; ISR logic and coin sequence arithmetic are unchanged.
+
+Test-first: guard commit [`236650a7`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/236650a78a2334abd8f7290ce1ce75a44013f305); RED [Relay #45647551685](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45647551685), job `139322538860`. Source commits: ESP8266 [`15e46f67`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/15e46f67f8ddc8aa3d8fe8d4ffa8736540e8afdf), ESP32 parity [`7db52843`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/7db52843760deaf82fd61ae2b31a117a61d49384), regression injection [`bb519e6a`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/bb519e6a2129f79723b9f7fb5903b4443149fcd0).
+
+Exact final-head CI:
+- Quarantine #45647993474 / job `139324111900`: PASS.
+- Relay #45647993495 / jobs `139324111495`, `139324111984`: PASS / PASS.
+- ESP8266 core 3.1.2 #45647993389 / job `139325441149`: PASS.
+- ESP32 cores 3.3.13 / 4.0.0 #45647993395 / jobs `139324111769`, `139324112411`: PASS / PASS.
+- Full #45647993676 / validation job `139324173309`: FAIL at inherited `Missing poll signature check`; 14 build jobs PASS, 12 downstream jobs SKIPPED.
+
+Focused logs: poll safety parity 19/19; synthetic deprecated-attribute mutation rejected on both boards; coin pulse capture 18/18 on both boards. Final exact core logs contain no deprecated ISR attribute warning.
+
+Binary SHA-256: ESP8266 core 3.1.2, 363728 bytes, `cad045f77cbc9b1384d6bf10b40b10236080037c1ab015bb6a07188e59e475d5`; ESP32 core 3.3.13, 1045808 bytes, `831cc5168640cd4da03d42546047f49639cd52c21813318991bf9fd7c9bb5362`; ESP32 core 4.0.0, 1100016 bytes, `8ee176f8174ee0bccdbae6824b0f5c82cbc680951eb3c894d499aff6899dfa14`.
+
+**CI VERIFIED / SIMULATED ONLY.** Physical coin/relay/electrical acceptance, LittleFS/EEPROM power cuts, 150 cuts and 30-device/24-hour soak remain NOT TESTED. HARDWARE ACCEPTED: NO. PRODUCTION READY: NO-GO. CORE owns the authenticated register/poll contract; QA owns assertion reconciliation; Hardware will not invent a signature or weaken deny-default.
+
+Next: CORE publishes canonical register/poll/coin contract and vectors; QA reconciles Full validation; MASTER reconciles stack ancestry; Hardware re-reads live heads before its next task. No flash, device reset, live-money operation, signer provisioning, production migration, release tag, merge, force-push or deployment.
