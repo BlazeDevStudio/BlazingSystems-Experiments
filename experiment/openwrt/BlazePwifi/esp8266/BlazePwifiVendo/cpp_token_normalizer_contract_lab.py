@@ -74,6 +74,45 @@ class CppTokenNormalizerContractTests(unittest.TestCase):
             ),
         )
 
+    def test_user_defined_string_suffix_is_attached_to_literal(self):
+        compact = tokenize_cpp('return u8"payload"_tag;')
+        separated = tokenize_cpp('return u8"payload" _tag;')
+        self.assertNotEqual(compact, separated)
+        self.assertEqual(
+            compact,
+            (
+                ("identifier", "return"),
+                ("literal", 'u8"payload"_tag'),
+                ("punct", ";"),
+            ),
+        )
+
+    def test_user_defined_raw_string_suffix_is_attached_to_literal(self):
+        compact = tokenize_cpp('return R"cfg(payload)cfg"_tag;')
+        separated = tokenize_cpp('return R"cfg(payload)cfg" _tag;')
+        self.assertNotEqual(compact, separated)
+        self.assertEqual(
+            compact,
+            (
+                ("identifier", "return"),
+                ("literal", 'R"cfg(payload)cfg"_tag'),
+                ("punct", ";"),
+            ),
+        )
+
+    def test_user_defined_character_suffix_is_attached_to_literal(self):
+        compact = tokenize_cpp("return 'x'_tag;")
+        separated = tokenize_cpp("return 'x' _tag;")
+        self.assertNotEqual(compact, separated)
+        self.assertEqual(
+            compact,
+            (
+                ("identifier", "return"),
+                ("literal", "'x'_tag"),
+                ("punct", ";"),
+            ),
+        )
+
 
 if __name__ == "__main__":
     suite = unittest.defaultTestLoader.loadTestsFromTestCase(
