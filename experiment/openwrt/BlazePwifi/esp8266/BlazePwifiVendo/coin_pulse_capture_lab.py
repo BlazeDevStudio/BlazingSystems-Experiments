@@ -13,9 +13,15 @@ helpers. Host C++ uses fake GPIO/time/storage only; no physical acceptance is
 claimed.
 """
 from pathlib import Path
+import re
 from cpp_fixture_runner import run_cpp_fixture
 
-from firmware_lab_source import extract_function, extract_functions, mask_non_code
+from firmware_lab_source import (
+    extract_function,
+    extract_functions,
+    mask_active_cpp_code,
+    mask_non_code,
+)
 from coin_pulse_capture_lab_fixtures import CPP
 from coin_pulse_capture_lab_contracts import (
     FUNCTION_SPECS,
@@ -31,18 +37,38 @@ BOARDS = (
 
 
 
-def active_isr_definition_index(board):
-    if board == "ESP8266":
-        return 0
-    if board == "ESP32":
-        return 1
-    raise RuntimeError(f"unsupported board for conditional coinEdgeISR selection: {board}")
+def _condition_board_gate(source, board):
+    if board not in ("ESP8266", "ESP32"):
+        raise RuntimeError(f"unsupported board for conditional coinEdgeISR selection: {board}")
+
+    # Only rewrite the one exact board gate used by both current sketches.
+    # Padding keeps all source offsets stable for the active-code mask.
+    masked = mask_non_code(source)
+    directive = re.compile(
+        r"(?m)^[ \\t]*#[ \\t]*if[ \\t]+defined[ \\t]*\\([ \\t]*ESP8266[ \\t]*\\)[ \\t]*(?=\\r?$)"
+    )
+    matches = list(directive.finditer(masked))
+    if len(matches) != 1:
+        raise RuntimeError(
+            f"{board} expected exactly one literal #if defined(ESP8266) board gate, "
+            f"found {len(matches)}"
+        )
+
+    match = matches[0]
+    replacement = "#if 1" if board == "ESP8266" else "#if 0"
+    width = match.end() - match.start()
+    if len(replacement) > width:
+        raise RuntimeError(f"{board} board gate is too narrow for offset-preserving selection")
+    return source[:match.start()] + replacement.ljust(width) + source[match.end():]
 
 
-def extract_board_coin_edge_isr(source, board):
+def _active_board_isr_definition(source, board):
     definitions = extract_functions(source, "coinEdgeISR")
-    if len(definitions) != 2:
-        raise RuntimeError(f"{board} expected both conditional coinEdgeISR definitions, found {len(definitions)}")
+    if len(definitions) < 2:
+        raise RuntimeError(
+            f"{board} expected both conditional coinEdgeISR definitions, found {len(definitions)}"
+        )
+
     prefixes = [body.split("{", 1)[0] for _, body in definitions]
     legacy_count = sum("ICACHE_RAM_ATTR" in prefix for prefix in prefixes)
     iram_count = sum("IRAM_ATTR" in prefix for prefix in prefixes)
@@ -51,30 +77,40 @@ def extract_board_coin_edge_isr(source, board):
             f"{board} coinEdgeISR still uses deprecated ICACHE_RAM_ATTR "
             f"in {legacy_count} conditional definition(s); use IRAM_ATTR"
         )
-    if iram_count != 2:
+    if iram_count != len(definitions):
         raise RuntimeError(
-            f"{board} coinEdgeISR must use IRAM_ATTR in both conditional definitions, "
-            f"found {iram_count}"
+            f"{board} coinEdgeISR must use IRAM_ATTR in every conditional definition, "
+            f"found {iram_count} of {len(definitions)}"
         )
-    return definitions[active_isr_definition_index(board)][1]
+
+    conditioned_source = _condition_board_gate(source, board)
+    active_mask = mask_active_cpp_code(conditioned_source)
+    active = [
+        (offset, body)
+        for offset, body in definitions
+        if active_mask[offset:offset + len(body)].strip()
+    ]
+    if len(active) != 1:
+        raise RuntimeError(
+            f"{board} expected exactly one active coinEdgeISR definition, found {len(active)}"
+        )
+    return active[0]
+
+
+def extract_board_coin_edge_isr(source, board):
+    return _active_board_isr_definition(source, board)[1]
 
 
 def mutate_active_isr_attribute(source, board):
-    definitions = extract_functions(source, "coinEdgeISR")
-    if len(definitions) != 2:
-        raise RuntimeError(f"{board} expected both conditional coinEdgeISR definitions, found {len(definitions)}")
-    active_offset = definitions[active_isr_definition_index(board)][0]
-    prefix = source[:active_offset]
-    active_source = source[active_offset:]
-    mutated_active = active_source.replace(
+    active_offset, active_body = _active_board_isr_definition(source, board)
+    mutated_body = active_body.replace(
         "IRAM_ATTR coinEdgeISR",
         "ICACHE_RAM_ATTR coinEdgeISR",
         1,
     )
-    if mutated_active == active_source:
+    if mutated_body == active_body:
         raise RuntimeError(f"{board} could not inject deprecated ISR attribute into active branch")
-    return prefix + mutated_active
-
+    return source[:active_offset] + mutated_body + source[active_offset + len(active_body):]
 
 def compile_and_run(functions):
     program = CPP.replace("@@FUNCTIONS@@", "\n\n".join(functions))
