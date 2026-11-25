@@ -82,3 +82,23 @@ Protected draft pins revalidated: #239 `d83b715b116185107737fef721c2eece8feebf39
 4. **PHX-HARDWARE:** on the next activation, revalidate live branch heads and choose one new unblocked Hardware-owned task.
 
 No flash/reset, physical power interruption, live money, production migration, signer provisioning, merge, release tag or deployment occurred.
+
+
+## Post-commit live-ref reconciliation (2026-11-25 UTC10)
+
+A second live read after the source/test CI completed found the repository default branch had advanced beyond the historical pins in the current Master audit:
+
+- Experiments owner is \`BlazeDevStudio\`; current \`main\` is \`6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5\` (commit time 2026-11-25T09:29:55Z).
+- The named development line is \`blazepwifi-v0.5.3-development\` at \`aad3aade72c1156eecba1fed30907c6d0283b2c5\`; there is no branch literally named \`development\`.
+- COE main remains \`a6513ab4412b4c014eee2863e45cbe32d06cb243\`; COE #26 remains OPEN / DRAFT at \`b382d233ff06c8791b1028bed3c617cc7b670d12\`, base main \`a6513ab...\`.
+- Hardware stack pins: #239 head \`d83b715b116185107737fef721c2eece8feebf39\`; #254 head \`84c442a46ee2ee48dcbe68b71ff0f54edbc09ba9\` and its base equals #239 head. GitHub compare confirms #254 head is 17 commits ahead of the supplied #254 cleanup commit \`3692ddf889470da8a002e9a16bf0ac2f37f1a9d0\` with zero commits behind.
+- #283 head / cleanup branch \`4dd0b01bf04cf80aec6d4dd6fc93b2fdc633da30\` still uses main base \`f4e8a891...\`, while current main is \`6be5d19b...\`.
+- #340 head \`38f3e9419f37109443c806a2362577d9efc50e4d\` still declares cleanup base \`88581eef...\`, while that cleanup branch currently resolves to #283 head \`4dd0b01b...\`.
+- #347 base branch currently resolves to \`ca72497ed386c9ac4e50d3f811827bef51e296ad\`, matching its declared base; #347 head \`960184670379f01e20f0e7e8bc23b3e5eedacd3f\` matches #349's declared base.
+- Master #288 head is \`025aadaa71aadf7fc09d53e0b623356c5550fe17\`, but its base is still \`f4e8a891...\`, not current main \`6be5d19b...\`. Hardware did not retarget, rebase or merge any of these stacks.
+
+The current main CGI blob is \`2e3a1430d08cc6606429a042df3b5848f53c7267\`; exact \`register|ping\` and \`poll\` response bodies still have no \`response_sig\`. This revalidates the Full integration blocker; no producer contract was changed by Hardware.
+
+The root repository README at current main still links the old \`BlazingSystems\` organization profile/projects/labs/archives. GitHub owner and repository URLs now resolve under \`BlazeDevStudio\`; this is a Master/maintainer documentation cleanup request, not a Hardware-owned edit. The BlazePwifi README still describes a 0.3.0 production release, which must not be confused with current Phoenix production acceptance.
+
+**Coordination request:** PHX-MASTER must reconcile the stale #288/#283 main bases and #340 cleanup base, refresh the live role matrix, and decide any authorized retarget/rebase sequence. Hardware made no such change.
