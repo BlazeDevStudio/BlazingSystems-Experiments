@@ -105,8 +105,8 @@ if "CPP" not in fixture_names:
 cpp = literal_assignment(fixture_tree, "CPP")
 if not isinstance(cpp, str) or "@@FUNCTIONS@@" not in cpp:
     fail("CPP fixture lost its exact-source insertion point")
-if "COIN_PULSE_CAPTURE_PASS" not in cpp:
-    fail("CPP fixture lost the 17-scenario pass marker")
+if "COIN_PULSE_CAPTURE_PASS" not in cpp or "18/18 top-level scenarios" not in cpp:
+    fail("CPP fixture lost the 18-scenario pass marker")
 for marker in ("SIMULATED_ONLY=1", "PHYSICAL_COIN_PULSE_ACCEPTANCE=0",
                "PHYSICAL_RELAY_ACCEPTANCE=0", "PHYSICAL_POWER_CUT_ACCEPTANCE=0"):
     if marker not in runner_source:
@@ -120,8 +120,10 @@ if len({item[0] for item in specs}) != len(specs):
     fail("FUNCTION_SPECS contains duplicate helper names")
 if len({item[1] for item in specs}) != len(specs):
     fail("FUNCTION_SPECS contains duplicate signatures")
-if len(mutation_names) != 16:
-    fail("MUTATIONS must retain all 16 fail-open mutation cases")
+if len(mutation_names) != 17:
+    fail("MUTATIONS must retain all 17 fail-open mutation cases")
+if "missing-isr-sequence-increment" not in mutation_names:
+    fail("MUTATIONS must reject removal of the exact coin ISR sequence increment")
 if len(set(mutation_names)) != len(mutation_names):
     fail("MUTATIONS contains duplicate identifiers")
 if "FUNCTION_INDEX_BY_NAME" not in assigned_names(contract_tree):

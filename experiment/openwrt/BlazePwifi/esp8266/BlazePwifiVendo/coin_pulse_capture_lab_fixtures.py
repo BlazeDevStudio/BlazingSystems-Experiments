@@ -8,6 +8,8 @@ CPP = r'''#include <cstdint>
 #include <iostream>
 #include <string>
 using String=std::string;
+#define ICACHE_RAM_ATTR
+#define IRAM_ATTR
 static uint32_t fakeNow=0, lastPoll=0;
 static volatile uint32_t coinEdgeSequence=0;
 static uint32_t lastHandledCoinEdgeSequence=0;
@@ -414,6 +416,23 @@ static bool runIngressTransitionCases(){
   return true;
 }
 
+static bool runIsrSequenceWraparound(){
+  resetState();
+  coinEdgeSequence=0xFFFFFFFEUL;
+  lastHandledCoinEdgeSequence=0xFFFFFFFEUL;
+  coinEdgeISR();
+  if(snapshotCoinEdgeSequence()!=0xFFFFFFFFUL)
+    return fail("isr-sequence-did-not-wrap","first ISR edge did not advance to UINT32_MAX");
+  coinEdgeISR();
+  if(snapshotCoinEdgeSequence()!=0U)
+    return fail("isr-sequence-did-not-wrap","second ISR edge did not wrap to zero");
+  if(quarantineCoinIngressTransition())
+    return fail("isr-sequence-did-not-wrap","two wrapped unhandled ISR edges were accepted as idle");
+  if(lastHandledCoinEdgeSequence!=0U || backupEdges!=2U || markerEdges!=2U)
+    return fail("isr-sequence-did-not-wrap","wrapped ISR delta was not preserved in both fault stores");
+  return true;
+}
+
 int main(){
   int passed=0;
   if(!runDrainCapture("delayed-100ms-active-low",0U,100U,130U,0U,40U,true)) return 1;
@@ -451,6 +470,8 @@ int main(){
   ++passed;
   if(!runIngressTransitionCases()) return 16;
   ++passed;
-  std::cout<<"COIN_PULSE_CAPTURE_PASS "<<passed<<"/17 top-level scenarios\n";
+  if(!runIsrSequenceWraparound()) return 18;
+  ++passed;
+  std::cout<<"COIN_PULSE_CAPTURE_PASS "<<passed<<"/18 top-level scenarios\n";
   return 0;
 }'''

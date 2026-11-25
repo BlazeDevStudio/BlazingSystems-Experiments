@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""PHX-HARDWARE exact-source coin pulse, bounded-batch overflow, target-drift, post-finalization and ISR-unobserved edge safety lab.
+"""PHX-HARDWARE exact-source coin pulse, ISR counter rollover, bounded-batch overflow, target-drift, post-finalization and ISR-unobserved edge safety lab.
 
 Compiles production coinLineIdle(), canStartPoll(), applyOutputs(),
 coinLineQuietAfterInhibit(), beginPollWindow(), latchPollPulseFault(),
@@ -15,7 +15,7 @@ claimed.
 from pathlib import Path
 from cpp_fixture_runner import run_cpp_fixture
 
-from firmware_lab_source import extract_function, mask_non_code
+from firmware_lab_source import extract_function, extract_functions, mask_non_code
 from coin_pulse_capture_lab_fixtures import CPP
 from coin_pulse_capture_lab_contracts import (
     FUNCTION_SPECS,
@@ -29,6 +29,26 @@ BOARDS = (
     ("ESP32", ROOT / "esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino"),
 )
 
+
+
+def extract_board_coin_edge_isr(source, board):
+    definitions = extract_functions(source, "coinEdgeISR")
+    if len(definitions) != 2:
+        raise RuntimeError(f"{board} expected both conditional coinEdgeISR definitions, found {len(definitions)}")
+    attributes = {
+        "ICACHE_RAM_ATTR": [
+            body for _, body in definitions
+            if "ICACHE_RAM_ATTR" in body.split("{", 1)[0]
+        ],
+        "IRAM_ATTR": [
+            body for _, body in definitions
+            if "IRAM_ATTR" in body.split("{", 1)[0]
+        ],
+    }
+    if len(attributes["ICACHE_RAM_ATTR"]) != 1 or len(attributes["IRAM_ATTR"]) != 1:
+        raise RuntimeError(f"{board} coinEdgeISR must have exactly one ICACHE_RAM_ATTR and one IRAM_ATTR definition")
+    expected = "ICACHE_RAM_ATTR" if board == "ESP8266" else "IRAM_ATTR"
+    return attributes[expected][0]
 
 
 def compile_and_run(functions):
@@ -140,16 +160,17 @@ def main():
                 functions.append(body)
             if len(functions) != len(FUNCTION_SPECS):
                 continue
+            functions.append(extract_board_coin_edge_isr(source, board))
             result = compile_and_run(functions)
             if result.returncode:
                 failures.append(f"{board} exact-source failure: {result.stderr or result.stdout}")
                 continue
-            if "COIN_PULSE_CAPTURE_PASS 17/17" not in result.stdout:
+            if "COIN_PULSE_CAPTURE_PASS 18/18" not in result.stdout:
                 failures.append(f"{board} missing pass marker: {result.stdout}")
                 continue
-            print(f"{board}_COIN_PULSE_CAPTURE_PASS 17/17")
+            print(f"{board}_COIN_PULSE_CAPTURE_PASS 18/18")
             for name, helper_name, old, new, expected in MUTATIONS:
-                index = FUNCTION_INDEX_BY_NAME.get(helper_name)
+                index = (len(functions) - 1) if helper_name == "coinEdgeISR" else FUNCTION_INDEX_BY_NAME.get(helper_name)
                 if index is None:
                     failures.append(f"{board} mutation references unknown helper {helper_name}")
                     break
