@@ -13,6 +13,7 @@ HERE = Path(__file__).resolve().parent
 RUNNER = HERE / "coin_pulse_capture_lab.py"
 FIXTURES = HERE / "coin_pulse_capture_lab_fixtures.py"
 CONTRACTS = HERE / "coin_pulse_capture_lab_contracts.py"
+ISR_SELECTOR = HERE / "coin_pulse_capture_lab_isr.py"
 
 
 def fail(message: str) -> None:
@@ -89,6 +90,7 @@ def tuple_first_strings(tree: ast.Module, name: str) -> list[str]:
 runner_source, runner_tree = parse(RUNNER)
 fixture_source, fixture_tree = parse(FIXTURES)
 contract_source, contract_tree = parse(CONTRACTS)
+isr_selector_source, isr_selector_tree = parse(ISR_SELECTOR)
 
 if imported_from(runner_tree, "coin_pulse_capture_lab_fixtures") != {"CPP"}:
     fail("runner must import only CPP from the fixture module")
