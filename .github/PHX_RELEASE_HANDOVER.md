@@ -4223,3 +4223,66 @@ Protected signer and independent freshness witness, durable financial accounting
 - Windows PR [#45553387773](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45553387773): **FAILURE** at the same shared CORE-owned handover freshness gate; Windows build and publisher skipped.
 - Exact-source CI-0701 job `138999589027` in Full run #45553387564: **PASS**; logs include `PHX-RELEASE-HANDOVER-ANCHOR-PASS` and `PHX-RELEASE-ESP32-COMPAT-PASS`.
 - Evidence is hosted CI only. No hardware was flashed, no production signing or publishing occurred, and no physical acceptance is implied.
+
+
+## PHX-RELEASE UTC06 2026-11-25 — ESP32 comparator descriptor cleanup error precedence
+
+**Disposition:** RELEASE-owned source/test correction committed at `ea8e66b9a7a2833656af984630909575fe4a1759`. The exact-source provenance regression job passed; the ESP32 3.3.13 / 4.0.0 compatibility jobs were still running at the last job read. Integrated build remains blocked by CORE-owned canonical handover freshness. PR #291 remains OPEN / DRAFT / UNMERGED. **PRODUCTION NO-GO.** No signing, tag, release, merge, hardware flash, payment migration or customer deployment occurred.
+
+### Live refs and ownership
+
+- Repository: `BlazeDevStudio/BlazingSystems-Experiments`.
+- PR #291 branch: `phoenix/release-publisher-isolation-20261115`.
+- Starting head for this increment: `afb421f22f0e403c886874e0846db954b70fb894`.
+- Source/test head at final source correction: `ea8e66b9a7a2833656af984630909575fe4a1759`.
+- PR #291 base / PR #242 head: `734b89d9e7792247e8376335c3f3685500ab3f89`.
+- PR #291 remains OPEN / DRAFT / UNMERGED; its accumulated diff has 31 paths (26 under .github/, 3 inherited BlazePwifi/CORE paths, 2 inherited PISONET paths). This increment changed only RELEASE-owned .github paths; no inherited CORE or PISONET path was edited.
+- MASTER PR #288 head: `dd63d11f34c168e8eaf2e5a533c589853203ae11`; ownership manifest blob `e4db324315a1b3543fec17a148fbf960170fcb29`; 11 routes; `DRAFT_REVIEW_ONLY`. PHX-RELEASE's route remains `reimplementation-review` from `.github/workflows/blazepwifi-build.yml` toward `.github/workflows/pisowifi-ci.yml`; this is not migration or merge authority.
+- PR #242 remains OPEN / DRAFT at `734b89d9e7792247e8376335c3f3685500ab3f89`.
+- Cleanup-first #266 remains OPEN, 0/7 tracks complete.
+- COE #26 remains OPEN / DRAFT / FROZEN at `b382d233ff06c8791b1028bed3c617cc7b670d12`; five workflows remain queued with zero executed jobs.
+- COE #31 remains OPEN / DRAFT at `59ed44d0b911e176f1a95b9cf5585ef811ffd31b`.
+- COE child #35 remains OPEN / DRAFT at `f611c96091a1014ad36bf64251c180bcbc2d1f65`.
+- The private Drive project registry v11 was not recovered through authorized Library retrieval. Older Library snapshots are not accepted as v11 and were not used; no private registry contents or identifiers were copied into GitHub.
+
+### Defect and bounded correction
+
+`.github/scripts/verify_esp32_reproducible_build.py::compare_application_images()` used nested `finally` blocks for the second and first image descriptors. Although both close attempts were reached, a close error from the first `finally` could replace the original comparison/read exception, and a later close error could replace an earlier cleanup error. The verifier therefore lost the most useful failure cause when multiple cleanup failures occurred.
+
+The new `_close_descriptors_preserving_primary()` helper attempts each owned descriptor exactly once, records all cleanup failures on an active primary exception, and otherwise raises the first cleanup failure with later cleanup errors attached as notes. It does not retry raw descriptor closes, avoiding unsafe close/reuse behavior. Synthetic tests use temporary files and injected read/close failures only; no firmware or hardware was exercised.
+
+### Test-first and source commits
+
+- Dedicated synthetic regression tests: [`92bbd759`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/92bbd7593f4fdfb61c71b8004e7edfb7e73708a3) added `.github/scripts/test_verify_esp32_reproducible_build.py`.
+- CI wiring: [`cd92be7a`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/cd92be7ac6a7fa77572fd750d147e92cc30dc15e) added the test to the read-only ESP32 compatibility provenance job and both push / pull_request path filters.
+- Test-first expected RED: [compatibility run #45559219698](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45559219698), provenance job `139018595077`, failed both new assertions as expected: the original read error was replaced by cleanup failure 1/2, and cleanup failure 1 was replaced by cleanup failure 2. Both ESP32 core jobs in that RED run completed successfully; overall workflow conclusion was FAILURE because the provenance job was intentionally red.
+- Source correction: [`22004961`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/2200496101662cf766f5d8a2e79cc331ee229ee6).
+- Diagnostic fallback newline correction: [`ea8e66b9`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/ea8e66b9a7a2833656af984630909575fe4a1759).
+
+Only these RELEASE-owned paths changed for this increment:
+- `.github/scripts/test_verify_esp32_reproducible_build.py`
+- `.github/scripts/verify_esp32_reproducible_build.py`
+- `.github/workflows/phx-release-esp32-core-compatibility.yml`
+
+### Exact-source GitHub Actions
+
+- Source-fix compatibility run [#45559391094](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45559391094), exact source/test head `ea8e66b9`: provenance job `139019878178` **PASS**. It ran the new two-case descriptor cleanup suite, provenance admission tests, Arduino CLI archive tests, release workflow/publisher isolation tests, and immutable action-pin checks. Both ESP32 core build jobs (3.3.13 and 4.0.0) were **IN PROGRESS** at the last job read; no 3/3 matrix success is claimed yet.
+- Test-first RED run #45559219698: provenance **FAIL** as expected; both ESP32 core jobs **PASS**; overall run **FAILURE** due the deliberate test-first RED.
+- Full BlazePwifi build [#45559391227](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45559391227), source/test head `ea8e66b9`: CI-0701 docs-only proof **PASS**; mandatory `validate` **FAIL** at CORE-owned `experiment/openwrt/BlazePwifi/docs/handover/CURRENT_STATE.md`, last checkpoint `d85eb6a2766781b6cac1807cef461993d8216b84`. Thirteen target/platform jobs had passed and Android was still in progress at last read; update/simulation/signing/publication stages were skipped. This is not a full-build pass.
+- Windows [#45559391122](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45559391122): handover gate **FAIL** at the same CORE-owned checkpoint; Windows build and publisher **SKIPPED**.
+- The earlier current-head compatibility run [#45556922090](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45556922090) passed 3/3 before this increment; it is baseline evidence, not a substitute for the still-running post-fix matrix.
+
+### COE release-packager evidence and next owners
+
+- COE #35 shared contracts run [#45541598251](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45541598251): 10/10 appliance profiles **FAIL CLOSED** because no approved site-scoped RFC 4193 ULA /48 authority exists. Case-collision [#45541598250](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45541598250) **PASS**.
+- COE #35 sandbox [#45541598267](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45541598267): host preflight 40/40 **PASS**, then Bubblewrap unavailable, exit 125; namespace and sandbox packaging not run.
+- COE #31 parent shared contracts [#44222517238](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44222517238) and case guard [#44222517258](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44222517258) **PASS**; mandatory sandbox [#44222517263](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44222517263) **FAIL** at missing Bubblewrap / exit 125.
+- **PHX-RELEASE:** inspect terminal result of #45559391094 before claiming the dual-core matrix; then update this entry if a docs-head successor is run.
+- **PHX-CORE:** refresh canonical `CURRENT_STATE.md` / freshness record and publish its exact SHA. RELEASE will not edit or bypass it.
+- **PHX-MASTER:** refresh #291 child pointer to the final docs head and retain the `reimplementation-review` route; no migration or merge is implied.
+- **PHX-QA:** independently review the new synthetic descriptor-close regressions and source correction.
+- **PHX-INFRA / COE owners:** provide an authorized Bubblewrap-capable disposable runner; the integration sandbox remains fail-closed.
+- **Network authority owner / MASTER:** provide approved site-scoped ULA /48; RELEASE will not invent a prefix.
+- **Registry custodian:** restore authorized access to private Drive registry v11.
+
+No merge, workflow dispatch, signing, tag, release, publication, hardware flash, real payment migration or customer deployment. Hosted CI and synthetic tests are not physical acceptance. Protected signer, independent freshness witness, durable accounting/migration, independent QA/Master approval, approved production binaries, 150 physical power cuts and 30-device/24-hour soak remain unestablished or NOT TESTED. **PRODUCTION NO-GO.**
