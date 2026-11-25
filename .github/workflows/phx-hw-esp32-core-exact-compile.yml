@@ -1,0 +1,86 @@
+name: PHX-HARDWARE ESP32 Arduino core exact-source compile
+
+on:
+  push:
+    branches:
+      - phoenix/hw-exact-arduino-core-matrix-20261125-utc11
+    paths:
+      - 'experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino'
+      - 'experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/mbedtls_compat_guard_lab.py'
+      - 'experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/esp32_boot_polarity_lab.py'
+      - '.github/workflows/phx-hw-esp32-core-exact-compile.yml'
+  pull_request:
+    branches:
+      - phoenix/hw-json-array-primitive-guard-20261124-utc00
+    paths:
+      - 'experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino'
+      - 'experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/mbedtls_compat_guard_lab.py'
+      - 'experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/esp32_boot_polarity_lab.py'
+      - '.github/workflows/phx-hw-esp32-core-exact-compile.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: phx-hw-esp32-core-exact-${{ github.ref }}-${{ matrix.core_version }}
+  cancel-in-progress: false
+
+jobs:
+  exact-source-core-matrix:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        core_version:
+          - "3.3.13"
+          - "4.0.0"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Verify exact source checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected="${{ github.event.pull_request.head.sha || github.sha }}"
+          actual="$(git rev-parse HEAD)"
+          printf 'EXPECTED_SHA=%s\\nACTUAL_SHA=%s\\n' "$expected" "$actual"
+          test "$actual" = "$expected"
+
+      - uses: arduino/setup-arduino-cli@v2
+
+      - name: Install pinned Arduino ESP32 core ${{ matrix.core_version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          arduino-cli config init --overwrite
+          arduino-cli config add board_manager.additional_urls https://espressif.github.io/arduino-esp32/package_esp32_index.json
+          arduino-cli core update-index
+          arduino-cli core install "esp32:esp32@${{ matrix.core_version }}"
+          arduino-cli core list
+          arduino-cli core list | awk -v v="${{ matrix.core_version }}" '$1 == "esp32:esp32" && $2 == v { found=1 } END { exit !found }'
+
+      - name: Run Mbed TLS 3/4 selector and failure-injection lab
+        run: python3 experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/mbedtls_compat_guard_lab.py
+
+      - name: Run ESP32 cold-boot polarity lab
+        run: python3 experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/esp32_boot_polarity_lab.py
+
+      - name: Compile the actual ESP32 Vendo sketch against core ${{ matrix.core_version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$RUNNER_TEMP/esp32-core-${{ matrix.core_version }}"
+          mkdir -p "$output"
+          arduino-cli compile --warnings all --fqbn esp32:esp32:esp32 \\
+            --output-dir "$output" \\
+            experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32
+          binary="$(find "$output" -type f -name '*.bin' -print -quit)"
+          test -n "$binary"
+          test -s "$binary"
+          stat -c 'BINARY_BYTES=%s' "$binary"
+          sha256sum "$binary"
+          printf 'ARDUINO_ESP32_CORE=${{ matrix.core_version }}\\nSIMULATED_ONLY=1\\nPHYSICAL_ACCEPTANCE=0\\n'
