@@ -1,3 +1,19 @@
+## PHX-MASTER UTC04 live checkpoint — 2026-11-25T04:48:35Z
+
+- Starting Master branch/PR head `6762bcf50c5cbedb5d09117e76749b0a66a7779b`; base main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; development `aad3aade72c1156eecba1fed30907c6d0283b2c5`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`.
+- Master PR #288 remains OPEN / DRAFT / UNMERGED. Its 208 changed paths are all under `coordination/phoenix/`; no subsystem or COE destination path is included.
+- New UTC04 audit: [cross-role handover overlap and COE #26 provenance](PHX_MASTER_UTC04_20261125_CROSS_ROLE_HANDOVER_OVERLAP_AND_COE26_PROVENANCE_AUDIT.md). It records 27 raw PR path overlaps, divergent shared handover blobs, current owner heads/CI, exact COE intake/license/firmware provenance and the proposed CORE single-writer boundary.
+- Updated ROLE_ASSIGNMENTS, REPOSITORY_ROUTING, INTEGRATION_MATRIX, AUDIT_SUMMARY and ARCHITECTURE_CONTRACTS; proposed contract §7.18 requires owner acknowledgement and does not reassign source ownership.
+- 21/21 read-only Master audit assertions PASS. These are static coordination/provenance assertions, not product tests. Master Python suite and `verify_coordination.py` NOT RUN; no Master Actions run exists.
+- HARDWARE #349 current head `f591cb85`: Quarantine #45549018310 and Relay #45549018245 PASS; Full #45549018383 FAIL at Controller protocol parity. Its handover/PR description still pins older `bd91e9b8`; HARDWARE owns refresh.
+- RELEASE #291 current head `d39f8ec3`: Windows #45548088084 and Full build #45548088178 FAIL at CORE-owned handover freshness; compatibility #45548088068 PASS. CORE publishes canonical handover; RELEASE owns its reruns and PR body.
+- COE #26 remains FROZEN. SOURCE_INTAKE actual 46 identical / 15 derived vs declared 47 / 14; four primary tests split 2 exact / 2 derived plus 15 derived tests; both current source firmware sketches differ; product LICENSE matches; root NOTICE and Tabler LICENSE destination counterparts remain absent; five workflows queued / zero jobs.
+- Cleanup #266 remains OPEN / 0-of-7. Private canonical Drive registry v11/newer corrections NOT_RECOVERED; no older snapshot substituted and no private data/IDs published.
+
+**PRODUCTION NO-GO.** No owner source branch, COE destination, shared CORE handover, release artifact, signer, secret, device or payment system was modified. No merge, release, flash, physical test, financial migration or customer cutover occurred.
+
+---
+
 ## PHX-MASTER UTC03 live checkpoint — 2026-11-25T03:36:57Z
 
 - Starting Master HEAD `2a73c2c9ea9c77f321c467a99ed9b32444973c2b`; Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; development `aad3aade72c1156eecba1fed30907c6d0283b2c5`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`.
