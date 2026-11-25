@@ -128,6 +128,11 @@ def expect_mutation_rejected(code, board, label, expected_exit):
     print(f"{board}: MUTATION_REJECTED {label} expected_exit={expected_exit}")
 
 
+def _normalize_cpp_function(source, name, whitespace_pattern=r"\s+"):
+    """Remove C++ formatting whitespace while preserving token differences."""
+    return re.sub(whitespace_pattern, "", extract_function(source, name))
+
+
 def _board_parity_problem(sources):
     """Return a readable mismatch when the two bounded readers drift."""
     missing = [board for board in BOARDS if board not in sources]
@@ -135,10 +140,8 @@ def _board_parity_problem(sources):
         return "missing board source(s): " + ", ".join(missing)
 
     normalized = {
-        board: re.sub(
-            r"\s+",
-            "",
-            extract_function(sources[board], "readBoundedControllerResponse"),
+        board: _normalize_cpp_function(
+            sources[board], "readBoundedControllerResponse"
         )
         for board in BOARDS
     }
@@ -204,7 +207,43 @@ def verify_board_parity_mutations(sources):
     print("BOUNDED_HTTP_RESPONSE_BOARD_PARITY_MUTATIONS_PASS 10/10")
 
 
+def verify_board_parity_normalizer_contract():
+    """Guard formatting-only parity and real token drift against regex regressions."""
+    compact = r"""
+String readBoundedControllerResponse(HTTPClient &h, int statusCode) {
+  if(statusCode<200 || statusCode>=300) return String();
+  return String();
+}
+"""
+    formatted = r"""
+String readBoundedControllerResponse ( HTTPClient & h , int statusCode )
+{
+    if ( statusCode < 200 || statusCode >= 300 ) return String ( ) ;
+    return String ( ) ;
+}
+"""
+    equivalent = {"ESP8266": compact, "ESP32": formatted}
+    if _board_parity_problem(equivalent) is not None:
+        raise AssertionError("whitespace-only C++ formatting must not break board parity")
+
+    legacy = {
+        board: _normalize_cpp_function(
+            equivalent[board], "readBoundedControllerResponse", whitespace_pattern=r"\\s+"
+        )
+        for board in BOARDS
+    }
+    if legacy["ESP8266"] == legacy["ESP32"]:
+        raise AssertionError("fixture must expose the previous over-escaped whitespace pattern")
+
+    drifted = dict(equivalent)
+    drifted["ESP32"] = formatted.replace("statusCode >= 300", "statusCode > 300")
+    if _board_parity_problem(drifted) is None:
+        raise AssertionError("token-level board drift must remain detectable")
+    print("BOUNDED_HTTP_RESPONSE_WHITESPACE_NORMALIZER_PASS 3/3")
+
+
 def verify():
+    verify_board_parity_normalizer_contract()
     sources = {
         board: path.read_text(encoding="utf-8")
         for board, path in BOARDS.items()
