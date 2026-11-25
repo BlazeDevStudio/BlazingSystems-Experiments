@@ -27,6 +27,9 @@ from poll_json_array_primitive_lab_composite_contracts import (
 from poll_json_array_primitive_lab_primitive_contracts import (
     verify_primitive_contracts,
 )
+from poll_json_array_primitive_lab_utf8_contracts import (
+    verify_utf8_contracts,
+)
 
 
 def _compile_and_run(code, board, label):
@@ -119,6 +122,9 @@ def verify(boards, extract, stubs):
             board, source, parser, stubs, extract, _expect_mutation_rejected
         )
         verify_primitive_contracts(
+            board, source, parser, stubs, extract, _expect_mutation_rejected
+        )
+        verify_utf8_contracts(
             board, source, parser, stubs, extract, _expect_mutation_rejected
         )
         print(

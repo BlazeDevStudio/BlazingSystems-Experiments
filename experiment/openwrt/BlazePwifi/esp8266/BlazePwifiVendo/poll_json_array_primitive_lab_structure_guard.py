@@ -24,9 +24,36 @@ MODULES = {
         "verify_primitive_contracts",
         ("leading_zero_guard", "fraction_guard", "exponent_guard"),
     ),
+    "utf8-string": (
+        "poll_json_array_primitive_lab_utf8_contracts.py",
+        "verify_utf8_contracts",
+        ("minimumSecond", "maximumSecond", "bypass-invalid-utf8-deny"),
+    ),
 }
 
 orchestrator = ORCHESTRATOR.read_text(encoding="utf-8")
+fixture_path = HERE / "poll_json_array_primitive_lab_fixtures.py"
+try:
+    fixture_tree = ast.parse(
+        fixture_path.read_text(encoding="utf-8"),
+        filename=str(fixture_path),
+    )
+except SyntaxError as error:
+    raise AssertionError(f"fixture module has invalid Python syntax: {error}") from error
+
+parser_functions = None
+for node in fixture_tree.body:
+    if isinstance(node, ast.Assign) and any(
+        isinstance(target, ast.Name) and target.id == "PARSER_FUNCTIONS"
+        for target in node.targets
+    ):
+        parser_functions = ast.literal_eval(node.value)
+        break
+if (
+    not isinstance(parser_functions, tuple)
+    or "pollJsonSkipUtf8Continuation" not in parser_functions
+):
+    raise AssertionError("source extractor must include the UTF-8 validator helper")
 for name, (filename, function, anchors) in MODULES.items():
     path = HERE / filename
     if not path.is_file():

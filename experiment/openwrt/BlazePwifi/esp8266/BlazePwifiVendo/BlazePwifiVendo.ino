@@ -1181,6 +1181,49 @@ bool pollJsonHex(char c){
   return (c>='0' && c<='9') || (c>='a' && c<='f') || (c>='A' && c<='F');
 }
 
+bool pollJsonSkipUtf8Continuation(const String &r,int &p,unsigned char lead){
+  const int n=(int)r.length();
+  int remaining=0;
+  unsigned char minimumSecond=0x80;
+  unsigned char maximumSecond=0xBF;
+
+  if(lead>=0xC2 && lead<=0xDF){
+    remaining=1;
+  } else if(lead==0xE0){
+    remaining=2;
+    minimumSecond=0xA0;
+  } else if(lead>=0xE1 && lead<=0xEC){
+    remaining=2;
+  } else if(lead==0xED){
+    remaining=2;
+    maximumSecond=0x9F;
+  } else if(lead>=0xEE && lead<=0xEF){
+    remaining=2;
+  } else if(lead==0xF0){
+    remaining=3;
+    minimumSecond=0x90;
+  } else if(lead>=0xF1 && lead<=0xF3){
+    remaining=3;
+  } else if(lead==0xF4){
+    remaining=3;
+    maximumSecond=0x8F;
+  } else {
+    return false;
+  }
+
+  if(p<0 || p>n || n-p<remaining) return false;
+  const unsigned char second=(unsigned char)r[p];
+  if(second<minimumSecond) return false;
+  if(second>maximumSecond) return false;
+  ++p;
+
+  for(int i=1;i<remaining;i++){
+    const unsigned char next=(unsigned char)r[p++];
+    if(next<0x80 || next>0xBF) return false;
+  }
+  return true;
+}
+
 bool pollJsonSkipString(const String &r,int &p){
   const int n=(int)r.length();
   if(p>=n || r[p]!='"') return false;
@@ -1189,6 +1232,7 @@ bool pollJsonSkipString(const String &r,int &p){
     const unsigned char c=(unsigned char)r[p++];
     if(c=='"') return true;
     if(c<0x20) return false;
+    if(c>=0x80 && !pollJsonSkipUtf8Continuation(r,p,c)) return false;
     if(c=='\\'){
       if(p>=n) return false;
       const char e=r[p++];

@@ -7,6 +7,7 @@ These fixtures validate syntax only; they do not authenticate a controller respo
 PARSER_FUNCTIONS = (
     "pollJsonSpace",
     "pollJsonHex",
+    "pollJsonSkipUtf8Continuation",
     "pollJsonSkipString",
     "pollJsonSkipPrimitive",
     "pollJsonSkipValueDepth",
