@@ -288,6 +288,10 @@ void loop() {
 }
 '''
     poll_guard_locations(poll_source)
+    if not has_empty_string_assignment('void f() { activeTarget = ""; }', "activeTarget"):
+        raise AssertionError("empty-target assignment was not recognized")
+    if has_empty_string_assignment('void f() { /* activeTarget = ""; */ }', "activeTarget"):
+        raise AssertionError("comment-only empty-target decoy was accepted")
 
 def main():
     verify_source_extractor_decoy_regressions()

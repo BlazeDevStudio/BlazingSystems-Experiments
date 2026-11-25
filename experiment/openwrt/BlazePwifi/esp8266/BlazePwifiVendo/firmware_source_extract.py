@@ -164,8 +164,11 @@ def extract_function(source: str, signature: str) -> str:
 def has_empty_string_assignment(source: str, identifier: str) -> bool:
     """Recognize an actual code assignment to an empty string literal."""
     masked = mask_non_code(source)
-    pattern = re.compile(rf"\b{re.escape(identifier)}\s*=\s*")
+    pattern = re.compile(rf"\b{re.escape(identifier)}\s*=")
     for match in pattern.finditer(masked):
-        if source.startswith('""', match.end()):
+        cursor = match.end()
+        while cursor < len(source) and source[cursor].isspace():
+            cursor += 1
+        if source.startswith('""', cursor):
             return True
     return False
