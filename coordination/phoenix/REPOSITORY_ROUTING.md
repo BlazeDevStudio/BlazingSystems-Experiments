@@ -1,3 +1,13 @@
+## PHX-MASTER UTC19 — owner routing and migration admission refresh (2026-11-25T19:17:34Z)
+
+The live `OWNERSHIP_ROUTES.json` remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`: 11 routes, `DRAFT_REVIEW_ONLY`, PHX-MASTER source `coordination/phoenix/`, target null. Hardware routes are selective review only; no route grants recursive copy or migration authority.
+
+Current HARDWARE #352 head is `f837146bc2522f88d2b8020ae8b94555d70e7ac3`. Its current four focused workflows pass; Full #45682323745 is CANCELLED with validation job #139445965049 failing at the inherited poll-signature assertion. The current PR description still identifies the previous `8daccf67` / `8eab8260` refs. HARDWARE owns the PR description/handover update; CORE owns the authenticated poll/register producer contract; QA owns independent assertion review.
+
+COE #26 at `b382d233ff06c8791b1028bed3c617cc7b670d12` has only PisoWiFi `SOURCE_INTAKE.json` and `MIGRATION_MAP.md`; neither provides Hardware source provenance. Hardware source/destination test, firmware, helper and license differences are recorded in the UTC19 report and INTEGRATION_MATRIX. The existing intake is pinned to a historical source and a different destination branch; its 47/14 summary conflicts with 46/15 runtime rows.
+
+**Admission decision:** keep COE #26 FROZEN. Require a Hardware-specific per-file source commit/path/blob/mode → destination path/blob/mode map, matching license/NOTICE, test identity and owner disposition, followed by exact-destination CI. Do not stage, copy, move, overwrite, cherry-pick or rebase. PHX-MASTER does not change subsystem source or destination ownership.
+
 ## PHX-MASTER UTC13 routing refresh — 2026-11-25T13:38:55Z
 
 Live route manifest remains `OWNERSHIP_ROUTES.json@e4db324315a1b3543fec17a148fbf960170fcb29`: 11 routes, `DRAFT_REVIEW_ONLY`, PHX-MASTER source `coordination/phoenix/`, target null. No route was changed.

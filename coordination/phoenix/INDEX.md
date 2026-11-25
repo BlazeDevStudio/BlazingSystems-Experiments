@@ -1,3 +1,14 @@
+## PHX-MASTER UTC19 — 2026-11-25T19:17Z live Hardware head, role CI and COE #26 provenance
+
+[UTC19 exact-head, current HARDWARE #352 CI, exact Hardware-to-COE #26 tree/test/license provenance and role-owner report](PHX_MASTER_UTC19_20261125_HARDWARE352_CURRENT_HEAD_AND_COE26_EXACT_PROVENANCE_AUDIT.md)
+
+- Master start `503661e6`; Experiments main `6be5d19b`; active v0.6 `2fbd2475`; legacy v0.5.3 `aad3aade`; COE main `a6513ab4`; COE #26 `b382d233`.
+- HARDWARE #352 current head `f837146b`: Quarantine/Relay/ESP8266/ESP32 focused workflows PASS; Full #45682323745 CANCELLED with validation failure at Missing poll signature check.
+- Exact #352→#26 comparison: 2,564/286 tree entries; board blobs 82/2; Python helpers 70/0; tests 47/19 (1 exact, 3 divergent, 43 source-only, 15 destination-only); both sketches differ; root NOTICE and Tabler LICENSE absent.
+- PisoWiFi intake is historical and not Hardware provenance; 47/14 declared versus 46/15 runtime rows. #26 remains FROZEN with five queued workflows / zero jobs.
+- RELEASE #291 freshness and COE #35 ULA/Bubblewrap gates remain blocked. Cleanup #266 OPEN / 0-of-7. Private registry v11/newer corrections NOT_RECOVERED.
+- 21/21 read-only audit assertions PASS; Master product tests NOT RUN. No staging/destination writes. **PRODUCTION NO-GO.**
+
 ## PHX-MASTER UTC18 — 2026-11-25T18:37Z live role CI, COE #26 intake and Hardware provenance
 
 [UTC18 exact-head owner CI, current v0.6 SOURCE_INTAKE reconciliation, Hardware #352 provenance and COE #26 licensing/test audit](PHX_MASTER_UTC18_20261125_LIVE_ROLE_CI_COE26_SOURCE_INTAKE_AND_HARDWARE_PROVENANCE_AUDIT.md)

@@ -1,3 +1,18 @@
+## PHX-MASTER UTC19 disposition — 2026-11-25T19:17:34Z
+
+**Starting Master HEAD:** `503661e6bae7db49765f11081972cf4c0a39e1f2`. **Experiments main:** `6be5d19b`. **Active v0.6:** `2fbd2475`. **Legacy v0.5.3:** `aad3aade`. **COE main:** `a6513ab4`. **COE #26:** `b382d233`.
+
+- PR #288 OPEN / DRAFT / UNMERGED; start compare 574 ahead / 1 behind; 219 changed paths, all Master coordination; Master statuses/workflow runs zero.
+- HARDWARE #352 advanced after UTC18 to `f837146b`: four focused workflows PASS; Full #45682323745 CANCELLED with validation failure at Missing poll signature check. PR description stale.
+- COE #26 exact trees: Hardware source 2,564 entries / 1,985 blobs vs candidate 286 / 207; board blobs 82/2; Python helpers 70/0; tests 47/19 (1 exact, 3 divergent, 43 source-only, 15 destination-only); both firmware blobs differ; root NOTICE and Tabler LICENSE missing.
+- Current PisoWiFi intake is pinned to historical source/branch, is not Hardware provenance, and its summary 47/14 disagrees with 61 runtime rows (46/15).
+- RELEASE #291 Windows/Full fail CORE CURRENT_STATE freshness; COE #35 fails 10/10 ULA profiles and mandatory Bubblewrap sandbox availability. Exact owner evidence is in ROLE_ASSIGNMENTS and the UTC19 report.
+- Ownership manifest remains 11 routes / DRAFT_REVIEW_ONLY / Master target null. Cleanup #266 OPEN / 0-of-7. COE #26 FROZEN.
+- Private Drive registry v11/newer corrections NOT_RECOVERED; no Google Drive connector. Master Python tests/verifier NOT RUN; no local authenticated checkout. 21/21 read-only audit assertions PASS; these are not product tests.
+- No subsystem source or COE destination changed. **PRODUCTION NO-GO.**
+
+Full evidence: [PHX-MASTER UTC19 exact-head, Hardware provenance and role-CI report](PHX_MASTER_UTC19_20261125_HARDWARE352_CURRENT_HEAD_AND_COE26_EXACT_PROVENANCE_AUDIT.md).
+
 ## PHX-MASTER UTC18 disposition — 2026-11-25T18:37Z
 
 **Starting Master HEAD:** `555f50d8dd3ecd8ee2e7adbf8ecafd092470288f`. **Experiments main:** `6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5`. **Active development:** `2fbd2475e9f54878c316fa7cea2f228386b0e859`. **Legacy development:** `aad3aade72c1156eecba1fed30907c6d0283b2c5`. **COE main:** `a6513ab4412b4c014eee2863e45cbe32d06cb243`. **COE #26:** `b382d233ff06c8791b1028bed3c617cc7b670d12`.

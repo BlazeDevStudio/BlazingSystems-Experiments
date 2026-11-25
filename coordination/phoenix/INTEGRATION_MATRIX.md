@@ -1,3 +1,25 @@
+## PHX-MASTER UTC19 — exact HARDWARE #352 source and COE #26 candidate comparison (2026-11-25T19:17:34Z)
+
+Complete, non-truncated recursive trees were read at Experiments #352 current head `f837146bc2522f88d2b8020ae8b94555d70e7ac3` and COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`.
+
+| Measure | Experiments #352 | COE #26 |
+|---|---:|---:|
+| Complete tree entries | 2,564 | 286 |
+| Git blobs | 1,985 | 207 |
+| ESP32 + ESP8266 subtree entries | 84 | 4 |
+| ESP32 + ESP8266 subtree blobs | 82 | 2 |
+| Board-local Python helpers | 70 | 0 |
+
+Firmware blob identities are different:
+- ESP32: source `1412cf57b70c6ee3061da9831b8d9abf6d58d94e`; destination `3cc7ec54b476943dc04a8d1af5e2df5fe054e422`.
+- ESP8266: source `b99f1f21d8ad1e6df0e403b2b34507f97bd90c16`; destination `c8be98f72596681e36a3ad1f8939bf8046c96887`.
+
+Test identity under the manifest route `experiment/openwrt/BlazePwifi/tests/` → `Pisowifi/tests/`: 47 source / 19 destination; 1 exact same-relative-path blob+mode, 3 divergent same-path blobs, 43 source-only and 15 destination-only. Similar filenames are not treated as equivalent tests.
+
+License comparison: source root `NOTICE.md` and `ui/vendor/tabler/LICENSE` have no destination counterpart. Product LICENSE, QRCode LICENSE, TailAdmin LICENSE and TailAdmin NOTICE have destination counterparts. BlazeRentalLauncher LICENSE belongs to the separate RENTAL route.
+
+COE #26 contains only PisoWiFi `SOURCE_INTAKE.json` and `MIGRATION_MAP.md`; no Hardware-specific intake/map. The current schema-8 PisoWiFi intake is pinned to historical source `6d4c9b48` and destination branch `feature/pisowifi-cleanup-stabilization`, not the current #26 candidate. Its summary 47/14 disagrees with 61 runtime rows (46/15). COE #26 has five queued workflows / zero jobs. Candidate remains FROZEN; no staging or destination writes.
+
 ## PHX-MASTER UTC18 — exact source/candidate, test identity and license reconciliation (2026-11-25T18:37Z)
 
 ### Canonical PisoWiFi rootfs source — active v0.6 development `2fbd2475`

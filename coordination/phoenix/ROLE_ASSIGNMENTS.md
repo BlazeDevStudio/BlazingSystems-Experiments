@@ -1,3 +1,36 @@
+## PHX-MASTER UTC19 post-checkpoint owner / CI refresh — 2026-11-25T19:17:34Z
+
+This section supersedes the UTC18 table. It is a read-only reconciliation; Master owns only `coordination/phoenix/`. CORE remains reserved to its separate continuation; no CORE source or canonical handover file was edited.
+
+**Exact repository refs**
+- Experiments main: `6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5`.
+- Active v0.6 development: `blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859`.
+- Legacy v0.5.3 development: `blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5`.
+- Master start: `503661e6bae7db49765f11081972cf4c0a39e1f2`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`.
+- PR #288 OPEN / DRAFT / UNMERGED; start compare 574 ahead / 1 behind, merge base `f4e8a891`, 219 existing paths, all Master-owned; starting-head statuses/runs zero.
+- `OWNERSHIP_ROUTES.json` remains 11 routes / `DRAFT_REVIEW_ONLY` / PHX-MASTER target null. Cleanup #266 OPEN / 0-of-7.
+
+| Owner / PR | Current exact head | Exact-head CI / disposition |
+|---|---|---|
+| CORE #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | Build #42698139210 PASS; scoped/older, not financial acceptance. CORE owns producer, finance and canonical handover. |
+| RENTAL #328 | `10fc200b6dbf470a95e679d3acc58aff4ab2a67f` | APK #45622918340, API #45622918364, auth/recovery #45622918551 PASS; shared build #45622918468 FAIL. |
+| PISONET #255 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | Synthetic Windows #42462978704 PASS; native COM not invoked. |
+| HARDWARE #352 | current head `f837146b` (previous docs/source-test `8daccf67` / `8eab8260`) | Current Quarantine #45682323606, Relay #45682323660, ESP8266 #45682323487, ESP32 #45682323583 PASS. Full #45682323745 CANCELLED; validation job #139445965049 FAIL at inherited Missing poll signature check. PR body stale; HARDWARE owns refresh. |
+| HARDWARE parent #349 | `2a5c997add4f49fcd74f753101d3a9daac0040bf` | Quarantine #45603969253 and Relay #45603968961 PASS; Full #45603969181 FAIL. |
+| QA #290 | `5c29d15994cee1279058f1eca12f2a3180704292` | Windows #43633486963 PASS; native COM not invoked. |
+| QA #292 | `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | No PR-triggered runs. |
+| RELEASE #291 | `9b928c9eaa72cb26fdcf3f0e50a0ec024f4e3c30` | Windows #45669599214 and Full #45669599438 FAIL at CORE CURRENT_STATE freshness; ESP32 compatibility #45669599322 PASS. CORE must publish canonical handover; RELEASE refreshes/reruns. |
+| COE RELEASE #35 | docs `28da39c6`; source/test `10f19a28` | Shared #45673818111: 231 PASS / 2 skips, then 10/10 site-ULA fail-closed; sandbox #45673815489: 40 host tests PASS then Bubblewrap absent / exit 125; case guard #45673815464 PASS. |
+| COE CORE #45 | `9d76a134c1f6512aa40c20ec4d247306a71a8cce` | Overlay/Shell #44295049727 and case guard #44295049903 PASS; focused only. |
+| COE INTERCON #49 | `aeb8ff11b2f5db9a5f86280ab62ab988245f3919` | Stage 5.1 #44646341873 and case guard #44646341992 PASS; shared Hardware/contracts #44646341922 FAIL. |
+| COE integration #26 | `b382d233ff06c8791b1028bed3c617cc7b670d12` | Five workflows QUEUED / zero jobs; FROZEN. |
+
+**HARDWARE #352 exact-head note:** commits `032e6517` and `f837146b` reorganize the ESP8266 coin-pulse host fixture into ordered literal sections; no board sketch changed. The four current focused runs pass, but the current Full validation job fails at the poll-signature assertion. The earlier UTC18 source/test CI is superseded for current-head status.
+
+**COE #26 migration note:** current #352 source tree 2,564 entries / 1,985 blobs; candidate 286 / 207. Board subtree 82 source blobs / 2 destination blobs, 70 source Python helpers / 0 destination, tests 47/19 (1 exact, 3 divergent, 43 source-only, 15 destination-only). Both firmware sketches differ. Root NOTICE and Tabler LICENSE remain absent. Current PisoWiFi intake is historical and does not cover Hardware.
+
+**Registry:** private v11 and newer corrections NOT_RECOVERED; no Google Drive connector. No older snapshot substituted. Master Python tests/verifier NOT RUN; Master Actions/statuses zero. **PRODUCTION NO-GO.**
+
 ## PHX-MASTER UTC18 post-checkpoint owner / CI refresh — 2026-11-25T18:37Z
 
 This section supersedes the UTC17 table. Read-only reconciliation of role-owned source branches; Master owns only `coordination/phoenix/`.
