@@ -1,3 +1,39 @@
+## PHX-MASTER UTC18 — exact source/candidate, test identity and license reconciliation (2026-11-25T18:37Z)
+
+### Canonical PisoWiFi rootfs source — active v0.6 development `2fbd2475`
+
+| Measure | Active v0.6 source | COE #26 candidate |
+|---|---:|---:|
+| Complete tree entries | 2,392 | 286 |
+| Git blobs | 1,846 | 207 |
+| Rootfs blobs | 61 | 62 |
+
+- Extra destination rootfs file: `Pisowifi/openwrt/rootfs/usr/sbin/blaze-appliance-diag` (blob `6690c739e931929d7beb3c256dd50b4531be3ba3`), absent from 61-row intake; COE owner provenance required.
+- `SOURCE_INTAKE.json` schema 8 pins source `6d4c9b487af4d768c4d7627654d119417fcc6e00` and destination branch `feature/pisowifi-cleanup-stabilization`, not current #26 candidate branch `integration/ecosystem-nonproprietary-candidate-20261111`.
+- All 61 manifest paths exist at active v0.6 and #26. Direct blob comparison: 46 equal / 15 different. Runtime rows classify 46 byte-identical / 15 derived, but JSON summary says 47 / 14.
+- Active v0.6 `common.sh` is `50fa2d02d40af7fd8b06e83974345f1016a317f9`; candidate remains derived blob `ae00667da26c68c9e44a54a941887191029afc11`; intake pins old source `4ccb10777b08f541d092f7c2c2d2aad4d2f6562e`. Owner review required.
+- `MIGRATION_MAP.md` blob `b54fc15d83bc2269de03db8aadd0e76259fd13d9` repeats old source commit/destination branch; update only under COE integration ownership.
+
+### Test identity
+
+- Active v0.6 test-directory blobs: 150 source / 19 destination; 2 exact, 2 divergent (`config.sh`, `integration.sh`), 131 source-only, 15 destination-only.
+- Active v0.6 tests include `tests/vendor/jsqr-1.4.0/{LICENSE,PROVENANCE.json,jsQR.js}`; absent from COE #26 and requires third-party provenance review.
+
+### HARDWARE #352 source candidate
+
+- Exact source/test `8eab8260`: 76 ESP32/ESP8266 subtree blobs (16/60) and 64 board-local Python helpers; COE #26 has 2 board blobs (1/1) and zero helpers.
+- #352 tests: 47 source / 19 destination; 1 exact, 3 divergent, 43 source-only, 15 destination-only. ESP32 source sketch `1412cf57b70c6ee3061da9831b8d9abf6d58d94e` differs from `3cc7ec54b476943dc04a8d1af5e2df5fe054e422`; ESP8266 source `b99f1f21d8ad1e6df0e403b2b34507f97bd90c16` differs from `c8be98f72596681e36a3ad1f8939bf8046c96887`.
+
+### License identity
+
+- Exact counterparts: product LICENSE `1ee55b94`, QRCode LICENSE `150770c0`, TailAdmin LICENSE `cb92d417`, TailAdmin NOTICE `f0425bbb`.
+- Source-only: Experiments root `NOTICE.md` (`f6d92cd2`) and `ui/vendor/tabler/LICENSE` (`22ee8122`). `BlazeRentalLauncher/LICENSE` belongs to the separate PHX-RENTAL route.
+
+### Gate
+
+- COE main has three tree entries. COE #26 has five workflows QUEUED / zero jobs. `OWNERSHIP_ROUTES.json` remains 11 routes / `DRAFT_REVIEW_ONLY` / Master target null.
+- No staging, copy, move, overwrite, rebase, cherry-pick, retarget or promotion. Candidate remains FROZEN.
+
 ## PHX-MASTER UTC17 — exact current Hardware source/destination and RELEASE integration gates (2026-11-25T17:38Z)
 
 ### COE #26 current Hardware source/destination identity

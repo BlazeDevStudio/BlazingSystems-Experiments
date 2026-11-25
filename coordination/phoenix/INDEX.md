@@ -1,3 +1,16 @@
+## PHX-MASTER UTC18 — 2026-11-25T18:37Z live role CI, COE #26 intake and Hardware provenance
+
+[UTC18 exact-head owner CI, current v0.6 SOURCE_INTAKE reconciliation, Hardware #352 provenance and COE #26 licensing/test audit](PHX_MASTER_UTC18_20261125_LIVE_ROLE_CI_COE26_SOURCE_INTAKE_AND_HARDWARE_PROVENANCE_AUDIT.md)
+
+- Experiments main `6be5d19b`; active v0.6 `2fbd2475`; legacy v0.5.3 `aad3aade`; Master start `555f50d8`; COE main `a6513ab4`; COE #26 `b382d233`.
+- HARDWARE #352 docs/source-test `8daccf67` / `8eab8260`: focused checks PASS; Full #45673358387 FAIL at Missing poll signature check.
+- RELEASE #291 `9b928c9e`: Windows #45669599214 and Full #45669599438 FAIL at CORE handover freshness; compatibility #45669599322 PASS; PR description stale.
+- COE RELEASE #35 `28da39c6` / `10f19a28`: 231 PASS / 2 skips then 10/10 site-ULA fail-closed; sandbox 40 host tests PASS then Bubblewrap absent / exit 125; case guard PASS.
+- COE #26 FROZEN: source/candidate trees 2,392/286; rootfs 61/62; intake summary 47/14 vs 46/15 rows; 46 equal / 15 different rootfs blobs; extra diagnostic file; active v0.6 tests 150/19; #352 board source 76 blobs / 64 helpers vs destination 2 / 0; licensing/provenance gaps.
+- #26 five workflows QUEUED / zero jobs. Manifest 11 routes / DRAFT_REVIEW_ONLY / Master target null. Cleanup #266 OPEN / 0-of-7.
+- Private Drive registry v11/newer corrections NOT_RECOVERED; no Google Drive connector. Master product tests NOT RUN. No staging or destination writes. **PRODUCTION NO-GO.**
+---
+
 ## PHX-MASTER UTC17 — 2026-11-25T17:38Z COE #35 descriptor cleanup, RELEASE handover freshness, and COE #26 provenance
 
 [UTC17 exact-head role/CI reconciliation, COE #35 descriptor-close fix, #291 freshness gate, and current #352-to-#26 tree/blob/license/test audit](PHX_MASTER_UTC17_20261125_COE35_DESCRIPTOR_CLOSE_RELEASE_HANDOVER_AND_COE26_PROVENANCE_AUDIT.md)

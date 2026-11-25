@@ -1,3 +1,18 @@
+## PHX-MASTER UTC18 disposition — 2026-11-25T18:37Z
+
+**Starting Master HEAD:** `555f50d8dd3ecd8ee2e7adbf8ecafd092470288f`. **Experiments main:** `6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5`. **Active development:** `2fbd2475e9f54878c316fa7cea2f228386b0e859`. **Legacy development:** `aad3aade72c1156eecba1fed30907c6d0283b2c5`. **COE main:** `a6513ab4412b4c014eee2863e45cbe32d06cb243`. **COE #26:** `b382d233ff06c8791b1028bed3c617cc7b670d12`.
+
+- PR #288 OPEN / DRAFT / UNMERGED; starting compare 573 ahead / 1 behind, merge base `f4e8a891`; 218 changed paths, all coordination-only; Master Actions zero.
+- HARDWARE #352 source/test `8eab8260`, docs `8daccf67`: focused checks PASS; Full #45673358387 FAIL at Missing poll signature check.
+- RELEASE #291 `9b928c9e`: Full/Windows fail CORE CURRENT_STATE freshness; compatibility PASS; PR body stale.
+- COE RELEASE #35 `10f19a28` / `28da39c6`: 231 host tests PASS / 2 skips, then 10/10 site-ULA fail-closed; sandbox 40 host tests PASS then Bubblewrap absent / exit 125; case guard PASS.
+- COE #26 FROZEN: rootfs 61/62; intake summary 47/14 vs 46/15 runtime; common.sh drift; extra destination diagnostic file; active v0.6 tests 150/19 (2 exact, 2 divergent, 131 source-only, 15 destination-only); #352 board subtree 76 blobs / 64 helpers vs destination 2 / 0; license/provenance gaps.
+- Five #26 workflows QUEUED / zero jobs. Ownership manifest 11 routes / DRAFT_REVIEW_ONLY / Master target null. Cleanup #266 OPEN / 0-of-7.
+- Private registry v11/newer corrections NOT_RECOVERED; Google Drive connector unavailable. Master Python suite/verifier NOT RUN; remote owner CI is not Master test execution.
+
+**PRODUCTION NO-GO.** Protected signing/anti-rollback witness, crash-atomic durable financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized release gates remain unverified.
+---
+
 ## PHX-MASTER UTC17 disposition — 2026-11-25T17:38Z
 
 **Master starting HEAD:** f3e743cc82001be925f28c3bbf1cdc37f682f73a. **Experiments main:** 6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5. **Active development:** 2fbd2475e9f54878c316fa7cea2f228386b0e859. **Legacy development:** aad3aade72c1156eecba1fed30907c6d0283b2c5. **COE main:** a6513ab4412b4c014eee2863e45cbe32d06cb243. **COE #26:** b382d233ff06c8791b1028bed3c617cc7b670d12.
