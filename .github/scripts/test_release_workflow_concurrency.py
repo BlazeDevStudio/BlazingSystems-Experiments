@@ -3,6 +3,10 @@
 from __future__ import annotations
 
 import re
+import shlex
+import subprocess
+import tempfile
+import textwrap
 import unittest
 from pathlib import Path
 
@@ -762,6 +766,78 @@ class BlazePwifiV053ImmutableReleaseTests(unittest.TestCase):
                 self.assertNotEqual(unsafe, self.stage_content)
                 with self.assertRaises(AssertionError):
                     require_v053_tag_ref_absence_before_publish(unsafe)
+
+
+
+def extract_v053_artifact_copy_loop(content: str) -> str:
+    """Extract the real release-stage shell loop so the fixture tests its behavior."""
+    marker = 'find artifacts/build -type f \\( '
+    start = content.find("find artifacts/build -type f \\(")
+    if start < 0:
+        raise AssertionError("missing v0.5.3 firmware artifact collection loop")
+    line_start = content.rfind("\\n", 0, start) + 1
+    end = content.find("\\n\\n          GATE=", start)
+    if end < 0:
+        raise AssertionError("cannot find the end of the v0.5.3 artifact collection loop")
+    return textwrap.dedent(content[line_start:end]).rstrip()
+
+
+class BlazePwifiV053ArtifactAssemblyTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.stage_content = RELEASE_STAGE_WORKFLOW.read_text(encoding="utf-8")
+
+    def test_stage_rejects_collision_after_parent_prefix_without_overwriting(self):
+        loop = extract_v053_artifact_copy_loop(self.stage_content)
+        with tempfile.TemporaryDirectory(prefix="phx-v053-artifact-collision-") as temporary:
+            root = Path(temporary)
+            build = root / "artifacts" / "build"
+            output = root / "release-out"
+            output.mkdir()
+
+            # Three separate target artifacts share a filename and the same
+            # immediate parent name. The legacy fallback prefixes only that
+            # parent, so the third copy silently overwrites the second.
+            for index, payload in enumerate((b"target-a", b"target-b", b"target-c"), start=1):
+                source = (
+                    build
+                    / f"artifact-{index}"
+                    / "bin"
+                    / "targets"
+                    / f"target-{index}"
+                    / "generic"
+                    / "same.bin"
+                )
+                source.parent.mkdir(parents=True)
+                source.write_bytes(payload)
+
+            script = (
+                "set -euo pipefail\\n"
+                f"OUT={shlex.quote(str(output))}\\n"
+                f"{loop}\\n"
+            )
+            completed = subprocess.run(
+                ["bash", "-c", script],
+                cwd=root,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+
+            self.assertNotEqual(
+                completed.returncode,
+                0,
+                "a collision after parent-prefix disambiguation must fail closed; "
+                f"stdout={completed.stdout!r} stderr={completed.stderr!r}",
+            )
+            self.assertIn("collision", completed.stderr.lower())
+            outputs = sorted(output.iterdir())
+            self.assertEqual([path.name for path in outputs], ["generic-same.bin", "same.bin"])
+            self.assertEqual(
+                len({path.read_bytes() for path in outputs}),
+                2,
+                "the failed third copy must not overwrite either admitted artifact",
+            )
 
 
 if __name__ == "__main__":
