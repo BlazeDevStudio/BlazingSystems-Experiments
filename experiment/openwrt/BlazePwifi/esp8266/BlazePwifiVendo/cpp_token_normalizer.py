@@ -46,6 +46,21 @@ def _scan_preprocessing_number(source, index):
     return ("number", source[start:index]), index
 
 
+def _scan_user_defined_literal_suffix(source, index):
+    """Consume an immediately adjacent C++ user-defined literal suffix."""
+    if index >= len(source) or not (
+        source[index].isalpha() or source[index] == "_"
+    ):
+        return index
+
+    index += 1
+    while index < len(source) and (
+        source[index].isalnum() or source[index] == "_"
+    ):
+        index += 1
+    return index
+
+
 def tokenize_cpp(source):
     """Return a conservative C++ token sequence for parity comparisons."""
     tokens = []
@@ -101,6 +116,7 @@ def tokenize_cpp(source):
             if end < 0:
                 raise ValueError("unterminated C++ raw string literal")
             end += len(terminator)
+            end = _scan_user_defined_literal_suffix(source, end)
             tokens.append(("literal", source[index:end]))
             index = end
             continue
@@ -126,6 +142,7 @@ def tokenize_cpp(source):
                     continue
                 if source[index] == quote:
                     index += 1
+                    index = _scan_user_defined_literal_suffix(source, index)
                     tokens.append(("literal", source[start:index]))
                     break
                 index += 1
