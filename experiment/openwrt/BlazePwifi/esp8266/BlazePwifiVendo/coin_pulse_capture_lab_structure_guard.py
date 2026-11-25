@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Keep the 700-line coin-pulse lab split into readable fixture, contract and runner modules.
+"""Enforce small, ordered, byte-preserving modules for the coin-pulse C++ fixture.
 
-This guard checks source ownership boundaries only; the executable behavior tests
-remain in coin_pulse_capture_lab.py and the board-specific firmware sketches.
+This is a source-ownership guard. The executable C++ scenario and mutation
+contracts remain in the existing runner and board sketches.
 """
 from __future__ import annotations
 
@@ -13,6 +13,14 @@ HERE = Path(__file__).resolve().parent
 RUNNER = HERE / "coin_pulse_capture_lab.py"
 FIXTURES = HERE / "coin_pulse_capture_lab_fixtures.py"
 CONTRACTS = HERE / "coin_pulse_capture_lab_contracts.py"
+SECTION_SPECS = (
+    ("coin_pulse_capture_lab_fixture_runtime", "CPP_RUNTIME", "#include <cstdint>"),
+    ("coin_pulse_capture_lab_fixture_poll", "CPP_POLL", "static bool runDrainCapture"),
+    ("coin_pulse_capture_lab_fixture_gates", "CPP_GATES", "static bool runDeniedGates"),
+    ("coin_pulse_capture_lab_fixture_faults", "CPP_FAULTS", "static bool runPulseLimitBoundary"),
+    ("coin_pulse_capture_lab_fixture_edges", "CPP_EDGES", "static bool runMissedPulseAfterBlockingPost"),
+    ("coin_pulse_capture_lab_fixture_entry", "CPP_ENTRY", "int main()"),
+)
 
 
 def fail(message: str) -> None:
@@ -91,7 +99,7 @@ fixture_source, fixture_tree = parse(FIXTURES)
 contract_source, contract_tree = parse(CONTRACTS)
 
 if imported_from(runner_tree, "coin_pulse_capture_lab_fixtures") != {"CPP"}:
-    fail("runner must import only CPP from the fixture module")
+    fail("runner must import only CPP from the fixture assembler")
 if imported_from(runner_tree, "coin_pulse_capture_lab_contracts") != {
     "FUNCTION_SPECS", "FUNCTION_INDEX_BY_NAME", "MUTATIONS"
 }:
@@ -99,18 +107,71 @@ if imported_from(runner_tree, "coin_pulse_capture_lab_contracts") != {
 if {"CPP", "FUNCTION_SPECS", "FUNCTION_INDEX_BY_NAME", "MUTATIONS"} & assigned_names(runner_tree):
     fail("runner still owns an inline fixture or contract table")
 
-fixture_names = assigned_names(fixture_tree)
-if "CPP" not in fixture_names:
-    fail("fixture module does not own CPP")
-cpp = literal_assignment(fixture_tree, "CPP")
-if not isinstance(cpp, str) or "@@FUNCTIONS@@" not in cpp:
-    fail("CPP fixture lost its exact-source insertion point")
+if assigned_names(fixture_tree) != {"CPP"}:
+    fail("fixture assembler must own only the composed CPP value")
+expected_imports = set()
+sections = []
+for module, constant, first_marker in SECTION_SPECS:
+    section_source, section_tree = parse(HERE / f"{module}.py")
+    if assigned_names(section_tree) != {constant}:
+        fail(f"{module}.py must own only {constant}")
+    value = literal_assignment(section_tree, constant)
+    if not isinstance(value, str) or not value.startswith(first_marker):
+        fail(f"{module}.py lost its ordered C++ section start marker")
+    if len(section_source.splitlines()) > 150:
+        fail(f"{module}.py exceeds the 150-line reviewability ceiling")
+    if imported_from(fixture_tree, module) != {constant}:
+        fail(f"fixture assembler must import only {constant} from {module}")
+    expected_imports.add(constant)
+    sections.append(value)
+
+expected_assembly = """CPP = "".join((
+    CPP_RUNTIME,
+    CPP_POLL,
+    CPP_GATES,
+    CPP_FAULTS,
+    CPP_EDGES,
+    CPP_ENTRY,
+))"""
+if expected_assembly not in fixture_source:
+    fail("fixture assembler changed the canonical section order")
+if imported_from(fixture_tree, "coin_pulse_capture_lab_fixture_runtime") | imported_from(
+    fixture_tree, "coin_pulse_capture_lab_fixture_poll"
+) | imported_from(fixture_tree, "coin_pulse_capture_lab_fixture_gates") | imported_from(
+    fixture_tree, "coin_pulse_capture_lab_fixture_faults"
+) | imported_from(fixture_tree, "coin_pulse_capture_lab_fixture_edges") | imported_from(
+    fixture_tree, "coin_pulse_capture_lab_fixture_entry"
+) != expected_imports:
+    fail("fixture assembler imports do not match the six declared sections")
+
+cpp = "".join(sections)
+if len(cpp) != 21445 or len(cpp.splitlines()) != 479:
+    fail(f"assembled C++ fixture size drifted: chars={len(cpp)} lines={len(cpp.splitlines())}")
+if not cpp.startswith("#include <cstdint>\n") or not cpp.endswith("return 0;\n}"):
+    fail("assembled C++ fixture lost its original outer boundaries")
+if cpp.count("@@FUNCTIONS@@") != 1:
+    fail("assembled C++ fixture must retain exactly one production-helper insertion point")
 if "COIN_PULSE_CAPTURE_PASS" not in cpp or "/18 top-level scenarios" not in cpp:
-    fail("CPP fixture lost the 18-scenario pass marker")
+    fail("assembled C++ fixture lost the 18-scenario pass marker")
 if "runIsrSequenceWraparound" not in cpp:
-    fail("CPP fixture lost the exact ISR rollover scenario")
-for marker in ("SIMULATED_ONLY=1", "PHYSICAL_COIN_PULSE_ACCEPTANCE=0",
-               "PHYSICAL_RELAY_ACCEPTANCE=0", "PHYSICAL_POWER_CUT_ACCEPTANCE=0"):
+    fail("assembled C++ fixture lost the exact ISR rollover scenario")
+for scenario in (
+    "runDrainCapture", "runNoPulseControl", "runSaveFailureCase", "runSaveFailure",
+    "runDeniedGates", "runInvalidPinConfig", "runPulseLimitBoundary",
+    "runUnrepresentablePulseFault", "runUnrepresentablePulseCases",
+    "runLatePulseAfterReady", "runMissedPulseAfterBlockingPost",
+    "runMissedPulseDuringBlockingWork", "runMultipleUnobservedEdges",
+    "runSingleObservedEdge", "runIngressTransitionCases", "runIsrSequenceWraparound",
+):
+    if cpp.count(f"static bool {scenario}(") != 1:
+        fail(f"assembled C++ fixture must contain exactly one {scenario} definition")
+if cpp.count("int main()") != 1:
+    fail("assembled C++ fixture must contain exactly one main entry point")
+
+for marker in (
+    "SIMULATED_ONLY=1", "PHYSICAL_COIN_PULSE_ACCEPTANCE=0",
+    "PHYSICAL_RELAY_ACCEPTANCE=0", "PHYSICAL_POWER_CUT_ACCEPTANCE=0",
+):
     if marker not in runner_source:
         fail(f"runner lost evidence marker: {marker}")
 
@@ -134,10 +195,10 @@ if "len(FUNCTION_INDEX_BY_NAME) != len(FUNCTION_SPECS)" not in contract_source:
     fail("contract module lost duplicate-name validation")
 if "len({signature for _, signature in FUNCTION_SPECS})" not in contract_source:
     fail("contract module lost duplicate-signature validation")
-if "CPP.replace(\"@@FUNCTIONS@@\"" not in runner_source:
+if 'CPP.replace("@@FUNCTIONS@@"' not in runner_source:
     fail("runner no longer composes the exact-source fixture")
 if "for name, helper_name, old, new, expected in MUTATIONS" not in runner_source:
     fail("runner no longer executes the complete mutation matrix")
 
 print("COIN_PULSE_CAPTURE_LAB_MODULE_BOUNDARIES_PASS")
-print(f"FUNCTION_SPECS={len(specs)} MUTATIONS={len(mutation_names)}")
+print(f"FIXTURE_SECTIONS={len(SECTION_SPECS)} FUNCTION_SPECS={len(specs)} MUTATIONS={len(mutation_names)}")
