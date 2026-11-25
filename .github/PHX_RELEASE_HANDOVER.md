@@ -2628,15 +2628,15 @@ Only RELEASE-owned test, compatibility workflow and this RELEASE handover are in
 
 This is the single machine-checked current pointer for the RELEASE ESP32 compatibility workflow. The focused-pass source/test commit, latest documentation commit, and current PR head are pinned separately.
 
-- HARDWARE #349 source/test SHA (last focused-pass): `9b20d0a6e520d78423250636b3ea0fe983b35294`.
-- HARDWARE #349 docs HEAD: `b5b44d2afa62de0077b2d04e687499b103a1e3b8`.
-- HARDWARE #349 PR HEAD (current, not qualified): `b5b44d2afa62de0077b2d04e687499b103a1e3b8`.
+- HARDWARE #349 source/test SHA (last focused-pass): `7da74f9d1768a42fc6c15be368eeddae29035d4f`.
+- HARDWARE #349 docs HEAD: `2a5c997add4f49fcd74f753101d3a9daac0040bf`.
+- HARDWARE #349 PR HEAD (current, not qualified): `2a5c997add4f49fcd74f753101d3a9daac0040bf`.
 - ESP32 sketch Git blob SHA (last focused-pass source): `c07aba7d518ef7eb5d536aafdd77ef6193e676cb`.
 - Latest PR-head ESP32 sketch Git blob SHA (not release-qualified): `c07aba7d518ef7eb5d536aafdd77ef6193e676cb`.
 - Release pin advanced to the latest focused-pass source/test SHA after exact-source Quarantine and Relay passed; the current docs/PR head retains the same sketch blob.
-- Latest exact-source Quarantine: #45587094891 — SUCCESS; Relay #45587106298 — SUCCESS; Full #45587106766 — FAILURE at QA-owned Missing poll signature check; no Full or production qualification.
-- Exact-source compatibility matrix: [#45594602608](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45594602608) — SUCCESS (3/3 jobs).
-- Source/test-to-docs comparison: source/test `9b20d0a6e520d78423250636b3ea0fe983b35294` is the exact focused-pass code snapshot; docs/PR head `b5b44d2afa62de0077b2d04e687499b103a1e3b8` is a three-commit documentation-only descendant. The ESP32 sketch blob is identical at both refs.
+- Latest exact-source Quarantine: #45603111644 — SUCCESS; Relay #45603111558 — SUCCESS; Full #45603111622 — FAILURE at inherited CORE/QA Missing poll signature check; no Full or production qualification.
+- Exact-source compatibility matrix: PENDING — no run claimed yet.
+- Source/test-to-docs comparison: source/test `7da74f9d1768a42fc6c15be368eeddae29035d4f` is the exact focused-pass code snapshot; docs/PR head `2a5c997add4f49fcd74f753101d3a9daac0040bf` is a two-commit documentation-only descendant. The ESP32 sketch blob is identical at both refs.
 - Evidence boundary: hosted CI only. This matrix does not establish physical hardware acceptance or production binary approval.
 
 ## PHX-RELEASE UTC09 — exact-head Full workflow follow-through
@@ -4624,3 +4624,28 @@ No merge, workflow dispatch, signing, tag, release, publication, hardware flash,
 
 **PRODUCTION NO-GO.** Protected production signer and independent freshness witness, durable financial accounting and reversible migration, independent QA/MASTER approvals, approved production binaries, 150 physical power cuts and 30-device/24-hour soak remain unestablished or NOT TESTED.
 
+
+## PHX-RELEASE UTC11 — current HARDWARE source pin refresh
+
+The prior release workflow pinned HARDWARE #349 to source/test `9b20d0a6e520d78423250636b3ea0fe983b35294`. The live #349 stack advanced through the C++ preprocessing-number and user-defined-literal suffix corrections. Current source/test is `7da74f9d1768a42fc6c15be368eeddae29035d4f`; the current docs/PR head is `2a5c997add4f49fcd74f753101d3a9daac0040bf`.
+
+The current sketch blob is unchanged at both refs (`c07aba7d518ef7eb5d536aafdd77ef6193e676cb`). The source/test-to-docs comparison is five commits ahead from the earlier UTC10 source/test and two documentation-only commits after the current source/test; the compared paths after source/test are only the project handover and UTC11 handover. No HARDWARE source or firmware file was changed by RELEASE.
+
+**Hardware exact-source evidence**
+- Quarantine [#45603111644](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45603111644), job `139166862358`: PASS; C++ literal suffix contract 14/14 and source-extracted quarantine/parity checks passed.
+- Relay [#45603111558](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45603111558), jobs `139166861621` / `139166862022`: PASS; UDL 14/14, poll response 11/11, strict JSON 13/13, bounded HTTP and parity mutations passed.
+- Full [#45603111622](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45603111622), validation job `139166864322`: FAIL at inherited CORE/QA `Missing poll signature check`; 14/14 firmware/platform plus Android jobs PASS; downstream update/simulation/candidate/signing/publication stages SKIPPED.
+- These are source-extracted host CI / simulated results only. Physical hardware acceptance is not established.
+
+**RELEASE test-first evidence**
+- Test-only commit [`1b30cbaf`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/1b30cbafa19e88d77832702a31f3f28037edd761) updated the source-pin guard to reject the stale release pin.
+- Expected RED: Full PR run [#45603490821](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45603490821), CI-0701 job `139168209933`: failed exactly because the compatibility workflow still named and checked out the old `9b20d0a6` source instead of the expected current source. The old workflow's separate compatibility runs were still building the stale pin and are not current-source evidence.
+- The Hardware stack advanced again before this correction; the final release pin uses the later live source/test SHA `7da74f9d1768a42fc6c15be368eeddae29035d4f` and current docs/PR head `2a5c997add4f49fcd74f753101d3a9daac0040bf`.
+
+**RELEASE exact-source compatibility matrix**
+- Exact-source compatibility matrix: PENDING — no run claimed yet. Update this line only after both ESP32 core jobs and the provenance job finish successfully.
+
+**Integration limitations**
+- Full/Windows integration remains subject to CORE-owned PROJECT_HANDOVER.md freshness. The last inspected Windows handover job rejected newer workflow changes because the canonical CORE checkpoint remained `f313fe0ded5d0702a9a1f74de57e314a5f9744b6`; RELEASE will not edit CORE-owned handovers.
+- PR #291 remains OPEN / DRAFT / UNMERGED. No merge, tag, signer, release, publication, hardware flash, payment migration or customer deployment.
+- Production signer and independent freshness witness, durable accounting/migration, independent QA/MASTER approval, approved production binaries, 150 power cuts and 30-device/24-hour soak remain unestablished or NOT TESTED. **PRODUCTION NO-GO.**
