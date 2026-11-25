@@ -128,9 +128,149 @@ def expect_mutation_rejected(code, board, label, expected_exit):
     print(f"{board}: MUTATION_REJECTED {label} expected_exit={expected_exit}")
 
 
-def _normalize_cpp_function(source, name, whitespace_pattern=r"\s+"):
-    """Remove C++ formatting whitespace while preserving token differences."""
-    return re.sub(whitespace_pattern, "", extract_function(source, name))
+_CPP_MULTI_CHAR_PUNCTUATORS = tuple(
+    sorted(
+        (
+            ">>=", "<<=", "->*", "...", "<=>", "++", "--", "->", ".*", "::",
+            "&&", "||", "<=", ">=", "==", "!=", "+=", "-=", "*=", "/=",
+            "%=", "^=", "&=", "|=", "<<", ">>", "##",
+        ),
+        key=len,
+        reverse=True,
+    )
+)
+
+
+def _cpp_token_sequence(source):
+    """Tokenize the extracted C++ function without losing literal payloads."""
+    tokens = []
+    index = 0
+
+    while index < len(source):
+        if source[index].isspace():
+            index += 1
+            continue
+
+        if source.startswith("//", index):
+            newline = source.find("\n", index + 2)
+            while (
+                newline >= 0
+                and newline > index
+                and source[newline - 1] == "\\"
+            ):
+                newline = source.find("\n", newline + 1)
+            index = len(source) if newline < 0 else newline + 1
+            continue
+
+        if source.startswith("/*", index):
+            end = source.find("*/", index + 2)
+            if end < 0:
+                raise ValueError("unterminated C++ block comment")
+            index = end + 2
+            continue
+
+        raw_prefix = next(
+            (
+                prefix
+                for prefix in ("u8R", "uR", "UR", "LR", "R")
+                if source.startswith(prefix + '"', index)
+            ),
+            None,
+        )
+        if raw_prefix is not None:
+            quote_index = index + len(raw_prefix)
+            open_paren = source.find("(", quote_index + 1)
+            if open_paren < 0:
+                raise ValueError("malformed C++ raw string literal")
+            delimiter = source[quote_index + 1 : open_paren]
+            if (
+                len(delimiter) > 16
+                or any(char.isspace() or char in "()\\" for char in delimiter)
+            ):
+                raise ValueError("invalid C++ raw string delimiter")
+            terminator = ")" + delimiter + '"'
+            end = source.find(terminator, open_paren + 1)
+            if end < 0:
+                raise ValueError("unterminated C++ raw string literal")
+            end += len(terminator)
+            tokens.append(("literal", source[index:end]))
+            index = end
+            continue
+
+        literal_prefix = None
+        quote = None
+        quote_index = None
+        for prefix in ("u8", "u", "U", "L", ""):
+            candidate = index + len(prefix)
+            if (
+                candidate < len(source)
+                and source.startswith(prefix, index)
+                and source[candidate] in ("'", '"')
+            ):
+                literal_prefix = prefix
+                quote = source[candidate]
+                quote_index = candidate
+                break
+        if literal_prefix is not None:
+            start = index
+            index = quote_index + 1
+            while index < len(source):
+                if source[index] == "\\":
+                    index += 2
+                    continue
+                if source[index] == quote:
+                    index += 1
+                    tokens.append(("literal", source[start:index]))
+                    break
+                index += 1
+            else:
+                raise ValueError("unterminated C++ quoted literal")
+            continue
+
+        char = source[index]
+        if char.isalpha() or char == "_":
+            start = index
+            index += 1
+            while index < len(source) and (
+                source[index].isalnum() or source[index] == "_"
+            ):
+                index += 1
+            tokens.append(("identifier", source[start:index]))
+            continue
+
+        if char.isdigit() or (
+            char == "." and index + 1 < len(source) and source[index + 1].isdigit()
+        ):
+            start = index
+            index += 1
+            while index < len(source) and (
+                source[index].isalnum() or source[index] in "_'."
+            ):
+                index += 1
+            tokens.append(("number", source[start:index]))
+            continue
+
+        punctuator = next(
+            (
+                item
+                for item in _CPP_MULTI_CHAR_PUNCTUATORS
+                if source.startswith(item, index)
+            ),
+            None,
+        )
+        if punctuator is None:
+            tokens.append(("punct", char))
+            index += 1
+        else:
+            tokens.append(("punct", punctuator))
+            index += len(punctuator)
+
+    return tuple(tokens)
+
+
+def _normalize_cpp_function(source, name):
+    """Compare C++ tokens, preserving strings/chars and ignoring comments."""
+    return _cpp_token_sequence(extract_function(source, name))
 
 
 def _board_parity_problem(sources):
@@ -208,7 +348,7 @@ def verify_board_parity_mutations(sources):
 
 
 def verify_board_parity_normalizer_contract():
-    """Guard formatting-only parity and real token drift against regex regressions."""
+    """Guard C++ token parity, literal payloads and comment-insensitive formatting."""
     compact = r"""
 String readBoundedControllerResponse(HTTPClient &h, int statusCode) {
   if(statusCode<200 || statusCode>=300) return String();
@@ -226,19 +366,6 @@ String readBoundedControllerResponse ( HTTPClient & h , int statusCode )
     if _board_parity_problem(equivalent) is not None:
         raise AssertionError("whitespace-only C++ formatting must not break board parity")
 
-    legacy = {
-        board: _normalize_cpp_function(
-            equivalent[board], "readBoundedControllerResponse", whitespace_pattern=r"\\s+"
-        )
-        for board in BOARDS
-    }
-    if legacy["ESP8266"] == legacy["ESP32"]:
-        raise AssertionError("fixture must expose the previous over-escaped whitespace pattern")
-
-    drifted = dict(equivalent)
-    drifted["ESP32"] = formatted.replace("statusCode >= 300", "statusCode > 300")
-    if _board_parity_problem(drifted) is None:
-        raise AssertionError("token-level board drift must remain detectable")
     literal_baseline = r"""
 String readBoundedControllerResponse(HTTPClient &h, int statusCode) {
   if (h.hasHeader("Transfer-Encoding")) return String();
@@ -269,7 +396,35 @@ String readBoundedControllerResponse(HTTPClient &h, int statusCode) {
     if _board_parity_problem({"ESP8266": comment_left, "ESP32": comment_right}) is not None:
         raise AssertionError("comments must not create a false board-parity mismatch")
 
-    print("BOUNDED_HTTP_RESPONSE_WHITESPACE_NORMALIZER_PASS 3/3")
+    raw_left = r"""
+String readBoundedControllerResponse(HTTPClient &h, int statusCode) {
+  return R"cfg(alpha beta)cfg";
+}
+"""
+    raw_right = raw_left.replace("alpha beta", "alpha  beta")
+    if _board_parity_problem({"ESP8266": raw_left, "ESP32": raw_right}) is None:
+        raise AssertionError("raw-string contents must remain significant")
+
+    escaped_left = r"""
+String readBoundedControllerResponse(HTTPClient &h, int statusCode) {
+  return "alpha\tbeta";
+}
+"""
+    escaped_right = escaped_left.replace(r"\t", " ")
+    if _board_parity_problem({"ESP8266": escaped_left, "ESP32": escaped_right}) is None:
+        raise AssertionError("escaped string contents must remain significant")
+
+    char_left = r"""
+String readBoundedControllerResponse(HTTPClient &h, int statusCode) {
+  return '\t';
+}
+"""
+    char_right = char_left.replace(r"\t", " ")
+    if _board_parity_problem({"ESP8266": char_left, "ESP32": char_right}) is None:
+        raise AssertionError("character literal contents must remain significant")
+
+    print("BOUNDED_HTTP_RESPONSE_TOKEN_NORMALIZER_PASS 8/8")
+
 
 
 def verify():
