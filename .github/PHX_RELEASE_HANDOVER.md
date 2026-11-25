@@ -4670,3 +4670,50 @@ The current sketch blob is unchanged at both refs (`c07aba7d518ef7eb5d536aafdd77
 - Full/Windows integration remains subject to CORE-owned PROJECT_HANDOVER.md freshness. The last inspected Windows handover job rejected newer workflow changes because the canonical CORE checkpoint remained `f313fe0ded5d0702a9a1f74de57e314a5f9744b6`; RELEASE will not edit CORE-owned handovers.
 - PR #291 remains OPEN / DRAFT / UNMERGED. No merge, tag, signer, release, publication, hardware flash, payment migration or customer deployment.
 - Production signer and independent freshness witness, durable accounting/migration, independent QA/MASTER approval, approved production binaries, 150 power cuts and 30-device/24-hour soak remain unestablished or NOT TESTED. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC12 — installed Arduino CLI hard-link admission
+
+**Disposition:** one RELEASE-owned toolchain-admission defect corrected test-first. Exact source/test compatibility matrix is **3/3 PASS**. PR #291 remains OPEN / DRAFT / UNMERGED; no merge, tag, signing, publication, hardware flash, payment migration or customer deployment.
+
+### Exact branch identity
+- Repository: `BlazeDevStudio/BlazingSystems-Experiments`.
+- PR #291 branch: `phoenix/release-publisher-isolation-20261115`.
+- Starting head for this increment: `4d0ecc8e07b3ef922660b545875afd5d02d409d5`.
+- Source/test head: `9c4f7bb9f951afcf8173eae2b1e453fb57572cb3`.
+- Base / PR #242: `734b89d9e7792247e8376335c3f3685500ab3f89`.
+- This increment changed exactly two RELEASE-owned files: `.github/scripts/test_arduino_cli_archive_verifier.py` and `.github/scripts/verify_arduino_cli_archive.py`. This handover is the third changed path.
+- PR #291's existing 32-path diff still contains pre-existing non-RELEASE paths, including CORE-owned `experiment/openwrt/BlazePwifi/docs/handover/CHANGE_LEDGER.md` (last touched by earlier commit `4d0ecc8`) and inherited CORE/PISONET paths. This increment did not edit those paths; MASTER/CORE must reconcile ownership before integration.
+
+### Defect and test-first lineage
+The installed Arduino CLI verifier already checked regular-file identity, no-follow open, bounded size, stable descriptor metadata and byte identity against the pinned upstream archive. Unlike RELEASE's build-provenance artifact inventory, it did not reject an installed executable with `st_nlink != 1`. A hard-linked alias could therefore remain a writable second name after verification.
+
+- Test-only commit [`3eb8c232`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/3eb8c232cc1d8f7df67c2ef94211d046f72c2f56) adds a synthetic hard-link alias and requires rejection before any network request.
+- Expected RED: [run #45612753299](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45612753299), provenance job `139200249115`: 60 build-provenance tests PASS; Arduino CLI suite ran 11 tests with exactly the new hard-link test failing because no `VerificationError` was raised. Both independent ESP32 core jobs completed SUCCESS. The overall workflow failure is the intended RED.
+- Source correction [`9c4f7bb9`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/9c4f7bb9f951afcf8173eae2b1e453fb57572cb3) rejects a link count other than one in both the pre-open stat and the opened descriptor before reading/downloading. Existing before/after file-state comparison continues to detect link-count changes during the read.
+
+### Exact-source compatibility CI
+[Run #45612892537](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45612892537) completed **SUCCESS, 3/3** at source/test head `9c4f7bb9`:
+- Provenance job `139202013948`: 60 provenance tests PASS; 11 Arduino CLI archive-verifier tests PASS; 5 reproducible-image descriptor tests PASS; 23 release workflow/concurrency tests PASS; immutable action-pin guard PASS.
+- ESP32 core 3.3.13 job `139202014099`: two clean builds reproduced a 1,045,808-byte application image, SHA-256 `7ff140eb6c0427d99c90a4f6c4404748125d50ca2f3c102b534c31e70af5adb7`.
+- ESP32 core 4.0.0 job `139202013308`: two clean builds reproduced a 1,100,016-byte application image, SHA-256 `b4f60e32ff18c5e7863d59dd5843c2adf107aa114a9669701ca4189b49326fa4`.
+- Both jobs checked out HARDWARE #349 source/test `7da74f9d1768a42fc6c15be368eeddae29035d4f`, verified sketch blob `c07aba7d518ef7eb5d536aafdd77ef6193e676cb`, and compared two clean builds per core. These are hosted-CI reproducibility outputs, not approved production binaries or physical acceptance.
+
+### Exact-source integrated workflow outcomes
+- Full [#45612892596](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45612892596): **OVERALL FAILURE**. CI-0701 PASS; mandatory validation FAIL at the CORE-owned handover freshness gate; all 14 target/platform jobs SUCCESS; update bundle, simulations, candidate, signing and publication SKIPPED.
+- Windows [#45612892588](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45612892588): **FAILURE** at handover freshness; Windows build and publisher SKIPPED.
+- The freshness job names CORE-owned `experiment/openwrt/BlazePwifi/docs/handover/CURRENT_STATE.md`, checkpoint `d85eb6a2766781b6cac1807cef461993d8216b84`. PHX-CORE/MASTER must publish the canonical post-change freshness SHA. RELEASE will not edit that CORE file or bypass the gate.
+
+### Live coordination and remaining blockers
+- Control plane #172: one UTC12 PHX-RELEASE checkpoint is posted after this handover update.
+- Cleanup-first #266 remains OPEN, **0/7 tracks complete**.
+- MASTER #288 remains OPEN/DRAFT at `5ff54bf3140f0b4b3065e22b20183c1564c57edb`; ownership manifest blob `e4db324315a1b3543fec17a148fbf960170fcb29` has 11 `DRAFT_REVIEW_ONLY` routes. RELEASE remains `reimplementation-review`, not copy/move/merge authority. Live main is `6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5`; the MASTER draft still uses base `f4e8a891`, so MASTER must decide whether/how to sync main-base drift.
+- Experiments #242 remains OPEN/DRAFT at `734b89d9`; PR #291 remains OPEN/DRAFT at source/test head `9c4f7bb9` before this handover commit. Independent PR reviews and review threads: **0**.
+- COE #26 remains FROZEN at `b382d233ff06c8791b1028bed3c617cc7b670d12`; five workflows are QUEUED with zero jobs.
+- COE #31 remains OPEN/DRAFT at `59ed44d0b911e176f1a95b9cf5585ef811ffd31b`. Shared-contract validation and case-collision pass; mandatory sandbox fails at unprivileged bubblewrap UID-map setup (`Permission denied`, exit 125). No fallback.
+- Private Drive registry v11 was not surfaced through authorized Library search. Older v3–v7 snapshots and a checkpoint that merely references v11 are not substitutes; none was used as current provenance.
+- Branch-protection read returned 403 and visible rulesets were empty; effective protected production admission is not established.
+
+**Next actions:** PHX-QA independently reviews the hard-link admission guard and regression; PHX-MASTER refreshes its #291 child pointer and reconciles pre-existing non-RELEASE paths; PHX-CORE publishes the canonical freshness SHA; PHX-INFRA supplies an authorized unprivileged namespace runner for COE #31. Do not repeat this fix.
+
+**PRODUCTION NO-GO.** Protected signer and independent freshness witness, durable financial accounting/migration, independent QA/MASTER approval, approved production binaries, 150 physical power cuts and 30-device/24-hour soak remain unestablished or NOT TESTED.
