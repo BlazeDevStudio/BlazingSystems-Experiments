@@ -112,7 +112,7 @@
       "dimension": "implementation",
       "mandatory": true,
       "weight": 4,
-      "status": "VERIFICATION PENDING",
+      "status": "VERIFIED",
       "requirement_sources": [
         "02_BLAZERENTAL_ANDROID.txt",
         "expanded BlazeRental Android directive",
@@ -120,14 +120,17 @@
       ],
       "implementation_task": "Signed rental status authentication before persistence",
       "acceptance_criterion": "Seven positive and adversarial status tests pass with actual Android state",
-      "verification_method": "PENDING: Seven positive and adversarial status tests pass with actual Android state",
-      "evidence": [],
-      "verified_commit": null,
-      "verified_at_utc": null,
+      "verification_method": "Source-exact Android 8.1/API27 JUnit instrumentation: seven auth cases and six installer cases, 13 non-skipped passes validated against actual XML",
+      "evidence": [
+        "https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45621832195",
+        "https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45621832195/artifacts/15026510211"
+      ],
+      "verified_commit": "0907da70c55b61d013aa75b5002ab37a51ccdf0a",
+      "verified_at_utc": "2026-11-25T13:20:25Z",
       "dependencies": [
         "PHX-MASTER stage-ledger reconciliation"
       ],
-      "remaining_work": "Demonstrate acceptance with exact commit and attached evidence"
+      "remaining_work": "Independent PHX-QA review, physical signed update and Device Owner recovery remain separate criteria."
     },
     {
       "id": "PXA-CORE-002",
@@ -137,7 +140,7 @@
       "dimension": "implementation",
       "mandatory": true,
       "weight": 3,
-      "status": "VERIFICATION PENDING",
+      "status": "VERIFIED",
       "requirement_sources": [
         "02_BLAZERENTAL_ANDROID.txt",
         "expanded BlazeRental Android directive",
@@ -145,14 +148,17 @@
       ],
       "implementation_task": "PackageInstaller recovery and stale callback token",
       "acceptance_criterion": "Six native installer state/recovery tests pass",
-      "verification_method": "PENDING: Six native installer state/recovery tests pass",
-      "evidence": [],
-      "verified_commit": null,
-      "verified_at_utc": null,
+      "verification_method": "Source-exact Android 8.1/API27 JUnit instrumentation: seven auth cases and six installer cases, 13 non-skipped passes validated against actual XML",
+      "evidence": [
+        "https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45621832195",
+        "https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45621832195/artifacts/15026510211"
+      ],
+      "verified_commit": "0907da70c55b61d013aa75b5002ab37a51ccdf0a",
+      "verified_at_utc": "2026-11-25T13:20:25Z",
       "dependencies": [
         "PHX-MASTER stage-ledger reconciliation"
       ],
-      "remaining_work": "Demonstrate acceptance with exact commit and attached evidence"
+      "remaining_work": "Independent PHX-QA review, physical signed update and Device Owner recovery remain separate criteria."
     },
     {
       "id": "PXA-CORE-003",
@@ -391,7 +397,7 @@
       "dimension": "functional",
       "mandatory": true,
       "weight": 4,
-      "status": "VERIFICATION PENDING",
+      "status": "VERIFIED",
       "requirement_sources": [
         "02_BLAZERENTAL_ANDROID.txt",
         "expanded BlazeRental Android directive",
@@ -399,14 +405,17 @@
       ],
       "implementation_task": "API27 seven lease + six installer instrumentation",
       "acceptance_criterion": "Exact 13 JUnit tests executed and XML verifies zero failure, error or skip",
-      "verification_method": "PENDING: Exact 13 JUnit tests executed and XML verifies zero failure, error or skip",
-      "evidence": [],
-      "verified_commit": null,
-      "verified_at_utc": null,
+      "verification_method": "Source-exact Android 8.1/API27 JUnit instrumentation: seven auth cases and six installer cases, 13 non-skipped passes validated against actual XML",
+      "evidence": [
+        "https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45621832195",
+        "https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45621832195/artifacts/15026510211"
+      ],
+      "verified_commit": "0907da70c55b61d013aa75b5002ab37a51ccdf0a",
+      "verified_at_utc": "2026-11-25T13:20:25Z",
       "dependencies": [
         "PHX-MASTER stage-ledger reconciliation"
       ],
-      "remaining_work": "Demonstrate acceptance with exact commit and attached evidence"
+      "remaining_work": "Independent PHX-QA review, physical signed update and Device Owner recovery remain separate criteria."
     },
     {
       "id": "PXA-FUN-004",
@@ -815,6 +824,7 @@
     "Current whole-product progress remains provisional until PHX-MASTER confirms scope and conflicts.",
     "Only VERIFIED criterion weight counts; no fractional completion credits.",
     "API21/API23 evidence comes from fixed APK smoke run on candidate 0e0...; later native-workflow-only changes do not affect tested APK source.",
-    "Current initial 10/98 provisional readiness points are historical API21/API23 source-exact evidence; global readiness remains NOT YET MEASURABLE."
+    "Current initial 10/98 provisional readiness points are historical API21/API23 source-exact evidence; global readiness remains NOT YET MEASURABLE.",
+    "PHX-ANDROID exact-head API27 source and emulator 13/13 suite completed SUCCESS at 0907da70c55b61d013aa75b5002ab37a51ccdf0a, artifact 15026510211. This satisfies three narrowly scoped criteria; no release or physical device claim."
   ]
 }
