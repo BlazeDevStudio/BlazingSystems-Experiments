@@ -1,3 +1,17 @@
+## PHX-MASTER UTC13 — current exact Hardware / COE #26 parity (2026-11-25T13:38:55Z)
+
+COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12` remains OPEN / DRAFT / FROZEN. Current HARDWARE #349 head is `2a5c997add4f49fcd74f753101d3a9daac0040bf`. Recursive trees are complete: source 2,552 entries; destination 286.
+
+- Source ESP32/ESP8266 board subtrees: 16 / 60 files, including 9 / 55 Python labs/helpers (64 total). Destination Hardware: 4 files, zero Python labs/helpers.
+- ESP32 blobs: source `c07aba7d518ef7eb5d536aafdd77ef6193e676cb`, destination `3cc7ec54b476943dc04a8d1af5e2df5fe054e422`.
+- ESP8266 blobs: source `56b7ff524f6b55a1305196b27494c87fb9ffa6ab`, destination `c8be98f72596681e36a3ad1f8939bf8046c96887`.
+- Hardening test blobs: source `41211b2c110ab409f6d9d1812ef12fda73b13211` (181 lines), destination `f921c56cecc19cab1989507b9b4ade1f45dac54e` (103 lines).
+- Destination retains format-on-mount, unverified quarantine append followed by unconditional pending clear, unauthenticated quarantine-log deletion and keyless response-signature bypass. Source preserves deny/recovery behavior and has no remote-config call sites.
+- SOURCE_INTAKE schema 8 has 61 runtime rows recounting 46 identical / 15 derived versus declared 47 / 14; it pins historical source `6d4c9b`, not current Hardware. Four primary tests are two exact/two derived; 15 additional derived tests are listed; release/hardware/full-CI/source-admission flags remain false.
+- Pisowifi LICENSE matches source blob `1ee55b94`; root NOTICE is absent at destination, and source Tabler LICENSE has no destination counterpart. Hardware-specific SOURCE_INTAKE/MIGRATION_MAP and license/toolchain disposition remain missing.
+
+No destination staging/copy/write is authorized. Require exact per-file provenance, test identities, toolchain pins, license/NOTICE review, owner review and terminal exact-head CI before proposing reversible staging.
+
 ## PHX-MASTER UTC06 — exact current Hardware source / COE #26 destination parity
 
 **Candidate:** COE #26 at `b382d233ff06c8791b1028bed3c617cc7b670d12`, OPEN / DRAFT / FROZEN. **Current Hardware owner snapshot:** PR #349 docs head `bbd3f343c952ddaab1bec210cfa342981bca742e`, source/test `61689ab4764018f3b913303b4bf508f1d04a88af`. No staging or destination writes.

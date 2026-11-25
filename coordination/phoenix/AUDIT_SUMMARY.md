@@ -1,3 +1,17 @@
+## PHX-MASTER UTC13 disposition — 2026-11-25T13:38:55Z
+
+**Master parent:** `870567fe35c49cf7dda70e1bf89c1860456f0943`. **Experiments main:** `6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5`. **Active development:** `2fbd2475e9f54878c316fa7cea2f228386b0e859`. **COE main:** `a6513ab4412b4c014eee2863e45cbe32d06cb243`. **COE #26:** `b382d233ff06c8791b1028bed3c617cc7b670d12`.
+
+- PR #288 remains OPEN / DRAFT / UNMERGED; 213 changed paths, all under `coordination/phoenix/`. Master exact-head Actions runs: zero.
+- Current owner heads and exact-head CI are refreshed in ROLE_ASSIGNMENTS and the UTC13 report.
+- COE #26 remains FROZEN: 64 current source board-local Python labs/helpers vs zero destination; firmware and hardening-test blobs differ; source/destination behavior is not equivalent; SOURCE_INTAKE recount 46/15 vs declared 47/14; Hardware intake, toolchain and license/NOTICE provenance remain incomplete.
+- Main is one unrelated commit ahead of Master (`promp CallerID`, 943 additions). No synchronization operation was performed.
+- Issue #172 OPEN; cleanup #266 OPEN / 0-of-7; ownership routes remain 11 / DRAFT_REVIEW_ONLY / Master target null.
+- Private v11/newer corrections NOT_RECOVERED; branch protection UNKNOWN; Master Python suite and `verify_coordination.py` NOT RUN because no local checkout could be established.
+- 30/30 read-only coordination/provenance assertions PASS; these are not product tests.
+
+**PRODUCTION NO-GO.** No subsystem source or COE destination changes, no merge, signing, release, flash, real payment, physical test or migration occurred.
+
 ## PHX-MASTER UTC06 disposition — 2026-11-25T06:34:41Z
 
 **Master parent:** `dd63d11f34c168e8eaf2e5a533c589853203ae11`. **Experiments main:** `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`. **Development:** `aad3aade72c1156eecba1fed30907c6d0283b2c5`. **COE main:** `a6513ab4412b4c014eee2863e45cbe32d06cb243`. **COE #26:** `b382d233ff06c8791b1028bed3c617cc7b670d12`.

@@ -1,3 +1,13 @@
+## PHX-MASTER UTC13 routing refresh — 2026-11-25T13:38:55Z
+
+Live route manifest remains `OWNERSHIP_ROUTES.json@e4db324315a1b3543fec17a148fbf960170fcb29`: 11 routes, `DRAFT_REVIEW_ONLY`, PHX-MASTER source `coordination/phoenix/`, target null. No route was changed.
+
+- Experiments main `6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5`; active development `2fbd2475e9f54878c316fa7cea2f228386b0e859`; Master `870567fe35c49cf7dda70e1bf89c1860456f0943`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`.
+- COE #26 Hardware routes remain selective-review only; destination has no Hardware-specific intake/map. No recursive copy is permitted.
+- PR #288 remains OPEN / DRAFT / UNMERGED; main is one unrelated commit ahead. No rebase or base synchronization was performed.
+- Owner PR/CI pointers are refreshed in the UTC13 ROLE_ASSIGNMENTS and audit report. CORE, RENTAL, PISONET, HARDWARE, QA and RELEASE retain their source branches.
+- Private registry v11/newer corrections remain unavailable. No private content or IDs are published.
+
 ## PHX-MASTER UTC06 routing refresh — owner-head drift and destination admission
 
 - Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; development `aad3aade72c1156eecba1fed30907c6d0283b2c5`; Master branch parent `dd63d11f34c168e8eaf2e5a533c589853203ae11`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`.

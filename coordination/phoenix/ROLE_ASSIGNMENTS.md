@@ -1,3 +1,26 @@
+## PHX-MASTER UTC13 exact-head role / CI refresh — 2026-11-25T13:38:55Z
+
+Master parent `870567fe35c49cf7dda70e1bf89c1860456f0943`; Experiments main `6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5`; active development `blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859`; legacy development `blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`.
+
+| Owner / PR | Current exact PR head | Exact-head CI / disposition |
+|---|---|---|
+| CORE #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | Build #42698139210 PASS (older scoped evidence); no CORE source edits |
+| RENTAL #328 | `10fc200b6dbf470a95e679d3acc58aff4ab2a67f` | APK #45622918340, API #45622918364, auth/recovery #45622918551 PASS; shared build #45622918468 FAIL at stale PROJECT_HANDOVER checkpoint `468adc8129ea311e13f4c5c63eb6bb01ca67ecb0` and ESP32 `mbedtls/sha256.h` |
+| PISONET #255 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | Synthetic Windows #42462978704 PASS; not native acceptance |
+| HARDWARE #340 | `fd1dbaa89e4267e53df22e73be73af80c6e61be8` | Six exact-head build/preflight/quarantine/MbedTLS/board compile workflows PASS |
+| HARDWARE #347 | `960184670379f01e20f0e7e8bc23b3e5eedacd3f` | Quarantine #45299741995, Relay #45299742437, build #45299741993 FAIL |
+| HARDWARE #348 | `eb7afcb2ba0d1e84054c052c8b129cb51a91d062` | Header #45352513178 PASS; build #45352513177 FAIL |
+| HARDWARE #349 | `2a5c997add4f49fcd74f753101d3a9daac0040bf` | Quarantine #45603969253 and Relay #45603968961 PASS; Full #45603969181 FAIL at inherited `Missing poll signature check`; 12 dependent stages skipped |
+| QA #290 | `5c29d15994cee1279058f1eca12f2a3180704292` | Windows #43633486963 PASS, but native COM lab is not invoked |
+| QA #292 | `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | No PR-triggered runs; base points at an older Master SHA |
+| RELEASE #291 | `b3e4fa22c4f4b8cd3009437a06a7eec56420d411` | Compatibility #45624182886 PASS; Full #45624183036 and Windows #45624182986 FAIL at CORE-owned freshness checkpoint `d85eb6a2766781b6cac1807cef461993d8216b84` |
+| COE RELEASE #35 | `f611c96091a1014ad36bf64251c180bcbc2d1f65` | Case guard #45541598250 PASS; 10/10 profiles fail closed for missing site ULA /48; sandbox #45541598267 exits 125 (Bubblewrap absent) |
+| COE CORE #45 | `9d76a134c1f6512aa40c20ec4d247306a71a8cce` | Overlay #44295049727 and case #44295049903 PASS (older scoped evidence) |
+| COE INTERCON #49 | `aeb8ff11b2f5db9a5f86280ab62ab988245f3919` | Case #44646341992 and Stage 5.1 #44646341873 PASS; shared ESP32 #44646341922 FAIL (missing mbedtls header) |
+| COE #26 | `b382d233ff06c8791b1028bed3c617cc7b670d12` | Five queued workflows / zero jobs; FROZEN |
+
+This snapshot supersedes older owner-head pins above; historical records are retained. No owner PR or subsystem branch was edited by Master.
+
 ## PHX-MASTER UTC06 exact-head owner / CI refresh — 2026-11-25T06:34:41Z
 
 Snapshot only; subsystem branches remain owner-controlled. Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; development `blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5`; Master parent `dd63d11f34c168e8eaf2e5a533c589853203ae11`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`.

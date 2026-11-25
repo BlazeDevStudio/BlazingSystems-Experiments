@@ -1,3 +1,16 @@
+## PHX-MASTER UTC13 — 2026-11-25 live HEAD, role CI, COE #26 exact-source provenance, and automation deconfliction
+
+[UTC13 exact-head owner CI, Hardware import provenance, manifest recount, branch drift, registry access and automation deconfliction audit](PHX_MASTER_UTC13_20261125_LIVE_HEAD_ROLE_CI_COE26_EXACT_SOURCE_PROVENANCE_AND_AUTOMATION_DECONFLICT_AUDIT.md)
+
+- Experiments main `6be5d19b`; active development `2fbd2475`; Master parent `870567fe`; COE main `a6513ab4`; COE #26 `b382d233`.
+- PR #288 is OPEN / DRAFT / UNMERGED with 213 coordination-only paths. Main is one unrelated `promp CallerID` commit ahead; no rebase/merge.
+- Current role PR heads/CI are refreshed in ROLE_ASSIGNMENTS. HARDWARE #349 Full remains blocked at inherited poll-signature fixture; RELEASE #291 Full/Windows remain blocked by CORE-owned handover freshness; RENTAL #328 has handover and ESP32 MbedTLS build failures.
+- COE #26 remains FROZEN: source/destination firmware/test blobs differ; 64 source board-local Python labs/helpers vs zero destination; SOURCE_INTAKE actual 46/15 vs declared 47/14; Hardware license/NOTICE provenance incomplete; five workflows queued / zero jobs.
+- #266 OPEN / 0-of-7; route manifest 11 / DRAFT_REVIEW_ONLY / Master target null; private v11/newer corrections NOT_RECOVERED.
+- Master suite NOT RUN; 30/30 read-only audit assertions PASS. **PRODUCTION NO-GO.**
+
+---
+
 ## PHX-MASTER UTC11 — 2026-11-25 current owner CI, COE #26 Hardware import delta, and main-base drift
 
 [UTC11 exact-head owner CI, newly missing Hardware lab imports, SOURCE_INTAKE recount, and main-base drift audit](PHX_MASTER_UTC11_20261125_CURRENT_HEAD_ROLE_CI_COE26_IMPORT_AND_MAIN_BASE_DRIFT_AUDIT.md)
