@@ -142,8 +142,34 @@ def verify_configure_runtime_pins_preserves_edge_baseline(source):
         raise RuntimeError("configureRuntimePins must quarantine ingress on both pin-attachment branches")
 
 
+def verify_fixture_routes_edges_through_production_isr():
+    if "++coinEdgeSequence" in CPP or "coinEdgeSequence++" in CPP:
+        raise RuntimeError(
+            "coin pulse fixture bypasses the production coinEdgeISR() by incrementing "
+            "the volatile sequence directly"
+        )
+    helper = extract_function(CPP, "emitCoinEdges")
+    if not helper or "coinEdgeISR();" not in helper:
+        raise RuntimeError("coin pulse fixture must route emitted edges through coinEdgeISR()")
+    scenarios = (
+        "runMissedPulseAfterBlockingPost",
+        "runMissedPulseDuringBlockingWork",
+        "runMultipleUnobservedEdges",
+        "runSingleObservedEdge",
+        "runIngressTransitionCases",
+        "runIsrSequenceWraparound",
+    )
+    for scenario in scenarios:
+        scenario_body = extract_function(CPP, scenario)
+        if "emitCoinEdges(" not in scenario_body:
+            raise RuntimeError(
+                f"{scenario} must inject edges through the extracted production ISR"
+            )
+
+
 def main():
     verify_shared_extractor()
+    verify_fixture_routes_edges_through_production_isr()
     failures = []
     for board, sketch in BOARDS:
         try:
