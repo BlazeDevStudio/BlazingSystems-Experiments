@@ -55,7 +55,36 @@ def verify_utf8_contracts(
         145,
     )
 
+
+    unicode_helper = extract(source, "pollJsonSkipUnicodeEscape")
+    high_surrogate_guard = "if(first>=0xD800 && first<=0xDBFF){"
+    low_surrogate_guard = "return !(first>=0xDC00 && first<=0xDFFF);"
+    if unicode_helper.count(high_surrogate_guard) != 1:
+        raise AssertionError(f"{board}: expected one high-surrogate pair guard")
+    if unicode_helper.count(low_surrogate_guard) != 1:
+        raise AssertionError(f"{board}: expected one isolated-low-surrogate guard")
+
+    bypass_high_pair = unicode_helper.replace(
+        high_surrogate_guard, "if(false){", 1
+    )
+    expect_mutation_rejected(
+        stubs + parser.replace(unicode_helper, bypass_high_pair, 1) + UTF8_MAIN,
+        board,
+        "accept-unpaired-high-surrogate",
+        151,
+    )
+
+    bypass_low_rejection = unicode_helper.replace(
+        low_surrogate_guard, "return true;", 1
+    )
+    expect_mutation_rejected(
+        stubs + parser.replace(unicode_helper, bypass_low_rejection, 1) + UTF8_MAIN,
+        board,
+        "accept-isolated-low-surrogate",
+        152,
+    )
+
     print(
         f"{board}: POLL_JSON_UTF8_VALIDATION_PASS "
-        "valid=3/3 invalid=9/9; mutations=4/4 rejected"
+        "valid=5/5 invalid=13/13; mutations=6/6 rejected"
     )

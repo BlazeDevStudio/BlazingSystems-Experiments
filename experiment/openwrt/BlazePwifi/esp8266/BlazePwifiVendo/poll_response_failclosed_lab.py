@@ -212,7 +212,7 @@ for board,path in BOARDS.items():
         "bool pollJsonSkipCompositeDepth(const String &r,int &p,uint8_t depth);\n"
     )
     parser = parser_prototypes + "\n".join(extract(source,name) for name in (
-        "pollJsonSpace", "pollJsonHex", "pollJsonSkipUtf8Continuation", "pollJsonSkipString",
+        "pollJsonSpace", "pollJsonHex", "pollJsonReadHex4", "pollJsonSkipUnicodeEscape", "pollJsonSkipUtf8Continuation", "pollJsonSkipString",
         "pollJsonSkipPrimitive", "pollJsonSkipValueDepth",
         "pollJsonSkipCompositeDepth", "pollJsonSkipComposite",
         "pollJsonSkipValue", "pollJsonTopLevelTrue",

@@ -1183,6 +1183,40 @@ bool pollJsonHex(char c){
   return (c>='0' && c<='9') || (c>='a' && c<='f') || (c>='A' && c<='F');
 }
 
+// JSON \u escapes must form Unicode scalar values. A high surrogate is
+// valid only when immediately followed by a low-surrogate \u escape.
+bool pollJsonReadHex4(const String &r,int &p,uint16_t &value){
+  const int n=(int)r.length();
+  if(p<0 || p>n || n-p<4) return false;
+  uint16_t decoded=0;
+  for(int i=0;i<4;i++){
+    const char c=r[p];
+    if(!pollJsonHex(c)) return false;
+    ++p;
+    int digit=0;
+    if(c>='0' && c<='9') digit=c-'0';
+    else if(c>='a' && c<='f') digit=c-'a'+10;
+    else digit=c-'A'+10;
+    decoded=(uint16_t)((decoded<<4) | (uint16_t)digit);
+  }
+  value=decoded;
+  return true;
+}
+
+bool pollJsonSkipUnicodeEscape(const String &r,int &p){
+  uint16_t first=0;
+  if(!pollJsonReadHex4(r,p,first)) return false;
+  if(first>=0xD800 && first<=0xDBFF){
+    const int n=(int)r.length();
+    if(p<0 || p>n || n-p<6 || r[p]!='\\' || r[p+1]!='u') return false;
+    p+=2;
+    uint16_t second=0;
+    if(!pollJsonReadHex4(r,p,second)) return false;
+    return second>=0xDC00 && second<=0xDFFF;
+  }
+  return !(first>=0xDC00 && first<=0xDFFF);
+}
+
 bool pollJsonSkipUtf8Continuation(const String &r,int &p,unsigned char lead){
   const int n=(int)r.length();
   int remaining=0;
@@ -1239,10 +1273,7 @@ bool pollJsonSkipString(const String &r,int &p){
       if(p>=n) return false;
       const char e=r[p++];
       if(e=='u'){
-        for(int i=0;i<4;i++){
-          if(p>=n || !pollJsonHex(r[p])) return false;
-          ++p;
-        }
+        if(!pollJsonSkipUnicodeEscape(r,p)) return false;
       } else if(e!='"' && e!='\\' && e!='/' && e!='b' &&
                 e!='f' && e!='n' && e!='r' && e!='t'){
         return false;

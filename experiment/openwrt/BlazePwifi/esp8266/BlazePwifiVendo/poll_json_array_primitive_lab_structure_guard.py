@@ -28,7 +28,7 @@ MODULES = {
     "utf8-string": (
         "poll_json_array_primitive_lab_utf8_contracts.py",
         "verify_utf8_contracts",
-        ("minimumSecond", "maximumSecond", "bypass-invalid-utf8-deny"),
+        ("minimumSecond", "maximumSecond", "bypass-invalid-utf8-deny", "accept-unpaired-high-surrogate", "accept-isolated-low-surrogate"),
     ),
 }
 
@@ -50,19 +50,28 @@ for node in fixture_tree.body:
     ):
         parser_functions = ast.literal_eval(node.value)
         break
-if (
-    not isinstance(parser_functions, tuple)
-    or "pollJsonSkipUtf8Continuation" not in parser_functions
+required_parser_helpers = (
+    "pollJsonReadHex4",
+    "pollJsonSkipUnicodeEscape",
+    "pollJsonSkipUtf8Continuation",
+    "pollJsonSkipString",
+)
+if not isinstance(parser_functions, tuple) or any(
+    helper not in parser_functions for helper in required_parser_helpers
 ):
-    raise AssertionError("source extractor must include the UTF-8 validator helper")
+    raise AssertionError("source extractor must include Unicode and UTF-8 string helpers")
+if tuple(parser_functions.index(helper) for helper in required_parser_helpers) != tuple(
+    sorted(parser_functions.index(helper) for helper in required_parser_helpers)
+):
+    raise AssertionError("Unicode/UTF-8 helpers must be extracted before string parsing")
 response_lab_source = (
     HERE / "poll_response_failclosed_lab.py"
 ).read_text(encoding="utf-8")
 if (
-    '"pollJsonSkipUtf8Continuation", "pollJsonSkipString"' not in response_lab_source
+    '"pollJsonReadHex4", "pollJsonSkipUnicodeEscape", "pollJsonSkipUtf8Continuation", "pollJsonSkipString"' not in response_lab_source
 ):
     raise AssertionError(
-        "poll-response fixture must extract the UTF-8 validator before string parsing"
+        "poll-response fixture must extract Unicode and UTF-8 validators before string parsing"
     )
 for name, (filename, function, anchors) in MODULES.items():
     path = HERE / filename
