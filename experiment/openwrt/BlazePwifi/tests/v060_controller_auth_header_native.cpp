@@ -53,7 +53,7 @@ int main() {
   std::puts("PHX-HW-CFG length-aware hex span and lowercase renderer PASS");
 
   const char key[]="synthetic-controller-v1-key";
-  const std::string policy="{\\"enabled\\":0,\\"coin_enabled\\":0,\\"config_revision\\":7}";
+  const std::string policy="{\"enabled\":0,\"coin_enabled\":0,\"config_revision\":7}";
   unsigned char hash[32]; char hashhex[65];
   mbedtls_sha256_context ctx; mbedtls_sha256_init(&ctx);
   assert(mbedtls_sha256_starts_ret(&ctx,0)==0);
