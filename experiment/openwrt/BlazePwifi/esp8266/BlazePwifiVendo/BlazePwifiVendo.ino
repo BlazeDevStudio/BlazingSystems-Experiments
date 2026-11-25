@@ -112,10 +112,12 @@ uint32_t lastHandledCoinEdgeSequence=0;
 
 // The ISR only counts the configured active edge. No String, filesystem,
 // network or logging calls are permitted from interrupt context.
+// Keep the unsigned modulo-2^32 increment explicit; newer GCC cores warn on
+// deprecated ++ of volatile-qualified objects. This ISR remains the only writer.
 #if defined(ESP8266)
-void ICACHE_RAM_ATTR coinEdgeISR(){ coinEdgeSequence++; }
+void ICACHE_RAM_ATTR coinEdgeISR(){ coinEdgeSequence = coinEdgeSequence + 1U; }
 #else
-void IRAM_ATTR coinEdgeISR(){ coinEdgeSequence++; }
+void IRAM_ATTR coinEdgeISR(){ coinEdgeSequence = coinEdgeSequence + 1U; }
 #endif
 uint32_t snapshotCoinEdgeSequence(){ return coinEdgeSequence; }
 
