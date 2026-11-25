@@ -115,3 +115,14 @@ The canonical private BLAZE_PROJECT_REGISTRY_v11_20261027.json and newer correct
 PR #288 remains OPEN / DRAFT / UNMERGED. This activation is coordination-only; no CORE/RENTAL/PISONET/HARDWARE/QA/RELEASE source branch or COE destination was modified. Cleanup #266 remains OPEN / 0-of-7. COE #26 remains FROZEN. **PRODUCTION NO-GO** until independent protected signing/anti-rollback witness, crash-atomic durable financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device 24-hour soak and owner-authorized release gates all have independently verified evidence.
 
 **No Codex was used.** No merge, release, secret provisioning, hardware flash, physical test, live payment operation, customer cutover or financial migration occurred.
+---
+
+## UTC04 post-checkpoint owner refresh — HARDWARE #349 (2026-11-25T04:56:08Z)
+
+After the initial UTC04 Master read, HARDWARE published BLAZE-COMMS/1 checkpoint #7153277010 and advanced its own PR #349. The source/test SHA remains `f591cb85ba032e4f2c30e5008c71de9ce8d17f2e`; the final handover/docs commit is `dc6ef11c104fdd9b73dfdd1120ca3a2bc3f86dcf`; the current PR/workflow head is `56de0761ca67b54feb4889401a810b0069f50614`.
+
+The refreshed handover blob is `311b31559a3ff98a8ee3f469fd0e663ff58634f0`. This supersedes the initial UTC04 `25351479` handover blob listed in the first overlap table. It remains divergent from all other role snapshots, so the raw cross-PR overlap count remains 27 and the canonical single-writer proposal remains relevant.
+
+Current docs-head CI is terminal: Quarantine [#45549636102](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45549636102) PASS; Relay [#45549636112](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45549636112) PASS; Full [#45549636091](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45549636091) FAIL at Controller protocol parity / inherited Missing poll signature check. Fourteen target/platform and Android jobs PASS; twelve dependent stages SKIPPED. The PR body and handover are now refreshed by HARDWARE. CORE owns the authenticated producer contract; QA owns independent assertion reconciliation.
+
+This owner update supersedes the earlier stale-HARDWARE-handover statement in the main UTC04 section. Master made no changes to the Hardware branch.
