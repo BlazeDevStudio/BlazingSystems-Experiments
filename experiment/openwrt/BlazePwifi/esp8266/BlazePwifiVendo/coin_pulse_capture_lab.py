@@ -167,34 +167,52 @@ def verify_fixture_routes_edges_through_production_isr():
             )
 
 
-def verify_board_specific_isr_selection():
-    # The first definition is active on ESP8266; the #else definition is active
-    # on ESP32. Distinct bodies make an inactive-branch selection observable.
-    probe = (
-        "#if defined(ESP8266)\\n"
-        "void IRAM_ATTR coinEdgeISR(){ coinEdgeSequence = coinEdgeSequence + 1U; }\\n"
-        "#else\\n"
-        "void IRAM_ATTR coinEdgeISR(){ coinEdgeSequence = coinEdgeSequence + 2U; }\\n"
-        "#endif\\n"
-    )
-    esp8266 = extract_board_coin_edge_isr(probe, "ESP8266")
-    esp32 = extract_board_coin_edge_isr(probe, "ESP32")
-    if "coinEdgeSequence = coinEdgeSequence + 1U;" not in esp8266:
-        raise RuntimeError("ESP8266 lab did not select the active #if coinEdgeISR branch")
-    if "coinEdgeSequence = coinEdgeSequence + 2U;" not in esp32:
-        raise RuntimeError("ESP32 lab compiled the inactive ESP8266 coinEdgeISR branch")
-    print("BOARD_SPECIFIC_ISR_BRANCH_SELECTION_PASS")
+def verify_board_specific_isr_selection(source, board):
+    definitions = extract_functions(source, "coinEdgeISR")
+    if len(definitions) != 2:
+        raise RuntimeError(f"{board} expected both conditional coinEdgeISR definitions, found {len(definitions)}")
+
+    marker = "coinEdgeSequence = coinEdgeSequence + 1U;"
+    positions = []
+    offset = 0
+    while True:
+        position = source.find(marker, offset)
+        if position < 0:
+            break
+        positions.append(position)
+        offset = position + len(marker)
+    if len(positions) != 2:
+        raise RuntimeError(f"{board} expected one increment in each conditional ISR branch, found {len(positions)}")
+
+    first = source.find("void IRAM_ATTR coinEdgeISR")
+    second = source.find("void IRAM_ATTR coinEdgeISR", first + 1)
+    conditional = source.rfind("#if defined(ESP8266)", 0, first)
+    alternate = source.find("#else", first, second)
+    terminator = source.find("#endif", second)
+    if not (0 <= conditional < first < alternate < second < terminator):
+        raise RuntimeError(f"{board} coinEdgeISR conditional branches are not in the expected order")
+
+    # Make the #else branch observably different without touching repository
+    # source. ESP8266 must select the first branch; ESP32 must select #else.
+    position = positions[1]
+    changed_marker = "coinEdgeSequence = coinEdgeSequence + 2U;"
+    probe = source[:position] + changed_marker + source[position + len(marker):]
+    selected = extract_board_coin_edge_isr(probe, board)
+    expected = marker if board == "ESP8266" else changed_marker
+    if expected not in selected:
+        raise RuntimeError(f"{board} lab selected the inactive conditional coinEdgeISR branch")
+    print(f"{board}_ACTIVE_ISR_BRANCH_SELECTION_PASS")
 
 
 
 def main():
     verify_shared_extractor()
     verify_fixture_routes_edges_through_production_isr()
-    verify_board_specific_isr_selection()
     failures = []
     for board, sketch in BOARDS:
         try:
             source = sketch.read_text(encoding="utf-8")
+            verify_board_specific_isr_selection(source, board)
             verify_configure_runtime_pins_preserves_edge_baseline(source)
             functions = []
             for helper_name, expected_signature in FUNCTION_SPECS:
