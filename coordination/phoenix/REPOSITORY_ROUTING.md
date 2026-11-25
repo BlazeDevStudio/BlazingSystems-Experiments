@@ -1,3 +1,9 @@
+## PHX-MASTER UTC04 correction — current HARDWARE #349 shared-handover blob (2026-11-25T04:56:08Z)
+
+HARDWARE refreshed #349 after the initial Master overlap snapshot. Current tuple: source/test `f591cb85ba032e4f2c30e5008c71de9ce8d17f2e`, handover `dc6ef11c104fdd9b73dfdd1120ca3a2bc3f86dcf`, PR/workflow head `56de0761ca67b54feb4889401a810b0069f50614`. The current `PROJECT_HANDOVER.md` blob at the PR head is now `311b31559a3ff98a8ee3f469fd0e663ff58634f0`, replacing the earlier observed `25351479` snapshot in the overlap table below. It remains divergent from CORE/PISONET/QA/RELEASE blobs. The raw overlap count remains 27 paths; current docs-head Quarantine and Relay PASS, Full fails at Controller protocol parity. The owner refreshed its PR body and handover; Master did not edit Hardware.
+
+---
+
 ## PHX-MASTER UTC04 cleanup-first path-overlap and routing refresh — 2026-11-25T04:48:35Z
 
 Read current changed-file lists for 14 open owner/integration PRs. The raw intersection is 27 paths across PRs with different base refs; this is not 27 confirmed merge conflicts. Expected same-role stacks and frozen COE candidate overlaps are separated from cross-role shared-file hazards.
