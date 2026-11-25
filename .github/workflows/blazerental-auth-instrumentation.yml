@@ -1,13 +1,21 @@
-name: PHX BlazeRental isolated native status-auth instrumentation
+name: PHX BlazeRental native auth and installer recovery instrumentation
 
 on:
   pull_request:
     types: [opened, synchronize, reopened]
+  push:
+    branches: ['phoenix/rental-apk-contract-audit-20261121']
+  workflow_dispatch:
     paths:
       - '.github/workflows/blazerental-auth-instrumentation.yml'
       - '.github/scripts/run-blazerental-native-auth.sh'
       - 'experiment/openwrt/BlazePwifi/android/BlazeRentalLauncher/src/com/blazesystems/blazerental/LeaseClient.java'
       - 'experiment/openwrt/BlazePwifi/android/BlazeRentalLauncher/tests/src/com/blazesystems/blazerental/LeaseSyncAuthBeforeCommitTest.java'
+      - 'experiment/openwrt/BlazePwifi/android/BlazeRentalLauncher/tests/src/com/blazesystems/blazerental/BlazeRentalUpdateFailureTest.java'
+      - 'experiment/openwrt/BlazePwifi/android/BlazeRentalLauncher/src/com/blazesystems/blazerental/BlazeRentalPackageUpdater.java'
+      - 'experiment/openwrt/BlazePwifi/android/BlazeRentalLauncher/src/com/blazesystems/blazerental/BlazeRentalUpdateManager.java'
+      - 'experiment/openwrt/BlazePwifi/android/BlazeRentalLauncher/src/com/blazesystems/blazerental/BlazeRentalUpdateReceiver.java'
+      - 'experiment/openwrt/BlazePwifi/android/BlazeRentalLauncher/src/com/blazesystems/blazerental/RentalPolicyRevisionGuard.java'
       - 'experiment/openwrt/BlazePwifi/android/BlazeRentalLauncher/build.gradle'
 
 permissions:
@@ -19,7 +27,7 @@ concurrency:
 
 jobs:
   native-lease-auth:
-    name: Native Android 27 lease/HMAC regression (isolated emulator)
+    name: Native API27 7 lease + 6 installer regressions (isolated emulator)
     runs-on: ubuntu-22.04
     timeout-minutes: 50
     env:
@@ -27,10 +35,10 @@ jobs:
       GRADLE_VERSION: 4.4.1
       TEST_CLASS: com.blazesystems.blazerental.LeaseSyncAuthBeforeCommitTest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           # This is the actual PR source, not an old default branch or a stale merge artifact.
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
 
       - name: Pin Android 27 SDK and build-tools 27.0.3 (Launcher3 AGP 3.1.3)
@@ -104,7 +112,7 @@ jobs:
           java -version 2>&1 | tee rental-auth-results/emulator-java.txt
           java -version 2>&1 | grep -Eq 'version "17\.'
 
-      - name: Execute three security tests on isolated Android API 27
+      - name: Execute 13 rental authentication and installer regression tests on API27
         # v2.38.0 pinned to its immutable commit, avoiding a floating action tag.
         uses: ReactiveCircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d
         with:
@@ -131,6 +139,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: PHX-Rental-auth-native-${{ github.event.pull_request.head.sha }}
+          name: PHX-Rental-auth-native-${{ github.event.pull_request.head.sha || github.sha }}
           path: rental-auth-results/
           if-no-files-found: error
