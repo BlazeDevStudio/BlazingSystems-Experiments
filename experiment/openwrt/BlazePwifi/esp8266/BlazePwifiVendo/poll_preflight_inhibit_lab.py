@@ -242,6 +242,21 @@ def verify_board(name: str, path: Path):
     else:
         raise AssertionError(f"{name}: missing pre-poll guard mutation was not rejected")
 
+    # Failure injection: a second synchronous poll site without its own
+    # post-poll deny guard must be rejected, not hidden by the first guarded site.
+    poll_token = 'post("poll")'
+    poll_at = loop.find(poll_token)
+    sample_at = loop.find("digitalRead(runCoinPin)", poll_at)
+    if poll_at < 0 or sample_at < 0:
+        raise AssertionError(f"{name}: cannot place unguarded second-poll mutation")
+    mutated_loop = loop[:sample_at] + '    post("poll");\\n    ' + loop[sample_at:]
+    try:
+        poll_guard_locations(mutated_loop)
+    except AssertionError:
+        pass
+    else:
+        raise AssertionError(f"{name}: unguarded second-poll mutation was not rejected")
+
     print(f"POLL_INTAKE_GUARD_PASS {name}")
     print(f"POLL_INTAKE_DENY_MUTATION_REJECTED {name}")
     print(f"POLL_PREPOLL_ORDER_MUTATION_REJECTED {name}")
