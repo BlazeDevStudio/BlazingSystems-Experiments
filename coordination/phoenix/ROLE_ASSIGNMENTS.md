@@ -1,3 +1,27 @@
+## PHX-MASTER UTC04 live owner-head and CI refresh — 2026-11-25T04:48:35Z
+
+**Snapshot only; source branches remain owner-controlled.** Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; development `blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5`; Master starting head `6762bcf50c5cbedb5d09117e76749b0a66a7779b`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`.
+
+| Owner / PR | Current PR head | Exact-head evidence and owner action |
+|---|---|---|
+| CORE #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | Build [#42698139210](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42698139210) PASS (older scoped evidence). CORE retains authenticated poll/register producer, financial state and canonical handover. Separate CORE continuation untouched. |
+| RENTAL #328 | `0e0da62acd47c6a1ce287f8a30fc700d603fa070` | APK [#44782114384](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44782114384) PASS; API [#44782114393](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44782114393) PASS; build [#44782114390](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44782114390) FAIL. RENTAL owns build/header/handover correction. |
+| PISONET #255 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | Synthetic Windows [#42462978704](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42462978704) PASS; not native device acceptance. |
+| HARDWARE #340 | `38f3e9419f37109443c806a2362577d9efc50e4d` | Build, ESP32, Mbed TLS guard, ESP8266, quarantine and pre-poll inhibit runs #45530901795/#45530901830/#45530901893/#45530901919/#45530901824/#45530901908 PASS. |
+| HARDWARE #347 | `960184670379f01e20f0e7e8bc23b3e5eedacd3f` | Quarantine #45299741995, Relay #45299742437 and build #45299741993 FAIL. Parent failure is not replaced by child evidence. |
+| HARDWARE #348 | `eb7afcb2ba0d1e84054c052c8b129cb51a91d062` | Focused header #45352513178 PASS; build #45352513177 FAIL at missing Mbed TLS SHA256 header. |
+| HARDWARE #349 | `f591cb85ba032e4f2c30e5008c71de9ce8d17f2e` | Quarantine [#45549018310](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45549018310) PASS; Relay [#45549018245](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45549018245) PASS; Full [#45549018383](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45549018383) FAIL at Controller protocol parity. Fourteen target/platform and Android jobs PASS; dependent stages SKIPPED. Current handover/PR body still pins older `bd91e9b8`; HARDWARE must refresh its own records. CORE owns producer contract; QA owns independent assertion review. |
+| QA #290 | `5c29d15994cee1279058f1eca12f2a3180704292` | Windows [#43633486963](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43633486963) PASS. QA retains independent native COM and safety review. |
+| QA #292 | `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | No PR-triggered workflow runs; no pass claimed. |
+| RELEASE #291 | `d39f8ec30ec51fcabd21abe6828a266e49454fa8` | Windows [#45548088084](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45548088084) FAIL at shared handover freshness; build [#45548088178](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45548088178) FAIL at mandatory freshness after CI-0701 docs proof and target jobs passed; ESP32 compatibility [#45548088068](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45548088068) PASS. CORE publishes canonical handover; RELEASE refreshes PR body and reruns. |
+| COE RELEASE #35 | `f611c96091a1014ad36bf64251c180bcbc2d1f65` | Shared #45541598251 FAIL after 223 host tests (2 skipped), then 10/10 profiles fail without approved site ULA /48. Sandbox #45541598267: 40/40 host preflight PASS, then Bubblewrap absent / exit 125. Case guard #45541598250 PASS. |
+| COE CORE #45 | `9d76a134c1f6512aa40c20ec4d247306a71a8cce` | Overlay #44295049727 and case guard #44295049903 PASS. |
+| COE INTERCON #49 | `aeb8ff11b2f5db9a5f86280ab62ab988245f3919` | Stage 5.1 #44646341873 and case guard #44646341992 PASS; shared Hardware #44646341922 FAIL. |
+
+COE #26 remains OPEN / DRAFT / FROZEN at `b382d233ff06c8791b1028bed3c617cc7b670d12`; five workflows remain QUEUED with zero jobs. Cleanup #266 remains OPEN / 0-of-7. No owner branch was modified.
+
+---
+
 ## PHX-MASTER UTC03 live owner-head and CI refresh — 2026-11-25T03:36:57Z
 
 **Snapshot only; owner branches remain owner-controlled.** Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; issue-designated development `aad3aade72c1156eecba1fed30907c6d0283b2c5`; Master branch starting HEAD `2a73c2c9ea9c77f321c467a99ed9b32444973c2b`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE integration #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`.
