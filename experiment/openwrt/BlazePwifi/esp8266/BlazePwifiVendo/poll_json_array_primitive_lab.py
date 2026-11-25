@@ -16,6 +16,7 @@ from poll_json_array_primitive_lab_fixtures import (
     PRIMITIVE_MAIN,
     PROTOTYPES,
     TRAILING_DATA_MAIN,
+    UTF8_MAIN,
 )
 from poll_json_array_primitive_lab_root_contracts import (
     verify_root_envelope_contracts,
@@ -80,6 +81,11 @@ def verify(boards, extract, stubs):
                 PRIMITIVE_MAIN,
             ),
             (
+                "utf8-baseline",
+                "strict JSON UTF-8 cases failed",
+                UTF8_MAIN,
+            ),
+            (
                 "depth-baseline",
                 "composite nesting-depth boundary failed",
                 DEPTH_MAIN,
@@ -103,7 +109,7 @@ def verify(boards, extract, stubs):
                     f"{board}: POLL_JSON_COMPOSITE_DEPTH_PASS "
                     "max=16 rejected=17 arrays=1 objects=1"
                 )
-            elif label in ("duplicate-root-baseline", "trailing-data-baseline"):
+            elif label in ("duplicate-root-baseline", "trailing-data-baseline", "utf8-baseline"):
                 print(result.stdout.strip())
 
         verify_root_envelope_contracts(

@@ -82,6 +82,10 @@ jobs:
         run: python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/coin_pulse_capture_lab_structure_guard.py
       - name: Verify pulse capture after poll-drain abort (both board sketches)
         run: python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/coin_pulse_capture_lab.py
+      - name: Verify strict JSON UTF-8 grammar on both board sketches
+        run: |
+          python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_json_array_primitive_lab_structure_guard.py
+          python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_json_array_primitive_lab.py
       - name: Verify ESP8266 cold-boot output polarity remains deny until locally configured
         run: python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/esp8266_boot_polarity_lab.py
       - name: Assert real money and hardware are not certified

@@ -160,3 +160,24 @@ int main() {
   return 0;
 }
 """
+
+UTF8_MAIN = r"""
+int main() {
+  if (!pollJsonTopLevelTrue(String("{\"ok\":true,\"meta\":\"\xC2\xA2\"}"), "ok")) return 131;
+  if (!pollJsonTopLevelTrue(String("{\"ok\":true,\"meta\":\"\xE2\x82\xAC\"}"), "ok")) return 132;
+  if (!pollJsonTopLevelTrue(String("{\"ok\":true,\"meta\":\"\xF0\x9F\x92\xB0\"}"), "ok")) return 133;
+
+  if (pollJsonTopLevelTrue(String("{\"ok\":true,\"meta\":\"\xC0\xAF\"}"), "ok")) return 141;
+  if (pollJsonTopLevelTrue(String("{\"ok\":true,\"meta\":\"\x80\"}"), "ok")) return 142;
+  if (pollJsonTopLevelTrue(String("{\"ok\":true,\"meta\":\"\xE2\x82\"}"), "ok")) return 143;
+  if (pollJsonTopLevelTrue(String("{\"ok\":true,\"meta\":\"\xED\xA0\x80\"}"), "ok")) return 144;
+  if (pollJsonTopLevelTrue(String("{\"ok\":true,\"meta\":\"\xF4\x90\x80\x80\"}"), "ok")) return 145;
+  if (pollJsonTopLevelTrue(String("{\"ok\":true,\"meta\":\"\xE2\x28\xA1\"}"), "ok")) return 146;
+  if (pollJsonTopLevelTrue(String("{\"ok\":true,\"meta\":\"\xF5\x80\x80\x80\"}"), "ok")) return 147;
+  if (pollJsonTopLevelTrue(String("{\"ok\":true,\"meta\":\"\xE0\x80\x80\"}"), "ok")) return 148;
+  if (pollJsonTopLevelTrue(String("{\"ok\":true,\"meta\":\"\xF0\x80\x80\x80\"}"), "ok")) return 149;
+
+  std::cout << "POLL_JSON_UTF8_VALIDATION_PASS valid=3/3 invalid=9/9\n";
+  return 0;
+}
+"""
