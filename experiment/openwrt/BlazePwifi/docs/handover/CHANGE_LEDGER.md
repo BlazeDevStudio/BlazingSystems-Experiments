@@ -1,3 +1,9 @@
+## PHX-RELEASE UTC 2026-11-25 — supersession audit: Arduino CLI archive-verifier hardening
+
+- Compatible draft head `ab719afe38ea9af97b0d46ab34a67c675d690d87` already contains RELEASE-owned Arduino CLI archive-verifier hardening and its regression coverage. No implementation was duplicated and no non-RELEASE source was changed.
+- Exact-head [BlazePwifi build #45614130499](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45614130499) completed docs-only proof plus scoped Android, ESP32, and ESP8266 jobs successfully; `validate` failed, and production import, signing, and publishing were skipped. [Windows #45614130429](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45614130429) failed at `handover` before Windows build and publication. [ESP32 compatibility #45614130744](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45614130744) succeeded on both pinned core legs against source `7da74f9d1768`.
+- This is scoped CI evidence only, not a production claim. PR #291 remains OPEN / DRAFT / UNMERGED with zero independent reviews. **PRODUCTION NO-GO** remains pending MASTER and independent QA approval, protected signing and durable finance/migration controls, and physical acceptance.
+
 ## PHX-RELEASE UTC 2026-11-25 — supersession audit: release artifact-assembly record and CI guard follow-up
 
 - Compatible draft head `c3886047f9807bd7310dafc96adcca5921f6ea9b` already contains the RELEASE-owned artifact-assembly record plus concurrency and ESP32 compatibility guard updates. No implementation was duplicated and no non-RELEASE source was changed.
