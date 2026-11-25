@@ -167,9 +167,30 @@ def verify_fixture_routes_edges_through_production_isr():
             )
 
 
+def verify_board_specific_isr_selection():
+    # The first definition is active on ESP8266; the #else definition is active
+    # on ESP32. Distinct bodies make an inactive-branch selection observable.
+    probe = (
+        "#if defined(ESP8266)\\n"
+        "void IRAM_ATTR coinEdgeISR(){ coinEdgeSequence = coinEdgeSequence + 1U; }\\n"
+        "#else\\n"
+        "void IRAM_ATTR coinEdgeISR(){ coinEdgeSequence = coinEdgeSequence + 2U; }\\n"
+        "#endif\\n"
+    )
+    esp8266 = extract_board_coin_edge_isr(probe, "ESP8266")
+    esp32 = extract_board_coin_edge_isr(probe, "ESP32")
+    if "coinEdgeSequence = coinEdgeSequence + 1U;" not in esp8266:
+        raise RuntimeError("ESP8266 lab did not select the active #if coinEdgeISR branch")
+    if "coinEdgeSequence = coinEdgeSequence + 2U;" not in esp32:
+        raise RuntimeError("ESP32 lab compiled the inactive ESP8266 coinEdgeISR branch")
+    print("BOARD_SPECIFIC_ISR_BRANCH_SELECTION_PASS")
+
+
+
 def main():
     verify_shared_extractor()
     verify_fixture_routes_edges_through_production_isr()
+    verify_board_specific_isr_selection()
     failures = []
     for board, sketch in BOARDS:
         try:
