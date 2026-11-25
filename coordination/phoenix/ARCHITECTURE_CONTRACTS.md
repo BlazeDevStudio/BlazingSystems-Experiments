@@ -2061,3 +2061,17 @@ Current examples:
 - COE #26 route-manifest source_ref main@`f4e8` and SOURCE_INTAKE historical pin `6d4c9b` are different source authorities. Preserve both; never silently rebase historical provenance onto current main.
 
 Before any integration staging proposal, require complete non-truncated source/destination trees; per-file path, blob and mode comparison at the exact source pin; separate current-source drift disposition; license/NOTICE mapping; test identity and map reconciliation; owner-reviewed import completeness; exact-head destination CI; and an explicit owner-authorized staging decision. The current COE #26 candidate fails these prerequisites and remains FROZEN. This contract grants no copy, move, merge, release or production authority.
+
+## 7.18 Shared canonical handover single-writer boundary — PROPOSED / owner acknowledgement required (2026-11-25 UTC04)
+
+Current role PRs #252, #255, #348, #290, #291 and #349 change the same source `PROJECT_HANDOVER.md` at divergent exact blob identities. PRs #252, #255, #348, #290 and #291 also change `docs/handover/CHANGE_LEDGER.md` and `docs/handover/CURRENT_STATE.md` at divergent blob identities. The exact path intersection is recorded in `PHX_MASTER_UTC04_20261125_CROSS_ROLE_HANDOVER_OVERLAP_AND_COE26_PROVENANCE_AUDIT.md`.
+
+To reduce merge conflicts and stale cross-role evidence, propose the following coordination invariant:
+
+1. PHX-CORE is the sole canonical writer for source `PROJECT_HANDOVER.md` and `CURRENT_STATE.md`; other roles do not independently replace these whole files in their PR branches.
+2. PHX-CORE is the proposed canonical writer for `CHANGE_LEDGER.md` pending explicit owner acknowledgement. If the team rejects that owner, use separate role-scoped append-only ledgers rather than concurrent rewrites.
+3. Each non-CORE role records its own work in a dated role-scoped handover under `docs/handover/`, preserving source/test SHA, final docs SHA, exact workflow checkout SHA, run URLs, failures and next action.
+4. A non-CORE role that needs a canonical correction submits the exact evidence/text to CORE for incorporation. The affected role reviews the resulting canonical blob before relying on it.
+5. PRs already carrying inherited shared paths retain their history; do not rewrite, rebase, force-push, cherry-pick or merge them merely to apply this proposal. Obtain CORE/PISONET/HARDWARE/QA/RELEASE acknowledgement before merge sequencing.
+
+This section is a coordination proposal, not an automatic source ownership transfer, code behavior change, merge permission or release gate waiver. Until affected owners acknowledge it, classify shared-file integration as `REVIEW_REQUIRED / STALE_RISK` and preserve each exact branch blob as evidence.
