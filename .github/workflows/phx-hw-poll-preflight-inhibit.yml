@@ -5,6 +5,7 @@ on:
       - 'experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino'
       - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/BlazePwifiVendo.ino'
       - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_preflight_inhibit_lab.py'
+      - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/firmware_source_extract.py'
       - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/remote_config_deny_lab.py'
       - '.github/workflows/phx-hw-poll-preflight-inhibit.yml'
   workflow_dispatch:

@@ -11,6 +11,8 @@ import re
 import subprocess
 import tempfile
 
+from firmware_source_extract import extract_braced, extract_function, mask_non_code
+
 
 BLAZEPWIFI = Path(__file__).resolve().parents[2]
 SKETCHES = {
@@ -19,85 +21,32 @@ SKETCHES = {
 }
 
 
-def extract_braced(source: str, brace_at: int) -> str:
-    if brace_at < 0 or source[brace_at] != "{":
-        raise AssertionError("expected opening brace")
-    depth = 0
-    quote = None
-    escaped = False
-    line_comment = False
-    block_comment = False
-    pos = brace_at
-    while pos < len(source):
-        ch = source[pos]
-        nxt = source[pos + 1] if pos + 1 < len(source) else ""
-        if line_comment:
-            if ch in "\r\n":
-                line_comment = False
-            pos += 1
-            continue
-        if block_comment:
-            if ch == "*" and nxt == "/":
-                block_comment = False
-                pos += 2
-            else:
-                pos += 1
-            continue
-        if quote is not None:
-            if escaped:
-                escaped = False
-            elif ch == "\\":
-                escaped = True
-            elif ch == quote:
-                quote = None
-            pos += 1
-            continue
-        if ch == "/" and nxt == "/":
-            line_comment = True
-            pos += 2
-            continue
-        if ch == "/" and nxt == "*":
-            block_comment = True
-            pos += 2
-            continue
-        if ch in ("'", '"'):
-            quote = ch
-            pos += 1
-            continue
-        if ch == "{":
-            depth += 1
-        elif ch == "}":
-            depth -= 1
-            if depth == 0:
-                return source[brace_at:pos + 1]
-        pos += 1
-    raise AssertionError("unclosed C++ block")
-
-
-def extract_function(source: str, signature: str) -> str:
-    start = source.find(signature)
-    if start < 0:
-        raise AssertionError(f"missing function: {signature}")
-    brace = source.find("{", start + len(signature))
-    if brace < 0:
-        raise AssertionError(f"missing body: {signature}")
-    return source[start:brace] + extract_braced(source, brace)
+def _poll_call_matches(source: str):
+    # Match the literal argument in source, but accept it only when the call
+    # identifier itself is code rather than a comment/string decoy.
+    pattern = re.compile(r'\bpost\s*\(\s*"poll"\s*\)')
+    masked = mask_non_code(source)
+    return [
+        match for match in pattern.finditer(source)
+        if masked[match.start():match.start() + 4] == "post"
+    ]
 
 
 def poll_guard_locations(source: str):
     loop = extract_function(source, "void loop()")
+    masked_loop = mask_non_code(loop)
     condition = re.search(
         r"if\s*\(\s*WiFi\.status\(\)\s*==\s*WL_CONNECTED\s*&&\s*"
         r"millis\(\)\s*-\s*lastPoll\s*>\s*1500\s*\)",
-        loop,
+        masked_loop,
     )
     if not condition:
         raise AssertionError("missing bounded synchronous poll condition")
-    brace = loop.find("{", condition.end())
+    brace = masked_loop.find("{", condition.end())
     poll_block = extract_braced(loop, brace)
-    poll_token = 'post("poll")'
-    loop_poll_matches = list(re.finditer(re.escape(poll_token), loop))
-    poll_matches = list(re.finditer(re.escape(poll_token), poll_block))
+    masked_poll_block = mask_non_code(poll_block)
+    loop_poll_matches = _poll_call_matches(loop)
+    poll_matches = _poll_call_matches(poll_block)
     if len(loop_poll_matches) != len(poll_matches):
         raise AssertionError("synchronous poll request exists outside the bounded guarded block")
     if not poll_matches:
@@ -112,14 +61,14 @@ def poll_guard_locations(source: str):
             if index + 1 < len(poll_matches)
             else len(poll_block)
         )
-        pre_guard = poll_block.rfind(
+        pre_guard = masked_poll_block.rfind(
             "denyRemoteControl();", previous_end, match.start()
         )
         if pre_guard < 0:
             raise AssertionError(
                 f"coin intake is not denied before blocking poll request {index + 1}"
             )
-        post_guard = poll_block.find(
+        post_guard = masked_poll_block.find(
             "denyRemoteControl();", match.end(), next_start
         )
         if post_guard < 0:
@@ -130,8 +79,8 @@ def poll_guard_locations(source: str):
             first_pre_guard = pre_guard
         last_post_guard = post_guard
 
-    global_last_poll = brace + 1 + poll_matches[-1].start()
-    sample = loop.find("digitalRead(runCoinPin)")
+    global_last_poll = brace + poll_matches[-1].start()
+    sample = masked_loop.find("digitalRead(runCoinPin)")
     if sample < 0 or sample <= global_last_poll:
         raise AssertionError(
             "coin input sampling moved before/inside the blocking poll sequence"
@@ -219,6 +168,14 @@ def compile_and_run(apply_fn: str, deny_fn: str, expect_success: bool, label: st
         return run_result
 
 
+def remove_first_code_token(source: str, token: str) -> str:
+    masked = mask_non_code(source)
+    start = masked.find(token)
+    if start < 0:
+        raise AssertionError(f"missing code token for mutation: {token}")
+    return source[:start] + source[start + len(token):]
+
+
 def verify_board(name: str, path: Path):
     source = path.read_text(encoding="utf-8")
     loop, pre_guard, poll_at, post_guard = poll_guard_locations(source)
@@ -227,6 +184,8 @@ def verify_board(name: str, path: Path):
 
     apply_fn = extract_function(source, "void applyOutputs()")
     deny_fn = extract_function(source, "void denyRemoteControl()")
+    deny_code = mask_non_code(deny_fn)
+    apply_code = mask_non_code(apply_fn)
     required = (
         "controllerEnabled=false;",
         "coinEnabled=false;",
@@ -235,13 +194,13 @@ def verify_board(name: str, path: Path):
         "applyOutputs();",
     )
     for token in required:
-        if token not in deny_fn:
+        if token not in deny_code:
             raise AssertionError(f"{name}: denyRemoteControl missing {token!r}")
-    if not re.search(r'activeTarget\s*=\s*""', deny_fn):
+    if not re.search(r'activeTarget\s*=\s*""', deny_code):
         raise AssertionError(f"{name}: denyRemoteControl does not clear active target")
-    if "bool accepting=controllerEnabled && coinEnabled && insertMode && fsReady && !pendingReady;" not in apply_fn:
+    if "bool accepting=controllerEnabled && coinEnabled && insertMode && fsReady && !pendingReady;" not in apply_code:
         raise AssertionError(f"{name}: relay acceptance predicate changed unexpectedly")
-    if "if(relayEnabled)" not in apply_fn or "writeLogical(runRelayPin,false,runRelayActiveHigh)" not in apply_fn:
+    if "if(relayEnabled)" not in apply_code or "writeLogical(runRelayPin,false,runRelayActiveHigh)" not in apply_code:
         raise AssertionError(f"{name}: relay-off GPIO branch is not explicit")
 
     compile_and_run(apply_fn, deny_fn, True, f"{name} safe pre-poll state")
@@ -251,14 +210,14 @@ def verify_board(name: str, path: Path):
     mutated_deny = deny_fn
     for token in ("controllerEnabled=false;", "coinEnabled=false;",
                   "relayEnabled=false;", "insertMode=false;"):
-        mutated_deny = mutated_deny.replace(token, "", 1)
+        mutated_deny = remove_first_code_token(mutated_deny, token)
     compile_and_run(apply_fn, mutated_deny, False, f"{name} deny-state mutation")
 
     # Failure injection: remove the pre-poll guard while retaining the
     # post-poll guard. The source-order assertion must reject this regression.
     mutated_loop = loop
     loop_start = mutated_loop.find("void loop()")
-    pre_guard_global = loop_start + mutated_loop[loop_start:].find("denyRemoteControl();")
+    pre_guard_global = loop_start + mask_non_code(mutated_loop[loop_start:]).find("denyRemoteControl();")
     if pre_guard_global < loop_start:
         raise AssertionError(f"{name}: pre-poll guard not found for mutation")
     mutated_loop = mutated_loop[:pre_guard_global] + mutated_loop[pre_guard_global + len("denyRemoteControl();"):]
@@ -271,9 +230,9 @@ def verify_board(name: str, path: Path):
 
     # Failure injection: a poll request outside the bounded guarded block
     # must be rejected, not hidden by the first guarded site.
-    poll_token = 'post("poll")'
-    poll_at = loop.find(poll_token)
-    sample_at = loop.find("digitalRead(runCoinPin)", poll_at)
+    poll_matches = _poll_call_matches(loop)
+    poll_at = poll_matches[0].start() if poll_matches else -1
+    sample_at = mask_non_code(loop).find("digitalRead(runCoinPin)", poll_at)
     if poll_at < 0 or sample_at < 0:
         raise AssertionError(f"{name}: cannot place unguarded second-poll mutation")
     mutated_loop = loop[:sample_at] + '    post("poll");\n    ' + loop[sample_at:]
@@ -315,6 +274,20 @@ def verify_source_extractor_decoy_regressions():
                 f"{label}: source extractor selected a non-code decoy or truncated the function"
             )
 
+
+    poll_source = r'''
+void loop() {
+    // post("poll"); denyRemoteControl();
+    const char *note = "post(\"poll\");";
+    if (WiFi.status() == WL_CONNECTED && millis() - lastPoll > 1500) {
+        denyRemoteControl();
+        post("poll");
+        denyRemoteControl();
+    }
+    digitalRead(runCoinPin);
+}
+'''
+    poll_guard_locations(poll_source)
 
 def main():
     verify_source_extractor_decoy_regressions()

@@ -5,6 +5,8 @@ import re
 import subprocess
 import tempfile
 
+from firmware_source_extract import extract_function, mask_non_code
+
 BLAZEPWIFI = Path(__file__).resolve().parents[2]
 SKETCHES = {
     "ESP8266": BLAZEPWIFI / "esp8266/BlazePwifiVendo/BlazePwifiVendo.ino",
@@ -12,81 +14,20 @@ SKETCHES = {
 }
 
 
-def extract_block(source: str, brace_at: int) -> str:
-    if brace_at < 0 or source[brace_at] != "{":
-        raise AssertionError("expected opening brace")
-    depth = 0
-    quote = None
-    escaped = False
-    line_comment = False
-    block_comment = False
-    pos = brace_at
-    while pos < len(source):
-        ch = source[pos]
-        nxt = source[pos + 1] if pos + 1 < len(source) else ""
-        if line_comment:
-            if ch in "\r\n":
-                line_comment = False
-            pos += 1
-            continue
-        if block_comment:
-            if ch == "*" and nxt == "/":
-                block_comment = False
-                pos += 2
-            else:
-                pos += 1
-            continue
-        if quote is not None:
-            if escaped:
-                escaped = False
-            elif ch == "\\":
-                escaped = True
-            elif ch == quote:
-                quote = None
-            pos += 1
-            continue
-        if ch == "/" and nxt == "/":
-            line_comment = True
-            pos += 2
-            continue
-        if ch == "/" and nxt == "*":
-            block_comment = True
-            pos += 2
-            continue
-        if ch in ("'", '"'):
-            quote = ch
-            pos += 1
-            continue
-        if ch == "{":
-            depth += 1
-        elif ch == "}":
-            depth -= 1
-            if depth == 0:
-                return source[brace_at:pos + 1]
-        pos += 1
-    raise AssertionError("unclosed C++ block")
-
-
-def extract_function(source: str, signature: str) -> str:
-    start = source.find(signature)
-    if start < 0:
-        raise AssertionError(f"missing function: {signature}")
-    brace = source.find("{", start + len(signature))
-    if brace < 0:
-        raise AssertionError(f"missing body: {signature}")
-    return source[start:brace] + extract_block(source, brace)
-
-
 def assert_source_contract(source: str, board: str) -> None:
-    if len(re.findall(r"\bapplyRemoteConfig\s*\(", source)) != 1:
+    masked_source = mask_non_code(source)
+    if len(re.findall(r"\bapplyRemoteConfig\s*\(", masked_source)) != 1:
         raise AssertionError(f"{board}: remote-config sentinel must remain definition-only")
     for helper in ("jsonString", "jsonTrue", "jsonInt"):
-        if re.search(rf"\b{helper}\s*\(", source):
+        if re.search(rf"\b{helper}\s*\(", masked_source):
             raise AssertionError(f"{board}: unauthenticated {helper} parser remains")
-    if "remoteRevision" in source:
+    if "remoteRevision" in masked_source:
         raise AssertionError(f"{board}: dormant remote revision state remains")
     apply_fn = extract_function(source, "void applyRemoteConfig(")
-    body = apply_fn[apply_fn.find("{") + 1:apply_fn.rfind("}")]
+    masked_apply = mask_non_code(apply_fn)
+    body_start = masked_apply.find("{")
+    body_end = masked_apply.rfind("}")
+    body = masked_apply[body_start + 1:body_end]
     if re.sub(r"\s+", "", body) != "(void)response;denyRemoteControl();":
         raise AssertionError(f"{board}: remote-config entrypoint is not deny-only")
 
@@ -197,7 +138,7 @@ def verify_board(board: str, path: Path) -> None:
         "insertMode=false;",
         "applyOutputs();",
     )
-    compact_deny = re.sub(r"\s+", "", deny_fn)
+    compact_deny = re.sub(r"\s+", "", mask_non_code(deny_fn))
     for token in required:
         if token not in compact_deny:
             raise AssertionError(f"{board}: deny function missing {token}")
@@ -206,9 +147,11 @@ def verify_board(board: str, path: Path) -> None:
 
     safe = harness(write_fn, outputs_fn, deny_fn, apply_fn)
     compile_and_run(safe, True, f"{board} deny-only response handling")
-    mutated_apply = apply_fn.replace("denyRemoteControl();", "(void)response;", 1)
-    if mutated_apply == apply_fn:
+    masked_apply = mask_non_code(apply_fn)
+    mutation_at = masked_apply.find("denyRemoteControl();")
+    if mutation_at < 0:
         raise AssertionError(f"{board}: deny-call mutation anchor missing")
+    mutated_apply = apply_fn[:mutation_at] + "(void)response;" + apply_fn[mutation_at + len("denyRemoteControl();"):]
     mutated = harness(write_fn, outputs_fn, deny_fn, mutated_apply)
     compile_and_run(mutated, False, f"{board} missing-deny mutation")
     print(f"REMOTE_CONFIG_DENY_PASS {board}")
