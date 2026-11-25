@@ -1136,6 +1136,124 @@ class BuildProvenanceTests(unittest.TestCase):
             os.close(directory_fd)
 
 
+
+    def assert_traversal_close_does_not_close_reused_descriptor(self, operation):
+        sentinel = self.root / "close-reuse-sentinel.bin"
+        sentinel.write_bytes(b"descriptor-must-remain-open")
+        real_open = os.open
+        real_close = os.close
+        real_fstat = os.fstat
+        first_close = []
+        reused = []
+
+        def close_then_reuse(descriptor):
+            if not reused:
+                first_close.append(descriptor)
+                real_close(descriptor)
+                replacement = real_open(sentinel, os.O_RDONLY)
+                reused.append(replacement)
+                self.assertEqual(
+                    replacement,
+                    descriptor,
+                    "the sentinel must reuse the just-released descriptor number",
+                )
+                raise OSError("injected close error after descriptor release")
+            real_close(descriptor)
+
+        try:
+            with patch.object(
+                provenance.os, "close", side_effect=close_then_reuse
+            ):
+                with self.assertRaises(provenance.ProvenanceError):
+                    operation()
+
+            self.assertEqual(len(first_close), 1)
+            self.assertEqual(reused, first_close)
+            real_fstat(reused[0])
+        finally:
+            for descriptor in reused:
+                try:
+                    real_fstat(descriptor)
+                except OSError:
+                    continue
+                real_close(descriptor)
+
+    def test_regular_traversal_close_error_does_not_close_reused_fd(self):
+        parent = self.root / "reuse-regular-parent"
+        parent.mkdir()
+        payload = parent / "payload.bin"
+        payload.write_bytes(b"release-provenance")
+        self.assert_traversal_close_does_not_close_reused_descriptor(
+            lambda: provenance._open_regular(payload)
+        )
+
+    def test_directory_traversal_close_error_does_not_close_reused_fd(self):
+        directory = self.root / "reuse-directory-parent" / "child"
+        directory.mkdir(parents=True)
+        self.assert_traversal_close_does_not_close_reused_descriptor(
+            lambda: provenance._open_directory(directory, "test directory")
+        )
+
+    def test_regular_identity_close_error_does_not_close_reused_fd(self):
+        parent = self.root / "reuse-identity-parent"
+        parent.mkdir()
+        payload = parent / "payload.bin"
+        payload.write_bytes(b"release-provenance")
+        sentinel = self.root / "identity-close-reuse-sentinel.bin"
+        sentinel.write_bytes(b"descriptor-must-remain-open")
+        real_open = os.open
+        real_close = os.close
+        real_fstat = os.fstat
+        file_descriptors = []
+        reused = []
+
+        def tracked_open(path, flags, *args, **kwargs):
+            descriptor = real_open(path, flags, *args, **kwargs)
+            if path == payload.name:
+                file_descriptors.append(descriptor)
+            return descriptor
+
+        supported = set(os.supports_dir_fd)
+        supported.add(tracked_open)
+
+        def close_then_reuse(descriptor):
+            if file_descriptors and descriptor == file_descriptors[0] and not reused:
+                real_close(descriptor)
+                replacement = real_open(sentinel, os.O_RDONLY)
+                reused.append(replacement)
+                self.assertEqual(
+                    replacement,
+                    descriptor,
+                    "the sentinel must reuse the released image descriptor number",
+                )
+                raise OSError("injected image close error after descriptor release")
+            real_close(descriptor)
+
+        try:
+            with patch.object(
+                provenance.os, "open", new=tracked_open
+            ), patch.object(
+                provenance.os, "supports_dir_fd", supported
+            ), patch.object(
+                provenance, "_same_file_state", return_value=False
+            ), patch.object(
+                provenance.os, "close", side_effect=close_then_reuse
+            ):
+                with self.assertRaises(provenance.ProvenanceError):
+                    provenance._open_regular(payload)
+
+            self.assertEqual(len(file_descriptors), 1)
+            self.assertEqual(reused, file_descriptors)
+            real_fstat(reused[0])
+        finally:
+            for descriptor in reused:
+                try:
+                    real_fstat(descriptor)
+                except OSError:
+                    continue
+                real_close(descriptor)
+
+
     def assert_open_cleanup_preserves_primary_after_close_interruption(self, operation):
         real_open = os.open
         real_fstat = os.fstat
