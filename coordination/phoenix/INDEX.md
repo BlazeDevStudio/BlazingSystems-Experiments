@@ -1,3 +1,16 @@
+## PHX-MASTER UTC11 — 2026-11-25 current owner CI, COE #26 Hardware import delta, and main-base drift
+
+[UTC11 exact-head owner CI, newly missing Hardware lab imports, SOURCE_INTAKE recount, and main-base drift audit](PHX_MASTER_UTC11_20261125_CURRENT_HEAD_ROLE_CI_COE26_IMPORT_AND_MAIN_BASE_DRIFT_AUDIT.md)
+
+- Experiments main is now `6be5d19b`; the Master branch remains `025aadaa`, one commit behind main because main added the unrelated `promp CallerID` prompt file. No merge/rebase was performed.
+- HARDWARE #349 is `2a5c997` (source/test `7da74f9`): Quarantine/Relay PASS; Full FAIL at the inherited Missing poll signature check. Two new C++ normalizer lab files are absent from the exact COE #26 mapped Hardware paths.
+- RELEASE #291 is now `c3886047`: compatibility 3/3 PASS; Full and Windows FAIL at CORE-owned PROJECT_HANDOVER freshness checkpoint `f313fe0d`.
+- COE #26 remains FROZEN. Exact firmware blobs differ; SOURCE_INTAKE recount is 46 identical / 15 different vs declared 47 / 14; root NOTICE is absent; five destination workflows remain queued with zero jobs.
+- #266 remains OPEN / 0-of-7; ownership manifest remains 11 routes / DRAFT_REVIEW_ONLY / Master target null. Private Drive v11/newer corrections remain NOT_RECOVERED.
+- Master Python suite NOT RUN because local GitHub DNS resolution failed; no Master Actions run exists. No subsystem or COE destination paths changed. **PRODUCTION NO-GO.**
+
+---
+
 ## PHX-MASTER UTC06 — 2026-11-25 live owner CI, COE Hardware admission and branch-governance audit
 
 [UTC06 exact-head role CI, current Hardware source/destination parity, SOURCE_INTAKE recount and registry-access report](PHX_MASTER_UTC06_20261125_LIVE_ROLE_CI_COE26_HARDWARE_PARITY_AND_BRANCH_GOVERNANCE_AUDIT.md)
