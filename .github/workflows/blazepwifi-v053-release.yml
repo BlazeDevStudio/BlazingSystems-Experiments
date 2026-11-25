@@ -226,8 +226,8 @@ jobs:
           TAG_LOOKUP_OUTPUT="$(gh api -i "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" 2>&1)"
           TAG_LOOKUP_EXIT=$?
           set -e
-          TAG_HTTP_STATUSES="$(printf '%s\\n' "$TAG_LOOKUP_OUTPUT" | sed -nE 's/^HTTP\\/[0-9.]+ ([0-9]{3})([[:space:]].*)?$/\\1/p')"
-          TAG_HTTP_COUNT="$(printf '%s\\n' "$TAG_HTTP_STATUSES" | awk 'NF { count++ } END { print count + 0 }')"
+          TAG_HTTP_STATUSES="$(printf '%s\n' "$TAG_LOOKUP_OUTPUT" | sed -nE 's/^HTTP\/[0-9.]+ ([0-9]{3})([[:space:]].*)?$/\1/p')"
+          TAG_HTTP_COUNT="$(printf '%s\n' "$TAG_HTTP_STATUSES" | awk 'NF { count++ } END { print count + 0 }')"
           if [ "$TAG_LOOKUP_EXIT" -eq 0 ]; then
             echo "RELEASE-BLOCKED: v0.5.3 Git tag already exists; refusing to modify it." >&2
             exit 1
@@ -242,8 +242,8 @@ jobs:
           RELEASE_LOOKUP_OUTPUT="$(gh api -i "repos/$GITHUB_REPOSITORY/releases/tags/$TAG" 2>&1)"
           RELEASE_LOOKUP_EXIT=$?
           set -e
-          RELEASE_HTTP_STATUSES="$(printf '%s\\n' "$RELEASE_LOOKUP_OUTPUT" | sed -nE 's/^HTTP\\/[0-9.]+ ([0-9]{3})([[:space:]].*)?$/\\1/p')"
-          RELEASE_HTTP_COUNT="$(printf '%s\\n' "$RELEASE_HTTP_STATUSES" | awk 'NF { count++ } END { print count + 0 }')"
+          RELEASE_HTTP_STATUSES="$(printf '%s\n' "$RELEASE_LOOKUP_OUTPUT" | sed -nE 's/^HTTP\/[0-9.]+ ([0-9]{3})([[:space:]].*)?$/\1/p')"
+          RELEASE_HTTP_COUNT="$(printf '%s\n' "$RELEASE_HTTP_STATUSES" | awk 'NF { count++ } END { print count + 0 }')"
           if [ "$RELEASE_LOOKUP_EXIT" -eq 0 ]; then
             echo "RELEASE-BLOCKED: v0.5.3 Release object already exists; refusing to modify it." >&2
             exit 1
