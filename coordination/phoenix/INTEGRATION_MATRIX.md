@@ -1,3 +1,21 @@
+## PHX-MASTER UTC04 COE #26 exact candidate revalidation — 2026-11-25T04:48:35Z
+
+**Candidate:** COE PR #26, head `b382d233ff06c8791b1028bed3c617cc7b670d12`, base `main@a6513ab4412b4c014eee2863e45cbe32d06cb243`, OPEN / DRAFT / UNMERGED / FROZEN. Candidate main remains a structure-only baseline; this PR is not an approved integration.
+
+- `Pisowifi/SOURCE_INTAKE.json` schema 8, blob `1b9018ff944f7f673934d0fc2a97e0a0090d3f5f`, pins historical source `6d4c9b487af4d768c4d7627654d119417fcc6e00` and destination pre-manifest head `cf59b41e5273bcc42acf59a7971481670e4b2611`.
+- Runtime manifest: 61 rows; exact source/destination blob recount 46 byte-identical / 15 derived. Declared summary remains 47 / 14.
+- Primary test map: four rows (two exact, two derived); fifteen additional derived tests are declared. Do not interpret manifest status as execution at the current source head.
+- Current source ESP32 sketch at HARDWARE #349 `f591cb85ba032e4f2c30e5008c71de9ce8d17f2e`: `adfd2f110d88243d03f2195658fb456b154dcb84`; destination #26: `3cc7ec54b476943dc04a8d1af5e2df5fe054e422`. They differ.
+- Current source ESP8266 sketch at #349: `8a0b458b6c7fb99c0913df16c5b4ca94dbcdc50e`; destination #26: `c8be98f72596681e36a3ad1f8939bf8046c96887`. They differ.
+- Product `LICENSE` is byte-identical at blob `1ee55b94183417be977ca287cd7391f9a6f7e721`. Source repository root `NOTICE.md` blob `f6d92cd21465312be5993631fe26977219be0fb9` has no COE root counterpart (404). The prior exact-ref license matrix records source Tabler `LICENSE` blob `22ee8122400915cbff18e5f69368fa9eea6145eb` without a destination counterpart. Hardware license/NOTICE scope remains unresolved; sibling Pisowifi/LICENSE does not establish Hardware coverage.
+- `MIGRATION_MAP.md` blob `b54fc15d83bc2269de03db8aadd0e76259fd13d9` remains tied to the historical source snapshot, not the current #349 source head.
+- Manifest flags remain `release_authorized=false`, `hardware_tested=false`, `full_ci_tested=false`, `source_admission_complete=false`.
+- Five exact-head workflows (#43096752609, #43096752632, #43096752800, #43096752563, #43096752557) are QUEUED; each job listing returned zero jobs.
+
+**Disposition:** FROZEN. Do not propose staging until the integration owner reconciles every source/destination path, blob and mode; current-source drift; tests and test identities; board helpers/sketches; license/NOTICE; import completeness; and terminal exact-head destination CI. No destination copy, move, overwrite, rebase, cherry-pick or staging occurred.
+
+---
+
 ## PHX-MASTER UTC03 COE #26 exact manifest and import checkpoint — 2026-11-25T03:36:57Z
 
 **Candidate:** `BlazeDevStudio/CoinOperatedEcosystem#26`, head `b382d233ff06c8791b1028bed3c617cc7b670d12`, base `main@a6513ab4412b4c014eee2863e45cbe32d06cb243`, OPEN / DRAFT / UNMERGED / FROZEN. Five workflows (#43096752609, #43096752632, #43096752800, #43096752563, #43096752557) are QUEUED; each job listing returns an empty array.
