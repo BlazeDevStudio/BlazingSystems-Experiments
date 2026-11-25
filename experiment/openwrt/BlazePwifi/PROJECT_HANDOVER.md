@@ -1017,3 +1017,17 @@ Live stack: #239 `d83b715b...`, #254 `84c442a4...` (contains `3692ddf...`, 17 ah
 
 See [UTC11 narrow handover](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/blob/3f5e8b59e6e72629a3c634abc34e24a082484a13/experiment/openwrt/BlazePwifi/docs/handover/2026-11-25-hw-cpp-user-defined-literal-suffix-boundaries-utc11.md).
 <!-- PHX-HARDWARE-20261125-CPP-UDL-SUFFIX-BOUNDARIES:END -->
+
+
+## PHX-HARDWARE UTC23 — CRLF line-splice parity guard
+
+- PR #349 remains OPEN / DRAFT / UNMERGED on phoenix/hw-json-array-primitive-guard-20261124-utc00; captured base is #347 at 960184670379f01e20f0e7e8bc23b3e5eedacd3f.
+- Test-first RED: 62f7813ef482e7ac9bc0d2010f8f7e2113cf29ef; Relay run #45723546132, job 139587561096, failed only at the new CRLF line-splice regression after the prior 14 tests passed.
+- Source fix: 9dc0ae39832e5fe7db79694b670a841f0c90ffe0. The C++ normalizer now recognizes backslash-LF and backslash-CRLF splices in // comments.
+- Exact-source Quarantine #45723944288 job 139588898662 PASS; Relay #45723944279 jobs 139588898747 / 139588899114 PASS. Logs: CPP_TOKEN_NORMALIZER_CONTRACT_PASS 15/15; BOUNDED_HTTP_RESPONSE_TOKEN_NORMALIZER_PASS 8/8.
+- Full #45723944321 validation job 139589011037 FAIL at inherited “Missing poll signature check”; all 14 firmware target jobs and Android pass. Production import/sign/simulation/candidate/publication stages skipped.
+- Only Hardware-owned host parity-lab source/tests and handovers changed. No production sketch, CGI producer, CORE API, finance, signer/witness, migration or COE destination changed. SIMULATED / CI VERIFIED only; HARDWARE ACCEPTED NO; PRODUCTION NO-GO.
+- The active v0.6 response trust boundary remains a separate P0: unsigned poll response consumption and empty-key verification skip, per Master UTC23 report. CORE owns the approved response/HMAC/key contract; Hardware implementation must follow that contract with QA negative vectors.
+- Private Drive registry v11 remains NOT RECOVERED; no Google Drive connector is exposed. No older snapshot substituted.
+
+See [UTC23 narrow handover](docs/handover/2026-11-25-hw-cpp-crlf-line-splice-guard-utc23.md). Master UTC23 also assigned a separate #348 canonical-handover synchronization; it remains pending and was not modified in this task.
