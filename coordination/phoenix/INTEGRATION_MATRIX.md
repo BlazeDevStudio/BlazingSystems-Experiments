@@ -1,3 +1,20 @@
+## PHX-MASTER UTC01 exact-tree and migration matrix — 2026-11-25T01:34:05Z
+
+- Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; development `blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5`; Master starting HEAD `30369ee731f0b77e502b1e2691c39bfc9fa59cdb`.
+- COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243` (structure-only tree: 3 entries); integration candidate #26 `b382d233ff06c8791b1028bed3c617cc7b670d12` (286 entries, complete/non-truncated; five workflows QUEUED, zero jobs/statuses).
+- Historical intake source `6d4c9b487af4d768c4d7627654d119417fcc6e00`: 2,391 entries. HARDWARE #349 source/test `d5b5cd10ae7ab655639b011c442b6968b32c2398`: 2,532 entries. Final docs/PR head `18d4ff4ff86c6ea6d04419e2117833faa58e5e88`: 2,533 entries. COE #26 destination: 286 entries. All recursive trees are complete and non-truncated.
+- #349 source/test and docs trees differ only at two file paths: `experiment/openwrt/BlazePwifi/PROJECT_HANDOVER.md` and the new `experiment/openwrt/BlazePwifi/docs/handover/2026-11-25-hw-cpp-fixture-stem-containment-utc01.md`; no source/test path changed after `d5b5cd`.
+- OWNERSHIP_ROUTES.json blob `e4db324315a1b3543fec17a148fbf960170fcb29`: 11 routes, `DRAFT_REVIEW_ONLY`, Master target null. Its source_ref is main@`f4e8`; SOURCE_INTAKE historical source pin is `6d4c9b`. These are distinct source authorities and must not be conflated.
+- SOURCE_INTAKE blob `1b9018ff944f7f673934d0fc2a97e0a0090d3f5f`, schema 8: 61 runtime rows; 61/61 historical source blob/mode pins and 61/61 destination blob/mode pins match. Actual classification is 46 byte-identical / 15 derived; declared summary remains 47 / 14. Current #349 source drift from the historical pin: 33 unchanged, 20 changed, 8 absent.
+- Historical tests: 149 source / 19 destination; 2 exact, 2 divergent, 145 source-only, 15 destination-only. Current #349 source tests: 47 / 19; 1 exact, 3 divergent, 43 source-only, 15 destination-only. The four same-path original tests are config.sh, integration.sh, portal.sh and security.sh; only portal.sh remains byte-identical at the current source pin.
+- Hardware import: 65 current source ESP32/ESP8266 board files vs 2 destination sketches; 53 source Python board/lab helpers vs 0 destination. ESP32 source blob `adfd2f110d88243d03f2195658fb456b154dcb84` differs from destination `3cc7ec54b476943dc04a8d1af5e2df5fe054e422`; ESP8266 source `8a0b458b6c7fb99c0913df16c5b4ca94dbcdc50e` differs from destination `c8be98f72596681e36a3ad1f8939bf8046c96887`.
+- MIGRATION_MAP blob `b54fc15d83bc2269de03db8aadd0e76259fd13d9`: 18 test rows (4 original + 14 derived), while SOURCE_INTAKE lists 15 derived tests. `voucher_txn_journal.sh` is absent from the map. `run_focus.sh` map SHA `fa1f4f2c...` differs from destination `2b7b861e...`; `member_txn_journal.sh` map SHA `01dc9c65...` differs from destination `d04df3c6...`.
+- Exact license counterparts: PisoWiFi product LICENSE, QRCode LICENSE, TailAdmin LICENSE and TailAdmin NOTICE. Missing destination counterparts: Experiments root NOTICE.md and Tabler LICENSE. BlazeRentalLauncher license remains a separate RENTAL route.
+- COE #26 remains FROZEN. No staging, copy, move, overwrite, rebase, cherry-pick, retarget or promotion occurred.
+
+
+---
+
 ## PHX-MASTER UTC00 exact-tree and migration matrix — 2026-11-25T00:37:39Z
 
 - Experiments main f4e8a891aed8af86d5fd315d28750a0ac3a7372b; development blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5; current HARDWARE #349 source/test 353231c60fe09e4694fa73e3a3a1e64c5d21353d.

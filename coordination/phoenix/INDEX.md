@@ -1,3 +1,17 @@
+## PHX-MASTER UTC01 live checkpoint — 2026-11-25T01:34:05Z
+
+- Starting Master HEAD `30369ee731f0b77e502b1e2691c39bfc9fa59cdb`; Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; development `aad3aade72c1156eecba1fed30907c6d0283b2c5`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`.
+- HARDWARE #349 source/test `d5b5cd10` / docs `18d4ff4f`: focused Quarantine/Relay PASS; Full fails at Missing poll signature check.
+- COE RELEASE #35 source/test `eda86d1f` / docs `02561ba1`: 220 host tests (218 pass / 2 skips), 10/10 ULA authority failures; sandbox 40/40 host preflight then Bubblewrap exit 125; case guard PASS.
+- COE #26 remains FROZEN. Exact trees: historical source 2,391; #349 source/test 2,532; #349 docs 2,533; destination 286. SOURCE_INTAKE actual 46/15 vs declared 47/14; 20 changed / 8 missing current-source rows; tests 149/19 historical and 47/19 current; board helpers 53/0; both sketches differ; voucher map row missing; two stale test hashes; root NOTICE and Tabler license counterparts missing.
+- #291 remains blocked at CORE handover freshness; #328 and #348 remain blocked by missing Mbed TLS header/build dependencies; #266 remains OPEN / 0-of-7.
+- Private v11/newer corrections NOT RECOVERED; no older registry substituted. 14/14 static audit assertions PASS; Master Python suite and verifier NOT RUN; no Master Actions run. No owner source or COE destination changed. **PRODUCTION NO-GO**.
+
+[UTC01 live owner/CI, exact-tree and COE provenance audit](PHX_MASTER_UTC01_20261125_LIVE_HEAD_OWNER_CI_COE26_EXACT_TREE_AND_REGISTRY_ACCESS_AUDIT.md)
+
+
+---
+
 ## PHX-MASTER UTC23 live checkpoint — 2026-11-24T23:37:39Z
 
 - Starting Master HEAD `433298c3837fe08c219035c2d74a10fa8f1aefa3`; base `main@f4e8a891aed8af86d5fd315d28750a0ac3a7372b`. UTC23 report and this index entry are coordination-only. The resulting branch/PR HEAD is the current exact head of PR #288.

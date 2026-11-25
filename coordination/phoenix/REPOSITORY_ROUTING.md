@@ -1,3 +1,20 @@
+## PHX-MASTER UTC01 owner routing — 2026-11-25T01:34:05Z
+
+- **PHX-CORE:** retains authenticated poll/register producer, financial state and canonical CURRENT_STATE / PROJECT_HANDOVER. #252 scoped build passes; #291 Windows/build remain blocked at handover freshness. The separate CORE continuation owns CORE source; Master does not edit it.
+- **PHX-RENTAL:** retains #328 and Android/server source. APK/API checks pass; the build fails at mandatory handover freshness and `mbedtls/sha256.h` absence.
+- **PHX-PISONET:** retains #255 and inherited #291 SoftTimer tests. Synthetic Windows CI passes only; no native-device acceptance is implied.
+- **PHX-HARDWARE:** retains #340/#347/#348/#349 source, firmware, labs and handovers. #340 exact checks pass; #347 checks fail; #348 build lacks `mbedtls/sha256.h`; #349 focused Quarantine/Relay pass but Full fails at `Missing poll signature check`. CORE supplies the authenticated producer contract; QA independently reviews the assertion. Preserve deny-default.
+- **PHX-QA:** owns independent poll-signature assertion reconciliation, money/crypto/migration review and #292 recipient regression. #290 Windows passes; #292 has no PR-triggered runs.
+- **PHX-RELEASE:** owns Experiments #291 and COE #35. #291 remains blocked by CORE-owned handover freshness. COE #35 source/test `eda86d1f` / final docs `02561ba1` is current; 220 host tests (218 pass / 2 skips) precede 10/10 site-ULA failures; sandbox 40/40 host preflight passes before missing Bubblewrap / exit 125. RELEASE needs approved site ULA authority and an authorized Bubblewrap-capable runner.
+- **COE integration owner:** owns #26 destination, SOURCE_INTAKE/MIGRATION_MAP, test and firmware import parity, license/NOTICE reconciliation and candidate CI. Keep FROZEN; no destination write.
+- **Registry custodian:** restore authorized private `BLAZE_PROJECT_REGISTRY_v11_20261027.json` and newer-correction access. Library search surfaced v3-v7 only; no Google Drive connector is exposed; no older snapshot is substituted.
+- **Repository administrators:** verify effective branch protection and rulesets. Current branch objects report `protected=false` for Experiments main, Experiments development and COE main; Master branch protection remains unverified.
+
+PHX-MASTER owns only `coordination/phoenix/`, architecture/interface contracts, cross-repo migration provenance and integration matrices. No worker branch takeover, parallel CORE worker, source move or destination staging is authorized.
+
+
+---
+
 ## PHX-MASTER UTC00 owner routing — 2026-11-25T00:37:39Z
 
 - **PHX-CORE:** owns authenticated register/poll producer contract, financial state, and canonical CURRENT_STATE. Master did not edit CORE source or shared handover. #291 Windows/build fail at the CORE freshness gate; compatibility passes.

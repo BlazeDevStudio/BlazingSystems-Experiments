@@ -2049,3 +2049,15 @@ Current COE RELEASE #35 demonstrates the distinction: source/test a514e57d789d82
 HARDWARE #349 is the contrasting current tuple: source/test 353231c60fe09e4694fa73e3a3a1e64c5d21353d; final docs/PR HEAD 2fd939ef90db4f68b12f33732733697606c36f9b. Its current PR body records the exact-source and docs-head runs. Both Full runs fail at the inherited Missing poll signature check; focused Quarantine/Relay passes and target compilation do not override that failure.
 
 If any one of the four identities is missing, stale or mismatched, classify the integration gate STALE / BLOCKED. Never infer that a passing source-head run validates a later docs/PR head; never treat a current handover as a substitute for an updated PR body; never bypass the CORE-owned canonical freshness gate. The owner of each source/PR updates its own handover and PR description; QA independently reviews critical money, crypto, hardware and migration claims.
+
+
+## 7.17 Exact-head evidence freshness and migration provenance gates — 2026-11-25 UTC01
+
+Keep three identities distinct for every worker PR: (1) source/test SHA, (2) final handover/docs/PR SHA, and (3) the exact SHA checked out by each workflow run. A docs-only commit does not inherit a prior source/test result unless the tree comparison proves that the tested paths are unchanged; a workflow name or green child run does not establish parent acceptance.
+
+Current examples:
+- HARDWARE #349 source/test `d5b5cd10ae7ab655639b011c442b6968b32c2398`, docs/PR `18d4ff4ff86c6ea6d04419e2117833faa58e5e88`. The source/test tree has 2,532 entries and docs tree 2,533; the only changed file paths are PROJECT_HANDOVER.md and the new UTC01 handover. Focused Quarantine/Relay pass; Full still fails at Missing poll signature check. Preserve the deny-only poll/coin contract until CORE producer schema/golden vectors and independent QA are accepted.
+- COE RELEASE #35 source/test `eda86d1f2c6f6bef8e6ff1111329d3f1775e043b`, final handover/PR `02561ba1ed60e0eb827946f76d8749a26943eaaf`. Exact docs-head shared/sandbox/case CI is current; 220 host tests (218 pass / 2 skips) and 40 host preflight tests do not clear the 10-profile ULA authority gate or missing Bubblewrap namespace runner.
+- COE #26 route-manifest source_ref main@`f4e8` and SOURCE_INTAKE historical pin `6d4c9b` are different source authorities. Preserve both; never silently rebase historical provenance onto current main.
+
+Before any integration staging proposal, require complete non-truncated source/destination trees; per-file path, blob and mode comparison at the exact source pin; separate current-source drift disposition; license/NOTICE mapping; test identity and map reconciliation; owner-reviewed import completeness; exact-head destination CI; and an explicit owner-authorized staging decision. The current COE #26 candidate fails these prerequisites and remains FROZEN. This contract grants no copy, move, merge, release or production authority.
