@@ -32,6 +32,19 @@ int main() {
   assert(!hex64(nullptr, 64));
   assert(!hex64(nullptr, 0));
 
+  // The fixed-span comparator is a public header helper: invalid pointers and
+  // empty spans must fail closed before any dereference or equality result.
+  const unsigned char compare_byte = 0x5a;
+  const unsigned char other_compare_byte = 0xa5;
+  assert(!equal_fixed(nullptr, &compare_byte, 1));
+  assert(!equal_fixed(&compare_byte, nullptr, 1));
+  assert(!equal_fixed(nullptr, nullptr, 1));
+  assert(!equal_fixed(nullptr, nullptr, 0));
+  assert(!equal_fixed(&compare_byte, &compare_byte, 0));
+  assert(equal_fixed(&compare_byte, &compare_byte, 1));
+  assert(!equal_fixed(&compare_byte, &other_compare_byte, 1));
+  std::puts("PHX-HW fixed comparator null/empty spans fail closed PASS");
+
   unsigned char sample[32];
   for (size_t i = 0; i < sizeof(sample); ++i) sample[i] = (unsigned char)i;
   char rendered[65];
@@ -40,7 +53,7 @@ int main() {
   std::puts("PHX-HW-CFG length-aware hex span and lowercase renderer PASS");
 
   const char key[]="synthetic-controller-v1-key";
-  const std::string policy="{\"enabled\":0,\"coin_enabled\":0,\"config_revision\":7}";
+  const std::string policy="{\\"enabled\\":0,\\"coin_enabled\\":0,\\"config_revision\\":7}";
   unsigned char hash[32]; char hashhex[65];
   mbedtls_sha256_context ctx; mbedtls_sha256_init(&ctx);
   assert(mbedtls_sha256_starts_ret(&ctx,0)==0);
