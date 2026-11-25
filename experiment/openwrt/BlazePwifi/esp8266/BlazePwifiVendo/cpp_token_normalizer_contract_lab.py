@@ -121,4 +121,4 @@ if __name__ == "__main__":
     result = unittest.TextTestRunner(verbosity=2).run(suite)
     if not result.wasSuccessful():
         raise SystemExit(1)
-    print("CPP_TOKEN_NORMALIZER_CONTRACT_PASS 11/11")
+    print("CPP_TOKEN_NORMALIZER_CONTRACT_PASS 14/14")
