@@ -136,4 +136,4 @@ if "for name, helper_name, old, new, expected in MUTATIONS" not in runner_source
     fail("runner no longer executes the complete mutation matrix")
 
 print("COIN_PULSE_CAPTURE_LAB_MODULE_BOUNDARIES_PASS")
-print(f"FUNCTION_SPECS={len(specs)} MUTATIONS={len(mutations)}")
+print(f"FUNCTION_SPECS={len(specs)} MUTATIONS={len(mutation_names)}")
