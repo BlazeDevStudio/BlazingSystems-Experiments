@@ -289,7 +289,35 @@ def verify_board(name: str, path: Path):
     print(f"POLL_PREPOLL_ORDER_MUTATION_REJECTED {name}")
 
 
+def verify_source_extractor_decoy_regressions():
+    # A source guard must select real definitions, not comments or literals.
+    cases = {
+        "block-comment decoy": (
+            "/* void loop() { fake_poll(); } */\\n"
+            "void loop() { actual_poll(); }\\n"
+        ),
+        "string-literal decoy": (
+            'const char *note = "void loop() { quoted_decoy(); }";\\n'
+            "void loop() { actual_poll(); }\\n"
+        ),
+        "raw-string brace": (
+            'void loop() { const char *payload = R"tag( } " // /* { )tag"; '
+            "actual_poll(); }\\n"
+        ),
+    }
+    for label, source in cases.items():
+        try:
+            extracted = extract_function(source, "void loop()")
+        except AssertionError as exc:
+            raise AssertionError(f"{label}: source extractor failed: {exc}") from exc
+        if "actual_poll();" not in extracted:
+            raise AssertionError(
+                f"{label}: source extractor selected a non-code decoy or truncated the function"
+            )
+
+
 def main():
+    verify_source_extractor_decoy_regressions()
     for name, path in SKETCHES.items():
         if not path.is_file():
             raise SystemExit(f"missing sketch: {path}")
