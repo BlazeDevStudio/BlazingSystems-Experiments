@@ -1,3 +1,9 @@
+## PHX-RELEASE UTC 2026-11-25 — supersession audit: release handover-reference regression guard
+
+- Compatible draft head `4bbefa32597a2a2ca8c2e9052d52ee65c031b6aa` already contains the RELEASE-owned current-handover-reference regression coverage in `.github/scripts/test_phx_release_handover_current_refs.py`. No implementation was duplicated and no non-RELEASE source was changed.
+- Exact-head [BlazePwifi build #45569128418](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45569128418) completed docs-only proof plus scoped Android, ESP32, and ESP8266 jobs successfully; `validate` failed, and production import, signing, and publishing were skipped. [Windows #45569128211](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45569128211) failed at `handover` before Windows build and publication. [ESP32 compatibility #45569128424](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45569128424) succeeded on both pinned core legs against source `f591cb85ba03`.
+- This is scoped CI evidence only, not a production claim. PR #291 remains OPEN / DRAFT / UNMERGED with zero independent reviews. **PRODUCTION NO-GO** remains pending MASTER and independent QA approval, protected signing and durable finance/migration controls, and physical acceptance.
+
 ## PHX-RELEASE UTC 2026-11-25 — supersession audit: ESP32 reproducible-build verifier hardening
 
 - Compatible draft head `8f444097d398b429bf4109bfdf3d8dc5f9746cdd` already contains the RELEASE-owned ESP32 reproducible-build verifier hardening and regression coverage in `.github/scripts/verify_esp32_reproducible_build.py`, `.github/scripts/test_verify_esp32_reproducible_build.py`, and the compatibility workflow. No implementation was duplicated and no non-RELEASE source was changed.
