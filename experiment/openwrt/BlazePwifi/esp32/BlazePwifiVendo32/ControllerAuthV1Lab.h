@@ -30,10 +30,16 @@ inline bool hex64(const char *p, size_t length) {
   }
   return true;
 }
-inline bool equal_fixed(const unsigned char *a,const unsigned char *b,size_t n) {
-  unsigned char diff=0;
-  for(size_t i=0;i<n;i++) diff|=(unsigned char)(a[i]^b[i]);
-  return diff==0;
+inline bool equal_fixed(const unsigned char *a, const unsigned char *b, size_t n) {
+  // An empty span is not a valid digest/signature comparison. Reject invalid
+  // pointers before entering the fixed-length loop so callers fail closed.
+  if (!a || !b || n == 0) return false;
+
+  unsigned char diff = 0;
+  for (size_t i = 0; i < n; ++i) {
+    diff |= static_cast<unsigned char>(a[i] ^ b[i]);
+  }
+  return diff == 0;
 }
 // Deterministic rendering of a 32-byte digest. Shared by SHA256 and HMAC
 // so both checks use one auditable lowercase-hex implementation.
