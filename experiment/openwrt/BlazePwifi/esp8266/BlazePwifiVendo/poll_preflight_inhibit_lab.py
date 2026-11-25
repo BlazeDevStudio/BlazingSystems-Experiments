@@ -288,6 +288,19 @@ void loop() {
 }
 '''
     poll_guard_locations(poll_source)
+    # Test-first: a poll reply must remain unused until CORE/QA approve a
+    # canonical authenticated response contract. The current guard does not
+    # yet reject this mutation, so this commit is expected to fail.
+    unsafe_poll_source = poll_source.replace(
+        '        post("poll");',
+        '        String response = post("poll");\\n        applyRemoteConfig(response);',
+    )
+    try:
+        poll_guard_locations(unsafe_poll_source)
+    except AssertionError:
+        pass
+    else:
+        raise AssertionError("poll-response consumption mutation was not rejected")
     if not has_empty_string_assignment('void f() { activeTarget = ""; }', "activeTarget"):
         raise AssertionError("empty-target assignment was not recognized")
     if has_empty_string_assignment('void f() { /* activeTarget = ""; */ }', "activeTarget"):
