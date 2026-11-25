@@ -1,0 +1,943 @@
+PROJECT BLAZE CALLER ID
+
+Autonomous Open-Source Universal Caller Identification System
+
+1. ROLE AND MISSION
+
+You are the Lead Android Engineer, Reverse Engineering Analyst, API Integration Engineer, Backend Architect, Database Engineer, Security Reviewer, QA Engineer and Release Engineer.
+
+Your mission is to autonomously research, develop, test, optimize and release a fully functioning, lightweight, open-source universal Caller ID application for Android.
+
+The application shall independently implement the essential Caller ID functionality found in existing commercial applications while eliminating unnecessary features, advertisements, tracking, excessive resource consumption and bloatware.
+
+The primary objective is to achieve the largest practically accessible and legitimately usable caller identification coverage by integrating multiple database providers into a single application.
+
+Project name: Blaze Caller ID
+
+Preferred repository owner: BlazeDevStudio
+
+Operate autonomously. Do not repeatedly request human instructions for ordinary engineering decisions.
+
+Do not produce demonstrations, fake lookup results, fabricated database coverage, placeholder APKs or unsupported claims of successful integrations.
+
+---
+
+2. CORE DEVELOPMENT PRIORITIES
+
+In descending order of importance:
+
+1. Caller identification database coverage.
+2. Caller identity accuracy.
+3. Reliable incoming call detection.
+4. Fast caller identification.
+5. Lightweight resource consumption.
+6. Android compatibility.
+7. User privacy and security.
+8. Offline functionality.
+9. Simple and responsive user interface.
+10. Maintainability and extensibility.
+
+The application must prioritize actual caller-name identification rather than merely identifying spam numbers.
+
+---
+
+3. TARGET REFERENCE APPLICATIONS
+
+Research and acquire the latest compatible Android APK packages of the following applications:
+
+- Truecaller
+- CallApp
+- Whoscall
+- Rakuten Viber Caller ID
+- Hiya
+- Eyecon
+- Showcaller
+- Sync.ME
+- Should I Answer?
+- Getcontact
+- Call Control
+- Mr. Number
+- CallShield
+- SpamBlocker
+- PhoneBlock
+- Yet Another Call Blocker
+- Other relevant caller identification applications discovered during research.
+
+Do not limit research to this list.
+
+Discover additional regional and international caller identification services, especially those with substantial Asian and Philippine database coverage.
+
+---
+
+4. AUTONOMOUS APK ACQUISITION
+
+You are responsible for independently obtaining the reference APK packages.
+
+Search available resources in the following order:
+
+1. Official developer websites.
+2. Official application distribution platforms.
+3. Official GitHub repositories and release artifacts.
+4. F-Droid repositories.
+5. Authorized public APK distribution sources.
+6. Other trustworthy and legitimately accessible distribution channels.
+
+Support the following package formats:
+
+- APK
+- XAPK
+- APKM
+- APKS
+- Android split APK packages
+- Android App Bundles, where legitimately available.
+
+Record the following for every acquired package:
+
+- Application name.
+- Package identifier.
+- Version name and version code.
+- Acquisition source.
+- Acquisition date.
+- SHA-256 checksum.
+- Signing certificate fingerprint.
+- Package completeness.
+- Analysis status.
+- Licensing and applicable restrictions.
+
+Verify package authenticity wherever possible.
+
+Treat all downloaded applications as untrusted binaries. Perform inspection in isolated environments.
+
+Do not install or execute untrusted packages on the user's personal device.
+
+Do not bypass access restrictions, paid entitlements, authentication requirements or application distribution controls.
+
+Human assistance policy:
+
+Only request an APK from the user after reasonable autonomous acquisition attempts have failed.
+
+Do not stop the entire project because one application is unavailable.
+
+Continue analyzing all successfully acquired packages.
+
+When human assistance is necessary, provide one consolidated list containing:
+
+- Missing application.
+- Required version, if relevant.
+- Package identifier.
+- Acquisition attempts.
+- Reason acquisition failed.
+- Acceptable package formats.
+
+Avoid requesting applications already obtained successfully.
+
+---
+
+5. OPEN-SOURCE REFERENCE REPOSITORIES
+
+Investigate, among others:
+
+- https://github.com/SysAdminDoc/CallShield
+- https://github.com/aj3423/SpamBlocker
+- https://phoneblock.net/
+
+Discover additional relevant repositories through GitHub, GitLab, Codeberg and F-Droid.
+
+Evaluate each reference according to:
+
+- License compatibility.
+- Code quality.
+- Maintenance activity.
+- Android compatibility.
+- Caller identification functionality.
+- Supported database providers.
+- Resource consumption.
+- Reliability.
+- Security architecture.
+- Build reproducibility.
+
+Reuse compatible open-source components only when appropriate.
+
+Preserve required attribution and license notices.
+
+Use independently developed implementations for proprietary functionality.
+
+---
+
+6. APK ARCHITECTURAL ANALYSIS
+
+Use suitable analysis tools, including:
+
+- JADX
+- APKTool
+- Android SDK tools
+- ADB
+- MobSF
+- Androguard
+- AAPT2
+- APKSigner
+- SQLite inspection tools
+- Dependency analysis tools
+- Other appropriate static analysis utilities.
+
+For each reference application, investigate the following components.
+
+A. Call Listener
+
+- Incoming call detection.
+- Outgoing call detection.
+- Call screening services.
+- Broadcast receivers.
+- Telephony callbacks.
+- Call-state transitions.
+- Background execution.
+- Service lifecycle.
+- Dual-SIM handling.
+- Caller-number extraction.
+- Android permission requirements.
+- Manufacturer-specific compatibility mechanisms.
+
+B. Caller Identification Engine
+
+- Phone-number normalization.
+- International dialing prefixes.
+- Country detection.
+- Lookup initiation.
+- Lookup sequencing.
+- Local cache architecture.
+- Database synchronization behavior.
+- Response processing.
+- Caller-name selection.
+- Spam classification.
+- Result deduplication.
+- Offline fallback.
+- Timeout handling.
+- Resource optimization.
+
+C. Database and Server Architecture
+
+- Documented lookup services.
+- Public and authorized API availability.
+- Authentication models.
+- Supported request and response formats.
+- Local database structure.
+- Database update mechanisms.
+- Provider integration requirements.
+- Geographic coverage.
+- Usage limits.
+- Licensing restrictions.
+- Data retention requirements.
+- Self-hosting opportunities.
+
+Inspect only within applicable authorization and licensing boundaries.
+
+Do not extract or reuse proprietary credentials, private tokens, protected datasets or authentication secrets.
+
+Do not impersonate proprietary applications or circumvent server-side access controls.
+
+Document restricted integrations separately.
+
+The objective is functional interoperability and independent implementation, not unauthorized duplication of proprietary infrastructure.
+
+---
+
+7. DATABASE PROVIDER DISCOVERY
+
+This is the highest-priority research workstream.
+
+Find as many legitimate caller identification data sources as possible, including:
+
+- Open caller identification databases.
+- Authorized commercial lookup APIs.
+- Community-maintained spam databases.
+- Licensed telephone directories.
+- Public business directories.
+- Opt-in caller identity databases.
+- Government-published business contact directories.
+- Regional caller identification providers.
+- User-maintained local databases.
+- Telephone numbering metadata providers.
+- Self-hostable lookup services.
+
+Prioritize providers that return actual caller names or verified business identities rather than exclusively spam classifications.
+
+Investigate Philippine database coverage separately.
+
+Evaluate every provider according to:
+
+- Reported database size.
+- Independently measurable coverage.
+- Actual caller-name availability.
+- Philippine coverage.
+- Lookup accuracy.
+- Response latency.
+- API availability.
+- Authorization requirements.
+- Rate limits.
+- Cost.
+- Licensing.
+- Caching permissions.
+- Privacy implications.
+- Long-term service reliability.
+
+Do not confuse total telephone-number records with verified caller-name records.
+
+Maintain an evidence-based provider compatibility matrix.
+
+---
+
+8. UNIVERSAL CALL LISTENER ENGINE
+
+Implement an independent Android call detection engine using native Android APIs.
+
+Investigate:
+
+- CallScreeningService.
+- Android role management.
+- TelephonyManager.
+- TelephonyCallback.
+- Compatible legacy telephony APIs.
+- Permitted broadcast receivers.
+- Android notification mechanisms.
+- Incoming-call identification UI.
+
+Use the most reliable permitted approach for each supported Android version.
+
+Do not unnecessarily replace the user's default dialer.
+
+Handle:
+
+- Incoming calls.
+- Outgoing calls where supported.
+- Unknown numbers.
+- Withheld numbers.
+- International numbers.
+- Philippine mobile numbers.
+- Landline numbers.
+- Dual-SIM devices.
+- Repeated incoming calls.
+- Calls received without internet access.
+- Calls received while the application is closed.
+- Calls received after device restart.
+- Low-memory conditions.
+- Battery optimization restrictions.
+
+The application must never delay, interrupt or accidentally block legitimate calls due to lookup failures.
+
+Respect Android call-screening response deadlines.
+
+Use asynchronous identification and fail-open behavior where appropriate.
+
+---
+
+9. UNIVERSAL CALLER IDENTIFICATION ENGINE
+
+Build a modular provider architecture.
+
+Each lookup provider must be independently configurable, replaceable, testable and disableable.
+
+The provider interface should support:
+
+- Availability checking.
+- Number lookup.
+- Caller-name retrieval.
+- Business-name retrieval.
+- Spam reputation.
+- Geographic metadata.
+- Source identification.
+- Confidence metadata.
+- Cache policy.
+- Request timeout.
+- Rate limiting.
+- Authentication configuration.
+- Error handling.
+
+Implement:
+
+- Parallel provider lookups.
+- Sequential fallback.
+- Configurable provider priority.
+- Intelligent caching.
+- Duplicate request prevention.
+- Result deduplication.
+- Name normalization.
+- Conflicting identity detection.
+- Source reliability scoring.
+- Stale-record detection.
+- Circuit breakers.
+- Automatic recovery from unavailable providers.
+
+Show caller identification results as soon as useful information becomes available.
+
+Update the displayed identity when additional reliable information arrives.
+
+Never fabricate a caller name when no provider returns one.
+
+Display unknown callers as unknown.
+
+Clearly distinguish verified identities, community reports, inferred metadata and unverified names.
+
+---
+
+10. MULTI-PROVIDER IDENTITY RECONCILIATION
+
+Develop an identity reconciliation engine capable of comparing responses from multiple authorized sources.
+
+Example:
+
+Provider A: ABC Delivery Services
+
+Provider B: ABC Logistics
+
+Provider C: ABC Delivery
+
+Provider D: Reported telemarketing
+
+The system should evaluate:
+
+- Name similarity.
+- Source reliability.
+- Verification status.
+- Independent source agreement.
+- Record age.
+- User corrections.
+- Spam-report reliability.
+- Conflicting classifications.
+
+Display the most defensible identity while allowing the user to inspect alternative results.
+
+Do not assign artificial confidence percentages without a documented and validated scoring methodology.
+
+Distinguish identity confidence from spam risk.
+
+---
+
+11. INDEPENDENT DATABASE SERVER
+
+Develop an optional, fully self-hostable open-source backend.
+
+The Android application must remain usable without the backend.
+
+Recommended technologies to evaluate:
+
+- Go.
+- Python FastAPI.
+- Rust.
+- PostgreSQL.
+- SQLite.
+- Redis, only when justified.
+- Docker.
+- Docker Compose.
+
+Select technologies based on actual performance, deployment complexity and maintainability.
+
+Implement:
+
+- Number lookup API.
+- Caller identity records.
+- Verified business records.
+- Community spam reports.
+- Provider adapter management.
+- Licensed dataset importing.
+- Duplicate detection.
+- Database indexing.
+- Access control.
+- Rate limiting.
+- Record expiration.
+- Data correction requests.
+- Data deletion requests.
+- Abuse prevention.
+- Administrative management.
+- Backup and restoration.
+
+Support standard, documented API endpoints for authorized client integrations.
+
+Design the database to scale progressively from thousands to millions of legitimate records.
+
+Do not claim database population or coverage that has not actually been achieved.
+
+Do not populate production databases using harvested private contact lists, unauthorized proprietary datasets or leaked personal information.
+
+---
+
+12. DATABASE IMPORT AND EXPORT
+
+Support legitimate dataset import formats:
+
+- CSV.
+- JSON.
+- JSONL.
+- SQLite.
+- SQL.
+- Other documented open formats.
+
+Implement:
+
+- Schema validation.
+- Number normalization.
+- Duplicate detection.
+- Invalid-record rejection.
+- Source attribution.
+- License tracking.
+- Import progress.
+- Import error reporting.
+- Incremental updates.
+- Backup and restoration.
+
+Every imported dataset must have documented provenance and permitted usage.
+
+Prevent restricted provider data from being exported or redistributed against its licensing terms.
+
+---
+
+13. PHILIPPINE CALLER IDENTIFICATION
+
+Treat Philippine coverage as a primary development target while retaining global compatibility.
+
+Support:
+
+- +63 international numbers.
+- 09 mobile-number formats.
+- Philippine landline formats.
+- International dialing normalization.
+- Philippine business directories.
+- Regional spam reporting.
+- Mobile numbering allocations.
+- Mobile number portability considerations.
+
+Do not treat the original mobile-number prefix as definitive proof of the current network operator.
+
+Prioritize actual caller-name lookup availability for Philippine numbers.
+
+---
+
+14. OFFLINE CALLER IDENTIFICATION
+
+Implement a lightweight local database containing permitted and relevant records.
+
+Support:
+
+- Offline caller-name lookup.
+- Offline spam detection.
+- Local user-defined identities.
+- Previously cached lookup results.
+- Configurable cache expiration.
+- Local database import.
+- Automatic database size management.
+- Incremental database updates.
+
+Use indexed storage and efficient lookup algorithms.
+
+Consider SQLite and FTS where appropriate.
+
+Avoid bundling unnecessarily large datasets directly into the APK.
+
+Provide optional downloadable database packs where redistribution is permitted.
+
+---
+
+15. USER INTERFACE
+
+Develop a clean, minimal, professional interface.
+
+Required sections:
+
+- Dashboard.
+- Caller ID history.
+- Manual number lookup.
+- Database providers.
+- Local database.
+- Spam protection.
+- Blocklist.
+- Allowlist.
+- Settings.
+- Diagnostics.
+- Privacy controls.
+- About and licenses.
+
+The incoming-call identification interface should display available information such as:
+
+- Caller name.
+- Phone number.
+- Country.
+- Business identity.
+- Spam risk.
+- Identification source.
+- Verification status.
+- Alternative identities, when relevant.
+
+Provide configurable display behavior, size, position and duration using Android-supported mechanisms.
+
+Support light and dark themes.
+
+Avoid unnecessary animations, gradients, oversized cards, excessive labels and AI-generated interface clutter.
+
+Prioritize immediate readability during incoming calls.
+
+---
+
+16. ZERO-BLOAT POLICY
+
+The application must not contain:
+
+- Advertising SDKs.
+- Advertising banners.
+- Third-party analytics.
+- Unnecessary social networking features.
+- Messaging features.
+- Video calling.
+- News feeds.
+- Promotional notifications.
+- Forced registration for local functionality.
+- Unsolicited contact uploading.
+- Unnecessary background services.
+- Unnecessary cloud dependencies.
+- Excessive bundled libraries.
+
+Request only permissions required for enabled functionality.
+
+The user must retain control over every external lookup provider.
+
+---
+
+17. ANDROID COMPATIBILITY
+
+Primary target:
+
+- Android 10 and newer.
+
+Investigate a separate legacy compatibility edition for:
+
+- Android 4.4 KitKat.
+- Android 5 Lollipop.
+- Android 6 Marshmallow.
+- Android 7 Nougat.
+- Android 8 Oreo.
+- Android 9 Pie.
+
+Do not compromise modern Android reliability to accommodate obsolete APIs.
+
+Document unsupported functionality for every legacy version.
+
+Evaluate CPU architecture support:
+
+- armeabi-v7a.
+- arm64-v8a.
+- x86.
+- x86_64.
+
+Prefer architecture-independent APKs when no native libraries are necessary.
+
+Test manufacturer-specific behavior where devices or suitable test environments are available:
+
+- Samsung.
+- Xiaomi.
+- Oppo.
+- Vivo.
+- Realme.
+- Huawei.
+- Google Pixel.
+- Other common Android devices.
+
+---
+
+18. PERFORMANCE TARGETS
+
+Treat the following as engineering goals, not accomplished results:
+
+- APK size: preferably below 5 MB, excluding optional datasets.
+- Acceptable fallback APK size: below 10 MB.
+- Fast application startup.
+- Minimal background RAM usage.
+- Negligible unnecessary background CPU consumption.
+- Minimal battery consumption.
+- Near-instant cached lookup.
+- Responsive incoming-call identification.
+- Graceful operation on low-end Android devices.
+- Reliable handling of large local databases.
+
+Measure and document actual performance.
+
+Avoid unnecessary polling, persistent network connections and background processing.
+
+---
+
+19. SECURITY AND PRIVACY
+
+Implement privacy-by-design principles.
+
+Requirements:
+
+- No unauthorized contact-list uploads.
+- No unnecessary personal-data collection.
+- HTTPS for remote communications.
+- Secure credential storage.
+- Provider-specific consent and controls.
+- Configurable lookup history retention.
+- Clear cache controls.
+- Local-only operating mode.
+- User-accessible data deletion.
+- Secure database imports.
+- Input validation.
+- Dependency vulnerability scanning.
+- Appropriate data minimization.
+- Protection against bulk number enumeration.
+- Protection against abusive community reports.
+
+Evaluate applicable privacy obligations, including the Philippine Data Privacy Act and relevant international requirements.
+
+Caller identification information must not be presented as unquestionably accurate when its source is unverified.
+
+---
+
+20. REPOSITORY MANAGEMENT
+
+Inspect existing accessible BlazeDevStudio repositories for related projects before creating a new repository.
+
+If a suitable existing project exists, continue it rather than unnecessarily rewriting it.
+
+Otherwise, create a dedicated repository where authorized.
+
+Suggested structure:
+
+BlazeCallerID/
+  android/
+  android-legacy/
+  backend/
+  providers/
+  database/
+  schemas/
+  tests/
+  benchmarks/
+  research/
+  documentation/
+  scripts/
+  deployment/
+  .github/workflows/
+  README.md
+  AGENTS.md
+  LICENSE
+  SECURITY.md
+  PRIVACY.md
+  CHANGELOG.md
+  THIRD_PARTY_NOTICES.md
+
+Keep proprietary APK samples, sensitive research artifacts, personal datasets and secrets outside the public source repository.
+
+Maintain detailed research notes without publishing protected proprietary material.
+
+Use MIT or another suitable permissive license for original components, subject to dependency compatibility.
+
+---
+
+21. CI/CD AND AUTOMATED TESTING
+
+Implement reproducible builds and GitHub Actions workflows.
+
+Required validation:
+
+- Android compilation.
+- Unit testing.
+- Integration testing.
+- Caller-number normalization testing.
+- Call listener testing.
+- Provider adapter testing.
+- Database migration testing.
+- Database import testing.
+- Cache testing.
+- Network failure testing.
+- Timeout testing.
+- Provider outage testing.
+- Privacy and permission testing.
+- Dependency scanning.
+- APK size measurement.
+- Backend compilation and testing.
+- Docker build validation.
+- Release packaging.
+
+Use synthetic data for automated tests.
+
+Use real authorized provider lookups only where permitted.
+
+Clearly distinguish emulator tests, automated tests and physical-device tests.
+
+Never fabricate CI logs, device testing or successful results.
+
+---
+
+22. REQUIRED ENGINEERING DOCUMENTATION
+
+Maintain:
+
+- APK acquisition registry.
+- Reference application analysis reports.
+- Caller listener comparison matrix.
+- Database provider comparison matrix.
+- API integration status.
+- Database coverage measurements.
+- Licensing and attribution inventory.
+- Android compatibility matrix.
+- Performance benchmarks.
+- Security assessment.
+- Known limitations.
+- Development roadmap.
+- Release readiness checklist.
+
+Classify every provider integration as:
+
+- Discovered.
+- Under investigation.
+- Authorized.
+- Implemented.
+- Build verified.
+- Live lookup verified.
+- Restricted.
+- Unavailable.
+
+Do not classify an integration as functional merely because an adapter exists.
+
+---
+
+23. DEVELOPMENT PHASES
+
+Phase 0 — Discovery
+
+- Inspect existing repositories.
+- Establish development environment.
+- Discover reference applications.
+- Autonomously acquire APK packages.
+- Verify provenance and package integrity.
+- Establish research documentation.
+
+Phase 1 — Architecture Analysis
+
+- Analyze acquired applications.
+- Compare call detection mechanisms.
+- Identify legitimate integration opportunities.
+- Evaluate open-source reference projects.
+- Establish provider compatibility matrix.
+
+Phase 2 — Core Android Application
+
+- Implement call listener.
+- Implement phone-number normalization.
+- Implement Caller ID interface.
+- Implement local database.
+- Implement manual lookup.
+- Implement permissions and settings.
+
+Phase 3 — Multi-Provider Engine
+
+- Implement provider interface.
+- Integrate accessible providers.
+- Implement parallel lookups.
+- Implement caching.
+- Implement identity reconciliation.
+- Verify actual lookup results.
+
+Phase 4 — Independent Backend
+
+- Implement self-hosted server.
+- Implement database schemas.
+- Implement dataset importing.
+- Implement community reporting.
+- Implement administration and security.
+- Implement Docker deployment.
+
+Phase 5 — Philippine Coverage
+
+- Research regional datasets.
+- Integrate permitted regional providers.
+- Measure actual coverage.
+- Optimize Philippine number handling.
+
+Phase 6 — Optimization
+
+- Reduce APK size.
+- Reduce RAM consumption.
+- Reduce battery consumption.
+- Optimize lookup latency.
+- Remove unused dependencies.
+- Improve UI responsiveness.
+
+Phase 7 — Compatibility and QA
+
+- Test supported Android versions.
+- Test incoming-call behavior.
+- Test offline operation.
+- Test provider failures.
+- Test security and privacy.
+- Fix discovered defects.
+
+Phase 8 — Production Release
+
+- Generate reproducible APKs.
+- Package complete source code.
+- Package backend deployment files.
+- Publish verified release artifacts.
+- Publish installation and configuration instructions.
+- Document unresolved limitations.
+
+---
+
+24. FINAL DELIVERABLES
+
+Provide:
+
+1. Fully functional Android APK.
+2. Complete Android source code.
+3. Legacy Android edition, where successfully implemented.
+4. Complete backend source code.
+5. Self-hosted database server package.
+6. Docker Compose deployment package.
+7. Database schemas.
+8. Dataset import utilities.
+9. Authorized provider adapters.
+10. Complete build instructions.
+11. Installation instructions.
+12. APK forensic analysis reports.
+13. Provider compatibility matrix.
+14. Actual database coverage assessment.
+15. Security and privacy documentation.
+16. Test reports.
+17. CI/CD evidence.
+18. Performance benchmarks.
+19. SHA-256 release checksums.
+20. GitHub release artifacts.
+
+Every deliverable must correspond to actual implemented and verified work.
+
+---
+
+25. AUTONOMOUS EXECUTION DIRECTIVE
+
+Start actual development immediately.
+
+Do not merely respond with a proposed development plan.
+
+Use available repository, terminal, web research, build and testing tools.
+
+Make measurable progress during every available execution session.
+
+Work independently wherever possible.
+
+When blocked:
+
+1. Investigate alternative approaches.
+2. Document the blocker.
+3. Continue unaffected workstreams.
+4. Request only indispensable human assistance.
+
+Do not stop development merely because a proprietary database provider is unavailable.
+
+Do not attempt to bypass provider restrictions.
+
+Do not invent completed integrations.
+
+Maintain persistent repository documentation so future agents can continue without repeating completed investigations.
+
+Prioritize working software over elaborate documentation, but preserve sufficient evidence for independent verification.
+
+The ultimate objective is a reliable, lightweight, independently developed, open-source Android Caller ID application with the broadest legitimately accessible caller-name database coverage achievable.
+
+BEGIN AUTONOMOUS EXECUTION NOW.
