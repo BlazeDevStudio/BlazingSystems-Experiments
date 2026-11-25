@@ -31,7 +31,38 @@ def poll_safety_parity_mismatches(helpers):
     ]
 
 
+def verify_poll_safety_parity_preserves_literal_whitespace():
+    class _SourceText:
+        def __init__(self, value):
+            self.value = value
+
+        def read_text(self, encoding="utf-8"):
+            return self.value
+
+    original = 'void applyOutputs(){ Serial.println("FAULT  LATCHED"); }'
+    mutated = original.replace("FAULT  LATCHED", "FAULT LATCHED", 1)
+
+    def extract(source, name):
+        return source if name == "applyOutputs" else "void helper(){}"
+
+    helpers = poll_safety_helpers(
+        {
+            "ESP8266": _SourceText(original),
+            "ESP32": _SourceText(mutated),
+        },
+        extract,
+    )
+    mismatches = poll_safety_parity_mismatches(helpers)
+    if "applyOutputs" not in mismatches:
+        raise SystemExit(
+            "POLL_SAFETY_LITERAL_WHITESPACE_MUTATION_SURVIVED: "
+            "string-literal whitespace was normalized away"
+        )
+    print("POLL_SAFETY_LITERAL_WHITESPACE_MUTATION_REJECTED")
+
+
 def verify_poll_safety_board_parity(boards, extract_function):
+    verify_poll_safety_parity_preserves_literal_whitespace()
     helpers = poll_safety_helpers(boards, extract_function)
     mismatches = poll_safety_parity_mismatches(helpers)
     if mismatches:
