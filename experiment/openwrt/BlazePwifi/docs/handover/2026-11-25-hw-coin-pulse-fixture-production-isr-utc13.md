@@ -8,6 +8,7 @@
 **Working branch:** `phoenix/hw-exact-arduino-core-matrix-20261125-utc11`  
 **Parent #349 HEAD:** `2a5c997add4f49fcd74f753101d3a9daac0040bf`  
 **Source/test HEAD:** `d3e36ae444e262bcd8ac37e087c9d98358e7a168`
+**Exact PR/docs HEAD revalidated before this handover-only update:** `c2179ef1cd28b732fb9026946d04882aca521d8a`
 
 ## One Hardware-owned test-fidelity defect corrected
 
@@ -21,7 +22,7 @@ The correction is test-only:
 - Added a fixture contract that rejects direct volatile-counter increments and requires the relevant scenarios to call `emitCoinEdges()`.
 - Updated the no-op ISR mutation's expected first-failure marker to `late-coin-post-edge`, because the late-POST scenario now actually exercises the ISR.
 
-No production `.ino` sketch, ISR implementation, pin, debounce, relay, credit, accounting, controller API, signer, witness, replay, downgrade or migration behavior changed.
+**Scope clarification:** The UTC13 fixture-only conversion did not modify either `.ino` sketch. However, PR #352 as a whole includes the earlier production-source commit [`ec9547f8`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/ec9547f8e97b815db705d5aa65382f171b5eade9) in both sketches: `coinEdgeSequence++` was replaced with `coinEdgeSequence = coinEdgeSequence + 1U` to keep the unsigned modulo-2^32 increment explicit and avoid the deprecated volatile-`++` warning. This is a production ISR source change and is included in the exact-core build evidence below. The UTC13 test-fidelity conversion itself changes only the fixture/harness. No pin, polarity, debounce, relay, credit, accounting, controller API, signer, witness, replay, downgrade or migration behavior was changed by these commits.
 
 ## Test-first history and intermediate failure
 
@@ -54,6 +55,21 @@ Both focused lab logs report:
 - Output explicitly retains `SIMULATED_ONLY=1`, `PHYSICAL_COIN_PULSE_ACCEPTANCE=0`, `PHYSICAL_RELAY_ACCEPTANCE=0`, and `PHYSICAL_POWER_CUT_ACCEPTANCE=0`.
 
 The exact Arduino builds passed on this source/test SHA. The ESP8266 compiler still emits the existing non-fatal `ICACHE_RAM_ATTR` deprecation warning; it was not changed in this task.
+
+## Exact current-PR-head revalidation on `c2179ef1cd28b732fb9026946d04882aca521d8a`
+
+GitHub Actions associated with the exact PR/docs head `c2179ef1...` completed the focused workflows again:
+
+| Workflow | Run / job | Result |
+|---|---|---|
+| Quarantine Byte Readback LAB | [#45629285893](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45629285893), job `139257837448` | **PASS** |
+| Relay Output Polarity LAB | [#45629285974](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45629285974), jobs `139257837555` / `139257842598` | **PASS / PASS** |
+| ESP8266 Arduino core 3.1.2 | [#45629286016](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45629286016), job `139257838230` | **PASS** |
+| ESP32 Arduino core 3.3.13 / 4.0.0 | [#45629286022](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45629286022), jobs `139257838056` / `139257837855` | **PASS / PASS** |
+
+The exact-head Full workflow [#45629285971](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45629285971) completed with 14/14 firmware/platform and Android build jobs passing, but validation job `139257838741` **FAILED** at the inherited `Missing poll signature check` in the ESP8266 sketch. The downstream update bundle, simulations, candidate gate, signing and publication jobs were skipped. The validate log confirms the exact failing assertion; no response signature was fabricated and deny-default was not weakened.
+
+The current focused results are CI evidence for the source/workflow content present at `c2179ef1...`. The handover correction now being committed is documentation-only; it does not change firmware, fixture or workflow paths. No new source test is claimed for that documentation-only commit.
 
 ## Full integration blocker
 
