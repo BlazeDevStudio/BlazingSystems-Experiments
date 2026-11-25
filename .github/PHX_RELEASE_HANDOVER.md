@@ -4133,3 +4133,53 @@ No merge, workflow dispatch, signing, release tag, publication, hardware flash, 
 - Compatible draft head `d90e382f3b5fc05e331c6be316c80d59a3e3a61b` already contains another worker’s release-workflow concurrency safeguard and regression coverage extension. No implementation was duplicated.
 - In [BlazePwifi build #45469265411](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45469265411), docs-only proof and scoped Android, ESP8266, ESP32, and OpenWrt compile legs succeeded; `validate` failed only at mandatory handover freshness. [Windows #45469265465](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45469265465) likewise stopped at handover freshness before Windows build/signing/publishing. [ESP32 compatibility #45469265445](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45469265445) succeeded.
 - This entry supplies the canonical freshness record. Evidence is scoped hosted CI only—not production, protected-signing, hardware, finance/migration, compatibility, or physical-acceptance evidence. PR #291 remains draft/unmerged and independently unreviewed. **PRODUCTION NO-GO** remains until MASTER and independent QA review, protected signer/source admission, durable finance/migration acceptance, and physical acceptance gates are satisfied.
+
+
+## PHX-RELEASE UTC04 2026-11-25 — immutable v0.5.3 publisher
+
+**Disposition:** RELEASE source/test guard VERIFIED at source/test HEAD `4b3269f619609ef83f1db7366bfb8a362bd12858`; integrated build remains blocked by CORE-owned handover freshness; PR #291 OPEN / DRAFT / UNMERGED; **PRODUCTION NO-GO**. This was one bounded release-owned workflow-safety task. No v0.5.3 workflow dispatch, signer-secret access, tag creation, release creation, publication, merge, hardware flash, payment migration, or customer deployment occurred.
+
+### Live branch and ownership pins
+
+- PR #291 branch: `phoenix/release-publisher-isolation-20261115`.
+- Live starting HEAD at activation read: `04f32a16aa8819cb9098db4543ddb641b4f3ed6f`. The older UTC04 lock pin `53fc8a1c` had advanced; all edits used the live PR head.
+- PR #291 base / PR #242 head: `734b89d9e7792247e8376335c3f3685500ab3f89`.
+- PR #288 current Master head: `6762bcf50c5cbedb5d09117e76749b0a66a7779b`; ownership manifest blob `e4db324315a1b3543fec17a148fbf960170fcb29`, 11 routes, `DRAFT_REVIEW_ONLY`. RELEASE's relevant workflow route remains `reimplementation-review`; MASTER retains child-pointer and migration coordination.
+- COE #26: `b382d233ff06c8791b1028bed3c617cc7b670d12`, OPEN / DRAFT / FROZEN.
+- COE #31: `59ed44d0b911e176f1a95b9cf5585ef811ffd31b`, OPEN / DRAFT.
+- COE #35: `f611c96091a1014ad36bf64251c180bcbc2d1f65`, OPEN / DRAFT; this activation did not modify COE.
+- Cleanup-first #266 remains OPEN / 0-of-7. The private Drive project registry v11 was not recovered through authorized Library/Drive access; no older registry was substituted and no private contents or identifiers were copied.
+
+### Test-first and source correction
+
+- Test-first commit [`04f32a16`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/04f32a16aa8819cb9098db4543ddb641b4f3ed6f) added the immutable-publisher regression. Expected RED [build #45546231013](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45546231013), CI-0701 job `138976414332`: the new publisher test failed against the old `gh release edit` / asset-clobber behavior; unrelated downstream jobs were skipped.
+- Test-fixture correction [`9eeba1d7`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/9eeba1d7bdc8448c86745a42a432315d519e3db9) replaced a no-op forbidden-edit mutation with an actual create-to-edit mutation.
+- Workflow correction [`aa8c7919`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/aa8c79194670140b1039e99b1c30f5d46caa5224) makes v0.5.3 publication one-time and fail-closed:
+  1. Confirms repository metadata is readable before interpreting 404.
+  2. Requires exactly one HTTP 404 for the Git tag ref and exactly one HTTP 404 for the Release-by-tag endpoint; an existing object, authentication/permission error, transport failure, redirect, or ambiguous status fails closed.
+  3. Creates a draft release only after both absence checks.
+  4. Uploads staged assets without overwrite behavior.
+  5. Verifies the release ID, target SHA, draft state and every required uploaded asset before publishing.
+  6. Publishes the draft only after verification, then re-fetches and verifies the same release ID, target SHA, non-draft and non-prerelease state.
+- Intermediate exact-source build [#45547373693](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45547373693) failed one test subcase: the mutation suite did not detect a premature publication PATCH before the asset loop. This was a test-harness gap, not a publisher runtime result.
+- Test correction [`4b3269f6`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/4b3269f619609ef83f1db7366bfb8a362bd12858) now requires exactly one publish PATCH and rejects it if it precedes required-asset verification.
+
+Only RELEASE-owned files for this increment changed: `.github/workflows/blazepwifi-v053-release.yml`, `.github/scripts/test_release_workflow_concurrency.py`, and this handover. No CORE, RENTAL, PISONET, HARDWARE, QA, MASTER or COE destination path was edited.
+
+### Exact-source GitHub Actions
+
+- Final source/test CI-0701 [#45547493806](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45547493806), job `138980504196`: **PASS**. The release workflow concurrency suite ran 22 tests, including `test_publisher_requires_absent_tag_and_never_mutates_existing_release`; all 22 passed. The same CI-0701 job also passed the 25-test handover-reference suite, 10-test Arduino CLI archive verifier suite, 3-test ESP32 image-admission suite, action-pin checks, toolchain pin checks and compatibility workflow contract.
+- Full BlazePwifi build [#45547493806](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45547493806): **IN PROGRESS at last read / not a successful full build**. Mandatory `validate` failed at the CORE-owned freshness gate; the gate reports workflow/source changes newer than `experiment/openwrt/BlazePwifi/PROJECT_HANDOVER.md`, last checkpoint `0ca69e5bd8e8169a673650c2621ddc92805c408f`, and names `.github/workflows/blazepwifi-v053-release.yml`. At last read, 11 target/platform jobs had passed and 3 remained in progress; update-bundle/simulation stages were skipped after validation failure. This is not a full target-matrix pass.
+- Windows release [#45547493750](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45547493750): **FAIL** at the same CORE-owned handover freshness gate; Windows build and publisher skipped.
+- ESP32 compatibility [#45547493707](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45547493707): provenance regression suite passed; two core build legs were still in progress at last read. No 3/3 result is claimed.
+- No release workflow was dispatched and no v0.5.3 tag/release was created. These are hosted CI/source-contract results only, not signed artifacts, production evidence, or physical hardware acceptance.
+
+### Next owner actions and gates
+
+- **PHX-CORE:** refresh the canonical BlazePwifi `PROJECT_HANDOVER.md` / `CURRENT_STATE.md` record after the RELEASE workflow change and publish its exact SHA. RELEASE will not edit or bypass CORE-owned freshness.
+- **PHX-QA:** independently review the exact-404 admission, draft-first upload/asset verification ordering, and mutation regressions.
+- **PHX-MASTER:** refresh the #291 child pointer to the final handover commit and reconcile the accumulated mixed-owner PR paths; no route transfer or merge is implied.
+- **Registry custodian:** restore authorized access to private Drive registry v11; no older snapshot is accepted as a substitute.
+- **PHX-RELEASE:** after CORE's freshness update, rerun exact-head Full, Windows and ESP32 compatibility; inspect terminal jobs and preserve any failures.
+
+Protected signer and independent freshness witness, durable financial accounting/migration, independent QA/MASTER approval, approved production binaries, 150 physical power cuts and 30-device/24-hour soak remain unestablished or NOT TESTED. **PRODUCTION NO-GO.**
