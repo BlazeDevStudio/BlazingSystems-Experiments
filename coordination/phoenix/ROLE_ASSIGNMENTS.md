@@ -4020,3 +4020,23 @@ COE supporting candidates:
 
 The current RELEASE UTC14 role lock is `PHX-RELEASE-20261124T14-ELF-ABSOLUTE-SYMBOL-EXCLUSION`; Master did not claim or edit its scope. The separate CORE continuation owner remains untouched.
 
+
+## PHX-MASTER UTC12 live owner-head and exact-head CI reconciliation — 2026-11-25
+
+| Owner / PR | Current exact head | Exact-head CI |
+|---|---|---|
+| CORE #252 | c82705f2de865c89ab733b10efa84f26f56a5cc4 | Build PASS (scoped). |
+| RENTAL #328 | 0e0da62acd47c6a1ce287f8a30fc700d603fa070 | APK/API PASS; build FAIL. |
+| PISONET #255 | d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | Windows PASS (synthetic). |
+| HARDWARE #340 | 38f3e9419f37109443c806a2362577d9efc50e4d | Six focused/build workflows PASS. |
+| HARDWARE #347 | 960184670379f01e20f0e7e8bc23b3e5eedacd3f | Quarantine/Relay/build FAIL. |
+| HARDWARE #348 | eb7afcb2ba0d1e84054c052c8b129cb51a91d062 | Header PASS; build FAIL. |
+| HARDWARE #349 | 2a5c997add4f49fcd74f753101d3a9daac0040bf | Quarantine/Relay PASS; Full FAIL at Missing poll signature check. |
+| QA #290/#292 | 5c29d15994cee1279058f1eca12f2a3180704292 / 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | #290 Windows PASS; #292 no runs. |
+| RELEASE #291 | ab719afe38ea9af97b0d46ab34a67c675d690d87 | Build/Windows fail CORE CURRENT_STATE freshness; compatibility PASS 3/3. |
+| COE RELEASE #35 | f611c96091a1014ad36bf64251c180bcbc2d1f65 | Shared ULA gate FAIL; sandbox Bubblewrap FAIL; case PASS. |
+| COE CORE #45 | 9d76a134c1f6512aa40c20ec4d247306a71a8cce | Overlay/case PASS (scoped). |
+| COE INTERCON #49 | aeb8ff11b2f5db9a5f86280ab62ab988245f3919 | Stage 5.1/case PASS; shared compile FAIL. |
+| COE integration #26 | b382d233ff06c8791b1028bed3c617cc7b670d12 | Five workflows queued / zero jobs; FROZEN. |
+
+CORE retains authenticated producer and canonical handover ownership; HARDWARE retains firmware; QA retains independent poll-signature assertion review; RELEASE retains workflow/rerun ownership. No transfer or subsystem source edit occurred.

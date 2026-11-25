@@ -5303,3 +5303,18 @@ Complete, non-truncated recursive trees at exact refs: pinned source `6d4c9b487a
 - Product LICENSE, QRCode LICENSE and TailAdmin LICENSE/NOTICE have exact destination counterparts. Experiments root NOTICE.md and `ui/vendor/tabler/LICENSE` have no COE #26 counterpart. BlazeRentalLauncher LICENSE is under the separate RENTAL route. The current complete source and destination trees contain no `jsqr` path; the earlier UTC14 line naming a jsqr test-vendor license is corrected and must not be used.
 - Five COE #26 workflows remain QUEUED with zero jobs/statuses. Candidate remains FROZEN. No staging, copy, move, overwrite, rebase, cherry-pick, retarget or promotion occurred.
 
+
+## PHX-MASTER UTC12 — COE #26 exact Hardware tree and admission reconciliation
+
+| Measure | HARDWARE #349 source | COE #26 destination |
+|---|---:|---:|
+| Complete repository tree entries | 2,552 | 286 |
+| Scoped ESP32/ESP8266 entries | 78 | 4 |
+| Board-local Python helpers | 64 | 0 |
+
+- ESP32 source `c07aba7d518ef7eb5d536aafdd77ef6193e676cb` differs from destination `3cc7ec54b476943dc04a8d1af5e2df5fe054e422`.
+- ESP8266 source `56b7ff524f6b55a1305196b27494c87fb9ffa6ab` differs from destination `c8be98f72596681e36a3ad1f8939bf8046c96887`.
+- Missing labs: `cpp_token_normalizer.py` and `cpp_token_normalizer_contract_lab.py` under the current ESP8266 source path.
+- SOURCE_INTAKE declares 47/14; 61 runtime rows recount to 46/15.
+- Root NOTICE, Tabler LICENSE and BlazeRentalLauncher LICENSE are source-present / destination-absent.
+- Five COE #26 workflows queued / zero jobs. Candidate remains FROZEN; no staging/copy/move/overwrite.

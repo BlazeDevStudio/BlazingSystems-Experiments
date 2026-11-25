@@ -1304,3 +1304,13 @@ UTC05 final refresh: HARDWARE owner updated PR #349 body to current source/test/
 - COE RELEASE #35 source/test a514e57d / handover+PR ecc1d3d4: 217 tests PASS / 2 skips, then all 10 profiles fail closed for missing approved ULA /48; Bubblewrap absent (exit 125); case guard PASS. PR description stale at UTC15.
 - COE #26 remains FROZEN: 2,530 current source entries / 286 destination; SOURCE_INTAKE 46/15 actual vs 47/14 declared; tests, board helpers, sketches and license gaps remain.
 - Private registry v11/newer corrections NOT RECOVERED. Master Python tests and verifier NOT RUN due local GitHub DNS failure. No subsystem source or destination changes. **PRODUCTION NO-GO.**
+
+## PHX-MASTER UTC12 — 2026-11-25 live branch, owner CI and COE #26 exact-tree audit
+
+[UTC12 live branch, owner CI, COE #26 exact-tree admission and registry-access report](PHX_MASTER_UTC12_20261125_LIVE_BRANCH_ROLE_CI_COE26_EXACT_TREE_AND_REGISTRY_ACCESS_AUDIT.md)
+
+- Master `5ff54bf3`; Experiments main `6be5d19b`; development `aad3aade`; COE main `a6513ab4`; COE #26 `b382d233`.
+- PR #288 OPEN / DRAFT / UNMERGED; main comparison 554 ahead / 1 behind; no merge/rebase.
+- HARDWARE #349 Quarantine/Relay PASS, Full FAIL at Missing poll signature check. RELEASE #291 Full/Windows fail CORE handover freshness; compatibility PASS.
+- COE #26 FROZEN: source/destination trees 2,552/286; scoped board Python helpers 64/0; firmware differs; two labs absent; intake 46/15 vs declared 47/14; NOTICE/licensing gaps.
+- Cleanup #266 OPEN / 0-of-7. Private registry v11/newer corrections NOT RECOVERED. Master product tests NOT RUN; no authenticated local checkout. **PRODUCTION NO-GO.**
