@@ -7,8 +7,7 @@ flash physics, ISR timing on silicon, or financial settlement.
 """
 from pathlib import Path
 import hashlib
-import subprocess
-import tempfile
+from cpp_fixture_runner import run_cpp_fixture
 
 from firmware_lab_source import extract_function, find_repo_root
 
@@ -214,38 +213,17 @@ int main() {
 GUARD = "if(!journalRecoveryRequired){\n      latchPollPulseFault"
 
 
-def compile_and_run(program: str, folder: Path, name: str):
-    source_path = folder / (name + ".cpp")
-    binary_path = folder / name
-    source_path.write_text(program, encoding="utf-8")
-    compile_result = subprocess.run(
-        [
-            "g++",
-            "-std=c++17",
-            "-Wall",
-            "-Wextra",
-            "-Werror",
-            "-pedantic",
-            "-O2",
-            str(source_path),
-            "-o",
-            str(binary_path),
-        ],
-        text=True,
-        capture_output=True,
+def compile_and_run(program: str, board: str, name: str):
+    """Use the shared bounded runner; keep fixture-specific flags and context."""
+    return run_cpp_fixture(
+        program,
+        prefix="phx-second-isr-" + board.lower() + "-",
+        stem=name,
+        extra_flags=("-pedantic", "-O2"),
+        compile_timeout=30,
+        run_timeout=10,
+        context=board + " " + name,
     )
-    if compile_result.returncode != 0:
-        raise AssertionError(
-            "C++ source-extraction harness failed to compile:\n"
-            + compile_result.stdout
-            + compile_result.stderr
-        )
-    return subprocess.run(
-        [str(binary_path)],
-        text=True,
-        capture_output=True,
-    )
-
 
 def check_board(board: str, sketch_path: Path):
     source = sketch_path.read_text(encoding="utf-8")
@@ -276,76 +254,74 @@ def check_board(board: str, sketch_path: Path):
         + MAIN.replace("BOARD_NAME", board)
     )
 
-    with tempfile.TemporaryDirectory(prefix="phx-second-isr-" + board.lower() + "-") as temp:
-        folder = Path(temp)
-        baseline = compile_and_run(board_main, folder, "baseline")
-        if baseline.returncode != 0:
-            raise AssertionError(
-                board + " baseline failed:\n" + baseline.stdout + baseline.stderr
-            )
-        print(baseline.stdout, end="")
+    baseline = compile_and_run(board_main, board, "baseline")
+    if baseline.returncode != 0:
+        raise AssertionError(
+            board + " baseline failed:\n" + baseline.stdout + baseline.stderr
+        )
+    print(baseline.stdout, end="")
 
-        mutant_sample = sample.replace(
-            GUARD,
-            "if(true){\n      latchPollPulseFault",
-            1,
+    mutant_sample = sample.replace(
+        GUARD,
+        "if(true){\n      latchPollPulseFault",
+        1,
+    )
+    mutant_functions = ordered_functions.replace(sample, mutant_sample, 1)
+    mutant_program = (
+        PRELUDE
+        + "\n"
+        + mutant_functions
+        + "\n"
+        + RUN_SCENARIO.replace("BOARD_NAME", board)
+        + "\n"
+        + MAIN.replace("BOARD_NAME", board)
+    )
+    mutant = compile_and_run(mutant_program, board, "mutant")
+    if mutant.returncode != 12:
+        raise AssertionError(
+            board + " repeated-latch mutation was not rejected at the expected assertion:\n"
+            + mutant.stdout
+            + mutant.stderr
+            + "exit="
+            + str(mutant.returncode)
         )
-        mutant_functions = ordered_functions.replace(sample, mutant_sample, 1)
-        mutant_program = (
-            PRELUDE
-            + "\n"
-            + mutant_functions
-            + "\n"
-            + RUN_SCENARIO.replace("BOARD_NAME", board)
-            + "\n"
-            + MAIN.replace("BOARD_NAME", board)
+    print("MUTATION_REJECTED SECOND_ISR_REPEATED_LATCH board=" + board)
+    identity_clear_call = "latchPollPulseFault((uint32_t)pendingPulses+unseenEdges);"
+    if sample.count(identity_clear_call) != 1:
+        raise AssertionError(board + ": expected one first-fault latch call for identity mutation")
+    identity_clear_sample = sample.replace(
+        identity_clear_call,
+        'pendingTarget="";\n      pendingNonce="";\n      ' + identity_clear_call,
+        1,
+    )
+    identity_clear_functions = ordered_functions.replace(sample, identity_clear_sample, 1)
+    identity_clear_program = (
+        PRELUDE
+        + "\n"
+        + identity_clear_functions
+        + "\n"
+        + RUN_SCENARIO.replace("BOARD_NAME", board)
+        + "\n"
+        + MAIN.replace("BOARD_NAME", board)
+    )
+    identity_clear_mutant = compile_and_run(
+        identity_clear_program, board, "identity_clear_mutant"
+    )
+    if identity_clear_mutant.returncode != 11:
+        raise AssertionError(
+            board + " pending-identity-clear mutation was not rejected at the expected assertion:\n"
+            + identity_clear_mutant.stdout
+            + identity_clear_mutant.stderr
+            + "exit="
+            + str(identity_clear_mutant.returncode)
         )
-        mutant = compile_and_run(mutant_program, folder, "mutant")
-        if mutant.returncode != 12:
-            raise AssertionError(
-                board + " repeated-latch mutation was not rejected at the expected assertion:\n"
-                + mutant.stdout
-                + mutant.stderr
-                + "exit="
-                + str(mutant.returncode)
-            )
-        print("MUTATION_REJECTED SECOND_ISR_REPEATED_LATCH board=" + board)
-        identity_clear_call = "latchPollPulseFault((uint32_t)pendingPulses+unseenEdges);"
-        if sample.count(identity_clear_call) != 1:
-            raise AssertionError(board + ": expected one first-fault latch call for identity mutation")
-        identity_clear_sample = sample.replace(
-            identity_clear_call,
-            'pendingTarget="";\n      pendingNonce="";\n      ' + identity_clear_call,
-            1,
-        )
-        identity_clear_functions = ordered_functions.replace(sample, identity_clear_sample, 1)
-        identity_clear_program = (
-            PRELUDE
-            + "\n"
-            + identity_clear_functions
-            + "\n"
-            + RUN_SCENARIO.replace("BOARD_NAME", board)
-            + "\n"
-            + MAIN.replace("BOARD_NAME", board)
-        )
-        identity_clear_mutant = compile_and_run(
-            identity_clear_program, folder, "identity_clear_mutant"
-        )
-        if identity_clear_mutant.returncode != 11:
-            raise AssertionError(
-                board + " pending-identity-clear mutation was not rejected at the expected assertion:\n"
-                + identity_clear_mutant.stdout
-                + identity_clear_mutant.stderr
-                + "exit="
-                + str(identity_clear_mutant.returncode)
-            )
-        print("MUTATION_REJECTED PENDING_IDENTITY_CLEAR board=" + board)
-        print(
-            "SOURCE_FUNCTION_SHA256 board="
-            + board
-            + " sha256="
-            + hashlib.sha256(sample.encode("utf-8")).hexdigest()
-        )
+    print("MUTATION_REJECTED PENDING_IDENTITY_CLEAR board=" + board)
+    print(
+        "SOURCE_FUNCTION_SHA256 board="
+        + board
+        + " sha256="
+        + hashlib.sha256(sample.encode("utf-8")).hexdigest()
+    )
 
 
 def main():
