@@ -97,8 +97,8 @@ if len({item[0] for item in specs}) != len(specs):
     fail("FUNCTION_SPECS contains duplicate helper names")
 if len({item[1] for item in specs}) != len(specs):
     fail("FUNCTION_SPECS contains duplicate signatures")
-if not isinstance(mutations, tuple) or len(mutations) != 14:
-    fail("MUTATIONS must retain all 14 fail-open mutation cases")
+if not isinstance(mutations, tuple) or len(mutations) != 16:
+    fail("MUTATIONS must retain all 16 fail-open mutation cases")
 if len({item[0] for item in mutations}) != len(mutations):
     fail("MUTATIONS contains duplicate identifiers")
 if "FUNCTION_INDEX_BY_NAME" not in assigned_names(contract_tree):
