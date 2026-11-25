@@ -1,3 +1,18 @@
+## PHX-MASTER UTC19 scheduled-run routing / stack admission — 2026-11-25T19:52:30.511Z
+
+Live `OWNERSHIP_ROUTES.json` remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`: 11 routes, `DRAFT_REVIEW_ONLY`, PHX-MASTER source `coordination/phoenix/`, destination null. No route grants recursive copy or migration authority.
+
+Current Hardware stack: #352 branch `phoenix/hw-exact-arduino-core-matrix-20261125-utc11` now `0e984e267b3a8fb10c314800d1a7f120806354b7`; stacked #353 child branch `phoenix/hw-board-conditional-isr-selector-20261125-utc17` has base SHA `6d743ae16bbb9f1cf604aa3e2a1553083e32a5ec`, while its parent branch is now `0e984e2`. Keep child draft; HARDWARE/MASTER/QA must reconcile exact ancestry before any integration. No rebase or retarget was performed.
+
+COE #26 remains FROZEN at `b382d233`. Current Hardware source/destination tree, test and license differences are documented in [UTC19 exact-head audit](PHX_MASTER_UTC19_20261125_HW352_HW353_COE26_COE35_EXACT_HEAD_AUDIT.md). No Hardware-specific intake/map exists; no staging or destination write.
+
+COE RELEASE #35 current docs/source pins are `1c08a339` / `b3a7873e`; PR description still pins `28da39c6` / `10f19a28`. RELEASE owns its PR-body refresh. CORE owns canonical CURRENT_STATE and poll/register producer; QA owns independent poll-signature review. CORE remains reserved to its separate continuation.
+
+Private Drive registry v11 and newer corrections remain NOT_RECOVERED because no Google Drive connector is exposed. No private content or identifiers were copied into GitHub.
+
+
+---
+
 ## PHX-MASTER UTC19 — owner routing and migration admission refresh (2026-11-25T19:17:34Z)
 
 The live `OWNERSHIP_ROUTES.json` remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`: 11 routes, `DRAFT_REVIEW_ONLY`, PHX-MASTER source `coordination/phoenix/`, target null. Hardware routes are selective review only; no route grants recursive copy or migration authority.
