@@ -1,5 +1,5 @@
 <!-- STANDALONE-BACKUP-20261113:START -->
-> **STANDALONE-BACKUP-20261113 / 2026-11-25 Asia/Manila / P0 rollback preservation / exact-head CI verified**
+> **STANDALONE-BACKUP-20261113 / 2026-11-25 Asia/Manila / P0 rollback preservation / integrated**
 >
 > Separate standalone base `14c0037978f61b3d478ee62aa681cf02cd9793c8`, installer blob `d5634f392a0d575888c051df16ace3631024e90a`. The backup block can reuse a directory when two runs share a timestamp. It also ignores reported backup copy failures. The installer and its uninstall fixture are the only tracked references to the backup root.
 >
@@ -7,9 +7,11 @@
 >
 > The candidate allocates an individual timestamp-prefixed directory with `mktemp -d`, preserves the existing backup root and flat names, and checks reported `cp -p` failures before managed web or state writes. The unchanged regression passed all three methods locally.
 >
-> Candidate `a4fffd01c8fb1818c32a53522e0590c1dc8a77cd` passed [Ubuntu run 43754089203](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43754089203), job `132934260545`, after every prior gate passed. The backup fixture passed 3/3 under Dash/GNU grep and 3/3 under BusyBox shell. Independent source and fixture review found no blocker. The fixture tests only the extracted backup stage. R281 stays on its manual preview.
+> [PR 287](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/287) merged into the separate `fix/rental-standalone-entropy` branch at `83f56e5d259f9ee2f83dffc913a64db936c2ec7f`. Its complete tree `1111d1b92723f138ed57fe3014901b5f03b66f06` equals independently reviewed and tested PR head `ebb9bf050a822932a98eef56d78a8712157be93a` and candidate source commit tree. The unique-backup and checked-copy-failure repair preserves the existing root, flat filenames, and earlier archives.
 >
-> **NEXT EXACT ACTION** Refresh the current base/head and peer paths, then integrate PR 287 into the standalone branch and record the resulting whole-tree identity. R281 stays on its manual preview.
+> Exact source/test candidate `a4fffd01c8fb1818c32a53522e0590c1dc8a77cd` passed [Ubuntu run 43754089203](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43754089203), job `132934260545`; all prior gates passed and the backup fixture passed 3/3 under Dash/GNU grep and 3/3 under BusyBox shell/grep. Final docs head `ebb9bf050a822932a98eef56d78a8712157be93a` passed [Ubuntu run 45539781933](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45539781933), job `138955200764`. Independent source, fixture, and exact-CI review found no blocker. This exercises the extracted backup block in temporary roots; it does not run the installer write phase or router. R281 remains on its manual preview.
+>
+> **NEXT EXACT ACTION** Refresh the standalone source and open peer paths. Continue with a read-only audit of the unresolved lease/receipt postwrite crash boundary; require an exact-source temporary reproduction before proposing any change. Keep customer-paid admission, physical acceptance, recovery, and production gates closed.
 <!-- STANDALONE-BACKUP-20261113:END -->
 
 <!-- STANDALONE-UNINSTALL-20261113:START -->
