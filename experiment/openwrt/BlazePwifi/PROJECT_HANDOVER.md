@@ -996,3 +996,24 @@ PR #340 already owns the pre-poll deny candidate; temporary duplicate PR #350 wa
 
 See [the narrow handover](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/blob/cad18161905cd2ae477ad979d6d8079dce40363a/experiment/openwrt/BlazePwifi/docs/handover/2026-11-25-hw-first-fault-edge-runner-shared-utc00.md).
 <!-- PHX-HARDWARE-20261125-FIRST-FAULT-RUNNER:END -->
+
+
+
+<!-- PHX-HARDWARE-20261125-CPP-UDL-SUFFIX-BOUNDARIES:START -->
+## PHX-HARDWARE UTC11 — C++ user-defined literal suffix boundaries
+
+The Hardware-owned C++ parity normalizer previously emitted adjacent string/character literal suffixes as separate tokens, then discarded whitespace. Consequently compact UDL forms and whitespace-separated literal-plus-identifier forms normalized identically. Test-first RED reproduced all three cases (ordinary prefixed string, raw string, character literal) on both focused workflows.
+
+- Test-only RED: Quarantine [#45602565653](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45602565653), job `139164952617`, and Relay [#45602565679](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45602565679), job `139164953025`: each failed at exactly the three new suffix-boundary assertions.
+- Source fix: [`c3d82cca`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/c3d82cca404dab8bfb7671abf27771f063073f97) adds one bounded adjacent-identifier suffix scanner and applies it to ordinary/prefixed/character and raw literals.
+- Final source/test SHA: [`7da74f9d`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/7da74f9d1768a42fc6c15be368eeddae29035d4f).
+- Exact Quarantine [#45603111644](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45603111644), job `139166862358`: **PASS**, normalizer 14/14, bounded HTTP parity PASS, 10/10 parity mutations rejected; existing source-extracted poll/coin/quarantine fault suites pass.
+- Exact Relay [#45603111558](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45603111558), jobs `139166861621` / `139166862022`: **PASS**, normalizer 14/14, poll/JSON/deny matrices and bounded HTTP both-board checks pass.
+- Full [#45603111622](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45603111622), validation job `139166864322`: **FAIL** at inherited CORE/QA `Missing poll signature check`; all 13 firmware/platform targets plus Android pass 14/14; dependent update/simulation/candidate/signing/publication jobs skipped.
+
+Only Hardware-owned host normalizer/contracts changed; no production sketch, CGI producer, shared API, financial state, signer, witness, migration or COE destination changed. The evidence is SIMULATED/CI VERIFIED, not physical acceptance. Physical coin/relay/electrical recovery, 150 power cuts, 30-device/24-hour soak, protected anti-rollback witness, durable accounting/replay, v1-to-v2 migration and independent QA/Release signoff remain NOT TESTED / NOT ACCEPTED. **HARDWARE ACCEPTED: NO; PRODUCTION NO-GO.**
+
+Live stack: #239 `d83b715b...`, #254 `84c442a4...` (contains `3692ddf...`, 17 ahead/zero behind), #283 `4dd0b01b...`; #340 base `88581eef...` still needs Master reconciliation against #283. CORE owns authenticated register/poll producer contract; QA owns independent assertion review; Master owns stack and integration pins.
+
+See [UTC11 narrow handover](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/blob/3f5e8b59e6e72629a3c634abc34e24a082484a13/experiment/openwrt/BlazePwifi/docs/handover/2026-11-25-hw-cpp-user-defined-literal-suffix-boundaries-utc11.md).
+<!-- PHX-HARDWARE-20261125-CPP-UDL-SUFFIX-BOUNDARIES:END -->
