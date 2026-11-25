@@ -1203,3 +1203,14 @@ UTC05 final refresh: HARDWARE owner updated PR #349 body to current source/test/
 - HARDWARE #349 advanced to dce158b3eb6c0d953900284207f349518205f1d2. New change is lab-only (poll_loop_blocking_inhibit_lab.py plus response fixture); Relay #45398283830 and Quarantine #45398283765 PASS. Build #45398283752 remains IN PROGRESS at read time with validation already FAIL at Missing poll signature check; target jobs still running.
 - This is a post-checkpoint refresh within the existing UTC12 Master activation. The single BLAZE-COMMS/1 issue #172 checkpoint is updated in place; no duplicate comment.
 - Full exact refs and run links: [UTC12 Master report](coordination/phoenix/PHX_MASTER_UTC12_20261124_RELEASE291_HANDOVER_COE26_SOURCE_INTAKE_AND_HW349_RECONCILIATION.md).
+
+
+## PHX-MASTER UTC00 — 2026-11-25 live owner CI and COE #26 exact-tree audit
+
+[UTC00 exact-head, role-CI, COE #26 tree/provenance and registry-access report](PHX_MASTER_UTC00_20261125_LIVE_HEAD_OWNER_CI_COE26_EXACT_TREE_AUDIT.md)
+
+- Master starting HEAD 263c679248aeb0eaeeefeb4190060defa07aee02; Experiments main f4e8a891aed8af86d5fd315d28750a0ac3a7372b; development aad3aade; COE main a6513ab4.
+- HARDWARE #349 source/test 353231c / docs+PR 2fd939e: focused Quarantine/Relay PASS; Full FAIL at Missing poll signature check.
+- COE RELEASE #35 source/test a514e57d / handover+PR ecc1d3d4: 217 tests PASS / 2 skips, then all 10 profiles fail closed for missing approved ULA /48; Bubblewrap absent (exit 125); case guard PASS. PR description stale at UTC15.
+- COE #26 remains FROZEN: 2,530 current source entries / 286 destination; SOURCE_INTAKE 46/15 actual vs 47/14 declared; tests, board helpers, sketches and license gaps remain.
+- Private registry v11/newer corrections NOT RECOVERED. Master Python tests and verifier NOT RUN due local GitHub DNS failure. No subsystem source or destination changes. **PRODUCTION NO-GO.**

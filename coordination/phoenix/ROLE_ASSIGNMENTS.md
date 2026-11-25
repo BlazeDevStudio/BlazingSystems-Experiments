@@ -1,3 +1,25 @@
+## PHX-MASTER UTC00 live owner/CI refresh — 2026-11-25T00:37:39Z
+
+| Owner / PR | Exact source/test and final PR HEAD | Exact-head CI observation | Required owner action |
+|---|---|---|---|
+| CORE #252 | c82705f2de865c89ab733b10efa84f26f56a5cc4 | #42698139210 scoped build PASS | CORE retains financial/poll contract and canonical CURRENT_STATE; separate CORE continuation untouched. |
+| RENTAL #328 | 0e0da62acd47c6a1ce287f8a30fc700d603fa070 | #44782114384 APK PASS; #44782114393 API PASS; #44782114390 build FAIL | RENTAL owns source/build blocker. |
+| PISONET #255 | d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | #42462978704 synthetic Windows PASS | PISONET retains COM/SoftTimer source and inherited tests. |
+| HARDWARE #347 | 960184670379f01e20f0e7e8bc23b3e5eedacd3f | #45299741995 Quarantine FAIL; #45299742437 Relay FAIL; #45299741993 build FAIL | HARDWARE owns parent branch; child results do not transfer. |
+| HARDWARE #348 | eb7afcb2ba0d1e84054c052c8b129cb51a91d062 | #45352513178 header-focused PASS; #45352513177 build FAIL at missing mbedtls/sha256.h | HARDWARE owns dependency correction. |
+| HARDWARE #349 | Source/test 353231c60fe09e4694fa73e3a3a1e64c5d21353d; docs/PR 2fd939ef90db4f68b12f33732733697606c36f9b | Exact-source Q/R #45512634485/#45512634525 PASS; Full #45512634648 FAIL. Docs-head Q/R #45513508003/#45513508200 PASS; Full #45513508008 FAIL at Missing poll signature check; 14/14 target/platform + Android jobs PASS, downstream skipped. | HARDWARE owns its handover; CORE owns authenticated producer contract; QA owns independent assertion review. |
+| QA #290 | 5c29d15994cee1279058f1eca12f2a3180704292 | #43633486963 Windows PASS | QA retains independent native COM review. |
+| QA #292 | 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | No PR-triggered runs | No pass claimed. |
+| RELEASE #291 | 53fc8a1c558f80adde19dc675b879c78797f0cd5 | #45485465901 Windows FAIL; #45485465992 build FAIL at CORE CURRENT_STATE freshness; #45485465888 ESP32 compatibility PASS | CORE refreshes canonical handover; RELEASE reruns; PISONET retains tests; QA reviews. |
+| COE RELEASE #35 | Source/test a514e57d789d821cea0f0a29e3e864dad0570046; handover/PR ecc1d3d4ad0c4564743a17e8155d524d805738de | Source and docs-head shared suites: 217 PASS / 2 skips, then 10/10 ULA authority failures. Sandbox 40/40 host tests PASS then missing Bubblewrap / exit 125. Case guards PASS. | Handover current at UTC00, PR body stale at UTC15; RELEASE must refresh its own PR description and obtain approved ULA/runner. |
+| COE CORE #45 | 9d76a134c1f6512aa40c20ec4d247306a71a8cce | #44295049727 overlay PASS; #44295049903 case PASS | CORE retains COE contract work. |
+| COE INTERCON #49 | aeb8ff11b2f5db9a5f86280ab62ab988245f3919 | #44646341873 Stage 5.1 PASS; #44646341992 case PASS; #44646341922 shared Hardware FAIL | Keep lab bridge separate from production finance/hardware acceptance. |
+| COE integration #26 | b382d233ff06c8791b1028bed3c617cc7b670d12 | Five queued workflows, zero jobs/statuses | Integration owner repairs exact provenance and tests before staging. |
+
+CORE source and shared handovers were not touched. PHX-MASTER owns only coordination/phoenix/, architecture/interface contracts, provenance and matrices.
+
+---
+
 ## PHX-MASTER UTC22 live owner/CI refresh — 2026-11-24T22:37:40Z
 
 | Owner / PR | Current exact ref | Exact-head CI observation | Required owner action |

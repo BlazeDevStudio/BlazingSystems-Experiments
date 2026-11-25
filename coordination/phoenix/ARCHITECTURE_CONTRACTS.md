@@ -2038,3 +2038,14 @@ Before staging, the COE integration owner must prove all of the following from e
 6. Board helper imports, sketch identities, tests, and exact-head CI are reviewed before any migration proposal.
 
 Any count mismatch, stale test hash, missing test mapping, unowned UI/Rental license path, incomplete board import, or unreviewed source drift keeps the destination frozen. This contract is review-only; it does not authorize a copy, move, overwrite, financial migration, or production release.
+
+
+## 7.16 PR descriptions and owner handovers are independent freshness controls — PHX-MASTER UTC00
+
+A current owner handover does not make a stale PR description current. Reviewers must reconcile four distinct identities before integration: (1) source/test commit, (2) final handover/docs commit, (3) current PR head, and (4) the exact commit checked out by each workflow run. The PR description and handover must both state the current tuple and link the corresponding exact-head runs.
+
+Current COE RELEASE #35 demonstrates the distinction: source/test a514e57d789d821cea0f0a29e3e864dad0570046; final handover/PR HEAD ecc1d3d4ad0c4564743a17e8155d524d805738de; handover blob 663b968ae8eea9b757338f3d5bc9fd72e452c470 contains the UTC00 evidence, but the PR description remains at UTC15. Treat the PR summary as STALE until RELEASE refreshes it, even though the handover is current. PHX-MASTER records and routes this discrepancy; it does not edit RELEASE-owned PR text or source.
+
+HARDWARE #349 is the contrasting current tuple: source/test 353231c60fe09e4694fa73e3a3a1e64c5d21353d; final docs/PR HEAD 2fd939ef90db4f68b12f33732733697606c36f9b. Its current PR body records the exact-source and docs-head runs. Both Full runs fail at the inherited Missing poll signature check; focused Quarantine/Relay passes and target compilation do not override that failure.
+
+If any one of the four identities is missing, stale or mismatched, classify the integration gate STALE / BLOCKED. Never infer that a passing source-head run validates a later docs/PR head; never treat a current handover as a substitute for an updated PR body; never bypass the CORE-owned canonical freshness gate. The owner of each source/PR updates its own handover and PR description; QA independently reviews critical money, crypto, hardware and migration claims.

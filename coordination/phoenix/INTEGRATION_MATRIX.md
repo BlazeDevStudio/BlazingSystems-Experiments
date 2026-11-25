@@ -1,3 +1,19 @@
+## PHX-MASTER UTC00 exact-tree and migration matrix — 2026-11-25T00:37:39Z
+
+- Experiments main f4e8a891aed8af86d5fd315d28750a0ac3a7372b; development blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5; current HARDWARE #349 source/test 353231c60fe09e4694fa73e3a3a1e64c5d21353d.
+- COE main a6513ab4412b4c014eee2863e45cbe32d06cb243; integration candidate #26 b382d233ff06c8791b1028bed3c617cc7b670d12.
+- Complete recursive trees: historical intake source 2,391 entries; current #349 source/test 2,530; COE #26 destination 286. All tree responses non-truncated.
+- OWNERSHIP_ROUTES.json e4db324315a1b3543fec17a148fbf960170fcb29: 11 routes, DRAFT_REVIEW_ONLY, Master target null. Source route ref main@f4e8 and SOURCE_INTAKE historical source pin 6d4c9b are distinct.
+- SOURCE_INTAKE blob 1b9018ff944f7f673934d0fc2a97e0a0090d3f5f: 61 rows; 61/61 historical source blob/mode pins match, 61/61 destination pins match. Actual row classification 46 identical / 15 derived, declared summary 47/14. Current source drift relative to historical pin: 33 unchanged, 20 changed, 8 absent.
+- Tests: 47 source / 19 destination; 1 exact, 3 divergent, 43 source-only, 15 destination-only. Divergent same-path tests: config.sh, integration.sh, security.sh.
+- Hardware: ESP32 16 source / 1 destination; ESP8266 49 source / 1 destination; 53 source Python labs/helpers / 0 destination. Both destination sketches differ from source. The new #349 lab blob 6b58d3b25614242109043b482e335cdf124c5a70 has no destination counterpart.
+- OpenWrt library rootfs/usr/lib/blazepwifi: 15 source / 20 destination; 6 exact, 9 divergent, 5 destination-only. Vendo CGI: 1/1, divergent.
+- MIGRATION_MAP blob b54fc15d83bc2269de03db8aadd0e76259fd13d9: stale run_focus.sh and member_txn_journal.sh hashes; destination voucher_txn_journal.sh is not mapped.
+- Exact license counterparts: PisoWiFi product LICENSE, QRCode LICENSE, TailAdmin LICENSE and TailAdmin NOTICE. Missing destination counterparts: Experiments root NOTICE and Tabler LICENSE. BlazeRentalLauncher LICENSE remains a separate RENTAL route.
+- COE #26 five workflows remain queued / zero jobs/statuses. **FROZEN:** no staging, copy, move, overwrite, rebase, cherry-pick, retarget or promotion.
+
+---
+
 ## PHX-MASTER UTC22 exact-head / migration matrix — 2026-11-24T22:37:40Z
 
 - Experiments main: `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; development `blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5`; Master starting HEAD `66a734ee33b7fc9fca8a2dd0b95c7fdd7d29bba3`.

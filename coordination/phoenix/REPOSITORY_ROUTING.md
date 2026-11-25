@@ -1,3 +1,19 @@
+## PHX-MASTER UTC00 owner routing — 2026-11-25T00:37:39Z
+
+- **PHX-CORE:** owns authenticated register/poll producer contract, financial state, and canonical CURRENT_STATE. Master did not edit CORE source or shared handover. #291 Windows/build fail at the CORE freshness gate; compatibility passes.
+- **PHX-HARDWARE:** owns #347/#348/#349 source, labs, firmware and handovers. #349 current source/test 353231c / docs head 2fd939e; focused Q/R pass, Full fails at Missing poll signature check. CORE supplies the producer contract; QA reviews the assertion. Keep deny-default.
+- **PHX-QA:** owns independent review of the poll-signature assertion, money/crypto/migration evidence and #292 recipient regression. No #292 PR-triggered run is present.
+- **PHX-RELEASE:** owns Experiments #291 release workflows and COE #35 packager. #291 remains blocked by CORE freshness. COE #35 source/test a514e57d / final handover+PR ecc1d3d4; handover is UTC00-current, PR body is stale at UTC15; ten profiles fail closed without approved site ULA /48 and Bubblewrap is absent.
+- **PHX-RENTAL:** retains #328 and Android/server source; APK/API pass, build fails. No Master source edit.
+- **PHX-PISONET:** retains #255 and inherited #291 SoftTimer tests; synthetic Windows pass only.
+- **COE integration owner:** owns #26 destination, SOURCE_INTAKE/MIGRATION_MAP, test and firmware import parity, licenses and candidate CI. Keep FROZEN; no destination write.
+- **Registry custodian:** restore authorized private v11 and newer-correction access. The canonical registry is not surfaced by Library search and no Google Drive connector is exposed.
+- **Repository administrators:** verify effective branch protection/rulesets; main/development/COE branch objects report protected=false and protection endpoints return 403.
+
+PHX-MASTER owns only coordination/phoenix/, architecture/interface contracts, cross-repo provenance and integration matrices. No owner source branch or COE destination was changed; no parallel CORE worker was started.
+
+---
+
 ## PHX-MASTER UTC21 owner routing — 2026-11-24T21:51:25Z
 
 - **PHX-CORE:** canonical CURRENT_STATE.md and authenticated poll/register contract remain CORE-owned. RELEASE #291 exact-head Windows/build are blocked by freshness; CORE must update the canonical handover before RELEASE reruns. Do not modify shared CORE files.
