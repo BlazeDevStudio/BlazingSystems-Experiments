@@ -32,8 +32,8 @@ Those are different literal bytes and must not compare equal.
 - Relay [run #45672194428](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45672194428), jobs `139410151542` and `139410152270`: **PASS / PASS**. Logs include the literal-whitespace mutation rejection, 19/19 parity, C++ token normalizer contract 14/14, poll-response fixture boundary 4/4, and bounded HTTP response tests on both boards.
 - ESP8266 core 3.1.2 [run #45672193510](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45672193510), job `139410149072`: **PASS**. Sketch image 363,728 bytes; SHA-256 `cad045f77cbc9b1384d6bf10b40b10236080037c1ab015bb6a07188e59e475d5`.
 - ESP32 core 3.3.13 [run #45672193620](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45672193620), job `139410149591`: **PASS**. Sketch image 1,045,808 bytes; SHA-256 `2c751b06ab69015c94a0bee85bd5f627c0a23c2ebfd0e50a422cd4cf36eaf87b`.
-- ESP32 core 4.0.0, same run, job `139410148938`: **IN PROGRESS at checkpoint**; not counted as PASS.
-- Full BlazePwifi workflow [run #45672193755](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45672193755): **PENDING at checkpoint**; no result claimed for this exact SHA.
+- ESP32 core 4.0.0, same run, job `139410148938`: **PASS**. Sketch image 1,100,016 bytes; SHA-256 `44fc8e96f88094aae907b0d9c4e6619f76332cd3997175ed8a781bfaa56723fb`.
+- Full push [run #45672174175](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45672174175), validation job `139410259570`: **FAIL** at inherited `Missing poll signature check` in the ESP8266 sketch. All 14 target/platform build jobs plus Android **PASS**; downstream simulation, update, candidate, signing and publication jobs **SKIPPED**. PR-triggered Full #45672193755 was cancelled and is not counted.
 
 All successful workflows are host/CI evidence. Logs explicitly retain `SIMULATED_ONLY=1`, `PHYSICAL_RELAY_POLARITY_VERIFIED=0`, `PHYSICAL_POWER_CUT_VERIFIED=0`, and `FINANCIAL_PRODUCTION_AUTHORIZED=0`.
 
