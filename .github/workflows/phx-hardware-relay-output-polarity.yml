@@ -39,6 +39,10 @@ on:
       - "experiment/openwrt/BlazePwifi/docs/handover/2026-11-24-hw-cpp-fixture-runner-contract-utc19.md"
       - "experiment/openwrt/BlazePwifi/docs/handover/2026-11-25-hw-first-fault-edge-runner-shared-utc00.md"
       - ".github/workflows/phx-hardware-relay-output-polarity.yml"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/coin_pulse_capture_lab.py"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/coin_pulse_capture_lab_structure_guard.py"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/coin_pulse_capture_lab_fixtures.py"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/coin_pulse_capture_lab_contracts.py"
       - "experiment/openwrt/BlazePwifi/PROJECT_HANDOVER.md"
       - "experiment/openwrt/BlazePwifi/docs/handover/2026-11-25-hw-cpp-fixture-prefix-containment-utc04.md"
       - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_pending_recovery_lab_fixtures.py"
@@ -107,6 +111,8 @@ jobs:
         run: python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_window_drain_lab.py
       - name: Verify fault latch inhibits outputs before secondary-store and LittleFS persistence
         run: python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_loop_blocking_inhibit_lab.py
+      - name: Enforce modular coin pulse lab boundaries
+        run: python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/coin_pulse_capture_lab_structure_guard.py
       - name: Compile parent pulse-capture lab and reject edge/persistence regressions
         if: ${{ hashFiles('experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/coin_pulse_capture_lab.py') != '' }}
         run: python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/coin_pulse_capture_lab.py
