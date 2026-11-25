@@ -1,5 +1,5 @@
 <!-- STANDALONE-BACKUP-20261113:START -->
-> **STANDALONE-BACKUP-20261113 / 2026-11-16 Asia/Manila / P0 rollback preservation / candidate awaiting Ubuntu**
+> **STANDALONE-BACKUP-20261113 / 2026-11-25 Asia/Manila / P0 rollback preservation / exact-head CI verified**
 >
 > Separate standalone base `14c0037978f61b3d478ee62aa681cf02cd9793c8`, installer blob `d5634f392a0d575888c051df16ace3631024e90a`. The backup block can reuse a directory when two runs share a timestamp. It also ignores reported backup copy failures. The installer and its uninstall fixture are the only tracked references to the backup root.
 >
@@ -7,7 +7,9 @@
 >
 > The candidate allocates an individual timestamp-prefixed directory with `mktemp -d`, preserves the existing backup root and flat names, and checks reported `cp -p` failures before managed web or state writes. The unchanged regression passed all three methods locally.
 >
-> **NEXT EXACT ACTION** Verify exact [PR 287](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/287) candidate and its Ubuntu default and BusyBox results, including all prior gates. Require independent review before integrating. The fixture tests only the extracted backup stage. R281 stays on its manual preview.
+> Candidate `a4fffd01c8fb1818c32a53522e0590c1dc8a77cd` passed [Ubuntu run 43754089203](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43754089203), job `132934260545`, after every prior gate passed. The backup fixture passed 3/3 under Dash/GNU grep and 3/3 under BusyBox shell. Independent source and fixture review found no blocker. The fixture tests only the extracted backup stage. R281 stays on its manual preview.
+>
+> **NEXT EXACT ACTION** Refresh the current base/head and peer paths, then integrate PR 287 into the standalone branch and record the resulting whole-tree identity. R281 stays on its manual preview.
 <!-- STANDALONE-BACKUP-20261113:END -->
 
 <!-- STANDALONE-UNINSTALL-20261113:START -->

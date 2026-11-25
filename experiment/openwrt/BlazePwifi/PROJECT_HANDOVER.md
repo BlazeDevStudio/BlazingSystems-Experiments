@@ -1,9 +1,9 @@
 <!-- STANDALONE-BACKUP-20261113:START -->
-> **STANDALONE-BACKUP-20261113 / 2026-11-16 Asia/Manila / candidate awaiting Ubuntu**
+> **STANDALONE-BACKUP-20261113 / 2026-11-25 Asia/Manila / exact-head CI verified**
 >
 > [PR 287](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/287) targets the separate standalone branch. The exact baseline overwrote the earlier backup under a fixed timestamp and reached the replacement boundary after a reported copy failure. The first-install control passed. [Ubuntu attempt 2](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43344419691/job/132933120931) reproduced both failures after all existing gates passed. Attempt 1 stopped in the existing BusyBox enrollment replay check. Both logs are retained in `work/standalone-backup-proof`.
 >
-> The candidate gives each run its own directory beneath the existing backup root. It stops before creating the managed web and state directories or replacing payload files if allocation or a reported copy fails. Copy-failure cleanup is limited to the new partial backup and the current staging directory. The same three-method fixture passes locally. Exact Ubuntu evidence and independent review are required before integration.
+> The candidate gives each run its own directory beneath the existing backup root. It stops before creating the managed web and state directories or replacing payload files if allocation or a reported copy fails. Copy-failure cleanup is limited to the new partial backup and the current staging directory. The same three-method fixture passes locally. Candidate `a4fffd01c8fb1818c32a53522e0590c1dc8a77cd` passed [Ubuntu run 43754089203](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43754089203), job `132934260545`; the fixture passed 3/3 under Dash/GNU grep and 3/3 under BusyBox shell. Independent source and fixture review found no blocker. R281 remains on its manual preview.
 <!-- STANDALONE-BACKUP-20261113:END -->
 
 <!-- STANDALONE-UNINSTALL-20261113:START -->
