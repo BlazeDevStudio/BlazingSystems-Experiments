@@ -37,6 +37,7 @@ on:
       - "experiment/openwrt/BlazePwifi/docs/handover/2026-11-24-hw-poll-response-denial-matrix-modularization-utc16.md"
       - "experiment/openwrt/BlazePwifi/docs/handover/2026-11-24-hw-poll-edge-race-and-failclosed-mutation-modularization-utc17.md"
       - "experiment/openwrt/BlazePwifi/docs/handover/2026-11-24-hw-cpp-fixture-runner-contract-utc19.md"
+      - "experiment/openwrt/BlazePwifi/docs/handover/2026-11-25-hw-first-fault-edge-runner-shared-utc00.md"
       - ".github/workflows/phx-hardware-relay-output-polarity.yml"
       - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_pending_recovery_lab_fixtures.py"
   pull_request:

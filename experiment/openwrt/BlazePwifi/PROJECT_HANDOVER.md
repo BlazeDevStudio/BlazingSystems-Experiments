@@ -942,3 +942,22 @@ Next: PHX-QA independently review the exact parser and repair its legacy poll-si
 <!-- PHX-HARDWARE-20261117-QUARANTINE-IDENTITY-DELIMITER:START -->
 > **PHX-HARDWARE UTC13 — quarantine identity delimiter ambiguity fixed on both boards.** Existing DRAFT [PR #317](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/317), branch `phoenix/hardware-clear-pending-marker-match-20261117`. Test-first RED [51528cc](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/51528cc3782cc64380196550ff2b213541a212f6), [run #44096424039](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44096424039), job 134084616687, failed at scenario 29 on both boards. ESP32 fix [45cfe84](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/45cfe84fd34a5e876d2a2ae1f60950d0444e9665), ESP8266 parity [e1fb1cc](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/e1fb1cc06ea5877d5e64ee868b63dd32e19d8ef9), final source/test [2bdf494](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/2bdf4945ec043a4493b33334b136d34662c97aee). The new token guard, reserved-marker escaping, nested-marker rejection and generated-record self-validation prevent a different target/reason tuple from being mistaken for an existing quarantine record and cleared. Exact-head quarantine [#44096806381](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44096806381), job 134085961421, SUCCESS: 33/33 per board (66/66 total) plus inherited journal suites. Relay polarity [#44096806289](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44096806289), job 134085966578, SUCCESS: 48/48 per board; both mutations rejected. This is host/fake-LittleFS SIMULATED/CI VERIFIED only; physical power cut, relay contact, coin pulse and flash durability remain NOT TESTED. Poll/coin admission remains default-deny. Full build run #44096806470 was still pending at the time of this checkpoint; no production readiness or release authority.
 <!-- PHX-HARDWARE-20261117-QUARANTINE-IDENTITY-DELIMITER:END -->
+
+
+<!-- PHX-HARDWARE-20261125-FIRST-FAULT-RUNNER:START -->
+## PHX-HARDWARE UTC00 — first-fault edge-count lab uses the shared bounded C++ runner
+
+The Hardware-owned poll_fault_latch_edge_count_lab.py no longer maintains a duplicate subprocess/tempfile compile-run lifecycle. It delegates to cpp_fixture_runner.py with the original C++17 warning/pedantic/optimization flags and explicit 30s/10s bounds. A test-first guard in cpp_fixture_runner_contract_lab.py rejects reintroduction of direct subprocess/tempfile use.
+
+- Test-only RED: [#45521119354](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45521119354), job 138892918972; exact failure was the expected duplicate-runner guard.
+- Corrected source/test SHA: 80ccb48312cd816fa7f93cdb22ab27210f3a5e35.
+- Quarantine: [#45521336663](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45521336663), job 138893668237, SUCCESS; shared-runner guard, first-fault scenarios on both boards and repeated-latch/pending-identity mutations all PASS.
+- Relay: [#45521336668](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45521336668), jobs 138893667791 and 138893668156, SUCCESS.
+- Full: [#45521329115](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45521329115), validation job 138893762549 FAILS at the inherited QA-owned Missing poll signature check; 14/14 firmware/platform targets PASS. Android was still running at the narrow-handover checkpoint.
+
+This is host-source SIMULATED / CI VERIFIED evidence only. No production sketch or shared API changed. Physical coin/relay/electrical acceptance, power cuts, soak, protected signer/witness, v1-to-v2 migration, durable accounting/replay and independent QA/Release acceptance remain unproven. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+
+PR #340 already owns the pre-poll deny candidate; temporary duplicate PR #350 was closed. The primary #327-to-#339 poll-edge lineage, #283 quarantine candidate and #340 deny-only candidate remain separate pending Master reconciliation. #348 Mbed TLS 4 provider selection awaits MASTER/RELEASE decision.
+
+See [the narrow handover](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/blob/80ccb48312cd816fa7f93cdb22ab27210f3a5e35/experiment/openwrt/BlazePwifi/docs/handover/2026-11-25-hw-first-fault-edge-runner-shared-utc00.md).
+<!-- PHX-HARDWARE-20261125-FIRST-FAULT-RUNNER:END -->
