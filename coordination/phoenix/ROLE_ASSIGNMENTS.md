@@ -1,3 +1,55 @@
+## PHX-MASTER UTC21 — live owner routing and CI reconciliation — 2026-11-25T21:33Z
+
+PHX-MASTER remains limited to `coordination/phoenix/`; CORE is reserved to its separate continuation. No subsystem source branch or COE destination was modified.
+
+| Owner / PR | Exact current PR head | Latest evidence / disposition |
+|---|---|---|
+| CORE #252 | `c82705f2` | Build #42698139210 PASS; scoped and not financial acceptance. CORE ownership remains separate. |
+| RENTAL #328 | `10fc200b` | APK/API/auth #45622918340/#45622918364/#45622918551 PASS; shared #45622918468 FAIL (CORE freshness / missing ESP32 `mbedtls/sha256.h`). |
+| PISONET #255 | `d01fd164` | Synthetic Windows #42462978704 PASS; native COM not invoked. |
+| HARDWARE #349 | `2a5c997a` | Existing focused checks PASS; Full #45603969181 FAIL at poll-signature assertion. |
+| HARDWARE #352 | docs `0e984e26`, source/test `8eab8260` | Quarantine/Relay/ESP8266/ESP32 #45683122459/#45683122371/#45683122364/#45683122379 PASS; Full #45683122413 FAIL at missing poll signature. |
+| HARDWARE #353 | docs `dc9cf634`, source/test `4f361e03` | Captured base `6d743ae` is 11 commits behind parent #352 `0e984e2` (13 changed paths). Latest known source Full #45698465506 and docs-head Full #45699196969 fail; current exact SHAs returned no new PR-triggered runs. HARDWARE owns stack/PR-body refresh. |
+| QA #290 | `5c29d159` | Synthetic Windows #43633486963 PASS; native COM not invoked. |
+| QA #292 | `75a3f66d` | No PR-triggered runs. |
+| RELEASE #291 | `9b928c9e` | Windows #45669599214 and Full #45669599438 FAIL at CORE CURRENT_STATE freshness; ESP32 compatibility #45669599322 PASS. |
+| COE RELEASE #35 | docs `1789e314` | Shared #45704322384 FAIL; sandbox #45704322559 FAIL; case-collision #45704322556 PASS. Latest RELEASE checkpoint also reports host preflight PASS but Bubblewrap unavailable. |
+| COE CORE #45 | `9d76a134` | Overlay/Shell #44295049727 and case guard #44295049903 PASS; focused only. |
+| COE INTERCON #49 | `aeb8ff11` | Stage 5.1 #44646341873 and case guard #44646341992 PASS; shared #44646341922 FAIL at missing `mbedtls/sha256.h`. |
+| COE integration #26 | `b382d233` | Five workflows queued / zero jobs; frozen. New keyless response-auth and contract mismatch documented in UTC21 report. |
+
+**Required handoffs:** CORE owns approved response schema/key provisioning; HARDWARE owns fail-closed firmware and #353 ancestry; QA owns independent source-exact negative tests; COE integration owner owns candidate provenance/licensing/CI. Master does not implement their source fixes.
+
+Cleanup #266 remains OPEN / 0-of-7. Private registry v11/newer corrections NOT_RECOVERED; no Google Drive connector. **PRODUCTION NO-GO.**
+
+---
+
+## PHX-MASTER UTC21 — live owner routing and CI reconciliation — 2026-11-25T21:33Z
+
+PHX-MASTER remains limited to `coordination/phoenix/`; CORE is reserved to its separate continuation. No subsystem source branch or COE destination was modified.
+
+| Owner / PR | Exact current PR head | Latest evidence / disposition |
+|---|---|---|
+| CORE #252 | `c82705f2` | Build #42698139210 PASS; scoped and not financial acceptance. CORE ownership remains separate. |
+| RENTAL #328 | `10fc200b` | APK/API/auth #45622918340/#45622918364/#45622918551 PASS; shared #45622918468 FAIL (CORE freshness / missing ESP32 `mbedtls/sha256.h`). |
+| PISONET #255 | `d01fd164` | Synthetic Windows #42462978704 PASS; native COM not invoked. |
+| HARDWARE #349 | `2a5c997a` | Existing focused checks PASS; Full #45603969181 FAIL at poll-signature assertion. |
+| HARDWARE #352 | docs `0e984e26`, source/test `8eab8260` | Quarantine/Relay/ESP8266/ESP32 #45683122459/#45683122371/#45683122364/#45683122379 PASS; Full #45683122413 FAIL at missing poll signature. |
+| HARDWARE #353 | docs `dc9cf634`, source/test `4f361e03` | Captured base `6d743ae` is 11 commits behind parent #352 `0e984e2` (13 changed paths). Latest known source Full #45698465506 and docs-head Full #45699196969 fail; current exact SHAs returned no new PR-triggered runs. HARDWARE owns stack/PR-body refresh. |
+| QA #290 | `5c29d159` | Synthetic Windows #43633486963 PASS; native COM not invoked. |
+| QA #292 | `75a3f66d` | No PR-triggered runs. |
+| RELEASE #291 | `9b928c9e` | Windows #45669599214 and Full #45669599438 FAIL at CORE CURRENT_STATE freshness; ESP32 compatibility #45669599322 PASS. |
+| COE RELEASE #35 | docs `1789e314` | Shared #45704322384 FAIL; sandbox #45704322559 FAIL; case-collision #45704322556 PASS. Latest RELEASE checkpoint also reports host preflight PASS but Bubblewrap unavailable. |
+| COE CORE #45 | `9d76a134` | Overlay/Shell #44295049727 and case guard #44295049903 PASS; focused only. |
+| COE INTERCON #49 | `aeb8ff11` | Stage 5.1 #44646341873 and case guard #44646341992 PASS; shared #44646341922 FAIL at missing `mbedtls/sha256.h`. |
+| COE integration #26 | `b382d233` | Five workflows queued / zero jobs; frozen. New keyless response-auth and contract mismatch documented in UTC21 report. |
+
+**Required handoffs:** CORE owns approved response schema/key provisioning; HARDWARE owns fail-closed firmware and #353 ancestry; QA owns independent source-exact negative tests; COE integration owner owns candidate provenance/licensing/CI. Master does not implement their source fixes.
+
+Cleanup #266 remains OPEN / 0-of-7. Private registry v11/newer corrections NOT_RECOVERED; no Google Drive connector. **PRODUCTION NO-GO.**
+
+---
+
 ## PHX-MASTER UTC20 scheduled-run owner / CI reconciliation — 2026-11-25T20:54:03Z
 
 This section supersedes the UTC19 owner table. PHX-MASTER owns only \`coordination/phoenix/\`; CORE remains reserved to its separate continuation. No subsystem source or COE destination was changed.

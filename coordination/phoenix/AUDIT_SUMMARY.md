@@ -1,3 +1,12 @@
+## PHX-MASTER UTC21 — COE #26 keyless response-auth and migration-provenance blocker — 2026-11-25T21:33Z
+
+Exact candidate blobs show both board sketches skip response verification when the controller key is empty; the setup portal does not require that key. The candidate test is token/fixture based and does not exercise the empty-key path. The README labels a raw SHA-256 concatenation as HMAC, the CGI signature omits the nested controller object, and the firmware parser expects top-level flags. Active v0.6 source remains unsigned for register/poll. See [UTC21 audit report](PHX_MASTER_UTC21_20261125_COE26_KEYLESS_RESPONSE_AUTH_AND_MIGRATION_AUDIT.md).
+
+Exact current COE #26 recursive tree remains incomplete against Experiments #353: 2,560/286 entries; ESP32 blobs 16/1; ESP8266 61/1; board helpers 65/0; mapped tests 47/19 plus one Hardware test; 1 exact, 3 divergent, 43 source-only, 15 destination-only. Root NOTICE and Tabler LICENSE are missing. Existing PisoWiFi intake is historical/different-branch and row counts disagree with its summary. COE #26 stays FROZEN; no staging or destination writes.
+
+15/15 static source assertions passed. This is not firmware execution or hardware acceptance. Private Drive registry v11/newer corrections NOT_RECOVERED; cleanup #266 OPEN / 0-of-7. **PRODUCTION NO-GO.**
+
+---
 ## PHX-MASTER UTC20 scheduled-run disposition — 2026-11-25T20:54:03Z
 
 Starting Master HEAD \`5ce9361a2e23f21af99ef54f5e33066ac37fe024\`; Experiments main \`6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5\`; active v0.6 \`2fbd2475e9f54878c316fa7cea2f228386b0e859\`; legacy v0.5.3 \`aad3aade72c1156eecba1fed30907c6d0283b2c5\`; COE main \`a6513ab4412b4c014eee2863e45cbe32d06cb243\`; COE #26 \`b382d233ff06c8791b1028bed3c617cc7b670d12\`.

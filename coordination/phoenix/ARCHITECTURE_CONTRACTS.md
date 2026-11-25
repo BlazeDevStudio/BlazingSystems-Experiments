@@ -2123,3 +2123,32 @@ This is a coordination admission proposal, not a source change, ownership transf
 - **PHX-MASTER:** retain the interface blocker and release gate. Do not invent a signature, reuse a member endpoint signature, or remove/relax the inherited \`Missing poll signature check\`.
 
 The current HARDWARE #353 Full failure at \`Missing poll signature check\` is a valid blocking signal, not a test to bypass. This section supersedes any earlier coordination wording that treated the current v0.6 implementation as verified deny-only. No source owner or branch was changed by this audit. **PRODUCTION NO-GO.**
+
+## 7.21 COE #26 Hardware response-auth candidate is keyless-bypassable and not HMAC-bound — P0 BLOCKER (2026-11-25 UTC21)
+
+**Scope distinction:** this section describes the COE #26 draft candidate only. It does not claim that the active Experiments v0.6 source has acquired response authentication. The active v0.6 register/ping and poll response blocks remain unsigned as recorded in §7.20.
+
+Exact candidate pins:
+- COE #26 branch `integration/ecosystem-nonproprietary-candidate-20261111`, head `b382d233ff06c8791b1028bed3c617cc7b670d12`.
+- ESP32 blob `3cc7ec54b476943dc04a8d1af5e2df5fe054e422`; ESP8266 blob `c8be98f72596681e36a3ad1f8939bf8046c96887`; CGI `vendo` blob `0a71c4e253ac6ec2c30d46f1f99faf874dbaab8e`.
+- Hardware test blob `f921c56cecc19cab1989507b9b4ade1f45dac54e`; Hardware README blob `99af3e5b46cd8b6f35c6479b204683f60c55ebcb`.
+
+### Source facts — static inspection, no exploit or hardware test
+
+1. ESP32 `loadConfig()` loads `cfg.key` with an empty default (`prefs.getString("key", "")`). ESP8266 `defaults()` zero-initializes the complete config, including the key. Both setup portals render a controller-key password field without `required`; both save handlers update the key only when the submitted field is nonempty. A fresh or blank-key controller can therefore retain an empty key.
+2. Both sketches initialize `sigOk=true` and enter response-signature verification only inside `if(cfg.key.length())` / `if(strlen(cfg.key))`. With an empty key, the verification block is skipped and `sigOk` remains true. The success branch then accepts an HTTP body containing `"ok":true`; the poll loop reads `insert` and `target_nonce` and invokes `applyRemoteConfig()`.
+3. The normal router first-boot UCI-defaults script generates an 18-byte random `vendo_key`, while `common.sh` reads that UCI value. This server-side bootstrap does not provision the corresponding key into the ESP setup portal and does not make the ESP field mandatory. `bp_check_vendo_sig()` also has no explicit nonempty-secret guard if the UCI defaults hook is bypassed or fails.
+4. The setup transport is HTTP. This audit does not demonstrate a live interception or actuation; it establishes a source-level unauthenticated response path when the device key is empty. A forged `ok:true` response can reach the success branch without response authentication. No unauthorized financial credit is claimed.
+5. Hardware README describes the response construction as `HMAC/SHA256(key | action | id | nonce | ... | key)`. The implementation uses raw SHA-256 over a concatenated secret/message/secret string (`mbedtls_sha256` on the boards; `sha256sum` through CGI `bp_sha256`), not a standard HMAC primitive. This is a documentation/contract mismatch, not a claim that a particular cryptographic attack was demonstrated.
+6. CGI `vendo_ping_sig()` binds action, ID, nonce and server time; `vendo_poll_sig()` binds insert, target nonce and expiry. The response JSON also contains a nested `controller` object, but that object is not included in either response digest. Firmware `applyRemoteConfig()` reads top-level enable/config fields, not the nested controller object. The response schema and signed-field set are therefore not a complete, canonical interface contract.
+7. `Hardware/tests/test_firmware_hardening.sh` checks token presence with grep and computes a separate Python SHA-256 example using a fixed nonempty test key. It does not execute the firmware verifier or CGI helper, and it does not test empty/missing keys, invalid signatures, stale/replayed responses, wrong controller/target, or controller-object binding.
+
+### Required owner resolution
+
+- **PHX-CORE:** publish the versioned register/poll response schema, approved standard MAC/HMAC construction, canonical serialization, controller/target binding, nonce/freshness rules, and explicit key-provisioning contract with independent golden vectors. Reject an absent server key at the CGI boundary.
+- **PHX-HARDWARE:** require a provisioned nonempty controller key before Wi-Fi registration/polling; keep outputs disabled and reject every response when the key is absent; verify the complete approved envelope before mutating insert, target, remote configuration or outputs. Make the setup flow enforce and clearly report key provisioning.
+- **PHX-QA:** add source-exact tests for both boards and CGI covering empty/missing key, missing/malformed/invalid signature, stale/replayed nonce, wrong controller/target, altered nested config, and exact positive vectors. A grep-only token check and a separately reimplemented digest are not equivalent to exercising the production verifier.
+- **COE integration owner:** correct the HMAC claim only after CORE approves the algorithm; pin per-file source/destination blobs, modes, licences and tests; refresh intake/migration provenance for the actual #26 branch; run all destination workflows at the exact final SHA.
+- **PHX-MASTER:** retain this as a P0 integration blocker. Do not modify Hardware or CGI source, provision a key, stage a copy, or waive the inherited poll-signature gate.
+
+**Disposition:** COE #26 remains FROZEN / DRAFT_REVIEW_ONLY. No destination staging or writes. **PRODUCTION NO-GO.**

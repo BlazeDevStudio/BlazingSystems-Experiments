@@ -214,5 +214,23 @@ class PollResponseArchitectureTests(unittest.TestCase):
             with self.subTest(required=required):
                 self.assertIn(required, section)
 
+    def test_coe26_hardware_candidate_response_auth_keyless_bypass_is_explicit(self):
+        section = DOC[DOC.index("## 7.21 COE #26 Hardware response-auth candidate"): ]
+        for required in (
+            "b382d233ff06c8791b1028bed3c617cc7b670d12",
+            "3cc7ec54b476943dc04a8d1af5e2df5fe054e422",
+            "c8be98f72596681e36a3ad1f8939bf8046c96887",
+            "cfg.key",
+            "sigOk=true",
+            "nonempty controller key",
+            "HMAC/SHA256",
+            "sha256sum",
+            "nested `controller` object",
+            "test_firmware_hardening.sh",
+            "PRODUCTION NO-GO",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, section)
+
 if __name__ == "__main__":
     unittest.main()

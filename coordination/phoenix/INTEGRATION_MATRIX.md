@@ -1,3 +1,43 @@
+## PHX-MASTER UTC21 — COE #26 response-auth candidate audit and migration hold — 2026-11-25T21:33Z
+
+**Live refs:** Experiments main `6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5`; product development `blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5`; active v0.6 `blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859`; Master start `fe33a297108d8a3b0dc812f7b2a133fb78a14230`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`.
+
+**New P0 candidate finding:** COE #26's ESP32/ESP8266 response-auth code skips verification when `cfg.key` is empty (`sigOk` remains true); both setup portals allow an empty key. Router first-boot generates `vendo_key`, but no mandatory controller-key provisioning gate exists in the firmware setup flow. The candidate test is grep + fixed-key digest simulation and does not cover this branch. Hardware README calls the digest HMAC, while board/CGI code computes raw SHA-256 over concatenated fields. The response digest also omits the nested `controller` object, while firmware reads top-level flags. Exact blobs and owner actions are in [UTC21 audit report](PHX_MASTER_UTC21_20261125_COE26_KEYLESS_RESPONSE_AUTH_AND_MIGRATION_AUDIT.md).
+
+**Exact current recursive-tree comparison:** Experiments #353 docs head `dc9cf634248ecc23f51f1477bd1769d63d3fe5ea` = 2,560 entries / 1,981 blobs (not truncated); COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12` = 286 entries / 207 blobs (not truncated). ESP32 subtree blobs 16/1; ESP8266 61/1; board-local Python helpers 65/0; mapped test files 47/19 plus one destination-only `Hardware/tests` file. Test identity: 1 exact same-path blob+mode, 3 divergent, 43 source-only, 15 destination-only. Firmware sketches are divergent: ESP32 `1412cf57` vs `3cc7ec54`; ESP8266 `b99f1f21` vs `c8be98f7`.
+
+**Migration provenance:** root NOTICE and Tabler LICENSE are present in source but absent in COE #26. Hardware-specific SOURCE_INTAKE/MIGRATION_MAP is absent. Existing PisoWiFi intake `1b9018ff` is schema 8, pinned to historical source `6d4c9b48` and destination branch `feature/pisowifi-cleanup-stabilization`, not current COE #26 branch; its summary claims 47 identical / 14 derived while its 61 runtime rows count 46 identical / 15 derived. It cannot prove Hardware or current #26 provenance. `OWNERSHIP_ROUTES.json` remains blob `e4db3243`, 11 routes, `DRAFT_REVIEW_ONLY`, PHX-MASTER target null.
+
+**CI:** COE #26 has five queued workflows / zero jobs. COE RELEASE #35 current docs head `1789e314`: shared #45704322384 FAIL, sandbox #45704322559 FAIL, case-collision #45704322556 PASS. COE CORE #45 focused overlay/shell and case guard PASS; COE INTERCON #49 Stage 5.1 and case guard PASS, shared ESP32 compile FAIL. HARDWARE #353 current docs/source heads `dc9cf634`/`4f361e03`; latest known source Full #45698465506 and docs-head Full #45699196969 fail; no new PR-triggered runs returned for the latest exact SHAs.
+
+**Decision:** COE #26 remains FROZEN. No copy, move, overwrite, cherry-pick or destination write. The PR body's claim that the licensing/privacy gate is resolved is not supported by the current missing root NOTICE/Tabler LICENSE and absent Hardware provenance.
+
+**Tests:** 15/15 coordinator static source assertions passed. This is source inspection only, not firmware execution, CGI execution, board compilation or hardware acceptance. Master Python suite NOT RUN; no Master CI run.
+
+**Blockers:** keyless response-auth bypass; non-HMAC label/contract; unsigned nested controller config; active v0.6 register/poll response still unsigned; missing Hardware provenance/licences; zero-job COE #26 CI; private Drive registry v11/newer corrections not recovered; cleanup #266 OPEN / 0-of-7. **PRODUCTION NO-GO.**
+
+---
+
+## PHX-MASTER UTC21 — COE #26 response-auth candidate audit and migration hold — 2026-11-25T21:33Z
+
+**Live refs:** Experiments main `6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5`; product development `blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5`; active v0.6 `blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859`; Master start `fe33a297108d8a3b0dc812f7b2a133fb78a14230`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`.
+
+**New P0 candidate finding:** COE #26's ESP32/ESP8266 response-auth code skips verification when `cfg.key` is empty (`sigOk` remains true); both setup portals allow an empty key. Router first-boot generates `vendo_key`, but no mandatory controller-key provisioning gate exists in the firmware setup flow. The candidate test is grep + fixed-key digest simulation and does not cover this branch. Hardware README calls the digest HMAC, while board/CGI code computes raw SHA-256 over concatenated fields. The response digest also omits the nested `controller` object, while firmware reads top-level flags. Exact blobs and owner actions are in [UTC21 audit report](PHX_MASTER_UTC21_20261125_COE26_KEYLESS_RESPONSE_AUTH_AND_MIGRATION_AUDIT.md).
+
+**Exact current recursive-tree comparison:** Experiments #353 docs head `dc9cf634248ecc23f51f1477bd1769d63d3fe5ea` = 2,560 entries / 1,981 blobs (not truncated); COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12` = 286 entries / 207 blobs (not truncated). ESP32 subtree blobs 16/1; ESP8266 61/1; board-local Python helpers 65/0; mapped test files 47/19 plus one destination-only `Hardware/tests` file. Test identity: 1 exact same-path blob+mode, 3 divergent, 43 source-only, 15 destination-only. Firmware sketches are divergent: ESP32 `1412cf57` vs `3cc7ec54`; ESP8266 `b99f1f21` vs `c8be98f7`.
+
+**Migration provenance:** root NOTICE and Tabler LICENSE are present in source but absent in COE #26. Hardware-specific SOURCE_INTAKE/MIGRATION_MAP is absent. Existing PisoWiFi intake `1b9018ff` is schema 8, pinned to historical source `6d4c9b48` and destination branch `feature/pisowifi-cleanup-stabilization`, not current COE #26 branch; its summary claims 47 identical / 14 derived while its 61 runtime rows count 46 identical / 15 derived. It cannot prove Hardware or current #26 provenance. `OWNERSHIP_ROUTES.json` remains blob `e4db3243`, 11 routes, `DRAFT_REVIEW_ONLY`, PHX-MASTER target null.
+
+**CI:** COE #26 has five queued workflows / zero jobs. COE RELEASE #35 current docs head `1789e314`: shared #45704322384 FAIL, sandbox #45704322559 FAIL, case-collision #45704322556 PASS. COE CORE #45 focused overlay/shell and case guard PASS; COE INTERCON #49 Stage 5.1 and case guard PASS, shared ESP32 compile FAIL. HARDWARE #353 current docs/source heads `dc9cf634`/`4f361e03`; latest known source Full #45698465506 and docs-head Full #45699196969 fail; no new PR-triggered runs returned for the latest exact SHAs.
+
+**Decision:** COE #26 remains FROZEN. No copy, move, overwrite, cherry-pick or destination write. The PR body's claim that the licensing/privacy gate is resolved is not supported by the current missing root NOTICE/Tabler LICENSE and absent Hardware provenance.
+
+**Tests:** 15/15 coordinator static source assertions passed. This is source inspection only, not firmware execution, CGI execution, board compilation or hardware acceptance. Master Python suite NOT RUN; no Master CI run.
+
+**Blockers:** keyless response-auth bypass; non-HMAC label/contract; unsigned nested controller config; active v0.6 register/poll response still unsigned; missing Hardware provenance/licences; zero-job COE #26 CI; private Drive registry v11/newer corrections not recovered; cleanup #266 OPEN / 0-of-7. **PRODUCTION NO-GO.**
+
+---
+
 ## PHX-MASTER UTC20 — exact #353 source / COE #26 candidate reconciliation and P0 poll-response contract — 2026-11-25T20:54Z
 
 Exact complete recursive trees: Experiments HARDWARE child #353 docs head \`dc9cf634248ecc23f51f1477bd1769d63d3fe5ea\` (2560 entries / 1981 blobs); COE #26 \`b382d233ff06c8791b1028bed3c617cc7b670d12\` (286 entries / 207 blobs).
