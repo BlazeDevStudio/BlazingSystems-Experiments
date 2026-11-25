@@ -32,13 +32,16 @@ A new `coin_pulse_capture_lab_structure_guard.py` checks the module boundary, li
 - Guard count correction (16 cases): `cbc570ce08280645858f3b25f7fba3f076421ae9`.
 - Guard AST correction (read mutation identifiers without evaluating string-concatenation expressions): `4a24af066e1f96c995c65569234886fc414dfc8b`.
 
-**Current source/test/guard SHA:** `4a24af066e1f96c995c65569234886fc414dfc8b` (before this handover-only successor).
+**Source/test refactor SHA:** `8966829d9295bcbc8bfbaf7b23e5f5228af8b6d8`.  
+**Final structural-guard correction SHA:** `1659ae4353f5708ed6dcea2287316d52783d3acd` (before this handover-only successor).
 
 ## Test-first / CI state
 
-The boundary guard was wired before the fixture and contract modules existed, so the test-only head is expected to fail at the missing-module boundary. The first source split exposed two guard-oracle corrections: the mutation matrix contains 16 cases, not 14, and its first mutation uses string concatenation, so the guard must inspect AST tuple identifiers rather than `ast.literal_eval` the full tuple.
+The boundary guard was wired before the fixture and contract modules existed. Exact test-only Relay run [#45555485240](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45555485240), job `139006398089`, failed at the intended missing-module boundary: `coin_pulse_capture_lab_fixtures.py` was absent. This is the expected RED, not a firmware failure.
 
-Exact Quarantine/Relay runs for the test-only and intermediate source heads were still in progress at the time of this handover write. Do not count those as PASS. Final exact-head Quarantine/Relay and Full results will be appended after terminal readback; Full remains independently subject to the inherited CORE/QA poll-signature contract.
+The first source split then exposed a guard-oracle error: the C++ fixture does not own the Python simulation/evidence print markers. Intermediate Relay run [#45555607772](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45555607772), job `139006799571`, rejected the marker at the wrong layer. The guard was corrected at `1659ae4` to check the C++ scenario marker in `CPP` and the SIMULATED / physical-zero markers in the Python runner. The earlier 16-case count correction is `cbc570ce08280645858f3b25f7fba3f076421ae9`.
+
+The corresponding Quarantine attempts were still in progress at last read; no pass is claimed from them. The Full run at intermediate head `8966829` was cancelled while the branch advanced. Final exact-head Quarantine/Relay and Full results remain pending terminal readback; Full also retains the inherited CORE/QA poll-signature contract blocker.
 
 ## Scope boundary
 
