@@ -10,7 +10,7 @@
 - PHX-MASTER starting branch HEAD: f3e743cc82001be925f28c3bbf1cdc37f682f73a.
 - COE main: a6513ab4412b4c014eee2863e45cbe32d06cb243.
 - COE integration PR #26: b382d233ff06c8791b1028bed3c617cc7b670d12, OPEN / DRAFT / UNMERGED.
-- Master PR #288: OPEN / DRAFT / UNMERGED, base main at f4e8a891aed8af86d5fd315d28750a0ac3a7372b. Starting compare: 571 ahead / 1 behind, merge base f4e8a891. Its 217 existing changed paths are all under coordination/phoenix/. No synchronization with main was attempted.
+- Master PR #288: OPEN / DRAFT / UNMERGED, base branch main (live main HEAD 6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5). Starting compare: 571 ahead / 1 behind, merge base f4e8a891aed8af86d5fd315d28750a0ac3a7372b. Its 217 existing changed paths are all under coordination/phoenix/. No synchronization with main was attempted.
 - Master exact-head Actions query returned zero runs.
 - Current ownership manifest blob e4db324315a1b3543fec17a148fbf960170fcb29: 11 routes, DRAFT_REVIEW_ONLY, PHX-MASTER target null. No route or owner was changed.
 

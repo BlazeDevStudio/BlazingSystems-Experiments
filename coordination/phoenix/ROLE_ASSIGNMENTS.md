@@ -8,7 +8,7 @@ This section supersedes the UTC16 table. It is a read-only reconciliation; subsy
 - Legacy v0.5.3 development: blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5.
 - Master starting HEAD: phoenix/master-coordination@f3e743cc82001be925f28c3bbf1cdc37f682f73a.
 - COE main: a6513ab4412b4c014eee2863e45cbe32d06cb243; COE #26: b382d233ff06c8791b1028bed3c617cc7b670d12.
-- PR #288 OPEN / DRAFT / UNMERGED, base main@f4e8a891; 571 ahead / 1 behind, merge base f4e8a891; 217 existing paths, all coordination/phoenix/. Master exact-head Actions: zero runs.
+- PR #288 OPEN / DRAFT / UNMERGED, base branch main (live main HEAD 6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5); 571 ahead / 1 behind, merge base f4e8a891; 217 existing paths, all coordination/phoenix/. Master exact-head Actions: zero runs.
 
 | Owner / PR | Current exact head | Exact-head CI / disposition |
 |---|---|---|

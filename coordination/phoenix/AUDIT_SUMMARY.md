@@ -2,7 +2,7 @@
 
 **Master starting HEAD:** f3e743cc82001be925f28c3bbf1cdc37f682f73a. **Experiments main:** 6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5. **Active development:** 2fbd2475e9f54878c316fa7cea2f228386b0e859. **Legacy development:** aad3aade72c1156eecba1fed30907c6d0283b2c5. **COE main:** a6513ab4412b4c014eee2863e45cbe32d06cb243. **COE #26:** b382d233ff06c8791b1028bed3c617cc7b670d12.
 
-- PR #288 remains OPEN / DRAFT / UNMERGED, base f4e8a891; starting compare 571 ahead / 1 behind; 217 existing paths all under coordination/phoenix/. Master Actions: zero.
+- PR #288 remains OPEN / DRAFT / UNMERGED, base branch main (live main HEAD 6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5); merge base f4e8a891; starting compare 571 ahead / 1 behind; 217 existing paths all under coordination/phoenix/. Master Actions: zero.
 - COE #35 advanced to docs head 09e6e508 / source-test ef869aee. Exact source/docs suites 230 PASS / 2 skips, then 10/10 ULA profiles fail closed; sandbox 40 host tests PASS then Bubblewrap absent / exit 125; case guard PASS. RELEASE PR body stale; QA review and site-ULA authority remain blockers.
 - Experiments #291 current head 5e3670f. Full and Windows fail the CORE CURRENT_STATE freshness gate at checkpoint d85eb6a2; ESP32 compatibility passes. Three canonical handover files diverge from active v0.6 development; CORE/RELEASE reconciliation is required before rerun.
 - HARDWARE #352 current docs head 6d743ae / source-test 1ab1be50. Focused exact-head checks pass; Full fails at Missing poll signature check. CORE owns producer contract; QA owns independent assertion reconciliation.
