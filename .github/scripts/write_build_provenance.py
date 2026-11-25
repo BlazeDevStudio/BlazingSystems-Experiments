@@ -258,12 +258,18 @@ def _open_regular(path: Path) -> tuple[int, os.stat_result, int, str]:
             next_fd = os.open(component, directory_flags, dir_fd=parent_fd)
             metadata = os.fstat(next_fd)
             if not stat.S_ISDIR(metadata.st_mode):
-                os.close(next_fd)
-                next_fd = -1
+                # Leave next_fd owned by the exception cleanup path. Calling
+                # close here and then retrying after an ambiguous close error
+                # could close an unrelated descriptor after fd-number reuse.
                 raise ProvenanceError(
                     f"expected a real directory path component: {component}"
                 )
-            os.close(parent_fd)
+            previous_parent_fd = parent_fd
+            parent_fd = -1
+            # Transfer ownership before close: POSIX close errors can leave the
+            # descriptor state ambiguous, so the exception path must not retry
+            # the same numeric descriptor after it may have been reused.
+            os.close(previous_parent_fd)
             parent_fd = next_fd
             next_fd = -1
 
@@ -275,8 +281,11 @@ def _open_regular(path: Path) -> tuple[int, os.stat_result, int, str]:
         fd = os.open(leaf, file_flags, dir_fd=parent_fd)
         opened = os.fstat(fd)
         if not stat.S_ISREG(opened.st_mode) or not _same_file_state(before, opened):
-            os.close(fd)
+            invalid_fd = fd
             fd = -1
+            # Do not leave an ambiguously closed descriptor in the cleanup
+            # inventory; a retry could close a different file after fd reuse.
+            os.close(invalid_fd)
             raise ProvenanceError(f"file identity changed while opening: {path}")
         return fd, opened, parent_fd, leaf
     except OSError as exc:
@@ -382,12 +391,16 @@ def _open_directory(path: Path, label: str) -> tuple[Path, int]:
             next_fd = os.open(component, flags, dir_fd=current_fd)
             metadata = os.fstat(next_fd)
             if not stat.S_ISDIR(metadata.st_mode):
-                os.close(next_fd)
-                next_fd = -1
+                # Leave next_fd owned by the exception cleanup path so it
+                # receives exactly one close attempt.
                 raise ProvenanceError(
                     f"{label} path component must be a real directory: {component}"
                 )
-            os.close(current_fd)
+            previous_current_fd = current_fd
+            current_fd = -1
+            # Transfer ownership before close because an interrupted close
+            # must never be retried against a potentially reused fd number.
+            os.close(previous_current_fd)
             current_fd = next_fd
             next_fd = -1
         return absolute, current_fd
