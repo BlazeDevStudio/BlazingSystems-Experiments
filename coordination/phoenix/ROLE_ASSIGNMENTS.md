@@ -1,3 +1,27 @@
+## PHX-MASTER UTC03 live owner-head and CI refresh — 2026-11-25T03:36:57Z
+
+**Snapshot only; owner branches remain owner-controlled.** Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; issue-designated development `aad3aade72c1156eecba1fed30907c6d0283b2c5`; Master branch starting HEAD `2a73c2c9ea9c77f321c467a99ed9b32444973c2b`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE integration #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`.
+
+| Owner / PR | Current PR HEAD | Exact-head evidence and required owner action |
+|---|---|---|
+| CORE #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | Last scoped build #42698139210 PASS; old evidence. CORE retains poll/register producer, financial state and canonical handover. Master made no CORE edits. |
+| RENTAL #328 | `0e0da62acd47c6a1ce287f8a30fc700d603fa070` | APK #44782114384 PASS; API #44782114393 PASS; build #44782114390 FAIL. RENTAL owns missing-header/build and handover correction. |
+| PISONET #255 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | Synthetic Windows #42462978704 PASS; no native device acceptance. PISONET retains source and inherited tests. |
+| HARDWARE #340 | `38f3e9419f37109443c806a2362577d9efc50e4d` | Build #45530901795, ESP32 #45530901830, Mbed TLS guard #45530901893, ESP8266 #45530901919, quarantine #45530901824 and pre-poll inhibit #45530901908 all PASS. |
+| HARDWARE #347 | `960184670379f01e20f0e7e8bc23b3e5eedacd3f` | Quarantine #45299741995, Relay #45299742437 and build #45299741993 all FAIL. Parent result is not replaced by child evidence. |
+| HARDWARE #348 | `eb7afcb2ba0d1e84054c052c8b129cb51a91d062` | Focused controller-header #45352513178 PASS; build #45352513177 FAIL at missing `mbedtls/sha256.h`. HARDWARE/RELEASE own the supported provider/toolchain decision. |
+| HARDWARE #349 | `bd91e9b8496c0d274bb0779fd4a75b5de28dbc33` | Latest commit changes only `poll_fault_dual_store_runner_guard.py`. Focused Quarantine #45540305031 and Relay #45540305104 PASS; build #45540305058 FAIL at inherited `Missing poll signature check`. All 14/14 target/platform + Android jobs PASS; 12 dependent release/simulation/signing/publication jobs SKIPPED. PR body still pins earlier source/test `d5b5cd10` and docs `18d4ff4f`; HARDWARE must refresh its own handover/PR description to include the guard commit and current exact-head failure. CORE owns producer contract; QA owns independent assertion review. Keep deny-default. |
+| QA #290 | `5c29d15994cee1279058f1eca12f2a3180704292` | Windows #43633486963 PASS. QA retains independent native COM and safety review. |
+| QA #292 | `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | No PR-triggered workflow runs. No pass claimed. |
+| RELEASE #291 | `53fc8a1c558f80adde19dc675b879c78797f0cd5` | Windows #45485465901 FAIL; build #45485465992 FAIL at CORE-owned CURRENT_STATE freshness; ESP32 compatibility #45485465888 PASS. CORE refreshes canonical handover; RELEASE reruns. |
+| COE RELEASE #35 | `70214b4c56332980e44820e99d6af0d42eb76cac` | Shared #45541465531 FAIL after 223 host tests (2 skipped), then 10/10 appliance profiles fail closed without approved site-scoped ULA /48 authority. Sandbox #45541465305: 40/40 host tests PASS, then Bubblewrap absent / exit 125. Case guard #45541465349 PASS. RELEASE owns PR-body/handover refresh, approved ULA authority and authorized sandbox runner. |
+| COE CORE #45 | `9d76a134c1f6512aa40c20ec4d247306a71a8cce` | Overlay #44295049727 and case guard #44295049903 PASS. CORE retains contract work. |
+| COE INTERCON #49 | `aeb8ff11b2f5db9a5f86280ab62ab988245f3919` | Stage 5.1 #44646341873 and case guard #44646341992 PASS; shared Hardware #44646341922 FAIL. Keep lab bridge separate from production finance/hardware acceptance. |
+
+COE #26 remains OPEN / DRAFT / FROZEN. Five exact-head workflows are queued and all five job listings return zero jobs; this is queued/no-job evidence, not a CI pass or proven runner root cause.
+
+---
+
 ## PHX-MASTER UTC01 live owner/CI refresh — 2026-11-25T01:34:05Z
 
 | Owner / PR | Exact source/test and final PR HEAD | Exact-head CI observation | Required owner action |
