@@ -79,5 +79,5 @@ MUTATIONS = (
      "coin POST remained eligible with an unsafe pin mapping"),
     ("missing-isr-sequence-increment", "coinEdgeISR",
      "coinEdgeSequence = coinEdgeSequence + 1U;", "coinEdgeSequence=coinEdgeSequence;",
-     "isr-sequence-did-not-wrap"),
+     "late-coin-post-edge"),
 )

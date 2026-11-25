@@ -77,6 +77,13 @@ bool writePollPulseFaultMarker(uint32_t edges){
 }
 @@FUNCTIONS@@
 
+static void emitCoinEdges(uint32_t count){
+  while(count>0U){
+    coinEdgeISR();
+    count-=1U;
+  }
+}
+
 static void resetState(uint32_t now=0,bool activeLow=true){
   fakeNow=now;lastPoll=0;runDebounceMs=40;lastEdge=0;
   coinEdgeSequence=0;lastHandledCoinEdgeSequence=0;
@@ -313,7 +320,7 @@ static bool runMissedPulseAfterBlockingPost(){
   pendingNonce="nonce-existing";
   pendingTarget="target-01";
   relayOn=false;ledOn=false;
-  ++coinEdgeSequence; // ISR fires while coin POST blocks; pulse ends before the next GPIO sample.
+  emitCoinEdges(1U); // ISR fires while coin POST blocks; pulse ends before the next GPIO sample.
   sampleCoinPulseEdge(false);
   if(!journalRecoveryRequired || insertMode || !activeTarget.empty() ||
      !pendingReady || relayOn || ledOn)
@@ -330,7 +337,7 @@ static bool runMissedPulseAfterBlockingPost(){
 static bool runMissedPulseDuringBlockingWork(){
   resetState(500U);
   lastEdge=400U;
-  ++coinEdgeSequence; // Pulse starts and ends while a synchronous handler owns the loop.
+  emitCoinEdges(1U); // Pulse starts and ends while a synchronous handler owns the loop.
   sampleCoinPulseEdge(false);
   if(!journalRecoveryRequired || insertMode || !activeTarget.empty() || relayOn || ledOn)
     return fail("missed-blocking-pulse","missed blocking pulse was not fail-closed");
@@ -342,7 +349,7 @@ static bool runMissedPulseDuringBlockingWork(){
 static bool runMultipleUnobservedEdges(){
   resetState(500U);
   lastEdge=400U;
-  coinEdgeSequence=3U;
+  emitCoinEdges(3U);
   sampleCoinPulseEdge(true);
   if(!journalRecoveryRequired || insertMode || !activeTarget.empty() || relayOn || ledOn)
     return fail("multiple-unobserved-edges","multiple ISR edges were not quarantined");
@@ -353,7 +360,7 @@ static bool runMultipleUnobservedEdges(){
 }
 static bool runSingleObservedEdge(){
   resetState(100U);
-  coinEdgeSequence=1U;
+  emitCoinEdges(1U);
   sampleCoinPulseEdge(true);
   if(journalRecoveryRequired || pendingPulses!=1U || saveCalls!=1 ||
      lastHandledCoinEdgeSequence!=1U)
@@ -387,15 +394,16 @@ static bool runIngressTransitionCases(){
     return fail("boot-active-line","active line was not persisted as unresolved with outputs OFF");
 
   resetState();
-  coinEdgeSequence=2U;
+  emitCoinEdges(2U);
   if(quarantineCoinIngressTransition())
     return fail("reconfigure-unhandled-edges","unhandled ISR edges after pin attachment were ignored");
   if(lastHandledCoinEdgeSequence!=2U || backupEdges!=2U || markerEdges!=2U)
     return fail("reconfigure-unhandled-edges","edge multiplicity or handled baseline was not preserved");
 
   resetState();
-  coinEdgeSequence=1U;
+  coinEdgeSequence=0xFFFFFFFEUL;
   lastHandledCoinEdgeSequence=0xFFFFFFFEUL;
+  emitCoinEdges(3U);
   if(quarantineCoinIngressTransition())
     return fail("reconfigure-counter-wrap","wrapped ISR sequence was accepted as idle");
   if(lastHandledCoinEdgeSequence!=1U || backupEdges!=3U || markerEdges!=3U)
@@ -420,10 +428,9 @@ static bool runIsrSequenceWraparound(){
   resetState();
   coinEdgeSequence=0xFFFFFFFEUL;
   lastHandledCoinEdgeSequence=0xFFFFFFFEUL;
-  coinEdgeISR();
+  emitCoinEdges(2U);
   if(snapshotCoinEdgeSequence()!=0xFFFFFFFFUL)
     return fail("isr-sequence-did-not-wrap","first ISR edge did not advance to UINT32_MAX");
-  coinEdgeISR();
   if(snapshotCoinEdgeSequence()!=0U)
     return fail("isr-sequence-did-not-wrap","second ISR edge did not wrap to zero");
   if(quarantineCoinIngressTransition())
