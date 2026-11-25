@@ -216,17 +216,58 @@ jobs:
           set -euo pipefail
           TAG=v0.5.3
           NOTES=release-out/README.md
-          if gh release view "$TAG" --repo "${{ github.repository }}" >/dev/null 2>&1; then
-            R="$(gh api "repos/${{ github.repository }}/releases/tags/$TAG")"
-            test "$(printf '%s' "$R" | jq -r .target_commitish)" = "$SHA"
-            gh release edit "$TAG" --repo "${{ github.repository }}" --target "$SHA"               --title "BlazePwifi v0.5.3 — Rental Hardening, Remote Operations & Central Members"               --notes-file "$NOTES" --prerelease=false
-          else
-            gh release create "$TAG" --repo "${{ github.repository }}" --target "$SHA"               --title "BlazePwifi v0.5.3 — Rental Hardening, Remote Operations & Central Members"               --notes-file "$NOTES" --latest
+          # Confirm repository visibility before interpreting any 404 as absence.
+          gh api "repos/$GITHUB_REPOSITORY" >/dev/null
+
+          # A release tag is a one-time immutable identity. Only one exact HTTP 404
+          # permits first publication; existing tags, auth/network errors, redirects,
+          # and ambiguous responses fail closed.
+          set +e
+          TAG_LOOKUP_OUTPUT="$(gh api -i "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" 2>&1)"
+          TAG_LOOKUP_EXIT=$?
+          set -e
+          TAG_HTTP_STATUSES="$(printf '%s\\n' "$TAG_LOOKUP_OUTPUT" | sed -nE 's/^HTTP\\/[0-9.]+ ([0-9]{3})([[:space:]].*)?$/\\1/p')"
+          TAG_HTTP_COUNT="$(printf '%s\\n' "$TAG_HTTP_STATUSES" | awk 'NF { count++ } END { print count + 0 }')"
+          if [ "$TAG_LOOKUP_EXIT" -eq 0 ]; then
+            echo "RELEASE-BLOCKED: v0.5.3 Git tag already exists; refusing to modify it." >&2
+            exit 1
           fi
-          find release-out -maxdepth 1 -type f -print0 | xargs -0 -r gh release upload "$TAG" --repo "${{ github.repository }}" --clobber
-          R="$(gh api "repos/${{ github.repository }}/releases/tags/$TAG")"
-          test "$(printf '%s' "$R" | jq -r .draft)" = false
+          if [ "$TAG_HTTP_COUNT" -ne 1 ] || [ "$TAG_HTTP_STATUSES" != "404" ]; then
+            echo "RELEASE-BLOCKED: cannot prove v0.5.3 tag absence; expected exactly one HTTP 404 (count=$TAG_HTTP_COUNT, status=${TAG_HTTP_STATUSES:-none}, exit=$TAG_LOOKUP_EXIT)." >&2
+            exit 1
+          fi
+
+          # A Release object may outlive a deleted tag; reject it as well.
+          set +e
+          RELEASE_LOOKUP_OUTPUT="$(gh api -i "repos/$GITHUB_REPOSITORY/releases/tags/$TAG" 2>&1)"
+          RELEASE_LOOKUP_EXIT=$?
+          set -e
+          RELEASE_HTTP_STATUSES="$(printf '%s\\n' "$RELEASE_LOOKUP_OUTPUT" | sed -nE 's/^HTTP\\/[0-9.]+ ([0-9]{3})([[:space:]].*)?$/\\1/p')"
+          RELEASE_HTTP_COUNT="$(printf '%s\\n' "$RELEASE_HTTP_STATUSES" | awk 'NF { count++ } END { print count + 0 }')"
+          if [ "$RELEASE_LOOKUP_EXIT" -eq 0 ]; then
+            echo "RELEASE-BLOCKED: v0.5.3 Release object already exists; refusing to modify it." >&2
+            exit 1
+          fi
+          if [ "$RELEASE_HTTP_COUNT" -ne 1 ] || [ "$RELEASE_HTTP_STATUSES" != "404" ]; then
+            echo "RELEASE-BLOCKED: cannot prove v0.5.3 Release absence; expected exactly one HTTP 404 (count=$RELEASE_HTTP_COUNT, status=${RELEASE_HTTP_STATUSES:-none}, exit=$RELEASE_LOOKUP_EXIT)." >&2
+            exit 1
+          fi
+
+          # Create a draft only after proving both the tag and Release object are absent.
+          gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --target "$SHA" --title "BlazePwifi v0.5.3 — Rental Hardening, Remote Operations & Central Members" --notes-file "$NOTES" --draft
+          find release-out -maxdepth 1 -type f -print0 | xargs -0 -r gh release upload "$TAG" --repo "$GITHUB_REPOSITORY"
+          R="$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG")"
+          RELEASE_ID="$(printf '%s' "$R" | jq -r .id)"
+          test -n "$RELEASE_ID" && test "$RELEASE_ID" != "null"
+          test "$(printf '%s' "$R" | jq -r .target_commitish)" = "$SHA"
+          test "$(printf '%s' "$R" | jq -r .draft)" = true
           test "$(printf '%s' "$R" | jq -r .prerelease)" = false
           for asset in BlazeRental.apk BlazeRental-v0.5.2-rescue-for-v0.5.3.apk BlazeRental-Binding-QR.html BlazeRental-DeviceOwner-Provisioning-QR.html BlazeRental-provisioning-SAMPLE.json RELEASE-MANIFEST.json CANDIDATE-GATE.json SHA256SUMS; do
-            printf '%s' "$R" | jq -e --arg a "$asset" '.assets[] | select(.name==$a)' >/dev/null
+            printf '%s' "$R" | jq -e --arg a "$asset" '.assets[] | select(.name==$a and .state=="uploaded" and .size>0)' >/dev/null
           done
+          gh api --method PATCH "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" -F draft=false -F prerelease=false -F make_latest=true
+          R="$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG")"
+          test "$(printf '%s' "$R" | jq -r .id)" = "$RELEASE_ID"
+          test "$(printf '%s' "$R" | jq -r .target_commitish)" = "$SHA"
+          test "$(printf '%s' "$R" | jq -r .draft)" = false
+          test "$(printf '%s' "$R" | jq -r .prerelease)" = false
