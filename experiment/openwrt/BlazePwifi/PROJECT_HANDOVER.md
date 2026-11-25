@@ -959,5 +959,5 @@ This is host-source SIMULATED / CI VERIFIED evidence only. No production sketch 
 
 PR #340 already owns the pre-poll deny candidate; temporary duplicate PR #350 was closed. The primary #327-to-#339 poll-edge lineage, #283 quarantine candidate and #340 deny-only candidate remain separate pending Master reconciliation. #348 Mbed TLS 4 provider selection awaits MASTER/RELEASE decision.
 
-See [the narrow handover](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/blob/80ccb48312cd816fa7f93cdb22ab27210f3a5e35/experiment/openwrt/BlazePwifi/docs/handover/2026-11-25-hw-first-fault-edge-runner-shared-utc00.md).
+See [the narrow handover](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/blob/cad18161905cd2ae477ad979d6d8079dce40363a/experiment/openwrt/BlazePwifi/docs/handover/2026-11-25-hw-first-fault-edge-runner-shared-utc00.md).
 <!-- PHX-HARDWARE-20261125-FIRST-FAULT-RUNNER:END -->
