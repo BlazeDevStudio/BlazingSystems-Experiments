@@ -7,6 +7,8 @@ on:
       - '.github/workflows/blazerental-apk-contract.yml'
       - 'experiment/openwrt/BlazePwifi/android/BlazeRentalLauncher/tools/verify_apk_contract.py'
       - 'experiment/openwrt/BlazePwifi/android/BlazeRentalLauncher/tests/validation/**'
+      - 'experiment/openwrt/BlazePwifi/android/BlazeRentalLauncher/tools/compute_acceptance_progress.py'
+      - 'experiment/openwrt/BlazePwifi/android/BlazeRentalLauncher/PHX_RENTAL_WORKSTREAM_ACCEPTANCE.json'
       - 'experiment/openwrt/BlazePwifi/android/BlazeRentalLauncher/PHX_RENTAL_APK_COMPATIBILITY.md'
   push:
     branches: ['phoenix/rental-apk-contract-audit-20261121']
@@ -35,6 +37,25 @@ jobs:
           python3 -m unittest discover \
             -s experiment/openwrt/BlazePwifi/android/BlazeRentalLauncher/tests/validation \
             -p 'test_*.py' -v
+      - name: Validate workstream acceptance ledger and preserve calculated progress
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p rental-progress-evidence
+          git rev-parse HEAD > rental-progress-evidence/source_sha.txt
+          python3 experiment/openwrt/BlazePwifi/android/BlazeRentalLauncher/tools/compute_acceptance_progress.py \
+            experiment/openwrt/BlazePwifi/android/BlazeRentalLauncher/PHX_RENTAL_WORKSTREAM_ACCEPTANCE.json \
+            > rental-progress-evidence/provisional_progress.json
+          cat rental-progress-evidence/provisional_progress.json
+
       - name: Explicit scope note
         run: |
           echo 'Host tests only: APK verification, installation, emulator, Device Owner, and physical devices NOT EXECUTED'
+
+      - name: Upload provisional PHX-ANDROID progress calculation
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: PHX-ANDROID-stage-ledger-${{ github.sha }}
+          path: rental-progress-evidence/
+          if-no-files-found: warn
