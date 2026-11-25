@@ -99,6 +99,40 @@ class CppFixtureRunnerContractTests(unittest.TestCase):
                             )
                     run.assert_not_called()
 
+    def test_stem_is_a_safe_filename_component_before_tempfile_creation(self):
+        class FakeTemporaryDirectory:
+            def __enter__(self):
+                return "/tmp/phx-runner-contract-safe"
+
+            def __exit__(self, *args):
+                return False
+
+        invalid_stems = ("", ".", "..", "../escape", "/tmp/escape", r"..\\escape", None, 7)
+        for stem in invalid_stems:
+            with self.subTest(stem=stem):
+                with patch(
+                    "cpp_fixture_runner.tempfile.TemporaryDirectory",
+                    return_value=FakeTemporaryDirectory(),
+                ) as temporary_directory, patch(
+                    "cpp_fixture_runner.Path.write_text"
+                ) as write_text, patch(
+                    "cpp_fixture_runner.subprocess.run",
+                    side_effect=[completed(), completed()],
+                ) as process_run:
+                    with self.assertRaisesRegex(
+                        ValueError,
+                        "stem must be a single safe filename component",
+                    ):
+                        run_cpp_fixture(
+                            "int main() { return 0; }",
+                            prefix="phx-runner-contract-",
+                            stem=stem,
+                        )
+
+                    temporary_directory.assert_not_called()
+                    write_text.assert_not_called()
+                    process_run.assert_not_called()
+
     def test_compile_timeout_is_reported_with_context(self):
         timeout = subprocess.TimeoutExpired(cmd=["g++"], timeout=30)
         temp_dirs = []
