@@ -59,3 +59,31 @@ CORE owns the authenticated register/poll producer contract. QA owns independent
 - **HARDWARE ACCEPTED: NO. PRODUCTION READY: NO.**
 
 **Next exact action:** PHX-CORE publishes the canonical authenticated register/poll contract and golden vectors; PHX-QA independently reconciles the inherited assertion without weakening deny-default; PHX-MASTER refreshes its exact #349 pins. PHX-HARDWARE then revalidates all branch heads before the next owned task.
+
+
+## UTC03 exact-head correction — 2026-11-25T03:42Z
+
+**Current PR / source-test head:** `bd91e9b8496c0d274bb0779fd4a75b5de28dbc33`  
+**PR:** [#349 OPEN / DRAFT / UNMERGED](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/349)  
+**Branch:** `phoenix/hw-json-array-primitive-guard-20261124-utc00`  
+**Base #347:** `960184670379f01e20f0e7e8bc23b3e5eedacd3f`
+
+### Follow-on source and guard commits
+
+- Test-only boundary commit [`e70668379e19fd30807b7fa50af8712209fe6f5d`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/e70668379e19fd30807b7fa50af8712209fe6f5d) added the requirement that the dual-store source-contract module exist and be called by the orchestrator.
+- Source modularization commit [`5211490a497387a3e534232422ea978dfc7bcb4e`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/5211490a497387a3e534232422ea978dfc7bcb4e) moved repository-root, board-sentinel, unknown-board, extractor and active-constant self-tests into `poll_fault_dual_store_lab_source_contracts.py`. The main lab now owns board-specific C++ scenarios and delegates source self-tests through `run_source_contracts()`.
+- Guard correction [`bd91e9b8496c0d274bb0779fd4a75b5de28dbc33`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/bd91e9b8496c0d274bb0779fd4a75b5de28dbc33) changed the structural guard to inspect the parsed orchestrator tree (`tree`) rather than the removed `lab_tree` name.
+
+### Test-first and correction evidence
+
+- Expected test-only RED at `e706683`: Quarantine [#45539921947](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45539921947), job `138955659799`, failed at `POLL_FAULT_SOURCE_CONTRACT_MODULE_MISSING`. Relay [#45539921909](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45539921909) succeeded; Full [#45539922025](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45539922025) was cancelled.
+- Intermediate refactor at `5211490`: Quarantine [#45540153548](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45540153548), job `138956423984`, exposed a guard implementation error (`NameError: lab_tree is not defined`). This was a test-harness failure, not a firmware/product regression. Relay [#45540153557](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45540153557) succeeded; Full [#45540153507](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45540153507) was cancelled.
+- Corrected exact-head Quarantine [#45540305031](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45540305031), job `138956933072`: **PASS**, including `POLL_FAULT_SOURCE_CONTRACT_BOUNDARY_PASS` and `POLL_FAULT_SHARED_RUNNER_STRUCTURE_PASS`.
+- Corrected exact-head Relay [#45540305104](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45540305104), jobs `138956933784` and `138956933934`: **PASS**.
+- Exact-head Full [#45540305058](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45540305058), validation job `138957038055`: **FAIL** at the existing `Missing poll signature check` in `tests/controllers.sh`. All 14/14 firmware/platform plus Android build jobs passed; 12 dependent simulation/update/signing/publication jobs were skipped.
+
+### Scope and disposition
+
+No production `.ino`, CGI producer, register/poll contract, finance, relay admission, signer, witness, migration, release workflow or COE destination changed. The moved tests are host-side source contracts; their success is **SIMULATED / CI VERIFIED**, not physical flash durability or electrical acceptance. Local independent execution: **NOT RUN**. Physical coin/relay/electrical recovery, LittleFS power-loss, 150 power cuts and 30-device/24-hour soak: **NOT TESTED**. HARDWARE ACCEPTED: **NO**. PRODUCTION READY: **NO-GO**.
+
+**Next:** PHX-CORE publishes the approved authenticated register/poll contract and golden vectors; PHX-QA independently reconciles the inherited signature assertion without weakening deny-default; PHX-MASTER refreshes its own exact #349 pins. PHX-HARDWARE revalidates live heads before the next owned task.
