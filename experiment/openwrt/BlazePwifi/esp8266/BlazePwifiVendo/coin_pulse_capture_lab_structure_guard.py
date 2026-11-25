@@ -63,6 +63,29 @@ def literal_assignment(tree: ast.Module, name: str):
     raise AssertionError("unreachable")
 
 
+def tuple_first_strings(tree: ast.Module, name: str) -> list[str]:
+    for node in tree.body:
+        if isinstance(node, ast.Assign) and any(
+            isinstance(target, ast.Name) and target.id == name
+            for target in node.targets
+        ):
+            if not isinstance(node.value, ast.Tuple):
+                fail(f"{name} must be a tuple")
+            values = []
+            for item in node.value.elts:
+                if (
+                    not isinstance(item, ast.Tuple)
+                    or not item.elts
+                    or not isinstance(item.elts[0], ast.Constant)
+                    or not isinstance(item.elts[0].value, str)
+                ):
+                    fail(f"{name} entries must begin with a literal identifier")
+                values.append(item.elts[0].value)
+            return values
+    fail(f"{name} must be a module-level tuple assignment")
+    raise AssertionError("unreachable")
+
+
 runner_source, runner_tree = parse(RUNNER)
 fixture_source, fixture_tree = parse(FIXTURES)
 contract_source, contract_tree = parse(CONTRACTS)
@@ -90,16 +113,16 @@ for marker in ("COIN_PULSE_CAPTURE_PASS", "SIMULATED_ONLY=1",
         fail(f"CPP fixture lost evidence marker: {marker}")
 
 specs = literal_assignment(contract_tree, "FUNCTION_SPECS")
-mutations = literal_assignment(contract_tree, "MUTATIONS")
+mutation_names = tuple_first_strings(contract_tree, "MUTATIONS")
 if not isinstance(specs, tuple) or len(specs) != 11:
     fail("FUNCTION_SPECS must retain all 11 production helper anchors")
 if len({item[0] for item in specs}) != len(specs):
     fail("FUNCTION_SPECS contains duplicate helper names")
 if len({item[1] for item in specs}) != len(specs):
     fail("FUNCTION_SPECS contains duplicate signatures")
-if not isinstance(mutations, tuple) or len(mutations) != 16:
+if len(mutation_names) != 16:
     fail("MUTATIONS must retain all 16 fail-open mutation cases")
-if len({item[0] for item in mutations}) != len(mutations):
+if len(set(mutation_names)) != len(mutation_names):
     fail("MUTATIONS contains duplicate identifiers")
 if "FUNCTION_INDEX_BY_NAME" not in assigned_names(contract_tree):
     fail("contract module does not own the helper index")
