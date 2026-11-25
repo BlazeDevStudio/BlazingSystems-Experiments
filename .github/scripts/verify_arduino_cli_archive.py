@@ -43,6 +43,34 @@ def _same_file_state(left: os.stat_result, right: os.stat_result) -> bool:
     )
 
 
+def _close_descriptor_preserving_primary(
+    fd: int,
+    primary_error: BaseException | None,
+) -> None:
+    """Attempt one close without replacing an active installed-binary error."""
+    try:
+        os.close(fd)
+    except BaseException as close_error:
+        if primary_error is None:
+            raise
+
+        detail = (
+            "Arduino CLI installed-binary descriptor cleanup failed while "
+            f"preserving the primary error: {type(close_error).__name__}: {close_error}"
+        )
+        add_note = getattr(primary_error, "add_note", None)
+        if callable(add_note):
+            try:
+                add_note(detail)
+            except BaseException:
+                pass
+        else:
+            try:
+                sys.stderr.write(detail + "\n")
+            except BaseException:
+                pass
+
+
 def _read_installed_binary(path: Path, expected_info: os.stat_result) -> bytes:
     """Read a bounded executable through a stable no-follow file descriptor."""
     if getattr(expected_info, "st_nlink", None) != 1:
@@ -65,6 +93,7 @@ def _read_installed_binary(path: Path, expected_info: os.stat_result) -> bytes:
 
     flags = os.O_RDONLY | nofollow | getattr(os, "O_CLOEXEC", 0)
     fd = -1
+    primary_error: BaseException | None = None
     try:
         fd = os.open(path, flags)
         before = os.fstat(fd)
@@ -104,15 +133,20 @@ def _read_installed_binary(path: Path, expected_info: os.stat_result) -> bytes:
         if total != after.st_size:
             raise VerificationError("installed Arduino CLI binary size changed while reading")
         return b"".join(chunks)
-    except VerificationError:
+    except VerificationError as exc:
+        primary_error = exc
         raise
     except OSError as exc:
-        raise VerificationError(
+        primary_error = VerificationError(
             f"cannot safely read installed Arduino CLI binary: {exc}"
-        ) from exc
+        )
+        raise primary_error from exc
+    except BaseException as exc:
+        primary_error = exc
+        raise
     finally:
         if fd >= 0:
-            os.close(fd)
+            _close_descriptor_preserving_primary(fd, primary_error)
 
 
 def _read_cli_member(archive_bytes: bytes) -> bytes:
