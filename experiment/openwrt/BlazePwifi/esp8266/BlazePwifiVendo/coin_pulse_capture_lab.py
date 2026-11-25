@@ -309,10 +309,12 @@ def verify_inactive_isr_source_decoy_tolerance(source, board):
         raise RuntimeError(f"{board} expected both conditional coinEdgeISR definitions, found {len(definitions)}")
 
     decoy = (
-        "#if 0\\n"
-        "void IRAM_ATTR coinEdgeISR(){ ++disabledSourceDecoy; }\\n"
-        "#endif\\n"
+        "#if 0\n"
+        "void IRAM_ATTR coinEdgeISR(){ ++disabledSourceDecoy; }\n"
+        "#endif\n"
     )
+    if decoy.count("\n") != 3:
+        raise RuntimeError(f"{board} inactive ISR decoy must contain three physical directive line breaks")
     first_offset = definitions[0][0]
     mutated_source = source[:first_offset] + decoy + source[first_offset:]
     baseline = extract_board_coin_edge_isr(source, board)
