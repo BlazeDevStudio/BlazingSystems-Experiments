@@ -715,6 +715,15 @@ def require_v053_tag_ref_absence_before_publish(content: str) -> None:
             "v0.5.3 tag-absence, draft upload, asset verification and final publish "
             "must occur in that order"
         )
+    asset_loop = step.find("for asset in BlazeRental.apk")
+    publish_patch = (
+        'gh api --method PATCH "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" '
+        "-F draft=false -F prerelease=false -F make_latest=true"
+    )
+    if step.count(publish_patch) != 1 or step.find(publish_patch) < asset_loop:
+        raise AssertionError(
+            "v0.5.3 draft must not be published before every required asset is verified"
+        )
     create_start = step.find('gh release create "$TAG"')
     create_end = step.find("\n", create_start)
     if "--draft" not in step[create_start:create_end]:
