@@ -1,3 +1,14 @@
+## PHX-MASTER UTC23 — #348 Mbed TLS 4 / COE release gate reconciliation — 2026-11-25T23:38Z
+
+[UTC23 exact-head Hardware #348 helper vs ESP32 core 4.0.0 Full build, #340/#352/#353 ancestry, COE #35 ULA/Bubblewrap and COE #49 shared compile](PHX_MASTER_UTC23_20261125_HW348_MBEDTLS4_COE35_EXACT_HEAD_AUDIT.md)
+
+- #348 focused #45716221522 PASS; Full #45716221609 FAIL at inherited ESP32 `mbedtls/sha256.h` include under core 4.0.0; Hardware handover pins remain pre-sync and need owner refresh.
+- #340 Full #45708073607 PASS but 43 ahead / 4 behind #283; #353 17 ahead / 11 behind #352 with no exact-head runs.
+- COE #35 238 tests PASS / 2 skips, then 10/10 ULA profiles fail closed; sandbox 42/42 host tests pass then `bwrap` missing. COE #49 shared ESP32 compile fails at same header.
+- COE #26 remains FROZEN; cleanup #266 OPEN / 0-of-7; private registry v11/newer corrections NOT_RECOVERED. **PRODUCTION NO-GO.**
+
+---
+
 ## PHX-MASTER UTC22 — Hardware stack / response-auth / COE #26 reconciliation — 2026-11-25T22:51Z
 
 [UTC22 exact-head Hardware #340/#348/#349/#352/#353 stack audit, active v0.6 unsigned poll boundary, COE #26 keyless candidate recheck and current role CI](PHX_MASTER_UTC22_20261125_HARDWARE_STACK_AUTH_AND_COE26_RECONCILIATION.md)

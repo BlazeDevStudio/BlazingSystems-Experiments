@@ -106,6 +106,17 @@ This subsection records the owner-implemented #315 behavior as a **provisional c
 
 ---
 
+### 2.3 ControllerAuthV1Lab evidence boundary — 2026-11-25 UTC23
+
+The non-actuating `ControllerAuthV1Lab.h` helper and its native test are not the production poll-response implementation.
+
+- PR #348 test commit `2147c9ae46ae862cb355d2da3b4df1787180689e` and source commit `659b1e646ba6d3efdbe6e03df4ab4f170a89f0e1` reject null pointers and zero-length fixed spans before comparison; nonempty comparisons retain a fixed-length XOR-accumulation pass.
+- Focused exact-head run [#45716221522](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45716221522) passed using the native helper under C++17, Mbed TLS 2.28.8, warnings-as-errors, ASan and UBSan.
+- Full exact-head run [#45716221609](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45716221609) failed at the inherited ESP32 application compile because Arduino core 4.0.0 does not provide the included `mbedtls/sha256.h` at `BlazePwifiVendo32.ino:6`. This is not a failure of the helper's span guard; it is also not a Full pass.
+- Therefore a focused Mbed TLS 2.28.8 helper test cannot be used as evidence that the application compiles under ESP32 core 4.0.0, authenticates poll responses, or is safe to admit coins. Do not change provider selection, pin a different core, or relax the failing target gate without the owner-approved PHX-CORE/PHX-RELEASE contract decision.
+- Ownership: PHX-CORE approves the response contract and golden vectors; PHX-HARDWARE owns firmware/provider implementation; PHX-RELEASE owns reproducible toolchain/provider policy; PHX-QA independently validates helper and application negative paths. Phase-A admission remains DENY.
+
+
 ## 3. Rental & Pisonet Client Time Grant Contracts
 
 ### 3.1 BlazeRental Android Client

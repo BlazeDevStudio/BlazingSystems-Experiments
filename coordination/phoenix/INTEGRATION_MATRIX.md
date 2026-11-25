@@ -1,3 +1,20 @@
+## PHX-MASTER UTC23 — exact dependency and evidence-boundary matrix — 2026-11-25T23:38Z
+
+| Integration edge | Exact observation | Gate / owner |
+|---|---|---|
+| #348 lab helper → application build | Test commit `2147c9ae`, source fix `659b1e64`, docs HEAD `ed172016`. Focused [#45716221522](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45716221522) PASS; Full [#45716221609](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45716221609) FAIL at inherited ESP32 application include `mbedtls/sha256.h` under Arduino core 4.0.0. | Helper null/empty-span guard is lab-only; PHX-RELEASE/PHX-HARDWARE must decide and implement the approved Mbed TLS 4 provider/toolchain path; QA independently verifies. |
+| #340 → #283 | #340 head `547148ee`, parent #283 head `4dd0b01b`; compare is 43 ahead / 4 behind. Full #45708073607 PASS, but #340 poll responses are discarded and configuration remains deny-only. | HARDWARE refresh ancestry; deny mitigation is not authenticated response protocol. |
+| #348 handover freshness | Canonical `PROJECT_HANDOVER.md` and `CURRENT_STATE.md` still record pre-sync #348 head `5c6f8be5` and runs #45715852392/#45715852140; they omit latest docs head `ed172016` and runs #45716221522/#45716221609. | HARDWARE append exact latest head/run evidence to all three canonical handovers; Master does not edit Hardware-owned files. |
+| #349 → #352 → #353 | #353 captured base `6d743ae` is 11 commits behind current #352 `0e984e2`; child compare is 17 ahead / 11 behind. #353 has no exact-head PR runs. | HARDWARE owns stack reconciliation; no Master rebase/retarget. |
+| Active v0.6 producer/consumer | ESP32/ESP8266 source blobs `29f1125d`/`12c4bb82` and CGI `db58041c` remain unsigned for register/poll response; unsigned fields are consumed. | P0: CORE response contract/golden vectors, HARDWARE fail-closed consumer, QA independent vectors. |
+| COE #26 | Candidate `b382d233` remains FROZEN; five workflows queued / zero jobs. Prior exact-tree/provenance/license/test parity blockers remain unremedied. | COE integration owner; no staging or destination writes. |
+| COE RELEASE #35 | 238 shared tests pass / 2 skips, then 10/10 appliance profiles fail closed for missing approved ULA /48; 42 sandbox host tests pass, then `bwrap` missing. | RELEASE/INFRA; no release admission. |
+| COE INTERCON #49 | Stage 5.1 and case guard pass; shared ESP32 compile fails on missing `mbedtls/sha256.h`. | HARDWARE/RELEASE cross-repo provider decision; no silent port. |
+
+No shared response schema/provider change was approved. No source move or migration staging was proposed. The helper's focused sanitizer PASS does not prove application poll authentication, target-core compatibility, relay actuation, durable financial state, or hardware acceptance.
+
+---
+
 ## PHX-MASTER UTC22 — branch dependency and trust-boundary matrix — 2026-11-25T22:51Z
 
 | Integration edge | Exact observation | Gate / owner |

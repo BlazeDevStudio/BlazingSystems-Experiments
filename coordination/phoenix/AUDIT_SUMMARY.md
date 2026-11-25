@@ -1,3 +1,13 @@
+## PHX-MASTER UTC23 — exact-head Hardware / COE release audit — 2026-11-25T23:38Z
+
+Committed a source-grounded coordination update for the current #348 helper and the cross-repository Mbed TLS 4 build boundary. #348's focused native helper run #45716221522 PASS; its exact-head Full build #45716221609 FAILS at the inherited ESP32 application include `mbedtls/sha256.h` under Arduino core 4.0.0. The canonical Hardware handovers still record pre-sync #348 head/run evidence and need an owner update. #340 Full passes but is 43 ahead / 4 behind current #283; #353 is 17 ahead / 11 behind current #352 and has no exact-head runs. COE #35 has 238 tests PASS / 2 skips before 10/10 ULA profile fail-closed results; its sandbox has 42/42 host tests PASS then blocks because `bwrap` is missing. COE #49 shared ESP32 compile fails at the same missing Mbed TLS header. COE #26 remains FROZEN.
+
+Updated exact role PR/CI pins and the architecture evidence boundary. No subsystem source, COE destination, API schema, signing, finance, or migration paths changed. Master unit tests and Master Actions were not run; no Master check-runs/statuses exist. Private Drive registry v11/newer corrections NOT_RECOVERED; no Google Drive connector. Cleanup #266 OPEN / 0-of-7. **PRODUCTION NO-GO.**
+
+Full evidence: [UTC23 exact-head Hardware #348, #340/#352/#353 stack, COE #35/#49 and Mbed TLS 4 audit](PHX_MASTER_UTC23_20261125_HW348_MBEDTLS4_COE35_EXACT_HEAD_AUDIT.md).
+
+---
+
 ## PHX-MASTER UTC22 — Hardware stack and response-auth boundary — 2026-11-25T22:51Z
 
 Committed a source-grounded coordination update for three separate Hardware stacks. #340 has six exact-head workflows PASS and a 26-success / 4-skip Full build, but its base is 4 commits behind current #283; its sketches explicitly discard poll responses and remain deny-only. #348 has a focused C++17/ASan/UBSan native-header PASS, but its Full run is CANCELLED; it is a non-actuating helper only. #353 remains 11 commits behind current #352 parent and has no exact-head PR runs.
