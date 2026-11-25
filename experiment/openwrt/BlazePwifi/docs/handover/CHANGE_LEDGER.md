@@ -51,3 +51,16 @@
 - **Blocker / ownership:** inherited ESP32 Mbed TLS 4 provider compatibility requires PHX-MASTER/PHX-RELEASE decision; no provider port or cross-stack cherry-pick performed. CORE response contract, coin/relay admission, finance, signer, witness and migration unchanged.
 - **Safety:** Phase-A coin/relay admission DENY. No physical hardware, live money, flash, reset, migration, signing, release or deployment.
 - **NEXT ACTION:** Master/Release decide the approved ESP32 provider/stack path; QA reviews span tests; Hardware reruns Full after approval.
+## 2026-11-25 UTC22 — #348 fixed-span comparator null/empty guard
+
+- **Role / task:** PHX-HARDWARE / #172 / #266 / #254 / #348; non-actuating ESP32 ControllerAuthV1Lab helper only.
+- **Branch / stack:** `phoenix/hw-controller-auth-nonempty-spans-20261123-utc15`; PR #348 → #254 at `84c442a46ee2ee48dcbe68b71ff0f54edbc09ba9` → Phase-A deny #239 at `d83b715b116185107737fef721c2eece8feebf39`.
+- **Test commit:** `2147c9ae46ae862cb355d2da3b4df1787180689e`; **source/test commit:** `659b1e646ba6d3efdbe6e03df4ab4f170a89f0e1`.
+- **Source delta:** `equal_fixed()` rejects null pointers and `n == 0` before reading; the nonempty XOR-accumulation loop remains fixed-length. Test adds null-left/right/both-null, empty, equal and unequal comparisons.
+- **Test-first evidence:** local C++17 ASan/UBSan micro-harness copied the pre-change helper and reproduced a null-read SEGV (RED); the corrected helper passed all six boundary cases (GREEN). This local micro-harness is supplementary; the full header test is covered by GitHub Actions below.
+- **Focused exact-head CI:** [#45715852392](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45715852392), job `139561583988`, SUCCESS at pre-sync docs tree `5c6f8be5c8be6c88cfca5156b7dff3a3ebdad0cf`. Actual native header compiled with Ubuntu Mbed TLS 2.28.8, C++17, `-Wall -Wextra -Werror`, ASan/UBSan; new null/empty assertions, existing 5/5 synthetic auth cases and Phase-A deny guard passed.
+- **Full:** [#45715852140](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45715852140), validation job `139562147363`, failed mandatory handover freshness because canonical handovers predated source/test commits. Target jobs were still running; no Full aggregate result claimed. The canonical records are now synchronized in this commit; rerun Full at the new exact head.
+- **Status:** focused helper CI VERIFIED / SIMULATED; hardware NOT TESTED; production NO-GO. No sketch, CORE contract, key, GPIO, relay, coin, finance, signer/witness, migration, release or COE destination changed. Phase-A deny remains.
+- **NEXT:** verify new exact-head Full gate and builds; request independent QA review; await Master/Release Mbed TLS 4 provider and stack disposition.
+<!-- PHX-HW-20261125-UTC22-EQUAL-FIXED-NULL-EMPTY:END -->
+
