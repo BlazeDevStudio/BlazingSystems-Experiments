@@ -1,3 +1,16 @@
+## PHX-MASTER UTC17 — 2026-11-25T17:38Z COE #35 descriptor cleanup, RELEASE handover freshness, and COE #26 provenance
+
+[UTC17 exact-head role/CI reconciliation, COE #35 descriptor-close fix, #291 freshness gate, and current #352-to-#26 tree/blob/license/test audit](PHX_MASTER_UTC17_20261125_COE35_DESCRIPTOR_CLOSE_RELEASE_HANDOVER_AND_COE26_PROVENANCE_AUDIT.md)
+
+- Experiments main 6be5d19b; active v0.6 development 2fbd2475; legacy v0.5.3 development aad3aade; Master starting HEAD f3e743cc; COE main a6513ab4; COE #26 b382d233.
+- COE #35 advanced to docs HEAD 09e6e508 / source-test ef869aee: 230 tests PASS / 2 skips, then 10/10 site-ULA profiles fail closed; sandbox 40/40 host tests PASS then Bubblewrap missing / exit 125; case guard PASS.
+- Experiments #291 is 5e3670f; Full #45659246220 and Windows #45659245510 fail at the CORE CURRENT_STATE freshness gate (checkpoint d85eb6a2); ESP32 compatibility #45659245624 PASS. Three canonical handover blobs differ from active v0.6 branch; CORE/RELEASE reconciliation required.
+- HARDWARE #352 docs HEAD 6d743ae / source-test 1ab1be50; focused checks PASS; Full #45659212942 fails at Missing poll signature check.
+- Exact current #352/#26 trees: 2,557 vs 286 entries; 64 source board Python helpers vs zero destination; mapped tests 47 vs 19 (1 exact, 3 divergent, 43 source-only, 15 destination-only); both firmware sketches differ; root NOTICE and Tabler license gaps remain. #26 is FROZEN with five queued workflows / zero jobs.
+- Ownership manifest remains 11 routes / DRAFT_REVIEW_ONLY / Master target null. Cleanup #266 OPEN / 0-of-7. Private registry v11/newer corrections NOT_RECOVERED. **PRODUCTION NO-GO.**
+
+---
+
 ## PHX-MASTER UTC16 — 2026-11-25T16:35Z live COE #35 publication recheck, exact COE #26 provenance, and owner CI
 
 [UTC16 live role/CI, artifact-manifest publication recheck, exact Hardware source/destination tree and license/test identity audit](PHX_MASTER_UTC16_20261125_COE35_MANIFEST_COE26_EXACT_TREE_AND_ROLE_CI_AUDIT.md)

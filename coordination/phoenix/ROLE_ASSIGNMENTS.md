@@ -1,3 +1,39 @@
+## PHX-MASTER UTC17 post-checkpoint owner / CI refresh — 2026-11-25T17:38Z
+
+This section supersedes the UTC16 table. It is a read-only reconciliation; subsystem owners retain their source branches and handover files.
+
+**Exact repository refs**
+- Experiments main: 6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5.
+- Active v0.6 development: blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859.
+- Legacy v0.5.3 development: blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5.
+- Master starting HEAD: phoenix/master-coordination@f3e743cc82001be925f28c3bbf1cdc37f682f73a.
+- COE main: a6513ab4412b4c014eee2863e45cbe32d06cb243; COE #26: b382d233ff06c8791b1028bed3c617cc7b670d12.
+- PR #288 OPEN / DRAFT / UNMERGED, base main@f4e8a891; 571 ahead / 1 behind, merge base f4e8a891; 217 existing paths, all coordination/phoenix/. Master exact-head Actions: zero runs.
+
+| Owner / PR | Current exact head | Exact-head CI / disposition |
+|---|---|---|
+| CORE #252 | c82705f2de865c89ab733b10efa84f26f56a5cc4 | Build #42698139210 PASS; older scoped evidence only, not financial acceptance. |
+| RENTAL #328 | 10fc200b6dbf470a95e679d3acc58aff4ab2a67f | APK #45622918340, API #45622918364, auth/recovery #45622918551 PASS; shared build #45622918468 FAIL. |
+| PISONET #255 | d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | Synthetic Windows #42462978704 PASS; native COM not invoked. |
+| HARDWARE #352 | docs 6d743ae16bbb9f1cf604aa3e2a1553083e32a5ec; source/test 1ab1be503bfe11dcfaa522348bc469d52fd040ed | Quarantine #45659213057, Relay #45659212875, ESP8266 #45659213036, ESP32 #45659212997 PASS; Full #45659212942 FAIL at Missing poll signature check. |
+| HARDWARE parent #349 | 2a5c997add4f49fcd74f753101d3a9daac0040bf | Quarantine #45603969253 and Relay #45603968961 PASS; Full #45603969181 FAIL. |
+| QA #290 | 5c29d15994cee1279058f1eca12f2a3180704292 | Windows #43633486963 PASS; native COM not invoked. |
+| QA #292 | 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | No PR-triggered runs. |
+| RELEASE #291 | 5e3670f375117d9a6053b921961476684dd34b46 | Windows #45659245510 and Full #45659246220 FAIL at CORE CURRENT_STATE freshness; ESP32 compatibility #45659245624 PASS. Three canonical handover blobs diverge from active v0.6; CORE/RELEASE reconciliation required. |
+| COE RELEASE #35 | docs 09e6e508f0813096d64f4a7ea7804f9239690010; source/test ef869aee3578241bfcae6fda8ed77bb560bebe2c | Source/docs-head shared suites 230 PASS / 2 skips, then 10/10 site-ULA fail-closed; sandbox 40 host tests PASS then Bubblewrap absent / exit 125; case guard PASS. PR body stale; RELEASE owns refresh. |
+| COE CORE #45 | 9d76a134c1f6512aa40c20ec4d247306a71a8cce | Overlay/Shell #44295049727 and case guard #44295049903 PASS; focused only. |
+| COE INTERCON #49 | aeb8ff11b2f5db9a5f86280ab62ab988245f3919 | Stage 5.1 #44646341873 and case guard #44646341992 PASS; shared ESP32 #44646341922 FAIL. |
+| COE integration #26 | b382d233ff06c8791b1028bed3c617cc7b670d12 | Five workflows QUEUED / zero jobs; FROZEN. |
+
+**Handover freshness and ownership**
+- #291 current docs head 5e3670f fails the required freshness gate: last checkpoint d85eb6a2766781b6cac1807cef461993d8216b84; four workflow files are newer than CURRENT_STATE.md. Windows build/publisher and downstream release stages were skipped.
+- Active v0.6 versus #291 handover blobs: CURRENT_STATE 86d49e27 / 85dd3c1e; PROJECT_HANDOVER 88ef13d8 / 59f8cb18; CHANGE_LEDGER f16d5774 (empty) / 1950335a. These are different branch histories, not permission to overwrite. CORE owns canonical current state; RELEASE must reconcile its branch against the owner-approved SHA.
+- COE #35 current source/test is ef869aee; its PR description still pins older f611c960 / 237618f4. RELEASE must refresh its PR body after the handover readback.
+
+Cleanup #266 remains OPEN / 0-of-7. OWNERSHIP_ROUTES.json remains 11 routes / DRAFT_REVIEW_ONLY / PHX-MASTER target null. CORE remains reserved and untouched. Private registry v11/newer corrections NOT_RECOVERED.
+
+---
+
 ## PHX-MASTER UTC16 post-checkpoint owner / CI refresh — 2026-11-25T16:35Z
 
 This section supersedes the UTC15 owner-head table below. It is a read-only reconciliation; subsystem owners retain their source branches.

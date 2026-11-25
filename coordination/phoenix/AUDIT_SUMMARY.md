@@ -1,3 +1,19 @@
+## PHX-MASTER UTC17 disposition — 2026-11-25T17:38Z
+
+**Master starting HEAD:** f3e743cc82001be925f28c3bbf1cdc37f682f73a. **Experiments main:** 6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5. **Active development:** 2fbd2475e9f54878c316fa7cea2f228386b0e859. **Legacy development:** aad3aade72c1156eecba1fed30907c6d0283b2c5. **COE main:** a6513ab4412b4c014eee2863e45cbe32d06cb243. **COE #26:** b382d233ff06c8791b1028bed3c617cc7b670d12.
+
+- PR #288 remains OPEN / DRAFT / UNMERGED, base f4e8a891; starting compare 571 ahead / 1 behind; 217 existing paths all under coordination/phoenix/. Master Actions: zero.
+- COE #35 advanced to docs head 09e6e508 / source-test ef869aee. Exact source/docs suites 230 PASS / 2 skips, then 10/10 ULA profiles fail closed; sandbox 40 host tests PASS then Bubblewrap absent / exit 125; case guard PASS. RELEASE PR body stale; QA review and site-ULA authority remain blockers.
+- Experiments #291 current head 5e3670f. Full and Windows fail the CORE CURRENT_STATE freshness gate at checkpoint d85eb6a2; ESP32 compatibility passes. Three canonical handover files diverge from active v0.6 development; CORE/RELEASE reconciliation is required before rerun.
+- HARDWARE #352 current docs head 6d743ae / source-test 1ab1be50. Focused exact-head checks pass; Full fails at Missing poll signature check. CORE owns producer contract; QA owns independent assertion reconciliation.
+- COE #26 remains FROZEN. Current source/destination trees are 2,557 vs 286 entries; 64 source board Python helpers vs zero destination; mapped tests 47 vs 19 with one exact and three divergent same-path files; both firmware sketches differ; root NOTICE and Tabler license gaps remain. No staging or destination writes.
+- Ownership manifest remains 11 routes / DRAFT_REVIEW_ONLY / Master target null. Cleanup #266 OPEN / 0-of-7. Private registry v11/newer corrections NOT_RECOVERED.
+- Master Python tests and verify_coordination.py NOT RUN; local git ls-remote failed because github.com DNS could not resolve. Remote owner CI is not a Master test pass.
+
+**PRODUCTION NO-GO.** Independent protected signing/anti-rollback witness, crash-atomic durable financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and explicit owner-authorized release gates remain mandatory.
+
+---
+
 ## PHX-MASTER UTC16 disposition — 2026-11-25T16:35Z
 
 **Master pre-update:** 97bf3a52d58ac9f6a6f4dcfb66231a797da931e4. **Experiments main:** 6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5. **Active development:** 2fbd2475e9f54878c316fa7cea2f228386b0e859. **Legacy development:** aad3aade72c1156eecba1fed30907c6d0283b2c5. **COE main:** a6513ab4412b4c014eee2863e45cbe32d06cb243. **COE #26:** b382d233ff06c8791b1028bed3c617cc7b670d12.

@@ -1,3 +1,43 @@
+## PHX-MASTER UTC17 — exact current Hardware source/destination and RELEASE integration gates (2026-11-25T17:38Z)
+
+### COE #26 current Hardware source/destination identity
+
+Exact non-truncated trees: Experiments HARDWARE #352 docs head 6d743ae16bbb9f1cf604aa3e2a1553083e32a5ec (2,557 entries / 1,978 blobs) and COE integration #26 b382d233ff06c8791b1028bed3c617cc7b670d12 (286 entries / 207 blobs).
+
+| Measure | Source | Destination |
+|---|---:|---:|
+| ESP32 subtree blobs | 16 | 1 |
+| ESP8266 subtree blobs | 60 | 1 |
+| Board-local Python helpers | 64 | 0 |
+| Mapped tests | 47 | 19 |
+| Same-path exact test blobs | 1 | — |
+| Same-path divergent test blobs | 3 | — |
+| Source-only / destination-only test files | 43 / 15 | — |
+
+| Artifact | Exact source blob | Exact destination blob | Result |
+|---|---|---|---|
+| ESP32 sketch | 1412cf57b70c6ee3061da9831b8d9abf6d58d94e | 3cc7ec54b476943dc04a8d1af5e2df5fe054e422 | Different |
+| ESP8266 sketch | b99f1f21d8ad1e6df0e403b2b34507f97bd90c16 | c8be98f72596681e36a3ad1f8939bf8046c96887 | Different |
+| Root NOTICE.md | f6d92cd21465312be5993631fe26977219be0fb9 | Missing | Gap |
+| Product LICENSE | 1ee55b94183417be977ca287cd7391f9a6f7e721 | Pisowifi/LICENSE same blob | Match |
+| TailAdmin LICENSE / NOTICE | cb92d4176b21b0594e5a6caf94d79340505e3d33 / f0425bbbe34c1227311098173b1eae0c3e2a807b | Same mapped blobs | Match |
+| Tabler LICENSE | 22ee8122400915cbff18e5f69368fa9eea6145eb | Missing | Gap |
+| BlazeRentalLauncher LICENSE | c5b1efa7aac764ae6d8da63476a2d5cec02a6a5d | Missing | Candidate-wide gap; Rental surface |
+
+Four same-path test files: one exact and three divergent; 43 source-only and 15 destination-only. COE #26 contains no current board-local Python helper counterpart. The root NOTICE and Tabler license gaps remain; the Launcher license is a separate Rental surface, not a Hardware subtree file.
+
+COE #26 remains FROZEN with five queued workflows / zero jobs. The routing manifest remains 11 routes / DRAFT_REVIEW_ONLY; Master target null. No staging, copy, move, overwrite, migration proposal or destination write.
+
+### COE RELEASE #35 — current descriptor cleanup and external gates
+
+Current docs head 09e6e508; exact source/test ef869aee. Source/test [#45664453496](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45664453496) and docs-head [#45664743895](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45664743895) each report 230 tests OK / 2 intentional skips before 10/10 site-scoped ULA admission failures. Sandbox [#45664744065](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45664744065): 40 host-preflight tests PASS, then Bubblewrap absent / exit 125. Case guard [#45664743921](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45664743921) PASS. PR body still pins older docs/source heads; RELEASE owns refresh. QA review and approved site-ULA authority remain missing.
+
+### Experiments RELEASE #291 — mandatory handover gate
+
+Current head 5e3670f. Full [#45659246220](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45659246220) and Windows [#45659245510](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45659245510) fail at CURRENT_STATE freshness; ESP32 compatibility [#45659245624](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45659245624) passes. Last checkpoint named by the gate is d85eb6a2766781b6cac1807cef461993d8216b84. Do not bypass. CORE must publish canonical current state; RELEASE reconciles and reruns.
+
+---
+
 ## PHX-MASTER UTC16 — exact current source/destination and release-packager evidence (2026-11-25T16:35Z)
 
 ### COE #26 current Hardware source/destination identity
