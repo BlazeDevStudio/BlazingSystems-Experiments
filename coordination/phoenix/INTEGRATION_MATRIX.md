@@ -1,3 +1,31 @@
+## PHX-MASTER UTC19 scheduled-run exact tree / test / license reconciliation — 2026-11-25T19:52:30.511Z
+
+Source tree: Experiments HARDWARE #352 docs head `0e984e267b3a8fb10c314800d1a7f120806354b7` (2,564 entries / 1,985 blobs; recursive tree not truncated). Destination: COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12` (286 entries / 207 blobs; not truncated).
+
+| Measure | Source | Destination |
+|---|---:|---:|
+| ESP32 + ESP8266 subtree entries | 86 | 6 |
+| Board subtree blobs | 82 | 2 |
+| Board-local Python helpers | 70 | 0 |
+| Mapped tests | 47 | 19 |
+
+Test identity: 4 same-path files, 1 exact blob+mode, 3 divergent, 43 source-only and 15 destination-only. ESP32 source blob `1412cf57b70c6ee3061da9831b8d9abf6d58d94e` differs from destination `3cc7ec54b476943dc04a8d1af5e2df5fe054e422`; ESP8266 source `b99f1f21d8ad1e6df0e403b2b34507f97bd90c16` differs from destination `c8be98f72596681e36a3ad1f8939bf8046c96887`.
+
+- Source root NOTICE `f6d92cd2` and Tabler LICENSE `22ee8122` are absent from destination.
+- Product LICENSE `1ee55b94`, QRCode LICENSE `150770c0`, TailAdmin LICENSE `cb92d417`, and TailAdmin NOTICE `f0425bbb` match exactly.
+- BlazeRentalLauncher LICENSE `c5b1efa7` belongs to the separate RENTAL route, not the Hardware subtree.
+- No Hardware-specific SOURCE_INTAKE/MIGRATION_MAP exists. The existing PisoWiFi intake is not Hardware provenance; its 47/14 summary disagrees with 61 runtime rows (46/15).
+- COE #26 remains five workflows QUEUED / zero jobs.
+
+**Gate:** FROZEN. No staging, copy, move, overwrite, rebase, cherry-pick or destination write. Require per-file source/destination blob+mode provenance, license/NOTICE disposition, test identity and owner review before any candidate.
+
+COE #35 current docs/source pins are `1c08a339` / `b3a7873e`; shared CI 230 PASS / 2 skips then 10/10 site-ULA admission failures, sandbox 40 host preflight PASS then Bubblewrap absent / exit 125, case guard PASS. COE #49 shared ESP32 compile fails at missing `mbedtls/sha256.h`.
+
+Full audit: [UTC19 exact-head report](PHX_MASTER_UTC19_20261125_HW352_HW353_COE26_COE35_EXACT_HEAD_AUDIT.md).
+
+
+---
+
 ## PHX-MASTER UTC19 — exact HARDWARE #352 source and COE #26 candidate comparison (2026-11-25T19:17:34Z)
 
 Complete, non-truncated recursive trees were read at Experiments #352 current head `f837146bc2522f88d2b8020ae8b94555d70e7ac3` and COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`.
