@@ -5,6 +5,7 @@ the loop orchestration runner. Dependencies are explicit parameters so the
 contract module can be reviewed and reused without hidden runner globals.
 """
 from firmware_lab_source import mask_active_cpp_code, mask_non_code
+from cpp_token_normalizer import tokenize_cpp
 from poll_loop_blocking_inhibit_lab_edge_fixtures import POLL_SAFETY_PARITY
 
 def poll_safety_helpers(boards, extract_function):
@@ -16,9 +17,10 @@ def poll_safety_helpers(boards, extract_function):
             body = extract_function(source, name)
             if not body:
                 raise AssertionError(f"{board}: missing shared poll-safety helper {name}")
-            # Ignore formatting-only changes; comments and executable tokens remain
-            # part of the comparison so safety intent cannot drift silently.
-            helpers[board][name] = " ".join(body.split())
+            # Compare lexical C++ tokens: whitespace outside tokens is formatting,
+            # while literal bytes and token boundaries are semantic. Comments are
+            # intentionally excluded from this executable-parity check.
+            helpers[board][name] = tokenize_cpp(body)
     return helpers
 
 
