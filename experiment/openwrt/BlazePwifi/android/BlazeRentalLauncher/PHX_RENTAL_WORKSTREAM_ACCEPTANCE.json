@@ -1,0 +1,819 @@
+{
+  "schema": "phoenix/android-workstream-acceptance/v1",
+  "revision": "PXA-WORKSTREAM-R1-2026-11-25",
+  "scope": "PHX-ANDROID only; not ecosystem-wide canonical roadmap",
+  "scope_status": "PROVISIONAL_PENDING_PHX_MASTER",
+  "project": "Project Phoenix — BlazeRental Android",
+  "stage_gate_policy": "A stage is complete only when all mandatory applicable criteria of the stage have exact evidence. Later-stage tests do not close earlier gates.",
+  "original_mission": "02_BLAZERENTAL_ANDROID.txt (recovered, read; private file IDs not published)",
+  "scope_reconciliation_disclaimer": "The 31 criteria are initial workstream decomposition, not a finalized ecosystem-wide denominator. PHX-MASTER owns consolidation, deduplication, and cross-agent weighting.",
+  "weight_policy": "Fixed risk-weighted points assigned at ledger R1 before measuring acceptance: implementation 32, functional 19, integration 15, QA/security 15, release 10, deployment 7, actual deployment 2. Do not change weights to improve completion.",
+  "known_dimension_weights": {
+    "implementation": 32,
+    "functional": 19,
+    "integration": 15,
+    "qa_security": 15,
+    "release": 10,
+    "deployment": 7,
+    "actual_deployment": 2
+  },
+  "readiness_dimensions": [
+    "implementation",
+    "functional",
+    "integration",
+    "qa_security",
+    "release",
+    "deployment"
+  ],
+  "deployment_dimension": "actual_deployment",
+  "criteria": [
+    {
+      "id": "PXA-MIS-001",
+      "subsystem": "BlazeRental Android",
+      "owner": "PHX-ANDROID",
+      "stage": "STAGE 00",
+      "dimension": "implementation",
+      "mandatory": true,
+      "weight": 2,
+      "status": "IN PROGRESS",
+      "requirement_sources": [
+        "02_BLAZERENTAL_ANDROID.txt",
+        "expanded BlazeRental Android directive",
+        "2026-11-25 universal staged directive"
+      ],
+      "implementation_task": "Recover original and later mission, reconcile canonical ownership",
+      "acceptance_criterion": "Master-approved traceable complete Android mission and migration boundary",
+      "verification_method": "PENDING: Master-approved traceable complete Android mission and migration boundary",
+      "evidence": [],
+      "verified_commit": null,
+      "verified_at_utc": null,
+      "dependencies": [
+        "PHX-MASTER stage-ledger reconciliation"
+      ],
+      "remaining_work": "Demonstrate acceptance with exact commit and attached evidence"
+    },
+    {
+      "id": "PXA-ARC-001",
+      "subsystem": "BlazeRental Android",
+      "owner": "PHX-ANDROID",
+      "stage": "STAGE 01",
+      "dimension": "implementation",
+      "mandatory": true,
+      "weight": 2,
+      "status": "IN PROGRESS",
+      "requirement_sources": [
+        "02_BLAZERENTAL_ANDROID.txt",
+        "expanded BlazeRental Android directive",
+        "2026-11-25 universal staged directive"
+      ],
+      "implementation_task": "Architecture and capability/mode matrix",
+      "acceptance_criterion": "Documented architecture, API compatibility, source ownership and interface contracts",
+      "verification_method": "PENDING: Documented architecture, API compatibility, source ownership and interface contracts",
+      "evidence": [],
+      "verified_commit": null,
+      "verified_at_utc": null,
+      "dependencies": [
+        "PHX-MASTER stage-ledger reconciliation"
+      ],
+      "remaining_work": "Demonstrate acceptance with exact commit and attached evidence"
+    },
+    {
+      "id": "PXA-STB-001",
+      "subsystem": "BlazeRental Android",
+      "owner": "PHX-ANDROID",
+      "stage": "STAGE 02",
+      "dimension": "implementation",
+      "mandatory": true,
+      "weight": 4,
+      "status": "VERIFIED",
+      "requirement_sources": [
+        "02_BLAZERENTAL_ANDROID.txt",
+        "expanded BlazeRental Android directive",
+        "2026-11-25 universal staged directive"
+      ],
+      "implementation_task": "Reproducible existing Launcher3 debug build",
+      "acceptance_criterion": "Exact pinned Gradle build produces inspectable debug APK",
+      "verification_method": "Source-exact GitHub Actions result + APK/emulator evidence",
+      "evidence": [
+        "https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44782114393"
+      ],
+      "verified_commit": "0e0da62acd47c6a1ce287f8a30fc700d603fa070",
+      "verified_at_utc": "2026-11-20T17:21:00Z",
+      "dependencies": [
+        "PHX-MASTER stage-ledger reconciliation"
+      ],
+      "remaining_work": "Retain/recheck evidence when dependent source changes"
+    },
+    {
+      "id": "PXA-CORE-001",
+      "subsystem": "BlazeRental Android",
+      "owner": "PHX-ANDROID",
+      "stage": "STAGE 03",
+      "dimension": "implementation",
+      "mandatory": true,
+      "weight": 4,
+      "status": "VERIFICATION PENDING",
+      "requirement_sources": [
+        "02_BLAZERENTAL_ANDROID.txt",
+        "expanded BlazeRental Android directive",
+        "2026-11-25 universal staged directive"
+      ],
+      "implementation_task": "Signed rental status authentication before persistence",
+      "acceptance_criterion": "Seven positive and adversarial status tests pass with actual Android state",
+      "verification_method": "PENDING: Seven positive and adversarial status tests pass with actual Android state",
+      "evidence": [],
+      "verified_commit": null,
+      "verified_at_utc": null,
+      "dependencies": [
+        "PHX-MASTER stage-ledger reconciliation"
+      ],
+      "remaining_work": "Demonstrate acceptance with exact commit and attached evidence"
+    },
+    {
+      "id": "PXA-CORE-002",
+      "subsystem": "BlazeRental Android",
+      "owner": "PHX-ANDROID",
+      "stage": "STAGE 03",
+      "dimension": "implementation",
+      "mandatory": true,
+      "weight": 3,
+      "status": "VERIFICATION PENDING",
+      "requirement_sources": [
+        "02_BLAZERENTAL_ANDROID.txt",
+        "expanded BlazeRental Android directive",
+        "2026-11-25 universal staged directive"
+      ],
+      "implementation_task": "PackageInstaller recovery and stale callback token",
+      "acceptance_criterion": "Six native installer state/recovery tests pass",
+      "verification_method": "PENDING: Six native installer state/recovery tests pass",
+      "evidence": [],
+      "verified_commit": null,
+      "verified_at_utc": null,
+      "dependencies": [
+        "PHX-MASTER stage-ledger reconciliation"
+      ],
+      "remaining_work": "Demonstrate acceptance with exact commit and attached evidence"
+    },
+    {
+      "id": "PXA-CORE-003",
+      "subsystem": "BlazeRental Android",
+      "owner": "PHX-ANDROID",
+      "stage": "STAGE 03",
+      "dimension": "implementation",
+      "mandatory": true,
+      "weight": 3,
+      "status": "IN PROGRESS",
+      "requirement_sources": [
+        "02_BLAZERENTAL_ANDROID.txt",
+        "expanded BlazeRental Android directive",
+        "2026-11-25 universal staged directive"
+      ],
+      "implementation_task": "Explicit rental lifecycle state machine",
+      "acceptance_criterion": "Valid paid, expired, renewed, and admin transitions tested",
+      "verification_method": "PENDING: Valid paid, expired, renewed, and admin transitions tested",
+      "evidence": [],
+      "verified_commit": null,
+      "verified_at_utc": null,
+      "dependencies": [
+        "PHX-MASTER stage-ledger reconciliation"
+      ],
+      "remaining_work": "Demonstrate acceptance with exact commit and attached evidence"
+    },
+    {
+      "id": "PXA-CORE-004",
+      "subsystem": "BlazeRental Android",
+      "owner": "PHX-ANDROID",
+      "stage": "STAGE 03",
+      "dimension": "implementation",
+      "mandatory": true,
+      "weight": 3,
+      "status": "IN PROGRESS",
+      "requirement_sources": [
+        "02_BLAZERENTAL_ANDROID.txt",
+        "expanded BlazeRental Android directive",
+        "2026-11-25 universal staged directive"
+      ],
+      "implementation_task": "QR enrollment, identity binding and anti-CSRF",
+      "acceptance_criterion": "Installed identity authenticated, replay rejected",
+      "verification_method": "PENDING: Installed identity authenticated, replay rejected",
+      "evidence": [],
+      "verified_commit": null,
+      "verified_at_utc": null,
+      "dependencies": [
+        "PHX-MASTER stage-ledger reconciliation"
+      ],
+      "remaining_work": "Demonstrate acceptance with exact commit and attached evidence"
+    },
+    {
+      "id": "PXA-CORE-005",
+      "subsystem": "BlazeRental Android",
+      "owner": "PHX-ANDROID",
+      "stage": "STAGE 03",
+      "dimension": "implementation",
+      "mandatory": true,
+      "weight": 2,
+      "status": "IN PROGRESS",
+      "requirement_sources": [
+        "02_BLAZERENTAL_ANDROID.txt",
+        "expanded BlazeRental Android directive",
+        "2026-11-25 universal staged directive"
+      ],
+      "implementation_task": "Near end, urgent, expiry alarms plus DND/accessibility",
+      "acceptance_criterion": "Real alarm duration, permission and accessibility behavior verified",
+      "verification_method": "PENDING: Real alarm duration, permission and accessibility behavior verified",
+      "evidence": [],
+      "verified_commit": null,
+      "verified_at_utc": null,
+      "dependencies": [
+        "PHX-MASTER stage-ledger reconciliation"
+      ],
+      "remaining_work": "Demonstrate acceptance with exact commit and attached evidence"
+    },
+    {
+      "id": "PXA-CORE-006",
+      "subsystem": "BlazeRental Android",
+      "owner": "PHX-ANDROID",
+      "stage": "STAGE 03",
+      "dimension": "implementation",
+      "mandatory": true,
+      "weight": 3,
+      "status": "IN PROGRESS",
+      "requirement_sources": [
+        "02_BLAZERENTAL_ANDROID.txt",
+        "expanded BlazeRental Android directive",
+        "2026-11-25 universal staged directive"
+      ],
+      "implementation_task": "Device Owner kiosk launcher and device policy",
+      "acceptance_criterion": "Actual DevicePolicyManager privilege and lock task verified",
+      "verification_method": "PENDING: Actual DevicePolicyManager privilege and lock task verified",
+      "evidence": [],
+      "verified_commit": null,
+      "verified_at_utc": null,
+      "dependencies": [
+        "PHX-MASTER stage-ledger reconciliation"
+      ],
+      "remaining_work": "Demonstrate acceptance with exact commit and attached evidence"
+    },
+    {
+      "id": "PXA-CORE-007",
+      "subsystem": "BlazeRental Android",
+      "owner": "PHX-ANDROID",
+      "stage": "STAGE 03",
+      "dimension": "implementation",
+      "mandatory": true,
+      "weight": 2,
+      "status": "IN PROGRESS",
+      "requirement_sources": [
+        "02_BLAZERENTAL_ANDROID.txt",
+        "expanded BlazeRental Android directive",
+        "2026-11-25 universal staged directive"
+      ],
+      "implementation_task": "Allowed/hidden applications and remote admin rights",
+      "acceptance_criterion": "Local scope enforced and remote actions authorized",
+      "verification_method": "PENDING: Local scope enforced and remote actions authorized",
+      "evidence": [],
+      "verified_commit": null,
+      "verified_at_utc": null,
+      "dependencies": [
+        "PHX-MASTER stage-ledger reconciliation"
+      ],
+      "remaining_work": "Demonstrate acceptance with exact commit and attached evidence"
+    },
+    {
+      "id": "PXA-CORE-008",
+      "subsystem": "BlazeRental Android",
+      "owner": "PHX-ANDROID",
+      "stage": "STAGE 03",
+      "dimension": "implementation",
+      "mandatory": true,
+      "weight": 2,
+      "status": "UNKNOWN",
+      "requirement_sources": [
+        "02_BLAZERENTAL_ANDROID.txt",
+        "expanded BlazeRental Android directive",
+        "2026-11-25 universal staged directive"
+      ],
+      "implementation_task": "Authenticated maintenance entry and safe recovery",
+      "acceptance_criterion": "Operator can reverse management policies without permanent lock",
+      "verification_method": "PENDING: Operator can reverse management policies without permanent lock",
+      "evidence": [],
+      "verified_commit": null,
+      "verified_at_utc": null,
+      "dependencies": [
+        "PHX-MASTER stage-ledger reconciliation"
+      ],
+      "remaining_work": "Demonstrate acceptance with exact commit and attached evidence"
+    },
+    {
+      "id": "PXA-CORE-009",
+      "subsystem": "BlazeRental Android",
+      "owner": "PHX-ANDROID",
+      "stage": "STAGE 03",
+      "dimension": "implementation",
+      "mandatory": true,
+      "weight": 2,
+      "status": "UNKNOWN",
+      "requirement_sources": [
+        "02_BLAZERENTAL_ANDROID.txt",
+        "expanded BlazeRental Android directive",
+        "2026-11-25 universal staged directive"
+      ],
+      "implementation_task": "Offline lease, monotonic time and reboot recovery",
+      "acceptance_criterion": "No unauthorized credit extension across reboot and disconnect",
+      "verification_method": "PENDING: No unauthorized credit extension across reboot and disconnect",
+      "evidence": [],
+      "verified_commit": null,
+      "verified_at_utc": null,
+      "dependencies": [
+        "PHX-MASTER stage-ledger reconciliation"
+      ],
+      "remaining_work": "Demonstrate acceptance with exact commit and attached evidence"
+    },
+    {
+      "id": "PXA-FUN-001",
+      "subsystem": "BlazeRental Android",
+      "owner": "PHX-ANDROID",
+      "stage": "STAGE 04",
+      "dimension": "functional",
+      "mandatory": true,
+      "weight": 3,
+      "status": "VERIFIED",
+      "requirement_sources": [
+        "02_BLAZERENTAL_ANDROID.txt",
+        "expanded BlazeRental Android directive",
+        "2026-11-25 universal staged directive"
+      ],
+      "implementation_task": "Android API21 x86 installation and launcher start",
+      "acceptance_criterion": "Real emulator aapt/apksigner, adb install and Activity start pass",
+      "verification_method": "Source-exact GitHub Actions result + APK/emulator evidence",
+      "evidence": [
+        "https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44782114393"
+      ],
+      "verified_commit": "0e0da62acd47c6a1ce287f8a30fc700d603fa070",
+      "verified_at_utc": "2026-11-20T17:21:00Z",
+      "dependencies": [
+        "PHX-MASTER stage-ledger reconciliation"
+      ],
+      "remaining_work": "Retain/recheck evidence when dependent source changes"
+    },
+    {
+      "id": "PXA-FUN-002",
+      "subsystem": "BlazeRental Android",
+      "owner": "PHX-ANDROID",
+      "stage": "STAGE 04",
+      "dimension": "functional",
+      "mandatory": true,
+      "weight": 3,
+      "status": "VERIFIED",
+      "requirement_sources": [
+        "02_BLAZERENTAL_ANDROID.txt",
+        "expanded BlazeRental Android directive",
+        "2026-11-25 universal staged directive"
+      ],
+      "implementation_task": "Android API23 x86 installation and launcher start",
+      "acceptance_criterion": "Real emulator aapt/apksigner, adb install and Activity start pass",
+      "verification_method": "Source-exact GitHub Actions result + APK/emulator evidence",
+      "evidence": [
+        "https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44782114393"
+      ],
+      "verified_commit": "0e0da62acd47c6a1ce287f8a30fc700d603fa070",
+      "verified_at_utc": "2026-11-20T17:21:00Z",
+      "dependencies": [
+        "PHX-MASTER stage-ledger reconciliation"
+      ],
+      "remaining_work": "Retain/recheck evidence when dependent source changes"
+    },
+    {
+      "id": "PXA-FUN-003",
+      "subsystem": "BlazeRental Android",
+      "owner": "PHX-ANDROID",
+      "stage": "STAGE 02",
+      "dimension": "functional",
+      "mandatory": true,
+      "weight": 4,
+      "status": "VERIFICATION PENDING",
+      "requirement_sources": [
+        "02_BLAZERENTAL_ANDROID.txt",
+        "expanded BlazeRental Android directive",
+        "2026-11-25 universal staged directive"
+      ],
+      "implementation_task": "API27 seven lease + six installer instrumentation",
+      "acceptance_criterion": "Exact 13 JUnit tests executed and XML verifies zero failure, error or skip",
+      "verification_method": "PENDING: Exact 13 JUnit tests executed and XML verifies zero failure, error or skip",
+      "evidence": [],
+      "verified_commit": null,
+      "verified_at_utc": null,
+      "dependencies": [
+        "PHX-MASTER stage-ledger reconciliation"
+      ],
+      "remaining_work": "Demonstrate acceptance with exact commit and attached evidence"
+    },
+    {
+      "id": "PXA-FUN-004",
+      "subsystem": "BlazeRental Android",
+      "owner": "PHX-ANDROID",
+      "stage": "STAGE 03",
+      "dimension": "functional",
+      "mandatory": true,
+      "weight": 4,
+      "status": "UNKNOWN",
+      "requirement_sources": [
+        "02_BLAZERENTAL_ANDROID.txt",
+        "expanded BlazeRental Android directive",
+        "2026-11-25 universal staged directive"
+      ],
+      "implementation_task": "End-to-end paid/expired/renewed rental session",
+      "acceptance_criterion": "Backend lease and actual client entitlement transitions correlate",
+      "verification_method": "PENDING: Backend lease and actual client entitlement transitions correlate",
+      "evidence": [],
+      "verified_commit": null,
+      "verified_at_utc": null,
+      "dependencies": [
+        "PHX-MASTER stage-ledger reconciliation"
+      ],
+      "remaining_work": "Demonstrate acceptance with exact commit and attached evidence"
+    },
+    {
+      "id": "PXA-FUN-005",
+      "subsystem": "BlazeRental Android",
+      "owner": "PHX-ANDROID",
+      "stage": "STAGE 04",
+      "dimension": "functional",
+      "mandatory": true,
+      "weight": 3,
+      "status": "UNKNOWN",
+      "requirement_sources": [
+        "02_BLAZERENTAL_ANDROID.txt",
+        "expanded BlazeRental Android directive",
+        "2026-11-25 universal staged directive"
+      ],
+      "implementation_task": "Restart, process death, clock and expiry recovery",
+      "acceptance_criterion": "Deterministic safe lease state after reboot and manipulation",
+      "verification_method": "PENDING: Deterministic safe lease state after reboot and manipulation",
+      "evidence": [],
+      "verified_commit": null,
+      "verified_at_utc": null,
+      "dependencies": [
+        "PHX-MASTER stage-ledger reconciliation"
+      ],
+      "remaining_work": "Demonstrate acceptance with exact commit and attached evidence"
+    },
+    {
+      "id": "PXA-FUN-006",
+      "subsystem": "BlazeRental Android",
+      "owner": "PHX-ANDROID",
+      "stage": "STAGE 04",
+      "dimension": "functional",
+      "mandatory": true,
+      "weight": 2,
+      "status": "IN PROGRESS",
+      "requirement_sources": [
+        "02_BLAZERENTAL_ANDROID.txt",
+        "expanded BlazeRental Android directive",
+        "2026-11-25 universal staged directive"
+      ],
+      "implementation_task": "Native administrator and launcher accessibility/UX",
+      "acceptance_criterion": "Gesture, floating time indicator and clear error states tested",
+      "verification_method": "PENDING: Gesture, floating time indicator and clear error states tested",
+      "evidence": [],
+      "verified_commit": null,
+      "verified_at_utc": null,
+      "dependencies": [
+        "PHX-MASTER stage-ledger reconciliation"
+      ],
+      "remaining_work": "Demonstrate acceptance with exact commit and attached evidence"
+    },
+    {
+      "id": "PXA-INT-001",
+      "subsystem": "BlazeRental Android",
+      "owner": "PHX-ANDROID",
+      "stage": "STAGE 05",
+      "dimension": "integration",
+      "mandatory": true,
+      "weight": 5,
+      "status": "BLOCKED",
+      "requirement_sources": [
+        "02_BLAZERENTAL_ANDROID.txt",
+        "expanded BlazeRental Android directive",
+        "2026-11-25 universal staged directive"
+      ],
+      "implementation_task": "Real rental backend enrollment and authenticated status",
+      "acceptance_criterion": "Exact backend version and client contract end-to-end pass",
+      "verification_method": "PENDING: Exact backend version and client contract end-to-end pass",
+      "evidence": [],
+      "verified_commit": null,
+      "verified_at_utc": null,
+      "dependencies": [
+        "PHX-MASTER stage-ledger reconciliation"
+      ],
+      "remaining_work": "Demonstrate acceptance with exact commit and attached evidence"
+    },
+    {
+      "id": "PXA-INT-002",
+      "subsystem": "BlazeRental Android",
+      "owner": "PHX-ANDROID",
+      "stage": "STAGE 05",
+      "dimension": "integration",
+      "mandatory": true,
+      "weight": 6,
+      "status": "BLOCKED",
+      "requirement_sources": [
+        "02_BLAZERENTAL_ANDROID.txt",
+        "expanded BlazeRental Android directive",
+        "2026-11-25 universal staged directive"
+      ],
+      "implementation_task": "Coin-window durable signed receipt and replay coordination",
+      "acceptance_criterion": "No duplicate credit; receipt durable before lease ACK with PHX-CORE proof",
+      "verification_method": "PENDING: No duplicate credit; receipt durable before lease ACK with PHX-CORE proof",
+      "evidence": [],
+      "verified_commit": null,
+      "verified_at_utc": null,
+      "dependencies": [
+        "PHX-MASTER stage-ledger reconciliation"
+      ],
+      "remaining_work": "Demonstrate acceptance with exact commit and attached evidence"
+    },
+    {
+      "id": "PXA-INT-003",
+      "subsystem": "BlazeRental Android",
+      "owner": "PHX-ANDROID",
+      "stage": "STAGE 05",
+      "dimension": "integration",
+      "mandatory": true,
+      "weight": 4,
+      "status": "BLOCKED",
+      "requirement_sources": [
+        "02_BLAZERENTAL_ANDROID.txt",
+        "expanded BlazeRental Android directive",
+        "2026-11-25 universal staged directive"
+      ],
+      "implementation_task": "Disconnect, duplicate request and server fault recovery",
+      "acceptance_criterion": "Negative tests against isolated real rental server",
+      "verification_method": "PENDING: Negative tests against isolated real rental server",
+      "evidence": [],
+      "verified_commit": null,
+      "verified_at_utc": null,
+      "dependencies": [
+        "PHX-MASTER stage-ledger reconciliation"
+      ],
+      "remaining_work": "Demonstrate acceptance with exact commit and attached evidence"
+    },
+    {
+      "id": "PXA-QA-001",
+      "subsystem": "BlazeRental Android",
+      "owner": "PHX-ANDROID",
+      "stage": "STAGE 06",
+      "dimension": "qa_security",
+      "mandatory": true,
+      "weight": 5,
+      "status": "NOT STARTED",
+      "requirement_sources": [
+        "02_BLAZERENTAL_ANDROID.txt",
+        "expanded BlazeRental Android directive",
+        "2026-11-25 universal staged directive"
+      ],
+      "implementation_task": "Fresh Device Owner provisioning, lock and reversal",
+      "acceptance_criterion": "Disposable emulator DPC apply AND cleanup verified",
+      "verification_method": "PENDING: Disposable emulator DPC apply AND cleanup verified",
+      "evidence": [],
+      "verified_commit": null,
+      "verified_at_utc": null,
+      "dependencies": [
+        "PHX-MASTER stage-ledger reconciliation"
+      ],
+      "remaining_work": "Demonstrate acceptance with exact commit and attached evidence"
+    },
+    {
+      "id": "PXA-QA-002",
+      "subsystem": "BlazeRental Android",
+      "owner": "PHX-ANDROID",
+      "stage": "STAGE 06",
+      "dimension": "qa_security",
+      "mandatory": true,
+      "weight": 3,
+      "status": "NOT STARTED",
+      "requirement_sources": [
+        "02_BLAZERENTAL_ANDROID.txt",
+        "expanded BlazeRental Android directive",
+        "2026-11-25 universal staged directive"
+      ],
+      "implementation_task": "Work Profile boundaries and owner privilege",
+      "acceptance_criterion": "Fresh managed-profile provisioning and scoped policies tested",
+      "verification_method": "PENDING: Fresh managed-profile provisioning and scoped policies tested",
+      "evidence": [],
+      "verified_commit": null,
+      "verified_at_utc": null,
+      "dependencies": [
+        "PHX-MASTER stage-ledger reconciliation"
+      ],
+      "remaining_work": "Demonstrate acceptance with exact commit and attached evidence"
+    },
+    {
+      "id": "PXA-QA-003",
+      "subsystem": "BlazeRental Android",
+      "owner": "PHX-ANDROID",
+      "stage": "STAGE 06",
+      "dimension": "qa_security",
+      "mandatory": true,
+      "weight": 4,
+      "status": "NOT STARTED",
+      "requirement_sources": [
+        "02_BLAZERENTAL_ANDROID.txt",
+        "expanded BlazeRental Android directive",
+        "2026-11-25 universal staged directive"
+      ],
+      "implementation_task": "Adversarial network, time, update and fault injection",
+      "acceptance_criterion": "Fail closed without irreversible lockout",
+      "verification_method": "PENDING: Fail closed without irreversible lockout",
+      "evidence": [],
+      "verified_commit": null,
+      "verified_at_utc": null,
+      "dependencies": [
+        "PHX-MASTER stage-ledger reconciliation"
+      ],
+      "remaining_work": "Demonstrate acceptance with exact commit and attached evidence"
+    },
+    {
+      "id": "PXA-QA-004",
+      "subsystem": "BlazeRental Android",
+      "owner": "PHX-ANDROID",
+      "stage": "STAGE 04",
+      "dimension": "qa_security",
+      "mandatory": true,
+      "weight": 3,
+      "status": "NOT STARTED",
+      "requirement_sources": [
+        "02_BLAZERENTAL_ANDROID.txt",
+        "expanded BlazeRental Android directive",
+        "2026-11-25 universal staged directive"
+      ],
+      "implementation_task": "Android API26+ and physical ARM/ARM64 OEM coverage",
+      "acceptance_criterion": "Required API and ABI matrix with device execution logs",
+      "verification_method": "PENDING: Required API and ABI matrix with device execution logs",
+      "evidence": [],
+      "verified_commit": null,
+      "verified_at_utc": null,
+      "dependencies": [
+        "PHX-MASTER stage-ledger reconciliation"
+      ],
+      "remaining_work": "Demonstrate acceptance with exact commit and attached evidence"
+    },
+    {
+      "id": "PXA-REL-001",
+      "subsystem": "BlazeRental Android",
+      "owner": "PHX-ANDROID",
+      "stage": "STAGE 07",
+      "dimension": "release",
+      "mandatory": true,
+      "weight": 4,
+      "status": "BLOCKED",
+      "requirement_sources": [
+        "02_BLAZERENTAL_ANDROID.txt",
+        "expanded BlazeRental Android directive",
+        "2026-11-25 universal staged directive"
+      ],
+      "implementation_task": "Lineage-2 certificate and production versionCode continuity",
+      "acceptance_criterion": "Signed candidate fingerprint and upgrade signer chain verified",
+      "verification_method": "PENDING: Signed candidate fingerprint and upgrade signer chain verified",
+      "evidence": [],
+      "verified_commit": null,
+      "verified_at_utc": null,
+      "dependencies": [
+        "PHX-MASTER stage-ledger reconciliation"
+      ],
+      "remaining_work": "Demonstrate acceptance with exact commit and attached evidence"
+    },
+    {
+      "id": "PXA-REL-002",
+      "subsystem": "BlazeRental Android",
+      "owner": "PHX-ANDROID",
+      "stage": "STAGE 07",
+      "dimension": "release",
+      "mandatory": true,
+      "weight": 4,
+      "status": "BLOCKED",
+      "requirement_sources": [
+        "02_BLAZERENTAL_ANDROID.txt",
+        "expanded BlazeRental Android directive",
+        "2026-11-25 universal staged directive"
+      ],
+      "implementation_task": "Same-signer rollback rescue and update",
+      "acceptance_criterion": "Physical/managed-device actual install, upgrade and rescue verified",
+      "verification_method": "PENDING: Physical/managed-device actual install, upgrade and rescue verified",
+      "evidence": [],
+      "verified_commit": null,
+      "verified_at_utc": null,
+      "dependencies": [
+        "PHX-MASTER stage-ledger reconciliation"
+      ],
+      "remaining_work": "Demonstrate acceptance with exact commit and attached evidence"
+    },
+    {
+      "id": "PXA-REL-003",
+      "subsystem": "BlazeRental Android",
+      "owner": "PHX-ANDROID",
+      "stage": "STAGE 07",
+      "dimension": "release",
+      "mandatory": true,
+      "weight": 2,
+      "status": "NOT STARTED",
+      "requirement_sources": [
+        "02_BLAZERENTAL_ANDROID.txt",
+        "expanded BlazeRental Android directive",
+        "2026-11-25 universal staged directive"
+      ],
+      "implementation_task": "Reproducible release packaging and provenance",
+      "acceptance_criterion": "Manifest, source SHA, build instructions and artifacts SHA256 verified",
+      "verification_method": "PENDING: Manifest, source SHA, build instructions and artifacts SHA256 verified",
+      "evidence": [],
+      "verified_commit": null,
+      "verified_at_utc": null,
+      "dependencies": [
+        "PHX-MASTER stage-ledger reconciliation"
+      ],
+      "remaining_work": "Demonstrate acceptance with exact commit and attached evidence"
+    },
+    {
+      "id": "PXA-DEP-001",
+      "subsystem": "BlazeRental Android",
+      "owner": "PHX-ANDROID",
+      "stage": "STAGE 08",
+      "dimension": "deployment",
+      "mandatory": true,
+      "weight": 4,
+      "status": "NOT STARTED",
+      "requirement_sources": [
+        "02_BLAZERENTAL_ANDROID.txt",
+        "expanded BlazeRental Android directive",
+        "2026-11-25 universal staged directive"
+      ],
+      "implementation_task": "Operator provisioning and deprovisioning",
+      "acceptance_criterion": "Controlled device procedures and emergency recovery validated",
+      "verification_method": "PENDING: Controlled device procedures and emergency recovery validated",
+      "evidence": [],
+      "verified_commit": null,
+      "verified_at_utc": null,
+      "dependencies": [
+        "PHX-MASTER stage-ledger reconciliation"
+      ],
+      "remaining_work": "Demonstrate acceptance with exact commit and attached evidence"
+    },
+    {
+      "id": "PXA-DEP-002",
+      "subsystem": "BlazeRental Android",
+      "owner": "PHX-ANDROID",
+      "stage": "STAGE 08",
+      "dimension": "deployment",
+      "mandatory": true,
+      "weight": 3,
+      "status": "BLOCKED",
+      "requirement_sources": [
+        "02_BLAZERENTAL_ANDROID.txt",
+        "expanded BlazeRental Android directive",
+        "2026-11-25 universal staged directive"
+      ],
+      "implementation_task": "Managed-device upgrade and data persistence",
+      "acceptance_criterion": "Upgrade/rollback state and identity preservation on authorized hardware",
+      "verification_method": "PENDING: Upgrade/rollback state and identity preservation on authorized hardware",
+      "evidence": [],
+      "verified_commit": null,
+      "verified_at_utc": null,
+      "dependencies": [
+        "PHX-MASTER stage-ledger reconciliation"
+      ],
+      "remaining_work": "Demonstrate acceptance with exact commit and attached evidence"
+    },
+    {
+      "id": "PXA-PROD-001",
+      "subsystem": "BlazeRental Android",
+      "owner": "PHX-ANDROID",
+      "stage": "STAGE 09",
+      "dimension": "actual_deployment",
+      "mandatory": true,
+      "weight": 2,
+      "status": "NOT STARTED",
+      "requirement_sources": [
+        "02_BLAZERENTAL_ANDROID.txt",
+        "expanded BlazeRental Android directive",
+        "2026-11-25 universal staged directive"
+      ],
+      "implementation_task": "Authorized operational production acceptance",
+      "acceptance_criterion": "Every required deployment target has real install/operation acceptance",
+      "verification_method": "PENDING: Every required deployment target has real install/operation acceptance",
+      "evidence": [],
+      "verified_commit": null,
+      "verified_at_utc": null,
+      "dependencies": [
+        "PHX-MASTER stage-ledger reconciliation"
+      ],
+      "remaining_work": "Demonstrate acceptance with exact commit and attached evidence"
+    }
+  ],
+  "current_source": "BlazeDevStudio/BlazingSystems-Experiments",
+  "base_pr": 328,
+  "notes": [
+    "Current whole-product progress remains provisional until PHX-MASTER confirms scope and conflicts.",
+    "Only VERIFIED criterion weight counts; no fractional completion credits.",
+    "API21/API23 evidence comes from fixed APK smoke run on candidate 0e0...; later native-workflow-only changes do not affect tested APK source."
+  ]
+}
