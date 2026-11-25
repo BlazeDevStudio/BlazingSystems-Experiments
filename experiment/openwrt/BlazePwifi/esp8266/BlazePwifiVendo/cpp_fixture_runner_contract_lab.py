@@ -133,6 +133,48 @@ class CppFixtureRunnerContractTests(unittest.TestCase):
                     write_text.assert_not_called()
                     process_run.assert_not_called()
 
+    def test_unsafe_prefixes_are_rejected_before_tempfile_creation(self):
+        class FakeTemporaryDirectory:
+            def __enter__(self):
+                return "/tmp/phx-runner-contract-safe"
+
+            def __exit__(self, *args):
+                return False
+
+        invalid_prefixes = (
+            None,
+            7,
+            "../escape",
+            "/tmp/escape",
+            r"..\\escape",
+            r"C:\\escape",
+            "C:relative",
+            "\\x00",
+        )
+        for prefix in invalid_prefixes:
+            with self.subTest(prefix=prefix):
+                with patch(
+                    "cpp_fixture_runner.tempfile.TemporaryDirectory",
+                    return_value=FakeTemporaryDirectory(),
+                ) as temporary_directory, patch(
+                    "cpp_fixture_runner.Path.write_text"
+                ) as write_text, patch(
+                    "cpp_fixture_runner.subprocess.run"
+                ) as process_run:
+                    with self.assertRaisesRegex(
+                        ValueError,
+                        "prefix must be a safe filename prefix",
+                    ):
+                        run_cpp_fixture(
+                            "int main() { return 0; }",
+                            prefix=prefix,
+                            stem="fixture",
+                        )
+
+                    temporary_directory.assert_not_called()
+                    write_text.assert_not_called()
+                    process_run.assert_not_called()
+
     def test_compile_timeout_is_reported_with_context(self):
         timeout = subprocess.TimeoutExpired(cmd=["g++"], timeout=30)
         temp_dirs = []
@@ -350,7 +392,7 @@ def verify():
     result = unittest.TextTestRunner(verbosity=1).run(suite)
     if not result.wasSuccessful():
         raise SystemExit(1)
-    print("CPP_FIXTURE_RUNNER_CONTRACT_PASS 9/9")
+    print("CPP_FIXTURE_RUNNER_CONTRACT_PASS 10/10")
 
 
 if __name__ == "__main__":
