@@ -62,6 +62,53 @@ def _open_regular_image(path: str | Path, expected_name: str) -> tuple[Path, int
         raise
 
 
+def _record_cleanup_failure(primary_error: BaseException, detail: str) -> None:
+    """Attach cleanup diagnostics without replacing the error being handled."""
+    try:
+        add_note = getattr(primary_error, "add_note", None)
+        if callable(add_note):
+            add_note(detail)
+        else:
+            sys.stderr.write(detail + "\\n")
+    except BaseException:
+        # Cleanup diagnostics must never replace the operation or cleanup error.
+        pass
+
+
+def _close_descriptors_preserving_primary(
+    descriptors: tuple[int, ...],
+    primary_error: BaseException | None,
+) -> None:
+    """Attempt every owned descriptor once and preserve the primary failure."""
+    cleanup_errors: list[BaseException] = []
+    for descriptor in descriptors:
+        try:
+            os.close(descriptor)
+        except BaseException as cleanup_error:
+            cleanup_errors.append(cleanup_error)
+
+    if not cleanup_errors:
+        return
+
+    if primary_error is not None:
+        for index, cleanup_error in enumerate(cleanup_errors, start=1):
+            _record_cleanup_failure(
+                primary_error,
+                "ESP32 image descriptor cleanup failure "
+                f"{index}: {type(cleanup_error).__name__}: {cleanup_error}",
+            )
+        return
+
+    first_error = cleanup_errors[0]
+    for index, cleanup_error in enumerate(cleanup_errors[1:], start=2):
+        _record_cleanup_failure(
+            first_error,
+            "additional ESP32 image descriptor cleanup failure "
+            f"{index}: {type(cleanup_error).__name__}: {cleanup_error}",
+        )
+    raise first_error
+
+
 def _verify_stable(path: Path, descriptor: int, before: os.stat_result) -> None:
     after_open = os.fstat(descriptor)
     after_path = path.lstat()
@@ -279,6 +326,7 @@ def compare_application_images(
     expected_name = f"{sketch_name}.ino.bin"
 
     first_path, first_fd, first_before = _open_regular_image(first_image, expected_name)
+    primary_error: BaseException | None = None
     try:
         second_path, second_fd, second_before = _open_regular_image(second_image, expected_name)
         try:
@@ -391,10 +439,16 @@ def compare_application_images(
                 )
 
             return expected_name, first_size, first_sha256
+        except BaseException as exc:
+            primary_error = exc
+            raise
         finally:
-            os.close(second_fd)
+            _close_descriptors_preserving_primary((second_fd,), primary_error)
+    except BaseException as exc:
+        primary_error = exc
+        raise
     finally:
-        os.close(first_fd)
+        _close_descriptors_preserving_primary((first_fd,), primary_error)
 
 
 def main() -> int:
