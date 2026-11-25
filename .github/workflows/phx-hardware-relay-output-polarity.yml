@@ -39,6 +39,8 @@ on:
       - "experiment/openwrt/BlazePwifi/docs/handover/2026-11-24-hw-cpp-fixture-runner-contract-utc19.md"
       - "experiment/openwrt/BlazePwifi/docs/handover/2026-11-25-hw-first-fault-edge-runner-shared-utc00.md"
       - ".github/workflows/phx-hardware-relay-output-polarity.yml"
+      - "experiment/openwrt/BlazePwifi/PROJECT_HANDOVER.md"
+      - "experiment/openwrt/BlazePwifi/docs/handover/2026-11-25-hw-cpp-fixture-prefix-containment-utc04.md"
       - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_pending_recovery_lab_fixtures.py"
   pull_request:
     paths:
@@ -65,6 +67,8 @@ on:
       - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/bounded_http_response_lab.py"
       - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_window_timeline_guard_lab.py"
       - ".github/workflows/phx-hardware-relay-output-polarity.yml"
+      - "experiment/openwrt/BlazePwifi/PROJECT_HANDOVER.md"
+      - "experiment/openwrt/BlazePwifi/docs/handover/2026-11-25-hw-cpp-fixture-prefix-containment-utc04.md"
       - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_loop_blocking_inhibit_lab_fixtures.py"
       - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_loop_blocking_inhibit_lab_runtime_fixtures.py"
       - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_loop_blocking_inhibit_lab_scenario_fixtures.py"
