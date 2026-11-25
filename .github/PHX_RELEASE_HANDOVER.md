@@ -1,3 +1,53 @@
+## PHX-RELEASE UTC07 — exact live refs and exact-head CI reconciliation
+
+**Activation date:** 2026-11-25, UTC07. **Disposition:** current-reference handover guard added test-first; the expected RED is reproduced; the final handover section is now recorded. PR #291 remains OPEN / DRAFT / UNMERGED. Strict NO Codex. No non-RELEASE source is changed by this activation.
+
+### Exact branch and test identity
+
+- Repository: `BlazeDevStudio/BlazingSystems-Experiments`.
+- PR #291 branch: `phoenix/release-publisher-isolation-20261115`; base PR #242: `734b89d9e7792247e8376335c3f3685500ab3f89`.
+- PR #291 observed starting head at activation preflight: `07eb78dec7094a7a6938102dbb814e0007538fac`.
+- Existing RELEASE implementation/source-test baseline: `ea8e66b9a7a2833656af984630909575fe4a1759`.
+- Test-first current-reference guard commit: [`980b8f63`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/980b8f63edda603a32816a70ffb4800152ad8278). Its first section-boundary fixture encoded escaped newlines incorrectly and is not accepted as RED evidence.
+- Test fixture correction: [`76d3e423`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/76d3e4239f06545740ed618646342b5fdf822648). This is the corrected source/test head for the UTC07 handover guard.
+- Corrected expected RED: [Full run #45568431411](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45568431411), CI-0701 job `139048860284`: **33 tests ran; 24 expected assertion failures** because the current handover did not yet contain the UTC07 section and its exact references. The section-boundary test passed. The initial fixture run [#45568337380](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45568337380) is retained as an invalid fixture attempt, not accepted as the expected RED.
+- This activation's code/test change is confined to `.github/scripts/test_phx_release_handover_current_refs.py`; the handover update below is confined to `.github/PHX_RELEASE_HANDOVER.md`.
+
+### Live cross-repository refs observed before this activation's commits
+
+- MASTER PR #288: OPEN / DRAFT / UNMERGED; head `025aadaa71aadf7fc09d53e0b623356c5550fe17`, base `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`.
+- MASTER ownership manifest blob: `e4db324315a1b3543fec17a148fbf960170fcb29`; 11 routes; status `DRAFT_REVIEW_ONLY`. PHX-RELEASE's route remains `reimplementation-review` for `.github/workflows/blazepwifi-build.yml` toward `.github/workflows/pisowifi-ci.yml`; this is review coordination, not copy/move/merge authority.
+- Experiments PR #242: OPEN / DRAFT; head `734b89d9e7792247e8376335c3f3685500ab3f89`, base `6d4c9b487af4d768c4d7627654d119417fcc6e00`.
+- Experiments PR #291: OPEN / DRAFT; observed starting head `07eb78dec7094a7a6938102dbb814e0007538fac`, base `734b89d9e7792247e8376335c3f3685500ab3f89`.
+- COE integration PR #26: OPEN / DRAFT / FROZEN; head `b382d233ff06c8791b1028bed3c617cc7b670d12`, base `a6513ab4412b4c014eee2863e45cbe32d06cb243`. Five workflows remain queued with zero executed jobs; no destination migration/write is authorized.
+- COE release-packager parent PR #31: OPEN / DRAFT; head `59ed44d0b911e176f1a95b9cf5585ef811ffd31b`, base `b382d233ff06c8791b1028bed3c617cc7b670d12`. Its handover records the shared validation and case-collision checks passing; mandatory Bubblewrap namespace setup remains blocked by hosted-runner UID-map permission.
+- COE release-packager child PR #35: OPEN / DRAFT; head `f611c96091a1014ad36bf64251c180bcbc2d1f65`, base `59ed44d0b911e176f1a95b9cf5585ef811ffd31b`. Its current handover records 223 tests (221 pass, 2 intentional skips), then all 10 appliance profiles failing closed for absent approved site-scoped RFC 4193 ULA /48 authority; sandbox host preflight 40/40 pass, then Bubblewrap unavailable / exit 125; case-collision guard pass.
+- Cleanup-first #266 remains OPEN, **0/7** role tracks complete.
+- The authorized Library search did not return the private Drive project **registry v11**; it is **not available** through the current authorized retrieval result. No older snapshot was substituted and no private registry content or identifiers were copied into GitHub.
+
+### Exact-head GitHub Actions observed at the pre-change PR #291 head `07eb78de`
+
+- Full build [#45563731601](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45563731601): overall **FAILURE**. The `validate` job's mandatory handover freshness step failed because CORE-owned `experiment/openwrt/BlazePwifi/docs/handover/CURRENT_STATE.md` was older than source/workflow changes; last checkpoint reported by the gate: `d85eb6a2766781b6cac1807cef461993d8216b84`. All **14/14 target/platform jobs PASS**. Downstream update/simulation/signing/publication jobs were skipped after the mandatory gate failed. This is not a full-build pass.
+- Windows release [#45563731613](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45563731613): overall **FAILURE** at the same shared CORE-owned handover freshness gate; `publish-release` and `build-windows` were **SKIPPED**.
+- ESP32 compatibility [#45563731645](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45563731645): **SUCCESS (3/3 jobs)** — provenance regression suite, ESP32 core 3.3.13, and ESP32 core 4.0.0. Both core jobs verified HARDWARE #349 source/test `f591cb85ba032e4f2c30e5008c71de9ce8d17f2e` and sketch blob `adfd2f110d88243d03f2195658fb456b154dcb84`, then performed two clean builds with byte-identical images within each core version. Hosted CI only; not production binary or physical hardware acceptance.
+- Corrected test-only head Full run [#45568431411](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45568431411): intentional CI-0701 RED described above; downstream target/validation jobs skipped. Windows run [#45568431307](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45568431307): same CORE freshness failure; build/publisher skipped. Compatibility run [#45568431310](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45568431310) was pending at the last run read; no result is claimed.
+
+### Ownership boundary and next owners
+
+- PR #291 has **31 accumulated changed paths**: **26 RELEASE / 3 CORE / 2 PISONET**. These inherited non-RELEASE paths remain outside PHX-RELEASE's edit authority.
+- The pre-activation comparison `8f444097..07eb78de` showed three documentation paths changed: this RELEASE handover plus CORE-owned `experiment/openwrt/BlazePwifi/PROJECT_HANDOVER.md` and `docs/handover/CHANGE_LEDGER.md`. Those two CORE paths are pre-existing branch history, not changes made by this activation. PHX-MASTER and PHX-CORE must reconcile the ownership overlap; RELEASE will not edit or revert them.
+- **This increment changes only RELEASE-owned paths.** No CORE, RENTAL, PISONET, HARDWARE, QA, MASTER or COE destination source is modified. PR #291 currently has zero independent reviews recorded.
+- **PHX-CORE:** refresh its canonical `CURRENT_STATE.md` / `PROJECT_HANDOVER.md` and publish the exact freshness SHA; RELEASE will not bypass or rewrite the gate.
+- **PHX-MASTER:** reconcile the inherited mixed-owner PR paths and refresh the #291 child pointer after the final handover commit; retain `DRAFT_REVIEW_ONLY` / `reimplementation-review`.
+- **PHX-QA:** independently review the current-reference guard and the existing release source/test changes.
+- **PHX-INFRA / COE owners:** provide an authorized Bubblewrap-capable disposable no-secret runner and the approved site-scoped ULA /48 authority.
+- **Registry custodian:** restore authorized provenance-only access to private Drive registry v11.
+
+### Release disposition
+
+**PRODUCTION NO-GO.** Protected production signer and independent freshness witness are not established; durable financial accounting and migration are not accepted; independent QA/MASTER approvals are pending; approved production binaries are not established; **150 physical power cuts** and the **30-device/24-hour soak** are **NOT TESTED**. No merge, tag, signing, publication, hardware flash, real payment migration or customer deployment occurred.
+
+
 ## PHX-RELEASE UTC 2026-11-25 — supersession audit: ESP32 reproducible-build verifier hardening
 
 - Compatible draft head `8f444097d398b429bf4109bfdf3d8dc5f9746cdd` already contains the RELEASE-owned ESP32 reproducible-build verifier hardening and regression coverage in `.github/scripts/verify_esp32_reproducible_build.py`, `.github/scripts/test_verify_esp32_reproducible_build.py`, and the compatibility workflow. No implementation was duplicated and no non-RELEASE source was changed.
