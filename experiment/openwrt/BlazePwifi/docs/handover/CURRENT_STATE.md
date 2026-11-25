@@ -780,3 +780,12 @@ The current commit updates `PROJECT_HANDOVER.md`, `CURRENT_STATE.md`, and `CHANG
 - Full [run 44683292995](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44683292995), validation job `136112096462`: **FAILED** the mandatory handover freshness gate because the canonical handovers had been committed before the narrow handover file. ESP8266 target job `136112096417` passed; other target/Android jobs were still running at the last read. This is not Full PASS and not a source/test failure.
 - The three canonical handovers are now updated **after** the narrow handover to make the next exact-head freshness evaluation meaningful. No firmware source or runtime behavior changed in this documentation successor.
 - Status: focused header **CI VERIFIED**; Full build **NOT VERIFIED**; hardware **NOT TESTED**; production **NO-GO**.
+<!-- PHX-HW-20261125-UTC22-EQUAL-FIXED-NULL-EMPTY:START -->
+> **PHX-HARDWARE / PR #348 — focused CI VERIFIED / Full freshness gate FAILED at prior docs head / HARDWARE NOT TESTED / PRODUCTION NO-GO.**
+> Source/test: `659b1e646ba6d3efdbe6e03df4ab4f170a89f0e1`; test: `2147c9ae46ae862cb355d2da3b4df1787180689e`; pre-sync docs head: `5c6f8be5c8be6c88cfca5156b7dff3a3ebdad0cf`.
+> Change: `equal_fixed()` fails closed for null pointers and empty spans before dereference; fixed-length XOR accumulation is retained for nonempty comparisons. Native tests include null/empty/equal/mismatch cases.
+> Focused [#45715852392](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45715852392), job `139561583988`: PASS, actual header compiled with Mbed TLS 2.28.8, C++17, warnings-as-errors, ASan/UBSan; Phase-A deny guard PASS.
+> Full [#45715852140](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45715852140), validation job `139562147363`: FAILED only at mandatory handover freshness because the canonical docs predated source/test commits. Target jobs were still running; no Full result claimed. This entry synchronizes the canonical hardware records; re-run Full at the new docs head.
+> Phase-A coin/relay admission remains DENY. No application sketch, CORE API, financial state, signer/witness, migration, physical device or COE destination changed.
+<!-- PHX-HW-20261125-UTC22-EQUAL-FIXED-NULL-EMPTY:END -->
+
