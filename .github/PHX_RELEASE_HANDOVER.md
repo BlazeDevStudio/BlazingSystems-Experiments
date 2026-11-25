@@ -2404,14 +2404,17 @@ Only RELEASE-owned test, compatibility workflow and this RELEASE handover are in
 ---
 ## PHX-RELEASE CURRENT SOURCE ANCHOR (machine-checked)
 
-This is the single machine-checked current pointer for the RELEASE ESP32 compatibility workflow. The source/test, latest documentation commit, and live PR head are pinned separately.
+This is the single machine-checked current pointer for the RELEASE ESP32 compatibility workflow. The focused-pass source/test commit, latest documentation commit, and current PR head are pinned separately.
 
-- HARDWARE #349 source/test SHA: `f591cb85ba032e4f2c30e5008c71de9ce8d17f2e`.
-- HARDWARE #349 docs HEAD: `dc6ef11c104fdd9b73dfdd1120ca3a2bc3f86dcf`.
-- HARDWARE #349 PR HEAD: `56de0761ca67b54feb4889401a810b0069f50614`.
-- ESP32 sketch Git blob SHA: `adfd2f110d88243d03f2195658fb456b154dcb84`.
-- Exact-source compatibility matrix: [#45553387775](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45553387775) — SUCCESS (3/3 jobs).
-- Source/test-to-docs comparison: source/test `f591cb85ba032e4f2c30e5008c71de9ce8d17f2e` contains the current HARDWARE #349 code snapshot; docs commit `dc6ef11c104fdd9b73dfdd1120ca3a2bc3f86dcf` adds the current handover; PR head `56de0761ca67b54feb4889401a810b0069f50614` adds the subsequent focused-workflow path-filter correction. The ESP32 sketch blob is unchanged between the source/test commit and current PR head.
+- HARDWARE #349 source/test SHA (last focused-pass): `059e3bbde935a86de0fa0e31e06d1ebb36755c4f`.
+- HARDWARE #349 docs HEAD: `de75e6166a9023b5f6e75c39141201282cac58f1`.
+- HARDWARE #349 PR HEAD (current, not qualified): `de75e6166a9023b5f6e75c39141201282cac58f1`.
+- ESP32 sketch Git blob SHA (last focused-pass source): `c07aba7d518ef7eb5d536aafdd77ef6193e676cb`.
+- Latest PR-head ESP32 sketch Git blob SHA (not release-qualified): `c07aba7d518ef7eb5d536aafdd77ef6193e676cb`.
+- Release pin advanced to the latest focused-pass source/test SHA after exact-source Quarantine and Relay passed; the current docs/PR head retains the same sketch blob.
+- Current PR-head Quarantine: #45574159279 — SUCCESS; Relay #45574159323 — SUCCESS; Full #45574159334 — FAILURE at QA-owned Missing poll signature check; no Full or production qualification.
+- Exact-source compatibility matrix: PENDING — no run claimed yet.
+- Source/test-to-docs comparison: source/test `059e3bbde935a86de0fa0e31e06d1ebb36755c4f` is the exact focused-pass code snapshot; docs/PR head `de75e6166a9023b5f6e75c39141201282cac58f1` is its documentation-only descendant. The ESP32 sketch blob is identical at both refs.
 - Evidence boundary: hosted CI only. This matrix does not establish physical hardware acceptance or production binary approval.
 
 ## PHX-RELEASE UTC09 — exact-head Full workflow follow-through
@@ -4353,3 +4356,44 @@ Only these RELEASE-owned paths changed for this increment:
 - **Registry custodian:** restore authorized access to private Drive registry v11.
 
 No merge, workflow dispatch, signing, tag, release, publication, hardware flash, real payment migration or customer deployment. Hosted CI and synthetic tests are not physical acceptance. Protected signer, independent freshness witness, durable accounting/migration, independent QA/Master approval, approved production binaries, 150 physical power cuts and 30-device/24-hour soak remain unestablished or NOT TESTED. **PRODUCTION NO-GO.**
+
+## PHX-RELEASE UTC08 — current HARDWARE #349 focused-pass source pin refresh
+
+**Disposition:** one RELEASE-owned compatibility source-pin correction on existing PR #291. OPEN / DRAFT / UNMERGED. Strict NO Codex. No merge, workflow dispatch, signer operation, tag, release, publication, hardware flash, payment migration or customer deployment.
+
+### Live refs and test-first evidence
+
+- PR #291 branch `phoenix/release-publisher-isolation-20261115`; starting head at this activation: `511468e9a9a31b9a476289b54d51bd0311a2e692`; base PR #242: `734b89d9e7792247e8376335c3f3685500ab3f89`.
+- Test-only commit `511468e9a9a31b9a476289b54d51bd0311a2e692` deliberately changed the source guard to reject the previous HARDWARE pin. Expected RED: [Full #45572666682](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45572666682), CI-0701 job `139062878714`; the 33-test handover-reference suite passed, then the compatibility contract failed because the workflow still pinned `f591cb85ba032e4f2c30e5008c71de9ce8d17f2e` / `adfd2f110d88243d03f2195658fb456b154dcb84`. This is the intended stale-pin regression, not a compiler failure.
+- Current HARDWARE #349 source/test is `059e3bbde935a86de0fa0e31e06d1ebb36755c4f`; current docs/PR head is `de75e6166a9023b5f6e75c39141201282cac58f1`. The ESP32 sketch blob is `c07aba7d518ef7eb5d536aafdd77ef6193e676cb` at both refs.
+- The exact source/test run metadata was read back: Quarantine [#45574159279](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45574159279) SUCCESS; Relay [#45574159323](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45574159323) SUCCESS. Full [#45574159334](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45574159334) FAILED at validation / Controller protocol parity (QA-owned Missing poll signature check); 14/14 target/platform + Android jobs succeeded, downstream update/simulation/sign/publish jobs were skipped. Focused CI is not hardware acceptance.
+- The previous PR #291 compatibility run [#45572666679](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45572666679) passed 3/3 but built the older `f591cb85` source. It is superseded and is not evidence for the current HARDWARE #349 snapshot.
+- Windows [#45572666627](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45572666627) FAILED at the shared CORE-owned freshness gate; `CURRENT_STATE.md` checkpoint reported by the gate is `d85eb6a2766781b6cac1807cef461993d8216b84`. Windows build and publisher were skipped. RELEASE did not modify CORE's handover.
+
+### RELEASE-owned change and ownership boundary
+
+- Updated only the compatibility workflow source pin, its exact-source regression guard, and this RELEASE handover.
+- The workflow remains read-only (`contents: read`), immutable-action pinned, and limited to ESP32 core 3.3.13 / 4.0.0. No secrets, artifact publication, hardware writes or signer path were added.
+- PR #291's accumulated 31-path diff includes inherited CORE and PISONET paths; this increment changes only RELEASE-owned files. MASTER retains cross-repository route and child-pointer coordination.
+
+### Live coordination and external dependencies
+
+- MASTER PR #288: OPEN / DRAFT / UNMERGED at `025aadaa71aadf7fc09d53e0b623356c5550fe17`. Ownership manifest `OWNERSHIP_ROUTES.json` blob `e4db324315a1b3543fec17a148fbf960170fcb29`: 11 routes, `DRAFT_REVIEW_ONLY`; RELEASE route is `reimplementation-review`, not copy/move authority.
+- Cleanup-first #266 remains OPEN / 0-of-7. MASTER/CORE/QA/HARDWARE retain their own source scopes.
+- COE #26 remains OPEN / DRAFT / FROZEN at `b382d233ff06c8791b1028bed3c617cc7b670d12`; five workflows queued, zero jobs. No destination write or migration.
+- COE #31 remains OPEN / DRAFT at `59ed44d0b911e176f1a95b9cf5585ef811ffd31b`; its current observed shared-contract and case-collision runs pass, mandatory Bubblewrap sandbox fails closed at hosted-runner namespace setup.
+- COE #35 remains OPEN / DRAFT at `f611c96091a1014ad36bf64251c180bcbc2d1f65`; its handover records 221/223 host tests passing (2 intentional skips), 10/10 site-ULA profile admissions failing closed, sandbox host preflight 40/40 then Bubblewrap unavailable / exit 125, and case-collision PASS. No unsandboxed fallback or invented ULA.
+- Experiments `main@f4e8a891aed8af86d5fd315d28750a0ac3a7372b` reports `protected=false`; visible repository rulesets are empty. This remains a release-governance blocker, not an invitation to bypass branch protection.
+- Authorized Library search did not surface private Drive `BLAZE_PROJECT_REGISTRY_v11_20261027.json`; v3–v7 snapshots are not substitutes and were not used. No private registry contents or identifiers are copied into GitHub.
+
+### Next actions
+
+1. PHX-RELEASE verifies the exact-source compatibility matrix and then its final docs-head recheck.
+2. PHX-CORE publishes the canonical current-state/freshness checkpoint; RELEASE reruns Full and Windows only after that exact SHA is available.
+3. PHX-QA independently reviews the source pin and continues poll-signature assertion reconciliation with CORE.
+4. PHX-MASTER refreshes the #291 child pointer without changing the review-only route.
+5. PHX-INFRA supplies an authorized disposable Bubblewrap-capable runner; the network-authority owner supplies approved site-scoped RFC 4193 ULA /48 authority for COE #35.
+6. Registry custodian restores authorized provenance-only access to private Drive v11.
+
+**PRODUCTION NO-GO.** Protected production signer and independent freshness witness, durable financial accounting and reversible migration, independent QA/MASTER approvals, approved production binaries, 150 physical power cuts and 30-device/24-hour soak remain unestablished or NOT TESTED.
+

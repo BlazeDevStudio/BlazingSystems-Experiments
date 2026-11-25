@@ -20,13 +20,13 @@ SYMBOL_HELPER = ROOT / ".github/scripts/inspect_esp32_elf_symbols.py"
 SYMBOL_TEST = ROOT / ".github/scripts/test_inspect_esp32_elf_symbols.py"
 # Last focused-pass PHX-HARDWARE #349 source/test snapshot. The current PR head is
 # recorded separately and must not be built until its own focused jobs pass.
-HARDWARE_SOURCE_SHA = "4ba665b5c36b1828735242b35de4302d3e2f6068"
-HARDWARE_DOCS_HEAD_SHA = "e8c0321b9ba827bd9cc5dad572a1c09f864e1440"
+HARDWARE_SOURCE_SHA = "059e3bbde935a86de0fa0e31e06d1ebb36755c4f"
+HARDWARE_DOCS_HEAD_SHA = "de75e6166a9023b5f6e75c39141201282cac58f1"
 HARDWARE_SKETCH_PATH = (
     "experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino"
 )
-HARDWARE_SKETCH_BLOB = "643f35399fe7e614b948207a326416ea175bcadc"
-HARDWARE_PR_HEAD_SHA = "06c5597d3ca921dd9302ce56f099ee054a893cbb"
+HARDWARE_SKETCH_BLOB = "c07aba7d518ef7eb5d536aafdd77ef6193e676cb"
+HARDWARE_PR_HEAD_SHA = "de75e6166a9023b5f6e75c39141201282cac58f1"
 HARDWARE_PR_HEAD_SKETCH_BLOB = "c07aba7d518ef7eb5d536aafdd77ef6193e676cb"
 CHECKOUT_SHA = "3d3c42e5aac5ba805825da76410c181273ba90b1"
 ARDUINO_SETUP_SHA = "b3cda96fddef6af6c56b4c5efb5c47e2357935db"
@@ -871,8 +871,8 @@ def check_current_source_handover_anchor() -> list[str]:
         f"HARDWARE #349 PR HEAD (current, not qualified): `{HARDWARE_PR_HEAD_SHA}`",
         f"ESP32 sketch Git blob SHA (last focused-pass source): `{HARDWARE_SKETCH_BLOB}`",
         f"Latest PR-head ESP32 sketch Git blob SHA (not release-qualified): `{HARDWARE_PR_HEAD_SKETCH_BLOB}`",
-        "Release pin held at the last focused-pass source/test SHA until the current PR-head source/test passes Quarantine/Relay.",
-        "Current PR-head Quarantine: #45571470480 — FAILURE at the poll JSON lab contract; do not promote this head.",
+        "Release pin advanced to the latest focused-pass source/test SHA after exact-source Quarantine and Relay passed; the current docs/PR head retains the same sketch blob.",
+        "Current PR-head Quarantine: #45574159279 — SUCCESS; Relay #45574159323 — SUCCESS; Full #45574159334 — FAILURE at QA-owned Missing poll signature check; no Full or production qualification.",
     )
     missing = [value for value in required if value not in section]
     if missing:
