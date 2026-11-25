@@ -66,23 +66,12 @@ def _active_board_isr_definition(source, board):
     definitions = extract_functions(source, "coinEdgeISR")
     if len(definitions) < 2:
         raise RuntimeError(
-            f"{board} expected both conditional coinEdgeISR definitions, found {len(definitions)}"
+            f"{board} expected at least two conditional coinEdgeISR definitions, found {len(definitions)}"
         )
 
-    prefixes = [body.split("{", 1)[0] for _, body in definitions]
-    legacy_count = sum("ICACHE_RAM_ATTR" in prefix for prefix in prefixes)
-    iram_count = sum("IRAM_ATTR" in prefix for prefix in prefixes)
-    if legacy_count:
-        raise RuntimeError(
-            f"{board} coinEdgeISR still uses deprecated ICACHE_RAM_ATTR "
-            f"in {legacy_count} conditional definition(s); use IRAM_ATTR"
-        )
-    if iram_count != len(definitions):
-        raise RuntimeError(
-            f"{board} coinEdgeISR must use IRAM_ATTR in every conditional definition, "
-            f"found {iram_count} of {len(definitions)}"
-        )
-
+    # First select the definition compiled for this board. Attributes on
+    # inactive #if/#else definitions do not affect the generated image and
+    # must not make an otherwise valid active ISR fail this contract.
     conditioned_source = _condition_board_gate(source, board)
     active_mask = mask_active_cpp_code(conditioned_source)
     active = [
@@ -94,7 +83,16 @@ def _active_board_isr_definition(source, board):
         raise RuntimeError(
             f"{board} expected exactly one active coinEdgeISR definition, found {len(active)}"
         )
-    return active[0]
+
+    active_offset, active_body = active[0]
+    active_prefix = active_body.split("{", 1)[0]
+    if "ICACHE_RAM_ATTR" in active_prefix:
+        raise RuntimeError(
+            f"{board} active coinEdgeISR still uses deprecated ICACHE_RAM_ATTR; use IRAM_ATTR"
+        )
+    if "IRAM_ATTR" not in active_prefix:
+        raise RuntimeError(f"{board} active coinEdgeISR must use IRAM_ATTR")
+    return active_offset, active_body
 
 
 def extract_board_coin_edge_isr(source, board):
@@ -230,8 +228,8 @@ def verify_fixture_routes_edges_through_production_isr():
 
 def verify_board_specific_isr_selection(source, board):
     definitions = extract_functions(source, "coinEdgeISR")
-    if len(definitions) != 2:
-        raise RuntimeError(f"{board} expected both conditional coinEdgeISR definitions, found {len(definitions)}")
+    if len(definitions) < 2:
+        raise RuntimeError(f"{board} expected at least two conditional coinEdgeISR definitions, found {len(definitions)}")
 
     # The selector must ignore an inactive decoy even when it appears before
     # the real board branches. A position-based [0]/[1] choice is not safe.
