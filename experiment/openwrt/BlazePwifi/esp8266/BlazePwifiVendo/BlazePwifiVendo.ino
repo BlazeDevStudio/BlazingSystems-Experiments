@@ -115,7 +115,7 @@ uint32_t lastHandledCoinEdgeSequence=0;
 // Keep the unsigned modulo-2^32 increment explicit; newer GCC cores warn on
 // deprecated ++ of volatile-qualified objects. This ISR remains the only writer.
 #if defined(ESP8266)
-void ICACHE_RAM_ATTR coinEdgeISR(){ coinEdgeSequence = coinEdgeSequence + 1U; }
+void IRAM_ATTR coinEdgeISR(){ coinEdgeSequence = coinEdgeSequence + 1U; }
 #else
 void IRAM_ATTR coinEdgeISR(){ coinEdgeSequence = coinEdgeSequence + 1U; }
 #endif
