@@ -194,3 +194,18 @@ int main() {
   return 0;
 }
 """
+
+
+UNPAIRED_HIGH_SURROGATE_MAIN = r"""
+int main() {
+  if (pollJsonTopLevelTrue(String("{\"ok\":true,\"meta\":\"\\uD800\"}"), "ok")) return 151;
+  return 0;
+}
+"""
+
+ISOLATED_LOW_SURROGATE_MAIN = r"""
+int main() {
+  if (pollJsonTopLevelTrue(String("{\"ok\":true,\"meta\":\"\\uDC00\"}"), "ok")) return 152;
+  return 0;
+}
+"""
