@@ -1,3 +1,50 @@
+## PHX-RELEASE UTC09 — provenance traversal descriptor ownership and fd-reuse safety
+
+**Disposition:** one RELEASE-owned build-provenance descriptor bug was reproduced test-first and corrected. Exact source/test push and PR compatibility matrices passed 3/3. Full BlazePwifi integration remains blocked by the CORE-owned canonical handover freshness gate. PR #291 remains OPEN / DRAFT / UNMERGED. Strict NO Codex. No merge, tag, signing, publication, hardware flash, real payment migration or customer deployment.
+
+### Live ownership and exact identities
+
+- Control plane: issue #172 UTC09 role lock/checkpoint comment [7158323987](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/172#issuecomment-7158323987). Cleanup-first #266 remains OPEN, 0/7 tracks complete.
+- MASTER PR #288 is OPEN / DRAFT / UNMERGED at 025aadaa71aadf7fc09d53e0b623356c5550fe17, base f4e8a891aed8af86d5fd315d28750a0ac3a7372b. Ownership manifest blob e4db324315a1b3543fec17a148fbf960170fcb29 still has 11 DRAFT_REVIEW_ONLY routes; PHX-RELEASE remains reimplementation-review, not copy/move/merge authority.
+- Experiments PR #242 remains OPEN / DRAFT at 734b89d9e7792247e8376335c3f3685500ab3f89. PR #291 branch phoenix/release-publisher-isolation-20261115 is based on that exact SHA; preflight head was b26856fae8fa0e2459362c5c430d69ae222e1d41, source/test head after this increment is 2fbaaa5581b545f4ced3c518d39f0d0800a5aaed.
+- Current HARDWARE PR #349 head at inspection: 28f86de8f3adaa62c04ed9ad484b79cd9174f6e2. Its latest commit only changes the board-parity test harness. Firmware source/test anchor remains 059e3bbde935a86de0fa0e31e06d1ebb36755c4f; the ESP32 sketch blob c07aba7d518ef7eb5d536aafdd77ef6193e676cb was fetched at both the source/test anchor and current PR head. The RELEASE compatibility workflow's exact source/blob pin is current; no pin change was needed.
+- COE integration #26 remains OPEN / DRAFT / FROZEN at b382d233ff06c8791b1028bed3c617cc7b670d12; its five workflows are queued with zero jobs. COE parent packager #31 remains OPEN / DRAFT at 59ed44d0b911e176f1a95b9cf5585ef811ffd31b; superseding child #35 remains OPEN / DRAFT at f611c96091a1014ad36bf64251c180bcbc2d1f65. Their existing blockers remain approved site-scoped RFC 4193 ULA /48 authority for profile admission and an authorized Bubblewrap-capable disposable runner for mandatory sandbox packaging. No destination migration or write occurred.
+- Authorized Library search did not surface private Drive project registry v11; only older v3–v7 snapshots were discoverable. No older snapshot was substituted and no private contents or identifiers were copied into GitHub.
+
+### Defect and test-first reproduction
+
+In write_build_provenance.py, _open_regular() and _open_directory() closed a traversal descriptor before removing its numeric value from the exception-cleanup inventory. _open_regular() had the same ordering in its final file-identity rejection branch. If close() released the descriptor and then reported an interruption/error, the exception handler could retry the same number after the OS had reused it, closing an unrelated descriptor. The non-directory rejection branches also performed a direct close before the common cleanup path.
+
+- Test-only commit [c52b4cfe](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/c52b4cfe3b57488d68bce12aa503cdda61f26960) adds three synthetic fd-reuse regressions: regular-file traversal, directory traversal, and final file-identity rejection. Each closes the original descriptor, opens a sentinel to reuse the same number, then injects a close error and requires the sentinel to remain open.
+- Expected RED [run #45584837884](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45584837884): provenance job failed with 60 tests and 3 errors, exactly the three new regressions; each reported EBADF on the reused sentinel because cleanup closed it. Both ESP32 compile jobs completed successfully. Overall failure is the intended RED, not a product acceptance result.
+- Source correction [2fbaaa55](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/2fbaaa5581b545f4ced3c518d39f0d0800a5aaed): transfer descriptor ownership out of the cleanup inventory before each potentially ambiguous close; leave rejected child descriptors to the single common cleanup path. No descriptor close is retried after an ambiguous result. Only write_build_provenance.py changed in the source-fix commit; the test commit changed only test_build_provenance.py.
+
+### Exact-source CI at 2fbaaa55
+
+- Push compatibility [run #45585016605](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45585016605): SUCCESS, 3/3 jobs — provenance regression suite, ESP32 core 3.3.13 and ESP32 core 4.0.0.
+- PR compatibility [run #45585028850](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45585028850): SUCCESS, 3/3 jobs, same exact source/test SHA.
+- Provenance job: 60 tests PASS; Arduino CLI archive verifier 10 PASS; ESP32 reproducible-build descriptor tests 5 PASS; release workflow/publisher tests 22 PASS; immutable action-pin validation PASS. All three fd-reuse regressions passed.
+- Both pinned ESP32 core jobs checked out HARDWARE source 059e3bb..., verified sketch blob c07aba7..., and compiled twice. Core 3.3.13 produced two identical 1,045,808-byte application images, SHA-256 6f6e0f7baf0028ed66fe32c52588166ef61ed815746733224a4e450419f2e999. Core 4.0.0 produced two identical 1,100,016-byte images, SHA-256 01091a265b17d796ae14dcd6f765a99296932e06da607e3d8e021cd5edf0ad38. These are hosted CI artifacts, not approved production binaries or hardware evidence.
+- Full push [run #45585016512](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45585016512): OVERALL FAILURE. CI-0701 PASS; validate FAIL at the CORE-owned freshness gate; all 14 target/platform jobs and Android PASS. Update bundle, simulations, candidate, signing and publication stages SKIPPED.
+- Full PR [run #45585029039](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45585029039): OVERALL FAILURE at the same validate freshness gate. CI-0701 PASS; all 14 target/platform jobs and Android PASS; downstream update-bundle/simulation/sign/publish stages SKIPPED.
+- Windows PR [run #45585028883](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45585028883): FAILURE at the shared handover gate; Windows build and publisher SKIPPED.
+- The gate reports canonical checkpoint d85eb6a2766781b6cac1807cef461993d8216b84 and identifies newer workflow/source changes. CORE must refresh experiment/openwrt/BlazePwifi/docs/handover/CURRENT_STATE.md and its exact evidence after those changes. RELEASE did not edit CORE-owned files or bypass the gate.
+
+### Changed paths and next owner actions
+
+The test-first/source increment changed exactly two RELEASE-owned paths: .github/scripts/test_build_provenance.py and .github/scripts/write_build_provenance.py. This handover update changes only .github/PHX_RELEASE_HANDOVER.md. No CORE, RENTAL, PISONET, HARDWARE, QA, MASTER, finance, network configuration, shared interface or COE destination path was modified. PR #291 remains OPEN / DRAFT / UNMERGED; no independent QA review or MASTER approval is established.
+
+1. PHX-CORE: refresh canonical CURRENT_STATE.md / PROJECT_HANDOVER.md and publish the exact freshness SHA. RELEASE must not edit the CORE-owned gate.
+2. PHX-QA: independently review the fd-reuse regression tests and descriptor ownership correction.
+3. PHX-MASTER: refresh the #291 child pointer after the final RELEASE handover commit; retain DRAFT_REVIEW_ONLY and reimplementation-review.
+4. PHX-INFRA / COE owner: supply an authorized disposable no-secret runner with Bubblewrap and working unprivileged namespace support.
+5. Network authority owner / MASTER: provide approved site-scoped RFC 4193 ULA /48 authority; RELEASE must not invent one.
+6. Registry custodian: restore authorized provenance-only access to private Drive v11.
+
+PRODUCTION NO-GO. Protected production signer and independent freshness witness are not established; durable financial accounting and reversible migration are not accepted; independent QA/MASTER approvals remain pending; approved production binaries are not established; 150 physical power cuts and 30-device / 24-hour soak are NOT TESTED. No merge, tag, signing, publication, hardware flash, real payment migration or customer deployment occurred.
+
+---
+
 ## PHX-RELEASE UTC08 — ESP32 fallback cursor-restoration exception preservation
 
 **Activation date:** 2026-11-25. **Disposition:** one RELEASE-owned reproducibility-verifier defect fixed test-first; exact-source compatibility push and PR matrices both PASS 3/3. Full integration remains blocked by the CORE-owned canonical handover freshness gate. PR #291 remains OPEN / DRAFT / UNMERGED. Strict NO Codex. No merge, tag, signing, publication, hardware flash, real payment migration or customer deployment.
