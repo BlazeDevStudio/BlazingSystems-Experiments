@@ -129,8 +129,15 @@ def expect_mutation_rejected(code, board, label, expected_exit):
 
 
 def verify():
+    sources = {
+        board: path.read_text(encoding="utf-8")
+        for board, path in BOARDS.items()
+    }
+    verify_board_parity(sources)
+    verify_board_parity_mutations(sources)
+
     for board, path in BOARDS.items():
-        source = path.read_text(encoding="utf-8")
+        source = sources[board]
         constant = re.search(
             r"static\s+const\s+int\s+MAX_CONTROLLER_RESPONSE_BYTES\s*=\s*1024\s*;",
             source,
