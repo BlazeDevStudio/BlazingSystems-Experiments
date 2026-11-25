@@ -1,3 +1,39 @@
+## PHX-MASTER UTC16 — exact current source/destination and release-packager evidence (2026-11-25T16:35Z)
+
+### COE #26 current Hardware source/destination identity
+
+Exact recursive trees: Experiments HARDWARE #352 docs head 1d376d3b9b5fec11c4e21776a96462c5c05706f9 (2,557 entries / 1,978 blobs) and COE integration #26 b382d233ff06c8791b1028bed3c617cc7b670d12 (286 entries / 207 blobs), both non-truncated.
+
+| Measure | Source | Destination |
+|---|---:|---:|
+| ESP32 subtree blobs | 16 | 1 |
+| ESP8266 subtree blobs | 60 | 1 |
+| Board-local Python helpers | 64 | 0 |
+| Mapped tests | 47 | 19 |
+| Same-path exact test blobs | 1 | — |
+| Same-path divergent test blobs | 3 | — |
+| Source-only / destination-only test files | 43 / 15 | — |
+
+| Artifact | Source blob | Destination blob | Result |
+|---|---|---|---|
+| ESP32 sketch | 1412cf57b70c6ee3061da9831b8d9abf6d58d94e | 3cc7ec54b476943dc04a8d1af5e2df5fe054e422 | Different |
+| ESP8266 sketch | b99f1f21d8ad1e6df0e403b2b34507f97bd90c16 | c8be98f72596681e36a3ad1f8939bf8046c96887 | Different |
+| Root NOTICE.md | f6d92cd21465312be5993631fe26977219be0fb9 | Missing | Gap |
+| Product LICENSE | 1ee55b94183417be977ca287cd7391f9a6f7e721 | Pisowifi/LICENSE same blob | Match |
+| TailAdmin LICENSE / NOTICE | cb92d4176b21b0594e5a6caf94d79340505e3d33 / f0425bbbe34c1227311098173b1eae0c3e2a807b | Same blobs at mapped vendor paths | Match |
+| Tabler LICENSE | 22ee8122400915cbff18e5f69368fa9eea6145eb | Missing | Gap |
+| BlazeRentalLauncher LICENSE | c5b1efa7aac764ae6d8da63476a2d5cec02a6a5d | Missing | Gap |
+
+COE contains Pisowifi/SOURCE_INTAKE.json and Pisowifi/MIGRATION_MAP.md, but no Hardware-specific intake or map. The route manifest remains 11 routes / DRAFT_REVIEW_ONLY; Master target null; Hardware routes selective-review only. No staging, copy, move, overwrite or migration proposal.
+
+### COE RELEASE #35 current exact-head gate
+
+PR/docs head 204084307b; source/test head a05188c6. Current docs-head shared run #45653690960 repeats 228 tests PASS / 2 intentional skips, then 10/10 ULA profiles fail closed because approved site-scoped RFC4193 /48 authority is missing. Sandbox #45653685548 passes 40 host tests then fails closed because Bubblewrap is absent (exit 125). Case-collision #45653687424 PASS. The source/test correction closes a manifest-publication mutation window but does not make the staging tree immutable after return; downstream checksum verification remains required.
+
+COE #26 remains FROZEN with five queued workflows / zero jobs. No destination writes were made.
+
+---
+
 ## PHX-MASTER UTC15 post-checkpoint exact source / destination revalidation — 2026-11-25 (2026-11-25T15:48:16.366Z)
 
 **Exact refs:** Experiments HARDWARE #352 `bb519e6a2129f79723b9f7fb5903b4443149fcd0`; COE integration #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`.
