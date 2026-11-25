@@ -674,5 +674,70 @@ class BlazePwifiV053RunProvenanceTests(unittest.TestCase):
         require_v053_stage_run_identities(self.stage_content)
 
 
+
+def require_v053_tag_ref_absence_before_publish(content: str) -> None:
+    """Require a provably absent immutable tag before first v0.5.3 publication."""
+    step = workflow_step_block(content, "publish", "Publish production v0.5.3")
+    required = (
+        "set +e",
+        'TAG_LOOKUP_OUTPUT="$(gh api -i "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" 2>&1)"',
+        "TAG_LOOKUP_EXIT=$?",
+        "set -e",
+        "TAG_HTTP_STATUSES=\"$(printf '%s\\\\n' \"$TAG_LOOKUP_OUTPUT\" | sed -nE 's/^HTTP\\\\/[0-9.]+ ([0-9]{3})([[:space:]].*)?$/\\\\1/p')\"",
+        "TAG_HTTP_COUNT=\"$(printf '%s\\\\n' \"$TAG_HTTP_STATUSES\" | awk 'NF { count++ } END { print count + 0 }')\"",
+        'if [ "$TAG_LOOKUP_EXIT" -eq 0 ]; then',
+        'if [ "$TAG_HTTP_COUNT" -ne 1 ] || [ "$TAG_HTTP_STATUSES" != "404" ]; then',
+        'gh release create "$TAG"',
+        'gh release upload "$TAG" --repo "$GITHUB_REPOSITORY"',
+    )
+    positions = tuple(step.find(fragment) for fragment in required)
+    if any(position < 0 for position in positions):
+        raise AssertionError(
+            "v0.5.3 publisher must prove exactly one HTTP 404 for the Git tag ref "
+            "before creating a new release"
+        )
+    if positions != tuple(sorted(positions)):
+        raise AssertionError(
+            "v0.5.3 tag-absence proof must complete before release creation and asset upload"
+        )
+    if "gh release edit" in step or "--clobber" in step:
+        raise AssertionError(
+            "v0.5.3 publisher must never edit an existing release or clobber published assets"
+        )
+
+
+class BlazePwifiV053ImmutableReleaseTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.stage_content = RELEASE_STAGE_WORKFLOW.read_text(encoding="utf-8")
+
+    def test_publisher_requires_absent_tag_and_never_mutates_existing_release(self):
+        require_v053_tag_ref_absence_before_publish(self.stage_content)
+
+        mutations = (
+            (
+                'TAG_HTTP_STATUSES" != "404"',
+                'TAG_HTTP_STATUSES" != "200"',
+            ),
+            (
+                'TAG_HTTP_COUNT" -ne 1',
+                'TAG_HTTP_COUNT" -lt 1',
+            ),
+            (
+                'gh release create "$TAG"',
+                'gh release edit "$TAG"\\n          gh release create "$TAG"',
+            ),
+            (
+                'gh release upload "$TAG" --repo "$GITHUB_REPOSITORY"',
+                'gh release upload "$TAG" --repo "$GITHUB_REPOSITORY" --clobber',
+            ),
+        )
+        for old, new in mutations:
+            with self.subTest(mutation=old):
+                unsafe = self.stage_content.replace(old, new, 1)
+                self.assertNotEqual(unsafe, self.stage_content)
+                with self.assertRaises(AssertionError):
+                    require_v053_tag_ref_absence_before_publish(unsafe)
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
