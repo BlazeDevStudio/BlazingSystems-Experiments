@@ -1,3 +1,32 @@
+## PHX-MASTER UTC19 scheduled-run reconciliation — 2026-11-25T19:52:30.511Z
+
+This section supersedes the prior UTC19 owner table. PHX-MASTER owns only `coordination/phoenix/`; CORE remains reserved to its separate continuation. No subsystem source or COE destination was changed.
+
+**Live refs:** Experiments main `6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5`; active v0.6 `2fbd2475e9f54878c316fa7cea2f228386b0e859`; legacy v0.5.3 `aad3aade72c1156eecba1fed30907c6d0283b2c5`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`; OWNERSHIP_ROUTES blob `e4db324315a1b3543fec17a148fbf960170fcb29` (11 routes, DRAFT_REVIEW_ONLY, Master target null).
+
+| Owner / PR | Current exact head | Exact-head CI / disposition |
+|---|---|---|
+| CORE #252 | `c82705f2` | Scoped build #42698139210 PASS; not financial acceptance. |
+| RENTAL #328 | `10fc200b` | APK/API/auth #45622918340/#45622918364/#45622918551 PASS; shared #45622918468 FAIL: CORE CURRENT_STATE freshness and missing ESP32 `mbedtls/sha256.h`. |
+| PISONET #255 | `d01fd164` | Synthetic Windows #42462978704 PASS; native COM not invoked. |
+| HARDWARE #349 | `2a5c997a` | Quarantine/Relay #45603969253/#45603968961 PASS; Full #45603969181 FAIL: Missing poll signature check. |
+| HARDWARE #352 | docs `0e984e26`; source/test `8eab8260` | Quarantine/Relay/ESP8266/ESP32 #45683122459/#45683122371/#45683122364/#45683122379 PASS; Full #45683122413 FAIL at Missing poll signature check. PR body current. |
+| HARDWARE child #353 | docs `e2ac0697`; source/test `2c9581e9` | Quarantine/Relay #45687084991/#45687084897 PASS; Full #45687084859 FAIL at same poll-signature assertion. Child base captured `6d743ae`, parent #352 now `0e984e2`; stack stale, no rebase/retarget. |
+| QA #290 | `5c29d159` | Synthetic Windows #43633486963 PASS; native COM not invoked. |
+| QA #292 | `75a3f66d` | No PR-triggered runs. |
+| RELEASE #291 | `9b928c9e` | Windows #45669599214 and Full #45669599438 fail CORE handover freshness; ESP32 compatibility #45669599322 PASS. |
+| COE RELEASE #35 | docs `1c08a339`; source/test `b3a7873e` | Shared #45684703416: 230 PASS / 2 skips then 10/10 ULA fail-closed; sandbox #45684703501: 40 host preflight PASS then Bubblewrap absent / exit 125; case #45684704383 PASS. PR body stale at `28da39c6` / `10f19a28`; RELEASE owns refresh. |
+| COE CORE #45 | `9d76a134` | Overlay/Shell #44295049727 and case #44295049903 PASS; focused only. |
+| COE INTERCON #49 | `aeb8ff11` | Stage 5.1/case #44646341873/#44646341992 PASS; shared #44646341922 fails ESP32 compile at missing `mbedtls/sha256.h`. |
+| COE integration #26 | `b382d233` | Five workflows QUEUED / zero jobs; FROZEN. |
+
+HARDWARE #352/#353 focused CI is simulated lab evidence, not physical acceptance. CORE owns poll/register producer and canonical handover; HARDWARE owns firmware/PR descriptions; QA owns independent assertion review; RELEASE owns its PR descriptions and reruns. No ownership changed.
+
+Full evidence: [UTC19 exact-head audit](PHX_MASTER_UTC19_20261125_HW352_HW353_COE26_COE35_EXACT_HEAD_AUDIT.md).
+
+
+---
+
 ## PHX-MASTER UTC19 post-checkpoint owner / CI refresh — 2026-11-25T19:17:34Z
 
 This section supersedes the UTC18 table. It is a read-only reconciliation; Master owns only `coordination/phoenix/`. CORE remains reserved to its separate continuation; no CORE source or canonical handover file was edited.
