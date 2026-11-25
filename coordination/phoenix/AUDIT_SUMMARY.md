@@ -1,3 +1,18 @@
+## PHX-MASTER UTC06 disposition — 2026-11-25T06:34:41Z
+
+**Master parent:** `dd63d11f34c168e8eaf2e5a533c589853203ae11`. **Experiments main:** `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`. **Development:** `aad3aade72c1156eecba1fed30907c6d0283b2c5`. **COE main:** `a6513ab4412b4c014eee2863e45cbe32d06cb243`. **COE #26:** `b382d233ff06c8791b1028bed3c617cc7b670d12`.
+
+- PR #288 remains OPEN / DRAFT / UNMERGED; 210 changed paths are all under `coordination/phoenix/`. Master exact-head Actions runs: none. No Master product-test pass is claimed.
+- Issue #172 remains OPEN. Cleanup #266 remains OPEN / 0-of-7. Routing manifest remains 11 routes / `DRAFT_REVIEW_ONLY` / PHX-MASTER target null.
+- HARDWARE #349 current owner tuple is source/test `61689ab`, docs/PR `bbd3f343`. Quarantine/Relay pass; Full fails at Missing poll signature check. Its PR body still pins the prior UTC04 tuple and must be refreshed by HARDWARE.
+- RELEASE #291 current owner tuple is source/test `ea8e66b9`, docs/PR `8f444097`. Full and Windows now fail at CORE-owned CURRENT_STATE freshness checkpoint `d85eb6a2766781b6cac1807cef461993d8216b84`; ESP32 compatibility is 3/3 PASS. RELEASE must refresh its own PR body and rerun only after CORE publishes canonical current state.
+- COE #26 remains FROZEN. Current Hardware source/destination firmware and test blobs differ, destination has format-on-mount, pending-clear, unauthenticated quarantine deletion and keyless response-signature bypass; SOURCE_INTAKE is stale and miscounts 46/15 vs 47/14; Hardware intake/test/license provenance is incomplete; five workflows queued / zero jobs.
+- Branch metadata says Experiments main, development and COE main are `protected=false`; repository rulesets reads are empty. Effective classic protection remains unverified. No protection settings changed.
+- Canonical private Drive v11 registry and newer corrections NOT_RECOVERED. Available Library results surfaced a separate checkpoint and older v5-v7 snapshots only; no substitute was used or private data published.
+- Local `git ls-remote` failed because this runtime could not resolve `github.com`; no local checkout was available. Master Python tests and `verify_coordination.py` NOT RUN. Exact-head owner CI was inspected separately; no Master Actions run exists.
+
+**PRODUCTION NO-GO.** Independent protected signing/anti-rollback witness, crash-atomic durable financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized release gates remain mandatory. No subsystem source, COE destination, signer, secret, financial state, release artifact, hardware or payment system was modified.
+
 ## PHX-MASTER UTC05 disposition — 2026-11-25T05:34:49Z
 
 **Master parent:** 544a76ead141de4c2c257ac3dcea3e54984889e8. **Experiments main:** f4e8a891aed8af86d5fd315d28750a0ac3a7372b. **Development:** aad3aade72c1156eecba1fed30907c6d0283b2c5. **COE main:** a6513ab4412b4c014eee2863e45cbe32d06cb243. **COE #26:** b382d233ff06c8791b1028bed3c617cc7b670d12.

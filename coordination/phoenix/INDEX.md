@@ -1,3 +1,16 @@
+## PHX-MASTER UTC06 — 2026-11-25 live owner CI, COE Hardware admission and branch-governance audit
+
+[UTC06 exact-head role CI, current Hardware source/destination parity, SOURCE_INTAKE recount and registry-access report](PHX_MASTER_UTC06_20261125_LIVE_ROLE_CI_COE26_HARDWARE_PARITY_AND_BRANCH_GOVERNANCE_AUDIT.md)
+
+- Master parent `dd63d11f34c168e8eaf2e5a533c589853203ae11`; Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; development `aad3aade72c1156eecba1fed30907c6d0283b2c5`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`.
+- HARDWARE #349 advanced to source/test `61689ab`, docs/PR `bbd3f343`: Quarantine/Relay PASS; Full FAIL at Missing poll signature check. Its PR body is stale.
+- RELEASE #291 advanced to source/test `ea8e66b9`, docs/PR `8f444097`: source/test 3/3 PASS; Full/Windows fail at CORE-owned CURRENT_STATE freshness; compatibility 3/3 PASS.
+- COE #26 remains FROZEN. Exact firmware/test blobs differ; SOURCE_INTAKE is pinned to historical source and recounts 46 identical / 15 derived versus declared 47 / 14; Hardware-specific intake/license/test provenance is missing.
+- Cleanup #266 OPEN / 0-of-7; private v11/newer corrections NOT_RECOVERED; repository rulesets empty and branch metadata reports protected=false; no Master local test suite run because GitHub DNS was unavailable.
+- No subsystem or destination source was modified. **PRODUCTION NO-GO.**
+
+---
+
 ## PHX-MASTER UTC05 — 2026-11-25 live role CI and COE Hardware candidate audit
 
 [UTC05 exact-head owner CI, COE #26 Hardware fail-closed firmware parity, provenance and registry-access report](PHX_MASTER_UTC05_20261125_COE26_HARDWARE_IMPORT_FAILCLOSED_PARITY_AND_ROLE_CI_AUDIT.md)

@@ -1,3 +1,26 @@
+## PHX-MASTER UTC06 exact-head owner / CI refresh — 2026-11-25T06:34:41Z
+
+Snapshot only; subsystem branches remain owner-controlled. Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; development `blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5`; Master parent `dd63d11f34c168e8eaf2e5a533c589853203ae11`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`.
+
+| Owner / PR | Current exact PR head | Exact-head CI / current owner action |
+|---|---|---|
+| CORE #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | Build #42698139210 PASS (older scoped evidence). CORE retains producer, durable finance and canonical handover. Separate CORE continuation was not touched. |
+| RENTAL #328 | `0e0da62acd47c6a1ce287f8a30fc700d603fa070` | APK #44782114384 PASS; API #44782114393 PASS; shared build #44782114390 FAIL. RENTAL owns its build/handover correction. |
+| PISONET #255 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | Synthetic Windows #42462978704 PASS; not native Windows acceptance. |
+| HARDWARE #340 | `38f3e9419f37109443c806a2362577d9efc50e4d` | Six build/focused runs #45530901795, #45530901830, #45530901893, #45530901919, #45530901824 and #45530901908 PASS. |
+| HARDWARE #347 | `960184670379f01e20f0e7e8bc23b3e5eedacd3f` | Quarantine #45299741995, Relay #45299742437 and build #45299741993 FAIL. |
+| HARDWARE #348 | `eb7afcb2ba0d1e84054c052c8b129cb51a91d062` | Focused header #45352513178 PASS; build #45352513177 FAIL at missing `mbedtls/sha256.h`. |
+| HARDWARE #349 | PR/docs `bbd3f343c952ddaab1bec210cfa342981bca742e`; source/test `61689ab4764018f3b913303b4bf508f1d04a88af` | Quarantine #45556869789 PASS; Relay #45556869915 PASS; Full #45556869883 FAIL at `Missing poll signature check` (job 139010921482). 14/14 target/platform + Android jobs PASS; 12 dependent stages SKIPPED. PR body is stale at prior `56de0761` / source `f591cb85` / docs `dc6ef11c`; HARDWARE owns refresh. |
+| QA #290 | `5c29d15994cee1279058f1eca12f2a3180704292` | Windows #43633486963 PASS. |
+| QA #292 | `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | No PR-triggered workflow runs; no pass claimed. |
+| RELEASE #291 | PR/docs `8f444097d398b429bf4109bfdf3d8dc5f9746cdd`; source/test `ea8e66b9a7a2833656af984630909575fe4a1759` | Full #45560126132 FAIL at CORE-owned CURRENT_STATE freshness (job 139021759365); Windows #45560126057 FAIL at the same handover gate (job 139021569907); ESP32 compatibility #45560126037 PASS 3/3. PR body remains stale; RELEASE owns refresh and reruns after CORE publishes current state. |
+| COE RELEASE #35 | `f611c96091a1014ad36bf64251c180bcbc2d1f65` | Shared #45541598251 FAIL; sandbox #45541598267 FAIL after 40/40 host preflight because Bubblewrap is unavailable (exit 125); case guard #45541598250 PASS. |
+| COE CORE #45 | `9d76a134c1f6512aa40c20ec4d247306a71a8cce` | Overlay #44295049727 and case guard #44295049903 PASS. |
+| COE INTERCON #49 | `aeb8ff11b2f5db9a5f86280ab62ab988245f3919` | Stage 5.1 #44646341873 and case guard #44646341992 PASS; shared Hardware #44646341922 FAIL. |
+| COE integration #26 | `b382d233ff06c8791b1028bed3c617cc7b670d12` | Five workflows QUEUED, zero jobs; no destination CI pass. Keep FROZEN. |
+
+PR #288 remains OPEN / DRAFT / UNMERGED; no Master Actions runs exist at its current parent. Owner CI above is not Master product testing or physical acceptance.
+
 ## PHX-MASTER UTC05 exact-head owner / CI refresh — 2026-11-25T05:34:49Z
 
 Snapshot only; subsystem branches remain owner-controlled. Experiments main f4e8a891aed8af86d5fd315d28750a0ac3a7372b; development blazepwifi-v0.5.3-development aad3aade72c1156eecba1fed30907c6d0283b2c5; Master parent 544a76ead141de4c2c257ac3dcea3e54984889e8; COE main a6513ab4412b4c014eee2863e45cbe32d06cb243; COE integration #26 b382d233ff06c8791b1028bed3c617cc7b670d12.

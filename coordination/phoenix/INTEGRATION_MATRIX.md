@@ -1,3 +1,32 @@
+## PHX-MASTER UTC06 — exact current Hardware source / COE #26 destination parity
+
+**Candidate:** COE #26 at `b382d233ff06c8791b1028bed3c617cc7b670d12`, OPEN / DRAFT / FROZEN. **Current Hardware owner snapshot:** PR #349 docs head `bbd3f343c952ddaab1bec210cfa342981bca742e`, source/test `61689ab4764018f3b913303b4bf508f1d04a88af`. No staging or destination writes.
+
+| Artifact | Current Experiments source | COE #26 destination | Result |
+|---|---|---|---|
+| ESP32 sketch | `adfd2f110d88243d03f2195658fb456b154dcb84` (74,740 bytes) | `3cc7ec54b476943dc04a8d1af5e2df5fe054e422` (18,505 bytes) | Different blob and behavior |
+| ESP8266 sketch | `8a0b458b6c7fb99c0913df16c5b4ca94dbcdc50e` (77,072 bytes) | `c8be98f72596681e36a3ad1f8939bf8046c96887` (18,394 bytes) | Different blob and behavior |
+| Firmware hardening test | `41211b2c110ab409f6d9d1812ef12fda73b13211` (6,782 bytes) | `f921c56cecc19cab1989507b9b4ade1f45dac54e` (4,118 bytes) | Different test identity / coverage not equivalent |
+
+### Exact unsafe destination behavior observed at #26 head
+
+- ESP32 destination calls `LittleFS.begin(true)`; current source calls `LittleFS.begin(false)` and preserves the journal-recovery deny latch.
+- ESP8266 destination explicitly calls `LittleFS.format()` after mount failure; current source does not auto-format.
+- Destination `quarantinePending()` clears pending state after the append attempt without proving durable append success; current source requires the durable attempt marker and successful append before `clearPending()`.
+- Both destination `/quarantine/clear` handlers remove `/quarantine.log` and return success without an authenticated recovery contract; current source preserves unpaid-coin evidence.
+- Destination register/poll paths initialize `sigOk=true` and only verify inside the non-empty-key branch, so an empty key bypasses the response-signature check. Destination also calls `applyRemoteConfig()` from register/poll responses; current source has only the function definition and no call sites.
+- Destination Hardware hardening test is a different blob and shorter than the current source test. Exact test identity/coverage parity is not established.
+
+### SOURCE_INTAKE / test / license reconciliation
+
+- `Pisowifi/SOURCE_INTAKE.json` schema 8, blob `1b9018ff944f7f673934d0fc2a97e0a0090d3f5f`, pins Experiments source `6d4c9b487af4d768c4d7627654d119417fcc6e00` and a historical destination pre-manifest head `cf59b41e5273bcc42acf59a7971481670e4b2611`. It is a PisoWiFi runtime manifest, not a Hardware intake.
+- Its 61 runtime rows declare 47 byte-identical / 14 derived; exact Git-blob recount is 46 identical / 15 derived.
+- Four primary test rows: two exact (portal/security) and two derived (config/integration). Fifteen additional derived tests are listed; most are NOT_RUN or PENDING_CI_RUN. `hardware_tested=false`; `full_ci_tested=false`.
+- Source project LICENSE and `Pisowifi/LICENSE` match exactly at blob `1ee55b94183417be977ca287cd7391f9a6f7e721`. Source root `NOTICE.md` has no destination counterpart; the source Tabler license also has no Hardware destination counterpart. COE root `LICENSE` and root `NOTICE.md` are absent.
+- Five #26 workflows remain QUEUED with zero jobs. No destination CI pass exists.
+
+**Admission:** FROZEN. Require a Hardware-specific per-file source/destination map at current exact SHAs, explicit test identity and toolchain mapping, license/NOTICE disposition, owner review and terminal exact-head CI before even proposing reversible staging. No copy, move, overwrite, cherry-pick, rebase or merge occurred.
+
 ## PHX-MASTER UTC05 exact candidate Hardware import audit — 2026-11-25T05:34:49Z
 
 COE #26 candidate b382d233ff06c8791b1028bed3c617cc7b670d12 remains FROZEN. Its recursive tree is complete (286 entries); current HARDWARE #349 source tree 56de0761ca67b54feb4889401a810b0069f50614 is complete (2,540 entries). The current source board subtrees contain 16 ESP32 files, 54 ESP8266 files, 47 project test files, and 58 Python labs/helpers across the two board trees. The destination Hardware subtree has two firmware sketches and one hardening test, no board-local Python labs, and no Hardware-specific SOURCE_INTAKE/MIGRATION_MAP.

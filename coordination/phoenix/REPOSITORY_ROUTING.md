@@ -1,3 +1,15 @@
+## PHX-MASTER UTC06 routing refresh — owner-head drift and destination admission
+
+- Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; development `aad3aade72c1156eecba1fed30907c6d0283b2c5`; Master branch parent `dd63d11f34c168e8eaf2e5a533c589853203ae11`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`.
+- Exact manifest `OWNERSHIP_ROUTES.json@e4db324315a1b3543fec17a148fbf960170fcb29`: 11 routes, `DRAFT_REVIEW_ONLY`; PHX-MASTER source `coordination/phoenix/`, target null. Hardware ESP32/ESP8266 routes remain selective-review only; no recursive-copy authority.
+- HARDWARE #349 owner checkpoint #7154164374 identifies source/test `61689ab4764018f3b913303b4bf508f1d04a88af` and final docs/PR head `bbd3f343c952ddaab1bec210cfa342981bca742e`. The PR body still pins older `56de0761` / `f591cb85` / `dc6ef11c`; Master records the drift but does not edit the owner PR. Full CI still fails at the inherited Missing poll signature check.
+- RELEASE #291 owner checkpoint #7154577602 identifies source/test `ea8e66b9` and current docs/PR head `8f444097`. Full and Windows exact-head workflows now terminally fail at CORE-owned CURRENT_STATE freshness; ESP32 compatibility passes 3/3. Its PR body still contains the older UTC17 checkpoint; RELEASE owns its refresh.
+- COE #26 remains FROZEN. The candidate has no Hardware-specific SOURCE_INTAKE/MIGRATION_MAP, and the existing Pisowifi intake is pinned to historical source `6d4c9b`; exact Hardware source/destination/test/license reconciliation remains required before any staging proposal.
+- #266 remains OPEN / 0-of-7. Master cleanup ownership/dependency/overlap inventory is incomplete; do not check the Master box.
+- Repository branch metadata reports `protected=false` for Experiments main, development and COE main; repository rulesets reads returned empty arrays. Effective classic protection was not independently established. No protection settings were changed.
+
+No route, source owner, branch base, destination path, merge state or migration authorization changed. No owner source or COE destination was modified.
+
 ## PHX-MASTER UTC05 routing refresh — current RELEASE child and COE Hardware candidate
 
 - Exact manifest: OWNERSHIP_ROUTES.json@e4db324315a1b3543fec17a148fbf960170fcb29; 11 routes, DRAFT_REVIEW_ONLY, PHX-MASTER source coordination/phoenix/ with target null.
