@@ -95,21 +95,45 @@ def poll_guard_locations(source: str):
         raise AssertionError("missing bounded synchronous poll condition")
     brace = loop.find("{", condition.end())
     poll_block = extract_braced(loop, brace)
-    poll_at = poll_block.find('post("poll")')
-    if poll_at < 0:
+    poll_token = 'post("poll")'
+    poll_matches = list(re.finditer(re.escape(poll_token), poll_block))
+    if not poll_matches:
         raise AssertionError("missing synchronous poll request")
-    pre_guard = poll_block.rfind("denyRemoteControl();", 0, poll_at)
-    post_guard = poll_block.find("denyRemoteControl();", poll_at + len('post("poll")'))
-    if pre_guard < 0:
-        raise AssertionError("coin intake is not denied before blocking poll")
-    if post_guard < 0:
-        raise AssertionError("post-poll deny guard is missing")
-    global_poll = brace + 1 + poll_at
-    sample = loop.find("digitalRead(runCoinPin)")
-    if sample < 0 or sample <= global_poll:
-        raise AssertionError("coin input sampling moved before/inside blocking poll")
-    return loop, pre_guard, poll_at, post_guard
 
+    first_pre_guard = -1
+    last_post_guard = -1
+    for index, match in enumerate(poll_matches):
+        previous_end = 0 if index == 0 else poll_matches[index - 1].end()
+        next_start = (
+            poll_matches[index + 1].start()
+            if index + 1 < len(poll_matches)
+            else len(poll_block)
+        )
+        pre_guard = poll_block.rfind(
+            "denyRemoteControl();", previous_end, match.start()
+        )
+        if pre_guard < 0:
+            raise AssertionError(
+                f"coin intake is not denied before blocking poll request {index + 1}"
+            )
+        post_guard = poll_block.find(
+            "denyRemoteControl();", match.end(), next_start
+        )
+        if post_guard < 0:
+            raise AssertionError(
+                f"post-poll deny guard is missing for request {index + 1}"
+            )
+        if index == 0:
+            first_pre_guard = pre_guard
+        last_post_guard = post_guard
+
+    global_last_poll = brace + 1 + poll_matches[-1].start()
+    sample = loop.find("digitalRead(runCoinPin)")
+    if sample < 0 or sample <= global_last_poll:
+        raise AssertionError(
+            "coin input sampling moved before/inside the blocking poll sequence"
+        )
+    return loop, first_pre_guard, poll_matches[0].start(), last_post_guard
 
 def make_harness(apply_fn: str, deny_fn: str) -> str:
     return r"""
@@ -249,7 +273,7 @@ def verify_board(name: str, path: Path):
     sample_at = loop.find("digitalRead(runCoinPin)", poll_at)
     if poll_at < 0 or sample_at < 0:
         raise AssertionError(f"{name}: cannot place unguarded second-poll mutation")
-    mutated_loop = loop[:sample_at] + '    post("poll");\\n    ' + loop[sample_at:]
+    mutated_loop = loop[:sample_at] + '    post("poll");\n    ' + loop[sample_at:]
     try:
         poll_guard_locations(mutated_loop)
     except AssertionError:
