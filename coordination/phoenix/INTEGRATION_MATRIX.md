@@ -1,3 +1,37 @@
+## PHX-MASTER UTC15 post-checkpoint exact source / destination revalidation — 2026-11-25 (2026-11-25T15:48:16.366Z)
+
+**Exact refs:** Experiments HARDWARE #352 `bb519e6a2129f79723b9f7fb5903b4443149fcd0`; COE integration #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`.
+
+Both recursive Git trees were read at exact commits and reported non-truncated.
+
+| Measure | Experiments #352 source | COE #26 destination |
+|---|---:|---:|
+| Complete tree entries (blobs + trees) | 2,558 | 286 |
+| Blob entries | 1,978 | 207 |
+| ESP32/ESP8266 board-subtree blobs | 76 | 2 |
+| Board-local Python helpers | 64 | 0 |
+| `BlazePwifi/tests/` / `Pisowifi/tests/` files | 47 | 19 |
+
+The mapped test-directory comparison has four same-relative-path files: one exact blob match and three divergent blobs; 43 source-only files and 15 destination-only files. This is path/blob provenance, not a migration recommendation.
+
+| Artifact | Exact source blob at #352 | Exact destination blob at #26 | Result |
+|---|---|---|---|
+| ESP32 sketch | `1412cf57b70c6ee3061da9831b8d9abf6d58d94e` | `3cc7ec54b476943dc04a8d1af5e2df5fe054e422` | Different |
+| ESP8266 sketch | `b99f1f21d8ad1e6df0e403b2b34507f97bd90c16` | `c8be98f72596681e36a3ad1f8939bf8046c96887` | Different |
+| `coin_pulse_capture_lab.py` | `9d6c8cf1f29f3ad27f5002f4062885033b96d606` | Missing | Not imported |
+| `poll_json_array_primitive_lab.py` | `410b7ef5b44bc96d9dfbfa302658bf6c8785d1cd` | Missing | Not imported |
+| `cpp_token_normalizer.py` | `fd77601b264c1d3f9d9dd853a6934853da602c7b` | Missing | Not imported |
+| Root `NOTICE.md` | `f6d92cd21465312be5993631fe26977219be0fb9` | Missing | Gap |
+| Product `LICENSE` | `1ee55b94183417be977ca287cd7391f9a6f7e721` | `Pisowifi/LICENSE` same blob | Match |
+| TailAdmin vendor `NOTICE.md` | `f0425bbbe34c1227311098173b1eae0c3e2a807b` | Same blob at mapped vendor path | Match |
+| Tabler vendor `LICENSE` | `22ee8122400915cbff18e5f69368fa9eea6145eb` | Missing | Gap |
+| BlazeRentalLauncher `LICENSE` | `c5b1efa7aac764ae6d8da63476a2d5cec02a6a5d` | Missing | Gap |
+
+COE #26 still has five queued workflows / zero jobs. The ownership manifest remains 11 routes, DRAFT_REVIEW_ONLY, with PHX-MASTER target null. The candidate remains FROZEN: no staging, copy, move, overwrite, destination write, or import proposal was made.
+
+
+---
+
 ## PHX-MASTER UTC14 post-checkpoint Hardware / COE integration delta — 2026-11-25T14:45Z
 
 - Source repository refs: Experiments main 6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5; active development blazepwifi-v0.6.0-audit-foundation 2fbd2475e9f54878c316fa7cea2f228386b0e859; Master branch pre-update a7efd4e1ee62007f83f34d5ee8ffa337c16b0c31.

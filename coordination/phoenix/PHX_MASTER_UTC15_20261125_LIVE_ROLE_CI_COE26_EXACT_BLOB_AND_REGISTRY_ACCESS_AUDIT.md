@@ -79,3 +79,46 @@ The current routing manifest remains review-only. Require a Hardware-specific pe
 7. Repository admin: decide whether to synchronize the unrelated CallerID main commit into #288. Master does not merge/rebase it.
 
 **PRODUCTION NO-GO remains mandatory** until independently verified protected signing/anti-rollback witness, crash-atomic durable financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak, and owner-authorized release gates all exist.
+
+
+---
+
+## Post-checkpoint revalidation — PHX-MASTER UTC15 (2026-11-25, 2026-11-25T15:48:16.366Z)
+
+This append-only follow-up supersedes stale UTC14/UTC15 pins where exact current GitHub reads differ. Earlier checkpoints remain historical evidence.
+
+### Exact refs and PR state
+- Experiments main: `6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5`.
+- Active v0.6 development: `blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859`.
+- Legacy development: `blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5`.
+- Master pre-update: `phoenix/master-coordination@7d75a9a291f38a894fb2ffada1755195ce21eb22`; PR #288 is OPEN / DRAFT / UNMERGED, base main@f4e8a891. Live compare is 563 ahead / 1 behind, merge base f4e8a891; 216 changed paths are all under coordination/phoenix/.
+- COE main: `a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE #26 remains OPEN / DRAFT / FROZEN at `b382d233ff06c8791b1028bed3c617cc7b670d12`.
+
+### Current owner/CI reconciliation
+- CORE #252 c82705f: scoped Build #42698139210 PASS; older evidence only, not financial acceptance.
+- RENTAL #328 10fc200b: APK/API/auth-recovery #45622918340/#45622918364/#45622918551 PASS; shared build #45622918468 FAIL.
+- PISONET #255 d01fd164: synthetic Windows #42462978704 PASS; native COM not accepted.
+- HARDWARE #340 fd1dbaa: six focused/build checks PASS. #347 96018467: three workflows FAIL. #348 eb7afcb: focused header PASS, build FAIL. #349 2a5c997: Quarantine/Relay PASS; Full #45603969181 FAIL at inherited Missing poll signature check.
+- HARDWARE #352 advanced to exact PR HEAD `bb519e6a2129f79723b9f7fb5903b4443149fcd0`. Its newest commit adds a deprecated `ICACHE_RAM_ATTR` mutation rejection to the source-extracted pulse-capture lab. Exact-head Quarantine #45647993474, Relay #45647993495, ESP8266 #45647993389 and ESP32 #45647993395 were IN PROGRESS; Full #45647993676 was QUEUED. The #352 PR body still pins the older a19cb235 head; HARDWARE owns the body/handover refresh. No Master edit to the Hardware branch.
+- QA #290 5c29d159 Windows #43633486963 PASS; native COM lab not invoked. QA #292 75a3f66 no PR-triggered runs.
+- RELEASE #291 b3e4fa22 compatibility #45624182886 PASS; Full #45624183036 and Windows #45624182986 FAIL at shared handover freshness.
+- COE #35 50f5fa17: 227 tests PASS / 2 intentional skips, then 10/10 site-ULA profiles fail closed; case guard PASS; sandbox host tests 40 PASS then Bubblewrap absent (exit 125). COE #45 focused overlay/case checks PASS. COE #49 Stage 5.1/case checks PASS, shared ESP32 compile FAIL at missing mbedtls/sha256.h. COE #26 five workflows remain QUEUED / zero jobs.
+
+### Exact #352 → COE #26 migration provenance
+- Recursive trees: source 2,558 entries / 1,978 blobs; destination 286 entries / 207 blobs.
+- Board subtree: source 76 blobs / 64 Python helpers; destination 2 blobs / zero Python helpers.
+- Test dirs: source 47 / destination 19; four same-path tests (one exact, three divergent), 43 source-only, 15 destination-only.
+- ESP32 source blob 1412cf57 differs from COE 3cc7ec54; ESP8266 source b99f1f21 differs from COE c8be98f7.
+- Current pulse-capture, JSON primitive parser and C++ token-normalizer labs are absent at destination.
+- Product LICENSE and TailAdmin NOTICE have exact matches. Root NOTICE, Tabler LICENSE and BlazeRentalLauncher LICENSE are absent at destination.
+- Manifest remains 11 routes / DRAFT_REVIEW_ONLY / PHX-MASTER target null. COE #26 remains FROZEN. No destination staging or writes.
+
+### Coordination index integrity
+- Current Master tree: 2,558 entries; coordination/phoenix contains 216 files, including 131 PHX_MASTER reports.
+- INDEX.md has 1,353 lines and 175 local Markdown links. One historical UTC20 link referenced a report absent from the current tree; two retained reports (UTC18 and UTC21, 2026-11-24) were not indexed. The index repair replaces the dangling reference with the next retained UTC21 follow-up and adds the unindexed UTC18 report. Repeated UTC08/UTC12 links are retained as separate historical checkpoint references; no historical report was deleted.
+- The read-only tree/index audit was performed in this activation. Master Python unittest suite and verify_coordination.py were NOT RUN; no authenticated local checkout was available. Master exact-head Actions runs/statuses: zero.
+
+### Access and safety
+- Canonical private Drive `BLAZE_PROJECT_REGISTRY_v11_20261027.json` and newer corrections remain NOT_RECOVERED. Library search surfaced older v5–v7 snapshots only; no older registry was substituted. No Google Drive connector/action is exposed in this runtime, and no private registry content or IDs were published.
+- The current automation inventory surfaced PHX-MASTER, PHX-RELEASE and a Hardware-owned production continuation; it did not surface a separate active task with the exact title `Blaze Production Continuation`. CORE was nevertheless treated as reserved per the coordination instruction; no CORE source/handover edits or competing CORE worker were started.
+- Cleanup #266 remains OPEN / 0-of-7. PRODUCTION NO-GO. No subsystem source or COE destination changes, merge, release, signer/secret provisioning, hardware flash, physical test, payment operation, customer cutover or financial migration occurred.

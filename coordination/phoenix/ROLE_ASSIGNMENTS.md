@@ -1,3 +1,38 @@
+## PHX-MASTER UTC15 post-checkpoint live owner / CI refresh — 2026-11-25 (2026-11-25T15:48:16.366Z)
+
+This section supersedes the older UTC14 owner-head table below. It is a read-only reconciliation; subsystem owners retain their branches.
+
+**Exact repository refs**
+- Experiments default `main`: `6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5`.
+- Active v0.6 development: `blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859`.
+- Legacy v0.5.3 development: `blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5`.
+- Master pre-update: `phoenix/master-coordination@7d75a9a291f38a894fb2ffada1755195ce21eb22`.
+- COE main: `a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE #26: `b382d233ff06c8791b1028bed3c617cc7b670d12`.
+- PR #288: OPEN / DRAFT / UNMERGED, base `main@f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; main...Master is 563 ahead / 1 behind, merge base `f4e8a891`; 216 changed paths, all under `coordination/phoenix/`. No synchronization, merge, rebase or retarget.
+
+| Owner / PR | Current exact head | Exact-head CI / disposition |
+|---|---|---|
+| CORE #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | Build [#42698139210](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42698139210) PASS; older scoped evidence only, not financial acceptance. |
+| RENTAL #328 | `10fc200b6dbf470a95e679d3acc58aff4ab2a67f` | APK [#45622918340](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45622918340), API [#45622918364](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45622918364), auth/recovery [#45622918551](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45622918551) PASS; shared build [#45622918468](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45622918468) FAIL. |
+| PISONET #255 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | Windows synthetic [#42462978704](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42462978704) PASS; not native COM acceptance. |
+| HARDWARE #340 | `fd1dbaa89e4267e53df22e73be73af80c6e61be8` | Six build/preflight/quarantine/MbedTLS/board-compile runs PASS: #45619803532, #45619803483, #45619803912, #45619803739, #45619803463, #45619803607. |
+| HARDWARE #347 | `960184670379f01e20f0e7e8bc23b3e5eedacd3f` | Quarantine #45299741995, Relay #45299742437 and build #45299741993 FAIL. |
+| HARDWARE #348 | `eb7afcb2ba0d1e84054c052c8b129cb51a91d062` | Focused header #45352513178 PASS; build #45352513177 FAIL. |
+| HARDWARE #349 | `2a5c997add4f49fcd74f753101d3a9daac0040bf` | Quarantine #45603969253 and Relay #45603968961 PASS; Full #45603969181 FAIL at inherited `Missing poll signature check`. |
+| HARDWARE #352 | `bb519e6a2129f79723b9f7fb5903b4443149fcd0` | New exact-head Quarantine #45647993474, Relay #45647993495, ESP8266 #45647993389 and ESP32 #45647993395 were IN PROGRESS; Full #45647993676 was QUEUED at read time. Latest commit adds a deprecated ISR-attribute mutation rejection to the pulse-capture lab. PR description still pins old head `a19cb235`; HARDWARE owns its refresh. No Master edits to the Hardware branch. |
+| QA #290 | `5c29d15994cee1279058f1eca12f2a3180704292` | Windows #43633486963 PASS; native COM lab not invoked. |
+| QA #292 | `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | No PR-triggered runs; no pass claimed. |
+| RELEASE #291 | `b3e4fa22c4f4b8cd3009437a06a7eec56420d411` | ESP32 compatibility #45624182886 PASS; Full #45624183036 and Windows #45624182986 FAIL at shared handover freshness. |
+| COE RELEASE #35 | `50f5fa1770e709cf3285d935c48c8eb7e98982e7` | Shared #45642963654: 227 tests PASS / 2 intentional skips, then 10/10 site-ULA profiles fail closed; case guard #45642963744 PASS; sandbox #45642963620: 40 host tests PASS, then Bubblewrap unavailable (exit 125). |
+| COE CORE #45 | `9d76a134c1f6512aa40c20ec4d247306a71a8cce` | Overlay/shell #44295049727 and case guard #44295049903 PASS; focused only. |
+| COE INTERCON #49 | `aeb8ff11b2f5db9a5f86280ab62ab988245f3919` | Stage 5.1 #44646341873 and case guard #44646341992 PASS; shared ESP32 #44646341922 FAIL at missing `mbedtls/sha256.h`. |
+| COE integration #26 | `b382d233ff06c8791b1028bed3c617cc7b670d12` | Five workflows #43096752557, #43096752563, #43096752609, #43096752632 and #43096752800 remain QUEUED; zero jobs. FROZEN. |
+
+Cleanup #266 remains OPEN / 0-of-7. The route manifest remains 11 routes / DRAFT_REVIEW_ONLY / PHX-MASTER target null. Private Drive v11/newer corrections remain NOT RECOVERED. CORE remains reserved and untouched.
+
+
+---
+
 ## PHX-MASTER UTC14 active-development handover cross-check — 2026-11-25T14:53Z
 
 The current v0.6.0 development branch is blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859 (merge commit dated 2026-11-12T20:31:10Z). Its PROJECT_HANDOVER.md and docs/handover/CURRENT_STATE.md last changed together at cfb4f04f6f743486bff79ce3512c8596e39dadaa (2026-11-12T20:28:32Z); their top current checkpoint is 2026-11-13 and is aligned with that branch head. HANDOVER_POLICY.md is present at blob c3a51e5185fb29de546d12e3b2ca25dc9aba77c6 and requires canonical handover synchronization plus an append-only transaction ledger.

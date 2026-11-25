@@ -8,6 +8,20 @@
 - COE #26 remains FROZEN: source #352 ESP32/ESP8266 blobs differ from destination, a current pulse-capture lab is absent, root NOTICE is absent, and SOURCE_INTAKE actual classification is 46/15 versus declared 47/14. Five destination workflows remain queued with zero jobs.
 - Routing manifest remains 11 routes / `DRAFT_REVIEW_ONLY` / PHX-MASTER target null. Private registry v11/newer corrections remain NOT_RECOVERED. Cleanup #266 remains OPEN / 0-of-7. **PRODUCTION NO-GO.**
 
+
+### Post-checkpoint live revalidation — same UTC15 Master activation
+
+- Master pre-update HEAD `7d75a9a291f38a894fb2ffada1755195ce21eb22`; main `6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5`; active development `2fbd2475e9f54878c316fa7cea2f228386b0e859`; legacy development `aad3aade72c1156eecba1fed30907c6d0283b2c5`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`.
+- Live main...Master compare: 563 ahead / 1 behind, merge base `f4e8a891`; PR #288 remains OPEN / DRAFT / UNMERGED with 216 coordination-only paths.
+- HARDWARE #352 current head is `bb519e6a`; its new exact-head runs were in progress/queued. The PR body still pins `a19cb235`; Hardware owns the refresh.
+- Exact #352/#26 comparison: source 2,558 tree entries / 76 board blobs / 64 board Python helpers; destination 286 entries / 2 board blobs / zero board Python helpers. Firmware blobs differ; pulse-capture/parser/token-normalizer labs are missing; source/destination tests are 47/19 with one exact and three divergent same-path files; root NOTICE, Tabler LICENSE and BlazeRentalLauncher LICENSE gaps remain.
+- Cleanup #266 remains OPEN / 0-of-7. Private registry v11/newer corrections NOT_RECOVERED. PRODUCTION NO-GO.
+
+### Previously unindexed historical report coverage restored
+
+- [PHX-MASTER UTC18 — 2026-11-24 live Hardware #349, RELEASE #291 and COE #26 provenance](PHX_MASTER_UTC18_20261124_LIVE_HARDWARE349_RELEASE291_AND_COE26_PROVENANCE_AUDIT.md).
+- The UTC21 report is now linked from the corrected historical UTC20 pointer above.
+
 ---
 ## PHX-MASTER UTC14 — post-checkpoint live owner / source-pin update (2026-11-25T14:45Z)
 
@@ -161,7 +175,7 @@ HARDWARE #349 now has a consistent owner-authored tuple: source/test `f591cb85ba
 - RELEASE #291 current PR head `ee1562df040ef1a52840039e3dace6821a92497c`: Windows [#45474966212](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45474966212) and build [#45474966373](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45474966373) FAIL at CORE-owned CURRENT_STATE freshness; compatibility [#45474966488](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45474966488) PASS.
 - COE #26 remains FROZEN. Exact historical source/destination blob checks pass for 61 runtime rows, but SOURCE_INTAKE summary is 47/14 vs actual 46/15; current source has 20 changed/8 missing runtime blobs vs the historical pin; test/license/import map defects remain.
 - Cleanup #266 OPEN / 0-of-7. Registry v11/newer corrections NOT RECOVERED; no older snapshot substituted.
-- Full report: [UTC20 exact-head and COE provenance audit](coordination/phoenix/PHX_MASTER_UTC20_20261124_LIVE_OWNER_HEADS_COE26_SOURCE_PIN_DRIFT_AND_HANDOVER_FRESHNESS_AUDIT.md).
+- The historical UTC20 report path referenced here is absent from the current tree; the next retained follow-up is [PHX-MASTER UTC21 live owner-head / COE #26 exact-tree audit](PHX_MASTER_UTC21_20261124_LIVE_OWNER_HEADS_AND_COE26_EXACT_TREE_AUDIT.md).
 - No subsystem source or destination writes. Master Python suite and verifier NOT RUN. PRODUCTION NO-GO.
 
 ## PHX-MASTER UTC19 post-checkpoint snapshot — 2026-11-24T19:26:29Z
