@@ -2635,7 +2635,12 @@ This is the single machine-checked current pointer for the RELEASE ESP32 compati
 - Latest PR-head ESP32 sketch Git blob SHA (not release-qualified): `c07aba7d518ef7eb5d536aafdd77ef6193e676cb`.
 - Release pin advanced to the latest focused-pass source/test SHA after exact-source Quarantine and Relay passed; the current docs/PR head retains the same sketch blob.
 - Latest exact-source Quarantine: #45603111644 — SUCCESS; Relay #45603111558 — SUCCESS; Full #45603111622 — FAILURE at inherited CORE/QA Missing poll signature check; no Full or production qualification.
-- Exact-source compatibility matrix: PENDING — no run claimed yet.
+- Exact-source compatibility matrix: [#45605045834](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45605045834) — SUCCESS (3/3 jobs).
+- Provenance job `139174434272`: 60 build-provenance tests, 5 reproducible-image cleanup tests, 22 release-workflow/concurrency tests, Arduino CLI archive verification, and immutable-action pin checks PASS.
+- ESP32 core 3.3.13 job `139174434392`: two clean builds produced identical 1,045,808-byte application images; SHA-256 `7ff140eb6c0427d99c90a4f6c4404748125d50ca2f3c102b534c31e70af5adb7`.
+- ESP32 core 4.0.0 job `139174434019`: two clean builds produced identical 1,100,016-byte application images; SHA-256 `b4f60e32ff18c5e7863d59dd5843c2adf107aa114a9669701ca4189b49326fa4`.
+- Both core jobs checked out HARDWARE source/test `7da74f9d1768a42fc6c15be368eeddae29035d4f`, verified sketch blob `c07aba7d518ef7eb5d536aafdd77ef6193e676cb`, and reported identical `.flash.appdesc` and `.flash.rodata` sections across each pair of builds.
+- These are ephemeral hosted-CI reproducibility outputs only; they are not approved production binaries or physical hardware acceptance.
 - Source/test-to-docs comparison: source/test `7da74f9d1768a42fc6c15be368eeddae29035d4f` is the exact focused-pass code snapshot; docs/PR head `2a5c997add4f49fcd74f753101d3a9daac0040bf` is a two-commit documentation-only descendant. The ESP32 sketch blob is identical at both refs.
 - Evidence boundary: hosted CI only. This matrix does not establish physical hardware acceptance or production binary approval.
 
@@ -4643,7 +4648,17 @@ The current sketch blob is unchanged at both refs (`c07aba7d518ef7eb5d536aafdd77
 - The Hardware stack advanced again before this correction; the final release pin uses the later live source/test SHA `7da74f9d1768a42fc6c15be368eeddae29035d4f` and current docs/PR head `2a5c997add4f49fcd74f753101d3a9daac0040bf`.
 
 **RELEASE exact-source compatibility matrix**
-- Exact-source compatibility matrix: PENDING — no run claimed yet. Update this line only after both ESP32 core jobs and the provenance job finish successfully.
+- Exact-source compatibility matrix: [#45605045834](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45605045834) — SUCCESS (3/3 jobs).
+- Provenance job `139174434272`: 60 build-provenance tests, 5 reproducible-image cleanup tests, 22 release-workflow/concurrency tests, Arduino CLI archive verification, and immutable-action pin checks PASS.
+- ESP32 core 3.3.13 job `139174434392`: two clean builds produced identical 1,045,808-byte application images; SHA-256 `7ff140eb6c0427d99c90a4f6c4404748125d50ca2f3c102b534c31e70af5adb7`.
+- ESP32 core 4.0.0 job `139174434019`: two clean builds produced identical 1,100,016-byte application images; SHA-256 `b4f60e32ff18c5e7863d59dd5843c2adf107aa114a9669701ca4189b49326fa4`.
+- Both core jobs checked out HARDWARE source/test `7da74f9d1768a42fc6c15be368eeddae29035d4f`, verified sketch blob `c07aba7d518ef7eb5d536aafdd77ef6193e676cb`, and reported identical `.flash.appdesc` and `.flash.rodata` sections across each pair of builds.
+- These are ephemeral hosted-CI reproducibility outputs only; they are not approved production binaries or physical hardware acceptance.
+
+**Exact-head integration outcomes**
+- Full [#45605045913](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45605045913): CI-0701 proof PASS; `validate` FAIL at CORE-owned `experiment/openwrt/BlazePwifi/PROJECT_HANDOVER.md` freshness checkpoint `f313fe0ded5d0702a9a1f74de57e314a5f9744b6`; all 14 target/platform jobs PASS; update bundle, simulations, candidate gate, signing and publication SKIPPED.
+- Windows [#45605045921](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45605045921): handover freshness FAIL at the same CORE-owned checkpoint; Windows build and publisher SKIPPED.
+- The source-pin compatibility matrix is PASS; the integrated Full/Windows release pipelines remain FAILURE and are not qualified. Update this line only after both ESP32 core jobs and the provenance job finish successfully.
 
 **Integration limitations**
 - Full/Windows integration remains subject to CORE-owned PROJECT_HANDOVER.md freshness. The last inspected Windows handover job rejected newer workflow changes because the canonical CORE checkpoint remained `f313fe0ded5d0702a9a1f74de57e314a5f9744b6`; RELEASE will not edit CORE-owned handovers.
