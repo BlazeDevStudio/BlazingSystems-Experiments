@@ -1,3 +1,58 @@
+## PHX-RELEASE staged mission and acceptance ledger — revision REL-R1 (2026-11-25)
+
+This is the PHX-RELEASE workstream submission for PHX-MASTER consolidation. It extends the existing handover rather than creating a second ecosystem roadmap. The historical blanket NO-GO is treated as superseded by the user's staged directive; each unresolved cause remains an evidence-based acceptance gate.
+
+**Mission reconciliation.** The original release mission is to produce reproducible multi-target pipelines, traceable artifacts, manifests and checksums, controlled signing/publication, recovery packages and operator installation guidance for OpenWrt targets, x86, Orange Pi, ESP8266/ESP32, Windows and Android/Rental outputs. Release owns packaging and release controls; subsystem behavior, financial authority, independent QA approval, signing custody, physical acceptance and production authorization remain external dependencies. The private registry v11 was not recovered, so Rental migration-utility scope remains partially unknown.
+
+**Current verified evidence SHA:** `bc3d8086d7819d09774083749d1502d64a113a9e`. Exact-head compatibility run [#45618845067](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45618845067) passed provenance/toolchain checks and both pinned ESP32 core builds. Full run [#45618845238](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45618845238) passed CI-0701 and all fourteen target/platform build jobs, but mandatory validation failed at the CORE-owned handover freshness gate; downstream candidate, signing and publishing jobs were skipped. Windows run [#45618844912](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45618844912) failed at the same freshness gate before build/publication.
+
+### Fixed-weight mandatory acceptance ledger
+
+Weights are frozen for revision REL-R1 and total 100. Only VERIFIED criteria contribute to the official percentage. Changing scope or weights requires a new revision with old/new denominators and recalculated results.
+
+| ID | Stage | Mandatory release criterion | Weight | Status | Evidence / dependency |
+|---|---:|---|---:|---|---|
+| REL-0001 | 00 | Original release mission, ownership and control-plane route reconciled | 4 | VERIFIED | Original `06_RELEASE_ENGINEERING.txt`, AGENTS.md, #172, PR #291 |
+| REL-0101 | 01 | Supported build/artifact matrix inventoried with acceptance boundaries | 4 | VERIFIED | This handover and PR #291 |
+| REL-0201 | 02 | CI uses immutable actions, bounded concurrency and pinned toolchains | 5 | VERIFIED | #45618845067 provenance job; CI-0701 in #45618845238 |
+| REL-0202 | 02 | Artifact provenance readers and admission controls are regression-tested | 5 | VERIFIED | #45618845067 provenance job |
+| REL-0203 | 02 | PR builds are isolated from write-privileged publication credentials | 5 | VERIFIED | PR #291 workflow tests; publisher skipped on PR |
+| REL-0301 | 03 | Supported OpenWrt preview matrix builds with checksums/provenance | 7 | VERIFIED | 14 target/platform jobs in #45618845238 |
+| REL-0302 | 04 | x86 BIOS/UEFI deliverables are fully identified and independently installable | 5 | VERIFICATION PENDING | x86_64 build passes; BIOS/UEFI install acceptance absent |
+| REL-0303 | 04 | Required Orange Pi packages/images build with provenance | 5 | VERIFIED | Orange Pi jobs in #45618845238 |
+| REL-0304 | 03 | ESP8266 firmware compiles and records exact-source provenance | 4 | VERIFIED | ESP8266 job in #45618845238 |
+| REL-0305 | 04 | ESP32 firmware is reproducible across pinned supported cores | 4 | VERIFIED | 3/3 jobs PASS in #45618845067 |
+| REL-0306 | 03 | Windows Setup/portable package builds from current integrated source | 6 | BLOCKED | #45618844912 stopped at CORE freshness |
+| REL-0307 | 03 | Android/Rental APK builds from current integrated source | 6 | VERIFIED | Android job in #45618845238 |
+| REL-0308 | 03 | Rental installer and migration utilities are complete and source-reconciled | 4 | UNKNOWN | Registry v11 unavailable; integrated validation skipped |
+| REL-0401 | 04 | SHA256SUMS/manifests are deterministic and validated | 5 | VERIFIED | CI-0701 and provenance suite at current evidence SHA |
+| REL-0402 | 04 | Protected signer and independent anti-rollback/freshness witness are admitted | 6 | BLOCKED | No approved signer/witness evidence |
+| REL-0501 | 05 | Cross-system release contracts and CORE handover are current | 4 | FAILED | Current mandatory freshness gate failure |
+| REL-0601 | 06 | Independent PHX-QA and PHX-MASTER release acceptance is recorded | 5 | BLOCKED | Zero independent review recorded on PR #291 |
+| REL-0701 | 07 | Complete release candidate contains all mandatory artifacts and recovery material | 6 | BLOCKED | Candidate/signing/publication stages skipped |
+| REL-0801 | 08 | Clean install, upgrade, migration and rollback pass on required targets | 6 | BLOCKED | No current target deployment-validation record |
+| REL-0901 | 09 | Authorized production publication and operational acceptance are evidenced | 4 | NOT STARTED | No authorized production deployment evidence |
+
+### Deterministic workstream metrics
+
+- Implementation completion: 54 / 69 verified weight = **78.26%**.
+- Functional verification: 41 / 56 verified weight = **73.21%**.
+- Cross-system integration: 0 / 10 verified weight = **0.00%**.
+- QA and security validation: 15 / 26 verified weight = **57.69%**.
+- Release engineering: 50 / 83 verified weight = **60.24%**.
+- **Verified deployment readiness:** 54 / 100 = **54.00%**.
+- **Actual deployment completion:** 0 / 4 = **0.00%**.
+
+Measurement status is **PROVISIONAL** pending PHX-MASTER deduplication and private-registry recovery. Verified mandatory weight is 54; unverified/blocked/failed/not-started weight is 42; unknown weight is 4. Evidence coverage is 96.00% of weighted criteria, scope reconciliation coverage is 96.00%, confirmed lower bound is 54.00%, potential upper bound is 100.00%, and the unresolved engineering measurement range is 46.00 percentage points.
+
+### Stage gate state and next executable work
+
+Stage 00 VERIFIED; Stage 01 VERIFIED; Stage 02 BLOCKED by integrated freshness despite verified release-owned controls; Stages 03 and 04 IN PROGRESS; Stages 05 and 06 BLOCKED; Stage 07 IN PROGRESS; Stage 08 BLOCKED; Stage 09 NOT STARTED.
+
+The earliest incomplete mandatory gate is Stage 02. PHX-CORE must publish the current canonical handover SHA. Release then reruns current Windows/full validation and records whether REL-0306 and REL-0501 can advance. Parallel release work may continue on x86 install/recovery acceptance and Rental migration-utility scope recovery without weakening the freshness, signer, QA or physical-acceptance gates.
+
+---
+
 ## PHX-RELEASE UTC 2026-11-25 — supersession audit: Arduino CLI archive-verifier hardening
 
 - Compatible draft head `ab719afe38ea9af97b0d46ab34a67c675d690d87` already contains RELEASE-owned Arduino CLI archive-verifier hardening and its regression coverage. No implementation was duplicated and no non-RELEASE source was changed.
