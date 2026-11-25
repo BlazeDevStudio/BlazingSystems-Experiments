@@ -106,7 +106,7 @@ This subsection records the owner-implemented #315 behavior as a **provisional c
 
 ---
 
-### 2.3 ControllerAuthV1Lab evidence boundary — 2026-11-25 UTC23
+### 2.5 ControllerAuthV1Lab evidence boundary — 2026-11-25 UTC23
 
 The non-actuating `ControllerAuthV1Lab.h` helper and its native test are not the production poll-response implementation.
 
