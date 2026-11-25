@@ -45,6 +45,12 @@ def _same_file_state(left: os.stat_result, right: os.stat_result) -> bool:
 
 def _read_installed_binary(path: Path, expected_info: os.stat_result) -> bytes:
     """Read a bounded executable through a stable no-follow file descriptor."""
+    if getattr(expected_info, "st_nlink", None) != 1:
+        raise VerificationError(
+            "hard-linked installed Arduino CLI binary is not admitted: "
+            f"link_count={getattr(expected_info, 'st_nlink', 'unknown')}"
+        )
+
     if expected_info.st_size <= 0 or expected_info.st_size > MAX_BINARY_SIZE:
         raise VerificationError(
             "installed Arduino CLI binary size is outside the allowed range: "
@@ -64,6 +70,11 @@ def _read_installed_binary(path: Path, expected_info: os.stat_result) -> bytes:
         before = os.fstat(fd)
         if not stat.S_ISREG(before.st_mode):
             raise VerificationError("installed Arduino CLI path is not a regular file")
+        if getattr(before, "st_nlink", None) != 1:
+            raise VerificationError(
+                "hard-linked installed Arduino CLI binary is not admitted: "
+                f"link_count={getattr(before, 'st_nlink', 'unknown')}"
+            )
         if before.st_size <= 0 or before.st_size > MAX_BINARY_SIZE:
             raise VerificationError(
                 "installed Arduino CLI binary size is outside the allowed range: "
