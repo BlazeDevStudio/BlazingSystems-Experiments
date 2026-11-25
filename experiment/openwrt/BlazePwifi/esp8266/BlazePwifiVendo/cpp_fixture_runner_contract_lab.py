@@ -350,7 +350,7 @@ def verify():
     result = unittest.TextTestRunner(verbosity=1).run(suite)
     if not result.wasSuccessful():
         raise SystemExit(1)
-    print("CPP_FIXTURE_RUNNER_CONTRACT_PASS 8/8")
+    print("CPP_FIXTURE_RUNNER_CONTRACT_PASS 9/9")
 
 
 if __name__ == "__main__":

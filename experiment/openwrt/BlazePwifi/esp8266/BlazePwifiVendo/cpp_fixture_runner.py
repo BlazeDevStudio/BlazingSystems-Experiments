@@ -52,6 +52,20 @@ def _validate_timeout(name, value):
         raise ValueError(f"{name} must be a finite positive number of seconds")
 
 
+def _validate_stem(stem):
+    """Reject stems that could escape the runner-owned temporary directory."""
+    if (
+        not isinstance(stem, str)
+        or not stem
+        or stem in {".", ".."}
+        or Path(stem).is_absolute()
+        or "/" in stem
+        or "\\" in stem
+        or "\x00" in stem
+    ):
+        raise ValueError("stem must be a single safe filename component")
+
+
 def run_cpp_fixture(
     source,
     *,
@@ -69,6 +83,7 @@ def run_cpp_fixture(
     """
     _validate_timeout("compile_timeout", compile_timeout)
     _validate_timeout("run_timeout", run_timeout)
+    _validate_stem(stem)
 
     with tempfile.TemporaryDirectory(prefix=prefix) as folder:
         cpp = Path(folder) / f"{stem}.cpp"
