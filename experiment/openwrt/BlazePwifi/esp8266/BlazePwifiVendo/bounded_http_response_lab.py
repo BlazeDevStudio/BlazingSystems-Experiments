@@ -219,7 +219,7 @@ def verify():
 
         print(
             f"{board}: BOUNDED_HTTP_RESPONSE_PASS "
-            "allowed=3 denied=7 mutations=5/5"
+            "allowed=3 denied=9 mutations=5/5"
         )
 
     print("BOUNDED_HTTP_RESPONSE_BOTH_BOARDS_PASS")
