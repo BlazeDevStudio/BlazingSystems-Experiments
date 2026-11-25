@@ -153,3 +153,44 @@ or during `commitInstall` remain a distinct recovery follow-up.
   legacy pre-token pending recovery, device-owner compatibility, power
   interruption and rollback acceptance still require separate tests.
   Neither this change nor CI autorizes production rollout.
+
+
+## PHX-ANDROID staged continuation checkpoint — 2026-11-25
+
+**Original role specification:** `02_BLAZERENTAL_ANDROID.txt` recovered; retained responsibilities include Launcher3 Android client, management modes, local allowed/hidden applications, alarms, offline lease UX, QR/auth, admin access, APK signing continuity, and assigned standalone rental-facing server integration. The latter is an interface responsibility, **not** ownership of PHX-CORE's money, receipt or ledger authority. Supplemental `Pasted text(2).txt` outlines multi-agent coordination. The 2026-11-25 master staged directive supersedes blanket development-stop language but **not** real acceptance gates.
+
+**Source/coordination:** Keep `phoenix/rental-apk-contract-audit-20261121` draft PR #328 stacked on PHX-RENTAL #289 → #240. Master owns issue #172, PR #288 and `coordination/phoenix/`; owner mapping remains `DRAFT_REVIEW_ONLY`. Do not relocate, merge, delete, sign, flash or run on customer devices without the relevant independent conditions being met.
+
+**Provisional deterministic workstream acceptance ledger:** `PHX_RENTAL_WORKSTREAM_ACCEPTANCE.json` revision `PXA-WORKSTREAM-R1-2026-11-25`, 31 mandatory criteria, 100 fixed risk-weighted points with actual deployment separated (2 points). After the latest Android 27 evidence, six criteria worth **21 readiness points out of 98** are verified: 21.43% **PROVISIONAL PHX-ANDROID only**. Previous checkpoint before API27 test was 10/98=10.20%, net +11/98=+11.22 percentage points. Unverified readiness weight = 77. Unknown readiness weight = 11. The theoretical upper bound is 100%, range 78.57 percentage points; this is not statistical uncertainty or proof of likely completion. Exact reproducible calculation:
+`python3 tools/compute_acceptance_progress.py PHX_RENTAL_WORKSTREAM_ACCEPTANCE.json` (execute from this launcher directory).
+Global deployment readiness is **NOT YET MEASURABLE**, pending MASTER's deduplicated cross-role ledger.
+
+**Evidence pins**
+- Android API21/API23 install/startup + debug signing: [CI run 44782114393](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44782114393) SUCCESS, source `0e0da62acd47c6a1ce287f8a30fc700d603fa070`.
+- Android API27 7 lease-auth + 6 installer cases: [CI run 45621832195](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45621832195) SUCCESS, source `0907da70c55b61d013aa75b5002ab37a51ccdf0a`, JUnit [artifact #15026510211](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45621832195/artifacts/15026510211).
+- Workstream staged ledger + APK contract verifier: [CI run 45621832194](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45621832194), 22/22 host cases PASS on `0907da70c55b61d013aa75b5002ab37a51ccdf0a`.
+- These are bounded source-exact results. They do not validate a physical OEM device, live credit transaction, Device Owner or Work Profile recovery, release signing or actual deployment.
+
+**Stage 00–09 status (PHX-ANDROID only; gates do not advance on source edits alone)**
+| Stage | Gate status and next evidence |
+| --- | --- |
+| 00 Mission recovery | IN PROGRESS — original mission and later directives recovered; MASTER scope/ownership signoff pending |
+| 01 Architecture/planning | IN PROGRESS — R1 weighted workstream ledger defined and tested; MASTER deduplication/acceptance pending |
+| 02 Stabilization | IN PROGRESS — API21/23 install and API27 focused suites pass; broader CI and regression coverage not fully green |
+| 03 Functional development | IN PROGRESS — complete explicit lifecycle, admin, offline/reboot and DPC behavior plus real integration tests |
+| 04 Compatibility | IN PROGRESS — only API21/API23 x86 installation has current evidence; API26+ and ARM/OEM pending |
+| 05 Cross-system integration | BLOCKED — CORE durable credit receipt contract and isolated backend transactions need coordination |
+| 06 QA/security | NOT STARTED for final gate — independent managed policy/reversal, fault injection and physical QA outstanding |
+| 07 Release engineering | BLOCKED — production signing/versionCode, rescue, reproducibility and review gates outstanding |
+| 08 Deployment validation | NOT STARTED — fresh authorized provisioning, signed upgrade, rollback and recovery |
+| 09 Production acceptance | NOT STARTED — owner approval and operational acceptance not performed |
+
+**Actionable blocker register**
+- **PXA-BLK-001 / migration ownership:** PHX-MASTER's `OWNERSHIP_ROUTES.json` is `DRAFT_REVIEW_ONLY`; prepare SHA-256 file-by-file source/target/licensing map, reconcile private storage registry, request owner approval before transfer. Parallel: launcher code tests and source audit.
+- **PXA-BLK-002 / shared build:** Whole BlazePwifi CI fails at a CORE-owned handover freshness gate and ESP32 Mbed TLS/toolchain problem in inherited streams. CORE/HARDWARE/QA own respective fixes; continue scoped Android tests without bypassing mandatory gates.
+- **PXA-BLK-003 / Device Owner and Work Profile:** No source-exact fresh disposable enrollment/lock/reversal evidence; implement reversible instrumented policy tests without customer devices. PHX-ANDROID with PHX-QA review.
+- **PXA-BLK-004 / credit authority:** Client cannot claim durable financial ACK or replay acceptance until PHX-CORE supplies a versioned, tested receipt/lease contract. PHX-ANDROID prepares negative integration tests only.
+- **PXA-BLK-005 / production signing:** Only Lineage-2 certificate metadata is documented; actual owner-signed upgrade and physical rollback are unverified. PHX-RELEASE/owner key custody required; no debug APK passes as an upgrade.
+- **PXA-BLK-006 / autonomous wake-up:** Separate hourly PHX-ANDROID automation could not be created because account already has five active scheduled tasks (plan limit); current session is real, but future wake-up remains **NEEDS_EXTERNAL_WAKEUP** unless an existing authorized scheduler is arranged. Do not silently replace another role's task.
+
+**Next owned sequence:** (1) Confirm current PR #328 head/CI and remote-readback ledger, (2) add safe Device Owner policy apply-and-reverse regression on a fresh API27 emulator, (3) inspect actual protocol fixtures with CORE for replay/ACK safety, (4) expand API26/29/30/33/35 compatibility, (5) request PHX-QA and MASTER review and submit a deduplicated BLAZE-COMMS/1 progress envelope. No production cutover merely because development may proceed.
