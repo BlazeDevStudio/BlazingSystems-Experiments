@@ -3,6 +3,7 @@
 This structural guard runs before the source-extracted parser lab. It prevents
 the orchestration module from becoming a second monolithic test contract.
 """
+import ast
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
