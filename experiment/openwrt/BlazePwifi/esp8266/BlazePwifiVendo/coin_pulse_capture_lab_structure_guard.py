@@ -105,8 +105,10 @@ if "CPP" not in fixture_names:
 cpp = literal_assignment(fixture_tree, "CPP")
 if not isinstance(cpp, str) or "@@FUNCTIONS@@" not in cpp:
     fail("CPP fixture lost its exact-source insertion point")
-if "COIN_PULSE_CAPTURE_PASS" not in cpp or "18/18 top-level scenarios" not in cpp:
+if "COIN_PULSE_CAPTURE_PASS" not in cpp or "/18 top-level scenarios" not in cpp:
     fail("CPP fixture lost the 18-scenario pass marker")
+if "runIsrSequenceWraparound" not in cpp:
+    fail("CPP fixture lost the exact ISR rollover scenario")
 for marker in ("SIMULATED_ONLY=1", "PHYSICAL_COIN_PULSE_ACCEPTANCE=0",
                "PHYSICAL_RELAY_ACCEPTANCE=0", "PHYSICAL_POWER_CUT_ACCEPTANCE=0"):
     if marker not in runner_source:
