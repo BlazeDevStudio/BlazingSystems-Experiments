@@ -303,6 +303,30 @@ def verify_board_specific_isr_selection(source, board):
     print(f"{board}_ACTIVE_ISR_BRANCH_SELECTION_PASS")
 
 
+def verify_inactive_isr_source_decoy_tolerance(source, board):
+    definitions = extract_functions(source, "coinEdgeISR")
+    if len(definitions) < 2:
+        raise RuntimeError(f"{board} expected both conditional coinEdgeISR definitions, found {len(definitions)}")
+
+    decoy = (
+        "#if 0\\n"
+        "void IRAM_ATTR coinEdgeISR(){ ++disabledSourceDecoy; }\\n"
+        "#endif\\n"
+    )
+    first_offset = definitions[0][0]
+    mutated_source = source[:first_offset] + decoy + source[first_offset:]
+    baseline = extract_board_coin_edge_isr(source, board)
+    selected = extract_board_coin_edge_isr(mutated_source, board)
+    if selected != baseline:
+        raise RuntimeError(f"{board} inactive source decoy changed the selected ISR")
+
+    # Exercise the complete board-selection contract against the mutated real
+    # sketch, not only the small synthetic probe above.
+    verify_board_specific_isr_selection(mutated_source, board)
+    print(f"{board}_INACTIVE_ISR_SOURCE_DECOY_IGNORED")
+
+
+
 def main():
     verify_shared_extractor()
     verify_fixture_routes_edges_through_production_isr()
@@ -311,6 +335,7 @@ def main():
         try:
             source = sketch.read_text(encoding="utf-8")
             verify_board_specific_isr_selection(source, board)
+            verify_inactive_isr_source_decoy_tolerance(source, board)
             verify_configure_runtime_pins_preserves_edge_baseline(source)
             functions = []
             for helper_name, expected_signature in FUNCTION_SPECS:
