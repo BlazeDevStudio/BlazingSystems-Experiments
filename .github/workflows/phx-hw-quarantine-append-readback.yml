@@ -7,6 +7,7 @@ on:
       - 'experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/quarantine_append_readback_lab.py'
       - 'experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/quarantine_clear_commit_lab.py'
       - 'experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/quarantine_clear_deny_lab.py'
+      - 'experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/poll_pre_poll_deny_guard.py'
       - '.github/workflows/phx-hw-quarantine-append-readback.yml'
   workflow_dispatch:
 permissions:
@@ -21,6 +22,8 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: Verify exact checkout
         run: test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
+      - name: Verify fail-closed intake suspension before synchronous poll
+        run: python3 experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/poll_pre_poll_deny_guard.py
       - name: Compile and run source-extracted append/readback failure injection
         run: python3 experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/quarantine_append_readback_lab.py
       - name: Compile and run source-extracted clear/commit failure injection
