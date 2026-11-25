@@ -428,9 +428,10 @@ static bool runIsrSequenceWraparound(){
   resetState();
   coinEdgeSequence=0xFFFFFFFEUL;
   lastHandledCoinEdgeSequence=0xFFFFFFFEUL;
-  emitCoinEdges(2U);
+  emitCoinEdges(1U);
   if(snapshotCoinEdgeSequence()!=0xFFFFFFFFUL)
     return fail("isr-sequence-did-not-wrap","first ISR edge did not advance to UINT32_MAX");
+  emitCoinEdges(1U);
   if(snapshotCoinEdgeSequence()!=0U)
     return fail("isr-sequence-did-not-wrap","second ISR edge did not wrap to zero");
   if(quarantineCoinIngressTransition())
