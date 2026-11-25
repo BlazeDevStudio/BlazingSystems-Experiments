@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Keep the 700-line coin-pulse lab split into readable fixture, contract and runner modules.
+"""Keep the coin-pulse lab split into readable fixture, contract, selector and runner modules.
 
 This guard checks source ownership boundaries only; the executable behavior tests
 remain in coin_pulse_capture_lab.py and the board-specific firmware sketches.
@@ -37,6 +37,14 @@ def imported_from(tree: ast.Module, module: str) -> set[str]:
         for node in ast.walk(tree)
         if isinstance(node, ast.ImportFrom) and node.module == module
         for alias in node.names
+    }
+
+
+def defined_functions(tree: ast.Module) -> set[str]:
+    return {
+        node.name
+        for node in tree.body
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
     }
 
 
@@ -98,6 +106,30 @@ if imported_from(runner_tree, "coin_pulse_capture_lab_contracts") != {
     "FUNCTION_SPECS", "FUNCTION_INDEX_BY_NAME", "MUTATIONS"
 }:
     fail("runner must import the source contract and mutation matrix")
+selector_imports = {
+    "extract_board_coin_edge_isr",
+    "mutate_active_isr_attribute",
+    "verify_board_specific_isr_selection",
+    "verify_inactive_isr_source_decoy_tolerance",
+}
+if imported_from(runner_tree, "coin_pulse_capture_lab_isr") != selector_imports:
+    fail("runner must import only the public board-ISR selector contracts")
+if imported_from(isr_selector_tree, "firmware_lab_source") != {
+    "extract_functions", "mask_active_cpp_code", "mask_non_code"
+}:
+    fail("ISR selector must use the shared firmware source parser")
+selector_functions = {
+    "_condition_board_gate",
+    "_active_board_isr_definition",
+    "extract_board_coin_edge_isr",
+    "mutate_active_isr_attribute",
+    "verify_board_specific_isr_selection",
+    "verify_inactive_isr_source_decoy_tolerance",
+}
+if not selector_functions.issubset(defined_functions(isr_selector_tree)):
+    fail("ISR selector module does not own all six board-selection helpers")
+if selector_functions & defined_functions(runner_tree):
+    fail("runner still owns board-selection helpers")
 if {"CPP", "FUNCTION_SPECS", "FUNCTION_INDEX_BY_NAME", "MUTATIONS"} & assigned_names(runner_tree):
     fail("runner still owns an inline fixture or contract table")
 
@@ -142,4 +174,4 @@ if "for name, helper_name, old, new, expected in MUTATIONS" not in runner_source
     fail("runner no longer executes the complete mutation matrix")
 
 print("COIN_PULSE_CAPTURE_LAB_MODULE_BOUNDARIES_PASS")
-print(f"FUNCTION_SPECS={len(specs)} MUTATIONS={len(mutation_names)}")
+print(f"FUNCTION_SPECS={len(specs)} MUTATIONS={len(mutation_names)} ISR_SELECTOR_HELPERS={len(selector_functions)}")
