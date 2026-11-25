@@ -170,6 +170,27 @@ class ArduinoCliArchiveVerifierTests(unittest.TestCase):
             download.assert_not_called()
             read_bytes.assert_not_called()
 
+    def test_rejects_hard_linked_installed_binary_before_network_download(self):
+        with tempfile.TemporaryDirectory() as directory:
+            binary = Path(directory) / "arduino-cli"
+            alias = Path(directory) / "operator-owned-alias"
+            binary.write_bytes(b"synthetic executable bytes")
+            binary.chmod(0o755)
+            os.link(binary, alias)
+
+            with patch.object(
+                verifier, "urlopen", return_value=FakeResponse()
+            ) as download, patch.object(
+                verifier, "verify_archive_payload", return_value="a" * 64
+            ):
+                with self.assertRaisesRegex(
+                    VerificationError,
+                    "hard-linked installed Arduino CLI binary",
+                ):
+                    verify_downloaded_binary(binary)
+
+            download.assert_not_called()
+
     def test_rejects_installed_binary_changed_during_descriptor_read(self):
         with tempfile.TemporaryDirectory() as directory:
             binary = Path(directory) / "arduino-cli"
