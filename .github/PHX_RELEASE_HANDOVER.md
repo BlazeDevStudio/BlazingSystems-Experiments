@@ -1,3 +1,9 @@
+## PHX-RELEASE UTC 2026-11-25 — supersession audit: Arduino CLI archive-verifier regression extension
+
+- Compatible draft head `0b89fa015f1d601cc951eaccd94cb824b172bbdd` already contains a RELEASE-owned extension to Arduino CLI archive-verifier regression coverage. No implementation was duplicated and no non-RELEASE source was changed.
+- At inspection, [BlazePwifi build #45621401651](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45621401651) was a completed failure, and [ESP32 compatibility #45621401552](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45621401552) was pending; neither supplies new production acceptance. [Windows #45621401564](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45621401564) failed before Windows build/publication.
+- The fixed-weight REL-R1 ledger above remains the current PHX-RELEASE staged workstream submission. This is scoped CI evidence only; PR #291 remains OPEN / DRAFT / UNMERGED with zero independent reviews.
+
 ## PHX-RELEASE staged mission and acceptance ledger — revision REL-R1 (2026-11-25)
 
 This is the PHX-RELEASE workstream submission for PHX-MASTER consolidation. It extends the existing handover rather than creating a second ecosystem roadmap. The historical blanket NO-GO is treated as superseded by the user's staged directive; each unresolved cause remains an evidence-based acceptance gate.
