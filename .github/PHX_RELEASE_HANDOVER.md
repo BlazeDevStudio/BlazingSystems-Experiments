@@ -2339,7 +2339,7 @@ This is the single machine-checked current pointer for the RELEASE ESP32 compati
 - HARDWARE #349 docs HEAD: `dc6ef11c104fdd9b73dfdd1120ca3a2bc3f86dcf`.
 - HARDWARE #349 PR HEAD: `56de0761ca67b54feb4889401a810b0069f50614`.
 - ESP32 sketch Git blob SHA: `adfd2f110d88243d03f2195658fb456b154dcb84`.
-- Exact-source compatibility matrix: PENDING — no run claimed yet.
+- Exact-source compatibility matrix: [#45553387775](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45553387775) — SUCCESS (3/3 jobs).
 - Source/test-to-docs comparison: source/test `f591cb85ba032e4f2c30e5008c71de9ce8d17f2e` contains the current HARDWARE #349 code snapshot; docs commit `dc6ef11c104fdd9b73dfdd1120ca3a2bc3f86dcf` adds the current handover; PR head `56de0761ca67b54feb4889401a810b0069f50614` adds the subsequent focused-workflow path-filter correction. The ESP32 sketch blob is unchanged between the source/test commit and current PR head.
 - Evidence boundary: hosted CI only. This matrix does not establish physical hardware acceptance or production binary approval.
 
@@ -4209,3 +4209,11 @@ Protected signer and independent freshness witness, durable financial accounting
 **Scope:** RELEASE-owned compatibility test, compatibility workflow and RELEASE handover only. No HARDWARE, CORE, PISONET, QA, MASTER or COE destination source was changed. No signer, tag, publication, device flash, payment migration or deployment was invoked.
 
 **Evidence boundary:** hosted CI only; physical hardware acceptance remains NOT TESTED; PRODUCTION NO-GO.
+
+
+**Final exact-source verification — source/test + workflow fix commit `1c99aa9b2eac493cfec2a965a7c2572dc8e73b55`**
+- PR compatibility matrix [#45553387775](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45553387775): **SUCCESS, 3/3 jobs**. The provenance regression suite and ESP32 Arduino cores 3.3.13 and 4.0.0 all passed against HARDWARE source/test `f591cb85ba032e4f2c30e5008c71de9ce8d17f2e` and sketch blob `adfd2f110d88243d03f2195658fb456b154dcb84`. Each core performed two clean builds; the application image was byte-identical within that core's pair. Core 3.3.13 output: 1,045,648 bytes, SHA-256 `813035a3691474e5c1d3ca5a52e40b60b545d32eecea74adb8d9fd772011d0dd`. Core 4.0.0 output: 1,099,888 bytes, SHA-256 `268f4eb8fc8bf4653ee1755dee7b20622122fd4caf078455cd80d6509c2f9bea`. These are synthetic hosted-CI build artifacts, not approved production binaries.
+- Full PR build [#45553387564](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45553387564): **FAILURE** at the CORE-owned canonical `CURRENT_STATE.md` freshness gate, last checkpoint `d85eb6a2766781b6cac1807cef461993d8216b84`. CI-0701 and all 14 target/platform jobs passed; downstream simulation, update-bundle, signing and publication stages were skipped.
+- Windows PR [#45553387773](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45553387773): **FAILURE** at the same shared CORE-owned handover freshness gate; Windows build and publisher skipped.
+- Exact-source CI-0701 job `138999589027` in Full run #45553387564: **PASS**; logs include `PHX-RELEASE-HANDOVER-ANCHOR-PASS` and `PHX-RELEASE-ESP32-COMPAT-PASS`.
+- Evidence is hosted CI only. No hardware was flashed, no production signing or publishing occurred, and no physical acceptance is implied.
