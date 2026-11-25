@@ -737,7 +737,7 @@ class BlazePwifiV053ImmutableReleaseTests(unittest.TestCase):
             ('TAG_HTTP_STATUSES" != "404"', 'TAG_HTTP_STATUSES" != "200"'),
             ('TAG_HTTP_COUNT" -ne 1', 'TAG_HTTP_COUNT" -lt 1'),
             (" --draft\n", " --latest\n"),
-            ('gh release edit "$TAG"', 'gh release edit "$TAG"'),
+            ('gh release create "$TAG"', 'gh release edit "$TAG"'),
             (
                 'gh release upload "$TAG" --repo "$GITHUB_REPOSITORY"',
                 'gh release upload "$TAG" --repo "$GITHUB_REPOSITORY" --clobber',
