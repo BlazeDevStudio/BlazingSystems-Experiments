@@ -1,8 +1,56 @@
-## PHX-RELEASE UTC 2026-11-25 — supersession audit: ESP32 reproducibility verifier regression extension
+## PHX-RELEASE UTC08 — ESP32 fallback cursor-restoration exception preservation
 
-- Compatible draft head `03dac8aa20b4c4d7eff64f7c74de5aceec113d12` already contains the RELEASE-owned ESP32 reproducibility verifier regression extension and compatibility-pin refresh. No implementation was duplicated and no non-RELEASE source was changed.
-- At inspection, [BlazePwifi build #45579612688](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45579612688) and [ESP32 compatibility #45579612811](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45579612811) were **in progress** and are not acceptance evidence. [Windows #45579612634](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45579612634) had already failed; no Windows build or publication result is claimed.
-- This entry records a non-terminal, scoped CI snapshot only—not production readiness. PR #291 remains OPEN / DRAFT / UNMERGED with zero independent reviews. **PRODUCTION NO-GO** remains pending MASTER and independent QA approval, protected signing and durable finance/migration controls, and physical acceptance.
+**Activation date:** 2026-11-25. **Disposition:** one RELEASE-owned reproducibility-verifier defect fixed test-first; exact-source compatibility push and PR matrices both PASS 3/3. Full integration remains blocked by the CORE-owned canonical handover freshness gate. PR #291 remains OPEN / DRAFT / UNMERGED. Strict NO Codex. No merge, tag, signing, publication, hardware flash, real payment migration or customer deployment.
+
+### Branch and exact source identity
+
+- Repository: `BlazeDevStudio/BlazingSystems-Experiments`.
+- Existing PR #291 branch: `phoenix/release-publisher-isolation-20261115`; base PR #242 SHA: `734b89d9e7792247e8376335c3f3685500ab3f89`.
+- PR #291 head at UTC08 preflight / role lock: `17d7dcefc9adc9dc8ce585cf87538ce25516269e`.
+- Test-only regression commit: [`ddd60a83`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/ddd60a83c2d1e43978e8ad3b7da1df97ae7be82d).
+- Source correction / exact source-test head: [`03dac8aa`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/03dac8aa20b4c4d7eff64f7c74de5aceec113d12).
+- The increment from the preflight head to source/test head changes exactly two RELEASE-owned files: `.github/scripts/test_verify_esp32_reproducible_build.py` and `.github/scripts/verify_esp32_reproducible_build.py`. No CORE, RENTAL, PISONET, HARDWARE, QA or MASTER path was changed by this increment.
+- After the source/test commit, the branch advanced through documentation-only descendants. At this handover update, PR #291 head is `fed1de4865c99d33edaec9134eb935b01b935883`. The observed compare from source/test `03dac8aa` to this head is 3 commits ahead / 0 behind; the added paths are `.github/PHX_RELEASE_HANDOVER.md`, CORE-owned `experiment/openwrt/BlazePwifi/PROJECT_HANDOVER.md`, and CORE-owned `experiment/openwrt/BlazePwifi/docs/handover/CHANGE_LEDGER.md`. Those existing documentation changes were preserved and are not claimed as part of this source fix.
+- PR #291 still has 31 accumulated paths (26 RELEASE / 3 CORE / 2 PISONET). The increment itself changed only the two RELEASE-owned files above. No independent PR reviews were present at the audit.
+
+### Defect and test-first evidence
+
+`verify_esp32_reproducible_build.py::_read_at()` uses `os.pread` when available. Its fallback for platforms without `pread` temporarily seeks, reads, then restores the descriptor cursor in a `finally` block. If the read/seek raised and cursor restoration also failed, the restoration exception replaced the primary operation error.
+
+The test-only commit adds three isolated fake-OS cases: successful fallback cursor restoration; primary read-error preservation when restoration also fails; and visibility of a restoration-only failure. The correction records restoration failure as a note on the primary exception, while still raising a restoration failure when no primary exception exists.
+
+- Expected RED: PR compatibility [run #45579483013](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45579483013), provenance job `139085605455`. Five fallback/descriptor tests ran: four passed and the new primary-error case errored as expected because `OSError: injected cursor restoration failure` masked `RuntimeError: primary fallback read failure`. This is the accepted regression reproduction; the earlier invalid fixture concern does not apply to this test.
+- Source correction: [`03dac8aa`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/03dac8aa20b4c4d7eff64f7c74de5aceec113d12).
+
+### Exact-source GitHub Actions
+
+- Push compatibility [run #45579601744](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45579601744): **SUCCESS, 3/3 jobs** — release provenance regression suite, ESP32 core 3.3.13, ESP32 core 4.0.0. The fallback/descriptor suite passed **5/5**; the provenance suite passed 57 tests; Arduino CLI archive verifier passed 10; release workflow/publisher suite passed 22; immutable action-pin checks passed. Both core jobs verified the exact HARDWARE source and sketch blob, then compiled twice and compared byte-identical images within each core version.
+- PR compatibility [run #45579612811](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45579612811): **SUCCESS, 3/3 jobs**, with the same provenance and two exact-core build legs.
+- Full PR [run #45579612688](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45579612688): **OVERALL FAILURE** at the mandatory CORE-owned handover freshness gate in `validate` (job `139086324513`). CI-0701 passed and **14/14 target/platform jobs passed**. Update bundle, simulations, candidate, signing and publication stages were skipped. The gate reports the canonical checkpoint `d85eb6a2766781b6cac1807cef461993d8216b84` and requires CORE to refresh `experiment/openwrt/BlazePwifi/docs/handover/CURRENT_STATE.md` after the newer workflow/source changes.
+- Windows PR [run #45579612634](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45579612634): **FAILURE** at the same handover gate; Windows build and publisher skipped.
+- Push Full [run #45579601648](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45579601648): CI-0701 passed; `validate` failed at the same freshness gate; target matrix was still finishing at last inspection. It is not recorded as a terminal overall result.
+- The pre-handover docs-head PR compatibility [run #45580162048](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45580162048) had its provenance job pass while both exact-core legs were still running at last inspection. Docs-head Full [run #45580162077](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45580162077) had CI-0701 pass and `validate` fail at the same freshness gate while target jobs were still running. Docs-head Windows [run #45580162154](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45580162154) failed at handover; build and publisher skipped. These are not terminal docs-head acceptance results.
+
+### HARDWARE source provenance and cross-repository ownership
+
+- Current PHX-HARDWARE PR #349: OPEN / DRAFT / UNMERGED; head `de75e6166a9023b5f6e75c39141201282cac58f1`; source/test anchor `059e3bbde935a86de0fa0e31e06d1ebb36755c4f); ESP32 sketch blob `c07aba7d518ef7eb5d536aafdd77ef6193e676cb`. RELEASE independently fetched the sketch at both the source/test commit and PR head; both blob IDs match the current compatibility workflow's expected pin.
+- MASTER PR #288: OPEN / DRAFT / UNMERGED at `025aadaa71aadf7fc09d53e0b623356c5550fe17`, base `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`. `coordination/phoenix/OWNERSHIP_ROUTES.json` blob `e4db324315a1b3543fec17a148fbf960170fcb29`: 11 routes, `DRAFT_REVIEW_ONLY`; PHX-RELEASE route remains `reimplementation-review`, not copy/move/merge authority.
+- Experiments PR #242 remains OPEN / DRAFT at `734b89d9e7792247e8376335c3f3685500ab3f89`, base `6d4c9b487af4d768c4d7627654d119417fcc6e00`. PR #291 remains OPEN / DRAFT / UNMERGED.
+- Cleanup-first issue #266 remains OPEN, **0/7** role tracks complete.
+- COE integration PR #26 remains OPEN / DRAFT / FROZEN at `b382d233ff06c8791b1028bed3c617cc7b670d12`, base `a6513ab4412b4c014eee2863e45cbe32d06cb243`; five workflows remain queued with zero executed jobs. COE release-packager PR #31 remains OPEN / DRAFT at `59ed44d0b911e176f1a95b9cf5585ef811ffd31b`, base `b382d233ff06c8791b1028bed3c617cc7b670d12`. Superseding COE child PR #35 remains OPEN / DRAFT at `f611c96091a1014ad36bf64251c180bcbc2d1f65`, base `59ed44d0b911e176f1a95b9cf5585ef811ffd31b`. Their previously recorded ULA authority and Bubblewrap sandbox blockers remain unresolved; no destination migration or write occurred.
+- Authorized Library retrieval and a complete Library filename scan did not find private Drive `BLAZE_PROJECT_REGISTRY_v11_20261027.json`; only v3-v7 registry snapshots were present. No older snapshot was substituted, and no private registry contents or identifiers were copied into GitHub.
+- The branch-protection endpoint returned 403 to this GitHub integration; the accessible rulesets response was empty. No protected production admission is claimed.
+
+### Next owner actions
+
+1. **PHX-CORE:** refresh the canonical `experiment/openwrt/BlazePwifi/docs/handover/CURRENT_STATE.md` and publish its exact freshness SHA after the workflow/source changes. RELEASE must not bypass or edit this CORE-owned gate.
+2. **PHX-QA:** independently review the fallback cursor-restoration source fix and its three synthetic failure-injection tests.
+3. **PHX-MASTER:** refresh the #291 child pointer after the final RELEASE handover commit, preserving `DRAFT_REVIEW_ONLY` and `reimplementation-review`.
+4. **PHX-INFRA / COE owners:** provide an authorized Bubblewrap-capable disposable no-secret runner and approved site-scoped RFC 4193 ULA /48 authority for COE #35.
+5. **Registry custodian:** restore authorized provenance-only access to private Drive v11.
+
+**PRODUCTION NO-GO.** Protected production signer and independent freshness witness are not established; durable financial accounting and reversible migration are not accepted; independent QA/MASTER approvals remain pending; approved production binaries are not established; **150 physical power cuts** and the **30-device/24-hour soak** are **NOT TESTED**. No merge, tag, signing, publication, hardware flash, real payment migration or customer deployment occurred.
+
 
 ## PHX-RELEASE UTC 2026-11-25 — supersession audit: release handover-reference regression guard
 
