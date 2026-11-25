@@ -36,7 +36,7 @@ def verify_utf8_contracts(
         stubs + parser.replace(helper, widen_minimum, 1) + UTF8_MAIN,
         board,
         "accept-overlong-utf8-sequence",
-        146,
+        148,
     )
 
     widen_surrogate = helper.replace("maximumSecond=0x9F;", "maximumSecond=0xBF;", 1)
