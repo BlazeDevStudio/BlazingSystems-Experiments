@@ -89,4 +89,85 @@ for node in ast.walk(tree):
     ):
         raise AssertionError("POLL_FAULT_DIRECT_CPP_COMPILER_CALL_REMAINS")
 
+
+SOURCE_CONTRACTS = HERE / "poll_fault_dual_store_lab_source_contracts.py"
+if not SOURCE_CONTRACTS.is_file():
+    raise AssertionError("POLL_FAULT_SOURCE_CONTRACT_MODULE_MISSING")
+
+source_tree = ast.parse(SOURCE_CONTRACTS.read_text(encoding="utf-8"))
+source_functions = {
+    node.name: node
+    for node in source_tree.body
+    if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+}
+expected_source_tests = (
+    "test_external_cwd_invocation",
+    "test_repo_root_requires_both_board_sentinels",
+    "test_unknown_board_identifier_fails_closed",
+    "test_extractors",
+    "test_constants_extract_only_active_declarations",
+)
+missing_source_tests = [
+    name for name in expected_source_tests if name not in source_functions
+]
+if missing_source_tests:
+    raise AssertionError(
+        "POLL_FAULT_SOURCE_CONTRACT_FUNCTIONS_MISSING: "
+        + ",".join(missing_source_tests)
+    )
+if any(name in functions for name in expected_source_tests):
+    raise AssertionError("POLL_FAULT_SOURCE_CONTRACTS_STILL_IN_ORCHESTRATOR")
+
+runner_imports = {
+    alias.name
+    for node in lab_tree.body
+    if isinstance(node, ast.ImportFrom)
+    and node.module == "poll_fault_dual_store_lab_source_contracts"
+    for alias in node.names
+}
+if runner_imports != {"run_source_contracts"}:
+    raise AssertionError("POLL_FAULT_SOURCE_CONTRACT_IMPORT_MISSING")
+
+source_runner = source_functions.get("run_source_contracts")
+if source_runner is None:
+    raise AssertionError("POLL_FAULT_SOURCE_CONTRACT_ORCHESTRATOR_MISSING")
+source_calls = [
+    node.func.id
+    for node in ast.walk(source_runner)
+    if isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
+]
+for name in expected_source_tests:
+    if source_calls.count(name) != 1:
+        raise AssertionError(
+            f"POLL_FAULT_SOURCE_CONTRACT_CALL_COUNT: {name}={source_calls.count(name)}"
+        )
+
+main_calls = [
+    node for node in ast.walk(lab_tree)
+    if isinstance(node, ast.Call)
+    and isinstance(node.func, ast.Name)
+    and node.func.id == "run_source_contracts"
+]
+if len(main_calls) != 1:
+    raise AssertionError("POLL_FAULT_SOURCE_CONTRACT_ORCHESTRATOR_CALL_MISSING")
+
+for node in lab_tree.body:
+    if isinstance(node, ast.Import):
+        imported = {alias.name.split(".")[0] for alias in node.names}
+    elif isinstance(node, ast.ImportFrom):
+        imported = {(node.module or "").split(".")[0]}
+    else:
+        continue
+    if imported.intersection({"subprocess", "tempfile"}):
+        raise AssertionError("POLL_FAULT_SOURCE_TEST_PROCESS_OWNERSHIP_NOT_EXTRACTED")
+
+if any(
+    isinstance(node, ast.ImportFrom)
+    and node.module == "poll_fault_dual_store_lab"
+    for node in source_tree.body
+):
+    raise AssertionError("POLL_FAULT_SOURCE_CONTRACT_CIRCULAR_IMPORT")
+
+print("POLL_FAULT_SOURCE_CONTRACT_BOUNDARY_PASS")
+
 print("POLL_FAULT_SHARED_RUNNER_STRUCTURE_PASS")
