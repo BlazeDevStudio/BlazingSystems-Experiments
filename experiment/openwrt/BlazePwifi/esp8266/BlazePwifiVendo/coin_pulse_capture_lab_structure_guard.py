@@ -204,7 +204,7 @@ if "for name, helper_name, old, new, expected in MUTATIONS" not in runner_source
 
 def workflow_event_block(source: str, event: str, next_event: str) -> str:
     start = source.find(f"  {event}:")
-    end = source.find(f"\\n  {next_event}:", start)
+    end = source.find(f"\n  {next_event}:", start)
     if start < 0 or end < 0:
         fail(f"workflow is missing the {event} path-filter block")
     return source[start:end]
