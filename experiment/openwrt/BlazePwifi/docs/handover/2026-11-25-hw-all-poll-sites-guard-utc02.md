@@ -50,9 +50,23 @@ Pinned compile evidence:
 
 These are CI builds of the existing sketches; this task did not modify their runtime source or flash any device.
 
-## Full build / simulation status at final check
+## Full build / simulation status — terminal SUCCESS
 
-[BlazePwifi build #45529524001](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45529524001) is still **IN PROGRESS** at the last check. Validation, all 14 firmware/platform targets, Android build, browser simulation, ESP8266/ESP32 simulations, Orange Pi simulations, Ruijie simulation, and update bundle were successful. Only `v04_android_emulator` remained in progress; the x86 simulation had completed successfully. Production APK import, prerelease, production signing handoff and publication were skipped. No overall Full-workflow success is claimed until the run is terminal.
+[BlazePwifi build #45529524001](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45529524001) completed **SUCCESS on attempt 2**, checked out at the exact source/test SHA `11531195a522048b9a4285768b35f7313533fa12`. Attempt 1 was cancelled while the Android emulator was still running after the docs-only handover commit advanced the branch; only the cancelled Android emulator job was explicitly rerun. Attempt 2 then completed with every required non-release job successful:
+
+- All 14 firmware/platform targets: PASS, including ESP8266, ESP32, x86_64, Orange Pi family and Ruijie
+- Android build: PASS
+- Validation: PASS
+- Browser simulation: PASS
+- ESP8266 and ESP32 simulations: PASS
+- x86 simulation: PASS
+- Orange Pi Zero 3 / One / PC simulations: PASS
+- Ruijie simulation: PASS
+- Update bundle: PASS
+- Android emulator: PASS (job `138923616512`)
+- Candidate gate: PASS (job `138924512750`; candidate JSON reports `status=passed`, `simulation=passed`; artifact ID `14985430078`)
+
+Production APK import, prerelease, production signing handoff and publication jobs were **SKIPPED**. This is a successful CI candidate/build gate only; it is not a signed release, physical hardware acceptance or production authorization.
 
 ## Live stack and blockers
 
