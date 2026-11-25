@@ -45,7 +45,7 @@ def _condition_board_gate(source, board):
     # Padding keeps all source offsets stable for the active-code mask.
     masked = mask_non_code(source)
     directive = re.compile(
-        r"(?m)^[ \\t]*#[ \\t]*if[ \\t]+defined[ \\t]*\\([ \\t]*ESP8266[ \\t]*\\)[ \\t]*(?=\\r?$)"
+        r"(?m)^[ \t]*#[ \t]*if[ \t]+defined[ \t]*\([ \t]*ESP8266[ \t]*\)[ \t]*(?=\r?$)"
     )
     matches = list(directive.finditer(masked))
     if len(matches) != 1:
