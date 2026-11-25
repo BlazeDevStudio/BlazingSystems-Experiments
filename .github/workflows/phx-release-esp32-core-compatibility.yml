@@ -16,6 +16,7 @@ on:
       - ".github/scripts/test_inspect_esp32_elf_symbols.py"
       - ".github/scripts/verify_esp32_application_image.py"
       - ".github/scripts/verify_esp32_reproducible_build.py"
+      - ".github/scripts/test_verify_esp32_reproducible_build.py"
       - ".github/scripts/test_release_artifact_action_pins.py"
       - ".github/scripts/write_build_provenance.py"
       - ".github/scripts/test_build_provenance.py"
@@ -41,6 +42,7 @@ on:
       - ".github/scripts/test_inspect_esp32_elf_symbols.py"
       - ".github/scripts/verify_esp32_application_image.py"
       - ".github/scripts/verify_esp32_reproducible_build.py"
+      - ".github/scripts/test_verify_esp32_reproducible_build.py"
       - ".github/scripts/test_release_artifact_action_pins.py"
       - ".github/scripts/write_build_provenance.py"
       - ".github/scripts/test_build_provenance.py"
@@ -74,6 +76,8 @@ jobs:
         run: python3 .github/scripts/test_build_provenance.py
       - name: Test Arduino CLI archive verifier
         run: python3 .github/scripts/test_arduino_cli_archive_verifier.py
+      - name: Test ESP32 reproducible-build descriptor cleanup
+        run: python3 .github/scripts/test_verify_esp32_reproducible_build.py
       - name: Test release workflow concurrency and publisher isolation
         run: python3 .github/scripts/test_release_workflow_concurrency.py
       - name: Verify immutable release action pins
