@@ -120,7 +120,7 @@ if any(name in functions for name in expected_source_tests):
 
 runner_imports = {
     alias.name
-    for node in lab_tree.body
+    for node in tree.body
     if isinstance(node, ast.ImportFrom)
     and node.module == "poll_fault_dual_store_lab_source_contracts"
     for alias in node.names
@@ -143,7 +143,7 @@ for name in expected_source_tests:
         )
 
 main_calls = [
-    node for node in ast.walk(lab_tree)
+    node for node in ast.walk(tree)
     if isinstance(node, ast.Call)
     and isinstance(node.func, ast.Name)
     and node.func.id == "run_source_contracts"
@@ -151,7 +151,7 @@ main_calls = [
 if len(main_calls) != 1:
     raise AssertionError("POLL_FAULT_SOURCE_CONTRACT_ORCHESTRATOR_CALL_MISSING")
 
-for node in lab_tree.body:
+for node in tree.body:
     if isinstance(node, ast.Import):
         imported = {alias.name.split(".")[0] for alias in node.names}
     elif isinstance(node, ast.ImportFrom):
