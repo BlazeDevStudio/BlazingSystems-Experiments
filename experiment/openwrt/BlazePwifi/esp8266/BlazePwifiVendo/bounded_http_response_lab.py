@@ -239,6 +239,36 @@ String readBoundedControllerResponse ( HTTPClient & h , int statusCode )
     drifted["ESP32"] = formatted.replace("statusCode >= 300", "statusCode > 300")
     if _board_parity_problem(drifted) is None:
         raise AssertionError("token-level board drift must remain detectable")
+    literal_baseline = r"""
+String readBoundedControllerResponse(HTTPClient &h, int statusCode) {
+  if (h.hasHeader("Transfer-Encoding")) return String();
+  return String();
+}
+"""
+    literal_drift = literal_baseline.replace(
+        '"Transfer-Encoding"', '"Transfer - Encoding"'
+    )
+    if _board_parity_problem({"ESP8266": literal_baseline, "ESP32": literal_drift}) is None:
+        raise AssertionError("string-literal whitespace must remain significant")
+
+    token_baseline = r"""
+String readBoundedControllerResponse(HTTPClient &h, int statusCode) {
+  return String();
+}
+"""
+    token_drift = token_baseline.replace("return String()", "returnString()")
+    if _board_parity_problem({"ESP8266": token_baseline, "ESP32": token_drift}) is None:
+        raise AssertionError("C++ token boundaries must remain significant")
+
+    comment_left = token_baseline.replace(
+        "return String();", "return String(); // ESP8266-only note"
+    )
+    comment_right = token_baseline.replace(
+        "return String();", "return String(); // ESP32-only note"
+    )
+    if _board_parity_problem({"ESP8266": comment_left, "ESP32": comment_right}) is not None:
+        raise AssertionError("comments must not create a false board-parity mismatch")
+
     print("BOUNDED_HTTP_RESPONSE_WHITESPACE_NORMALIZER_PASS 3/3")
 
 
