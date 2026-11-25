@@ -71,13 +71,14 @@ def verify_composite_contracts(
         board, "accept-unsupported-string-escape", 73
     )
 
-    unicode_guard = "!pollJsonHex(r[p])"
-    if string_parser.count(unicode_guard) != 1:
-        raise AssertionError(f"{board}: expected one Unicode hex guard")
+    hex_reader = extract(source, "pollJsonReadHex4")
+    unicode_guard = "if(!pollJsonHex(c)) return false;"
+    if hex_reader.count(unicode_guard) != 1:
+        raise AssertionError(f"{board}: expected one Unicode hex reader guard")
     expect_mutation_rejected(
         stubs + parser.replace(
-            string_parser,
-            string_parser.replace(unicode_guard, "false", 1),
+            hex_reader,
+            hex_reader.replace(unicode_guard, "if(false) return false;", 1),
             1
         ) + COMPOSITE_MAIN,
         board, "accept-nonhex-unicode-escape", 75

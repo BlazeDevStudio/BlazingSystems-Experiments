@@ -190,7 +190,7 @@ int main() {
   if (pollJsonTopLevelTrue(String("{\"ok\":true,\"meta\":\"\\uD800\\u0041\"}"), "ok")) return 153;
   if (pollJsonTopLevelTrue(String("{\"ok\":true,\"meta\":\"\\uDC00\\uD800\"}"), "ok")) return 154;
 
-  std::cout << "POLL_JSON_UTF8_VALIDATION_PASS valid=5/5 invalid=13/13\\n";
+  std::cout << "POLL_JSON_UTF8_VALIDATION_PASS valid=5/5 invalid=13/13\n";
   return 0;
 }
 """
