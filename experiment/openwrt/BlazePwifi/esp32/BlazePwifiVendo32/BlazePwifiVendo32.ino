@@ -526,6 +526,9 @@ void loop(){
   }
   if(WiFi.status()==WL_CONNECTED && millis()-lastPoll>1500){
     wifiFailures=0;
+    // Suspend intake before the synchronous request; the loop cannot sample
+    // coin edges while HTTPClient is blocked. Keep the post-poll deny as well.
+    denyRemoteControl();
     // Current main poll replies have no response_sig. The derived |poll|
     // candidate is not an approved producer/consumer contract; ignore all fields.
     (void)post("poll");
