@@ -7,7 +7,7 @@
 - HARDWARE #352 current PR HEAD a19cb235; source/test d3e36ae; production ISR source delta ec9547f8 affects both sketches. Four focused exact-head workflows PASS; Full #45636378501 FAILS at inherited Missing poll signature check.
 - COE RELEASE #35 current HEAD 845e6e90: 10/10 profiles fail closed without approved site ULA /48; case guard PASS; sandbox exits 125. COE #26 remains FROZEN with five queued workflows / zero jobs.
 - Ownership manifest remains 11 routes / DRAFT_REVIEW_ONLY / Master target null; cleanup #266 OPEN / 0-of-7.
-- Private Drive v11/newer corrections NOT RECOVERED. Master product tests NOT RUN. **PRODUCTION NO-GO.**
+- Active v0.6 branch handovers are current through 2026-11-13 at branch HEAD 2fbd2475; CHANGE_LEDGER.md is zero bytes and needs CORE-owner confirmation under HANDOVER_POLICY. Private Drive v11/newer corrections NOT RECOVERED. Master product tests NOT RUN. **PRODUCTION NO-GO.**
 
 ---
 

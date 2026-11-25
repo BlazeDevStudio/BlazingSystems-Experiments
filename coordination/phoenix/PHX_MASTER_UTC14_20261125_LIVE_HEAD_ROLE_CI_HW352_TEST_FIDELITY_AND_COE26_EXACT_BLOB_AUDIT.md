@@ -135,3 +135,13 @@ COE #26 remains at b382d233ff06c8791b1028bed3c617cc7b670d12 with five queued wor
 ### Master disposition
 
 Master pre-update HEAD was a7efd4e1ee62007f83f34d5ee8ffa337c16b0c31. This report update changes coordination/phoenix only. No subsystem source, COE destination, ownership route, shared CORE handover, payment state or release control was changed. Production remains NO-GO.
+
+
+## PHX-MASTER UTC14 active-development handover cross-check — 2026-11-25T14:53Z
+
+The current v0.6.0 development branch is blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859 (merge commit dated 2026-11-12T20:31:10Z). Its PROJECT_HANDOVER.md and docs/handover/CURRENT_STATE.md last changed together at cfb4f04f6f743486bff79ce3512c8596e39dadaa (2026-11-12T20:28:32Z); their top current checkpoint is 2026-11-13 and is aligned with that branch head. HANDOVER_POLICY.md is present at blob c3a51e5185fb29de546d12e3b2ca25dc9aba77c6 and requires canonical handover synchronization plus an append-only transaction ledger.
+
+The same active branch's docs/handover/CHANGE_LEDGER.md is zero bytes at the current branch HEAD (blob f16d5774366cf3a4c358dd2a0c2e7ee5e945f668). This is a governance gap requiring CORE-owner confirmation: verify whether the empty ledger is an intentional reset or restore/maintain the required append-only entries before the next meaningful CORE source transition. MASTER did not edit the CORE branch or its handover files.
+
+The active branch LARGE_ARTIFACT_DRIVE_POLICY.md (blob 87ce2b673d53b5f278ab0ee5de8da01bd00bb2fe) requires Google Drive handoff for ecosystem artifacts >=200,000,000 bytes with pre/post-upload full-byte SHA-256 verification and preservation of originals. No Drive connector/action was exposed in this run; no upload or registry read is claimed. The canonical private v11 registry and newer corrections remain NOT RECOVERED.
+
