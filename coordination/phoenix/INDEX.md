@@ -1,3 +1,16 @@
+## PHX-MASTER UTC16 — 2026-11-25T16:35Z live COE #35 publication recheck, exact COE #26 provenance, and owner CI
+
+[UTC16 live role/CI, artifact-manifest publication recheck, exact Hardware source/destination tree and license/test identity audit](PHX_MASTER_UTC16_20261125_COE35_MANIFEST_COE26_EXACT_TREE_AND_ROLE_CI_AUDIT.md)
+
+- Experiments main 6be5d19b; active v0.6 development 2fbd2475; legacy v0.5.3 development aad3aade; Master pre-update 97bf3a52; COE main a6513ab4; COE #26 b382d233.
+- PR #288 remains OPEN / DRAFT / UNMERGED, base main@f4e8a891, 216 coordination-only paths; main...Master is 566 ahead / 1 behind. No synchronization.
+- COE RELEASE #35 advanced to 2040843 (source/test a05188c6): 228 tests PASS / 2 skips; 10/10 ULA profiles fail closed; Bubblewrap unavailable after 40 host tests; case guard PASS.
+- HARDWARE #352 remains 1d376d3b docs / bb519e6a source-test; focused checks PASS, Full fails at inherited Missing poll signature check. RELEASE #291 and RENTAL #328 still fail the CORE-owned CURRENT_STATE freshness gate.
+- COE #26 remains FROZEN: 2,557 source tree entries vs 286 destination; 64 source board Python helpers vs zero; sketches differ; test identity is incomplete; root NOTICE, Tabler LICENSE and BlazeRentalLauncher LICENSE gaps remain.
+- Ownership manifest remains 11 routes / DRAFT_REVIEW_ONLY / PHX-MASTER target null. Cleanup #266 remains OPEN / 0-of-7. Private registry v11/newer corrections NOT_RECOVERED. **PRODUCTION NO-GO.**
+
+---
+
 ## PHX-MASTER UTC15 — 2026-11-25T15:09Z live role/CI and COE #26 provenance
 
 [UTC15 live owner CI, exact Hardware source/destination blobs, SOURCE_INTAKE recount, registry-access and no-staging audit](PHX_MASTER_UTC15_20261125_LIVE_ROLE_CI_COE26_EXACT_BLOB_AND_REGISTRY_ACCESS_AUDIT.md)
