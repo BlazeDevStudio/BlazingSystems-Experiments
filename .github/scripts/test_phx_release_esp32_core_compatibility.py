@@ -20,13 +20,13 @@ SYMBOL_HELPER = ROOT / ".github/scripts/inspect_esp32_elf_symbols.py"
 SYMBOL_TEST = ROOT / ".github/scripts/test_inspect_esp32_elf_symbols.py"
 # Last focused-pass PHX-HARDWARE #349 source/test snapshot. The current PR head is
 # recorded separately and must not be built until its own focused jobs pass.
-HARDWARE_SOURCE_SHA = "9b20d0a6e520d78423250636b3ea0fe983b35294"
-HARDWARE_DOCS_HEAD_SHA = "b5b44d2afa62de0077b2d04e687499b103a1e3b8"
+HARDWARE_SOURCE_SHA = "fc4ce8084c8465a75d5c3418bac5a268e49a4ae3"
+HARDWARE_DOCS_HEAD_SHA = "252347a5e846270882dfbcf6c4b876c75bc6fc94"
 HARDWARE_SKETCH_PATH = (
     "experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino"
 )
 HARDWARE_SKETCH_BLOB = "c07aba7d518ef7eb5d536aafdd77ef6193e676cb"
-HARDWARE_PR_HEAD_SHA = "b5b44d2afa62de0077b2d04e687499b103a1e3b8"
+HARDWARE_PR_HEAD_SHA = "252347a5e846270882dfbcf6c4b876c75bc6fc94"
 HARDWARE_PR_HEAD_SKETCH_BLOB = "c07aba7d518ef7eb5d536aafdd77ef6193e676cb"
 CHECKOUT_SHA = "3d3c42e5aac5ba805825da76410c181273ba90b1"
 ARDUINO_SETUP_SHA = "b3cda96fddef6af6c56b4c5efb5c47e2357935db"
