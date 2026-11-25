@@ -1,3 +1,22 @@
+## PHX-MASTER UTC19 scheduled-run disposition — 2026-11-25T19:52:30.511Z
+
+Starting Master HEAD `7aa4c3bd5248a31f12d089a1ec40a46a9d941f06`; Experiments main `6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5`; active v0.6 `2fbd2475e9f54878c316fa7cea2f228386b0e859`; legacy v0.5.3 `aad3aade72c1156eecba1fed30907c6d0283b2c5`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`.
+
+- PR #288 OPEN / DRAFT / UNMERGED; start compare 575 ahead / 1 behind, merge base `f4e8a891`; 220 existing paths, all Master-owned. Current Master head had zero workflow runs/statuses.
+- New exact-head audit records HARDWARE #352/#353 current heads, Full poll-signature failures, and the stale #353 parent base.
+- COE #26 remains FROZEN: source/destination 2,564/286 entries; board blobs 82/2; helpers 70/0; tests 47/19 (1 exact, 3 divergent, 43 source-only, 15 destination-only); both firmware blobs differ; root NOTICE and Tabler LICENSE missing.
+- RELEASE #291 Full/Windows fail CORE CURRENT_STATE freshness. RENTAL #328 has the same freshness failure and ESP32 `mbedtls/sha256.h` compile failure.
+- COE #35 current docs/source `1c08a339` / `b3a7873e`: 230 PASS / 2 skips then 10/10 ULA fail-closed; sandbox Bubblewrap unavailable; PR body stale. COE #49 shared ESP32 compile also lacks `mbedtls/sha256.h`.
+- Cleanup #266 OPEN / 0-of-7. Private registry v11/newer corrections NOT_RECOVERED; no Google Drive connector. Master product tests and verifier NOT RUN; no local authenticated checkout.
+- No subsystem source, COE destination, ownership route, secret, signer, payment system or hardware changed.
+
+Full evidence: [UTC19 exact-head Hardware stack and COE #26/#35 audit](PHX_MASTER_UTC19_20261125_HW352_HW353_COE26_COE35_EXACT_HEAD_AUDIT.md).
+
+**PRODUCTION NO-GO.** Protected signing/anti-rollback witness, crash-atomic durable financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized release gates remain unverified.
+
+
+---
+
 ## PHX-MASTER UTC19 disposition — 2026-11-25T19:17:34Z
 
 **Starting Master HEAD:** `503661e6bae7db49765f11081972cf4c0a39e1f2`. **Experiments main:** `6be5d19b`. **Active v0.6:** `2fbd2475`. **Legacy v0.5.3:** `aad3aade`. **COE main:** `a6513ab4`. **COE #26:** `b382d233`.
