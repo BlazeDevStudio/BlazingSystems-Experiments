@@ -55,6 +55,15 @@ if (
     or "pollJsonSkipUtf8Continuation" not in parser_functions
 ):
     raise AssertionError("source extractor must include the UTF-8 validator helper")
+response_lab_source = (
+    HERE / "poll_response_failclosed_lab.py"
+).read_text(encoding="utf-8")
+if (
+    '"pollJsonSkipUtf8Continuation", "pollJsonSkipString"' not in response_lab_source
+):
+    raise AssertionError(
+        "poll-response fixture must extract the UTF-8 validator before string parsing"
+    )
 for name, (filename, function, anchors) in MODULES.items():
     path = HERE / filename
     if not path.is_file():
