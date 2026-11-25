@@ -1,3 +1,26 @@
+## PHX-MASTER UTC04 disposition — 2026-11-25T04:48:35Z
+
+**Starting Master HEAD:** `6762bcf50c5cbedb5d09117e76749b0a66a7779b`. **PR #288:** OPEN / DRAFT / UNMERGED. **COE #26:** FROZEN. **Production:** NO-GO.
+
+- Re-read the full Master prompt, latest README_FIRST and COMMUNICATION_PROTOCOL, root AGENTS.md, cloud artifact policy/storage handover, issue #172, cleanup #266, Master PR #288, exact main/development/Master/COE refs, routing manifest, current owner PRs and exact-head CI, COE #26 and its SOURCE_INTAKE/MIGRATION_MAP.
+- #266 remains OPEN / 0-of-7. Master’s cleanup-first ownership/dependency/overlap inventory is still not checked off.
+- 21/21 read-only Master audit assertions PASS. They validate current refs, 11-route DRAFT_REVIEW_ONLY manifest, SOURCE_INTAKE recount, test classification, selected license/firmware identities, PR path scope, raw overlap count, owner CI and frozen candidate state. These are coordination/provenance assertions, not product tests or independent QA.
+- The 14 owner/integration PR changed-file lists have 27 raw overlapping paths. Three shared handover files are edited on multiple role branches with divergent exact blobs: PROJECT_HANDOVER.md (six PRs), CHANGE_LEDGER.md (five), CURRENT_STATE.md (five). Several other overlaps are expected same-role stacks or frozen COE candidate snapshots. The new routing note proposes a CORE single-writer boundary pending owner acknowledgement.
+- HARDWARE #349 advanced to `f591cb85`; Quarantine and Relay pass, Full validation fails at Controller protocol parity. Its PR body and PROJECT_HANDOVER.md still cite older source/test `bd91e9b8`; HARDWARE owns the correction.
+- RELEASE #291 remains at `d39f8ec3`; Windows and Full validation fail at CORE-owned handover freshness. Compatibility passes; RELEASE owns its own PR-body refresh and reruns after CORE publishes the canonical handover.
+- COE #26 manifest actual runtime split is 46 identical / 15 derived vs declared 47 / 14; four primary tests split two exact / two derived plus 15 additional derived tests; both firmware sketches differ; product LICENSE matches; root NOTICE and Tabler LICENSE destination counterparts remain missing; five workflows queued / zero jobs.
+- Private canonical Drive registry v11/newer corrections remain NOT_RECOVERED. Library surfaced older v3-v7 snapshots and a separate checkpoint, not the canonical registry. No Google Drive connector is exposed; no substitute or private IDs/content were published.
+- Master Python unittest discovery and `verify_coordination.py` NOT RUN; no authenticated local checkout or dedicated Master validation workflow. PR #288 has no Actions runs or combined statuses. No Master product-test pass is claimed.
+- CORE, RENTAL, PISONET, HARDWARE, QA and RELEASE source branches were not modified. COE destination was not modified. No merge, release, signing, secret provisioning, hardware flash, physical test, real-payment operation, customer cutover or financial migration occurred.
+
+**Next:** CORE acknowledges or amends the shared-handover single-writer proposal and publishes canonical state; HARDWARE refreshes #349's current handover/PR tuple and resolves Controller protocol parity with CORE/QA; RELEASE refreshes #291 and reruns after CORE's update; COE integration owner reconciles manifest/test/firmware/license provenance; registry custodian restores authorized v11 access.
+
+Full evidence: [UTC04 cross-role handover overlap and COE #26 provenance audit](PHX_MASTER_UTC04_20261125_CROSS_ROLE_HANDOVER_OVERLAP_AND_COE26_PROVENANCE_AUDIT.md).
+
+**PRODUCTION NO-GO.** No subsystem source, shared CORE handover, ownership manifest or COE destination was changed.
+
+---
+
 ## PHX-MASTER UTC03 disposition — 2026-11-25T03:36:57Z
 
 **Starting Master HEAD:** `2a73c2c9ea9c77f321c467a99ed9b32444973c2b`. **PR #288:** OPEN / DRAFT / UNMERGED, base `main@f4e8a891aed8af86d5fd315d28750a0ac3a7372b`, 207 changed paths; a fresh changed-filename listing confirms 0 paths outside `coordination/phoenix/`. **COE #26:** FROZEN. **Production:** NO-GO.
