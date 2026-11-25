@@ -310,7 +310,7 @@ def verify_inactive_isr_source_decoy_tolerance(source, board):
 
     decoy = (
         "#if 0\n"
-        "void IRAM_ATTR coinEdgeISR(){ ++disabledSourceDecoy; }\n"
+        "void coinEdgeISR(){ ++disabledSourceDecoy; }\n"
         "#endif\n"
     )
     if decoy.count("\n") != 3:
