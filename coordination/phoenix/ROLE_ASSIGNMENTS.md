@@ -1,3 +1,34 @@
+## PHX-MASTER UTC16 post-checkpoint owner / CI refresh — 2026-11-25T16:35Z
+
+This section supersedes the UTC15 owner-head table below. It is a read-only reconciliation; subsystem owners retain their source branches.
+
+**Exact repository refs**
+- Experiments main: 6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5.
+- Active v0.6 development: blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859.
+- Legacy v0.5.3 development: blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5.
+- Master pre-update: phoenix/master-coordination@97bf3a52d58ac9f6a6f4dcfb66231a797da931e4.
+- COE main: a6513ab4412b4c014eee2863e45cbe32d06cb243; COE #26: b382d233ff06c8791b1028bed3c617cc7b670d12.
+- PR #288 OPEN / DRAFT / UNMERGED, base main@f4e8a891; main...Master 566 ahead / 1 behind, merge base f4e8a891; 216 coordination-only paths. Master exact-head workflow query returned zero runs.
+
+| Owner / PR | Current exact head | Exact-head CI / disposition |
+|---|---|---|
+| CORE #252 | c82705f2de865c89ab733b10efa84f26f56a5cc4 | Build #42698139210 PASS; older scoped evidence only, not financial acceptance. |
+| RENTAL #328 | 10fc200b6dbf470a95e679d3acc58aff4ab2a67f | APK #45622918340, API #45622918364, auth/recovery #45622918551 PASS; shared build #45622918468 FAIL at CORE-owned CURRENT_STATE freshness. ESP32 job also failed; cause not established from retrieved summary. |
+| PISONET #255 | d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | Synthetic Windows #42462978704 PASS; native COM not accepted. |
+| HARDWARE #352 | docs 1d376d3b9b5fec11c4e21776a96462c5c05706f9; source/test bb519e6a2129f79723b9f7fb5903b4443149fcd0 | Quarantine #45648827942, Relay #45648827985, ESP8266 #45648827975, ESP32 #45648828161 PASS; Full #45648828144 FAIL at inherited Missing poll signature check. PR description remains stale at a19cb235 / d3e36ae; HARDWARE owns refresh. |
+| HARDWARE parent #349 | 2a5c997add4f49fcd74f753101d3a9daac0040bf | Quarantine #45603969253 and Relay #45603968961 PASS; Full #45603969181 FAIL. |
+| QA #290 | 5c29d15994cee1279058f1eca12f2a3180704292 | Windows #43633486963 PASS; native COM not invoked. |
+| QA #292 | 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | No PR-triggered runs. |
+| RELEASE #291 | b3e4fa22c4f4b8cd3009437a06a7eec56420d411 | ESP32 compatibility #45624182886 PASS; Full #45624183036 and Windows #45624182986 FAIL at CORE-owned freshness. |
+| COE RELEASE #35 | docs/PR 204084307b257154470934a17da4efb5794bdb69; source/test a05188c632e207c022319277d6c11bce7e348e65 | Shared #45653690960: 228 tests PASS / 2 skips then 10/10 ULA fail-closed; sandbox #45653685548: 40 host tests PASS then Bubblewrap absent / exit 125; case guard #45653687424 PASS. |
+| COE CORE #45 | 9d76a134c1f6512aa40c20ec4d247306a71a8cce | Overlay/Shell #44295049727 and case guard #44295049903 PASS; focused only. |
+| COE INTERCON #49 | aeb8ff11b2f5db9a5f86280ab62ab988245f3919 | Stage 5.1 #44646341873 and case guard #44646341992 PASS; shared ESP32 #44646341922 FAIL. |
+| COE integration #26 | b382d233ff06c8791b1028bed3c617cc7b670d12 | Five workflows QUEUED / zero jobs; FROZEN. |
+
+Cleanup #266 remains OPEN / 0-of-7. OWNERSHIP_ROUTES.json remains 11 routes / DRAFT_REVIEW_ONLY / PHX-MASTER target null. CORE remains reserved and untouched. Private registry v11/newer corrections NOT_RECOVERED.
+
+---
+
 ## PHX-MASTER UTC15 post-checkpoint live owner / CI refresh — 2026-11-25 (2026-11-25T15:48:16.366Z)
 
 This section supersedes the older UTC14 owner-head table below. It is a read-only reconciliation; subsystem owners retain their branches.
