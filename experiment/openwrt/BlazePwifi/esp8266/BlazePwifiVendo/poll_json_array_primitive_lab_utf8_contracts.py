@@ -1,6 +1,10 @@
 """Raw UTF-8 validation contracts for source-extracted poll JSON strings."""
 
-from poll_json_array_primitive_lab_fixtures import UTF8_MAIN
+from poll_json_array_primitive_lab_fixtures import (
+    ISOLATED_LOW_SURROGATE_MAIN,
+    UNPAIRED_HIGH_SURROGATE_MAIN,
+    UTF8_MAIN,
+)
 
 
 def verify_utf8_contracts(
@@ -68,7 +72,7 @@ def verify_utf8_contracts(
         high_surrogate_guard, "if(false){", 1
     )
     expect_mutation_rejected(
-        stubs + parser.replace(unicode_helper, bypass_high_pair, 1) + UTF8_MAIN,
+        stubs + parser.replace(unicode_helper, bypass_high_pair, 1) + UNPAIRED_HIGH_SURROGATE_MAIN,
         board,
         "accept-unpaired-high-surrogate",
         151,
@@ -78,7 +82,7 @@ def verify_utf8_contracts(
         low_surrogate_guard, "return true;", 1
     )
     expect_mutation_rejected(
-        stubs + parser.replace(unicode_helper, bypass_low_rejection, 1) + UTF8_MAIN,
+        stubs + parser.replace(unicode_helper, bypass_low_rejection, 1) + ISOLATED_LOW_SURROGATE_MAIN,
         board,
         "accept-isolated-low-surrogate",
         152,
