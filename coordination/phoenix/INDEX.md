@@ -1,3 +1,16 @@
+## PHX-MASTER UTC14 — 2026-11-25 live HEAD, Hardware #352 test fidelity, and COE #26 exact-blob audit
+
+[UTC14 exact-head role CI, Hardware #352 source/test refresh, COE #26 recursive-tree/blob/license audit, and production NO-GO report](PHX_MASTER_UTC14_20261125_LIVE_HEAD_ROLE_CI_HW352_TEST_FIDELITY_AND_COE26_EXACT_BLOB_AUDIT.md)
+
+- Master pre-commit HEAD 2828c178; Experiments main 6be5d19b; active development 2fbd2475; legacy development aad3aade; COE main a6513ab4; COE #26 b382d233.
+- PR #288 remains OPEN / DRAFT / UNMERGED; 214 changed paths, all under coordination/phoenix/. Main comparison: 556 ahead / 1 behind; no synchronization was performed.
+- HARDWARE #352 source/test d3e36ae, PR/docs c2179ef: focused Quarantine/Relay and ESP32/ESP8266 exact-core compiles PASS; Full fails at inherited Missing poll signature check. PR body still pins older SHAs and needs owner refresh.
+- HARDWARE #349 Full also fails at the same inherited poll-signature check. RELEASE #291 Full/Windows fail the CORE-owned handover freshness gate.
+- COE #26 remains FROZEN: complete trees 2,552/286; scoped Hardware entries 78/4; board-local Python helpers 64/0; ESP32/ESP8266/test blobs differ; SOURCE_INTAKE recount 46/15 vs declared 47/14; source NOTICE and Tabler LICENSE lack destination counterparts.
+- 29/29 read-only audit assertions PASS; Master product tests NOT RUN; private Drive v11/newer corrections NOT RECOVERED. **PRODUCTION NO-GO.**
+
+---
+
 ## PHX-MASTER UTC13 — 2026-11-25 live HEAD, role CI, COE #26 exact-source provenance, and automation deconfliction
 
 [UTC13 exact-head owner CI, Hardware import provenance, manifest recount, branch drift, registry access and automation deconfliction audit](PHX_MASTER_UTC13_20261125_LIVE_HEAD_ROLE_CI_COE26_EXACT_SOURCE_PROVENANCE_AND_AUTOMATION_DECONFLICT_AUDIT.md)
