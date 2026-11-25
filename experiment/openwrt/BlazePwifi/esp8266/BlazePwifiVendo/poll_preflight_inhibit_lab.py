@@ -96,7 +96,10 @@ def poll_guard_locations(source: str):
     brace = loop.find("{", condition.end())
     poll_block = extract_braced(loop, brace)
     poll_token = 'post("poll")'
+    loop_poll_matches = list(re.finditer(re.escape(poll_token), loop))
     poll_matches = list(re.finditer(re.escape(poll_token), poll_block))
+    if len(loop_poll_matches) != len(poll_matches):
+        raise AssertionError("synchronous poll request exists outside the bounded guarded block")
     if not poll_matches:
         raise AssertionError("missing synchronous poll request")
 
@@ -266,8 +269,8 @@ def verify_board(name: str, path: Path):
     else:
         raise AssertionError(f"{name}: missing pre-poll guard mutation was not rejected")
 
-    # Failure injection: a second synchronous poll site without its own
-    # post-poll deny guard must be rejected, not hidden by the first guarded site.
+    # Failure injection: a poll request outside the bounded guarded block
+    # must be rejected, not hidden by the first guarded site.
     poll_token = 'post("poll")'
     poll_at = loop.find(poll_token)
     sample_at = loop.find("digitalRead(runCoinPin)", poll_at)
