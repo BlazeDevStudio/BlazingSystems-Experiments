@@ -872,7 +872,7 @@ def check_current_source_handover_anchor() -> list[str]:
         f"ESP32 sketch Git blob SHA (last focused-pass source): `{HARDWARE_SKETCH_BLOB}`",
         f"Latest PR-head ESP32 sketch Git blob SHA (not release-qualified): `{HARDWARE_PR_HEAD_SKETCH_BLOB}`",
         "Release pin advanced to the latest focused-pass source/test SHA after exact-source Quarantine and Relay passed; the current docs/PR head retains the same sketch blob.",
-        "Latest exact-source Quarantine: #45587094891 — SUCCESS; Relay #45587106298 — SUCCESS; Full #45587106766 — FAILURE at QA-owned Missing poll signature check; no Full or production qualification.",
+        "Latest exact-source Quarantine: #45603111644 — SUCCESS; Relay #45603111558 — SUCCESS; Full #45603111622 — FAILURE at inherited CORE/QA Missing poll signature check; no Full or production qualification.",
     )
     missing = [value for value in required if value not in section]
     if missing:
