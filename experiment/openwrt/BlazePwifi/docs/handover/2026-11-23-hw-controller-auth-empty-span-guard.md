@@ -65,3 +65,16 @@ Exact-SHA workflow lookup and combined commit status for `659b1e646ba6d3efdbe6e0
 ### Safety boundary
 
 This remains an ESP32 lab-only primitive, not application intake. No sketch, CORE response schema, key material, GPIO, relay, coin admission, financial state, signer/witness, migration, release workflow or COE destination changed. PR #348 remains stacked on #254 at `84c442a46ee2ee48dcbe68b71ff0f54edbc09ba9`, which remains stacked on Phase-A deny #239 at `d83b715b116185107737fef721c2eece8feebf39`. Parallel #283 remains unchanged. Phase-A coin/relay admission remains DENY; physical hardware acceptance remains NOT TESTED.
+
+
+## UTC22 exact docs-head CI correction
+
+The focused native workflow subsequently ran against the exact final handover head `8bdddfb88630c0c9675f7e4a47ab640f5d17f699` (which contains source/test commit `659b1e646ba6d3efdbe6e03df4ab4f170a89f0e1`).
+
+- Focused [run #45715616078](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45715616078), job `139560779561`: **SUCCESS**.
+- Exact-source checkout step verified `git rev-parse HEAD == 8bdddfb88630c0c9675f7e4a47ab640f5d17f699`.
+- Runner installed Ubuntu `libmbedtls-dev 2.28.8`, compiled the actual `ControllerAuthV1Lab.h` test with C++17, `-Wall -Wextra -Werror`, ASan and UBSan, and executed the full native header test.
+- Output confirms fixed-span null/empty checks, digest rendering, empty-policy denial, empty canonical/signature denial, null parser-span denial, synthetic HMAC tamper/device/nonce rejection, and coin/relay admission remaining DENY; all five existing synthetic auth cases passed.
+- Phase-A admission guard step passed.
+
+The separate [Full BlazePwifi run #45715616079](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45715616079) was still pending with no jobs returned at the last observation; no Full aggregate result is claimed. The focused helper is **CI VERIFIED / SIMULATED**, not hardware accepted or production-authoritative.
