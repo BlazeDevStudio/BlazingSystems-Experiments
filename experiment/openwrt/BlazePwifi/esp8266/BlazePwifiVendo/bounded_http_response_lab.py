@@ -2,7 +2,7 @@
 """Source-exact bounded HTTP response allocation guard for both ESP controllers.
 
 Only known-length 2xx bodies at or below 1024 bytes with no Transfer-Encoding
-header may be materialized as a String. Unknown/chunked, oversized and non-2xx
+header and exact Content-Length readback may be materialized as a String. Unknown/chunked, oversized and non-2xx
 responses are denied before HTTPClient::getString(). This is host simulation,
 not hardware acceptance.
 """
@@ -52,13 +52,23 @@ int main() {
   if (readBoundedControllerResponse(exact, 200) != boundary ||
       exact.getStringCalls != 1) return 61;
 
-  HTTPClient created(13, "created");
+  HTTPClient created(7, "created");
   if (readBoundedControllerResponse(created, 201) != "created" ||
       created.getStringCalls != 1) return 62;
 
   HTTPClient empty(0, "");
   if (readBoundedControllerResponse(empty, 204) != "" ||
       empty.getStringCalls != 1) return 63;
+
+  // A complete-looking JSON prefix is still incomplete when Content-Length
+  // says more bytes were promised than HTTPClient actually returned.
+  HTTPClient shortRead(12, R"({"ok":true})");
+  if (readBoundedControllerResponse(shortRead, 200) != "" ||
+      shortRead.getStringCalls != 1) return 71;
+
+  HTTPClient overRead(10, R"({"ok":true})");
+  if (readBoundedControllerResponse(overRead, 200) != "" ||
+      overRead.getStringCalls != 1) return 72;
 
   // HTTPClient may still decode a chunked body when Content-Length is also
   // present. The declared size alone must never authorize getString().
@@ -90,7 +100,7 @@ int main() {
   if (readBoundedControllerResponse(informational, 199) != "" ||
       informational.getStringCalls != 0) return 68;
 
-  std::cout << "BOUNDED_CONTROLLER_HTTP_RESPONSE_PASS allowed=3 denied=7\n";
+  std::cout << "BOUNDED_CONTROLLER_HTTP_RESPONSE_PASS allowed=3 denied=9\n";
   return 0;
 }
 """
