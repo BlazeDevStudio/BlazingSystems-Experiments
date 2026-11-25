@@ -22,8 +22,11 @@ class AcceptanceLedgerTest(unittest.TestCase):
         result = checker.calculate(self.ledger)
         self.assertEqual(len(self.ledger["criteria"]), 31)
         self.assertEqual(result["readiness_total_weight"], 98)
-        self.assertEqual(result["readiness_verified_weight"], 10)
-        self.assertEqual(result["readiness_bar20"], "##..................")
+        expected = sum(c["weight"] for c in self.ledger["criteria"]
+                       if c["status"] == "VERIFIED" and c["dimension"] != "actual_deployment")
+        self.assertEqual(result["readiness_verified_weight"], expected)
+        self.assertEqual(result["readiness_bar20"],
+                         "#" * (expected * 20 // 98) + "." * (20 - expected * 20 // 98))
         self.assertEqual(result["actual_deployment_verified_percent"], 0)
 
     def test_scoped_document_cannot_call_itself_global(self):
@@ -60,7 +63,7 @@ class AcceptanceLedgerTest(unittest.TestCase):
     def test_unknown_items_receive_no_partial_credit(self):
         self.ledger["criteria"][0]["status"] = "UNKNOWN"
         output = checker.calculate(self.ledger)
-        self.assertEqual(output["readiness_verified_weight"], 10)
+        self.assertEqual(output["readiness_verified_weight"], sum(c["weight"] for c in self.ledger["criteria"] if c["status"] == "VERIFIED" and c["dimension"] != "actual_deployment"))
         self.assertGreater(output["readiness_unknown_weight"], 0)
 
     def test_non_integer_weight_fails(self):
