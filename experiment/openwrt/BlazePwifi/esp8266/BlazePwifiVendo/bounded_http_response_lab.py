@@ -136,7 +136,7 @@ def _board_parity_problem(sources):
 
     normalized = {
         board: re.sub(
-            r"\\s+",
+            r"\s+",
             "",
             extract_function(sources[board], "readBoundedControllerResponse"),
         )
