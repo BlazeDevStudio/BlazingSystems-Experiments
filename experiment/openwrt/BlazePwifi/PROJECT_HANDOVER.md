@@ -1,3 +1,9 @@
+## PHX-RELEASE UTC 2026-11-25 — supersession audit: Arduino CLI archive-verifier regression extension
+
+- Compatible draft head `0b89fa015f1d601cc951eaccd94cb824b172bbdd` already contains a RELEASE-owned extension to Arduino CLI archive-verifier regression coverage. No implementation was duplicated and no non-RELEASE source was changed.
+- At inspection, [BlazePwifi build #45621401651](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45621401651) was a completed failure, and [ESP32 compatibility #45621401552](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45621401552) was pending; neither supplies new production acceptance. [Windows #45621401564](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45621401564) failed before Windows build/publication.
+- The fixed-weight REL-R1 ledger above remains the current PHX-RELEASE staged workstream submission. This is scoped CI evidence only; PR #291 remains OPEN / DRAFT / UNMERGED with zero independent reviews.
+
 ## PHX-RELEASE UTC 2026-11-25 — supersession audit: Arduino CLI archive-verifier hardening
 
 - Compatible draft head `ab719afe38ea9af97b0d46ab34a67c675d690d87` already contains RELEASE-owned Arduino CLI archive-verifier hardening and its regression coverage. No implementation was duplicated and no non-RELEASE source was changed.
