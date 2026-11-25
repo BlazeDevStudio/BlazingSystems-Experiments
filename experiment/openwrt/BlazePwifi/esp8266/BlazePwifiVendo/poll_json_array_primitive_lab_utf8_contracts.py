@@ -31,23 +31,31 @@ def verify_utf8_contracts(
         141,
     )
 
-    bypass_minimum = helper.replace(minimum_guard, "", 1)
+    widen_minimum = helper.replace("minimumSecond=0xA0;", "minimumSecond=0x80;", 1)
     expect_mutation_rejected(
-        stubs + parser.replace(helper, bypass_minimum, 1) + UTF8_MAIN,
+        stubs + parser.replace(helper, widen_minimum, 1) + UTF8_MAIN,
         board,
         "accept-overlong-utf8-sequence",
         146,
     )
 
-    bypass_maximum = helper.replace(maximum_guard, "", 1)
+    widen_surrogate = helper.replace("maximumSecond=0x9F;", "maximumSecond=0xBF;", 1)
     expect_mutation_rejected(
-        stubs + parser.replace(helper, bypass_maximum, 1) + UTF8_MAIN,
+        stubs + parser.replace(helper, widen_surrogate, 1) + UTF8_MAIN,
         board,
         "accept-utf8-surrogate-encoding",
         144,
     )
 
+    widen_scalar = helper.replace("maximumSecond=0x8F;", "maximumSecond=0xBF;", 1)
+    expect_mutation_rejected(
+        stubs + parser.replace(helper, widen_scalar, 1) + UTF8_MAIN,
+        board,
+        "accept-utf8-above-unicode-range",
+        145,
+    )
+
     print(
         f"{board}: POLL_JSON_UTF8_VALIDATION_PASS "
-        "valid=3/3 invalid=9/9; mutations=3/3 rejected"
+        "valid=3/3 invalid=9/9; mutations=4/4 rejected"
     )
