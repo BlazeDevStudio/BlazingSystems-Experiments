@@ -1,3 +1,20 @@
+## PHX-MASTER UTC03 COE #26 exact manifest and import checkpoint — 2026-11-25T03:36:57Z
+
+**Candidate:** `BlazeDevStudio/CoinOperatedEcosystem#26`, head `b382d233ff06c8791b1028bed3c617cc7b670d12`, base `main@a6513ab4412b4c014eee2863e45cbe32d06cb243`, OPEN / DRAFT / UNMERGED / FROZEN. Five workflows (#43096752609, #43096752632, #43096752800, #43096752563, #43096752557) are QUEUED; each job listing returns an empty array.
+
+The destination `Pisowifi/SOURCE_INTAKE.json` is schema 8, blob `1b9018ff944f7f673934d0fc2a97e0a0090d3f5f`. It pins historical Experiments source commit `6d4c9b487af4d768c4d7627654d119417fcc6e00` and destination pre-manifest head `cf59b41e5273bcc42acf59a7971481670e4b2611`; these are not current-source pins.
+
+- Runtime manifest rows: 61. Declared summary: 47 byte-identical / 14 derived. Recounting exact source/destination blob fields gives 46 equal / 15 different; summary is wrong by one classification.
+- Primary test rows: 4; two exact (portal/security), two derived (config/integration). Fifteen additional derived tests are declared; they are not a substitute for source test identity or execution evidence.
+- Current source ESP32 sketch at Experiments #349 head `bd91e9b8496c0d274bb0779fd4a75b5de28dbc33` has blob `adfd2f110d88243d03f2195658fb456b154dcb84`; COE #26 destination sketch has blob `3cc7ec54b476943dc04a8d1af5e2df5fe054e422`. They differ.
+- Current source ESP8266 sketch has blob `8a0b458b6c7fb99c0913df16c5b4ca94dbcdc50e`; COE #26 destination sketch has blob `c8be98f72596681e36a3ad1f8939bf8046c96887`. They differ.
+- `Pisowifi/LICENSE` destination blob `1ee55b94183417be977ca287cd7391f9a6f7e721` matches the source `LICENSE` blob exactly. Destination root `NOTICE.md` and vendor Tabler `LICENSE` are absent at this exact candidate ref (404).
+- `Pisowifi/MIGRATION_MAP.md` blob `b54fc15d83bc2269de03db8aadd0e76259fd13d9` still describes the historical source snapshot. No migration staging, copying, moving, rebasing, overwrite or destination write was performed.
+
+**Disposition:** FROZEN. Do not propose a move until the integration owner reconciles counters, every source/destination blob+mode, current-source drift, test identities, board helpers/sketches, licensing/NOTICE and completed exact-head CI.
+
+---
+
 ## PHX-MASTER UTC01 exact-tree and migration matrix — 2026-11-25T01:34:05Z
 
 - Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; development `blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5`; Master starting HEAD `30369ee731f0b77e502b1e2691c39bfc9fa59cdb`.
