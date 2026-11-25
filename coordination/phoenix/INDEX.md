@@ -1,13 +1,13 @@
-## PHX-MASTER UTC14 — 2026-11-25 live HEAD, Hardware #352 test fidelity, and COE #26 exact-blob audit
+## PHX-MASTER UTC14 — post-checkpoint live owner / source-pin update (2026-11-25T14:45Z)
 
-[UTC14 exact-head role CI, Hardware #352 source/test refresh, COE #26 recursive-tree/blob/license audit, and production NO-GO report](PHX_MASTER_UTC14_20261125_LIVE_HEAD_ROLE_CI_HW352_TEST_FIDELITY_AND_COE26_EXACT_BLOB_AUDIT.md)
+[UTC14 audit with current HARDWARE #352 source/test tuple, exact current-head CI, COE #35 refresh and frozen COE #26 provenance](PHX_MASTER_UTC14_20261125_LIVE_HEAD_ROLE_CI_HW352_TEST_FIDELITY_AND_COE26_EXACT_BLOB_AUDIT.md)
 
-- Master pre-commit HEAD 2828c178; Experiments main 6be5d19b; active development 2fbd2475; legacy development aad3aade; COE main a6513ab4; COE #26 b382d233.
-- PR #288 remains OPEN / DRAFT / UNMERGED; 214 changed paths, all under coordination/phoenix/. Main comparison: 556 ahead / 1 behind; no synchronization was performed.
-- HARDWARE #352 source/test d3e36ae, PR/docs c2179ef: focused Quarantine/Relay and ESP32/ESP8266 exact-core compiles PASS; Full fails at inherited Missing poll signature check. PR body still pins older SHAs and needs owner refresh.
-- HARDWARE #349 Full also fails at the same inherited poll-signature check. RELEASE #291 Full/Windows fail the CORE-owned handover freshness gate.
-- COE #26 remains FROZEN: complete trees 2,552/286; scoped Hardware entries 78/4; board-local Python helpers 64/0; ESP32/ESP8266/test blobs differ; SOURCE_INTAKE recount 46/15 vs declared 47/14; source NOTICE and Tabler LICENSE lack destination counterparts.
-- 29/29 read-only audit assertions PASS; Master product tests NOT RUN; private Drive v11/newer corrections NOT RECOVERED. **PRODUCTION NO-GO.**
+- Master pre-update HEAD a7efd4e1; Experiments main 6be5d19b; active development 2fbd2475; legacy development aad3aade; COE main a6513ab4; COE #26 b382d233.
+- PR #288 remains OPEN / DRAFT / UNMERGED, base main@f4e8a891; exact compare 557 ahead / 1 behind; 215 changed paths, all coordination/phoenix/. No synchronization.
+- HARDWARE #352 current PR HEAD a19cb235; source/test d3e36ae; production ISR source delta ec9547f8 affects both sketches. Four focused exact-head workflows PASS; Full #45636378501 FAILS at inherited Missing poll signature check.
+- COE RELEASE #35 current HEAD 845e6e90: 10/10 profiles fail closed without approved site ULA /48; case guard PASS; sandbox exits 125. COE #26 remains FROZEN with five queued workflows / zero jobs.
+- Ownership manifest remains 11 routes / DRAFT_REVIEW_ONLY / Master target null; cleanup #266 OPEN / 0-of-7.
+- Private Drive v11/newer corrections NOT RECOVERED. Master product tests NOT RUN. **PRODUCTION NO-GO.**
 
 ---
 

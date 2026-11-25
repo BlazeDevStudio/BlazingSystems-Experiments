@@ -1,3 +1,29 @@
+## PHX-MASTER UTC14 post-checkpoint Hardware / COE integration delta — 2026-11-25T14:45Z
+
+- Source repository refs: Experiments main 6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5; active development blazepwifi-v0.6.0-audit-foundation 2fbd2475e9f54878c316fa7cea2f228386b0e859; Master branch pre-update a7efd4e1ee62007f83f34d5ee8ffa337c16b0c31.
+- Destination: COE main a6513ab4412b4c014eee2863e45cbe32d06cb243; integration #26 b382d233ff06c8791b1028bed3c617cc7b670d12, OPEN / DRAFT / FROZEN, five queued workflows / zero jobs.
+- Routing manifest OWNERSHIP_ROUTES.json remains 11 routes / DRAFT_REVIEW_ONLY; PHX-MASTER target null. Hardware ESP32/ESP8266 routes remain selective-review only; no recursive copy authority or staging approval.
+
+### Current Hardware source tuple
+
+HARDWARE #352 current PR/docs HEAD is a19cb2356fd4f1be65a15d40c9b0f8eb445a5d8d, stacked on #349 head 2a5c997add4f49fcd74f753101d3a9daac0040bf. Source/test SHA is d3e36ae444e262bcd8ac37e087c9d98358e7a168. Production-source commit ec9547f8e97b815db705d5aa65382f171b5eade9 changes both ESP32 and ESP8266 sketches from volatile coinEdgeSequence++ to explicit coinEdgeSequence = coinEdgeSequence + 1U, preserving uint32 modulo-2^32 behavior. The source/test fixture routes simulated edges through the extracted production coinEdgeISR(); the current PR HEAD is a docs-only handover correction.
+
+Exact current-head CI:
+- Quarantine #45636378586 PASS.
+- Relay #45636380464 PASS.
+- ESP8266 core 3.1.2 #45636378388 PASS.
+- ESP32 core 3.3.13 / 4.0.0 #45636400076 PASS.
+- Full #45636378501 FAIL at inherited Missing poll signature check (validation job 139282824095). Fourteen firmware/platform and Android build jobs passed; downstream update, simulation, candidate, signing and publication stages skipped.
+- Evidence class remains CI VERIFIED / SIMULATED. Physical coin pulse, relay/load, electrical recovery, power-cut, 150-cut and 30-device soak acceptance remain NOT TESTED.
+
+### COE integration admission
+
+COE #26 remains FROZEN. The existing 61-row SOURCE_INTAKE recount is 46 identical / 15 derived, not its declared 47 / 14. The exact Hardware source/destination sketch and test blobs remain divergent; 64 source board-local Python helpers/labs have no destination counterparts; root NOTICE and Tabler LICENSE destination counterparts are absent. Five workflows remain queued with zero jobs. No destination staging, copy, move, overwrite or merge was performed.
+
+COE RELEASE #35 advanced to 845e6e90b226f8ba09724894f4c8e6dbad6d5671: current shared validation #45634744105 fails closed on all 10 profiles because approved site-scoped RFC4193 ULA /48 authority is missing; case guard #45634744042 passes; ImageBuilder sandbox #45634744314 exits 125. COE CORE #45 remains focused PASS; COE INTERCON #49 remains Stage 5.1/case PASS but shared ESP32 compile FAIL at missing mbedtls/sha256.h.
+
+This delta updates provenance only. It does not alter route ownership, destination content, source branches, release gates or migration authority.
+
 ## PHX-MASTER UTC13 — current exact Hardware / COE #26 parity (2026-11-25T13:38:55Z)
 
 COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12` remains OPEN / DRAFT / FROZEN. Current HARDWARE #349 head is `2a5c997add4f49fcd74f753101d3a9daac0040bf`. Recursive trees are complete: source 2,552 entries; destination 286.

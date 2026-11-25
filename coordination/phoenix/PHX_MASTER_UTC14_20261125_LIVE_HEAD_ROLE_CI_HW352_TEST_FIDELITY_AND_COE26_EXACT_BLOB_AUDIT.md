@@ -104,3 +104,34 @@ Cleanup issue #266 remains OPEN / 0-of-7; the Master checkbox remains intentiona
 **PRODUCTION NO-GO.** Independent protected signing/anti-rollback witness, crash-atomic durable financial state, reversible financial migration tests, independent QA, native hardware acceptance, 150 real power cuts, 30-device 24-hour soak and explicit owner-authorized release gates remain mandatory.
 
 No merge, release, signing, secret provisioning, firmware flash, physical test, real-payment operation, customer cutover or financial migration occurred.
+
+
+
+## Post-checkpoint owner update — 2026-11-25T14:45Z
+
+This section supersedes the earlier HARDWARE #352 stale-PR-body statement and the COE RELEASE #35 head/run pins in §3 above. It is an in-place update to the existing UTC14 report, not a second UTC-hour report.
+
+### HARDWARE #352 owner correction and current exact-head CI
+
+The owner refreshed #352's PR body at current PR/docs HEAD a19cb2356fd4f1be65a15d40c9b0f8eb445a5d8d. The PR remains OPEN / DRAFT / UNMERGED, based on #349 head 2a5c997add4f49fcd74f753101d3a9daac0040bf. Source/test SHA remains d3e36ae444e262bcd8ac37e087c9d98358e7a168.
+
+The current PR body now identifies production-source commit ec9547f8e97b815db705d5aa65382f171b5eade9. Exact PR patches confirm both sketches changed from volatile coinEdgeSequence++ to explicit coinEdgeSequence = coinEdgeSequence + 1U, preserving unsigned uint32 modulo-2^32 increment semantics while avoiding the newer GCC volatile-increment warning. The commit also changes the coin-pulse lab contract. This is a real production-source edit; it must not be described as fixture-only. The separate d3e36ae test-fidelity correction routes simulated pulse scenarios through the extracted production coinEdgeISR() rather than direct counter mutation.
+
+Exact current PR-head CI for a19cb235:
+- Quarantine Byte Readback LAB #45636378586 — PASS.
+- Relay Output Polarity LAB #45636380464 — PASS.
+- ESP8266 Arduino core 3.1.2 #45636378388 — PASS.
+- ESP32 Arduino core 3.3.13 / 4.0.0 #45636400076 — PASS.
+- Full integration #45636378501 — FAIL. Validation job 139282824095 logs the inherited Missing poll signature check in the ESP8266 sketch. Fourteen firmware/platform and Android build jobs pass; downstream update bundle, simulations, candidate gate, signing and publication are skipped.
+
+The owner corrected its own PR body and handover. No Hardware source branch was edited by Master. CORE retains authenticated register/poll producer contract ownership; QA retains independent assertion reconciliation. Do not add a fabricated response signature or weaken default-deny. CI is simulated/source-extracted evidence only; physical acceptance, 150 real power cuts and 30-device/24-hour soak remain NOT TESTED.
+
+### COE RELEASE #35 exact-head refresh
+
+Current PR head is 845e6e90b226f8ba09724894f4c8e6dbad6d5671. Shared validation #45634744105 fails all 10 appliance profiles closed because approved site-scoped RFC4193 ULA /48 authority is missing. Case-collision guard #45634744042 passes. ImageBuilder sandbox #45634744314 fails with exit 125 after host preflight; no packaging admission is established. RELEASE owns this candidate and its fixes.
+
+COE #26 remains at b382d233ff06c8791b1028bed3c617cc7b670d12 with five queued workflows and zero jobs. No destination writes or staging occurred. COE #45 remains focused PASS; COE #49 remains Stage 5.1/case PASS with shared ESP32 compile failure.
+
+### Master disposition
+
+Master pre-update HEAD was a7efd4e1ee62007f83f34d5ee8ffa337c16b0c31. This report update changes coordination/phoenix only. No subsystem source, COE destination, ownership route, shared CORE handover, payment state or release control was changed. Production remains NO-GO.
