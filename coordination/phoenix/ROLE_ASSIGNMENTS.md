@@ -1,3 +1,16 @@
+## PHX-MASTER UTC04 owner follow-up — HARDWARE #349 final docs/PR tuple (2026-11-25T04:56:08Z)
+
+This owner update supersedes the earlier UTC04 #349 docs/PR pin below; source/test remains unchanged.
+
+- PR #349 source/test: `f591cb85ba032e4f2c30e5008c71de9ce8d17f2e`.
+- Handover/docs commit: `dc6ef11c104fdd9b73dfdd1120ca3a2bc3f86dcf`; current PROJECT_HANDOVER blob: `311b31559a3ff98a8ee3f469fd0e663ff58634f0`.
+- Current PR/workflow head: `56de0761ca67b54feb4889401a810b0069f50614`; PR body and handover now identify the same source/test and docs tuple.
+- Exact docs-head Quarantine [#45549636102](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45549636102) PASS; Relay [#45549636112](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45549636112) PASS; Full [#45549636091](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45549636091) FAIL at Controller protocol parity / inherited Missing poll signature check. Fourteen target/platform and Android jobs PASS; twelve dependent simulation/update/signing/publication stages SKIPPED.
+- The previous `bd91e9b8` handover/PR mismatch is now corrected by HARDWARE. The unresolved Full protocol assertion remains CORE producer + QA independent-review work; HARDWARE keeps deny-default.
+- No Master change was made to the Hardware source, PR or handover.
+
+---
+
 ## PHX-MASTER UTC04 live owner-head and CI refresh — 2026-11-25T04:48:35Z
 
 **Snapshot only; source branches remain owner-controlled.** Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; development `blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5`; Master starting head `6762bcf50c5cbedb5d09117e76749b0a66a7779b`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`.
