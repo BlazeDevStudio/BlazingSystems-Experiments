@@ -59,11 +59,11 @@ def poll_guard_locations(source: str):
     for match in poll_matches:
         prefix = masked_poll_block[max(0, match.start() - 32):match.start()]
         suffix = masked_poll_block[match.end():]
-        if not re.search(r"\\(\\s*void\\s*\\)\\s*$", prefix):
+        if not re.search(r"\(\s*void\s*\)\s*$", prefix):
             raise AssertionError("poll response must be explicitly discarded until authenticated contract approval")
-        if not re.match(r"\\s*;", suffix):
+        if not re.match(r"\s*;", suffix):
             raise AssertionError("poll response must not be consumed before post-poll deny")
-    if re.search(r"\\bapplyRemoteConfig\\s*\\(", masked_loop):
+    if re.search(r"\bapplyRemoteConfig\s*\(", masked_loop):
         raise AssertionError("remote configuration must remain unapplied until authenticated contract approval")
 
     first_pre_guard = -1
@@ -306,7 +306,7 @@ void loop() {
     # application must be rejected until the authenticated contract is approved.
     unsafe_poll_source = poll_source.replace(
         '        (void)post("poll");',
-        '        String response = post("poll");\\n        applyRemoteConfig(response);',
+        '        String response = post("poll");\n        applyRemoteConfig(response);',
     )
     try:
         poll_guard_locations(unsafe_poll_source)
@@ -316,7 +316,7 @@ void loop() {
         raise AssertionError("poll-response consumption mutation was not rejected")
     unsafe_config_source = poll_source.replace(
         '        (void)post("poll");',
-        '        (void)post("poll");\\n        applyRemoteConfig(staleResponse);',
+        '        (void)post("poll");\n        applyRemoteConfig(staleResponse);',
     )
     try:
         poll_guard_locations(unsafe_config_source)
@@ -324,6 +324,8 @@ void loop() {
         pass
     else:
         raise AssertionError("remote-config application mutation was not rejected")
+    print("POLL_RESPONSE_USE_MUTATION_REJECTED")
+    print("POLL_REMOTE_CONFIG_MUTATION_REJECTED")
     if not has_empty_string_assignment('void f() { activeTarget = ""; }', "activeTarget"):
         raise AssertionError("empty-target assignment was not recognized")
     if has_empty_string_assignment('void f() { /* activeTarget = ""; */ }', "activeTarget"):
