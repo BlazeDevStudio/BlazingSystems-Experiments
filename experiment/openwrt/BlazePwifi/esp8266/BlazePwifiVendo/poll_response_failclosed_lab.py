@@ -10,6 +10,7 @@ from cpp_fixture_runner import run_cpp_fixture
 from firmware_lab_source import extract_function as _extract_function, mask_active_cpp_code, mask_non_code
 
 import poll_response_failclosed_lab_structure_guard  # noqa: F401
+import poll_json_array_primitive_lab_structure_guard  # noqa: F401
 from poll_json_array_primitive_lab import verify as verify_json_array_primitive_delimiters
 from poll_response_failclosed_lab_fixtures import (
     STUBS,
