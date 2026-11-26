@@ -47,6 +47,40 @@ def extract_function(source: str, signature: str, required: bool = True) -> str:
     raise RuntimeError(f"unterminated production function: {signature}")
 
 
+
+def _check_quarantine_pending_definition_only(source: str, board: str) -> None:
+    """Keep the disposition helper dormant until CORE/QA approve its contract.
+
+    A future callsite could clear a pending event after a local quarantine
+    append without an approved event-bound server disposition. Count source
+    references conservatively: even a comment reference requires review.
+    """
+    references = len(re.findall(r"\bquarantinePending\s*\(", source))
+    definitions = len(re.findall(r"\bbool\s+quarantinePending\s*\(", source))
+    if references != 1 or definitions != 1:
+        raise RuntimeError(
+            f"{board}: quarantinePending must remain definition-only until "
+            f"PHX-CORE/PHX-QA approve the event-bound disposition contract; "
+            f"found {references} references and {definitions} definitions"
+        )
+
+
+def assert_quarantine_pending_definition_only(source: str, board: str) -> None:
+    _check_quarantine_pending_definition_only(source, board)
+    injected = (
+        source
+        + "\nvoid injected_unapproved_quarantine_callsite() { "
+        + 'quarantinePending(String("unapproved")); }\n'
+    )
+    try:
+        _check_quarantine_pending_definition_only(injected, board)
+    except RuntimeError:
+        print(f"{board}: MUTATION_REJECTED unapproved quarantinePending callsite")
+    else:
+        raise RuntimeError(f"{board}: dormant-callsite guard accepted injected callsite")
+
+
+
 def compile_and_run(board: str, source: str, temp: Path) -> None:
     match = re.search(r"static const size_t QUARANTINE_MAX_BYTES\s*=\s*([0-9]+)\s*;", source)
     if not match:
@@ -231,6 +265,7 @@ def main() -> None:
         temp = Path(directory)
         for board, path in BOARDS:
             source = path.read_text(encoding="utf-8")
+            assert_quarantine_pending_definition_only(source, board)
             compile_and_run(board, source, temp)
     print("QUARANTINE_APPEND_READBACK_LAB=PASS (SIMULATED; no physical flash/power cut)")
     subprocess.run(
