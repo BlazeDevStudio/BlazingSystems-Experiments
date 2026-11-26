@@ -1,3 +1,18 @@
+## PHX-MASTER UTC17 post-checkpoint refresh — 2026-11-26T17:52Z
+
+**This addendum supersedes the earlier #353 head, handover and current-run status recorded below.** During this same UTC17 activation, HARDWARE advanced #353 after the initial Master checkpoint.
+
+- Current #353 PR/docs HEAD: `f527b33c9e391a9a66490388d96f06d6c8761dfa`; current source/test SHA: `44de55a0e132cb15fdb60ecf85446e9490fa277e`; parent #352 remains exact at `2fa3b7db1161ddb531ed94bcf60617947fa1a7bd`.
+- The new source/test commit changes only Hardware-owned `coin_pulse_capture_lab_isr.py`. It now snapshots the pre-existing `pollIntakeSuspended` state before temporary inhibit and restores that exact prior state only after successful post-attach quarantine; the previous lab allowed a mutation that initialized the snapshot to `false`.
+- HARDWARE refreshed its PR body/handover to current head `f527b33c`; the prior stale `cb1787ac/ed2f77d` pointers are superseded.
+- Exact source/test SHA evidence: test-first RED [#45869946851](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45869946851); intermediate test-authoring issue [#45870280500](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45870280500) was corrected; focused Relay [#45870624293](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45870624293) and PR [#45870635699](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45870635699) PASS; Quarantine [#45870624386](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45870624386) and PR [#45870635503](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45870635503) PASS. Full [#45870624355](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45870624355) still fails the inherited ESP8266 missing poll-signature check.
+- New PR-docs-head runs on `f527b33c` are still IN_PROGRESS at readback: Quarantine [#45871096480](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45871096480), Relay [#45871096516](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45871096516), Full [#45871096425](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45871096425). These are not reported as PASS.
+- Both production `.ino` sketches remain unchanged. Evidence is source-extracted host simulation and CI only; physical GPIO/relay, power-cut, soak and hardware acceptance remain NOT TESTED.
+
+CORE still owns the authenticated poll/register producer contract; QA owns independent assertions; HARDWARE owns this lab. No ad-hoc signature or fail-open change is authorized.
+
+---
+
 # PHX-MASTER scheduled UTC17 — live owner CI, current Hardware test heads and COE #26 provenance
 
 **Observed:** 2026-11-26T17:31Z  
