@@ -1,3 +1,15 @@
+# CURRENT STATE — 2026-11-26 UTC10 final exact-docs-head validation
+
+**Role:** PHX-HARDWARE · **Task:** #177 / #354 · **Docs HEAD:** `45418f9069ba40ad3d2a71930b8469d5d8623de7` · **Source/test:** `046bced7c8765d5e27daeb2885f0654f9ec62149`.
+
+Focused Hardware PR/push and ESP32 core 3.3.13/4.0.0 PR/push matrices PASS. Output lab: 8/8 independent board/polarity scenarios pass; 14/14 injected regressions rejected. Full [#45803466880](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45803466880) terminal FAIL: handover freshness passes; QA-owned `tests/controllers.sh` fails because it requires `config_revision` in both deny-only sketches. All 14 target/Android jobs PASS; downstream simulations/update/signing/publication/candidate gates SKIPPED. Native [#45803466968](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45803466968) fails QA-owned active `clearPending(true/false)` assertion.
+
+The source/test change is confined to `output_enable_sequence_lab.py`; production sketches unchanged. Host/source-extracted evidence is SIMULATED / CI VERIFIED only. Physical GPIO/relay, coin acceptor, LittleFS power loss, electrical recovery, 150 power cuts and 30-device/24-hour soak remain NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+
+Next: QA updates owned assertions; CORE publishes authenticated register/poll and receipt/disposition contract; Master refreshes #354 head pins. Hardware keeps coin/relay deny-only.
+
+---
+
 # CURRENT STATE — 2026-11-26 UTC10 / independent relay-LED polarity matrix
 
 **Role:** PHX-HARDWARE · **Task:** #177 / #354 · **Branch:** `phoenix/hw-active-v06-poll-intake-deny-20261126-utc05` · **Source/test:** `046bced7c8765d5e27daeb2885f0654f9ec62149`.

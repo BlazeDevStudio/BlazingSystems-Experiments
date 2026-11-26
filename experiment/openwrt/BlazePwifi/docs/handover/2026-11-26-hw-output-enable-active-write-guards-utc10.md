@@ -70,3 +70,29 @@ The prior source-extracted lab set relay and LED polarity together. The producti
 - No positive coin/relay admission, response trust, pending disposition, CORE API, finance, signer, witness, COE destination, flash, device reset, payment operation, release tag, merge or deployment changed.
 
 **Next exact action:** inspect the new final-docs-head Full and ESP32 matrix runs; PHX-QA reconciles the deny-only pending-evidence assertion; PHX-CORE publishes the authenticated register/poll and receipt/disposition contract; PHX-MASTER refreshes the #354 head pin in Master-owned coordination files.
+
+
+## PHX-HARDWARE UTC10 final exact-docs-head validation — 2026-11-26
+
+**Updated:** 2026-11-26T10:45:04.754Z · **PR:** [#354](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/354) · **Branch:** `phoenix/hw-active-v06-poll-intake-deny-20261126-utc05`
+**Docs HEAD tested:** `45418f9069ba40ad3d2a71930b8469d5d8623de7` · **Source/test:** `046bced7c8765d5e27daeb2885f0654f9ec62149`
+**State:** OPEN / DRAFT / UNMERGED; deny-only.
+
+### Final exact-head CI
+- Focused Hardware PR [#45803466556](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45803466556), job `139852438950`: PASS.
+- ESP32 core matrix PR [#45803466620](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45803466620): PASS — source-contract `139853189956`, core 3.3.13 `139853190096`, core 4.0.0 `139853189558`.
+- ESP32 core matrix push [#45803459247](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45803459247): PASS — source-contract `139852414868`, core 3.3.13 `139852415194`, core 4.0.0 `139852415334`.
+- Focused push [#45802954262](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45802954262), job `139850639639`: PASS. Exact-source log: 8/8 independent board/polarity scenarios pass; 14/14 injected regressions rejected.
+- Full [#45803466880](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45803466880): terminal FAILURE. Mandatory handover freshness, handover fail-closed tests, HND-0700, CI-0701, BusyBox decode, static validation, v0.3, admin security, config and template-gallery checks PASS. QA-owned `tests/controllers.sh` then FAILS because it requires `config_revision` in both sketches. The deny-only candidate intentionally does not consume unsigned remote configuration. All 14 target/Android jobs PASS (ESP8266, ESP32, Android, x86_64, Ruijie and Orange Pi targets); simulations, update bundle, candidate gate, signing and publication are SKIPPED.
+- Native [#45803466968](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45803466968), job `139852441371`: FAIL at QA-owned `tests/v060_vendo_sequence_contract.py` requiring active `clearPending(true/false)` callsites. Hardware intentionally preserves pending evidence and has no active disposition callsite.
+
+### Reconciliation
+The prior exact-head Full [#45802963678](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45802963678) failed the pre-refresh handover freshness gate. This final-docs-head run [#45803466880](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45803466880) proves the freshness gate now passes; the remaining failure is QA-owned protocol parity. No Hardware change to QA-owned scripts is authorized.
+
+### Next owner actions
+- **PHX-QA:** replace legacy `config_revision` and active-clear expectations with deny/no-callsite/pending-evidence-preservation assertions; independently review the polarity matrix.
+- **PHX-CORE:** publish the authenticated register/poll and event receipt/disposition contract (canonical serialization, mandatory key provisioning, controller/target binding, freshness and replay).
+- **PHX-MASTER:** refresh `ROLE_ASSIGNMENTS.md` and `INTEGRATION_MATRIX.md` from stale #354 `e7f63da2` to current #354 head; branch-protection reads remain false on main and v0.6.
+- **PHX-HARDWARE:** keep coin and relay admission denied; rerun Full after QA/CORE owner changes.
+
+Physical GPIO/relay transient, coin acceptor, LittleFS power-loss, electrical recovery, 150 power cuts and 30-device/24-hour soak remain NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO. No positive coin/relay admission, financial logic, signer/witness, COE destination, flash, reset, live-money operation, migration, release tag, merge or deployment changed.
