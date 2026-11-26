@@ -13,7 +13,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: blazepisonet-softtimer-${{ github.ref }}
@@ -25,6 +25,8 @@ env:
 
 jobs:
   handover:
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -38,6 +40,8 @@ jobs:
 
   build-windows:
     needs: handover
+    permissions:
+      contents: read
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -176,7 +180,7 @@ jobs:
 
 
       - name: RELEASE-SIGN sign portable executables before NSIS
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && env.VERSION != '0.4.0' && vars.SOFTTIMER_RELEASE_APPROVED == 'true'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && env.VERSION != '0.4.0' && vars.SOFTTIMER_RELEASE_APPROVED == 'true' && vars.SOFTTIMER_RELEASE_VERSION == env.VERSION
         shell: pwsh
         env:
           SOFTTIMER_SIGNING_PFX_B64: ${{ secrets.SOFTTIMER_SIGNING_PFX_B64 }}
@@ -239,7 +243,7 @@ jobs:
 
 
       - name: RELEASE-SIGN sign native Setup after metadata verification
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && env.VERSION != '0.4.0' && vars.SOFTTIMER_RELEASE_APPROVED == 'true'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && env.VERSION != '0.4.0' && vars.SOFTTIMER_RELEASE_APPROVED == 'true' && vars.SOFTTIMER_RELEASE_VERSION == env.VERSION
         shell: pwsh
         env:
           SOFTTIMER_SIGNING_PFX_B64: ${{ secrets.SOFTTIMER_SIGNING_PFX_B64 }}
@@ -354,7 +358,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: RELEASE-SIGN verify final signed packages before upload
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && env.VERSION != '0.4.0' && vars.SOFTTIMER_RELEASE_APPROVED == 'true'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && env.VERSION != '0.4.0' && vars.SOFTTIMER_RELEASE_APPROVED == 'true' && vars.SOFTTIMER_RELEASE_VERSION == env.VERSION
         shell: pwsh
         env:
           SOFTTIMER_SIGNER_CERT_SHA256: ${{ secrets.SOFTTIMER_WINDOWS_SIGNER_CERT_SHA256 }}
@@ -381,20 +385,66 @@ jobs:
             release/BlazePisonet-SoftTimer-Setup-v${{ env.VERSION }}.exe
             BlazePisonet-SoftTimer-v${{ env.VERSION }}-portable-win-x64.zip
             SHA256SUMS
+            out/bundle/BlazePisonet.SoftTimer.exe
+            out/bundle/BlazePisonet.SoftTimer.Watchdog.exe
           if-no-files-found: error
 
+
+  publish-release:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.SOFTTIMER_RELEASE_APPROVED == 'true' && vars.SOFTTIMER_RELEASE_VERSION != '' && vars.SOFTTIMER_RELEASE_VERSION != '0.4.0'
+    needs: build-windows
+    runs-on: windows-latest
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: BlazePisonet-SoftTimer-v${{ env.VERSION }}-win-x64
+          path: candidate
+
+      - name: Verify downloaded release candidate identity and signatures
+        shell: pwsh
+        env:
+          SOFTTIMER_RELEASE_VERSION: ${{ vars.SOFTTIMER_RELEASE_VERSION }}
+          SOFTTIMER_SIGNER_CERT_SHA256: ${{ secrets.SOFTTIMER_WINDOWS_SIGNER_CERT_SHA256 }}
+          GITHUB_SHA_EXPECTED: ${{ github.sha }}
+        run: |
+          $ErrorActionPreference='Stop'
+          if ($env:VERSION -eq '0.4.0') { throw 'Frozen v0.4.0 cannot be published' }
+          if ($env:SOFTTIMER_RELEASE_VERSION -cne $env:VERSION) { throw 'Approved release version does not match compiled VERSION' }
+          $releaseTarget=(git rev-parse HEAD).Trim()
+          if ($LASTEXITCODE -ne 0 -or $releaseTarget -cne $env:GITHUB_SHA_EXPECTED) { throw 'Publisher checkout does not match event source SHA' }
+
+          $setup="candidate/release/BlazePisonet-SoftTimer-Setup-v$env:VERSION.exe"
+          $zip="candidate/BlazePisonet-SoftTimer-v$env:VERSION-portable-win-x64.zip"
+          $sums='candidate/SHA256SUMS'
+          $app='candidate/out/bundle/BlazePisonet.SoftTimer.exe'
+          $watchdog='candidate/out/bundle/BlazePisonet.SoftTimer.Watchdog.exe'
+          foreach ($path in @($setup,$zip,$sums,$app,$watchdog)) {
+            if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { throw "Release candidate member missing: $path" }
+          }
+
+          $gate="$env:PROJECT_DIR/tests/ReleaseSigning/Release-Authenticode.ps1"
+          & $gate -Mode Verify -InputPaths @($setup,$app,$watchdog) -PinnedCertSha256 $env:SOFTTIMER_SIGNER_CERT_SHA256 -PortableZipPath $zip -Sha256SumsPath $sums -ExpectedVersion $env:VERSION -ExpectedSourceCommit $releaseTarget
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
       - name: Publish GitHub Release
-        # Never mutate the frozen v0.4.0 release from later development code.
-        # A version/tag bump and explicit new candidate are mandatory first.
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && env.VERSION != '0.4.0' && vars.SOFTTIMER_RELEASE_APPROVED == 'true'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && env.VERSION != '0.4.0' && vars.SOFTTIMER_RELEASE_APPROVED == 'true' && vars.SOFTTIMER_RELEASE_VERSION == env.VERSION
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
-          SOFTTIMER_SIGNER_CERT_SHA256: ${{ secrets.SOFTTIMER_WINDOWS_SIGNER_CERT_SHA256 }}
         run: |
           $ErrorActionPreference='Stop'
-          $setup="release/BlazePisonet-SoftTimer-Setup-v$env:VERSION.exe"
-          $zip="BlazePisonet-SoftTimer-v$env:VERSION-portable-win-x64.zip"
+          $setup="candidate/release/BlazePisonet-SoftTimer-Setup-v$env:VERSION.exe"
+          $zip="candidate/BlazePisonet-SoftTimer-v$env:VERSION-portable-win-x64.zip"
+          $sums='candidate/SHA256SUMS'
           $releaseTarget=(git rev-parse HEAD).Trim()
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
@@ -406,9 +456,5 @@ jobs:
           if (gh release view $releaseTag *> $null) {
             throw "Immutable release tag $releaseTag already exists. Refusing asset replacement; select an approved new version."
           }
-          # Re-admit the FINAL shipped bytes in the publisher step, even if
-          # a prior signing job was skipped, and fail closed on any mismatch.
-          $gate="$env:PROJECT_DIR/tests/ReleaseSigning/Release-Authenticode.ps1"
-          & $gate -Mode Verify -InputPaths @($setup,'out/bundle/BlazePisonet.SoftTimer.exe','out/bundle/BlazePisonet.SoftTimer.Watchdog.exe') -PinnedCertSha256 "$env:SOFTTIMER_SIGNER_CERT_SHA256" -PortableZipPath $zip -Sha256SumsPath 'SHA256SUMS' -ExpectedVersion $env:VERSION -ExpectedSourceCommit $releaseTarget
-          gh release create $releaseTag $setup $zip SHA256SUMS --title "BlazePisonet SoftTimer v$env:VERSION" --notes-file $releaseNotes --target $releaseTarget
+          gh release create $releaseTag $setup $zip $sums --title "BlazePisonet SoftTimer v$env:VERSION" --notes-file $releaseNotes --target $releaseTarget
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
