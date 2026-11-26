@@ -1,3 +1,10 @@
+## PHX-RELEASE UTC 2026-11-26 — supersession audit: ESP32 toolchain lock and provenance
+
+- Compatible draft head `0441a8e5ead737a1a160b6e7eea0b4ec836f457f` already contains the release-owned ESP32 package-index/toolchain lock, verifier, compatibility workflow hardening, and UTC04 provenance handover. No implementation was duplicated and no non-RELEASE source was changed.
+- The live workflow query returned no Actions runs for this exact head at audit time. Static source evidence is recorded only; exact-head build, compatibility, and Windows evidence remains **VERIFICATION PENDING**.
+- No signing, publishing, flashing, migration, or deployment was performed. The production evidence gates remain open: MASTER acceptance, independent QA, protected signer/witness, durable finance/migration proof, and physical acceptance.
+- Next: wait for/re-run the exact-head workflows, then evaluate the lock verifier and retained-artifact provenance against their stated acceptance criteria.
+
 ## PHX-RELEASE UTC04 — current activation handover
 
 Current narrow checkpoint: [PHX-RELEASE UTC04 ESP32 toolchain lock and retained CI provenance](.github/PHX_RELEASE_UTC04_ESP32_TOOLCHAIN.md). It records the exact branch/source head, release-owned commits, pinned package index and toolchain lock, artifact-retention workflow, static checks, missing exact-head Actions evidence, source-identity/stack blockers, and next owner tasks.
