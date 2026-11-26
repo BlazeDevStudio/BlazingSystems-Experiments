@@ -190,7 +190,7 @@ def _runtime_interrupt_wiring_body(source, board):
     detach = "detachInterrupt(digitalPinToInterrupt(runCoinPin));"
     assign = "runCoinPin=coinPin;"
     input_mode = "pinMode(runCoinPin,INPUT_PULLUP);"
-    quarantine = "quarantineCoinIngressTransition();"
+    quarantine = "if(!quarantineCoinIngressTransition())returnfalse;"
 
     attach_positions = [match.start() for match in re.finditer(re.escape(attach), compact)]
     detach_positions = [match.start() for match in re.finditer(re.escape(detach), compact)]
@@ -344,7 +344,14 @@ def verify_runtime_interrupt_wiring(source, board):
         source, board, _replace_runtime_wiring_body(source, attach_before_input_body), "attach-before-input-pullup"
     )
 
-    missing_quarantine_body = body.replace("quarantineCoinIngressTransition();", "", 1)
+    missing_quarantine_body, removed_quarantine = re.subn(
+        r"if\s*\(\s*!\s*quarantineCoinIngressTransition\s*\(\s*\)\s*\)\s*return\s+false\s*;",
+        "",
+        body,
+        count=1,
+    )
+    if removed_quarantine != 1:
+        raise RuntimeError("could not construct missing post-attach quarantine mutation")
     _expect_runtime_wiring_rejected(
         source, board, _replace_runtime_wiring_body(source, missing_quarantine_body), "missing-post-attach-quarantine"
     )
@@ -393,7 +400,7 @@ def verify_runtime_interrupt_wiring(source, board):
 
     restore_before_quarantine_body = _swap_first_runtime_statements(
         body,
-        "quarantineCoinIngressTransition();",
+        "if(!quarantineCoinIngressTransition()) return false;",
         "pollIntakeSuspended=priorPollIntakeSuspended;",
     )
     _expect_runtime_wiring_rejected(
