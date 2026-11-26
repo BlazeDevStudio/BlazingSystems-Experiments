@@ -1,3 +1,30 @@
+# CURRENT STATE — 2026-11-26 UTC12 — poll guard control-flow regression
+
+**Role:** PHX-HARDWARE · **Task:** [#177](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/177) / [#354](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/354)  
+**Branch:** `phoenix/hw-active-v06-poll-intake-deny-20261126-utc05` · **Base:** `2fbd2475e9f54878c316fa7cea2f228386b0e859`  
+**Source/test SHA:** `ea24229ee3b46424997fd3e68012ef50a65897f9` · **PR:** OPEN / DRAFT / UNMERGED · **Production:** NO-GO.
+
+## Current change
+
+The Hardware-owned `poll_preflight_inhibit_lab.py` now rejects conditional or bypassable pre/post poll deny calls. The prior lab accepted a braced conditional pre-poll guard. Test-first RED [#45819429664](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45819429664), job `139907519235`, reproduced that false acceptance. The correction at [`ea24229`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/ea24229ee3b46424997fd3e68012ef50a65897f9) requires top-level unconditional deny statements and rejects early control transfers before the post-poll deny.
+
+Exact-head focused GREEN [#45819620598](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45819620598), job `139908174414`, PASS. Both board labs rejected all five new control-flow mutations (10/10 total), while the existing no-coin-POST, no-pending-clear, poll-response-discard, remote-config-deny, request-auth and GPIO output-order tests passed.
+
+Production ESP8266/ESP32 sketches were unchanged in this activation. The existing candidate still denies coin/relay/LED outputs before and after synchronous poll, discards the unauthenticated response, and preserves unresolved pending journal evidence.
+
+## Remaining exact-head gates
+
+- Native [#45819620637](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45819620637), job `139908175159`: FAIL at QA-owned PAY-0745 active `clearPending(true/false)` assertion. Do not restore active disposition.
+- Full [#45820173237](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45820173237): the first post-source rerun still failed because this CURRENT_STATE record was older than the source change; it is being refreshed now. This run does not establish controller-protocol parity.
+- ESP32 Mbed TLS 3/4 matrix [#45819620625](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45819620625): source contract and core 3.3.13 passed; core 4.0.0 was still in progress at the last job read. No final matrix result claimed.
+- Host/source-extracted status is SIMULATED / CI VERIFIED only. Physical GPIO/relay, coin acceptor, LittleFS power loss, electrical pulse/recovery, 150 controlled power cuts and 30-device/24-hour soak remain NOT TESTED. HARDWARE ACCEPTED = NO.
+
+## NEXT EXACT ACTION
+
+Refresh the append-only CHANGE_LEDGER after this CURRENT_STATE update, then rerun Full validation at the resulting exact PR head. PHX-QA must reconcile the deny-only pending-evidence assertions; PHX-CORE must publish the authenticated register/poll and receipt/disposition contract; PHX-MASTER must refresh the #354 head pin. Keep coin/relay admission denied.
+
+---
+
 # CURRENT STATE — 2026-11-26 UTC10 final exact-docs-head validation
 
 **Role:** PHX-HARDWARE · **Task:** #177 / #354 · **Docs HEAD:** `45418f9069ba40ad3d2a71930b8469d5d8623de7` · **Source/test:** `046bced7c8765d5e27daeb2885f0654f9ec62149`.
