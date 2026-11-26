@@ -71,3 +71,11 @@
 - Injected failure separately into all 13 ESP32 Preferences keys; every failure propagated and all 13 write attempts were retained. All-success control passed.
 - ESP8266 EEPROM commit-failure propagation and four existing config-persistence mutation guards passed.
 - SIMULATED host Preferences harness / CI VERIFIED; no real NVS power-cut or atomic transaction claim. Physical acceptance NOT TESTED; production NO-GO.
+
+
+## 2026-11-27 UTC21 — docs-head Full/Native/Mbed readback
+
+- Focused #45900652617 job 140185310639 PASS at docs head a59dbb5812a28eb5a9fc7fc1025b99e29410a33c; 13 ESP32 Preferences failure-injection cases and EEPROM commit propagation pass.
+- Full #45900652616 CI-0701 job 140186298232 PASS; validation job 140186375629 FAIL at QA-owned controllers.sh:21 config_revision assertion. Target builds were in progress; no final target count claimed.
+- Native #45900652601 job 140185311226 FAIL at QA-owned active clearPending assertion. Mbed #45900652645 source-contract job 140185906703 PASS; 3.3.13/4.0.0 target builds in progress.
+- No QA source or production firmware changed. NVS multi-key write remains non-atomic; hardware acceptance NOT TESTED; production NO-GO.

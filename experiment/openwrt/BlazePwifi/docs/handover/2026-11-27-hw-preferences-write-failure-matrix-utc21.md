@@ -23,8 +23,9 @@ For each key, the fake Preferences implementation returns zero for that write; t
 - Focused workflow [#45900402218](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45900402218), job 140184489587, exact checkout 68416f69bc10dde8b2afa2948b312d4010507ad5: **PASS**.
 - Logs: ESP8266_EEPROM_COMMIT_FAILURE_PROPAGATED_PASS; ESP32_PREFERENCES_WRITE_FAILURE_MATRIX_PASS cases=13 writes=13/13; CONFIG_PERSISTENCE_WRITE_RESULT_PASS ESP8266+ESP32.
 - Existing source-extracted poll wait/pulse-loss, deny-only remote-config, request-auth, output-latch and bounded EEPROM checks also passed in the same job.
-- Native synthetic [#45900402244](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45900402244) fails at QA-owned tests/v060_vendo_sequence_contract.py:20, which requires active clearPending(true/false) callsites. No Hardware-side callsite was added.
-- Full validation [#45900396860](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45900396860) failed the mandatory handover freshness gate before this docs refresh; rerun required on the refreshed head. Mbed [#45900402216](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45900402216) pending at last check.
+- Native docs-head [#45900652601](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45900652601), job 140185311226, fails QA-owned tests/v060_vendo_sequence_contract.py:20 requiring active clearPending(true/false) callsites. No Hardware-side callsite was added.
+- Full docs-head [#45900652616](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45900652616): CI-0701 job 140186298232 PASS; validation job 140186375629 fails QA-owned tests/controllers.sh:21 because the deny-only sketches intentionally lack config_revision. Target builds were still in progress; no final count is claimed.
+- Mbed docs-head [#45900652645](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45900652645): source-contract job 140185906703 PASS; 3.3.13 job 140185906936 and 4.0.0 job 140185906993 still running at last check.
 
 ## Limits / risk
 

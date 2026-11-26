@@ -1,3 +1,17 @@
+## PHX-HARDWARE UTC21 integration readback — exact docs-head results
+
+**Observed UTC:** 2026-11-26T21:52Z  
+**PR #355:** OPEN / DRAFT / UNMERGED; source/test SHA 68416f69bc10dde8b2afa2948b312d4010507ad5; docs parent a59dbb5812a28eb5a9fc7fc1025b99e29410a33c.
+
+- Focused docs-head [#45900652617](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45900652617), job 140185310639: **PASS**. ESP32 Preferences per-key matrix: 13 independent failure cases, all 13 writes attempted each case, all-success control passed. ESP8266 EEPROM commit failure propagation passed; four config-persistence mutation guards rejected.
+- Full docs-head [#45900652616](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45900652616): CI-0701 job 140186298232 **PASS**; validation job 140186375629 **FAIL** at QA-owned tests/controllers.sh line 21 because the deny-only sketches intentionally have no config_revision response consumer. All target builds were still in progress at the last check; no final target count is claimed.
+- Native docs-head [#45900652601](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45900652601), job 140185311226: **FAIL** at QA-owned tests/v060_vendo_sequence_contract.py:20 requiring active clearPending(true/false) callsites. Hardware did not add a callsite.
+- Mbed TLS docs-head [#45900652645](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45900652645): source-contract job 140185906703 **PASS**; clean target builds 3.3.13 job 140185906936 and 4.0.0 job 140185906993 were still in progress.
+
+The 13-key Preferences harness is SIMULATED / CI VERIFIED only. The 13-key NVS write remains non-atomic. No real NVS power-cut, physical GPIO/relay, coin pulse, 150 power-cut, 30-device/24-hour soak or electrical recovery test is claimed. #177 remains unresolved on active v0.6; no production firmware was changed in this test-only task. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+
+---
+
 ## PHX-HARDWARE UTC21 addendum — ESP32 Preferences per-key failure matrix
 
 **Observed UTC:** 2026-11-26T21:47Z  
