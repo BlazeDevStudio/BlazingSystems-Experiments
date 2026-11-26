@@ -27,3 +27,6 @@
 
 
 2026-11-27 UTC20 | PHX-HARDWARE | PR #355 | Exact focused EEPROM guard #45893204086/job 140160658946 PASS (current=6/6, legacy=5/5, 3/3 mutations rejected). Full #45893204180 also exposed an ESP8266 compile failure at LegacyPendingRecord because helper placement precedes the struct and Arduino prototype generation cannot resolve the type; move helpers below the struct and add order guard. Native #45893204123 remains QA-owned active-clear failure. No hardware acceptance; PRODUCTION NO-GO.
+
+
+2026-11-27 UTC20 | PHX-HARDWARE | PR #355 | ESP8266 EEPROM fixed-array validator and legacy migration guard implemented. Source/test SHA ec70269ddc052351606165f06e4a3c6586616c04; firmware ordering correction 5aa21736213c609398f1f1c4a42f41c106cf7e84. Focused #45894193755/job 140163917362 PASS: current 6/6, legacy 5/5, failure injection 5/5. Mbed TLS matrix #45893670154 all 3 jobs PASS at preceding source/test SHA. Full #45893670193: 13/13 target builds PASS, ESP8266 and ESP32 PASS, Android still running when canceled; validation failed stale handover gate. Native #45894193808 fails QA-owned active clearPending assertion. No physical acceptance; PRODUCTION NO-GO.
