@@ -5,7 +5,32 @@ the loop orchestration runner. Dependencies are explicit parameters so the
 contract module can be reviewed and reused without hidden runner globals.
 """
 from firmware_lab_source import mask_active_cpp_code, mask_non_code
+from cpp_token_normalizer import tokenize_cpp
 from poll_loop_blocking_inhibit_lab_edge_fixtures import POLL_SAFETY_PARITY
+
+
+
+def replace_cpp_tokens(tokens, anchor, replacement):
+    """Replace one exact C++ token subsequence for deterministic failure injection."""
+    expected = tokenize_cpp(anchor)
+    replacement_tokens = tokenize_cpp(replacement)
+    if not expected:
+        raise AssertionError("C++ mutation anchor tokenized to an empty sequence")
+    matches = [
+        index
+        for index in range(len(tokens) - len(expected) + 1)
+        if tuple(tokens[index:index + len(expected)]) == expected
+    ]
+    if len(matches) != 1:
+        raise AssertionError(
+            f"C++ mutation anchor must occur exactly once; found {len(matches)}: {anchor!r}"
+        )
+    index = matches[0]
+    return (
+        tuple(tokens[:index])
+        + tuple(replacement_tokens)
+        + tuple(tokens[index + len(expected):])
+    )
 
 def poll_safety_helpers(boards, extract_function):
     helpers = {}
@@ -16,9 +41,10 @@ def poll_safety_helpers(boards, extract_function):
             body = extract_function(source, name)
             if not body:
                 raise AssertionError(f"{board}: missing shared poll-safety helper {name}")
-            # Ignore formatting-only changes; comments and executable tokens remain
-            # part of the comparison so safety intent cannot drift silently.
-            helpers[board][name] = " ".join(body.split())
+            # Compare lexical C++ tokens: whitespace outside tokens is formatting,
+            # while literal bytes and token boundaries are semantic. Comments are
+            # intentionally excluded from this executable-parity check.
+            helpers[board][name] = tokenize_cpp(body)
     return helpers
 
 
@@ -31,7 +57,38 @@ def poll_safety_parity_mismatches(helpers):
     ]
 
 
+def verify_poll_safety_parity_preserves_literal_whitespace():
+    class _SourceText:
+        def __init__(self, value):
+            self.value = value
+
+        def read_text(self, encoding="utf-8"):
+            return self.value
+
+    original = 'void applyOutputs(){ Serial.println("FAULT  LATCHED"); }'
+    mutated = original.replace("FAULT  LATCHED", "FAULT LATCHED", 1)
+
+    def extract(source, name):
+        return source if name == "applyOutputs" else "void helper(){}"
+
+    helpers = poll_safety_helpers(
+        {
+            "ESP8266": _SourceText(original),
+            "ESP32": _SourceText(mutated),
+        },
+        extract,
+    )
+    mismatches = poll_safety_parity_mismatches(helpers)
+    if "applyOutputs" not in mismatches:
+        raise SystemExit(
+            "POLL_SAFETY_LITERAL_WHITESPACE_MUTATION_SURVIVED: "
+            "string-literal whitespace was normalized away"
+        )
+    print("POLL_SAFETY_LITERAL_WHITESPACE_MUTATION_REJECTED")
+
+
 def verify_poll_safety_board_parity(boards, extract_function):
+    verify_poll_safety_parity_preserves_literal_whitespace()
     helpers = poll_safety_helpers(boards, extract_function)
     mismatches = poll_safety_parity_mismatches(helpers)
     if mismatches:
@@ -49,12 +106,10 @@ def verify_poll_safety_board_parity(boards, extract_function):
         board: dict(board_helpers)
         for board, board_helpers in helpers.items()
     }
-    marker = "!journalRecoveryRequired"
-    apply_outputs = mutated["ESP32"]["applyOutputs"]
-    if marker not in apply_outputs:
-        raise AssertionError("ESP32 applyOutputs parity mutation anchor missing")
-    mutated["ESP32"]["applyOutputs"] = apply_outputs.replace(
-        marker, "journalRecoveryRequired", 1
+    mutated["ESP32"]["applyOutputs"] = replace_cpp_tokens(
+        mutated["ESP32"]["applyOutputs"],
+        "!journalRecoveryRequired",
+        "journalRecoveryRequired",
     )
     if not poll_safety_parity_mismatches(mutated):
         raise SystemExit(
@@ -83,10 +138,11 @@ def verify_poll_safety_board_parity(boards, extract_function):
             board: dict(board_helpers)
             for board, board_helpers in helpers.items()
         }
-        body = mutated["ESP32"][name]
-        if anchor not in body:
-            raise AssertionError(f"ESP32 {name} parity mutation anchor missing")
-        mutated["ESP32"][name] = body.replace(anchor, replacement, 1)
+        mutated["ESP32"][name] = replace_cpp_tokens(
+            mutated["ESP32"][name],
+            anchor,
+            replacement,
+        )
         mismatches = poll_safety_parity_mismatches(mutated)
         if name not in mismatches:
             raise SystemExit(
