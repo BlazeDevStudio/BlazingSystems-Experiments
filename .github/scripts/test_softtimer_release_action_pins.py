@@ -163,5 +163,29 @@ class SoftTimerReleaseActionPinTests(unittest.TestCase):
         self.assertTrue(_checkout_has_read_only_credentials(block))
 
 
+    def test_checkout_step_discovery_counts_id_first_action_steps(self):
+        valid_step = (
+            "      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683\\n"
+            "        with:\\n"
+            "          persist-credentials: false\\n"
+        )
+        workflow = valid_step * 3 + (
+            "      - id: additional-checkout\\n"
+            "        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683\\n"
+            "        with:\\n"
+            "          persist-credentials: true\\n"
+        )
+        checkout_blocks = [
+            block
+            for block in _step_blocks(workflow)
+            if re.search(r"(?m)^      - uses: actions/checkout@", block)
+        ]
+        self.assertEqual(
+            len(checkout_blocks),
+            4,
+            "id-first steps with a later uses: actions/checkout key must be counted",
+        )
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
