@@ -1,3 +1,17 @@
+# CURRENT STATE — 2026-11-26 UTC10 / independent relay-LED polarity matrix
+
+**Role:** PHX-HARDWARE · **Task:** #177 / #354 · **Branch:** `phoenix/hw-active-v06-poll-intake-deny-20261126-utc05` · **Source/test:** `046bced7c8765d5e27daeb2885f0654f9ec62149`.
+
+The output-enable source lab now exercises all four independent relay/LED active-polarity combinations on both boards. Exact-source focused PR [#45802963675](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45802963675) and push [#45802954262](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45802954262) PASS; 8/8 board/polarity scenarios pass and 14/14 injected regressions are rejected. The first helper attempt at `2ab43c71` failed because it expected two rather than three OFF writes; corrected in `046bced7` and not accepted as test evidence.
+
+Native [#45802963561](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45802963561) FAILS at QA-owned `clearPending(true/false)` assertion. Full [#45802963678](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45802963678) FAILS mandatory handover freshness because this source commit predates the present handover refresh. ESP32 matrix [#45802963530](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45802963530) pending at this update; final-docs-head reruns are required.
+
+The follow-up changes only `output_enable_sequence_lab.py`; production sketches are unchanged. SIMULATED / CI VERIFIED only. Physical GPIO, relay contact, coin acceptor, LittleFS power-loss, electrical recovery, 150 power cuts and 30-device/24-hour soak remain NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+
+See [narrow handover](2026-11-26-hw-output-enable-active-write-guards-utc10.md).
+
+---
+
 # CURRENT STATE — 2026-11-26 UTC09 terminal / PHX-HARDWARE output-enable latch preload
 
 **Task:** [#177](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/177) · **Control:** [#172](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/172) · **Cleanup-first:** [#266](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/266) · **PR:** [#354](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/354)

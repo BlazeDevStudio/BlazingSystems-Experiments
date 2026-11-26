@@ -1,3 +1,13 @@
+## CURRENT STATUS — 2026-11-26 UTC10 follow-up (independent relay/LED polarity matrix)
+
+**PR #354 remains OPEN / DRAFT / UNMERGED.** Source/test commit `046bced7c8765d5e27daeb2885f0654f9ec62149` extends the Hardware-owned output-enable lab to exercise all four independent relay/LED polarity combinations on both ESP8266 and ESP32. Exact-source focused PR [#45802963675](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45802963675) and push [#45802954262](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45802954262) PASS; both report 8/8 board/polarity scenarios and 14/14 injected regressions rejected. Native [#45802963561](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45802963561) FAILS at QA-owned active-clear assertion. Full [#45802963678](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45802963678) FAILS the pre-refresh handover-freshness gate; a final-docs-head Full rerun is required. The ESP32 core matrix [#45802963530](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45802963530) was pending at this update.
+
+This follow-up changes only the source-extracted test lab; production sketches are unchanged. The first mutation-helper attempt at `2ab43c71` expected two OFF writes but the production function has three (old-pin shutdown, preload, post-enable confirmation); that test-authoring error was corrected at `046bced7` and is not counted as acceptance evidence. Physical GPIO/relay behavior remains NOT TESTED; HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+
+See [UTC10 narrow handover](docs/handover/2026-11-26-hw-output-enable-active-write-guards-utc10.md). CORE authenticated register/poll and receipt/disposition contract, QA native deny-only assertion, Master head reconciliation, physical acceptance and all production release gates remain outstanding.
+
+---
+
 ## CURRENT STATUS — 2026-11-26 UTC09 terminal follow-up (PHX-HARDWARE GPIO output-latch ordering)
 
 **Status: PR #354 OPEN / DRAFT / UNMERGED; output-enable latch correction source/test CI VERIFIED; ESP32 core 3.3.13 and 4.0.0 matrix PASS; native QA assertion FAIL; Full validation FAIL at Controller protocol parity; physical acceptance NOT TESTED; PRODUCTION NO-GO.**

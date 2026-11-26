@@ -41,3 +41,32 @@ The harness now records every `digitalWrite` in the extracted `configureRuntimeP
 ## Next exact action
 
 PHX-QA must reconcile the legacy active-`clearPending` and `config_revision` assertions with the intentionally deny-only / pending-evidence-preservation candidate. PHX-CORE must publish the approved authenticated register/poll and receipt/disposition contract before Hardware implements any positive response consumer. PHX-MASTER must refresh its #354 exact-head pin after this documentation commit.
+
+
+## PHX-HARDWARE UTC10 follow-up — independent relay/LED polarity matrix
+
+**Updated:** 2026-11-26T10:39:53.455Z
+**Task:** #177 / #354 · **Role:** PHX-HARDWARE
+**Branch:** `phoenix/hw-active-v06-poll-intake-deny-20261126-utc05`
+**Base:** `blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859`
+**Source/test SHA:** `046bced7c8765d5e27daeb2885f0654f9ec62149`
+**Scope:** `experiment/openwrt/BlazePwifi/docs/handover/2026-11-26-hw-output-enable-active-write-guards-utc10.md` and `output_enable_sequence_lab.py` only for the new follow-up; production ESP8266/ESP32 sketches are unchanged by this follow-up.
+
+The prior source-extracted lab set relay and LED polarity together. The production function uses independent `runRelayActiveHigh` and `runLedActiveHigh` settings, so the symmetric-only scenarios could not detect a polarity-coupling regression. The lab now exercises all four independent combinations (relay AH/LED AH, relay AH/LED AL, relay AL/LED AH, relay AL/LED AL) on both boards. It also injects incorrect cross-use of the other output's polarity for the old-pin shutdown, pre-output preload, and post-enable OFF confirmation.
+
+**Exact-source focused evidence**
+- PR [#45802963675](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45802963675), job `139850670712`: PASS. Logs show all four combinations per board and `14/14 injected regressions rejected` (seven per board), plus existing poll-intake, remote-config-deny and request-auth guards.
+- Push [#45802954262](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45802954262), job `139850639639`: PASS with the same exact-source output.
+- The first attempt at `2ab43c71ff6397346bfe0948974823a4413f345f` was a test-authoring error: the polarity mutation helper expected two OFF writes but the real function has three (old-pin shutdown, preload, post-enable confirmation). The failed runs [#45802855713](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45802855713) and [#45802846230](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45802846230) are not accepted regression evidence. The count was corrected to three in `046bced7`.
+
+**Independent / integration gates**
+- Native synthetic [#45802963561](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45802963561), job `139850670920`: FAIL at QA-owned `tests/v060_vendo_sequence_contract.py` assertion requiring active `clearPending(true/false)` callsites. The deny-only candidate intentionally preserves pending evidence and has no active disposition callsite; Hardware did not edit QA-owned tests.
+- Full PR [#45802963678](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45802963678), validation job `139850939852`: FAIL at mandatory handover freshness because this source commit preceded this handover refresh. A new final-docs-head Full run is required; no Full PASS is claimed.
+- ESP32 Mbed TLS matrix [#45802963530](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45802963530) was pending when this handover was prepared; no result is claimed here.
+
+**Safety / evidence boundary**
+- This is host/source-extracted SIMULATED / CI VERIFIED test tooling. GPIO voltage, relay contact transient, physical coin acceptor, LittleFS power-loss, electrical recovery, 150 controlled power cuts and 30-device/24-hour soak remain NOT TESTED.
+- HARDWARE ACCEPTED = NO. PRODUCTION READY = NO-GO.
+- No positive coin/relay admission, response trust, pending disposition, CORE API, finance, signer, witness, COE destination, flash, device reset, payment operation, release tag, merge or deployment changed.
+
+**Next exact action:** inspect the new final-docs-head Full and ESP32 matrix runs; PHX-QA reconciles the deny-only pending-evidence assertion; PHX-CORE publishes the authenticated register/poll and receipt/disposition contract; PHX-MASTER refreshes the #354 head pin in Master-owned coordination files.
