@@ -1,3 +1,15 @@
+## PHX-MASTER UTC03 — reproducible-build, exact-head and migration audit — 2026-11-26T03:57:22Z
+
+[UTC03 exact-head Hardware #340 core-4 reproducibility, #353 Full gate, active v0.6 response-auth, COE #26 source/license/test provenance and role CI audit](PHX_MASTER_UTC03_20261126_HW340_REPRODUCIBILITY_HW353_COE26_PROVENANCE_AUDIT.md)
+
+- #340 core-4 actual sketch compile and final docs-head Full pass, but identical sketch/toolchain labels yielded different binary hashes and the dedicated core-4 artifacts were not retained.
+- #353 current head 8326920 is 27 ahead / 0 behind #352; focused tests pass but Full fails at Missing poll signature check.
+- Active v0.6 poll response remains unsigned; COE #26 retains keyless response-verification bypass and remains FROZEN.
+- Current #353 board blobs differ from COE #26; product LICENSE matches, root NOTICE does not; full current-head test remap is not claimed.
+- #242 has no exact-head run; #291 is 852 ahead / 9 behind current #242. Cleanup #266 0/7; registry v11/newer corrections NOT_RECOVERED. **PRODUCTION NO-GO.**
+
+---
+
 ## PHX-MASTER UTC02 — provider, response-auth and COE provenance refresh — 2026-11-26T02:39:42Z
 
 [UTC02 exact-head provider compile, active v0.6 poll-response recheck, COE #26 tree/licence/test identity and role CI audit](PHX_MASTER_UTC02_20261126_HW340_CORE4_PROVIDER_AND_COE26_MIGRATION_AUDIT.md)
