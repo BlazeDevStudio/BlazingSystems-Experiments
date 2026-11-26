@@ -6,6 +6,17 @@
 
 ---
 
+## UTC02 evidence note — provider compile does not close poll-response authentication
+
+The #340 Hardware candidate now has a real ESP32 Arduino core 4.0.0 exact-source compile PASS at source/test SHA `d3168ccb4959fe1eab718912fd04510ef7603253` ([run #45742944327](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45742944327)). This replaces the earlier statement that only a source-extracted Mbed TLS guard existed for that candidate. It is still candidate-scoped; #340's current Full build remains in progress, #348 still fails on its separate old header path, and active v0.6 is unchanged.
+
+At active v0.6 exact HEAD `2fbd2475e9f54878c316fa7cea2f228386b0e859`, both board sketches consume unsigned poll fields and call `applyRemoteConfig`; the CGI poll response does not include `response_sig`. COE #26's copied board sketches instead default `sigOk=true` and skip verification for an empty controller key. Neither behavior is an approved authenticated poll contract.
+
+**Contract order remains:** CORE defines the canonical authenticated response, serialization, controller binding, mandatory key provisioning, freshness and replay; HARDWARE implements only after approval; QA independently tests both boards. Deny-only coin/relay admission remains mandatory until then.
+
+---
+
+
 ## 1. Financial Receipt Schema & Accounting Invariants
 
 ### 1.1 Single-Authority Durable Ledger

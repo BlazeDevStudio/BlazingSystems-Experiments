@@ -1,3 +1,19 @@
+## PHX-MASTER UTC02 — current interface and migration evidence — 2026-11-26T02:39:42Z
+
+| Edge / artifact | Exact evidence | Gate / owner |
+|---|---|---|
+| ESP32 core 4.0.0 provider | #340 source/test SHA `d3168ccb4959fe1eab718912fd04510ef7603253`, compile #45742944327 PASS; final docs head `83b002721fedf3b262864d2414cdab510c76e35b`. | Candidate-scoped compile only; current Full #45743454237 still IN PROGRESS. HARDWARE/RELEASE/QA own integration review. |
+| Active v0.6 poll response | ESP32 `29f1125d...` and ESP8266 `12c4bb82...` consume `insert`/`target_nonce` and call `applyRemoteConfig`; CGI `db58041c...` poll response has no `response_sig`. | P0 OPEN. CORE must define canonical signed envelope/key/freshness/replay before HARDWARE changes trust/actuation. |
+| COE #26 destination sketches | ESP32 blob `3cc7ec54...`, ESP8266 `c8be98f7...`; both retain `sigOk=true` and conditional verification only when a key is nonempty. | Keyless verification bypass remains; keep #26 FROZEN. |
+| #349 → #26 Hardware mapping | Source tree 2,553 entries / 1,974 blobs; destination 286 / 207. ESP32 16→1 (0 exact); ESP8266 60→1 (0 exact); board Python helpers 64→0. | Import completeness not established; no staging/copy/move. |
+| QA tests | Source 47 / destination 19; 4 common paths, 1 exact blob+mode, 3 divergent, 43 source-only, 15 destination-only. | Test identity is incomplete; preserve original source and owner review. |
+| Licensing | `BlazePwifi/LICENSE` and `Pisowifi/LICENSE` match exact blob `1ee55b94...`; source root `NOTICE.md` has no destination root counterpart. | #26 narrative's licensing resolution is not supported by the current exact tree. |
+| COE #26 CI | Exact candidate head has zero check-runs. | FROZEN; no destination writes. |
+
+Other current failures: #348 core-4 header, #349 poll-signature assertion, #352 protocol parity, #353 validation, #328 shared build, #291 handover freshness, #35 site-ULA/Bubblewrap, #49 shared ESP32 compile. No source or destination mutation by Master.
+
+---
+
 ## PHX-MASTER UTC01 — #340 ancestry resolved; active response-auth and COE #26 gates remain
 
 | Integration edge | Exact observation | Gate / owner |

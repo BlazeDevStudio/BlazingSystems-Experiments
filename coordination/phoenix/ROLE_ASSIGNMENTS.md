@@ -1,3 +1,30 @@
+## PHX-MASTER UTC02 — live role/CI refresh — 2026-11-26T02:39:42Z
+
+Master-only update. CORE, RENTAL, PISONET, HARDWARE, QA and RELEASE source ownership remains with their assigned owners. No subsystem source branch was changed.
+
+| Owner / PR | Exact current head | Exact-head disposition |
+|---|---|---|
+| CORE #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | Scoped Build #42698139210 PASS; broader x86 simulation #42698124574 FAIL. Not financial acceptance. |
+| RENTAL #328 | `10fc200b6dbf470a95e679d3acc58aff4ab2a67f` | APK identity/API/auth runs #45622918340/#45622918364/#45622918551 PASS; shared #45622918468 FAIL. |
+| PISONET #255 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | Synthetic Windows #42462978704 PASS; native COM not invoked. |
+| HARDWARE #283 | `4dd0b01bf04cf80aec6d4dd6fc93b2fdc633da30` | Parent of #340; remains separate OPEN draft. |
+| HARDWARE #340 | `83b002721fedf3b262864d2414cdab510c76e35b` | Core 4.0.0 exact-source compile #45742944327 PASS at source/test SHA `d3168ccb4959fe1eab718912fd04510ef7603253`; core 3.3.13 #45742560223 PASS; provider guard #45742560160 PASS. Current Full #45743454237 IN PROGRESS (23 success / 2 in progress / 4 skipped); prior Full #45742560168 CANCELLED. |
+| HARDWARE #348 | `93afd4830b2728d5976e21951610943e1ec96c85` | Full #45731176586 FAIL at ESP32 core 4.0.0 missing `mbedtls/sha256.h`. #340 provider evidence is not yet ported here. |
+| HARDWARE #349 | `1a2ecf5fa8c8c20a0095ac898c1bff254280ad27` | Full #45724609215 FAIL at Missing poll signature check. |
+| HARDWARE #352 | `0e984e267b3a8fb10c314800d1a7f120806354b7` | Full #45683122413 FAIL at Controller protocol parity. |
+| HARDWARE #353 | `4e2185b150ba6d1a614fe86d875a9d2bfc7db9a4` | Focused Quarantine/Relay PASS; Full #45740177155 FAIL at validation. |
+| QA #290 | `5c29d15994cee1279058f1eca12f2a3180704292` | Synthetic Windows #43633486963 PASS; native COM not invoked. |
+| QA #292 | `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | No PR-triggered runs. |
+| RELEASE #291 | `9b928c9eaa72cb26fdcf3f0e50a0ec024f4e3c30` | Windows #45669599214 and Full #45669599438 FAIL at CORE handover freshness; ESP32 compatibility #45669599322 PASS; signing/publication skipped. |
+| COE RELEASE #35 | `b6ec4ba78dda03a19d3d55d9be26b0a808eb4e26` | Exact-head shared #45742049762 fails appliance validation; sandbox #45742051077 fails Bubblewrap availability. |
+| COE CORE #45 | `9d76a134c1f6512aa40c20ec4d247306a71a8cce` | Overlay/Shell and case guard PASS; focused only. |
+| COE INTERCON #49 | `aeb8ff11b2f5db9a5f86280ab62ab988245f3919` | Stage 5.1/case PASS; shared ESP32 compile #44646341922 FAIL at missing `mbedtls/sha256.h`. |
+| COE integration #26 | `b382d233ff06c8791b1028bed3c617cc7b670d12` | OPEN / DRAFT / FROZEN; zero check-runs. |
+
+Active refs: Experiments main `6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5`; development `aad3aade72c1156eecba1fed30907c6d0283b2c5`; v0.6 audit foundation `2fbd2475e9f54878c316fa7cea2f228386b0e859`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`. Manifest remains 11 routes / DRAFT_REVIEW_ONLY / Master target null. **PRODUCTION NO-GO.**
+
+---
+
 ## PHX-MASTER UTC01 — exact-head role/CI and ancestry refresh — 2026-11-26
 
 Master-only coordination update. The #340/#283 ancestry is now reconciled at exact heads; this does not promote the Hardware candidate into active v0.6. The current v0.6 poll-response P0 and COE #26 migration freeze remain.

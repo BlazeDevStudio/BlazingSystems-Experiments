@@ -1,3 +1,15 @@
+## PHX-MASTER UTC02 — provider, response-auth and COE provenance refresh — 2026-11-26T02:39:42Z
+
+[UTC02 exact-head provider compile, active v0.6 poll-response recheck, COE #26 tree/licence/test identity and role CI audit](PHX_MASTER_UTC02_20261126_HW340_CORE4_PROVIDER_AND_COE26_MIGRATION_AUDIT.md)
+
+- #340 ESP32 core 4.0.0 exact-source compile #45742944327 PASS at source/test SHA d3168ccb; current Full #45743454237 remains IN PROGRESS, not aggregate PASS.
+- Active v0.6 still consumes unsigned poll fields on both boards; CGI poll emits no response_sig.
+- COE #26 remains FROZEN: 2,553/286 tree entries, 64/0 board Python helpers, tests 47/19 (1 exact, 3 divergent), root NOTICE missing; zero check-runs.
+- Role CI, exact heads, and current blockers are in the report and ROLE_ASSIGNMENTS.md / INTEGRATION_MATRIX.md.
+- Cleanup #266 OPEN / 0-of-7. Private registry v11/newer corrections NOT_RECOVERED. **PRODUCTION NO-GO.**
+
+---
+
 ## PHX-MASTER UTC01 — current exact-head Hardware/COE reconciliation
 
 [UTC01 exact-head role CI, #340/#283 ancestry reconciliation, active v0.6 response-auth boundary and COE #26 migration provenance](PHX_MASTER_UTC01_20261126_HW340_RECONCILIATION_COE26_PROVENANCE_AND_ROLE_CI_AUDIT.md)

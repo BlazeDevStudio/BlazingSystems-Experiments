@@ -1,3 +1,17 @@
+## PHX-MASTER UTC02 — current disposition — 2026-11-26T02:39:42Z
+
+HARDWARE #340 has advanced: the ESP32 Arduino core 4.0.0 exact-source application compile passes on candidate source/test SHA `d3168ccb4959fe1eab718912fd04510ef7603253` (run #45742944327). Core 3.3.13 and the provider mutation guard also pass. However, the earlier full run was cancelled and the newer Full build #45743454237 remains in progress; this is not an aggregate integration PASS and does not resolve the active v0.6 unsigned poll-response P0.
+
+The exact v0.6 source recheck confirms both boards still consume unsigned `insert`/`target_nonce` and call `applyRemoteConfig`, while CGI poll emits no `response_sig`. COE #26's destination copies retain `sigOk=true` with conditional key verification, so a keyless path remains possible.
+
+Fresh source #349 / destination #26 tree comparison remains materially incomplete: 2,553 vs 286 entries; 64 vs 0 board-local Python helpers; 47 vs 19 mapped tests (1 exact, 3 divergent, 43 source-only, 15 destination-only); both board sketches differ; root NOTICE absent at destination. #26 has zero check-runs and remains FROZEN. No staging or destination write.
+
+Other exact-head blockers: #348 ESP32 core-4 header failure; #349 Missing poll signature check; #352 Controller protocol parity; #353 validation; #328 shared build; #291 handover freshness; COE #35 site-ULA and Bubblewrap; COE #49 shared ESP32 compile. Cleanup #266 remains OPEN / 0-of-7.
+
+Private registry v11/newer corrections remain unavailable; branch-protection enforcement is UNKNOWN (classic reads 403, rulesets empty). Master Python tests/verifier NOT RUN without an authenticated local checkout. **PRODUCTION NO-GO.**
+
+---
+
 ## PHX-MASTER UTC01 — current owner CI, Hardware ancestry and COE migration recheck
 
 The Hardware owner reconciled #340 against current parent #283 without force-push/rebase/retarget. Exact final PR-head Full CI now passes, but production import/sign/publication remain skipped and the candidate is not active v0.6. The active v0.6 register/poll response remains unsigned. COE #26 is still not migration-ready.
