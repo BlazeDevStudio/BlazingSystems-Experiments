@@ -1,3 +1,27 @@
+## PHX-HARDWARE UTC23 — STORCHK-0674 system-device separation (IN PROGRESS)
+
+**Observed:** 2026-11-26T23:45:00Z · **Issue:** #34 · **PR:** #356 OPEN / DRAFT / UNMERGED
+**Branch:** phoenix/hardware-storage-preflight-device-separation-20261126-utc23 · **Base:** blazepwifi-v0.6.0-audit-foundation @ 2fbd2475e9f54878c316fa7cea2f228386b0e859
+**Test-only commit:** 68907bfa993c1b6b635e41e0935193c80126b7ac
+
+### Intent and affected surfaces
+Close a read-only physical-pretrial guard gap: the mountinfo parser checked the fixture and scratch mount identities against each other, but did not compare the scratch device major:minor with the live /, /overlay, /rom and /boot mount identities. A same-system-partition scratch mount could therefore pass the old string deny-list.
+
+Only Hardware-owned acceptance tooling is in scope: v060_lab_mountinfo_guard.awk, tests/v060_lab_storage_preflight.sh, the focused read-only workflow, and narrow/canonical handovers. No firmware, payment, controller API, shared schema, customer storage, COE or other-role source is changed.
+
+### Test-first RED evidence
+- Test-only source SHA: 68907bfa993c1b6b635e41e0935193c80126b7ac.
+- Push RED: https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45912530609, job 140224038590 — expected failure: unsafe synthetic mount accepted: scratch reuses root filesystem block device.
+- PR RED: https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45912560098, job 140224138127 — same expected failure.
+- Full build started as run 45912530717; validation job 140224091948 stopped at the handover-freshness gate because this checkpoint had not yet been committed. This is an expected sequencing failure, not a product regression.
+
+### Hazard and rollback
+All test fixtures are text-only synthetic mountinfo and disposable local temp directories. No mount, unmount, block write, power interruption, coin, payment, device or customer data operation occurred. Revert this isolated test/parser/workflow stack to restore the previous read-only preflight behavior; do not bypass the guard or run a physical trial based on CI.
+
+### NEXT EXACT ACTION
+Update the AWK guard to require exactly one root mount, reject scratch major:minor reuse with /, /overlay, /rom and /boot, reject duplicate protected mountpoints, and fail if an overlay root lacks a separately identified /overlay mount. Then rerun the focused workflow at the exact source SHA and synchronize the canonical handover before any Full validation claim.
+
+Status: IN_PROGRESS / SIMULATED RED REPRODUCTION / PRODUCTION NO-GO.
 <!-- FULL-QR-TERMINAL-20261113:START -->
 > **Full offline QR merged-head CI / 2026-11-13 Asia/Manila / VALIDATED** — The Full push for the PR 278 merge, `d4c06e2c5ca223cc95ff04bd60a9f6cf0a69e1bb`, completed successfully on attempt 1 on `blazepwifi-v0.6.0-audit-foundation`. All 27 jobs that ran succeeded, including the required and optional firmware matrices. The complete 32-job REST inventory shows five expected skips for signed APK import, signing handoff, prerelease, release and lab-preview publication. [Full run 42475439223](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42475439223)
 >

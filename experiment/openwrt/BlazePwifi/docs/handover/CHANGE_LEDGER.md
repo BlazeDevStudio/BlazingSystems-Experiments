@@ -3387,3 +3387,17 @@ Application/source snapshot is still exact520; this note is metadata only.
 > **Full checkpoint** — The current Full base is `7a32197276a219645431fcde66691457e16d8ad4` from PR 281. Only the three canonical handover documents differ from the tested merge, and GitHub lists zero Actions runs for the PR 281 merge commit. Physical acceptance, paid admission, P0 money safety, permanent signing, custody and recovery remain open. The QR rollback is the isolated builder and regression-test revert. [PR 281](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/281)
 >
 > **Next exact action** — On the separate Standalone Rental line, refresh `fix/rental-standalone-entropy` at `1074c213e0d21ef44d63d7549a04b58d5d7391fc`. Use a disposable fixture with deletion intercepted to exercise `experiment/openwrt/Rental-Server-Standalone/install.sh` uninstall. Show that a managed `/www/rental/index.html` triggers a recursive `/www/rental` removal request while the installer owns only the index. Preserve explicit purge, backups and the installed R281 preview.
+
+## 2026-11-26 — STORCHK-0674 root/overlay system-device separation
+
+- **ID / role:** PHX-HW-STORCHK-20261126T23-ROOT-DEVICE-SEPARATION / PHX-HARDWARE.
+- **Local time:** 2026-11-27 07:45 Asia/Manila; observed UTC: 2026-11-26T23:45:00Z.
+- **Scope:** experiment/openwrt/BlazePwifi/docs/handover/2026-11-27-hw-storage-preflight-device-separation-utc23.md; experiment/openwrt/BlazePwifi/docs/handover/CURRENT_STATE.md; experiment/openwrt/BlazePwifi/PROJECT_HANDOVER.md; tools/v060_lab_mountinfo_guard.awk; tests/v060_lab_storage_preflight.sh; focused workflow.
+- **Status:** in_progress; **priority:** P0 safety/pretrial isolation.
+- **Why:** current STORCHK-0674 checks that scratch and fixture mounts share the expected device, but does not reject reusing the mounted root, overlay, ROM or boot device identity.
+- **Branch/base:** phoenix/hardware-storage-preflight-device-separation-20261126-utc23 from blazepwifi-v0.6.0-audit-foundation @ 2fbd2475e9f54878c316fa7cea2f228386b0e859.
+- **Test-first commit:** 68907bfa993c1b6b635e41e0935193c80126b7ac; changed only the synthetic shell regression and focused workflow.
+- **Expected RED evidence:** push run 45912530609 job 140224038590 and PR run 45912560098 job 140224138127 failed at the new same-root-device case: scratch reuses root filesystem block device.
+- **Full workflow:** run 45912530717 job 140224091948 failed handover freshness because the test-only commit was not yet synchronized into canonical records; recorded as a sequencing failure, not hidden.
+- **Risk/rollback:** no actual mount/device/write/power-cut/coin/payment action. Revert this isolated test/parser/workflow stack to restore the previous preflight.
+- **NEXT ACTION:** add root/overlay/rom/boot major:minor exclusion and duplicate/missing mount identity guards, then exact-head focused CI and final handover synchronization.

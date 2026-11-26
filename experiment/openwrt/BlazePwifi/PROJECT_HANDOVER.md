@@ -1,3 +1,16 @@
+## PHX-HARDWARE UTC23 — STORCHK-0674 root/overlay device isolation (IN PROGRESS)
+
+**2026-11-26T23:45Z · Issue #34 · DRAFT PR #356 · No merge / no flash / no power cut.**
+
+The read-only pretrial mountinfo guard compared the synthetic fixture and scratch mounts with each other, but did not compare their major:minor identity with the live mount identities for /, /overlay, /rom and /boot. A plausible device path could therefore identify the same mounted system partition while avoiding the string deny-list.
+
+Test-only commit 68907bfa993c1b6b635e41e0935193c80126b7ac adds synthetic root, overlay, ROM and boot records. Expected RED was observed on push run 45912530609 job 140224038590 and PR run 45912560098 job 140224138127: scratch reuses root filesystem block device.
+
+The bounded correction will compare mountinfo major:minor values, require one root record, reject duplicate protected mounts, and require a separate /overlay identity for an overlay root. Scope is limited to Hardware-owned acceptance tooling. No product firmware, payment/API/ledger, COE, physical storage or customer data is touched.
+
+Full validation attempt 45912530717 job 140224091948 stopped at the handover freshness gate because the test-only commit was not yet followed by canonical synchronization; this checkpoint records that sequence.
+
+**NEXT EXACT ACTION:** implement the mount-identity guard, obtain exact-head focused CI, then refresh CURRENT_STATE, CHANGE_LEDGER and this top status block. A CI pass remains SIMULATED / CI VERIFIED only; owner-confirmed disposable media, real power telemetry and physical acceptance remain NOT TESTED.
 <!-- FULL-QR-TERMINAL-20261113:START -->
 > **Full offline QR merged-head CI / 2026-11-13 Asia/Manila / VALIDATED** — The Full push for the PR 278 merge, `d4c06e2c5ca223cc95ff04bd60a9f6cf0a69e1bb`, completed successfully on attempt 1 on `blazepwifi-v0.6.0-audit-foundation`. All 27 jobs that ran succeeded, including the required and optional firmware matrices. The complete 32-job REST inventory shows five expected skips for signed APK import, signing handoff, prerelease, release and lab-preview publication. [Full run 42475439223](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42475439223)
 >
