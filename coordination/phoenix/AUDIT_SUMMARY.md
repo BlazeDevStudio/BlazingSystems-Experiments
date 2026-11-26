@@ -1,3 +1,20 @@
+## PHX-MASTER UTC15 — current disposition and blockers (2026-11-26T15:10Z)
+
+**Master audit result:** 14/14 static/source-tree assertions PASS. These are coordination checks, not repository tests or CI. Exact-head Master Actions: 0 runs / 0 combined statuses. Local clone attempt failed DNS resolution for `github.com`; Master Python suite and `verify_coordination.py` NOT RUN.
+
+**Current blockers**
+- HARDWARE #353 actual head `df1a633`: three CI failures — runtime pin attachment does not quarantine coin ingress; quarantine fixture fails compilation because `runtimePinsSafe` is undeclared; Full validation misses the ESP8266 poll signature. Its PR body/handover still pins older HEAD/source-test SHAs.
+- HARDWARE #354 actual head `bbb209f`: focused polarity and Mbed TLS pass; Full controller-protocol parity and Native QA `clearPending(true/false)` assertion fail. Do not add unsafe pending-clear calls to a deny-only candidate.
+- COE #35: 254 shared tests pass / 2 skip, but all 10 profiles fail for missing approved site-scoped ULA /48; 48 sandbox host tests pass but Bubblewrap is absent (exit 125).
+- COE #26: source/destination blobs, test identities, intake counts, destination firmware presence, and licensing/notice records are inconsistent. Keep frozen.
+- QA/CORE must reconcile the authenticated poll/register and pending receipt/disposition contract.
+- Cleanup #266 OPEN / 0 of 7.
+- Repository rulesets empty; branch API reports `protected=false` for Experiments main, active v0.6 development and COE main. Required-check enforcement is not established.
+- Private Drive registry v11 and newer corrections NOT RECOVERED: no Google Drive connector was exposed and Library search/list did not surface v11. No older registry substituted and no private data disclosed.
+
+**Owner routing:** HARDWARE owns #353 source/fixture fixes and handover refresh; QA owns validation assertions; CORE owns financial/poll/register/disposition interfaces; COE integration owner owns #26 provenance/licensing reconciliation; RELEASE/INFRA owns ULA and Bubblewrap; registry custodian owns v11 access; repository administrators own branch protection. CORE and all subsystem source branches remain untouched by Master.
+
+**PRODUCTION NO-GO:** independent protected signing/anti-rollback witness, crash-atomic durable financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device 24-hour soak and owner-authorized release gates remain mandatory. No merge, release, signing, secret provisioning, flashing, physical test, real-payment operation or financial migration occurred.
 ## PHX-MASTER scheduled UTC13 — current blockers, governance and execution limits
 
 - HARDWARE #354 current PR head `bbb209f55ddcd48f248eb8d700629db8754dc13a` / source-test `9bb46bb27e4be80f6506dbebf2846700efd4cb81`: focused and Mbed TLS matrix PASS; Full fails QA-owned Controller protocol parity; Native fails PAY-0745 active-clear assertion. QA must revise assertions to prove deny-only/pending-evidence preservation; CORE owns the authenticated poll/receipt contract; HARDWARE owns firmware/labs.
