@@ -1,13 +1,18 @@
-# CURRENT STATE — 2026-11-26 UTC05 / PHX-HARDWARE active-v0.6 poll intake deny
+# CURRENT STATE — 2026-11-26 UTC08 / PHX-HARDWARE active-v0.6 poll intake deny
 
-**Task:** [#177](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/177) · **Control:** [#172](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/172) · **PR:** [#354](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/354)
+**Task:** [#177](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/177) · **Control:** [#172](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/172) · **Cleanup-first:** [#266](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/266) · **PR:** [#354](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/354)
 
-- **Role:** PHX-HARDWARE. No shared API, finance backend, QA-owned test, release workflow, COE destination or another role's source was changed.
+- **Role:** PHX-HARDWARE. Scope remains both board sketches, Hardware-owned labs/workflows and Hardware handovers. No CORE producer/API, QA-owned assertion, finance, release-owned code or COE destination was changed.
 - **Base:** `blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859`.
 - **Branch:** `phoenix/hw-active-v06-poll-intake-deny-20261126-utc05`.
-- **Source implementation commit:** `dc619870a096f01d0d1cba24f0bf3c0c981a08d2`.
-- **Corrected source/test head:** `f381f6d38699e953b32e1d0c603524bc6da86541`.
-- **Current pre-refresh docs head:** `2bd7a25c2a00e74079b83a3953b190bdd929a11e`.
+- **Exact current PR/source-test checkout:** `ec622923ef6b5dbcc386ecae70cc853725085561`; this UTC08 reconciliation changes handovers/ledger only, not firmware or test source.
+- **Owned source/provider correction:** `da4e89ed64a7b1fe5426468939d5ee7cf563bfc2` restores fail-closed ESP32 runtime-pin setup and version-gated Mbed TLS 3 / PSA Crypto 4 SHA-256. The provider lab checks version selection, initialization/status/length failure, invalid digest, missing key/ID, empty body and action allowlist. Workflow commits `fc6cdab4`, `86f79abaf` and `ec622923` pin compiler time, normalize canonical paths and restage the identical packaged inputs twice from clean source staging.
+- **Focused deny-intake:** [#45779792234](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45779792234), job `139772179285`, PASS on exact checkout `ec622923ef6b5dbcc386ecae70cc853725085561`. Both board labs pass; failure-injection mutations for response use, remote config, coin POST, pending clear and pre-poll deny/order are rejected.
+- **ESP32 provider/build matrix:** [#45779792398](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45779792398): source contract `139772180335`, core 3.3.13 `139772180661`, core 4.0.0 `139772180674` all PASS. Each pinned core builds twice from clean source staging and compares source/application hashes. This resolves the current #354 ESP32 core-4 include/build failure; do not repeat the older statement that the provider is still unported.
+- **Native synthetic sequence:** [#45779792145](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45779792145), job `139772178998`, FAIL at QA-owned `tests/v060_vendo_sequence_contract.py:20` because it requires active `clearPending(true/false)` callsites. The candidate intentionally retains the helper definition but has no active pending disposition callsite. Ten preceding native/CGI/migration/freeze checks passed.
+- **Full validation:** [#45779792293](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45779792293), validation job `139772357582`, FAIL at the mandatory handover freshness gate. It reports root handover checkpoint `56a45583ab736442a66267966d025e675e2976de` predating the ESP32 sketch and Mbed TLS lab. The platform/board builds and Android completed successfully; the validation suite stopped before later checks. No Full PASS is claimed.
+- **Current candidate behavior:** both sketches deny controller/coin/relay/LED output, discard register/poll responses, disable automatic coin POST/retry/clear, and preserve unresolved pending evidence. This is deny-only and not a positive authenticated protocol.
+- **Release state:** SIMULATED / CI VERIFIED only. Physical relay polarity, coin acceptor cutoff, pulse capture under real network stalls, LittleFS power loss, 150 power cuts, 30-device/24-hour soak and electrical pulse/recovery are NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO.
 
 ## Implemented
 
@@ -32,7 +37,11 @@ The candidate is deliberately deny-only. It does not resume paid operation on un
 
 ## NEXT EXACT ACTION
 
-PHX-QA reviews the deny-only pending-disposition invariant and updates its owned sequence contract; PHX-CORE publishes the authenticated poll and event receipt/disposition contract; PHX-HARDWARE then reruns Full CI at the canonical handover head. No physical flash, device reset, live money, signing, migration, merge or deployment.
+PHX-HARDWARE: inspect the new Full run after the handover freshness correction and report its terminal state. Keep the active candidate deny-only.
+PHX-QA: replace the stale active-clear assertion with an independently reviewed deny-only invariant that proves no disposition callsite and retained pending evidence.
+PHX-CORE: publish the approved authenticated register/poll and event receipt/disposition contract before any positive consumer behavior.
+PHX-MASTER: reconcile the current #354 head in ROLE_ASSIGNMENTS with the older head still recorded in INTEGRATION_MATRIX.
+No physical flash, device reset, live money, signing, migration, merge, release tag or deployment is authorized.
 
 <!-- FULL-QR-TERMINAL-20261113:START -->
 > **Full offline QR merged-head CI / 2026-11-13 Asia/Manila / VALIDATED** — The Full push for the PR 278 merge, `d4c06e2c5ca223cc95ff04bd60a9f6cf0a69e1bb`, completed successfully on attempt 1 on `blazepwifi-v0.6.0-audit-foundation`. All 27 jobs that ran succeeded, including the required and optional firmware matrices. The complete 32-job REST inventory shows five expected skips for signed APK import, signing handoff, prerelease, release and lab-preview publication. [Full run 42475439223](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42475439223)
