@@ -71,3 +71,24 @@ The focused results remain SIMULATED / CI VERIFIED source-extracted checks, not 
 - Private Drive registry v11 was not available in the exposed connector surface or Library; no older registry was substituted.
 
 **Disposition:** PR #353 remains OPEN / DRAFT / UNMERGED. Scoped source/test work is CI VERIFIED; HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO. Next action: CORE contract + QA review, then MASTER stack decision.
+
+
+## UTC17 — preserve the pre-existing poll-intake inhibit snapshot (2026-11-26T17:50:22.989Z)
+
+**PHX-HARDWARE · PR #353 · test-only source guard.** Branch `phoenix/hw-board-conditional-isr-selector-20261125-utc17`; parent #352 remains `2fa3b7db1161ddb531ed94bcf60617947fa1a7bd`. Source/test SHA: `44de55a0e132cb15fdb60ecf85446e9490fa277e`. No rebase, retarget, merge or force-push.
+
+### Proven test-coverage gap and test-first correction
+
+`configureRuntimePins()` snapshots `pollIntakeSuspended` before asserting its temporary inhibit, then restores the prior value only after successful post-attach quarantine. The existing wiring lab checked the restore call count/order but did not verify that the snapshot actually copied the prior state. Replacing the snapshot initializer with `false` therefore survived the previous lab and could clear an outer poll-drain inhibit when pin reconfiguration completes.
+
+- **Valid RED:** [Relay Output Polarity push #45869946851](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45869946851), job `140082458131`, exact head `79eb045db53bbba738778eb9b2db9c5b6eafa8c4`. The new injected mutation was accepted on both boards; the lab failed with `runtime interrupt wiring accepted lost prior poll-inhibit snapshot`.
+- **Intermediate test-authoring failure:** [Relay Output Polarity push #45870280500](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45870280500), job `140083605311`, exact head `730820b52a2d43d31736cd44489227dec25a2004`. The first guard needle retained spaces while the source was whitespace-compacted; the guard rejected the unmutated source. This was corrected in the next test commit and is not a production-source failure.
+- **GREEN:** [Relay Output Polarity push #45870624293](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45870624293), job `140084782634`, exact source/test head `44de55a0e132cb15fdb60ecf85446e9490fa277e`: **SUCCESS**. Log confirms `lost-prior-poll-inhibit-snapshot` rejected for ESP8266 and ESP32, and `COIN_PULSE_CAPTURE_PASS 18/18` for both boards.
+- Quarantine push [#45870624386](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45870624386), job `140084783973`, and PR Relay [#45870635699](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45870635699), job `140084822907`, were still running at this handover observation; no result is claimed for them.
+- Full BlazePwifi push [#45870624355](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45870624355), validation job `140084922585`, **FAIL**: inherited `Missing poll signature check` in the ESP8266 sketch. Do not add an ad-hoc signature or weaken default-deny; this needs CORE's approved envelope and QA's assertion reconciliation.
+
+### Scope and status
+
+Only `coin_pulse_capture_lab_isr.py` changed for this task. No production `.ino`, controller/API, finance, replay, QA/CORE/MASTER/RELEASE-owned file, signer, witness, migration or COE destination changed. This is source-extracted host simulation and CI evidence only: **SIMULATED / CI VERIFIED** for the scoped guard; **HARDWARE ACCEPTED = NO**; **PRODUCTION READY = NO-GO**. Physical relay/GPIO/electrical behavior, LittleFS power loss, 150 controlled power cuts and 30-device/24-hour soak remain NOT TESTED.
+
+**Next exact actions:** PHX-QA independently review the new prior-inhibit snapshot mutation and the ISR wiring contract; PHX-CORE publish the authenticated register/poll and receipt/disposition contract; PHX-MASTER reconcile the #353 → #352 → #349 stack and refresh stale role-head pointers. Keep #353 DRAFT / UNMERGED.
