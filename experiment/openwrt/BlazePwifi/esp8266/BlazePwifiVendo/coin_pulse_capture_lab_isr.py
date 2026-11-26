@@ -221,15 +221,21 @@ def _runtime_interrupt_wiring_body(source, board):
     detached_state = "coinInterruptAttached=false;"
     attached_state = "coinInterruptAttached=true;"
     restore = "pollIntakeSuspended=priorPollIntakeSuspended;"
+    prior_snapshot = "const bool priorPollIntakeSuspended=pollIntakeSuspended;"
+    if compact.count(prior_snapshot) != 1:
+        raise RuntimeError(f"{board} must preserve the prior poll intake inhibit snapshot exactly once")
     if not re.search(r"\bbool\s+coinInterruptAttached\s*=\s*false\s*;", mask_non_code(source)):
         raise RuntimeError(f"{board} must track whether the prior coin ISR is attached")
     if not re.search(r"\bbool\s+configureRuntimePins\s*\(", mask_non_code(source)):
         raise RuntimeError(f"{board} configureRuntimePins must report preflight failure")
     if compact.count(inhibit) != 1:
         raise RuntimeError(f"{board} must assert pollIntakeSuspended exactly once during pin reconfiguration")
+    prior_snapshot_pos = compact.find(prior_snapshot)
     inhibit_pos = compact.find(inhibit)
     pre_output_pos = compact.find(output_apply, inhibit_pos)
     preflight_pos = compact.find(preflight, pre_output_pos)
+    if not (0 <= prior_snapshot_pos < inhibit_pos < pre_output_pos):
+        raise RuntimeError(f"{board} must snapshot the prior poll intake inhibit before asserting the new inhibit")
     first_detach = min(detach_positions)
     if not (0 <= inhibit_pos < pre_output_pos < preflight_pos < first_detach):
         raise RuntimeError(f"{board} must inhibit outputs and quarantine the old ISR before detaching it")
