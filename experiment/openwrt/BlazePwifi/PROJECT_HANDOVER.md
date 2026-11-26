@@ -1072,3 +1072,20 @@ All run heads below were read from GitHub Actions and match the source/test merg
 - Full BlazePwifi [run #45744810573](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45744810573): FAIL at validation job `139658174516`, same inherited `Missing poll signature check`. All 14 firmware/platform jobs and Android passed; production import/signing, simulation, candidate and publication jobs were skipped.
 
 These are SIMULATED / CI VERIFIED results. The failure is not fixed by ancestry reconciliation and must not be bypassed by weakening the signature check. No physical coin pulse, relay contact, power cut, or device soak was performed.
+
+
+<!-- PHX-HARDWARE-20261126-UTC03-RUNTIME-COIN-INTERRUPT-WIRING:START -->
+## PHX-HARDWARE UTC03 — runtime coin interrupt wiring contract
+
+- Existing DRAFT [PR #353](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/353), branch `phoenix/hw-board-conditional-isr-selector-20261125-utc17`; parent #352 head `2fa3b7db1161ddb531ed94bcf60617947fa1a7bd`.
+- Source/test head: [`ed2f77d5`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/ed2f77d5924172881f27222cc26649f8f85abe6c); final documentation head is recorded by the follow-up commit.
+- The Hardware-owned ISR lab now checks the `configureRuntimePins()` sequence on ESP8266 and ESP32: detach before pin reassignment, select the coin input as INPUT_PULLUP, attach the ISR using the configured active edge, then quarantine ingress on each path.
+- Four fail-open mutations per board are rejected: inverted active edge, missing detach, attach before INPUT_PULLUP, and missing post-attach quarantine. The existing 18/18 coin pulse scenarios and 17 fail-open source mutations per board remain green.
+- Test-first RED: [Relay #45750332358](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45750332358), job `139676302468`, and [Quarantine #45750332373](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45750332373), job `139676302130`, both exposed the missing wiring contract at the structure guard on test-only commit `94c29c2a`.
+- Exact-source GREEN: [Quarantine #45750631472](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45750631472), job `139677288144`, PASS; [Relay #45750631445](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45750631445), jobs `139677288015 / 139677288298`, PASS. PR-triggered repeats [#45750638451](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45750638451) and [#45750638402](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45750638402) also PASS.
+- Full [#45750631464](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45750631464) FAILS at validation job `139677382199`, inherited `Missing poll signature check`; all 14 firmware/platform targets and Android passed, downstream simulation/signing/publication/candidate jobs skipped. PR-triggered Full [#45750638422](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45750638422) was pending at observation.
+- No production `.ino`, CGI, API, financial source, signer, witness, migration or COE destination was changed. Host/source-extracted tests are SIMULATED / CI VERIFIED only. Physical coin, relay, LittleFS power-cut and electrical acceptance remain NOT TESTED.
+- Active v0.6 remains `blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859`; both sketches still perform synchronous poll before coin sampling and consume unsigned register/poll fields. Main CGI producer blob `2e3a1430d08cc6606429a042df3b5848f53c7267` does not emit `response_sig` for register/ping or poll.
+- PR #283 head `4dd0b01bf04cf80aec6d4dd6fc93b2fdc633da30`: failed quarantine append returns before `clearPending()`, but `quarantinePending()` is definition-only on both sketches. This is not an end-to-end lifecycle or power-loss acceptance.
+- PR #353 remains OPEN / DRAFT / UNMERGED. HARDWARE ACCEPTED: NO; PRODUCTION READY: NO-GO.
+<!-- PHX-HARDWARE-20261126-UTC03-RUNTIME-COIN-INTERRUPT-WIRING:END -->
