@@ -252,6 +252,10 @@ def compile_and_run(apply_fn: str, deny_fn: str, expect_success: bool, label: st
             )
         if not expect_success and run_result.returncode == 0:
             raise AssertionError(f"{label}: fail-open mutation was not detected")
+        if run_result.stdout.strip():
+            print(run_result.stdout.strip())
+        if not expect_success:
+            print(f"{label}: mutation rejected (exit {run_result.returncode})")
         return run_result
 
 
