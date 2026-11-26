@@ -242,6 +242,9 @@ void configureRuntimePins(int coinPin,int relayPin,int ledPin){
   if(runLedPin!=ledPin) writeLogical(runLedPin,false,runLedActiveHigh);
   if(runRelayPin!=relayPin) writeLogical(runRelayPin,false,runRelayActiveHigh);
   runCoinPin=coinPin; runRelayPin=relayPin; runLedPin=ledPin;
+  // Preload logical OFF before enabling output drivers; LOW can energize active-low relays.
+  writeLogical(runRelayPin,false,runRelayActiveHigh);
+  writeLogical(runLedPin,false,runLedActiveHigh);
   pinMode(runCoinPin,INPUT_PULLUP); pinMode(runRelayPin,OUTPUT); pinMode(runLedPin,OUTPUT);
   writeLogical(runRelayPin,false,runRelayActiveHigh); writeLogical(runLedPin,false,runLedActiveHigh);
 }
