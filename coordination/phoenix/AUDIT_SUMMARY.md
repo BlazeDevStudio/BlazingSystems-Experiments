@@ -1,3 +1,17 @@
+## PHX-MASTER UTC01 — current owner CI, Hardware ancestry and COE migration recheck
+
+The Hardware owner reconciled #340 against current parent #283 without force-push/rebase/retarget. Exact final PR-head Full CI now passes, but production import/sign/publication remain skipped and the candidate is not active v0.6. The active v0.6 register/poll response remains unsigned. COE #26 is still not migration-ready.
+
+- #340 final docs/PR head a85eec4; source/test merge a32c023; base #283 4dd0b01; 45 ahead / 0 behind. Full #45737856635: 26 success / 4 skips. Mbed TLS guard #45737856364 is SIMULATED_ONLY, not a core-4 application build.
+- #348 Full #45731176586 fails at missing mbedtls/sha256.h; #349 Full #45724609215 fails Missing poll signature check; #352 Full #45683122413 fails Controller protocol parity; #353 has no exact-head PR run.
+- Active v0.6 source blobs remain ESP32 29f1125d, ESP8266 12c4bb82, CGI db58041c. Both board poll loops consume unsigned insert/target_nonce and invoke applyRemoteConfig.
+- COE #26 exact #349/#26 tree recheck: 2,553/286 entries; 76/2 board blobs; 64/0 board-local Python helpers; tests 47/19 with only 1 exact common test; root NOTICE and product LICENSE absent at destination. No staging.
+- COE #35 final head 3cbc658: shared 240 PASS / 2 skips then 10/10 ULA denials; sandbox 42/42 host tests then missing Bubblewrap / exit 125; case guard PASS.
+- #266 remains OPEN / 0-of-7. Experiments main 6be5d19, development aad3aade, COE main a6513ab; all three branch metadata entries report protected=false and both repositories' rulesets lists are empty.
+- Private Drive v11/newer corrections NOT_RECOVERED. Library search found older v5-v7 snapshots and sync-ledger material only; no Google Drive connector. Master tests NOT RUN; no Master Actions run/status. No subsystem source or COE destination changed.
+
+Full source, CI, tree and ownership evidence: [UTC01 report](PHX_MASTER_UTC01_20261126_HW340_RECONCILIATION_COE26_PROVENANCE_AND_ROLE_CI_AUDIT.md).
+
 ## PHX-MASTER UTC00 — exact-head role CI and COE #26 source-provenance recheck — 2026-11-26T00:33Z
 
 Master completed a current-head audit of the active Hardware #349 source/test update, its #352/#353 ancestry, the COE #35 release-owned correction, the active v0.6 poll/register boundary and the exact #349→COE #26 candidate tree. Only Master-owned coordination documents changed; no subsystem source or COE destination path changed.

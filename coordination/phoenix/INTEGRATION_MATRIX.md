@@ -1,3 +1,15 @@
+## PHX-MASTER UTC01 — #340 ancestry resolved; active response-auth and COE #26 gates remain
+
+| Integration edge | Exact observation | Gate / owner |
+|---|---|---|
+| HARDWARE #283 → #340 | #340 source/test merge a32c023 has first parent 547148e and second parent current #283 4dd0b01; final docs head a85eec4 is one documentation-only commit later. Current compare: 45 ahead / 0 behind, merge base exactly #283. Full #45737856635 at final PR head PASS (26 success / 4 production import/sign/publication skips). | Ancestry reconciliation is verified; keep both PRs OPEN / DRAFT / UNMERGED. Full CI is simulated/host and target-build evidence only; physical acceptance remains absent. |
+| HARDWARE #340 Mbed TLS 4 claim | Guard #45737856364 PASS, but its log says SIMULATED_ONLY=1 / TARGET_BUILD_REQUIRED=1 / COIN_ADMISSION_ENABLED=0. Full ESP32 compile uses Arduino core 3.3.13; ESP8266 uses core 3.1.2. | Do not treat the guard as an actual Arduino core 4.0.0 application compile. #348 remains independently blocked at missing mbedtls/sha256.h. |
+| HARDWARE #348 | Head 93afd483; focused helper #45731176550 PASS; Full #45731176586 FAIL at ESP32 core 4.0.0 missing mbedtls/sha256.h. | HARDWARE/RELEASE own provider/toolchain correction; no crypto weakening. |
+| HARDWARE #349 → #352 → #353 | #349 1a2ecf5 Full #45724609215 FAIL at Missing poll signature check. #352 0e984e26 is 43 ahead / 3 behind #349 (merge base 2a5c997); Full #45683122413 FAIL at Controller protocol parity. #353 dc9cf634 is 17 ahead / 11 behind #352 (merge base 6d743ae); no exact-head PR runs. | HARDWARE owns ancestry and source branches; QA owns independent assertion; Master does not rebase or retarget. |
+| Active v0.6 response boundary | Active branch 2fbd2475; ESP32 blob 29f1125d, ESP8266 12c4bb82, CGI vendo db58041c. Both sketches consume unsigned poll insert/target_nonce and call applyRemoteConfig; poll/register response bodies lack response_sig. | P0 remains. CORE publishes authenticated response/key provisioning contract; HARDWARE implements; QA verifies both boards. #340 is separate and not integrated. |
+| COE #26 migration candidate | Head b382d233, base main a6513ab. Exact #349/#26 trees 2,553/286 entries (1,974/207 blobs); board blobs 76/2, 2 common paths and 0 exact; tests 47/19 (4 common, 1 exact, 3 divergent, 43 source-only, 15 destination-only); board-local Python helpers 64/0. Root source NOTICE and product LICENSE have no destination root counterparts. | FROZEN / DRAFT_REVIEW_ONLY. No SOURCE_INTAKE/MIGRATION_MAP for Hardware provenance, no staging or destination writes. Five workflows queued / zero jobs. |
+| COE RELEASE #35 | Head 3cbc658; shared #45734911002 240 PASS / 2 skips then 10/10 site-ULA denials; sandbox #45734910925 42/42 host tests then missing Bubblewrap / exit 125; case #45734910935 PASS. | RELEASE/CORE/INFRA supply approved site-scoped ULA authority and trusted Bubblewrap runner; QA review remains outstanding. |
+
 ## PHX-MASTER UTC00 — current Hardware ancestry, response-auth and COE #26 provenance — 2026-11-26T00:33Z
 
 | Integration edge | Exact observation | Gate / owner |

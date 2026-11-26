@@ -2172,3 +2172,41 @@ Exact candidate pins:
 - **PHX-MASTER:** retain this as a P0 integration blocker. Do not modify Hardware or CGI source, provision a key, stage a copy, or waive the inherited poll-signature gate.
 
 **Disposition:** COE #26 remains FROZEN / DRAFT_REVIEW_ONLY. No destination staging or writes. **PRODUCTION NO-GO.**
+
+## 7.22 HARDWARE #340 is a separate deny-only poll candidate, not the active v0.6 response-auth fix — P0 boundary (2026-11-26 UTC01)
+
+**Exact Hardware candidate:** PR #340 final docs/PR head a85eec4aa2ca1ad834f50031658f52aec51856e3; source/test merge commit a32c02311e4837669124c5b4b54fb1dfceed94fc. Its second parent is the current #283 head 4dd0b01bf04cf80aec6d4dd6fc93b2fdc633da30; the final PR head is 45 commits ahead / 0 behind that parent. The final docs commit adds only the UTC01 ancestry handover.
+
+### What this candidate does
+
+Static source inspection of the #340 candidate shows both board sketches now:
+1. De-energize/deny remote control before the synchronous poll HTTP wait.
+2. Discard the register/poll response fields rather than accepting insert/target/configuration from an unauthenticated response.
+3. Keep applyRemoteConfig as a compatibility sentinel that ignores the response and calls denyRemoteControl.
+4. Select the Mbed TLS 4 PSA one-shot SHA-256 provider path and retain the Mbed TLS 3 legacy API path with explicit status/digest checks.
+
+This is a **deny-only safety candidate**. It does not implement positive response authentication, an approved HMAC, or the CORE-owned authenticated register/poll envelope. The outbound request digest is not a substitute for response authentication.
+
+### Exact final-head CI
+
+- Quarantine append/readback [#45737856305](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45737856305): PASS.
+- Poll preflight inhibit [#45737856314](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45737856314): PASS.
+- Mbed TLS compatibility guard [#45737856364](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45737856364): PASS, but log explicitly says SIMULATED_ONLY=1, TARGET_BUILD_REQUIRED=1, COIN_ADMISSION_ENABLED=0.
+- ESP8266 Arduino core 3.1.2 compile [#45737856422](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45737856422): PASS.
+- ESP32 Arduino core 3.3.13 compile [#45737856339](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45737856339): PASS.
+- Full BlazePwifi build [#45737856635](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45737856635): PASS, 26 successful jobs / 4 skipped. Skips are production signed APK import, prerelease publication, release publication and production-sign handoff.
+
+The Mbed TLS guard is a source-extracted simulation, not an Arduino core 4.0.0 application compile. The Full build's ESP32 target compile is on core 3.3.13. HARDWARE #348 remains a separate branch and its Full run #45731176586 still fails because core 4.0.0 cannot find mbedtls/sha256.h. Do not transfer #340's guard result to #348.
+
+### Separation from active v0.6
+
+The active development branch remains blazepwifi-v0.6.0-audit-foundation at 2fbd2475e9f54878c316fa7cea2f228386b0e859. Its exact ESP32/ESP8266 sketches still contain no response_sig token, consume unsigned poll insert/target_nonce, and call applyRemoteConfig; the active CGI register/ping and poll bodies do not include response_sig (member endpoint signatures are not a poll contract). Therefore the active v0.6 source remains **not verified deny-only** and the P0 response-auth/actuation-influence finding remains open. PR #340 is not integrated into that branch.
+
+### Required owner actions
+
+- PHX-CORE publishes the versioned authenticated register/poll response envelope, canonical serialization, standard MAC/HMAC construction, controller/target binding, freshness/replay rules and mandatory nonempty key-provisioning contract.
+- PHX-HARDWARE keeps the deny-only candidate separate until the approved contract exists, then implements the consumer on both boards.
+- PHX-QA independently verifies missing, malformed, invalid, stale, replayed, wrong-controller, wrong-target, altered-config and positive vectors on both boards.
+- PHX-MASTER records exact source/test and docs heads separately; no candidate promotion, source merge or contract invention.
+
+CI/simulation is not physical acceptance. No coin pulse, relay/electrical recovery, LittleFS power-loss, 150 real power cuts or 30-device/24-hour soak is established by these runs. **PRODUCTION NO-GO.**

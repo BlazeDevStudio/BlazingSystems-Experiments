@@ -1,3 +1,14 @@
+## PHX-MASTER UTC01 — current exact-head Hardware/COE reconciliation
+
+[UTC01 exact-head role CI, #340/#283 ancestry reconciliation, active v0.6 response-auth boundary and COE #26 migration provenance](PHX_MASTER_UTC01_20261126_HW340_RECONCILIATION_COE26_PROVENANCE_AND_ROLE_CI_AUDIT.md)
+
+- #340 source/test merge a32c023 / final docs head a85eec4; current #283 parent 4dd0b01; 45 ahead / 0 behind; final-head Full #45737856635 PASS (26 success / 4 production import/sign/publication skips).
+- #348 Full fails missing mbedtls/sha256.h; #349 and #352 Full fail poll/protocol gates; #353 has no exact-head PR runs.
+- Active v0.6 remains unsigned at register/poll; #340 is a separate deny-only candidate and is not integrated.
+- COE #26 remains FROZEN: 76/2 board blobs, 64/0 board-local Python helpers, tests 47/19 (1 exact common test), source root NOTICE/LICENSE absent at destination; no staging.
+- COE #35 still fails closed on 10/10 ULA profiles and missing Bubblewrap; cleanup #266 remains 0/7.
+- Private Drive registry v11/newer corrections NOT_RECOVERED; no Google Drive connector. **PRODUCTION NO-GO.**
+
 ## PHX-MASTER UTC00 — current exact-head Hardware / COE #26 provenance audit — 2026-11-26T00:33Z
 
 [Exact-head Hardware #349 source/test, #352/#353/#340 ancestry, active v0.6 response-auth boundary, and COE #26 migration provenance](PHX_MASTER_UTC00_20261126_EXACT_HEAD_HARDWARE_COE26_PROVENANCE_AUDIT.md)
