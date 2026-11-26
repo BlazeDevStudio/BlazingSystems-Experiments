@@ -1089,3 +1089,16 @@ These are SIMULATED / CI VERIFIED results. The failure is not fixed by ancestry 
 - PR #283 head `4dd0b01bf04cf80aec6d4dd6fc93b2fdc633da30`: failed quarantine append returns before `clearPending()`, but `quarantinePending()` is definition-only on both sketches. This is not an end-to-end lifecycle or power-loss acceptance.
 - PR #353 remains OPEN / DRAFT / UNMERGED. HARDWARE ACCEPTED: NO; PRODUCTION READY: NO-GO.
 <!-- PHX-HARDWARE-20261126-UTC03-RUNTIME-COIN-INTERRUPT-WIRING:END -->
+
+
+## PHX-HARDWARE UTC04 — PR #353 exact-head reconciliation
+
+- PR #353 remains OPEN / DRAFT / UNMERGED on `phoenix/hw-board-conditional-isr-selector-20261125-utc17`. Source/test SHA: `ed2f77d5924172881f27222cc26649f8f85abe6c`; prior docs head: `832692020a428ff4fe03a197a1bfce65b3f9316c`; parent #352: `2fa3b7db1161ddb531ed94bcf60617947fa1a7bd`.
+- Final prior docs-head Quarantine [#45751177827](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45751177827), job `139679053052`: PASS. Relay [#45751177670](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45751177670), jobs `139679052817 / 139679052900`: PASS / PASS.
+- Full [#45751177730](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45751177730), validation job `139679141206`: FAIL — downloaded log confirms `Missing poll signature check` in ESP8266. All 14 firmware/platform jobs and Android passed; downstream production/simulation/signing/publication gates skipped.
+- This UTC04 update is documentation-only. It does not alter production firmware, GPIO/relay behavior, controller/API, finance, replay, signer, witness or migration.
+- CORE-approved authenticated register/poll contract and QA independent review remain required. Active v0.6 remains at `2fbd2475e9f54878c316fa7cea2f228386b0e859` with the poll-before-sample race. #340 is not integrated into that branch.
+- Physical coin/relay/electrical acceptance, 150 power cuts, 30-device/24-hour soak, protected anti-rollback witness, durable accounting/replay, v1→v2 migration and independent release signoff remain NOT TESTED / NOT ACCEPTED.
+- Private Drive registry v11 remains unavailable through the exposed connector/Library surface; no older snapshot was substituted.
+
+**Status:** scoped #353 checks CI VERIFIED only; HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
