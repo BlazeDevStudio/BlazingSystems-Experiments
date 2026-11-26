@@ -126,9 +126,9 @@ def verify_configure_runtime_pins_preserves_edge_baseline(source):
     # Count only the two post-attachment fail-closed guards. The earlier
     # pre-detach quarantine is intentionally separate and uses a different
     # condition; a bare-call string check misses these guarded expressions.
-    attachments = list(re.finditer(r"\\battachInterrupt\\s*\\(", body))
+    attachments = list(re.finditer(r"\battachInterrupt\s*\(", body))
     quarantines = list(re.finditer(
-        r"if\\s*\\(\\s*!\\s*quarantineCoinIngressTransition\\s*\\(\\s*\\)\\s*\\)\\s*return\\s+false\\s*;",
+        r"if\s*\(\s*!\s*quarantineCoinIngressTransition\s*\(\s*\)\s*\)\s*return\s+false\s*;",
         body,
     ))
     if len(attachments) != 2 or len(quarantines) != 2:
@@ -148,7 +148,7 @@ def verify_configure_runtime_pins_preserves_edge_baseline(source):
         if "coinInterruptAttached=true;" not in body[attachment.end():quarantine.start()]:
             raise RuntimeError("coin interrupt attachment must be recorded before guarded ingress quarantine")
         resume = re.search(
-            r"pollIntakeSuspended\\s*=\\s*priorPollIntakeSuspended\\s*;",
+            r"pollIntakeSuspended\s*=\s*priorPollIntakeSuspended\s*;",
             body[quarantine.end():branch_end],
         )
         if resume is None:
