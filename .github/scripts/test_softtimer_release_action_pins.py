@@ -90,6 +90,16 @@ class SoftTimerReleaseActionPinTests(unittest.TestCase):
     def setUpClass(cls):
         cls.workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
 
+    def test_action_reference_with_inline_yaml_comment_is_not_ignored(self):
+        workflow = (
+            "      - uses: actions/checkout@v4 # valid YAML comment\\n"
+        )
+        self.assertEqual(
+            _action_references(workflow),
+            ["actions/checkout@v4"],
+            "inline comments must not hide external actions from immutable-pin checks",
+        )
+
     def test_every_external_action_uses_its_reviewed_immutable_commit(self):
         references = _action_references(self.workflow)
         problems = []
