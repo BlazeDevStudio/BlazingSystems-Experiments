@@ -199,12 +199,22 @@ void loadConfig(){
   }
 }
 
-void saveConfig(){
-  prefs.putString("ssid",cfg.ssid); prefs.putString("pass",cfg.pass);
-  prefs.putString("server",cfg.server); prefs.putString("key",cfg.key); prefs.putString("id",cfg.id);
-  prefs.putInt("coinpin",cfg.coinPin); prefs.putInt("ledpin",cfg.insertLedPin); prefs.putInt("relaypin",cfg.relayPin);
-  prefs.putBool("coinlow",cfg.coinActiveLow); prefs.putBool("relayhi",cfg.relayActiveHigh); prefs.putBool("ledhi",cfg.ledActiveHigh);
-  prefs.putUInt("debounce",cfg.coinDebounceMs); prefs.putUInt("groupms",cfg.pulseGroupMs);
+bool saveConfig(){
+  bool ok=true;
+  if(prefs.putString("ssid",cfg.ssid)==0) ok=false;
+  if(prefs.putString("pass",cfg.pass)==0) ok=false;
+  if(prefs.putString("server",cfg.server)==0) ok=false;
+  if(prefs.putString("key",cfg.key)==0) ok=false;
+  if(prefs.putString("id",cfg.id)==0) ok=false;
+  if(prefs.putInt("coinpin",cfg.coinPin)==0) ok=false;
+  if(prefs.putInt("ledpin",cfg.insertLedPin)==0) ok=false;
+  if(prefs.putInt("relaypin",cfg.relayPin)==0) ok=false;
+  if(prefs.putBool("coinlow",cfg.coinActiveLow)==0) ok=false;
+  if(prefs.putBool("relayhi",cfg.relayActiveHigh)==0) ok=false;
+  if(prefs.putBool("ledhi",cfg.ledActiveHigh)==0) ok=false;
+  if(prefs.putUInt("debounce",cfg.coinDebounceMs)==0) ok=false;
+  if(prefs.putUInt("groupms",cfg.pulseGroupMs)==0) ok=false;
+  return ok;
 }
 
 void denyRemoteControl();
@@ -306,7 +316,12 @@ void setupPortal(){
     cfg.coinPin=web.arg("coin").toInt(); cfg.insertLedPin=web.arg("led").toInt(); cfg.relayPin=web.arg("relay").toInt();
     long db=web.arg("db").toInt(), pg=web.arg("pg").toInt(); if(db<1)db=1;if(db>2000)db=2000;if(pg<10)pg=10;if(pg>10000)pg=10000;
     cfg.coinDebounceMs=(uint16_t)db; cfg.pulseGroupMs=(uint16_t)pg; cfg.coinActiveLow=web.arg("cl")!="0"; cfg.relayActiveHigh=web.arg("rh")!="0"; cfg.ledActiveHigh=web.arg("lh")!="0";
-    saveConfig(); web.send(200,"text/plain","Wi-Fi verified and settings saved. Rebooting..."); delay(700); ESP.restart();
+    if(!saveConfig()){
+      denyRemoteControl();
+      web.send(500,"text/plain","Preferences write failed; settings were not confirmed. Setup mode remains active.");
+      return;
+    }
+    web.send(200,"text/plain","Wi-Fi verified and settings saved. Rebooting..."); delay(700); ESP.restart();
   });
   web.begin(); configuredApSince=millis();
 }

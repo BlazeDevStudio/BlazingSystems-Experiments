@@ -211,7 +211,7 @@ void defaults(){
   makeSetupPassword();
 }
 
-void saveCfg(){ EEPROM.put(0,cfg); EEPROM.commit(); }
+bool saveCfg(){ EEPROM.put(0,cfg); return EEPROM.commit(); }
 
 void loadCfg(){
   EEPROM.begin(sizeof(Config));
@@ -232,13 +232,13 @@ void loadCfg(){
     cfg.insertLedPin=oldCfg.insertLedPin;
     cfg.relayPin=oldCfg.relayPin;
     cfg.coinActiveLow=oldCfg.coinActiveLow;
-    saveCfg();
-    Serial.println("Migrated BlazePwifi Vendo v1 configuration.");
+    if(!saveCfg()) Serial.println("CRITICAL: EEPROM configuration migration write failed; retrying on next boot.");
+    else Serial.println("Migrated BlazePwifi Vendo v1 configuration.");
     return;
   }
 
   defaults();
-  saveCfg();
+  if(!saveCfg()) Serial.println("CRITICAL: EEPROM defaults write failed; setup remains available.");
 }
 
 void writeLogical(int pin,bool on,bool activeHigh){ digitalWrite(pin,(on==activeHigh)?HIGH:LOW); }
@@ -341,7 +341,12 @@ void setupPortal(){
     strlcpy(cfg.ssid,newSsid.c_str(),sizeof(cfg.ssid));strlcpy(cfg.pass,newPass.c_str(),sizeof(cfg.pass));
     strlcpy(cfg.server,web.arg("server").c_str(),sizeof(cfg.server));if(web.arg("k").length())strlcpy(cfg.key,web.arg("k").c_str(),sizeof(cfg.key));strlcpy(cfg.id,web.arg("id").c_str(),sizeof(cfg.id));
     cfg.coinPin=web.arg("coin").toInt();cfg.insertLedPin=web.arg("led").toInt();cfg.relayPin=web.arg("relay").toInt();
-    saveCfg();web.send(200,"text/plain","Wi-Fi verified and settings saved. Rebooting...");delay(700);ESP.restart();
+    if(!saveCfg()){
+      denyRemoteControl();
+      web.send(500,"text/plain","EEPROM commit failed; settings were not confirmed. Setup mode remains active.");
+      return;
+    }
+    web.send(200,"text/plain","Wi-Fi verified and settings saved. Rebooting...");delay(700);ESP.restart();
   });
   web.begin();
   configuredApSince=millis();
