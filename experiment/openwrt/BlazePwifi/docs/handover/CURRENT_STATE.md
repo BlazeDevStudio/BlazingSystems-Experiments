@@ -1,32 +1,19 @@
-# CURRENT STATE — 2026-11-27 UTC16 — blocking-poll wait harness IN PROGRESS
+# CURRENT STATE — 2026-11-27 UTC16 — blocking-poll wait harness IN PROGRESS (first CI attempt failed in test construction)
 
 **Role:** PHX-HARDWARE · **Issue:** [#177](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/177) · **PR:** [#354](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/354)  
 **Branch:** `phoenix/hw-active-v06-poll-intake-deny-20261126-utc05` · **Base:** `blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859`  
-**Starting PR head:** `bbb209f55ddcd48f248eb8d700629db8754dc13a` · **Starting source/test SHA:** `9bb46bb27e4be80f6506dbebf2846700efd4cb81`  
+**Current PR head:** `05be6faf86290de70cc10ea7e6cce8ecb1108f02` · **Source/test attempt:** same SHA.  
 **Work item:** `PHX-HARDWARE-20261126T16-BLOCKING-POLL-WAIT-HARNESS` · **Status:** IN_PROGRESS.
 
-## Proven gap and bounded intent
+## Latest transition — test-authoring failure, not product evidence
 
-The current `poll_preflight_inhibit_lab.py` says it holds the relay/LED OFF through a simulated 3500 ms HTTP wait, but `make_harness()` calls the extracted `denyRemoteControl()` and immediately checks the output levels; it does not execute the extracted poll block, advance a clock, or inject a pulse during a blocking wait. This is a test-evidence gap, not a claim that the deny-only firmware currently re-enables the relay.
+The first harness commit attempted to execute the actual extracted poll block, but exact focused CI [#45862503824](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45862503824), job `140056856073`, failed during C++ fixture compilation. The log showed incorrect newline escaping between extracted functions, a split C++ diagnostic string, and an omitted `wifiFailures` stub required by the actual poll block. The test did not reach the 3500 ms assertion; this is a harness-authoring error, **not** a firmware regression and **not** the intended RED evidence.
 
-Add a host-only C++ harness that executes the actual extracted poll block from each board sketch. Its stubbed `post("poll")` will advance exactly 3500 ms, inject one 80 ms coin-line pulse while the loop is blocked, and check every simulated millisecond that relay/LED outputs remain logically OFF, admission flags remain denied, and pending pulse/nonce/target evidence remains unchanged. After the block, the next sample must occur after the pulse has ended and must not create a coin acceptance. Add a negative mutation that removes the pre-poll deny and must be detected by the wait harness.
-
-## Safety boundary
-
-- No production `.ino`, pin, API, authentication, finance, receipt, or pending-disposition behavior changes are intended.
-- This is host simulation only; it cannot prove relay voltage, coin-acceptor behavior, pulse conditioning, LittleFS durability, or physical acceptance.
-- No hardware flash/reset, live money, customer device, signer, migration, release, merge, or deployment.
-- Keep coin/relay admission denied pending PHX-CORE's authenticated contract and PHX-QA's assertion reconciliation.
-
-## Proof and rollback
-
-- Success: exact-source focused workflow compiles/runs both board poll blocks; reports 3500 simulated ms, 80 injected pulse ticks, zero samples during wait, zero accepted pulses, preserved pending evidence, and rejects a missing pre-poll deny mutation.
-- Failure: compile/test failure, no actual poll-block execution, wrong wait duration, an output/admission transition during the wait, lost pending evidence, or surviving mutation.
-- Rollback: revert only this work item's commits on the existing Hardware-owned PR branch; do not rebase or alter #239/#254/#283/#340/#353.
+The initial code inspection remains valid: the prior harness only invoked `denyRemoteControl()` and immediately checked outputs; it did not execute the actual poll block or advance simulated time. The production sketches remain unchanged by this work item.
 
 ## NEXT EXACT ACTION
 
-Implement the source-extracted blocking-poll harness in `experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_preflight_inhibit_lab.py`, run the focused workflow on the exact resulting SHA, then synchronize the append-only handovers.
+Correct the harness concatenation with an explicit newline, add the missing `wifiFailures` stub, use stream terminators instead of embedded diagnostic newlines, then rerun the focused exact-head workflow. Count a RED only if the corrected harness compiles and fails specifically because the modeled poll wait does not advance to 3500 ms.
 
 # CURRENT STATE — 2026-11-26 UTC14 — final poll-inhibit independent polarity evidence
 
