@@ -63,3 +63,11 @@
 - ESP32 Mbed matrix `45897118552`: 3/3 PASS — source-contract `140174115684`, core 3.3.13 `140174116287`, core 4.0.0 `140174115903`.
 - Native synthetic `45897118723`, job `140173656134`, FAIL at QA-owned PAY-0745. #177 remains unresolved; #266 OPEN / 0-of-7; #31/#32/#34/#43 open.
 - Physical acceptance NOT TESTED; HARDWARE ACCEPTED NO; PRODUCTION NO-GO.
+
+
+## 2026-11-27 UTC21 — ESP32 Preferences per-key failure matrix
+
+- Test-only commit: 68416f69bc10dde8b2afa2948b312d4010507ad5; focused exact-head run [#45900402218](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45900402218), job 140184489587: PASS.
+- Injected failure separately into all 13 ESP32 Preferences keys; every failure propagated and all 13 write attempts were retained. All-success control passed.
+- ESP8266 EEPROM commit-failure propagation and four existing config-persistence mutation guards passed.
+- SIMULATED host Preferences harness / CI VERIFIED; no real NVS power-cut or atomic transaction claim. Physical acceptance NOT TESTED; production NO-GO.

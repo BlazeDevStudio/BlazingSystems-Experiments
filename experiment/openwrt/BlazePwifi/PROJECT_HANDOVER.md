@@ -1,3 +1,22 @@
+## PHX-HARDWARE UTC21 addendum — ESP32 Preferences per-key failure matrix
+
+**Observed UTC:** 2026-11-26T21:47Z  
+**PR:** [#355](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/355), OPEN / DRAFT / UNMERGED; stacked on #354 at **fc842342596786e072630179acfbbc4feeb2ba02**.  
+**Branch:** phoenix/hw-poll-preflight-lab-modules-20261127-utc18  
+**Exact source/test HEAD:** 68416f69bc10dde8b2afa2948b312d4010507ad5.
+
+The Hardware-owned configuration-persistence lab now injects failure independently into each of the 13 ESP32 Preferences keys (ssid, pass, server, key, id, coinpin, ledpin, relaypin, coinlow, relayhi, ledhi, debounce, groupms). Every failed write must make saveConfig() return false while all 13 writes are still attempted; the all-success control must return true. The firmware remains unchanged in this task.
+
+- Focused exact-head [run #45900402218](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45900402218), job 140184489587: **PASS** at exact checkout 68416f69bc10dde8b2afa2948b312d4010507ad5.
+- Log evidence: ESP8266_EEPROM_COMMIT_FAILURE_PROPAGATED_PASS; ESP32_PREFERENCES_WRITE_FAILURE_MATRIX_PASS cases=13 writes=13/13; four existing config-persistence mutations rejected; poll, deny-only remote-config, request-auth, output-latch and EEPROM integrity regressions passed.
+- This is a fake-Preferences host harness (SIMULATED / CI VERIFIED), not ESP32 NVS power-cut testing. The 13-key Preferences update remains non-atomic; no rollback/transaction guarantee is claimed.
+- Latest Full validation at the same source head failed its mandatory handover freshness gate because this documentation refresh had not yet been committed. A fresh Full run is required after this commit. Native synthetic run [#45900402244](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45900402244) fails the QA-owned legacy assertion in tests/v060_vendo_sequence_contract.py:20 requiring active clearPending(true/false) callsites; Hardware did not add them. Mbed matrix [#45900402216](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45900402216) was pending at last check.
+- #177 synchronous poll-before-sample P0 remains unresolved on active v0.6; #31/#32/#34/#43 and cleanup #266 remain open. Physical acceptance NOT TESTED; HARDWARE ACCEPTED NO; PRODUCTION NO-GO.
+
+**Next exact action:** rerun Full on the refreshed docs head, then coordinate the QA pending-disposition assertion with CORE before any clear callsite or positive coin admission.
+
+---
+
 ## FINAL UTC21 RECONCILIATION — focused and target builds CI verified; Full integration blocked by QA-owned controller parity
 
 **Exact focused source/test head:** `facf4cd7efee2df199475e6ae2e135429210eb87`  
