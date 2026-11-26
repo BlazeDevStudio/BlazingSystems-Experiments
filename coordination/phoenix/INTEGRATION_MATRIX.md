@@ -1,3 +1,31 @@
+## PHX-MASTER UTC04 — exact interface, owner CI and migration provenance — 2026-11-26T04:53:01Z
+
+| Edge / artifact | Exact current evidence | Gate / owner |
+|---|---|---|
+| Active v0.6 register/poll trust | Branch `blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859`. ESP32 sketch blob `29f1125d52ff474a0d028ad41f7af201be1f0f9d`, ESP8266 `12c4bb82b6fddafe813674a0b5f692c1d3634073`, CGI `db58041c0575ad0a1101d99cb85403e03c8dcb22`. Both sketches consume poll `insert` / `target_nonce` and call `applyRemoteConfig`; CGI poll JSON has no `response_sig` (member endpoints do return their own signatures). | P0 remains OPEN. CORE must publish authenticated register/poll envelope, canonical serialization, mandatory key provisioning, controller/target binding, freshness and replay rules before HARDWARE implementation and independent QA. |
+| HARDWARE #353 stack | Source/test `ed2f77d5`; docs/PR `cb1787ac`; parent #352 `2fa3b7db`; 29 ahead / 0 behind. Focused Quarantine/Relay PASS; PR and push Full fail validation at `Missing poll signature check`. | HARDWARE owns firmware and branch ancestry. QA owns independent assertion/negative-vector review. Do not weaken the inherited fail-closed check or synthesize a response signature. |
+| HARDWARE #340 core-4 candidate | Source/test `d1380acf`; final docs/PR `f70f6af7`; 52 ahead / 0 behind #283. Core 4.0.0 actual sketch compile and final Full pass; Full has 26 successful jobs / 4 intentional production import/sign/publication skips. | Candidate build evidence only. Different prior core-4 binary hashes remain unexplained; RELEASE #291 exact-head hosted lock/artifact run has not occurred. No active v0.6 integration or hardware acceptance. |
+| RELEASE #291 reproducibility stack | Source/test/workflow `f556769b`; final docs head `0441a8e5`; 873 ahead / 9 behind current #242, merge base `734b89d9`. Exact head returns zero workflow runs and zero combined statuses. | RELEASE owns lock/verifier/workflow; INFRA must dispatch the two named workflows on exact head and retain artifacts; QA independently reviews. No merge/rebase by Master. |
+| COE #26 source/destination trees | Source #353 recursive tree 2,572 entries; destination #26 286 entries (both non-truncated). Manifest routes ESP32 → Hardware/esp32, ESP8266 → Hardware/esp8266, tests → Pisowifi/tests. | Exact per-file results below. Candidate remains FROZEN; no copy, staging or destination write. |
+
+### Exact #353 → COE #26 mapped blob identity
+
+| Route | Source blobs | Destination blobs | Same relative paths | Exact blobs | Divergent | Source-only | Destination-only |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| ESP32 → `Hardware/esp32/` | 16 | 1 | 1 | 0 | 1 | 15 | 0 |
+| ESP8266 → `Hardware/esp8266/` | 67 | 1 | 1 | 0 | 1 | 66 | 0 |
+| Tests → `Pisowifi/tests/` | 47 | 19 | 4 | 1 | 3 | 43 | 15 |
+
+Product license: source `experiment/openwrt/BlazePwifi/LICENSE` and destination `Pisowifi/LICENSE` are the same Git blob `1ee55b94183417be977ca287cd7391f9a6f7e721`. Source root `NOTICE.md` blob `f6d92cd21465312be5993631fe26977219be0fb9` has no destination root counterpart. This confirms only that one product LICENSE matches; it does not establish complete license/NOTICE compliance for every imported file.
+
+### COE #26 keyless poll/register verification bypass
+
+At exact destination blobs `3cc7ec54b476943dc04a8d1af5e2df5fe054e422` (ESP32) and `c8be98f72596681e36a3ad1f8939bf8046c96887` (ESP8266), both sketches initialize `sigOk=true` and run `response_sig` verification only inside a nonempty controller-key conditional. When the key is empty, the default remains true and an `ok:true` response can reach `applyRemoteConfig`. The destination setup path does not establish a mandatory nonempty key in the inspected sketches. This is a P0; do not transplant these files.
+
+COE #26 exact-head CI: five workflows QUEUED / zero jobs. The candidate is OPEN / DRAFT but operationally FROZEN. The manifest's `source_ref=f4e8a891...` is a historical routing baseline, not a pin to the current #353 source tree; keep it review-only until owners approve a file-by-file map. **No migration is authorized.**
+
+---
+
 ## PHX-MASTER UTC03 — exact interface, CI and migration evidence — 2026-11-26T03:57:22Z
 
 | Edge / artifact | Exact current evidence | Gate / owner |

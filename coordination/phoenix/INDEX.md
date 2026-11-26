@@ -1,3 +1,14 @@
+## PHX-MASTER UTC04 — 2026-11-26T04:53:01Z
+
+[Exact-head role/CI reconciliation, active v0.6 poll-response P0, HARDWARE #353 current Full result, RELEASE #291 toolchain evidence and #353→COE #26 migration provenance](PHX_MASTER_UTC04_20261126_HW353_RELEASE291_COE26_PROVENANCE_AND_ROLE_CI_AUDIT.md)
+
+- #353 exact docs head cb1787ac / source-test ed2f77d is 29 ahead / 0 behind #352; focused Quarantine/Relay pass, both PR and push Full fail at Missing poll signature check.
+- #291 final docs head 0441a8e5 / source-test f556769 has static lock assertions but zero exact-head hosted runs/statuses; stack is 873 ahead / 9 behind #242.
+- Active v0.6 poll remains unsigned; COE #26 retains keyless sigOk=true bypass. Current #353→#26 mapping shows board/test identity and NOTICE gaps; product LICENSE matches. #26 remains FROZEN.
+- Cleanup #266 OPEN / 0-of-7; registry v11/newer corrections NOT_RECOVERED. **PRODUCTION NO-GO.**
+
+---
+
 ## PHX-MASTER UTC03 — reproducible-build, exact-head and migration audit — 2026-11-26T03:57:22Z
 
 [UTC03 exact-head Hardware #340 core-4 reproducibility, #353 Full gate, active v0.6 response-auth, COE #26 source/license/test provenance and role CI audit](PHX_MASTER_UTC03_20261126_HW340_REPRODUCIBILITY_HW353_COE26_PROVENANCE_AUDIT.md)
