@@ -1,3 +1,20 @@
+## PHX-HARDWARE UTC22 — ESP32 NVS interrupted-save validity latch
+
+**Observed UTC:** 2026-11-26T22:50Z · **PR #355:** OPEN / DRAFT / UNMERGED · **Role:** PHX-HARDWARE  
+**Branch:** phoenix/hw-poll-preflight-lab-modules-20261127-utc18 · **pre-documentation HEAD:** ba24c44144a6b367c12b716944d1957f20003b3f
+
+The ESP32 Vendo configuration save now brackets its 14 Preferences writes with a cfgvalid marker: false before field writes, true only after all writes succeed. On boot, Preferences-open failure or an explicit false marker discards partial values and selects setup defaults; a missing marker remains legacy-compatible. connectSta() and loop() block STA/reconnect/poll while configuration is invalid, while the setup portal remains responsive. ESP8266 EEPROM behavior is unchanged.
+
+**Exact focused CI:** [#45907063693](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45907063693), job 140206222638, exact checkout ba24c44144a6b367c12b716944d1957f20003b3f: **PASS**. Logs confirm invalid-marker defaults, legacy compatibility, Preferences.begin retry, 14-field failure injection, two marker-failure cases, EEPROM commit propagation, and seven unsafe mutations rejected.
+
+**Test-first RED:** [#45906591317](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45906591317), job 140204687313, old sketch rejected for lacking config-validity state. The subsequent focused GREEN passed at the exact current source/test head.
+
+**Other current gates:** Mbed matrix [#45907063709](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45907063709) source contract PASS, two target builds in progress. Full [#45907057845](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45907057845) CI-0701 PASS but handover freshness failed because docs were not refreshed after the source change; ESP8266 target PASS and remaining target jobs were still running. Native [#45907063717](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45907063717) fails QA-owned PAY-0745 pending-clear assertion. Full must be rerun after this documentation update.
+
+**Limitations:** This marker is not an atomic NVS transaction or power-cut evidence. Host fake-Preferences testing is SIMULATED / CI VERIFIED; physical NVS power cuts, custom pin/polarity recovery, electrical OFF behavior, 150 power cuts and 30-device/24-hour soak remain NOT TESTED. Invalid-marker recovery discards custom settings and uses stock defaults; external hardware bias and default wiring require independent verification.
+
+#177 remains unresolved; #266 is OPEN / 0-of-7; #31/#32/#34/#43 remain open. No other-role source, shared API, or COE destination was changed. See [narrow UTC22 handover](docs/handover/2026-11-27-hw-esp32-nvs-validity-latch-utc22.md). **HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.**
+
 ## PHX-HARDWARE UTC21 integration readback — exact docs-head results
 
 **Observed UTC:** 2026-11-26T21:52Z  
