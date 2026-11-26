@@ -375,6 +375,8 @@ static const int HIGH=1, LOW=0, FALLING=2, RISING=3;
 void pinMode(int,int);
 void digitalWrite(int,int);
 int digitalPinToInterrupt(int);
+bool runtimePinsSafe(int,int,int);
+void applyOutputs();
 void detachInterrupt(int);
 void coinEdgeISR();
 void attachInterrupt(int,void(*)(),int);

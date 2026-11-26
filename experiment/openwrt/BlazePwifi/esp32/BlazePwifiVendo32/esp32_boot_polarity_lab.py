@@ -327,6 +327,7 @@ void digitalWrite(int pin,int level) {
 int digitalPinToInterrupt(int pin) { return pin; }
 // Pin-range policy is covered by the exact-source coin-pulse wiring lab.
 bool runtimePinsSafe(int,int,int){ return true; }
+void applyOutputs();
 void detachInterrupt(int) { coinInterruptAttached=false; }
 volatile uint32_t coinEdgeSequence=0;
 uint32_t lastHandledCoinEdgeSequence=0;
