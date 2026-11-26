@@ -183,6 +183,24 @@ def register_guard_locations(source: str):
             "startup register response must not apply remote configuration before authenticated contract approval"
         )
 
+    connected_if = re.search(
+        r"if\s*\(\s*WiFi\.status\(\)\s*==\s*WL_CONNECTED\s*\)",
+        masked_connect,
+    )
+    if not connected_if:
+        raise AssertionError(
+            "register POST must remain inside the Wi-Fi-connected startup branch"
+        )
+    connected_open = masked_connect.find("{", connected_if.end())
+    if connected_open < 0:
+        raise AssertionError("Wi-Fi-connected startup branch has no body")
+    connected_branch = extract_braced(connect, connected_open)
+    connected_end = connected_open + len(connected_branch)
+    if not (connected_open < register.start() < connected_end):
+        raise AssertionError(
+            "register POST must remain inside the Wi-Fi-connected startup branch"
+        )
+
     register_depth = (
         masked_connect[:register.start()].count("{")
         - masked_connect[:register.start()].count("}")
