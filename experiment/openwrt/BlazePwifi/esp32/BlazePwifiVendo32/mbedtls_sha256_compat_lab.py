@@ -112,6 +112,11 @@ def validate_source(source: str) -> None:
     ):
         require(token in digest, f"hexDigest missing fail-closed/provider token: {token}")
 
+    psa_init_at = digest.find("if(psa_crypto_init()!=PSA_SUCCESS) return String();")
+    psa_compute_at = digest.find("psa_hash_compute(")
+    require(0 <= psa_init_at < psa_compute_at,
+            "PSA crypto must initialize successfully before SHA-256 computation")
+
     print("MBEDTLS_SHA256_PROVIDER_FAIL_CLOSED_PASS")
 
     valid = extract_function(source, "bool validSha256Hex(const String &digest)")
@@ -163,6 +168,35 @@ def main() -> None:
     validate_source(source)
     print("ESP32_MBEDTLS_SHA256_SELECTOR_PASS")
     print("ESP32_SIGNED_BODY_FAIL_CLOSED_PASS")
+
+    expect_rejected(
+        "missing-psa-crypto-init-failure-deny",
+        source.replace(
+            "if(psa_crypto_init()!=PSA_SUCCESS) return String();",
+            "/* mutation: PSA initialization failure ignored */",
+            1,
+        ),
+    )
+    expect_rejected(
+        "psa-hash-before-crypto-initialization",
+        source.replace(
+            "if(psa_crypto_init()!=PSA_SUCCESS) return String();",
+            "",
+            1,
+        ).replace(
+            "  );\n  if(status!=PSA_SUCCESS || digestLength!=sizeof(out)) return String();",
+            "  );\n  if(psa_crypto_init()!=PSA_SUCCESS) return String();\n  if(status!=PSA_SUCCESS || digestLength!=sizeof(out)) return String();",
+            1,
+        ),
+    )
+    expect_rejected(
+        "missing-unsupported-major-deny",
+        source.replace(
+            '#error "Unsupported Mbed TLS major version: BlazePwifi ESP32 supports 3.x and 4.x only"',
+            "/* mutation: unsupported Mbed TLS major not rejected */",
+            1,
+        ),
+    )
 
     expect_rejected(
         "missing-psa-status-and-length-check",
