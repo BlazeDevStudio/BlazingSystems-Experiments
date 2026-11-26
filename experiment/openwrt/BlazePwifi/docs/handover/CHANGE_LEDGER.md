@@ -45,3 +45,12 @@
 - Physical storage/power-cut/relay acceptance NOT TESTED; HARDWARE ACCEPTED NO; PRODUCTION NO-GO.
 
 - Source-comment clarification: EEPROM commit result must be honored; ESP32 Preferences multi-key writes are not atomic. Comment-only source sync is included with this documentation refresh.
+
+
+## 2026-11-27 UTC21 — final exact-head reconciliation
+
+- Exact focused source/test head `facf4cd7efee2df199475e6ae2e135429210eb87`, job `140173655648` in run `45897118576`: PASS. EEPROM commit failure and 13/13 Preferences write results propagated; 4/4 injected config-persistence regressions rejected.
+- Full run `45897118594`: CI-0701 + handover freshness PASS; validation job `140173820395` fails QA-owned `tests/controllers.sh:21` (`config_revision`). Full target jobs were still running.
+- Mbed matrix `45897118552`: source-contract PASS; core 3.3.13 and 4.0.0 builds still running. Native `45897118723` job `140173656134` FAIL at QA-owned PAY-0745 pending sequence/corruption assertion.
+- Master coordination HEAD `0e8a59a0463d522ddff95371a60cf271d4c752bc` records #355 in both role assignment and integration matrix. #177 remains unresolved; #266 OPEN / 0-of-7; #31/#32/#34/#43 open.
+- Physical acceptance NOT TESTED; HARDWARE ACCEPTED NO; PRODUCTION NO-GO.

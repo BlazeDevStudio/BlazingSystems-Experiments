@@ -63,3 +63,19 @@ This could falsely tell a technician that changed Wi-Fi/device configuration was
 - **HARDWARE ACCEPTED: NO. PRODUCTION READY: NO-GO.**
 
 No secrets, live money, physical flash, device reset, production migration, deployment, merge, force-push or release tagging occurred.
+
+
+## FINAL UTC21 RECONCILIATION — exact focused CI PASS; Full integration blocked by QA-owned controller parity
+
+**Current tested source/test head:** `facf4cd7efee2df199475e6ae2e135429210eb87`  
+**Firmware correction:** `26a28c763168e2881d5b8e36d859a0a72d704524`  
+**Current PR:** [#355](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/355), OPEN / DRAFT / UNMERGED; base #354 at `fc842342596786e072630179acfbbc4feeb2ba02`.
+
+- Exact-head focused [#45897118576](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45897118576), job `140173655648`: **PASS**. EEPROM commit failure propagated; ESP32 Preferences 13/13 write results checked; 4/4 injected config-persistence regressions rejected; existing poll/deny/auth/output and bounded EEPROM labs pass.
+- Full [#45897118594](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45897118594): CI-0701 and mandatory handover freshness gate **PASS**. Validation job `140173820395` **FAILS** at QA-owned Controller protocol parity / `tests/controllers.sh:21`, which requires `config_revision`. The sketches intentionally discard unauthenticated register/poll responses and contain no config-revision consumer. No dummy field or unsigned consumer was added. Full target jobs were still running at the last check.
+- ESP32 Mbed TLS matrix [#45897118552](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45897118552): source-contract **PASS**; 3.3.13 and 4.0.0 target builds still running.
+- Native synthetic [#45897118723](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45897118723), job `140173656134`: **FAIL** at QA-owned `PAY-0745 durable Vendo pending sequence and corruption contract`. No pending-clear/disposition callsite was added.
+- Master coordination HEAD `0e8a59a0463d522ddff95371a60cf271d4c752bc` now includes #355 in both `ROLE_ASSIGNMENTS.md` and `INTEGRATION_MATRIX.md`.
+- #177 synchronous poll/pulse-loss P0 remains unresolved. #266 remains OPEN / 0-of-7; #31/#32/#34/#43 remain open. Physical acceptance NOT TESTED; HARDWARE ACCEPTED NO; PRODUCTION NO-GO.
+
+This reconciliation supersedes the earlier UTC21 checkpoint below where the Full handover-freshness gate was still pending. The focused source/test SHA is unchanged by this docs-only reconciliation.
