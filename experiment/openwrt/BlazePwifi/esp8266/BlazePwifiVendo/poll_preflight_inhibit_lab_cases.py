@@ -12,6 +12,7 @@ from poll_preflight_inhibit_lab_contract import (
     poll_call_matches,
     poll_guard_locations,
     register_guard_locations,
+    startup_storage_guard_locations,
 )
 from poll_preflight_inhibit_lab_harness import (
     compile_and_run,
@@ -20,7 +21,7 @@ from poll_preflight_inhibit_lab_harness import (
     remove_first_code_token,
 )
 
-__all__ = ["main", "verify_board", "verify_register_preflight", "verify_source_extractor_decoy_regressions"]
+__all__ = ["main", "verify_board", "verify_register_preflight", "verify_startup_storage_order", "verify_source_extractor_decoy_regressions"]
 
 
 
@@ -30,6 +31,60 @@ SKETCHES = {
     "ESP32": BLAZEPWIFI / "esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino",
 }
 
+
+
+def verify_startup_storage_order(name: str, source: str):
+    """Require the board's configured outputs to be denied before LittleFS work."""
+    setup = startup_storage_guard_locations(source)
+    masked_setup = mask_non_code(setup)
+    config_load = re.search(
+        r"\b(?:loadCfg|loadConfig)\s*\(\s*\)\s*;",
+        masked_setup,
+    )
+    if not config_load:
+        raise AssertionError(f"{name}: persisted pin configuration load missing")
+
+    storage_match = re.search(
+        r"\binitPendingStore\s*\(\s*\)\s*;"
+        r"|\bfsReady\s*=\s*LittleFS\s*\.\s*begin\s*\([^;]*\)\s*;",
+        masked_setup,
+    )
+    if not storage_match:
+        raise AssertionError(f"{name}: LittleFS startup entrypoint missing")
+
+    storage_statement = setup[storage_match.start():storage_match.end()]
+    without_storage = (
+        setup[:storage_match.start()] + setup[storage_match.end():]
+    )
+    without_mask = mask_non_code(without_storage)
+    config_after_removal = re.search(
+        r"\b(?:loadCfg|loadConfig)\s*\(\s*\)\s*;",
+        without_mask,
+    )
+    if not config_after_removal:
+        raise AssertionError(f"{name}: config load anchor lost during mutation")
+    mutated_setup = (
+        without_storage[:config_after_removal.end()]
+        + "\n  " + storage_statement
+        + without_storage[config_after_removal.end():]
+    )
+    mutated_source = source.replace(setup, mutated_setup, 1)
+
+    try:
+        startup_storage_guard_locations(mutated_source)
+    except AssertionError as exc:
+        expected = "filesystem initialization must follow configured output pins"
+        if expected not in str(exc):
+            raise AssertionError(
+                f"{name}: early-LittleFS mutation failed for the wrong reason: {exc}"
+            ) from exc
+    else:
+        raise AssertionError(
+            f"{name}: moving LittleFS startup before the output deny latch was not rejected"
+        )
+
+    print(f"STARTUP_OUTPUT_BEFORE_LITTLEFS_PASS {name}")
+    print(f"EARLY_LITTLEFS_BEFORE_OUTPUT_DENY_MUTATION_REJECTED {name}")
 
 def verify_register_preflight(name: str, source: str):
     """Protect the deny-only startup register exchange on both controller boards."""
@@ -415,10 +470,19 @@ void loop() {
         raise AssertionError("comment-only empty-target decoy was accepted")
 
 def main():
-    verify_source_extractor_decoy_regressions()
+    startup_failures = []
     for name, path in SKETCHES.items():
         if not path.is_file():
             raise SystemExit(f"missing sketch: {path}")
+        try:
+            verify_startup_storage_order(name, path.read_text(encoding="utf-8"))
+        except AssertionError as exc:
+            startup_failures.append(f"{name}: {exc}")
+    if startup_failures:
+        raise AssertionError("STARTUP_OUTPUT_ORDER_RED: " + " | ".join(startup_failures))
+
+    verify_source_extractor_decoy_regressions()
+    for name, path in SKETCHES.items():
         verify_board(name, path)
     print("POLL_INTAKE_GUARD_SIMULATED_ONLY=1")
     print("PHYSICAL_COIN_RELAY_ACCEPTANCE=0")
