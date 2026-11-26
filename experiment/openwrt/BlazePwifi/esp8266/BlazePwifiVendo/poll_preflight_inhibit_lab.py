@@ -298,7 +298,38 @@ int digitalRead(int pin) {
 // must fail until the modeled blocking wait and pulse injection are implemented.
 String post(const String &action) {
     ++pollCalls;
-    if (action != "poll") invalidPollAction = true;
+    if (action != "poll") {
+        invalidPollAction = true;
+        return "";
+    }
+
+    const unsigned long waitStarted = nowMs;
+    inPollWait = true;
+    for (int elapsed = 0; elapsed < 3500; ++elapsed) {
+        nowMs = waitStarted + static_cast<unsigned long>(elapsed + 1);
+        coinLineActive = (elapsed >= 1600 && elapsed < 1680);
+        if (coinLineActive) {
+            ++coinPulseTicks;
+            if (relayLevelHigh == runRelayActiveHigh || coinEnabled ||
+                insertMode || controllerEnabled) {
+                ++acceptedPulseTicks;
+            }
+        }
+        if (relayLevelHigh == runRelayActiveHigh ||
+            ledLevelHigh == runLedActiveHigh) {
+            unsafeRelayDuringWait = true;
+        }
+        if (controllerEnabled || coinEnabled || relayEnabled ||
+            ledEnabled || insertMode) {
+            unsafeAdmissionDuringWait = true;
+        }
+        if (pendingPulses != 3 || pendingNonce != "pending-nonce" ||
+            pendingTarget != "pending-target") {
+            pendingEvidenceChangedDuringWait = true;
+        }
+    }
+    coinLineActive = false;
+    inPollWait = false;
     return "";
 }
 """ + apply_fn + chr(10) + deny_fn + r"""
@@ -501,6 +532,30 @@ def verify_board(name: str, path: Path):
     compile_and_run(apply_fn, deny_fn, True, f"{name} safe pre-poll state")
     compile_blocking_poll_and_run(
         apply_fn, deny_fn, poll_block, True, f"{name} actual blocking poll wait"
+    )
+
+    # Failure injection: removing the pre-poll deny must leave an energized
+    # relay visible to the 3500 ms wait model and be rejected.
+    mutated_poll_block = poll_block.replace("denyRemoteControl();", "", 1)
+    if mutated_poll_block == poll_block:
+        raise AssertionError(f"{name}: pre-poll deny mutation anchor missing")
+    compile_blocking_poll_and_run(
+        apply_fn, deny_fn, mutated_poll_block, False,
+        f"{name} missing pre-poll deny during blocking wait",
+    )
+
+    # Failure injection: the relay OFF branch must use relay polarity even
+    # when the LED has the opposite active level.
+    mutated_apply = apply_fn.replace(
+        "writeLogical(runRelayPin,false,runRelayActiveHigh)",
+        "writeLogical(runRelayPin,false,runLedActiveHigh)",
+        1,
+    )
+    if mutated_apply == apply_fn:
+        raise AssertionError(f"{name}: relay OFF polarity mutation anchor missing")
+    compile_blocking_poll_and_run(
+        mutated_apply, deny_fn, poll_block, False,
+        f"{name} relay OFF borrows LED polarity during blocking wait",
     )
 
     # Failure injection: the relay OFF path must use relay polarity, not LED polarity.
