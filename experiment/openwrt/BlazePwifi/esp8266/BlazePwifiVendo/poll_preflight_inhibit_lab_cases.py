@@ -134,8 +134,8 @@ def verify_register_preflight(name: str, source: str):
     register_guard_locations(decoy_source)
 
     print(f"REGISTER_STARTUP_DENY_PASS {name}")
-    print(f"REGISTER_STARTUP_DENY_MUTATIONS_REJECTED {name} 6/6")
-    print(f"REGISTER_POST_RESPONSE_USE_MUTATION_REJECTED {name}")
+    print(f"REGISTER_STARTUP_DENY_MUTATIONS_REJECTED {name} 7/7")
+    print(f"REGISTER_POST_RESPONSE_USE_MUTATIONS_REJECTED {name} 2/2")
     print(f"REGISTER_POST_DECOY_MUTATIONS_IGNORED {name}")
 
 
