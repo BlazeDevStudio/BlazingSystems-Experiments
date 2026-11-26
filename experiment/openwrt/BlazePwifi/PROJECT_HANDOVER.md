@@ -1,3 +1,46 @@
+## CURRENT STATUS — 2026-11-27 UTC18 — poll preflight lab modularization focused CI verified; Full sync recheck pending
+
+**Role:** PHX-HARDWARE · **Task:** cleanup-first #266 / hardware #177 · **Draft PR:** [#355](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/355), stacked on [#354](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/354)  
+**Branch:** `phoenix/hw-poll-preflight-lab-modules-20261127-utc18` · **Parent/base:** `phoenix/hw-active-v06-poll-intake-deny-20261126-utc05@fc842342596786e072630179acfbbc4feeb2ba02`  
+**Source/test SHA:** `e21f5e70695f3fdd6ee349e385fda69210034826` · **Docs checkpoint:** this canonical sync commit  
+**PR:** OPEN / DRAFT / UNMERGED · **Production:** NO-GO.
+
+### One bounded Hardware-owned cleanup
+
+The 776-line Hardware-owned `poll_preflight_inhibit_lab.py` was split into:
+- `poll_preflight_inhibit_lab_contract.py` — source extraction and poll-guard contract checks.
+- `poll_preflight_inhibit_lab_harness.py` — deterministic C++ harness builders, compilation and mutation runners.
+- `poll_preflight_inhibit_lab_cases.py` — ESP8266/ESP32 board assertions and failure-injection cases.
+- `poll_preflight_inhibit_lab.py` remains the stable command entry point.
+
+The original test function bodies and mutation scenarios were moved without changing their behavior. The focused Actions workflow now watches all three modules in both push and pull-request path filters. No production `.ino`, GPIO/relay logic, shared API, QA assertion, finance, signer, witness, migration or COE destination changed.
+
+### Exact-source evidence
+
+- Initial refactor [#45878977604](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45878977604), job `140113163508`, FAILED because the first extraction omitted the closing brace for `SKETCHES`. Corrected in `68a3281c1405bfe51434f7d9b9b9a142ce5ca3e9`.
+- Intermediate [#45879096653](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45879096653), job `140113559453`, FAILED because the board-case module referenced `_poll_call_matches` without importing it. Corrected in source/test SHA `e21f5e70695f3fdd6ee349e385fda69210034826`.
+- Final exact-source focused workflow [#45879218178](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45879218178), job `140113978484`, **PASS** at `e21f5e70695f3fdd6ee349e385fda69210034826`. Both ESP8266 and ESP32 pass the source-extracted poll, relay and pending-evidence harness; both board mutation suites, remote-config deny, request-auth guards and output-enable sequence checks pass.
+- Both boards report `BLOCKING_POLL_WAIT_PASS 3500ms pulse_ticks=80 samples_during_wait=0 accepted=0 polarity_combinations=4`; the logs report 8/8 independent board/polarity scenarios and 14/14 injected regressions rejected.
+- Full PR [#45879218268](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45879218268) and push [#45879211901](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45879211901) reached the mandatory handover gate and failed because the canonical handover predated `e21f5e70695f3fdd6ee349e385fda69210034826`. This commit synchronizes the canonical handover; a new exact-docs-head Full run is required. Target jobs were not all terminal at the previous readback.
+
+### Cross-role blockers and status boundaries
+
+- PHX-QA owns the deny-only-incompatible `config_revision` and active `clearPending(true/false)` assertions; Hardware did not edit QA tests.
+- PHX-CORE owns the authenticated register/poll and receipt/disposition contract; no positive consumer is permitted before it is approved.
+- PHX-MASTER owns global assignments and branch-pin reconciliation. Current Master coordination PR #288 remains DRAFT.
+- Cleanup #266 remains OPEN / 0-of-7. Financial #31/#32, safety #34 and witness #43 remain open release gates. #239/#254/#283/#353 remain untouched.
+- Host/source-extracted behavior is **SIMULATED / CI VERIFIED** only. Physical GPIO/relay, real coin acceptor, electrical pulse/recovery, LittleFS power-loss, 150 power cuts and 30-device/24-hour soak are **NOT TESTED**. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+- Private Drive registry `BLAZE_PROJECT_REGISTRY_v11_20261027.json` was not accessible through the current connector surface. No registry-derived migration or promotion occurred.
+
+### Process deviation
+
+The required IN-PROGRESS handover was not staged before the first source commit. Both initial CI failures are retained and disclosed above; this canonical sync now records the exact code/test SHA and outcomes. Future Hardware source changes must stage the IN-PROGRESS handover before the source commit.
+
+### NEXT EXACT ACTION
+
+Re-read the exact docs-head Full workflow after this sync. If it reaches the inherited QA `config_revision` or active-clear assertion, request PHX-QA reconciliation and PHX-CORE's signed poll/receipt contract; keep the candidate deny-only and the PR draft. No merge, flash, reset, live money, migration, signing, release tag or deployment.
+
+
 ## CURRENT STATUS — 2026-11-27 UTC17 — focused and target builds verified; integrated validation blocked
 
 **Role:** PHX-HARDWARE · **Issue:** [#177](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/177) · **Draft PR:** [#354](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/354)  

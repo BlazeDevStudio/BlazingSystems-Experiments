@@ -3618,3 +3618,20 @@ PR #354 remains OPEN / DRAFT / UNMERGED. PRs #239/#254/#283 remain OPEN / DRAFT 
 - **Coordination:** PHX-QA owns both assertion reconciliations; PHX-CORE owns authenticated register/poll and receipt/disposition contract; PHX-MASTER must refresh #354 pin from stale `bbb209f55ddcd48f248eb8d700629db8754dc13a` to current branch docs head. Private Drive registry v11 remains unavailable in this runtime.
 - **Next:** request QA/CORE/Master action; retain deny-only behavior; no merge, flash, reset, live money, migration, signer, release tag or deployment.
 
+
+
+## 2026-11-27 02:42 Asia/Manila — PHX-HARDWARE — cleanup-first #266 / hardware #177 — scoped validation
+
+- **Priority:** P2 maintainability; behavior-preserving Hardware host-lab structure.
+- **Status:** validated for focused source-extracted CI; Full integration blocked pending canonical handover sync and inherited QA/CORE gates.
+- **Branch / PR:** `phoenix/hw-poll-preflight-lab-modules-20261127-utc18` / DRAFT #355 (stacked on DRAFT #354).
+- **Source/test commit:** `e21f5e70695f3fdd6ee349e385fda69210034826`.
+- **Paths:** `experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_preflight_inhibit_lab.py`; new `_contract.py`, `_harness.py`, `_cases.py` siblings; `.github/workflows/phx-hw-active-v06-poll-intake-deny.yml` path filters.
+- **Changes:** split 776-line poll preflight lab into contract, harness and board-case modules; retained original entry point and moved existing function bodies/mutation vectors without changing test logic.
+- **Failed attempts retained:** `8d893f6c` / run `45878977604` failed missing `SKETCHES` closing brace; `68a3281c` / run `45879096653` failed missing `_poll_call_matches` import. Both were corrected by `e21f5e70695f3fdd6ee349e385fda69210034826`.
+- **Focused evidence:** [run 45879218178](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45879218178), job `140113978484`, PASS at exact source/test SHA. Both boards: 3500 ms modeled wait, 80 pulse ticks, zero samples during wait, zero accepted, four independent relay/LED polarity combinations; 8/8 scenarios and 14/14 injected regressions rejected.
+- **Full evidence:** PR run `45879218268` / validation job `140114170288` and push run `45879211901` / validation job `140114171064` failed the mandatory handover freshness gate because canonical docs predated the source/test SHA. Exact docs-head rerun is required.
+- **Safety:** no production `.ino`, shared API, QA assertion, finance, signer, witness, migration, COE destination, physical device or customer/payment state changed. Host result is SIMULATED / CI VERIFIED only. Physical GPIO/relay, real coin acceptor, electrical recovery, LittleFS power loss, 150 power cuts and 30-device/24-hour soak NOT TESTED.
+- **Rollback:** revert the three source/test commits on the child branch; do not merge, force-push or retarget the parent stack.
+- **Blockers:** PHX-QA owns `config_revision` / active-clear assertions; PHX-CORE owns authenticated poll/receipt contract; PHX-MASTER owns role assignment and branch-pin reconciliation; private Drive registry v11 unavailable.
+- **NEXT ACTION:** inspect the new docs-head Full run; request QA/CORE changes if inherited assertions remain; keep coin/relay deny-only.

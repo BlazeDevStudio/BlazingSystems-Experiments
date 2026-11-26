@@ -1,3 +1,29 @@
+# CURRENT STATE — 2026-11-27 UTC18 — poll preflight lab modularization focused CI verified; Full sync recheck pending
+
+**Role:** PHX-HARDWARE · **Task:** cleanup-first #266 / hardware #177 · **Draft PR:** [#355](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/355), stacked on [#354](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/354)  
+**Branch:** `phoenix/hw-poll-preflight-lab-modules-20261127-utc18` · **Parent/base:** `phoenix/hw-active-v06-poll-intake-deny-20261126-utc05@fc842342596786e072630179acfbbc4feeb2ba02`  
+**Source/test SHA:** `e21f5e70695f3fdd6ee349e385fda69210034826` · **PR:** OPEN / DRAFT / UNMERGED · **Production:** NO-GO.
+
+## Work completed
+
+The 776-line Hardware-owned poll preflight lab was split into contract, deterministic C++ harness, and board-case modules. The original function bodies and mutation scenarios were preserved; the original script remains a stable entry point. The focused workflow now watches the extracted modules. No production sketch or shared API changed.
+
+## Exact evidence
+
+- [Focused exact-source run #45879218178](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45879218178), job `140113978484`, PASS at `e21f5e70695f3fdd6ee349e385fda69210034826`.
+- Both boards: 3500 ms modeled wait, 80 pulse ticks, zero samples during wait, zero accepted pulses, four relay/LED polarity combinations; 8/8 board/polarity scenarios and 14/14 injected regressions rejected.
+- Failed refactor attempts are retained: [#45878977604](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45878977604) (missing closing brace) and [#45879096653](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45879096653) (missing poll-matcher import). Both were corrected before `e21f5e70695f3fdd6ee349e385fda69210034826`.
+- Full PR [#45879218268](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45879218268) and push [#45879211901](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45879211901) failed the handover freshness gate because the canonical docs predated the source/test commit. This update is the required post-source sync; exact docs-head Full rerun remains pending.
+
+## Blockers and limitations
+
+PHX-QA owns the `config_revision` and active `clearPending` assertion mismatch; PHX-CORE owns the authenticated register/poll and receipt/disposition contract; PHX-MASTER owns global assignment and branch-pin reconciliation. Cleanup #266 remains OPEN / 0-of-7. #239/#254/#283/#353 were revalidated and left untouched.
+
+Host behavior is SIMULATED / CI VERIFIED only. Physical GPIO/relay, real coin acceptor, electrical recovery, LittleFS power-loss, 150 power cuts and 30-device/24-hour soak are NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO. Private Drive registry v11 was not available through the current connector surface.
+
+**NEXT EXACT ACTION:** verify the new docs-head Full workflow; if it reaches the inherited QA assertion, request QA reconciliation and the CORE authenticated contract. Keep coin/relay admission denied.
+
+
 # CURRENT STATE — 2026-11-27 UTC17 — focused and target builds verified; integrated validation blocked
 
 **Role:** PHX-HARDWARE · **Issue:** [#177](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/177) · **Draft PR:** [#354](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/354)  
