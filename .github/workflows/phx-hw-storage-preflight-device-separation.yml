@@ -1,0 +1,45 @@
+name: PHX-HARDWARE storage preflight device separation
+on:
+  push:
+    branches:
+      - phoenix/hardware-storage-preflight-device-separation-20261126-utc23
+    paths:
+      - 'experiment/openwrt/BlazePwifi/tests/v060_lab_storage_preflight.sh'
+      - 'experiment/openwrt/BlazePwifi/tools/v060_lab_mountinfo_guard.awk'
+      - '.github/workflows/phx-hw-storage-preflight-device-separation.yml'
+      - 'experiment/openwrt/BlazePwifi/docs/handover/2026-11-27-hw-storage-preflight-device-separation-utc23.md'
+  pull_request:
+    paths:
+      - 'experiment/openwrt/BlazePwifi/tests/v060_lab_storage_preflight.sh'
+      - 'experiment/openwrt/BlazePwifi/tools/v060_lab_mountinfo_guard.awk'
+      - '.github/workflows/phx-hw-storage-preflight-device-separation.yml'
+      - 'experiment/openwrt/BlazePwifi/docs/handover/2026-11-27-hw-storage-preflight-device-separation-utc23.md'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: phx-hw-storage-preflight-device-separation-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  exact-source:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Verify exact checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected="${{ github.event.pull_request.head.sha || github.sha }}"
+          actual="$(git rev-parse HEAD)"
+          printf 'EXPECTED_SHA=%s\nACTUAL_SHA=%s\n' "$expected" "$actual"
+          test "$actual" = "$expected"
+      - name: Run synthetic read-only mountinfo safety regression
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_lab_storage_preflight.sh
+      - name: State the evidence boundary
+        run: |
+          printf '%s\n' 'SIMULATED_ONLY=1'
+          printf '%s\n' 'PHYSICAL_POWER_CUT_VERIFIED=0'
+          printf '%s\n' 'CUSTOMER_INSTALL_AUTHORIZED=0'

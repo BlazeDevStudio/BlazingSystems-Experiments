@@ -13,6 +13,10 @@ WANT=/tmp/blaze-v2-native-test01
 SCRATCH=/mnt/blaze-v2-lab-media-test01
 SOURCE=/dev/sdb1
 cat > "$TEMP/good" <<'MOUNTINFO'
+1 0 8:1 / / rw,relatime - ext4 /dev/sda1 rw
+2 1 8:2 / /overlay rw,relatime - ext4 /dev/sda2 rw
+3 1 31:0 / /rom ro,relatime - squashfs /dev/mtdblock0 ro
+4 1 8:3 / /boot rw,relatime - vfat /dev/sda3 rw
 20 1 8:17 / /mnt/blaze-v2-lab-media-test01 rw,relatime - ext4 /dev/sdb1 rw
 21 1 8:17 /fixture /tmp/blaze-v2-native-test01 rw,relatime - ext4 /dev/sdb1 rw
 MOUNTINFO
@@ -36,6 +40,18 @@ check_bad() {
   }
 }
 check_ok "$TEMP/good" 'explicit persistent scratch bind'
+sed 's/8:17/8:1/g' "$TEMP/good" > "$TEMP/bad"
+check_bad "$TEMP/bad" 'scratch reuses root filesystem block device'
+sed 's/8:17/8:2/g' "$TEMP/good" > "$TEMP/bad"
+check_bad "$TEMP/bad" 'scratch reuses /overlay block device'
+sed 's/8:17/31:0/g' "$TEMP/good" > "$TEMP/bad"
+check_bad "$TEMP/bad" 'scratch reuses /rom block device'
+sed 's/8:17/8:3/g' "$TEMP/good" > "$TEMP/bad"
+check_bad "$TEMP/bad" 'scratch reuses /boot block device'
+awk '$5 != "/"' "$TEMP/good" > "$TEMP/bad"
+check_bad "$TEMP/bad" 'missing root mount identity'
+sed '1s/ - ext4 / - overlay /' "$TEMP/good" | awk '$5 != "/overlay"' > "$TEMP/bad"
+check_bad "$TEMP/bad" 'overlay root without separately identified upper storage'
 # All negative cases must fail CLOSED. Inputs are plain-text synthetic mount
 # tables and have no actual mount privileges or storage effects.
 sed 's/ - ext4 / - tmpfs /g' "$TEMP/good" > "$TEMP/bad"
@@ -52,7 +68,7 @@ sed 's# /mnt/blaze-v2-lab-media-test01 # /overlay #g' "$TEMP/good" > "$TEMP/bad"
 check_bad "$TEMP/bad" 'missing approved scratch root'
 sed 's# /mnt/blaze-v2-lab-media-test01 # / #g' "$TEMP/good" > "$TEMP/bad"
 check_bad "$TEMP/bad" 'customer filesystem root'
-sed '2s/rw,relatime/ro,relatime/' "$TEMP/good" > "$TEMP/bad"
+sed '/\/tmp\/blaze-v2-native-test01/s/rw,relatime/ro,relatime/' "$TEMP/good" > "$TEMP/bad"
 check_bad "$TEMP/bad" 'read-only target mount'
 sed 's# /fixture /tmp/blaze-v2-native-test01 # /fixture /tmp/blaze-v2-native-OTHER #g' "$TEMP/good" > "$TEMP/bad"
 check_bad "$TEMP/bad" 'unmounted generic tmp path'
@@ -72,5 +88,5 @@ if sh "$WRAP" /etc /dev/sdb1 "$SCRATCH" > "$TEMP/out" 2>"$TEMP/err"; then
   echo 'wrapper accepted /etc as paid scratch fixture' >&2; exit 1
 fi
 [ ! -s "$TEMP/out" ] || { echo 'unsafe wrapper emitted success' >&2; exit 1; }
-echo 'STORCHK-0674 PASS: mountinfo parser rejects tmpfs/system/root/overlay/loop/ambiguous/wrong-device/restricted path; no mounts or paid writes'
+echo 'STORCHK-0674 PASS: mountinfo parser rejects root/overlay/rom/boot device reuse plus tmpfs/system/loop/ambiguous/wrong-device/restricted path; no mounts or paid writes'
 echo 'LAB ONLY: software preflight is NOT physical power-loss durability'
