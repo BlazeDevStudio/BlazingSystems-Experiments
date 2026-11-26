@@ -1,3 +1,31 @@
+## PHX-MASTER UTC03 — live role/CI refresh — 2026-11-26T03:57:22Z
+
+Master-only reconciliation. CORE, RENTAL, PISONET, HARDWARE, QA and RELEASE retain their source-branch ownership. No subsystem source or COE destination branch was changed.
+
+| Owner / PR | Exact current head | Exact-head evidence / disposition |
+|---|---|---|
+| CORE #252 | c82705f2de865c89ab733b10efa84f26f56a5cc4 | Scoped BlazePwifi build #42698139210 PASS. This is not financial acceptance; separate CORE owner remains authoritative. |
+| RENTAL #328 | 10fc200b6dbf470a95e679d3acc58aff4ab2a67f | API21/23 smoke #45622918364, auth/installer instrumentation #45622918551 and APK identity #45622918340 PASS; shared build #45622918468 FAIL. |
+| PISONET #255 | d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | Synthetic Windows #42462978704 PASS; native COM hardware was not invoked. |
+| HARDWARE #283 | 4dd0b01bf04cf80aec6d4dd6fc93b2fdc633da30 | Current parent reference for #340; remains separate and owner-controlled. |
+| HARDWARE #340 | final docs/PR f70f6af78c64ef86ba0f631faeb02b6cb6eb2725; source/test d1380acf80c0b631c5814d746dca36b2fad7a986 | 52 ahead / 0 behind current #283. ESP32 core 4.0.0 actual sketch compile #45747192648 PASS; final docs-head Full #45747758154 PASS (26 successful jobs / 4 intentional production import/sign/publication skips). Same sketch blob and reported CLI/core produced different binary hashes across two core-4 runs; dedicated core-4 artifacts were not retained. RELEASE reproducibility review remains open. |
+| HARDWARE #348 | 93afd4830b2728d5976e21951610943e1ec96c85 | Full #45731176586 FAIL: ESP32 core 4.0.0 cannot find mbedtls/sha256.h. #340 provider evidence is not a port to this branch. |
+| HARDWARE #349 | 1a2ecf5fa8c8c20a0095ac898c1bff254280ad27 | Full #45724609215 FAIL: Missing poll signature check. |
+| HARDWARE #352 | 2fa3b7db1161ddb531ed94bcf60617947fa1a7bd | Full #45745420916 FAIL: validation job reports Missing poll signature check. |
+| HARDWARE #353 | final docs/PR 832692020a428ff4fe03a197a1bfce65b3f9316c; source/test ed2f77d5924172881f27222cc26649f8f85abe6c | 27 ahead / 0 behind parent #352. Quarantine #45751177827 and Relay #45751177670 PASS; Full #45751177730 FAILS at Missing poll signature check. All 14 target/platform jobs and Android pass; downstream simulation/update/sign/publication/candidate jobs are skipped. New work is source-extracted ISR/runtime-pin lab coverage, not production sketch changes. |
+| QA #290 | 5c29d15994cee1279058f1eca12f2a3180704292 | Synthetic Windows #43633486963 PASS; native COM not invoked. |
+| QA #292 | 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | No PR-triggered runs. |
+| RELEASE #242 | a7e27fe50e13326a7258bbaed1388594141ddda3 | No exact-head Actions run; PowerShell negative self-test not run. Static assertions only. |
+| RELEASE #291 | 9b928c9eaa72cb26fdcf3f0e50a0ec024f4e3c30 | Child remains based on former #242 head 734b89d9; current #242 head is 9 commits beyond that base. Compare current #242 to #291: 852 ahead / 9 behind. #291 Windows and Full fail at CORE handover freshness; ESP32 compatibility passes. No rebase/retarget by Master. |
+| COE RELEASE #35 | b6ec4ba78dda03a19d3d55d9be26b0a808eb4e26 | Shared #45742049762 fails appliance ULA admission; sandbox #45742051077 fails Bubblewrap availability; case guard #45742049684 PASS. |
+| COE CORE #45 | 9d76a134c1f6512aa40c20ec4d247306a71a8cce | Overlay/Shell #44295049727 and case guard #44295049903 PASS; focused only. |
+| COE INTERCON #49 | aeb8ff11b2f5db9a5f86280ab62ab988245f3919 | Stage 5.1 and case guard PASS; shared ESP32 compile #44646341922 FAIL at missing mbedtls/sha256.h. |
+| COE integration #26 | b382d233ff06c8791b1028bed3c617cc7b670d12 | OPEN / DRAFT / FROZEN; five workflows remain queued with zero jobs. No destination writes. |
+
+Exact refs: Experiments main 6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5; development aad3aade72c1156eecba1fed30907c6d0283b2c5; active v0.6 2fbd2475e9f54878c316fa7cea2f228386b0e859; COE main a6513ab4412b4c014eee2863e45cbe32d06cb243. Ownership manifest remains 11 routes / DRAFT_REVIEW_ONLY / PHX-MASTER target null. Cleanup #266 OPEN / 0-of-7. Private Drive registry v11 and newer corrections NOT_RECOVERED. **PRODUCTION NO-GO.**
+
+---
+
 ## PHX-MASTER UTC02 — live role/CI refresh — 2026-11-26T02:39:42Z
 
 Master-only update. CORE, RENTAL, PISONET, HARDWARE, QA and RELEASE source ownership remains with their assigned owners. No subsystem source branch was changed.
