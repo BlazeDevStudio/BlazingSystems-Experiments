@@ -13,3 +13,68 @@
 - Full [44683292995](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44683292995), validation job 136112096462: FAILED mandatory handover freshness because canonical handovers predated the narrow handover. ESP8266 passed; other jobs were running at last read. No Full PASS.
 - Canonical handovers updated after narrow handover; new exact-head Full run must confirm freshness.
 - LAB ONLY / HARDWARE NOT TESTED / PRODUCTION NO-GO.
+
+
+## 2026-11-24 UTC07 — #348 zero-length controller-auth span coverage
+
+- **ID / scope:** PHX-HARDWARE / #172 / #177 / #266 / #254 / #348; non-actuating ESP32 ControllerAuthV1Lab native test only.
+- **Status:** committed; focused CI validated; Full build pending at checkpoint. Hardware NOT TESTED; production NO-GO.
+- **Branch / parent:** `phoenix/hw-controller-auth-nonempty-spans-20261123-utc15`, stacked on #254 at `84c442a46ee2ee48dcbe68b71ff0f54edbc09ba9`, itself stacked on #239 at `d83b715b116185107737fef721c2eece8feebf39`.
+- **Source/test commit:** `4ad6d202da4918ae244d5cb6f44176bf93e6fa3c`; file `experiment/openwrt/BlazePwifi/tests/v060_controller_auth_header_native.cpp`.
+- **Change:** add explicit rejection assertions for zero-length hex digest, zero-length policy digest and zero-length HMAC signature spans. Actual helper/header remains the subject under test; no production sketch or shared API changed.
+- **Exact CI:** focused [#45350904157](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45350904157), job `138296790332`, SUCCESS at exact source/test SHA; ASan/UBSan, `-Wall -Wextra -Werror`, Phase-A deny guard PASS. Full [#45350904159](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45350904159) was IN_PROGRESS; no Full result claimed.
+- **Known blocker:** prior Full [#45207909463](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45207909463) failed at inherited ESP32 core 4.0.0 missing `mbedtls/sha256.h` in `BlazePwifiVendo32.ino:6`, plus stale handover gate. Mbed TLS 4/PSA provider decision remains a Master/Release coordination dependency; no cross-stack port performed.
+- **Safety:** Phase A coin/relay admission remains DENY. No key, signer, witness, finance, migration, physical device, flash, reset, release or deployment action.
+- **NEXT ACTION:** reconcile terminal Full run #45350904159, then request Master/Release decision on the ESP32 provider path; retain exact source/head evidence and independent QA review.
+
+
+## 2026-11-24 UTC07 — #348 null-pointer span failure injection
+
+- **ID / scope:** PHX-HARDWARE / #172 / #177 / #266 / #254 / #348; non-actuating ControllerAuthV1Lab native test.
+- **Status:** source/test and all three canonical handovers committed together; exact-head focused/Full CI pending. Hardware NOT TESTED; production NO-GO.
+- **Branch / stack:** `phoenix/hw-controller-auth-nonempty-spans-20261123-utc15`, PR #348 → #254 at `84c442a46ee2ee48dcbe68b71ff0f54edbc09ba9` → #239 at `d83b715b116185107737fef721c2eece8feebf39`.
+- **Source/test:** this checkpoint commit adds null-pointer rejection cases for raw policy, digest, canonical message and signature spans, including null/zero-length hex input. Prior zero-length coverage is in `4ad6d202da4918ae244d5cb6f44176bf93e6fa3c`.
+- **Prior exact CI:** focused [#45350904157](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45350904157), job `138296790332`, SUCCESS at `4ad6d202da4918ae244d5cb6f44176bf93e6fa3c`; ASan/UBSan and Phase-A deny guard PASS. Full [#45350904159](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45350904159) failed the stale event SHA's handover gate: `CHANGE_LEDGER has no dated entries`; no Full PASS.
+- **Handover gate correction:** added dated UTC07 entry and synchronized PROJECT_HANDOVER, CURRENT_STATE and CHANGE_LEDGER in this same source+docs commit; new Full exact-head run must independently verify.
+- **Known blocker:** inherited ESP32 Arduino core 4.0.0 build cannot find `mbedtls/sha256.h` in the application sketch. Provider/PSA decision remains Master/Release coordination; no cross-stack port.
+- **Safety:** Phase A coin/relay admission DENY. No application behavior, CORE contract, key, signer, witness, finance, migration, flash, reset, release or deployment changed.
+- **NEXT ACTION:** verify new exact-head focused and Full runs; record terminal outcomes; request independent QA and Master/Release review.
+
+
+## 2026-11-24 UTC07 — terminal exact-head CI for #348
+
+- **Branch / final source+handover head:** `phoenix/hw-controller-auth-nonempty-spans-20261123-utc15` / `b1639bde37de704708d87a085ed0d14208594e59`; PR #348 OPEN/DRAFT/UNMERGED, base #254 `84c442a46ee2ee48dcbe68b71ff0f54edbc09ba9`, parent #239 `d83b715b116185107737fef721c2eece8feebf39`.
+- **Source/test:** zero-length digest-hex, policy-digest and HMAC-signature assertions; null raw-policy, digest, canonical-message and signature pointer rejection. Canonical handovers were committed in the same source+docs commit to preserve freshness.
+- **Focused exact-head:** [#45351486951](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45351486951), job `138298749761`: SUCCESS at `b1639bde37de704708d87a085ed0d14208594e59`; ASan/UBSan, `-Wall -Wextra -Werror`, 5/5 synthetic checks, Phase-A deny guard PASS.
+- **Full exact-head:** [#45351479477](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45351479477): overall FAILURE; 23 jobs SUCCESS, 1 FAILURE, 6 SKIPPED. Validation job `138298862610` SUCCESS, including mandatory handover freshness, gate regression, controller protocol parity and financial/accounting/replay/witness host tests. ESP8266 `138298862746`, Android `138298862647`, and 11 other OpenWrt target jobs SUCCESS. ESP32 `138298862598` FAILURE: `BlazePwifiVendo32.ino:6` cannot find `mbedtls/sha256.h` on Arduino core 4.0.0. ESP32 simulation and production sign/publish/candidate jobs SKIPPED.
+- **Handover gate history:** previous event SHA `4ad6d202da4918ae244d5cb6f44176bf93e6fa3c` failed because CHANGE_LEDGER lacked a dated heading; this combined commit added the dated record and synchronized all three canonical handovers. New Full exact-head gate PASS. Prior failure is preserved as history, not transferred to this head.
+- **Blocker / ownership:** inherited ESP32 Mbed TLS 4 provider compatibility requires PHX-MASTER/PHX-RELEASE decision; no provider port or cross-stack cherry-pick performed. CORE response contract, coin/relay admission, finance, signer, witness and migration unchanged.
+- **Safety:** Phase-A coin/relay admission DENY. No physical hardware, live money, flash, reset, migration, signing, release or deployment.
+- **NEXT ACTION:** Master/Release decide the approved ESP32 provider/stack path; QA reviews span tests; Hardware reruns Full after approval.
+## 2026-11-25 UTC22 — #348 fixed-span comparator null/empty guard
+
+- **Role / task:** PHX-HARDWARE / #172 / #266 / #254 / #348; non-actuating ESP32 ControllerAuthV1Lab helper only.
+- **Branch / stack:** `phoenix/hw-controller-auth-nonempty-spans-20261123-utc15`; PR #348 → #254 at `84c442a46ee2ee48dcbe68b71ff0f54edbc09ba9` → Phase-A deny #239 at `d83b715b116185107737fef721c2eece8feebf39`.
+- **Test commit:** `2147c9ae46ae862cb355d2da3b4df1787180689e`; **source/test commit:** `659b1e646ba6d3efdbe6e03df4ab4f170a89f0e1`.
+- **Source delta:** `equal_fixed()` rejects null pointers and `n == 0` before reading; the nonempty XOR-accumulation loop remains fixed-length. Test adds null-left/right/both-null, empty, equal and unequal comparisons.
+- **Test-first evidence:** local C++17 ASan/UBSan micro-harness copied the pre-change helper and reproduced a null-read SEGV (RED); the corrected helper passed all six boundary cases (GREEN). This local micro-harness is supplementary; the full header test is covered by GitHub Actions below.
+- **Focused exact-head CI:** [#45715852392](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45715852392), job `139561583988`, SUCCESS at pre-sync docs tree `5c6f8be5c8be6c88cfca5156b7dff3a3ebdad0cf`. Actual native header compiled with Ubuntu Mbed TLS 2.28.8, C++17, `-Wall -Wextra -Werror`, ASan/UBSan; new null/empty assertions, existing 5/5 synthetic auth cases and Phase-A deny guard passed.
+- **Full:** [#45715852140](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45715852140), validation job `139562147363`, failed mandatory handover freshness because canonical handovers predated source/test commits. Target jobs were still running; no Full aggregate result claimed. The canonical records are now synchronized in this commit; rerun Full at the new exact head.
+- **Status:** focused helper CI VERIFIED / SIMULATED; hardware NOT TESTED; production NO-GO. No sketch, CORE contract, key, GPIO, relay, coin, finance, signer/witness, migration, release or COE destination changed. Phase-A deny remains.
+- **NEXT:** verify new exact-head Full gate and builds; request independent QA review; await Master/Release Mbed TLS 4 provider and stack disposition.
+<!-- PHX-HW-20261125-UTC22-EQUAL-FIXED-NULL-EMPTY:END -->
+
+
+
+
+## 2026-11-26 UTC00 — #348 exact-head terminal CI reconciliation
+
+- **Role / task:** PHX-HARDWARE / #172 / #266 / #254 / #348. This is a documentation/evidence synchronization only; no new firmware source change in this checkpoint.
+- **Branch / stack:** `phoenix/hw-controller-auth-nonempty-spans-20261123-utc15`; parent PR #254 exact head `84c442a46ee2ee48dcbe68b71ff0f54edbc09ba9`; #254 remains stacked on Phase-A deny PR #239 at `d83b715b116185107737fef721c2eece8feebf39`. PR #348 remains OPEN / DRAFT / UNMERGED.
+- **Source/test provenance:** native header source/test commit `659b1e646ba6d3efdbe68e03df4ab4f170a89f0e1`; test commit `2147c9ae46ae862cb355d2da3b4df1787180689e`. The fixed-span comparator rejects null pointers and zero-length spans before dereference; the nonempty comparison retains its fixed-length XOR-accumulation pass.
+- **Focused exact-head CI:** [run #45716221522](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45716221522), job `139562835485`, **SUCCESS** at exact docs/PR head `ed17201687d9308de0e0bc4dd10d6da33d4a4733`. The actual native header test ran with C++17, Mbed TLS 2.28.8, `-Wall -Wextra -Werror`, ASan/UBSan; null/empty span, digest rendering, empty-policy/canonical denial, null parser-span and 5/5 synthetic authentication checks passed. Phase-A coin/relay admission guard remained DENY.
+- **Full exact-head CI:** [run #45716221609](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45716221609), exact head `ed17201687d9308de0e0bc4dd10d6da33d4a4733`, terminal **FAILURE** (23 jobs success / 1 failure / 6 skipped). Validation job `139563017167` **SUCCESS**; ESP32 job `139563017235` **FAILURE** because Arduino ESP32 core `4.0.0` cannot find `mbedtls/sha256.h` included by `BlazePwifiVendo32.ino:6`. The other 12 firmware target jobs and Android passed; seven v0.4 simulations and update-bundle job passed. Production import, prerelease, ESP simulation, sign handoff, publication and candidate-gate jobs were skipped. This is not a Full pass.
+- **Interpretation / boundaries:** focused helper is **CI VERIFIED / SIMULATED**, not application authentication or hardware acceptance. The Mbed TLS 4 application-provider failure is inherited; no provider port, core pin, response-contract change, sketch change, key provisioning, GPIO/relay behavior, finance, signer/witness or migration was changed. Phase-A remains DENY.
+- **Physical status:** coin pulse/electrical recovery, LittleFS/EEPROM power-loss, 150 power cuts and 30-device/24-hour soak remain **NOT TESTED**. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+- **Next exact action:** PHX-CORE / PHX-RELEASE / PHX-MASTER decide the approved ESP32 core-4.0.0 Mbed TLS 4/PSA provider path; PHX-QA independently reviews the helper boundary and negative cases; PHX-HARDWARE reruns Full only after the approved provider/contract change. No merge, rebase, retarget, flash, reset, signing, migration, release or deployment.
+

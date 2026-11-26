@@ -30,10 +30,16 @@ inline bool hex64(const char *p, size_t length) {
   }
   return true;
 }
-inline bool equal_fixed(const unsigned char *a,const unsigned char *b,size_t n) {
-  unsigned char diff=0;
-  for(size_t i=0;i<n;i++) diff|=(unsigned char)(a[i]^b[i]);
-  return diff==0;
+inline bool equal_fixed(const unsigned char *a, const unsigned char *b, size_t n) {
+  // An empty span is not a valid digest/signature comparison. Reject invalid
+  // pointers before entering the fixed-length loop so callers fail closed.
+  if (!a || !b || n == 0) return false;
+
+  unsigned char diff = 0;
+  for (size_t i = 0; i < n; ++i) {
+    diff |= static_cast<unsigned char>(a[i] ^ b[i]);
+  }
+  return diff == 0;
 }
 // Deterministic rendering of a 32-byte digest. Shared by SHA256 and HMAC
 // so both checks use one auditable lowercase-hex implementation.
@@ -47,7 +53,7 @@ inline void encode_sha256_hex(const unsigned char digest[32], char out[65]) {
 }
 inline bool matches_policy_digest(const char *raw_policy,size_t len,
                                   const char *digest,size_t digest_len) {
-  if (!raw_policy || !hex64(digest,digest_len)) return false;
+  if (!raw_policy || len == 0 || !hex64(digest,digest_len)) return false;
   unsigned char hash[32]; char hex[65];
   mbedtls_sha256_context ctx; mbedtls_sha256_init(&ctx);
   bool ok=mbedtls_sha256_starts_ret(&ctx,0)==0 &&
@@ -66,7 +72,7 @@ inline bool matches_policy_digest(const char *raw_policy,size_t len,
 inline bool verify_mac(const char *key,size_t key_len,
                        const char *canonical,size_t canonical_len,
                        const char *signature,size_t signature_len) {
-  if(!key || !key_len || !canonical || !hex64(signature,signature_len)) return false;
+  if(!key || !key_len || !canonical || !canonical_len || !hex64(signature,signature_len)) return false;
   unsigned char out[32]; char hex[65];
   const mbedtls_md_info_t *md=mbedtls_md_info_from_type(MBEDTLS_MD_SHA256);
   if(!md || mbedtls_md_hmac(md,reinterpret_cast<const unsigned char*>(key),

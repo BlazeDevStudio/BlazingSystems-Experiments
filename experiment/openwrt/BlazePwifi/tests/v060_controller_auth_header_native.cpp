@@ -21,6 +21,7 @@ int main() {
   char raw_digest[64];
   memset(raw_digest, 'a', sizeof(raw_digest));
   assert(hex64(raw_digest, sizeof(raw_digest)));
+  assert(!hex64(raw_digest, 0));
   assert(!hex64(raw_digest, sizeof(raw_digest) - 1));
   char oversized_digest[65];
   memset(oversized_digest, 'a', sizeof(oversized_digest));
@@ -29,6 +30,20 @@ int main() {
   memset(uppercase_digest, 'A', sizeof(uppercase_digest));
   assert(!hex64(uppercase_digest, sizeof(uppercase_digest)));
   assert(!hex64(nullptr, 64));
+  assert(!hex64(nullptr, 0));
+
+  // The fixed-span comparator is a public header helper: invalid pointers and
+  // empty spans must fail closed before any dereference or equality result.
+  const unsigned char compare_byte = 0x5a;
+  const unsigned char other_compare_byte = 0xa5;
+  assert(!equal_fixed(nullptr, &compare_byte, 1));
+  assert(!equal_fixed(&compare_byte, nullptr, 1));
+  assert(!equal_fixed(nullptr, nullptr, 1));
+  assert(!equal_fixed(nullptr, nullptr, 0));
+  assert(!equal_fixed(&compare_byte, &compare_byte, 0));
+  assert(equal_fixed(&compare_byte, &compare_byte, 1));
+  assert(!equal_fixed(&compare_byte, &other_compare_byte, 1));
+  std::puts("PHX-HW fixed comparator null/empty spans fail closed PASS");
 
   unsigned char sample[32];
   for (size_t i = 0; i < sizeof(sample); ++i) sample[i] = (unsigned char)i;
@@ -48,15 +63,38 @@ int main() {
   for(size_t i=0;i<32;i++) snprintf(hashhex+i*2,3,"%02x",hash[i]);
   hashhex[64]=0;
   assert(matches_policy_digest(policy.data(),policy.size(),hashhex,64));
+  assert(!matches_policy_digest(policy.data(),policy.size(),hashhex,0));
+  assert(!matches_policy_digest(nullptr,policy.size(),hashhex,64));
+  assert(!matches_policy_digest(policy.data(),policy.size(),nullptr,64));
   assert(!matches_policy_digest(policy.data(),policy.size(),hashhex,63));
   assert(!matches_policy_digest((policy+" ").data(),policy.size()+1,hashhex,64));
+  // Empty policy bytes are invalid even when their digest is correct.
+  const char emptySha256[] = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
+  assert(!matches_policy_digest("",0,emptySha256,sizeof(emptySha256)-1));
+  std::puts("PHX-HW empty policy span denied PASS");
 
   const std::string prefix="blazepwifi-controller-response-v1|poll|";
   const std::string suffix=std::string("|7|")+hashhex+"|0||0|DENY";
   const std::string good=prefix+"vendo-01|0011223344556677"+suffix;
   const std::string signature=mac(good);
+  assert(!verify_mac(key,strlen(key),good.data(),good.size(),
+                     signature.data(),0));
+  std::puts("PHX-HW zero-length digest and signature spans denied PASS");
+  // An empty message cannot be a canonical controller response.
+  const std::string emptyCanonical;
+  const std::string emptyCanonicalMac=mac(emptyCanonical);
+  assert(!verify_mac(key,strlen(key),emptyCanonical.data(),emptyCanonical.size(),
+                     emptyCanonicalMac.data(),emptyCanonicalMac.size()));
+  std::puts("PHX-HW empty canonical span denied PASS");
   const std::vector<char> raw_canonical(good.begin(),good.end());
   const std::vector<char> raw_signature(signature.begin(),signature.end());
+  assert(!verify_mac(nullptr,strlen(key),raw_canonical.data(),raw_canonical.size(),
+                     raw_signature.data(),raw_signature.size()));
+  assert(!verify_mac(key,strlen(key),nullptr,good.size(),
+                     raw_signature.data(),raw_signature.size()));
+  assert(!verify_mac(key,strlen(key),raw_canonical.data(),raw_canonical.size(),
+                     nullptr,64));
+  std::puts("PHX-HW null parser-span pointers denied PASS");
   assert(verify_mac(key,strlen(key),raw_canonical.data(),raw_canonical.size(),
                     raw_signature.data(),raw_signature.size()));
   assert(!may_admit_coin_even_if_mac_valid());
