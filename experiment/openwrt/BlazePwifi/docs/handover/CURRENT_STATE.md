@@ -1,3 +1,46 @@
+## CURRENT STATE — 2026-11-27 UTC19 — startup output latch before LittleFS recovery (source/test CI verified)
+
+**Role:** PHX-HARDWARE · **Issues:** #177 / #266 · **PR:** [#355](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/355), OPEN / DRAFT / UNMERGED, stacked on #354  
+**Repository:** `BlazeDevStudio/BlazingSystems-Experiments` · **Branch:** `phoenix/hw-poll-preflight-lab-modules-20261127-utc18`  
+**Parent #354 base:** `fc842342596786e072630179acfbbc4feeb2ba02`  
+**Exact source/test HEAD:** `6b4f7a873dd72663c00c4e08f23131d58e662584`  
+**Firmware correction:** `6bb8eafe03e5a2548524b7c693a37a95638c140e` · **Mbed test-fixture correction:** `6b4f7a873dd72663c00c4e08f23131d58e662584`.
+
+### Verified source change
+
+Both sketches now load persisted pin/polarity settings, configure the corresponding runtime pins with the existing OFF preload, and call `denyRemoteControl()` before any LittleFS mount or pending-journal recovery:
+- ESP8266: `initPendingStore()` moved after output configuration and deny.
+- ESP32: `LittleFS.begin(false)` and `loadPending()` moved after output configuration and deny.
+
+No pin mapping, polarity, journal format, response contract, shared API, coin admission or finance behavior changed. The branch remains deny-only. EEPROM/Preferences configuration reads still precede pin setup because persisted pins/polarity select the OFF level; this change does not prove electrical state during that read. Hardware bias and physical boot behavior remain unverified.
+
+The poll-preflight lab remains split into contract, harness and cases modules behind its stable entrypoint. The ESP32 Mbed TLS lab's whitespace-sensitive setup mutation was corrected and now also asserts LittleFS mount/recovery occurs after output deny.
+
+### Exact test evidence
+
+- **Expected RED before firmware correction:** [#45886210859](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45886210859), job `140137430702`, test-only SHA `39aa77e56806df3c1febae0f0a097b0f661ca2c6`: failed on both boards because LittleFS startup preceded configured output pins and deny.
+- **Focused GREEN:** [#45886748490](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45886748490), job `140139222908`, exact source/test SHA `6b4f7a873dd72663c00c4e08f23131d58e662584`: PASS. ESP8266 and ESP32 both report `STARTUP_OUTPUT_BEFORE_LITTLEFS_PASS` and reject the injected early-LittleFS mutation. Register startup 8/8 mutation rejection, synchronous poll wait / pulse-loss model, remote-config deny, request-auth and output-polarity cases also pass.
+- **ESP32 Mbed TLS matrix:** [#45886748407](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45886748407): source-contract job `140139828100` PASS; ESP32 core 3.3.13 job `140139827987` PASS; ESP32 core 4.0.0 job `140139827660` PASS. Clean target builds and source mutation tests only; not physical device acceptance.
+- **Full PR build at source/test SHA:** [#45886748466](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45886748466): CI-0701 job `140140022161` PASS; ESP8266 `140140135665` PASS; ESP32 `140140135695` PASS; all 13 OpenWrt/target build jobs PASS. Android job `140140135671` was still running at last check. Validation job `140140135720` FAIL: `handover_gate.sh` requires a dated `## 2026-` heading in `CHANGE_LEDGER.md`; this is a documentation gate failure, not a firmware compile failure. Production import, update bundle, simulations, candidate gate, signing and publication were skipped.
+- **Native synthetic gate:** [#45886748463](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45886748463) FAIL at QA-owned `tests/v060_vendo_sequence_contract.py:20` because it expects active `clearPending(true/false)` callsites. The deny-only candidate intentionally has no active pending disposition callsite until CORE approves the authenticated receipt/disposition contract. Hardware did not modify QA source or add an unsafe clear.
+- **Stale handover run:** [#45886742357](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45886742357) also failed the same dated-ledger gate; its target builds completed successfully, but it is not an overall Full pass.
+
+The missing dated heading is corrected in this handover update. A fresh Full run is required against the updated docs HEAD before claiming the Full handover gate passes.
+
+### Ownership / release boundary
+
+PHX-HARDWARE owns only the two ESP sketches and its lab/handover files. PHX-QA owns controller/native assertions; PHX-CORE owns authenticated register/poll and pending receipt/disposition contracts; PHX-MASTER owns global assignments, stack reconciliation and release authority. Current Master HEAD `ed6bb786c08d360a611e0e6c5c0505fa90d9b477` still does not list PR #355 in `ROLE_ASSIGNMENTS.md` / `INTEGRATION_MATRIX.md`; Master review requested on #172.
+
+#239 remains Phase-A deny; #254 remains OPEN / DRAFT at `84c442a46ee2ee48dcbe68b71ff0f54edbc09ba9`; #283 remains OPEN / DRAFT at `4dd0b01bf04cf80aec6d4dd6fc93b2fdc633da30`. The supplied #254 cleanup SHA `3692ddf889470da8a0029e16bf0ac2f37f1a9d0` does not resolve in the current repository (GitHub 422). Current #254 focused run [#44683629378](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44683629378) PASS; Full [#44683629491](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44683629491) FAIL: ESP32 core 4.0.0 lacks `mbedtls/sha256.h`, and the inherited handover gate reports no dated CHANGE_LEDGER entries.
+
+#283 audit revalidation: `quarantinePending()` is definition-only in both sketches; failed append returns before `clearPending()`, so the original unconditional-clear pattern is absent at that head, but the lifecycle is not wired and physical durability is not accepted. Main CGI producer `2e3a1430d08cc6606429a042df3b5848f53c7267` still emits no `response_sig` for register/poll. Keep deny-only; do not invent a signature or positive admission.
+
+#266 remains OPEN / 0-of-7; #31/#32 financial, #34 physical safety and #43 witness remain open. COE main remains `a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE #26 remains frozen at `b382d233ff06c8791b1028bed3c617cc7b670d12`. The private Drive registry v11 is not available through the current connector surface; the accessible Nov 9 checkpoint only records its prior name/Drive ID and is not a live registry substitute.
+
+### Production acceptance status
+
+Source-extracted host tests = **SIMULATED**; focused Actions and Mbed target matrix = **CI VERIFIED**. Physical GPIO/relay polarity, real coin acceptor, electrical pulse/recovery, LittleFS power-loss, 150 controlled power cuts and 30-device/24-hour soak = **NOT TESTED**. Protected anti-rollback signer/witness, durable accounting/replay, v1→v2 migration and independent QA/release signoff = **NOT ACCEPTED**. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+
 ## CURRENT STATE — 2026-11-27 UTC19 — startup output deny moved ahead of LittleFS recovery; exact-head CI pending
 
 **Role:** PHX-HARDWARE · **Task:** hardware #177 / cleanup-first #266 / DRAFT PR #355 (stacked on #354)  
