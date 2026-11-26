@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import shutil
 import sys
 import tempfile
 import unittest
@@ -97,7 +98,7 @@ def synthetic_fixture(root: Path):
 
     lock = {
         "schema": "phx/arduino-esp32-toolchain-lock/v1",
-        "index": {
+        "source": {
             "url": INDEX_URL,
             "git_blob_sha1": verifier.git_blob_sha1(esp32_bytes),
         },
@@ -161,8 +162,8 @@ class Esp32ToolchainLockTests(unittest.TestCase):
     def test_repository_lock_pins_both_supported_cores_and_archives(self):
         lock = json.loads(LOCK_PATH.read_text(encoding="utf-8"))
         self.assertEqual(lock["schema"], "phx/arduino-esp32-toolchain-lock/v1")
-        self.assertEqual(lock["index"]["url"], INDEX_URL)
-        self.assertRegex(lock["index"]["git_blob_sha1"], r"^[0-9a-f]{40}$")
+        self.assertEqual(lock["source"]["url"], INDEX_URL)
+        self.assertRegex(lock["source"]["git_blob_sha1"], r"^[0-9a-f]{40}$")
         self.assertEqual(set(lock["cores"]), {"3.3.13", "4.0.0"})
         self.assertEqual(lock["arduino_cli"]["version"], "1.6.0")
         for version, core in lock["cores"].items():
@@ -201,7 +202,7 @@ class Esp32ToolchainLockTests(unittest.TestCase):
         with tempfile.TemporaryDirectory(prefix="phx-esp32-lock-missing-") as temporary:
             root = Path(temporary)
             lock, packages, esp32_index, arduino_index = synthetic_fixture(root)
-            (packages / "esp32/tools/esp-x32/2512").rmdir()
+            shutil.rmtree(packages / "esp32/tools/esp-x32/2512")
             with self.assertRaisesRegex(ValueError, "esp-x32"):
                 verifier.verify_toolchain_lock(
                     lock, "4.0.0", packages, esp32_index, arduino_index,
