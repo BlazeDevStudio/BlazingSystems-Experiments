@@ -18,6 +18,9 @@ on:
       - ".github/scripts/verify_esp32_reproducible_build.py"
       - ".github/scripts/test_verify_esp32_reproducible_build.py"
       - ".github/scripts/test_release_artifact_action_pins.py"
+      - ".github/scripts/verify_esp32_toolchain_lock.py"
+      - ".github/scripts/test_esp32_toolchain_lock.py"
+      - ".github/locks/esp32-core-toolchains.json"
       - ".github/scripts/write_build_provenance.py"
       - ".github/scripts/test_build_provenance.py"
       - ".github/scripts/verify_arduino_cli_archive.py"
@@ -85,6 +88,8 @@ jobs:
         run: python3 .github/scripts/test_verify_esp32_reproducible_build.py
       - name: Test release workflow concurrency and publisher isolation
         run: python3 .github/scripts/test_release_workflow_concurrency.py
+      - name: Test pinned ESP32 toolchain lock and artifact provenance
+        run: python3 .github/scripts/test_esp32_toolchain_lock.py
       - name: Verify immutable release action pins
         run: python3 .github/scripts/test_release_artifact_action_pins.py
 
