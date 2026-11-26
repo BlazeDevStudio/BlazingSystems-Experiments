@@ -160,7 +160,7 @@ def poll_guard_locations(source: str):
         raise AssertionError(
             "coin input sampling moved before/inside the blocking poll sequence"
         )
-    return loop, first_pre_guard, poll_matches[0].start(), last_post_guard
+    return loop, poll_block, first_pre_guard, poll_matches[0].start(), last_post_guard
 
 def make_harness(apply_fn: str, deny_fn: str) -> str:
     return r"""
@@ -230,6 +230,183 @@ int main() {
 """
 
 
+
+def make_blocking_poll_harness(apply_fn: str, deny_fn: str, poll_block: str) -> str:
+    """Execute the actual extracted poll block with a deterministic host HTTP wait."""
+    return r"""
+#include <iostream>
+#include <string>
+using String = std::string;
+constexpr int HIGH = 1;
+constexpr int LOW = 0;
+
+bool controllerEnabled = true;
+bool coinEnabled = true;
+bool relayEnabled = true;
+bool ledEnabled = true;
+bool insertMode = true;
+bool fsReady = true;
+bool pendingReady = false;
+bool runRelayActiveHigh = true;
+bool runLedActiveHigh = true;
+int runRelayPin = 4;
+int runLedPin = 5;
+int runCoinPin = 6;
+bool relayLevelHigh = false;
+bool ledLevelHigh = false;
+std::string activeTarget = "target-12345678";
+int pendingPulses = 3;
+std::string pendingNonce = "pending-nonce";
+std::string pendingTarget = "pending-target";
+
+unsigned long nowMs = 2000;
+unsigned long lastPoll = 0;
+int pollCalls = 0;
+bool invalidPollAction = false;
+bool inPollWait = false;
+bool coinLineActive = false;
+int coinSamplesDuringWait = 0;
+int coinSamplesAfterWait = 0;
+int pulseSamples = 0;
+int coinPulseTicks = 0;
+int acceptedPulseTicks = 0;
+bool unsafeRelayDuringWait = false;
+bool unsafeAdmissionDuringWait = false;
+bool pendingEvidenceChangedDuringWait = false;
+
+void writeLogical(int pin, bool on, bool activeHigh) {
+    const bool levelHigh = (on == activeHigh);
+    if (pin == runRelayPin) relayLevelHigh = levelHigh;
+    if (pin == runLedPin) ledLevelHigh = levelHigh;
+}
+
+unsigned long millis() { return nowMs; }
+
+int digitalRead(int pin) {
+    if (pin == runCoinPin) {
+        if (inPollWait) ++coinSamplesDuringWait;
+        else {
+            ++coinSamplesAfterWait;
+            if (coinLineActive) ++pulseSamples;
+        }
+    }
+    return coinLineActive ? LOW : HIGH;
+}
+
+// RED fixture: this stub returns immediately, so the new 3500 ms assertion
+// must fail until the modeled blocking wait and pulse injection are implemented.
+String post(const String &action) {
+    ++pollCalls;
+    if (action != "poll") invalidPollAction = true;
+    return "";
+}
+""" + apply_fn + "\\n" + deny_fn + r"""
+int main() {
+    for (int relayPolarity = 0; relayPolarity < 2; ++relayPolarity) {
+        for (int ledPolarity = 0; ledPolarity < 2; ++ledPolarity) {
+            controllerEnabled = true;
+            coinEnabled = true;
+            relayEnabled = true;
+            ledEnabled = true;
+            insertMode = true;
+            fsReady = true;
+            pendingReady = false;
+            runRelayActiveHigh = (relayPolarity != 0);
+            runLedActiveHigh = (ledPolarity != 0);
+            activeTarget = "target-12345678";
+            pendingPulses = 3;
+            pendingNonce = "pending-nonce";
+            pendingTarget = "pending-target";
+            nowMs = 2000;
+            lastPoll = 0;
+            pollCalls = 0;
+            invalidPollAction = false;
+            inPollWait = false;
+            coinLineActive = false;
+            coinSamplesDuringWait = 0;
+            coinSamplesAfterWait = 0;
+            pulseSamples = 0;
+            coinPulseTicks = 0;
+            acceptedPulseTicks = 0;
+            unsafeRelayDuringWait = false;
+            unsafeAdmissionDuringWait = false;
+            pendingEvidenceChangedDuringWait = false;
+
+            applyOutputs();
+            if (relayLevelHigh != runRelayActiveHigh ||
+                ledLevelHigh != runLedActiveHigh) return 10;
+
+            const unsigned long started = millis();
+""" + poll_block + r"""
+            if (pollCalls != 1 || invalidPollAction) return 13;
+            if (millis() - started != 3500) {
+                std::cerr << "BLOCKING_POLL_WAIT_RED elapsed_ms="
+                          << (millis() - started) << " expected=3500
+";
+                return 14;
+            }
+            if (lastPoll != millis()) return 15;
+            if (coinPulseTicks != 80) return 16;
+            if (coinSamplesDuringWait != 0) return 17;
+            const int rawAfterWait = digitalRead(runCoinPin);
+            if (rawAfterWait != HIGH || coinSamplesAfterWait != 1 ||
+                pulseSamples != 0) return 18;
+            if (acceptedPulseTicks != 0 || unsafeRelayDuringWait ||
+                unsafeAdmissionDuringWait) return 19;
+            if (pendingEvidenceChangedDuringWait || pendingPulses != 3 ||
+                pendingNonce != "pending-nonce" ||
+                pendingTarget != "pending-target") return 20;
+            if (controllerEnabled || coinEnabled || relayEnabled ||
+                ledEnabled || insertMode || !activeTarget.empty()) return 21;
+            if (relayLevelHigh == runRelayActiveHigh ||
+                ledLevelHigh == runLedActiveHigh) return 22;
+        }
+    }
+    std::cout << "BLOCKING_POLL_WAIT_PASS 3500ms pulse_ticks=80 samples_during_wait=0 accepted=0 polarity_combinations=4
+";
+    return 0;
+}
+"""
+
+
+def compile_blocking_poll_and_run(
+    apply_fn: str, deny_fn: str, poll_block: str,
+    expect_success: bool, label: str,
+):
+    with tempfile.TemporaryDirectory(prefix="phx-blocking-poll-") as temp:
+        source = Path(temp) / "blocking_poll.cpp"
+        binary = Path(temp) / "blocking_poll"
+        source.write_text(
+            make_blocking_poll_harness(apply_fn, deny_fn, poll_block),
+            encoding="utf-8",
+        )
+        compile_result = subprocess.run(
+            ["g++", "-std=c++17", "-Wall", "-Wextra", "-Werror",
+             str(source), "-o", str(binary)],
+            text=True, capture_output=True,
+        )
+        if compile_result.returncode != 0:
+            raise AssertionError(
+                f"{label}: C++ harness compile failed:\\n"
+                f"{compile_result.stdout}\\n{compile_result.stderr}"
+            )
+        run_result = subprocess.run([str(binary)], text=True, capture_output=True)
+        if expect_success and run_result.returncode != 0:
+            raise AssertionError(
+                f"{label}: blocking-poll harness failed "
+                f"({run_result.returncode}): {run_result.stdout}{run_result.stderr}"
+            )
+        if not expect_success and run_result.returncode == 0:
+            raise AssertionError(f"{label}: fail-open poll-block mutation survived")
+        if run_result.stdout.strip():
+            print(run_result.stdout.strip())
+        if run_result.stderr.strip():
+            print(run_result.stderr.strip())
+        if not expect_success:
+            print(f"{label}: mutation rejected (exit {run_result.returncode})")
+        return run_result
+
+
 def compile_and_run(apply_fn: str, deny_fn: str, expect_success: bool, label: str):
     with tempfile.TemporaryDirectory(prefix="phx-poll-inhibit-") as temp:
         source = Path(temp) / "poll_inhibit.cpp"
@@ -297,7 +474,7 @@ def verify_board(name: str, path: Path):
         raise AssertionError(f"{name}: clearPending must remain definition-only until authenticated receipt approval")
     if _coin_post_matches(source):
         raise AssertionError(f"{name}: automatic coin POST must remain absent from firmware")
-    loop, pre_guard, poll_at, post_guard = poll_guard_locations(source)
+    loop, poll_block, pre_guard, poll_at, post_guard = poll_guard_locations(source)
     if not (pre_guard < poll_at < post_guard):
         raise AssertionError(f"{name}: invalid poll guard order")
 
@@ -323,6 +500,9 @@ def verify_board(name: str, path: Path):
         raise AssertionError(f"{name}: relay-off GPIO branch is not explicit")
 
     compile_and_run(apply_fn, deny_fn, True, f"{name} safe pre-poll state")
+    compile_blocking_poll_and_run(
+        apply_fn, deny_fn, poll_block, True, f"{name} actual blocking poll wait"
+    )
 
     # Failure injection: the relay OFF path must use relay polarity, not LED polarity.
     # The existing two-case harness gives both outputs the same polarity, so this
