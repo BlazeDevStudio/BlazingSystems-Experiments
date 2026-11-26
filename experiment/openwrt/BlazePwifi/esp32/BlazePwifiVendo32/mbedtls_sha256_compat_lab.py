@@ -42,7 +42,7 @@ def validate_runtime_pin_setup(source: str) -> None:
     old_relay = helper.find("if(runRelayPin!=relayPin)")
     assign = helper.find("runCoinPin=coinPin;")
     input_mode = helper.find("pinMode(runCoinPin,INPUT_PULLUP)")
-    output_off = helper.find("writeLogical(runRelayPin,false,runRelayActiveHigh)")
+    output_off = helper.find("writeLogical(runRelayPin,false,runRelayActiveHigh)", input_mode)
     require(0 <= old_led < assign and 0 <= old_relay < assign < input_mode < output_off,
             "old outputs must be forced OFF before pin reassignment and new output setup")
 
@@ -99,7 +99,7 @@ def validate_mbedtls_provider(source: str) -> None:
             "PSA crypto must initialize successfully before SHA-256 computation")
     print("MBEDTLS_SHA256_PROVIDER_FAIL_CLOSED_PASS")
 
-    valid = mask_non_code(extract_function(source, "bool validSha256Hex(const String &digest)"))
+    valid = extract_function(source, "bool validSha256Hex(const String &digest)")
     for token in (
         "digest.length()!=64",
         "for(size_t i=0;i<64;i++)",
