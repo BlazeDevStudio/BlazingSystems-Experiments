@@ -259,6 +259,7 @@ int pendingPulses = 3;
 std::string pendingNonce = "pending-nonce";
 std::string pendingTarget = "pending-target";
 
+int wifiFailures = 0;
 unsigned long nowMs = 2000;
 unsigned long lastPoll = 0;
 int pollCalls = 0;
@@ -300,7 +301,7 @@ String post(const String &action) {
     if (action != "poll") invalidPollAction = true;
     return "";
 }
-""" + apply_fn + "\\n" + deny_fn + r"""
+""" + apply_fn + chr(10) + deny_fn + r"""
 int main() {
     for (int relayPolarity = 0; relayPolarity < 2; ++relayPolarity) {
         for (int ledPolarity = 0; ledPolarity < 2; ++ledPolarity) {
@@ -341,8 +342,7 @@ int main() {
             if (pollCalls != 1 || invalidPollAction) return 13;
             if (millis() - started != 3500) {
                 std::cerr << "BLOCKING_POLL_WAIT_RED elapsed_ms="
-                          << (millis() - started) << " expected=3500
-";
+                          << (millis() - started) << " expected=3500" << std::endl;
                 return 14;
             }
             if (lastPoll != millis()) return 15;
@@ -362,8 +362,7 @@ int main() {
                 ledLevelHigh == runLedActiveHigh) return 22;
         }
     }
-    std::cout << "BLOCKING_POLL_WAIT_PASS 3500ms pulse_ticks=80 samples_during_wait=0 accepted=0 polarity_combinations=4
-";
+    std::cout << "BLOCKING_POLL_WAIT_PASS 3500ms pulse_ticks=80 samples_during_wait=0 accepted=0 polarity_combinations=4" << std::endl;
     return 0;
 }
 """
