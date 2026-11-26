@@ -1,3 +1,15 @@
+## PHX-HARDWARE UTC23 — STORCHK-0674 Full-integration readback
+
+**Docs head:** 3295381dc3a6f9051ccef40d938130b33ab7afd4 · **PR #356:** OPEN / DRAFT / UNMERGED.
+
+Focused exact-head run 45913088792 job 140225825590 PASS at docs head 3295381. Source/test SHA cd767cdf06ce3984c7e134c7d980b22b73f58844 remains GREEN on push run 45912851366 job 140225058949 and PR run 45912857510 job 140225078166.
+
+Full PR run 45913088776 is IN_PROGRESS. Handover freshness and the first 121 validation steps passed; validation job 140225968163 is at step 122 and not terminal. ESP8266 PASS, Android PASS, thirteen of fourteen target/platform builds PASS. ESP32 job 140225968098 FAILS with missing mbedtls/sha256.h in BlazePwifiVendo32. The PR changes no sketch, so this is inherited from the active v0.6 base and remains a separate Hardware build blocker.
+
+No Full PASS is claimed. The focused guard is CI VERIFIED only in synthetic host scope. No physical media, mount, power, coin, payment or customer operation was used. Physical acceptance remains NOT TESTED; production remains NO-GO.
+
+NEXT EXACT ACTION: inspect terminal Full run 45913088776 and request Master/QA review of #356; do not merge or authorize physical trial.
+
 ## PHX-HARDWARE UTC23 — STORCHK-0674 FINAL FOCUSED-CI CHECKPOINT
 
 **2026-11-26T23:47Z · Issue #34 · DRAFT PR #356 · no merge, flash or power cut.**

@@ -1,3 +1,15 @@
+## PHX-HARDWARE UTC23 — STORCHK-0674 Full-integration readback
+
+**Docs head at readback:** 3295381dc3a6f9051ccef40d938130b33ab7afd4 · **PR #356:** OPEN / DRAFT / UNMERGED.
+
+Focused exact-head PR run 45913088792 job 140225825590 PASS at docs head 3295381. The source/test GREEN SHA remains cd767cdf06ce3984c7e134c7d980b22b73f58844; push run 45912851366 job 140225058949 and PR run 45912857510 job 140225078166 passed.
+
+Full PR run 45913088776 is IN_PROGRESS at docs head 3295381. Handover freshness, HND-0700 path selection, CI-0701 guard and the first 121 validation steps passed; validation job 140225968163 is still running at step 122. ESP8266 job 140225968063 PASS; ESP32 job 140225968098 FAIL with fatal error mbedtls/sha256.h not found at BlazePwifiVendo32. Android job 140225968060 PASS. Thirteen of fourteen target/platform build jobs passed; ESP32 is the one failure. No terminal Full result is available yet.
+
+The ESP32 failure is inherited from the active v0.6 base and this PR changes no sketch or firmware source. It is not counted as a pass and remains a separate Hardware build blocker.
+
+**NEXT EXACT ACTION:** read terminal run 45913088776 and the final validation job result; request Master to add #356 to the role/integration matrix and QA to review the protected-mount identity guard. Keep PR DRAFT. Physical acceptance remains NOT TESTED; production remains NO-GO.
+
 ## PHX-HARDWARE UTC23 — STORCHK-0674 FINAL FOCUSED-CI CHECKPOINT
 
 **Issue #34 · DRAFT PR #356 · branch phoenix/hardware-storage-preflight-device-separation-20261126-utc23 · base active v0.6 2fbd2475e9f54878c316fa7cea2f228386b0e859

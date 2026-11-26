@@ -3413,3 +3413,13 @@ Application/source snapshot is still exact520; this note is metadata only.
 - Status: SIMULATED / CI VERIFIED for parser only; physical acceptance NOT TESTED; production NO-GO.
 - Risk: no physical mount, block write, power interruption, coin, payment, migration or customer operation. Distinct major:minor does not prove separate physical media or disposability.
 - NEXT ACTION: Master/QA review PR #356; inspect Full run after post-code documentation checkpoint; owner-approved physical evidence remains required.
+
+## 2026-11-26 — STORCHK-0674 Full-run status readback
+
+- Role/task: PHX-HARDWARE / STORCHK-0674; PR #356 remains OPEN / DRAFT / UNMERGED.
+- Docs head at readback: 3295381dc3a6f9051ccef40d938130b33ab7afd4; source/test SHA: cd767cdf06ce3984c7e134c7d980b22b73f58844.
+- Focused docs-head PR run 45913088792 job 140225825590 PASS; exact source/test push 45912851366 job 140225058949 and PR 45912857510 job 140225078166 PASS.
+- Full PR run 45913088776 is IN_PROGRESS: handover freshness and first 121 validation steps PASS; validation job 140225968163 remains in progress at step 122.
+- Platform results at readback: ESP8266 PASS; Android PASS; 13/14 target/platform jobs PASS; ESP32 job 140225968098 FAILS with missing mbedtls/sha256.h. This is inherited from active v0.6 base; no sketch changed in #356.
+- Status: focused preflight SIMULATED / CI VERIFIED; Full integration NOT COMPLETE; physical acceptance NOT TESTED; production NO-GO.
+- NEXT ACTION: inspect terminal Full run; Master add #356 to assignment/integration matrix; QA review guard. No physical trial, merge or release.
