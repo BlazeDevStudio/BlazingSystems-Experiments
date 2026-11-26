@@ -362,7 +362,7 @@ def verify_runtime_interrupt_wiring(source, board):
     )
 
     missing_preflight_body = body.replace(
-        "if(coinInterruptAttached&&!quarantineCoinIngressTransition())return false;",
+        "if(coinInterruptAttached && !quarantineCoinIngressTransition()) return false;",
         "",
         1,
     )
@@ -383,7 +383,7 @@ def verify_runtime_interrupt_wiring(source, board):
     detach_before_inhibit_body = _swap_first_runtime_statements(
         body,
         "applyOutputs();",
-        "if(coinInterruptAttached)detachInterrupt(digitalPinToInterrupt(runCoinPin));",
+        "if(coinInterruptAttached) detachInterrupt(digitalPinToInterrupt(runCoinPin));",
     )
     _expect_runtime_wiring_rejected(
         source, board, _replace_runtime_wiring_body(source, detach_before_inhibit_body), "detach-before-output-inhibit"
@@ -391,7 +391,7 @@ def verify_runtime_interrupt_wiring(source, board):
 
     polarity_before_preflight_body = _swap_first_runtime_statements(
         body,
-        "if(coinInterruptAttached&&!quarantineCoinIngressTransition())return false;",
+        "if(coinInterruptAttached && !quarantineCoinIngressTransition()) return false;",
         "runCoinActiveLow=coinActiveLow;",
     )
     _expect_runtime_wiring_rejected(
