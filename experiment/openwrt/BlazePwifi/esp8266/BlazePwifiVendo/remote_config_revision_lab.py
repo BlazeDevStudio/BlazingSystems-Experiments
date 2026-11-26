@@ -216,7 +216,7 @@ int main() {
   if(remoteRevision!=6 || !controllerEnabled || !coinEnabled || !relayEnabled ||
      !ledEnabled || !runCoinActiveLow || runCoinPin!=2 || runRelayPin!=14 ||
      runLedPin!=15 || runDebounceMs!=100 || runPulseGroupMs!=1200 ||
-     maxWifiRetries!=20 || quarantineCalls!=1 || applyOutputsCalls!=1 ||
+     maxWifiRetries!=20 || quarantineCalls!=1 || applyOutputsCalls!=2 ||
      outputModeCalls!=2 || pinModes[14]!=OUTPUT || pinModes[15]!=OUTPUT) return 13;
   std::cout<<"REMOTE_CONFIG_NEWER_REVISION_ACCEPT_PASS\n";
 
@@ -229,7 +229,7 @@ int main() {
   if(remoteRevision!=6 || pinConfigSafe || pinModes[2]!=INPUT_PULLUP ||
      pinModes[14]!=INPUT || pinModes[15]!=INPUT || outputModeCalls!=0 ||
      insertMode || activeTarget.length()!=0 || quarantineCalls!=1 ||
-     applyOutputsCalls!=1) return 14;
+     applyOutputsCalls!=2) return 14;
   std::cout<<"REMOTE_CONFIG_UNKNOWN_POLARITY_DENY_PASS\n";
   return 0;
 }
