@@ -413,4 +413,25 @@ def verify_runtime_interrupt_wiring(source, board):
         source, board, _replace_runtime_wiring_body(source, restore_before_quarantine_body), "restore-output-before-post-attach-quarantine"
     )
 
+    lost_prior_snapshot_body = body.replace(
+        "const bool priorPollIntakeSuspended=pollIntakeSuspended;",
+        "const bool priorPollIntakeSuspended=false;",
+        1,
+    )
+    if lost_prior_snapshot_body == body:
+        raise RuntimeError("could not construct lost prior poll-inhibit snapshot mutation")
+    lost_prior_snapshot_source = _replace_runtime_wiring_body(source, lost_prior_snapshot_body)
+    try:
+        _runtime_interrupt_wiring_body(lost_prior_snapshot_source, board)
+    except RuntimeError as error:
+        if "prior poll intake inhibit snapshot" not in str(error):
+            raise RuntimeError(
+                f"{board} lost prior poll-inhibit snapshot failed for the wrong reason: {error}"
+            ) from error
+        print(f"{board}_RUNTIME_INTERRUPT_MUTATION_REJECTED lost-prior-poll-inhibit-snapshot")
+    else:
+        raise RuntimeError(
+            f"{board} runtime interrupt wiring accepted lost prior poll-inhibit snapshot"
+        )
+
     print(f"{board}_RUNTIME_INTERRUPT_WIRING_PASS")
