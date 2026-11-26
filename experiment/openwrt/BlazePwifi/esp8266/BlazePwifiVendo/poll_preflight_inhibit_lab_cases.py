@@ -23,6 +23,7 @@ BLAZEPWIFI = Path(__file__).resolve().parents[2]
 SKETCHES = {
     "ESP8266": BLAZEPWIFI / "esp8266/BlazePwifiVendo/BlazePwifiVendo.ino",
     "ESP32": BLAZEPWIFI / "esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino",
+}
 
 def verify_board(name: str, path: Path):
     source = path.read_text(encoding="utf-8")
