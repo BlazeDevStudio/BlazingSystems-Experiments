@@ -1047,3 +1047,23 @@ See [UTC23 narrow handover](docs/handover/2026-11-25-hw-cpp-crlf-line-splice-gua
 - The corresponding #353 child will be advanced as a second two-parent merge, preserving its ISR-specific source and handovers while incorporating the reconciled #352 parent.
 - No production sketch, CGI producer, CORE API, finance, signer/witness, migration, COE destination, physical device, or release artifact was changed.
 - Exact-head focused CI is required after both branch updates; no new CI result is claimed by this handover before those runs complete.
+
+## Exact-head CI results after UTC02 ancestry reconciliation
+
+All run heads below were read from GitHub Actions and match the source/test merge commits, not a physical device:
+
+### PR #352 — source/test SHA `a1720e1724a15b5254d9dd1ee57e6212259a4896`
+
+- Quarantine Byte Readback [run #45744575878](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45744575878), job `139657404426`: PASS. ESP8266 and ESP32 coin pulse capture 18/18 each; C++ token normalizer 15/15 including CRLF line-splice regression; bounded HTTP token normalizer 8/8; JSON/UTF-8, boot-polarity, EEPROM-read failure and fail-closed mutation checks passed.
+- Relay Output Polarity [run #45744575789](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45744575789), jobs `139657404082` and `139657404444`: PASS / PASS.
+- ESP8266 core 3.1.2 [run #45744575794](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45744575794), job `139657404588`: PASS.
+- ESP32 core 3.3.13 and 4.0.0 [run #45744575866](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45744575866), jobs `139657405152` and `139657404946`: PASS / PASS. The actual ESP32 Vendo sketch compiled under both pinned cores; core-4 output was 1,099,857 bytes (83% of 1,310,720 bytes).
+- Full BlazePwifi [run #45744575781](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45744575781): FAIL at validation job `139657404573`, inherited `Missing poll signature check` in the active ESP8266 sketch. All 14 firmware/platform jobs and Android passed; production APK import, signing, simulations, candidate gate and publication were skipped.
+
+### PR #353 — source/test SHA `c42ceae028e21e4061c9d424f28c4bcfdbff7c63`
+
+- Quarantine Byte Readback [run #45744810594](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45744810594), job `139658174292`: PASS. ESP8266 and ESP32 coin pulse capture 18/18 each; C++ token normalizer 15/15; bounded HTTP token normalizer 8/8; JSON/UTF-8, boot-polarity, EEPROM-read failure and fail-closed mutation checks passed.
+- Relay Output Polarity [run #45744810597](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45744810597), jobs `139658174191` and `139658174518`: PASS / PASS.
+- Full BlazePwifi [run #45744810573](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45744810573): FAIL at validation job `139658174516`, same inherited `Missing poll signature check`. All 14 firmware/platform jobs and Android passed; production import/signing, simulation, candidate and publication jobs were skipped.
+
+These are SIMULATED / CI VERIFIED results. The failure is not fixed by ancestry reconciliation and must not be bypassed by weakening the signature check. No physical coin pulse, relay contact, power cut, or device soak was performed.
