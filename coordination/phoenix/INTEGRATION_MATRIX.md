@@ -1,3 +1,23 @@
+## PHX-MASTER UTC03 — exact interface, CI and migration evidence — 2026-11-26T03:57:22Z
+
+| Edge / artifact | Exact current evidence | Gate / owner |
+|---|---|---|
+| #340 ESP32 core 4.0.0 | Source/test SHA d1380acf; final docs head f70f6af. Exact actual-sketch compile #45747192648 PASS; final docs-head Full #45747758154 PASS (26 success / 4 intentional skips). | Candidate build gate only. Two identical sketch blobs and reported Arduino CLI 1.6.0 / ESP32 core 4.0.0 yielded different binary SHA-256 values; dedicated core-4 artifacts are absent. PHX-RELEASE must pin the complete toolchain and retain artifacts before any reproducibility claim. |
+| #353 child stack | Source/test ed2f77d; final docs head 8326920; current parent #352 2fa3b7; 27 ahead / 0 behind. Focused Quarantine/Relay pass; Full #45751177730 fails at Missing poll signature check. | HARDWARE owns source and exact-head Full rerun; QA independently reviews new ISR/runtime-pin mutation vectors. Do not rebase/retarget by Master. |
+| #352 / #349 poll gate | #352 head 2fa3b7 Full #45745420916 and #349 head 1a2ecf Full #45724609215 both fail at Missing poll signature check. | CORE contract first; HARDWARE consumer; QA independent vectors. No test bypass. |
+| #348 Mbed TLS 4 | Head 93afd483 Full #45731176586 fails at missing mbedtls/sha256.h. | HARDWARE/RELEASE own branch-specific provider correction; #340 evidence is not transferable. |
+| Active v0.6 response | At 2fbd2475, ESP32 blob 29f1125d, ESP8266 12c4bb82, CGI vendo db58041c. Both sketches consume unsigned poll insert/target_nonce and call applyRemoteConfig; CGI poll body has no response_sig. | P0 OPEN. CORE must approve canonical authenticated envelope, mandatory key provisioning, controller/target binding, freshness and replay rules before HARDWARE changes trust/actuation. |
+| COE #26 board blobs | Current #353 source ESP32 1412cf57 and ESP8266 b99f1f21; COE #26 destination ESP32 3cc7ec54 and ESP8266 c8be98f7. Both board blobs differ. Destination retains sigOk=true with verification conditional on a nonempty key. | FROZEN; keyless bypass and import identity remain unresolved. No staging/copy/move/overwrite. |
+| COE #26 licensing | Source product LICENSE and destination Pisowifi/LICENSE both exact blob 1ee55b94. Source root NOTICE blob f6d92cd has no destination root NOTICE (404). | Destination license narrative is incomplete at root; integration owner must map notice/license scope. |
+| COE #26 tests/import | Previous complete #349 tree baseline: 2,553/286 entries; 64/0 board-local Python helpers; 47/19 mapped tests (4 common, 1 exact, 3 divergent, 43 source-only, 15 destination-only). Current #353 adds ISR/runtime-pin labs absent from the #26 changed-path list; full recursive remap at 8326920 is not claimed. | Import completeness and test identity NOT VERIFIED for current #353 head. Five #26 workflows are queued with zero jobs. Keep frozen. |
+| RELEASE #242 → #291 | #242 current head a7e27fe has no exact-head Actions; source/test 9351dd0 static assertions only. #291 head 9b928c9 is 852 ahead / 9 behind current #242 (merge base 734b89d). | RELEASE owns both source branches; child-stack reconciliation and exact-head test evidence required. Master did not rebase/retarget. |
+| COE #35 / #49 | #35 ULA admission and Bubblewrap remain failing; #49 shared ESP32 compile fails at missing mbedtls/sha256.h. | RELEASE/INFRA/CORE owner actions; no site ULA authority or sandbox acceptance inferred. |
+| Governance | Manifest e4db324: 11 routes, DRAFT_REVIEW_ONLY, PHX-MASTER target null; cleanup #266 OPEN / 0-of-7. | No migration authority. Registry v11/newer corrections unavailable; no Google Drive connector exposed. |
+
+No subsystem source or COE destination mutation by PHX-MASTER. CI above was inspected at exact owner SHAs, not executed by Master. **PRODUCTION NO-GO.**
+
+---
+
 ## PHX-MASTER UTC02 — current interface and migration evidence — 2026-11-26T02:39:42Z
 
 | Edge / artifact | Exact evidence | Gate / owner |
