@@ -3401,3 +3401,15 @@ Application/source snapshot is still exact520; this note is metadata only.
 - **Full workflow:** run 45912530717 job 140224091948 failed handover freshness because the test-only commit was not yet synchronized into canonical records; recorded as a sequencing failure, not hidden.
 - **Risk/rollback:** no actual mount/device/write/power-cut/coin/payment action. Revert this isolated test/parser/workflow stack to restore the previous preflight.
 - **NEXT ACTION:** add root/overlay/rom/boot major:minor exclusion and duplicate/missing mount identity guards, then exact-head focused CI and final handover synchronization.
+
+## 2026-11-26 — STORCHK-0674 focused guard validation
+
+- ID / role: PHX-HW-STORCHK-20261126T23-ROOT-DEVICE-SEPARATION / PHX-HARDWARE.
+- Branch: phoenix/hardware-storage-preflight-device-separation-20261126-utc23; DRAFT PR #356; base active v0.6 at 2fbd2475e9f54878c316fa7cea2f228386b0e859.
+- Test-first RED commit: 68907bfa993c1b6b635e41e0935193c80126b7ac; run 45912530609 job 140224038590 and run 45912560098 job 140224138127 failed as expected on root-device reuse.
+- Source/test GREEN commit: cd767cdf06ce3984c7e134c7d980b22b73f58844; push run 45912851366 job 140225058949 PASS; PR run 45912857510 job 140225078166 PASS.
+- Correction: require one root mount; reject scratch major:minor reuse with root, overlay, ROM or boot; reject duplicate protected mountpoints; require separately identified overlay mount for overlay root.
+- Full run 45912851358 validation job 140225122247 failed handover freshness because source commit cd767 followed the previous canonical docs checkpoint; remaining target jobs were still running. PR Full run 45912857560 queued.
+- Status: SIMULATED / CI VERIFIED for parser only; physical acceptance NOT TESTED; production NO-GO.
+- Risk: no physical mount, block write, power interruption, coin, payment, migration or customer operation. Distinct major:minor does not prove separate physical media or disposability.
+- NEXT ACTION: Master/QA review PR #356; inspect Full run after post-code documentation checkpoint; owner-approved physical evidence remains required.

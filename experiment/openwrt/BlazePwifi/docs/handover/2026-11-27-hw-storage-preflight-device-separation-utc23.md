@@ -1,30 +1,30 @@
 # PHX-HARDWARE — STORCHK-0674 root/overlay device separation
 
-**Observed:** 2026-11-26T23:45:00Z
+**Status:** SIMULATED / FOCUSED CI VERIFIED. **Physical acceptance:** NOT TESTED. **Production:** NO-GO.
 **Issue:** https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/34
-**Draft PR:** https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/356
+**DRAFT PR:** https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/356
 **Branch:** phoenix/hardware-storage-preflight-device-separation-20261126-utc23
-**Base:** blazepwifi-v0.6.0-audit-foundation @ 2fbd2475e9f54878c316fa7cea2f228386b0e859
-**Test-only commit:** 68907bfa993c1b6b635e41e0935193c80126b7ac
+**Base:** active v0.6 audit foundation at 2fbd2475e9f54878c316fa7cea2f228386b0e859
+**Test-only RED SHA:** 68907bfa993c1b6b635e41e0935193c80126b7ac
+**Source/test GREEN SHA:** cd767cdf06ce3984c7e134c7d980b22b73f58844
 
-## Defect
+## Change
 
-The existing read-only preflight parser verified that the synthetic fixture bind mount and scratch mount share one expected block-device identity. It rejected obvious /dev/root, loop, ram, MTD, UBI, NBD and overlay path strings, but did not compare the scratch major:minor with the actual mount identities for /, /overlay, /rom or /boot. A plausible device path could therefore identify the same mounted system partition while avoiding the string deny-list.
+The read-only mountinfo guard now requires exactly one root mount, rejects duplicate overlay/rom/boot records, rejects scratch major:minor reuse with root/overlay/rom/boot, and requires a separate overlay mount when root is overlayfs. Existing fixture/source/path/filesystem/private-marker checks remain.
 
-## Test-first evidence
+## Exact tests
 
-- Push RED #45912530609, job 140224038590: expected failure at scratch reuses root filesystem block device.
-- PR RED #45912560098, job 140224138127: same expected failure.
-- Full run #45912530717, validation job 140224091948: handover freshness failed because the test-only commit was not yet followed by canonical synchronization. This is recorded as a sequencing failure.
-
-## Correction plan
-
-Require exactly one root mount identity; reject scratch major:minor reuse with /, /overlay, /rom and /boot; reject duplicate protected mountpoints; require a separately identified /overlay mount when the root filesystem type is overlay; retain all existing source/path/filesystem/private-marker checks.
+- RED push run 45912530609 job 140224038590: expected failure because scratch reused the root filesystem device.
+- RED PR run 45912560098 job 140224138127: same expected failure.
+- GREEN push run 45912851366 job 140225058949: PASS at exact source/test SHA cd767cdf06ce3984c7e134c7d980b22b73f58844.
+- GREEN PR run 45912857510 job 140225078166: PASS at the same SHA.
+- GREEN logs state SIMULATED_ONLY=1, PHYSICAL_POWER_CUT_VERIFIED=0 and CUSTOMER_INSTALL_AUTHORIZED=0.
+- Full run 45912851358 validation job 140225122247 failed handover freshness because the source commit preceded this synchronization; remaining target jobs were in progress. PR Full run 45912857560 queued.
 
 ## Evidence limits
 
-All regression inputs are synthetic mountinfo text. The shell test creates only a private temporary directory and removes it. It does not mount/unmount, write block devices, interrupt power, operate a coin acceptor, run a payment, migrate data, or authorize installation. Distinct major:minor proves distinct mounted block-device identity only; it does not prove physically separate media or owner-confirmed disposability. CI remains SIMULATED / CI VERIFIED only.
+Only synthetic mountinfo text and private temporary directories were used. No mount/unmount, block write, physical power cut, coin, payment, migration or customer operation occurred. Distinct major:minor proves distinct mounted block-device identity only, not separate physical media or owner-confirmed disposability.
 
-## Next exact action
+## NEXT EXACT ACTION
 
-Implement the parser correction, run the focused exact-source workflow, then update this handover plus CURRENT_STATE.md, CHANGE_LEDGER.md and the top of PROJECT_HANDOVER.md with terminal evidence. Keep PR #356 DRAFT and unmerged.
+Request PHX-MASTER/PHX-QA review of PR #356, then inspect Full validation at the post-documentation head. Keep PR DRAFT and unmerged. Physical trials require owner-approved isolated equipment, independent media verification, authenticated power telemetry and recovery signoff.

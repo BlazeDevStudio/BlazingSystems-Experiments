@@ -1,3 +1,18 @@
+## PHX-HARDWARE UTC23 — STORCHK-0674 FINAL FOCUSED-CI CHECKPOINT
+
+**2026-11-26T23:47Z · Issue #34 · DRAFT PR #356 · no merge, flash or power cut.**
+
+Source/test SHA cd767cdf06ce3984c7e134c7d980b22b73f58844 adds root, overlay, ROM and boot mount identity comparisons to the read-only pretrial parser. It requires one root record, rejects duplicate protected mounts and requires a separate overlay mount when root is overlayfs.
+
+Test-first RED: run 45912530609 job 140224038590 and run 45912560098 job 140224138127 failed as expected because scratch reused the root device.
+Focused GREEN: push run 45912851366 job 140225058949 PASS; PR run 45912857510 job 140225078166 PASS at the exact source/test SHA. Logs explicitly state simulated-only and physical/customer authorization zero.
+
+Full run 45912851358 validation job 140225122247 failed the handover freshness gate because the source commit preceded this canonical synchronization; other target jobs were still running at last read. PR Full run 45912857560 was queued. This is not a product regression or full validation pass.
+
+The guard proves distinct mounted major:minor identities only. It does not prove separate physical media, disposability or power-loss durability. No physical operation or customer action occurred. Issue #34 remains physically NOT TESTED and production remains NO-GO.
+
+NEXT EXACT ACTION: request PHX-MASTER/PHX-QA review of PR #356 and inspect Full validation on the post-documentation head.
+
 ## PHX-HARDWARE UTC23 — STORCHK-0674 root/overlay device isolation (IN PROGRESS)
 
 **2026-11-26T23:45Z · Issue #34 · DRAFT PR #356 · No merge / no flash / no power cut.**

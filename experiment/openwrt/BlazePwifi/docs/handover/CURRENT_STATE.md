@@ -1,3 +1,24 @@
+## PHX-HARDWARE UTC23 — STORCHK-0674 FINAL FOCUSED-CI CHECKPOINT
+
+**Issue #34 · DRAFT PR #356 · branch phoenix/hardware-storage-preflight-device-separation-20261126-utc23 · base active v0.6 2fbd2475e9f54878c316fa7cea2f228386b0e859
+Test-only RED SHA: 68907bfa993c1b6b635e41e0935193c80126b7ac
+Source/test GREEN SHA: cd767cdf06ce3984c7e134c7d980b22b73f58844
+
+The read-only mountinfo guard now requires one root mount, rejects scratch major:minor reuse with root, overlay, ROM and boot mounts, rejects duplicate protected mountpoints, and requires a separately identified overlay mount when root is overlayfs. Existing exact fixture/source/filesystem checks remain.
+
+RED: run 45912530609 job 140224038590 and run 45912560098 job 140224138127 failed as expected at scratch reusing root device.
+GREEN: push run 45912851366 job 140225058949 PASS; PR run 45912857510 job 140225078166 PASS, both at exact source/test SHA cd767cdf06ce3984c7e134c7d980b22b73f58844.
+Both GREEN logs state SIMULATED_ONLY=1, PHYSICAL_POWER_CUT_VERIFIED=0 and CUSTOMER_INSTALL_AUTHORIZED=0.
+
+Full run 45912851358 validation job 140225122247 failed only because the source commit was newer than the canonical handover checkpoint; platform jobs were still running at last read. PR Full run 45912857560 was queued. This is a documented sequencing failure, not a product test pass.
+
+Evidence is SIMULATED / CI VERIFIED for mountinfo parsing only. Distinct major:minor does not prove separate physical media or owner-confirmed disposability. No mount, unmount, block write, power cut, coin, payment, migration or customer install occurred.
+
+## NEXT EXACT ACTION
+Request PHX-MASTER and PHX-QA review of PR #356, then inspect the terminal Full run after this documentation checkpoint. Keep the PR DRAFT and unmerged. Do not conduct physical trials without owner-approved noncustomer equipment, independent media verification, authenticated power telemetry and a recovery plan.
+
+Production remains NO-GO.
+
 ## PHX-HARDWARE UTC23 — STORCHK-0674 system-device separation (IN PROGRESS)
 
 **Observed:** 2026-11-26T23:45:00Z · **Issue:** #34 · **PR:** #356 OPEN / DRAFT / UNMERGED
