@@ -18,7 +18,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: phx-hw-esp32-core-4-0-0-\${{ github.ref }}
+  group: phx-hw-esp32-core-4-0-0-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -28,13 +28,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: \${{ github.event.pull_request.head.sha || github.sha }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Verify exact source checkout
         shell: bash
         run: |
           set -euo pipefail
-          expected="\${{ github.event.pull_request.head.sha || github.sha }}"
+          expected="${{ github.event.pull_request.head.sha || github.sha }}"
           actual="$(git rev-parse HEAD)"
           printf 'EXPECTED_SHA=%s\nACTUAL_SHA=%s\n' "$expected" "$actual"
           test "$actual" = "$expected"
@@ -69,4 +69,4 @@ jobs:
           test -n "$binary"
           test -s "$binary"
           sha256sum "$binary"
-          printf 'ARDUINO_ESP32_CORE=4.0.0\nSIMULATED_ONLY=1\nPHYSICAL_ACCEPTANCE=0\n';
+          printf '%s\n' "ARDUINO_ESP32_CORE=4.0.0" "SIMULATED_ONLY=1" "PHYSICAL_ACCEPTANCE=0"
