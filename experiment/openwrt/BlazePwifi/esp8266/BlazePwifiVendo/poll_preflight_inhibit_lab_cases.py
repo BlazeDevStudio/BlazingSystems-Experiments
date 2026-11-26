@@ -11,6 +11,7 @@ from poll_preflight_inhibit_lab_contract import (
     coin_post_matches,
     poll_call_matches,
     poll_guard_locations,
+    register_guard_locations,
 )
 from poll_preflight_inhibit_lab_harness import (
     compile_and_run,
@@ -19,7 +20,7 @@ from poll_preflight_inhibit_lab_harness import (
     remove_first_code_token,
 )
 
-__all__ = ["main", "verify_board", "verify_source_extractor_decoy_regressions"]
+__all__ = ["main", "verify_board", "verify_register_preflight", "verify_source_extractor_decoy_regressions"]
 
 
 
@@ -29,6 +30,115 @@ SKETCHES = {
     "ESP32": BLAZEPWIFI / "esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino",
 }
 
+
+def verify_register_preflight(name: str, source: str):
+    """Protect the deny-only startup register exchange on both controller boards."""
+    setup, connect = register_guard_locations(source)
+
+    def expect_rejected(label: str, mutated_source: str, expected: str):
+        try:
+            register_guard_locations(mutated_source)
+        except AssertionError as exc:
+            if expected not in str(exc):
+                raise AssertionError(
+                    f"{name}: {label} failed for the wrong reason: {exc}"
+                ) from exc
+        else:
+            raise AssertionError(f"{name}: {label} mutation was not rejected")
+
+    # The setup-level deny must stay unconditional and precede connectSta().
+    mutated_setup = setup.replace("denyRemoteControl();", "", 1)
+    if mutated_setup == setup:
+        raise AssertionError(f"{name}: startup deny mutation anchor missing")
+    expect_rejected(
+        "missing startup pre-register deny",
+        source.replace(setup, mutated_setup, 1),
+        "startup pre-register deny guard is missing",
+    )
+
+    mutated_setup = setup.replace(
+        "denyRemoteControl();", "if (false) { denyRemoteControl(); }", 1
+    )
+    expect_rejected(
+        "conditional startup pre-register deny",
+        source.replace(setup, mutated_setup, 1),
+        "startup pre-register: deny guard must be an unconditional standalone statement",
+    )
+
+    # Registration must be followed by a direct deny in the connected branch.
+    mutated_connect = connect.replace("denyRemoteControl();", "", 1)
+    if mutated_connect == connect:
+        raise AssertionError(f"{name}: post-register deny mutation anchor missing")
+    expect_rejected(
+        "missing post-register deny",
+        source.replace(connect, mutated_connect, 1),
+        "post-register deny guard is missing",
+    )
+
+    mutated_connect = connect.replace(
+        "denyRemoteControl();", "if (false) { denyRemoteControl(); }", 1
+    )
+    expect_rejected(
+        "conditional post-register deny",
+        source.replace(connect, mutated_connect, 1),
+        "post-register: deny guard must be an unconditional standalone statement",
+    )
+
+    # No startup register response may become a remote actuation/configuration input.
+    mutated_connect = connect.replace(
+        '(void)post("register");',
+        'String response = post("register"); applyRemoteConfig(response);',
+        1,
+    )
+    if mutated_connect == connect:
+        raise AssertionError(f"{name}: register response mutation anchor missing")
+    expect_rejected(
+        "consumed register response",
+        source.replace(connect, mutated_connect, 1),
+        "register response must be explicitly discarded",
+    )
+
+    mutated_connect = connect.replace(
+        '(void)post("register");',
+        '(void)post("register"); applyRemoteConfig(staleResponse);',
+        1,
+    )
+    expect_rejected(
+        "applied register response",
+        source.replace(connect, mutated_connect, 1),
+        "startup register response must not apply remote configuration",
+    )
+
+    # A second executable register POST outside connectSta() must not be hidden.
+    loop_at = source.find("void loop()")
+    loop_brace = source.find("{", loop_at)
+    if loop_at < 0 or loop_brace < 0:
+        raise AssertionError(f"{name}: loop() anchor missing for duplicate-register mutation")
+    mutated_source = (
+        source[:loop_brace + 1]
+        + '\\n    (void)post("register");'
+        + source[loop_brace + 1:]
+    )
+    expect_rejected(
+        "duplicate register POST outside connectSta",
+        mutated_source,
+        "register POST must exist exactly once",
+    )
+
+    # Comment and string decoys must not be counted as executable register POSTs.
+    decoy_source = (
+        source
+        + '\\n// post("register");'
+        + '\\nconst char *registerNote = "post(\\\\"register\\\\");";'
+    )
+    register_guard_locations(decoy_source)
+
+    print(f"REGISTER_STARTUP_DENY_PASS {name}")
+    print(f"REGISTER_STARTUP_DENY_MUTATIONS_REJECTED {name} 6/6")
+    print(f"REGISTER_POST_RESPONSE_USE_MUTATION_REJECTED {name}")
+    print(f"REGISTER_POST_DECOY_MUTATIONS_IGNORED {name}")
+
+
 def verify_board(name: str, path: Path):
     source = path.read_text(encoding="utf-8")
     masked_source = mask_non_code(source)
@@ -36,6 +146,7 @@ def verify_board(name: str, path: Path):
         raise AssertionError(f"{name}: clearPending must remain definition-only until authenticated receipt approval")
     if coin_post_matches(source):
         raise AssertionError(f"{name}: automatic coin POST must remain absent from firmware")
+    verify_register_preflight(name, source)
     loop, poll_block, pre_guard, poll_at, post_guard = poll_guard_locations(source)
     if not (pre_guard < poll_at < post_guard):
         raise AssertionError(f"{name}: invalid poll guard order")
