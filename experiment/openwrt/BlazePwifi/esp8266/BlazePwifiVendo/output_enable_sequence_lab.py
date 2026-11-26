@@ -218,13 +218,64 @@ def remove_local_polarity_gate(configure: str) -> str:
 
     raise RuntimeError(f"could not remove one board-specific local polarity gate (combined guards={count})")
 
+def verify_runtime_pin_quarantine(configure: str, board: str) -> None:
+    pre_detach = re.search(
+        r"if\\s*\\(\\s*coinInterruptAttached\\s*&&\\s*!\\s*"
+        r"quarantineCoinIngressTransition\\s*\\(\\s*\\)\\s*\\)\\s*return\\s+false\\s*;",
+        configure,
+    )
+    detach = re.search(r"\\bdetachInterrupt\\s*\\(", configure)
+    inhibit = configure.find("pollIntakeSuspended=true")
+    output_off = configure.find("applyOutputs();")
+    if not pre_detach or not detach or not (0 <= inhibit < output_off < pre_detach.start() < detach.start()):
+        raise RuntimeError(f"{board}: ingress must be inhibited and quarantined before detaching the ISR")
+
+    attach_positions = [m.start() for m in re.finditer(r"\\battachInterrupt\\s*\\(", configure)]
+    attached_positions = [m.start() for m in re.finditer(r"coinInterruptAttached\\s*=\\s*true", configure)]
+    post_positions = [m.start() for m in re.finditer(
+        r"if\\s*\\(\\s*!\\s*quarantineCoinIngressTransition\\s*\\(\\s*\\)\\s*\\)\\s*return\\s+false\\s*;",
+        configure,
+    )]
+    restore_positions = [m.start() for m in re.finditer(
+        r"pollIntakeSuspended\\s*=\\s*priorPollIntakeSuspended", configure
+    )]
+    if not (len(attach_positions) == len(attached_positions) == len(post_positions) == len(restore_positions) == 2):
+        raise RuntimeError(f"{board}: expected two attach → quarantine → intake-restore paths")
+    for attach, attached, quarantine, restore in zip(
+        attach_positions, attached_positions, post_positions, restore_positions
+    ):
+        if not attach < attached < quarantine < restore:
+            raise RuntimeError(f"{board}: ingress quarantine must succeed before intake resumes")
+
+
+def reject_quarantine_mutation(configure: str, board: str, label: str, pattern: str) -> None:
+    mutated, count = re.subn(pattern, "", configure, count=1)
+    if count != 1:
+        raise RuntimeError(f"{board}: could not inject {label} mutation")
+    try:
+        verify_runtime_pin_quarantine(mutated, board)
+    except RuntimeError:
+        print(f"{board}: {label} mutation rejected")
+        return
+    raise RuntimeError(f"{board}: {label} mutation was not rejected")
+
 
 for board, path in BOARDS:
     source = path.read_text(encoding="utf-8")
     write_logical = extract(source, "writeLogical")
     configure = extract(source, "configureRuntimePins")
-    # Ingress quarantine is verified by the dedicated ISR and blocking-poll labs.
-    # This fixture stubs that boundary and remains focused on GPIO output ordering.
+    # Verify source-level ISR quarantine ordering here; runtime behavior is
+    # exercised by the dedicated coin-pulse and blocking-poll labs.
+    verify_runtime_pin_quarantine(configure, board)
+    reject_quarantine_mutation(
+        configure, board, "pre-detach-quarantine",
+        r"if\\s*\\(\\s*coinInterruptAttached\\s*&&\\s*!\\s*"
+        r"quarantineCoinIngressTransition\\s*\\(\\s*\\)\\s*\\)\\s*return\\s+false\\s*;",
+    )
+    reject_quarantine_mutation(
+        configure, board, "post-attach-quarantine",
+        r"if\\s*\\(\\s*!\\s*quarantineCoinIngressTransition\\s*\\(\\s*\\)\\s*\\)\\s*return\\s+false\\s*;",
+    )
     has_local_polarity_guard = "outputPolarityKnown" in configure
     build_and_run(board, write_logical, configure, expect_pass=True,
                   has_local_polarity_guard=has_local_polarity_guard)
@@ -234,5 +285,5 @@ for board, path in BOARDS:
         build_and_run(board, write_logical, remove_local_polarity_gate(configure),
                       expect_pass=False, has_local_polarity_guard=True)
 
-print("PHX-HARDWARE: 5/5 output-enable/polarity host checks PASS; physical GPIO/relay behavior NOT TESTED")
+print("PHX-HARDWARE: output-order/polarity and ISR-quarantine source mutations rejected; physical GPIO/relay behavior NOT TESTED")
 
