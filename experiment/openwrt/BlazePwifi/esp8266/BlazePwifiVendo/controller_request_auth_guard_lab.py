@@ -72,9 +72,9 @@ def assert_contract(board: str, source: str) -> None:
     post_compact = re.sub(r"\s+", "", post)
     require('if(action!="register"&&action!="poll")return"";' in post_compact,
             f"{board}: post must allow only register and poll")
-    post_compact_code = re.sub(r"\\s+", "", post_code)
+    post_compact_code = re.sub(r"\s+", "", post_code)
     action_at = post_compact_code.find("action!=")
-    post_guard = post_compact_code.find(re.sub(r"\\s+", "", CREDENTIAL_GUARD[board]))
+    post_guard = post_compact_code.find(re.sub(r"\s+", "", CREDENTIAL_GUARD[board]))
     wifi_at = post_compact_code.find("WiFi.status()")
     body_at = post_compact_code.find("Stringbody=signedBody(action,pulses,target,forcedNonce);")
     body_check = post_compact_code.find("if(!body.length())return")
