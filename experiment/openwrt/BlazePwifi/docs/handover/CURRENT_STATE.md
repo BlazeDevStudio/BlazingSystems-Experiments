@@ -1,3 +1,33 @@
+# CURRENT STATE — 2026-11-27 UTC16 — blocking-poll wait harness IN PROGRESS
+
+**Role:** PHX-HARDWARE · **Issue:** [#177](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/177) · **PR:** [#354](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/354)  
+**Branch:** `phoenix/hw-active-v06-poll-intake-deny-20261126-utc05` · **Base:** `blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859`  
+**Starting PR head:** `bbb209f55ddcd48f248eb8d700629db8754dc13a` · **Starting source/test SHA:** `9bb46bb27e4be80f6506dbebf2846700efd4cb81`  
+**Work item:** `PHX-HARDWARE-20261126T16-BLOCKING-POLL-WAIT-HARNESS` · **Status:** IN_PROGRESS.
+
+## Proven gap and bounded intent
+
+The current `poll_preflight_inhibit_lab.py` says it holds the relay/LED OFF through a simulated 3500 ms HTTP wait, but `make_harness()` calls the extracted `denyRemoteControl()` and immediately checks the output levels; it does not execute the extracted poll block, advance a clock, or inject a pulse during a blocking wait. This is a test-evidence gap, not a claim that the deny-only firmware currently re-enables the relay.
+
+Add a host-only C++ harness that executes the actual extracted poll block from each board sketch. Its stubbed `post("poll")` will advance exactly 3500 ms, inject one 80 ms coin-line pulse while the loop is blocked, and check every simulated millisecond that relay/LED outputs remain logically OFF, admission flags remain denied, and pending pulse/nonce/target evidence remains unchanged. After the block, the next sample must occur after the pulse has ended and must not create a coin acceptance. Add a negative mutation that removes the pre-poll deny and must be detected by the wait harness.
+
+## Safety boundary
+
+- No production `.ino`, pin, API, authentication, finance, receipt, or pending-disposition behavior changes are intended.
+- This is host simulation only; it cannot prove relay voltage, coin-acceptor behavior, pulse conditioning, LittleFS durability, or physical acceptance.
+- No hardware flash/reset, live money, customer device, signer, migration, release, merge, or deployment.
+- Keep coin/relay admission denied pending PHX-CORE's authenticated contract and PHX-QA's assertion reconciliation.
+
+## Proof and rollback
+
+- Success: exact-source focused workflow compiles/runs both board poll blocks; reports 3500 simulated ms, 80 injected pulse ticks, zero samples during wait, zero accepted pulses, preserved pending evidence, and rejects a missing pre-poll deny mutation.
+- Failure: compile/test failure, no actual poll-block execution, wrong wait duration, an output/admission transition during the wait, lost pending evidence, or surviving mutation.
+- Rollback: revert only this work item's commits on the existing Hardware-owned PR branch; do not rebase or alter #239/#254/#283/#340/#353.
+
+## NEXT EXACT ACTION
+
+Implement the source-extracted blocking-poll harness in `experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_preflight_inhibit_lab.py`, run the focused workflow on the exact resulting SHA, then synchronize the append-only handovers.
+
 # CURRENT STATE — 2026-11-26 UTC14 — final poll-inhibit independent polarity evidence
 
 **Role:** PHX-HARDWARE · **Issue:** [#177](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/177) · **PR:** [#354](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/354)  
