@@ -1,3 +1,207 @@
+# CURRENT STATE — 2026-11-27 UTC17 — focused and target builds verified; integrated validation blocked
+
+**Role:** PHX-HARDWARE · **Issue:** [#177](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/177) · **Draft PR:** [#354](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/354)  
+**Branch:** `phoenix/hw-active-v06-poll-intake-deny-20261126-utc05` · **Base:** `blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859`  
+**Source/test SHA:** `145aac9607682071e2db05944a6f9db5aa06e524` · **Tested docs head:** `fcedf8a8c90128a33983c77f853abbbc7d95e258`  
+**PR:** OPEN / DRAFT / UNMERGED · **Production:** NO-GO.
+
+## Work completed — one Hardware-owned test-fidelity correction
+
+The old poll-inhibit lab claimed a 3500 ms HTTP wait but only called `denyRemoteControl()` and immediately inspected outputs. The new host harness executes the actual extracted poll block from both board sketches, models the configured 3500 ms synchronous `post("poll")`, injects an 80 ms coin-line pulse, and verifies no sample/acceptance during the wait, relay/LED OFF, denied admission, pending pulse/nonce/target preservation, and four independent relay/LED polarity combinations. Missing pre-poll deny and relay-OFF polarity-borrow mutations are rejected.
+
+No production `.ino`, shared API, finance, receipt, signer, witness, migration, QA test, or other-role source changed.
+
+## Exact evidence
+
+- Focused push [#45862938002](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45862938002), job `140058369164`, PASS.
+- Focused PR [#45862948688](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45862948688), job `140058405613`, PASS.
+- Both board logs: `BLOCKING_POLL_WAIT_PASS 3500ms pulse_ticks=80 samples_during_wait=0 accepted=0 polarity_combinations=4`; existing output-enable lab: 8/8 scenarios and 14/14 injected regressions rejected.
+- Valid RED: [#45862737466](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45862737466), job `140057673814`, and [#45862745148](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45862745148), job `140057700491`, both compiled and failed at `elapsed_ms=0 expected=3500`. Initial fixture compile error [#45862503824](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45862503824), job `140056856073`, is disclosed but excluded from RED evidence.
+- Full [#45863473436](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45863473436): mandatory handover freshness and CI-0701 job `140060351112` PASS; all 14/14 ESP8266, ESP32, x86_64, Ruijie, Orange Pi and Android target/platform jobs PASS. Overall validation job `140060447896` FAILS only at QA-owned Controller protocol parity because `tests/controllers.sh:21` still requires `config_revision` in both deny-only sketches. Signing, release, update-bundle, preview and simulation stages are skipped.
+- Native [#45863473523](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45863473523), job `140060214162`, FAILS at QA-owned `tests/v060_vendo_sequence_contract.py:20`, which requires active `clearPending(true/false)` callsites. The deny-only candidate intentionally preserves pending evidence and does not perform disposition.
+- ESP32 Mbed TLS matrix [#45863473433](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45863473433) SUCCESS: source-contract job `140061337553`, core 3.3.13 job `140061338064`, core 4.0.0 job `140061337907` all PASS. Both cores produced identical clean A/B builds. Staged source-tree SHA-256 `b4528d827c2eb93cf5d1144e73f22b68f1ae7df31042a713470f3d52f7ff476a`; 3.3.13 binary A/B SHA-256 `c28a935b454dec63bae8dcc26db73e919cc3639795a805de422ab73cd0a6c4d5`; 4.0.0 binary A/B SHA-256 `b9baf73c04037964bec33c65c620eb8848b2471f3c892561113f936a0d990587`.
+
+## Cross-role blockers and limits
+
+- PHX-QA must reconcile `config_revision` parity and active-clear assertions with the deny-only/pending-preservation boundary; Hardware will not edit QA tests or restore unsafe unsigned response consumption.
+- PHX-CORE must publish the authenticated register/poll and receipt/disposition contract plus canonical vectors before any positive consumer.
+- PHX-MASTER's latest `ROLE_ASSIGNMENTS.md` and `INTEGRATION_MATRIX.md` still pin #354 at stale `bbb209f55ddcd48f248eb8d700629db8754dc13a`; refresh to the current docs head.
+- Cleanup-first #266 remains open (0/7); this run does not claim its cross-role cleanup gate complete.
+- Financial #31/#32, safety #34 and witness #43 remain open release blockers. #239/#254/#283/#353 were revalidated and left untouched.
+- Private Drive registry `BLAZE_PROJECT_REGISTRY_v11_20261027.json` is not available through this runtime; no registry-derived migration or promotion occurred.
+
+Host behavior is **SIMULATED / CI VERIFIED** only. Physical GPIO/relay voltage/contact transient, real coin acceptor, electrical pulse/recovery, LittleFS power-loss, 150 power cuts, and 30-device/24-hour soak remain **NOT TESTED**. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+
+Canonical `CHANGE_LEDGER.md` was appended without truncation; the narrow handover is `docs/handover/2026-11-27-hw-blocking-poll-wait-harness-utc16.md`. The role checkpoint is recorded on #172 and linked from #177.
+
+## NEXT EXACT ACTION
+
+PHX-MASTER must refresh #354's branch pins; PHX-QA must reconcile the two deny-only assertions; PHX-CORE must publish the authenticated poll/receipt contract. Keep coin/relay admission denied and the PR draft. No merge, flash, reset, live money, migration, signer, release tag or deployment.
+
+# CURRENT STATE — 2026-11-26 UTC14 — final poll-inhibit independent polarity evidence
+
+**Role:** PHX-HARDWARE · **Issue:** [#177](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/177) · **PR:** [#354](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/354)  
+**Branch:** `phoenix/hw-active-v06-poll-intake-deny-20261126-utc05` · **Base:** `2fbd2475e9f54878c316fa7cea2f228386b0e859`  
+**Source/test SHA:** `9bb46bb27e4be80f6506dbebf2846700efd4cb81`  
+**PR state:** OPEN / DRAFT / UNMERGED · **Production:** NO-GO.
+
+## Validated task
+
+The Hardware-owned poll-inhibit source-extracted lab now covers all four independent relay/LED active-polarity combinations on ESP8266 and ESP32. It checks both logical OFF outputs after `denyRemoteControl()`, preserves pending pulse/nonce/target evidence through the simulated 3500 ms synchronous HTTP wait, and prints harness/mutation outcomes.
+
+- RED: [#45833611464](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45833611464), job `139956531105`, expected failure of the old symmetric-polarity harness.
+- Focused GREEN: [#45835204586](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45835204586), job `139962121142`, PASS; logs show 4/4 on both boards and all cross-polarity/deny-state mutations rejected.
+- ESP32 Mbed TLS matrix: [#45835204598](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45835204598), source-contract / 3.3.13 / 4.0.0 jobs all PASS.
+- Full: [#45835204641](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45835204641), freshness job `139962277374` PASS; validation job `139962374783` FAIL at QA-owned Controller protocol parity; 14/14 firmware/platform and Android jobs PASS; downstream simulation/update/signing/publication skipped.
+- Native: [#45835204563](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45835204563), job `139962121765`, FAIL at QA-owned PAY-0745 active-clear assertion.
+
+Only `poll_preflight_inhibit_lab.py` changed in source/test commits. Production sketches remain unchanged and deny-only. This is SIMULATED / CI VERIFIED, not hardware acceptance.
+
+## Process deviation
+
+The test-only RED commit preceded a new IN PROGRESS handover entry. This ordering deviation is disclosed. Future source work must stage IN PROGRESS before the first source commit.
+
+## Next exact action
+
+QA reconciles deny-only assertions; CORE publishes the authenticated register/poll and receipt/disposition contract; Master refreshes #354 branch pins; Hardware reruns exact-head Full. Physical GPIO/relay, coin acceptor, electrical recovery, LittleFS power-loss, 150 power cuts and 30-device/24-hour soak remain NOT TESTED. HARDWARE ACCEPTED NO; PRODUCTION READY NO-GO.
+
+# CURRENT STATE — 2026-11-26 UTC12 — poll guard control-flow regression
+
+**Role:** PHX-HARDWARE · **Task:** [#177](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/177) / [#354](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/354)  
+**Branch:** `phoenix/hw-active-v06-poll-intake-deny-20261126-utc05` · **Base:** `2fbd2475e9f54878c316fa7cea2f228386b0e859`  
+**Source/test SHA:** `ea24229ee3b46424997fd3e68012ef50a65897f9` · **PR:** OPEN / DRAFT / UNMERGED · **Production:** NO-GO.
+
+## Current change
+
+The Hardware-owned `poll_preflight_inhibit_lab.py` now rejects conditional or bypassable pre/post poll deny calls. The prior lab accepted a braced conditional pre-poll guard. Test-first RED [#45819429664](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45819429664), job `139907519235`, reproduced that false acceptance. The correction at [`ea24229`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/ea24229ee3b46424997fd3e68012ef50a65897f9) requires top-level unconditional deny statements and rejects early control transfers before the post-poll deny.
+
+Exact-head focused GREEN [#45819620598](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45819620598), job `139908174414`, PASS. Both board labs rejected all five new control-flow mutations (10/10 total), while the existing no-coin-POST, no-pending-clear, poll-response-discard, remote-config-deny, request-auth and GPIO output-order tests passed.
+
+Production ESP8266/ESP32 sketches were unchanged in this activation. The existing candidate still denies coin/relay/LED outputs before and after synchronous poll, discards the unauthenticated response, and preserves unresolved pending journal evidence.
+
+## Remaining exact-head gates
+
+- Native [#45819620637](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45819620637), job `139908175159`: FAIL at QA-owned PAY-0745 active `clearPending(true/false)` assertion. Do not restore active disposition.
+- Full [#45820173237](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45820173237): the first post-source rerun still failed because this CURRENT_STATE record was older than the source change; it is being refreshed now. This run does not establish controller-protocol parity.
+- ESP32 Mbed TLS 3/4 matrix [#45819620625](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45819620625): source contract and core 3.3.13 passed; core 4.0.0 was still in progress at the last job read. No final matrix result claimed.
+- Host/source-extracted status is SIMULATED / CI VERIFIED only. Physical GPIO/relay, coin acceptor, LittleFS power loss, electrical pulse/recovery, 150 controlled power cuts and 30-device/24-hour soak remain NOT TESTED. HARDWARE ACCEPTED = NO.
+
+## NEXT EXACT ACTION
+
+Refresh the append-only CHANGE_LEDGER after this CURRENT_STATE update, then rerun Full validation at the resulting exact PR head. PHX-QA must reconcile the deny-only pending-evidence assertions; PHX-CORE must publish the authenticated register/poll and receipt/disposition contract; PHX-MASTER must refresh the #354 head pin. Keep coin/relay admission denied.
+
+---
+
+# CURRENT STATE — 2026-11-26 UTC10 final exact-docs-head validation
+
+**Role:** PHX-HARDWARE · **Task:** #177 / #354 · **Docs HEAD:** `45418f9069ba40ad3d2a71930b8469d5d8623de7` · **Source/test:** `046bced7c8765d5e27daeb2885f0654f9ec62149`.
+
+Focused Hardware PR/push and ESP32 core 3.3.13/4.0.0 PR/push matrices PASS. Output lab: 8/8 independent board/polarity scenarios pass; 14/14 injected regressions rejected. Full [#45803466880](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45803466880) terminal FAIL: handover freshness passes; QA-owned `tests/controllers.sh` fails because it requires `config_revision` in both deny-only sketches. All 14 target/Android jobs PASS; downstream simulations/update/signing/publication/candidate gates SKIPPED. Native [#45803466968](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45803466968) fails QA-owned active `clearPending(true/false)` assertion.
+
+The source/test change is confined to `output_enable_sequence_lab.py`; production sketches unchanged. Host/source-extracted evidence is SIMULATED / CI VERIFIED only. Physical GPIO/relay, coin acceptor, LittleFS power loss, electrical recovery, 150 power cuts and 30-device/24-hour soak remain NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+
+Next: QA updates owned assertions; CORE publishes authenticated register/poll and receipt/disposition contract; Master refreshes #354 head pins. Hardware keeps coin/relay deny-only.
+
+---
+
+# CURRENT STATE — 2026-11-26 UTC10 / independent relay-LED polarity matrix
+
+**Role:** PHX-HARDWARE · **Task:** #177 / #354 · **Branch:** `phoenix/hw-active-v06-poll-intake-deny-20261126-utc05` · **Source/test:** `046bced7c8765d5e27daeb2885f0654f9ec62149`.
+
+The output-enable source lab now exercises all four independent relay/LED active-polarity combinations on both boards. Exact-source focused PR [#45802963675](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45802963675) and push [#45802954262](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45802954262) PASS; 8/8 board/polarity scenarios pass and 14/14 injected regressions are rejected. The first helper attempt at `2ab43c71` failed because it expected two rather than three OFF writes; corrected in `046bced7` and not accepted as test evidence.
+
+Native [#45802963561](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45802963561) FAILS at QA-owned `clearPending(true/false)` assertion. Full [#45802963678](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45802963678) FAILS mandatory handover freshness because this source commit predates the present handover refresh. ESP32 matrix [#45802963530](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45802963530) pending at this update; final-docs-head reruns are required.
+
+The follow-up changes only `output_enable_sequence_lab.py`; production sketches are unchanged. SIMULATED / CI VERIFIED only. Physical GPIO, relay contact, coin acceptor, LittleFS power-loss, electrical recovery, 150 power cuts and 30-device/24-hour soak remain NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+
+See [narrow handover](2026-11-26-hw-output-enable-active-write-guards-utc10.md).
+
+---
+
+# CURRENT STATE — 2026-11-26 UTC09 terminal / PHX-HARDWARE output-enable latch preload
+
+**Task:** [#177](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/177) · **Control:** [#172](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/172) · **Cleanup-first:** [#266](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/266) · **PR:** [#354](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/354)
+
+- **Role:** PHX-HARDWARE; scope limited to the two Vendo sketches, Hardware-owned source lab/workflow and Hardware-owned handovers.
+- **Branch:** `phoenix/hw-active-v06-poll-intake-deny-20261126-utc05`; **base:** `2fbd2475e9f54878c316fa7cea2f228386b0e859`; **source/test SHA:** `b8732704e2ff414f6ab4593acf4ae4e95fc6c280`.
+- **Change:** preload logical OFF for new relay/LED pins before OUTPUT on ESP8266 and ESP32; retain old-pin OFF and post-enable confirmation.
+- **Focused exact-source:** RED [#45790170219](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45790170219) job `139806889031`; GREEN [#45790391253](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45790391253) not the output lab; authoritative output-lab GREEN [#45790391312](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45790391312) job `139807615868` PASS and final docs-head focused [#45790738156](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45790738156) job `139808804664` PASS.
+- **Build matrix:** [#45790738210](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45790738210), source-contract + Arduino core 3.3.13 + 4.0.0 all PASS.
+- **Native:** [#45790738152](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45790738152) FAIL at QA-owned PAY-0745 active `clearPending(true/false)` assertion. **Full:** [#45790738250](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45790738250) validation FAIL at Controller protocol parity; all firmware target jobs and Android PASS; production import/update/simulation/sign/publish/candidate gates skipped.
+- **Evidence status:** SIMULATED / CI VERIFIED for source-extracted call ordering and target builds. Physical GPIO/relay/electrical/power-cut acceptance NOT TESTED. HARDWARE ACCEPTED NO; PRODUCTION READY NO.
+- No CORE API, QA tests, finance, pending disposition, signer/witness, migration, RELEASE workflow, COE destination or physical device was changed/operated.
+- [Narrow UTC09 handover](docs/handover/2026-11-26-hw-output-enable-preload-utc09.md).
+
+---
+
+# CURRENT STATE — 2026-11-26 UTC09 / PHX-HARDWARE output-enable latch preload
+
+**Task:** [#177](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/177) · **Control:** [#172](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/172) · **Cleanup-first:** [#266](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/266) · **PR:** [#354](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/354)
+
+- **Role:** PHX-HARDWARE; source scope limited to the two Vendo sketches, Hardware-owned host lab and Hardware-owned focused workflow.
+- **Branch:** `phoenix/hw-active-v06-poll-intake-deny-20261126-utc05`; **base:** `2fbd2475e9f54878c316fa7cea2f228386b0e859`; **final source/test SHA:** `b8732704e2ff414f6ab4593acf4ae4e95fc6c280`.
+- **Change:** preload logical OFF for new relay/LED pins before enabling OUTPUT on ESP8266 and ESP32. Keep old-pin OFF and post-enable OFF confirmation.
+- **Test-first RED:** [#45790170219](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45790170219), job `139806889031`, exact assertion `OUTPUT_SEQUENCE_FAIL relay OFF must precede OUTPUT mode`.
+- **Focused GREEN:** [#45790391312](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45790391312), job `139807615868`, PASS; 4/4 board/polarity checks and both unsafe-order mutations rejected.
+- **Other exact-head workflows:** ESP32 core matrix #45790391253 pending; native #45790391185 in progress; Full #45790391321 in progress at the time of this record.
+- **Evidence status:** SIMULATED / CI VERIFIED for source-extracted call ordering. Physical GPIO/relay/electrical/power-cut acceptance NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO.
+- No CORE API, QA tests, finance, pending disposition, signer/witness, migration, release or COE destination was changed. No physical device/relay/coin/flash/live money was operated.
+- [Narrow UTC09 handover](docs/handover/2026-11-26-hw-output-enable-preload-utc09.md).
+
+---
+
+# CURRENT STATE — 2026-11-26 UTC08 follow-up / PHX-HARDWARE active-v0.6 request guard parity
+
+**Task:** [#177](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/177) · **Control:** [#172](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/172) · **Cleanup-first:** [#266](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/266) · **PR:** [#354](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/354)
+
+- **Role:** PHX-HARDWARE. Only Hardware-owned ESP8266 firmware, Hardware-owned request-auth source lab and Hardware-owned focused workflow were changed. No CORE API/producer, QA-owned tests, finance backend, RELEASE-owned workflow, or COE destination changed.
+- **Base:** `blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859`.
+- **Branch:** `phoenix/hw-active-v06-poll-intake-deny-20261126-utc05`.
+- **Source implementation commit:** `17950ceee07dfc68bf252d76a60ff47296c4cfcd`; ESP8266 sketch blob `d8aeb524f8d0c33065d976a03413c7d5b60ec152`.
+- **Test-first RED:** [#45787241292](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45787241292), job `139797013376`; ESP8266 failed the missing request-guard contract while ESP32 passed its baseline and mutation tests.
+- **Focused GREEN push:** [#45787375680](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45787375680), job `139797466705`, PASS.
+- **Focused GREEN PR:** [#45787384111](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45787384111), job `139797496182`, PASS.
+- **Native synthetic:** [#45787384107](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45787384107), job `139797496443`, FAIL at QA-owned `clearPending(true/false)` callsite assertion; pending evidence remains intentionally undisposed.
+- **Full:** [#45787384199](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45787384199), validation job `139797731892`, FAIL at handover freshness because this source change had not yet been documented. Rerun required after this update.
+- **Status:** request-guard host regression SIMULATED / CI VERIFIED. Full integration NOT PASS. Physical coin/relay/electrical and power-cut acceptance NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO.
+
+## UTC08 request-guard change
+
+ESP8266 now mirrors the existing ESP32 request guard: `signedBody()` refuses empty key or ID and validates the generated SHA-256 hex; `post()` allows only `register` and `poll`, rejects empty key/ID, requires a nonempty signed body before opening HTTP, and sends only that validated body. The request format and BearSSL SHA-256 algorithm are unchanged. No positive coin, relay, remote-config or pending-disposition path was enabled.
+
+## Next exact action
+
+Rerun Full and both ESP32 core targets on the final handover head. QA owns the stale sequence and controller-parity assertions; CORE owns the authenticated response and receipt/disposition contract. Keep coin/relay denied.
+
+## Implemented
+
+Both ESP8266 and ESP32 now call `denyRemoteControl()` after pin setup, before and after every synchronous poll, and after register. The helper disables controller, coin, relay and LED flags, clears the active target, and applies the existing polarity-aware logical OFF path. Register/poll response bodies are discarded. The legacy config parser and unused JSON helpers/revision state are removed. Automatic coin POST/retry/clear is removed from `loop()`; existing pending pulse/nonce/target and durable journal records remain untouched.
+
+The candidate is deliberately deny-only. It does not resume paid operation on unsigned `insert` or `target_nonce` fields.
+
+## Exact test evidence
+
+- RED: [#45764293566](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45764293566), job `139721362633`, expected failure on test-only head because pending disposition remained in the active loop.
+- GREEN focused final docs head: [#45765161847](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45765161847), job `139724228280`, PASS.
+- Native journal workflow: [#45765161848](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45765161848), job `139724228753`, FAIL at QA-owned `clearPending(true/false)` source assertion; preceding native journal, CGI denial, migration preflight, maintenance freeze and frozen-capture tests passed.
+- Full build: [#45765161859](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45765161859), validation job `139724399274`, FAIL at handover freshness before target matrix terminal results. Canonical docs are being refreshed; rerun required.
+
+## Status distinctions
+
+- Host/source-extracted regression: SIMULATED / CI VERIFIED.
+- Board compilation on this final handover head: NOT YET VERIFIED.
+- Physical relay/coin acceptance and power-loss durability: NOT TESTED.
+- HARDWARE ACCEPTED: NO.
+- PRODUCTION READY: NO.
+
+## NEXT EXACT ACTION
+
+PHX-QA: update its own controller parity and sequence assertions for the deny-only candidate, without restoring unsigned config or active pending disposition.
+PHX-CORE: publish the authenticated register/poll and event receipt/disposition contract.
+PHX-MASTER: reconcile the #354 SHA in ROLE_ASSIGNMENTS and INTEGRATION_MATRIX.
+PHX-HARDWARE: revalidate branch heads and rerun Full after those owner changes. Keep coin/relay denied.
+No physical flash, device reset, live money, signing, migration, merge, release tag or deployment.
+
 <!-- FULL-QR-TERMINAL-20261113:START -->
 > **Full offline QR merged-head CI / 2026-11-13 Asia/Manila / VALIDATED** — The Full push for the PR 278 merge, `d4c06e2c5ca223cc95ff04bd60a9f6cf0a69e1bb`, completed successfully on attempt 1 on `blazepwifi-v0.6.0-audit-foundation`. All 27 jobs that ran succeeded, including the required and optional firmware matrices. The complete 32-job REST inventory shows five expected skips for signed APK import, signing handoff, prerelease, release and lab-preview publication. [Full run 42475439223](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42475439223)
 >
@@ -690,3 +894,68 @@
 > **COIN-20261021 LOGO REVIEW FAILURE — 2026-10-21 Asia/Manila, UNCOMMITTED:** Independent review reproduced a valid APK URL containing the literal branding marker being rewritten into image data because logo substitution ran after user URL insertion. New logo source is not accepted yet. Add URL-preservation RED and move logo substitution before inserting user-controlled values, then recheck all setup tests. Original three fixes at `b9d988a0df1570445ac2820f83e91e4f5891e98f` are exact-HEAD verified: Full #39492236306 and #39492187314, Windows #39492236189 all completed success. Owner additionally authorized R281 standalone tests; SSH read-only board query confirms Notion R281/OpenWrt 24.10.8. Browser inspection of `/rental` is blocked by the router's untrusted certificate; no warning bypass, config change, firmware write or paid operation performed. Credentials are not recorded in repository evidence. NEXT: repair proven logo interpolation bug, finish read-only installed-source inventory, push synchronized source and run fresh CI.
 
 > **COIN-20261021 OWNER ZIP SOURCE — IN PROGRESS, 2026-10-21 Asia/Manila:** Owner identified `branding/Logo-V2/Logo-V2-Branding-Package.zip` as the asset source. Use its exact `Logo-V2/ASSETS/logo-on-dark-from-board.png` (278x175, SHA-256 `c4e61f370a1a9541722f4fcee522cec8d20c3c9e2917fc1a32286f4870193690`; archive SHA-256 `8cd0d32f8023e7d8259a268f9bdbb6c7b3dfdf55d7ba2a205fd39f800bfa22b9`) instead of the larger original board. Keep bytes unchanged, display logo panel through viewport excluding packaged caption/white stripe, embed PNG offline and retain valid marker-containing URLs. Prior local logo source `977ec3fd90cf83ee589e82671c181ca41ed463c9` is superseded by this explicit source instruction and is not CI-proven. NEXT: switch to ZIP asset, rerun setup/branding tests, synchronize all handovers before push. R281 permission also permits isolated temporary entropy routine smoke tests in RAM only; installed service and persistent configuration remain untouched, no power-cut or release acceptance implied.
+
+
+## PHX-HARDWARE UTC06 — exact-head preservation and CI update
+
+The active-v0.6 deny candidate remains on [PR #354](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/354), branch `phoenix/hw-active-v06-poll-intake-deny-20261126-utc05`, based on `blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859`.
+
+The canonical `CHANGE_LEDGER.md` history was restored after detecting that the prior UTC05 refresh had replaced 1,080,830 characters / 400 headings with a 2,454-character checkpoint. The restoration commit is [d718c873](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/d718c873f4def0807ebf0fc40aa6e1ff60bb3122); the restored ledger blob contains 1,082,506 characters and 401 headings.
+
+Exact-head evidence at d718c873:
+- Focused exact-head PR [#45766825375](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45766825375), job `139729611849`, and push [#45766819170](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45766819170), job `139729592701`, PASS at final docs head `aca9becc35d2c68faeecbf6e14c70b7d71d1d91b`. The earlier d718c873 focused run [#45766610880](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45766610880), job `139728911769`, also passed.
+- Full exact-head build [#45766825536](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45766825536) completed FAILURE at final docs head `aca9becc35d2c68faeecbf6e14c70b7d71d1d91b`. Validation job `139729743548` failed at QA-owned `tests/controllers.sh` / Controller protocol parity: both deny-only sketches intentionally omit the legacy `config_revision` token, but the current QA script still requires it; the other checked loop markers are present. ESP32 job `139729743626` failed under ESP32 core 4.0.0 with `fatal error: mbedtls/sha256.h: No such file or directory`. All other target/Android build jobs passed; update/simulation/signing/release/publication gates were skipped. This is not Full PASS.
+- Native exact-head journal [#45766825496](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45766825496), job `139729626660`, FAIL at QA-owned `tests/v060_vendo_sequence_contract.py:20`: the legacy assertion requires active `clearPending(true/false)` callsites, incompatible with this deny-only candidate. The preceding 12 steps passed; Hardware did not edit the QA-owned test.
+
+This UTC06 change is documentation/history preservation only; no firmware source was changed in this increment. Host/source-extracted firmware checks remain SIMULATED / CI VERIFIED only. Physical coin, relay, electrical recovery, 150 power cuts and 30-device/24-hour soak remain NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO.
+
+
+
+## PHX-HARDWARE UTC06 — final deny-candidate exact-head recheck
+
+**Evidence head before this handover-only refresh:** `458fc1fa7b3b0a58c44e6b3f4becfbcacd905d85` on PR #354, branch `phoenix/hw-active-v06-poll-intake-deny-20261126-utc05`, base active v0.6 `2fbd2475e9f54878c316fa7cea2f228386b0e859`. The following commits are documentation-only; they do not change the firmware source/test SHA.
+
+- Focused PR [#45768041258](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45768041258), job `139733634481`: PASS.
+- Focused push [#45768031076](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45768031076), job `139733600239`: PASS.
+- Native journal [#45768041271](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45768041271), job `139733635211`: FAIL at QA-owned `tests/v060_vendo_sequence_contract.py:20`, which still requires active `clearPending(true/false)` callsites. The deny-only source intentionally retains no active clear/disposition callsite; prior 12 native steps passed.
+- Full [#45768041351](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45768041351): terminal FAILURE. Validation job `139733743621` failed at QA-owned `tests/controllers.sh` / Controller protocol parity. Source audit confirms both sketches omit `config_revision` while the current QA script still greps for that legacy token; the other checked loop markers remain present. ESP32 job `139733743603` failed on core 4.0.0: `fatal error: mbedtls/sha256.h: No such file or directory`. All other target jobs and Android passed; update bundle, v0.4 simulations, signing, publication and candidate gates skipped. No Full PASS.
+- Exact-source loop audit: both ESP8266 and ESP32 loops call `denyRemoteControl()` immediately before and after synchronous `post("poll")`; the returned body is discarded; no `post("coin")`, `clearPending()` or `applyRemoteConfig()` call exists in either loop. Pending pulse/nonce/target evidence remains preserved. This is source audit plus CI, not physical pulse acceptance.
+- Known Hardware-owned provider candidate: PR #340 source/test `d1380acf80c0b631c5814d746dca36b2fad7a986` includes version-gated Mbed TLS 3 / PSA Crypto 4 SHA-256, initialization/digest-length failure guards and request-digest validation; actual ESP32 core 4.0.0 compile [#45747192648](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45747192648), job `139665996232`, PASS. This exact provider has not been ported to #354; request PHX-MASTER/PHX-RELEASE review before porting. Do not invent a different crypto path.
+
+PR #354 remains OPEN / DRAFT / UNMERGED. PRs #239/#254/#283 remain OPEN / DRAFT / UNMERGED and untouched. The active candidate is deny-only; no production firmware source changed in this activation. Physical coin/relay/electrical acceptance, LittleFS power cuts, 150 controlled power cuts and 30-device/24-hour soak remain NOT TESTED. Protected signer/witness, v1-to-v2 migration, durable accounting/replay and independent QA/release signoff remain NOT ACCEPTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+
+**Next exact action:** PHX-QA updates its own controller parity and sequence assertions to match the intentionally deny-only candidate without reintroducing response parsing or pending disposition; PHX-CORE publishes the approved authenticated register/poll and event receipt/disposition contract; PHX-MASTER/PHX-RELEASE review the exact #340 Mbed TLS provider port. Only then should PHX-HARDWARE change firmware source and rerun exact-head Full.
+
+## PHX-HARDWARE UTC09 — shared C++ source extractor in output-enable lab
+
+- **Task:** #177 / PR #354; Hardware-owned host-lab maintainability improvement only. The two production sketches and their GPIO behavior are unchanged by this follow-up.
+- **Branch:** `phoenix/hw-active-v06-poll-intake-deny-20261126-utc05`; source/test commit: [`87ef824d7d4dd88c712da1a690a3ebb30989ac86`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/87ef824d7d4dd88c712da1a690a3ebb30989ac86); PR #354 remains OPEN / DRAFT / UNMERGED.
+- **Change:** `output_enable_sequence_lab.py` now imports the shared `firmware_source_extract.extract_function` instead of maintaining a second regex/brace-count extractor. A small fixture verifies that comment, quoted-string and C++ raw-string decoys cannot shadow the actual function definition. Existing active-high/active-low output ordering and unsafe-mutation checks remain intact.
+- **Focused exact-source push:** [#45794249849](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45794249849), job `139820705126`, PASS.
+- **Focused exact-source PR:** [#45794256145](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45794256145), job `139820725334`, PASS. Logs show `SOURCE_EXTRACTOR_PASS`, ESP8266 and ESP32 `OUTPUT_SEQUENCE_PASS`, unsafe-order mutation rejected on both boards, and 4/4 output-enable checks PASS.
+- **Other exact-source checks:** ESP32 Mbed TLS matrix [#45794256223](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45794256223), native synthetic [#45794256041](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45794256041), and Full PR [#45794256126](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45794256126) were still running at the initial handover update. Full push [#45794249945](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45794249945) reached the mandatory handover-freshness gate before this append and failed there; it is not a source/test failure. Final-head reruns are required after this documentation update.
+- **Evidence limits:** this is host/source-extracted SIMULATED / CI VERIFIED test tooling. Physical GPIO voltage, relay contact transient, coin acceptor, LittleFS power-loss, electrical recovery, 150 power cuts and 30-device/24-hour soak remain NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+- No CORE API, QA-owned tests, finance, receipt/disposition, signer, witness, COE destination, production device or physical firmware was changed.
+
+
+## PHX-HARDWARE UTC09 terminal exact-head reconciliation — shared extractor lab
+
+- **Role / task:** PHX-HARDWARE; #177 / DRAFT PR #354. Source/test commit `87ef824d7d4dd88c712da1a690a3ebb30989ac86`; the exact-head validation below was run on docs head `1d8edd339b87831921282524236ad5978d4c309e` before this terminal documentation-only commit.
+- **Code change:** the Hardware-owned output-enable lab now uses the shared C/C++ function extractor and verifies comment, quoted-string and raw-string decoys are ignored. Production sketches and runtime behavior are unchanged in this follow-up.
+- **Focused exact-head PR:** [#45794589576](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45794589576), job `139821876411`, PASS. The log contains `SOURCE_EXTRACTOR_PASS`; both ESP8266 and ESP32 output sequences pass; the unsafe output-before-OFF mutation is rejected on both boards; 4/4 output-enable checks PASS.
+- **ESP32 Mbed TLS matrix:** [#45794589884](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45794589884), terminal SUCCESS. Source-contract job `139822229406`, Arduino core 4.0.0 job `139822229989`, and Arduino core 3.3.13 job `139822230183` all PASS.
+- **Native synthetic:** [#45794589513](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45794589513), job `139821904434`, terminal FAILURE at QA-owned `tests/v060_vendo_sequence_contract.py:20`, which requires active `clearPending(true/false)` callsites. The deny-only candidate intentionally has no active pending-disposition callsite and preserves evidence. Hardware did not edit QA-owned tests.
+- **Full BlazePwifi:** [#45794589544](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45794589544), terminal FAILURE at QA-owned Controller protocol parity / `tests/controllers.sh` legacy `config_revision` expectation. Mandatory handover freshness, HND-0700, CI-0701, form decoder, static, v0.3, admin, config and template checks passed. ESP8266, ESP32, all OpenWrt target jobs and Android passed. Downstream simulations, update bundle, candidate gate, signing and publication were skipped. This is not a Full PASS.
+- **Safety:** candidate remains deny-only. No authenticated poll consumer, unsigned config application, active pending disposition, coin admission, relay admission, financial state or COE destination changed. Physical GPIO/relay/electrical behavior, coin acceptance, LittleFS power-loss, 150 power cuts and 30-device/24-hour soak remain NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+- **Next exact action:** PHX-QA replaces the two legacy deny-only-incompatible assertions with default-deny/no-callsite and pending-evidence-preservation assertions. PHX-CORE publishes the approved authenticated register/poll and receipt/disposition contract. PHX-MASTER refreshes its #354 head pin after this documentation commit.
+
+
+## PHX-HARDWARE UTC10 — output-enable active-write guard (2026-11-26)
+
+- PR #354 branch `phoenix/hw-active-v06-poll-intake-deny-20261126-utc05`; source/test SHA `46a0af372bef5b0e48f538846aa59407227e3a24`.
+- Hardware-owned lab only: `output_enable_sequence_lab.py` now rejects active relay/LED writes anywhere during extracted `configureRuntimePins()`, including between OFF preload and OUTPUT enable and between OUTPUT enable and OFF confirmation. Both polarities are exercised on ESP8266 and ESP32.
+- Test-first RED: [#45799017209](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45799017209), job `139837027426`, the new relay-active-before-output mutation survived the old harness.
+- Focused GREEN: push [#45799336363](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45799336363), job `139838136565`, PASS; PR [#45799349008](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45799349008), job `139838180750`, PASS. Both logs show 12/12 checks PASS and eight active-level mutations rejected.
+- Native [#45799349143](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45799349143) remains FAIL at QA-owned active-`clearPending` assertion. Full [#45799349134](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45799349134) requires a post-handover exact-head rerun. Mbed TLS matrix [#45799349049](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45799349049) was still pending at this entry.
+- Production sketches and behavior unchanged by this task. GPIO voltage/contact transient, physical coin acceptor, LittleFS power-loss, electrical recovery, 150 power cuts and 30-device/24-hour soak remain NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+- See [narrow handover](2026-11-26-hw-output-enable-active-write-guards-utc10.md).
