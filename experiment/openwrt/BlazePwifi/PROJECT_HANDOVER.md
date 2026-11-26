@@ -767,3 +767,17 @@ The current commit updates `PROJECT_HANDOVER.md`, `CURRENT_STATE.md`, and `CHANG
 > **Next:** read the new exact-head Full validation and target jobs; PHX-QA reviews the helper boundary; PHX-MASTER/PHX-RELEASE reconcile the Mbed TLS 4 provider and stack. No merge, rebase, retarget, flash, reset, signing, release or deployment.
 <!-- PHX-HW-20261125-UTC22-EQUAL-FIXED-NULL-EMPTY:END -->
 
+
+
+
+## 2026-11-26 UTC00 — #348 exact-head terminal CI reconciliation
+
+- **Role / task:** PHX-HARDWARE / #172 / #266 / #254 / #348. This is a documentation/evidence synchronization only; no new firmware source change in this checkpoint.
+- **Branch / stack:** `phoenix/hw-controller-auth-nonempty-spans-20261123-utc15`; parent PR #254 exact head `84c442a46ee2ee48dcbe68b71ff0f54edbc09ba9`; #254 remains stacked on Phase-A deny PR #239 at `d83b715b116185107737fef721c2eece8feebf39`. PR #348 remains OPEN / DRAFT / UNMERGED.
+- **Source/test provenance:** native header source/test commit `659b1e646ba6d3efdbe68e03df4ab4f170a89f0e1`; test commit `2147c9ae46ae862cb355d2da3b4df1787180689e`. The fixed-span comparator rejects null pointers and zero-length spans before dereference; the nonempty comparison retains its fixed-length XOR-accumulation pass.
+- **Focused exact-head CI:** [run #45716221522](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45716221522), job `139562835485`, **SUCCESS** at exact docs/PR head `ed17201687d9308de0e0bc4dd10d6da33d4a4733`. The actual native header test ran with C++17, Mbed TLS 2.28.8, `-Wall -Wextra -Werror`, ASan/UBSan; null/empty span, digest rendering, empty-policy/canonical denial, null parser-span and 5/5 synthetic authentication checks passed. Phase-A coin/relay admission guard remained DENY.
+- **Full exact-head CI:** [run #45716221609](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45716221609), exact head `ed17201687d9308de0e0bc4dd10d6da33d4a4733`, terminal **FAILURE** (23 jobs success / 1 failure / 6 skipped). Validation job `139563017167` **SUCCESS**; ESP32 job `139563017235` **FAILURE** because Arduino ESP32 core `4.0.0` cannot find `mbedtls/sha256.h` included by `BlazePwifiVendo32.ino:6`. The other 12 firmware target jobs and Android passed; seven v0.4 simulations and update-bundle job passed. Production import, prerelease, ESP simulation, sign handoff, publication and candidate-gate jobs were skipped. This is not a Full pass.
+- **Interpretation / boundaries:** focused helper is **CI VERIFIED / SIMULATED**, not application authentication or hardware acceptance. The Mbed TLS 4 application-provider failure is inherited; no provider port, core pin, response-contract change, sketch change, key provisioning, GPIO/relay behavior, finance, signer/witness or migration was changed. Phase-A remains DENY.
+- **Physical status:** coin pulse/electrical recovery, LittleFS/EEPROM power-loss, 150 power cuts and 30-device/24-hour soak remain **NOT TESTED**. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+- **Next exact action:** PHX-CORE / PHX-RELEASE / PHX-MASTER decide the approved ESP32 core-4.0.0 Mbed TLS 4/PSA provider path; PHX-QA independently reviews the helper boundary and negative cases; PHX-HARDWARE reruns Full only after the approved provider/contract change. No merge, rebase, retarget, flash, reset, signing, migration, release or deployment.
+

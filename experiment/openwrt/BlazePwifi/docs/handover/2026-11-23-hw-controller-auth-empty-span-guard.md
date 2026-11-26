@@ -78,3 +78,20 @@ The focused native workflow subsequently ran against the exact final handover he
 - Phase-A admission guard step passed.
 
 The separate [Full BlazePwifi run #45715616079](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45715616079) was still pending with no jobs returned at the last observation; no Full aggregate result is claimed. The focused helper is **CI VERIFIED / SIMULATED**, not hardware accepted or production-authoritative.
+
+
+<!-- PHX-HW-20261126-UTC00-348-TERMINAL:START -->
+
+## 2026-11-26 UTC00 — terminal exact-head CI reconciliation
+
+The exact-head Full workflow has now completed; the earlier “IN PROGRESS” wording above is superseded by the terminal result below.
+
+- PR/docs head before this docs-only reconciliation: `ed17201687d9308de0e0bc4dd10d6da33d4a4733`.
+- Source/test: `659b1e646ba6d3efdbe68b71ff0f54edbc09ba9`; native test commit `2147c9ae46ae862cb355d2da3b4df1787180689e`.
+- Focused [#45716221522](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45716221522), job `139562835485`: **PASS** at the exact parent/docs head. The actual native header test passed null/empty-span and synthetic authentication checks under C++17, warnings-as-errors, ASan/UBSan; Phase-A admission remained DENY.
+- Full [#45716221609](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45716221609): terminal **FAILURE**. The validation job `139563017167` passed; ESP32 job `139563017235` failed at Arduino core 4.0.0 because `mbedtls/sha256.h` is absent for the application sketch. All other 12 firmware target jobs and Android passed; 23 total jobs succeeded, one failed, six production/release-related jobs were skipped.
+- The ESP32 provider/PSA decision belongs to MASTER/CORE/RELEASE; this Hardware lab branch did not substitute a different core or add an unapproved provider. Focused status is CI VERIFIED / SIMULATED only; Full status is FAILED; hardware NOT TESTED; production NO-GO.
+- No production sketch, CGI producer, shared API, key, relay, coin admission, financial state, signer/witness, migration or COE destination changed. No physical test, flash, reset, signing, merge or deployment occurred.
+- Next: obtain the approved ESP32 Mbed TLS 4 provider decision, QA review, then rerun Full at the approved exact head.
+
+<!-- PHX-HW-20261126-UTC00-348-TERMINAL:END -->
