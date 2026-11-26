@@ -1,23 +1,27 @@
-# CURRENT STATE — 2026-11-27 UTC19 — focused, Mbed TLS and 14/14 target builds CI verified; Full validation blocked by QA-owned deny-only assertions
+# CURRENT STATE — 2026-11-27 UTC19 — startup register deny guard CI verified; Full handover sync required
 
-**Role:** PHX-HARDWARE · **Task:** cleanup-first #266 / hardware #177 / draft PR #355 (stacked on #354)  
-**Branch:** `phoenix/hw-poll-preflight-lab-modules-20261127-utc18` · **Base:** `phoenix/hw-active-v06-poll-intake-deny-20261126-utc05@fc842342596786e072630179acfbbc4feeb2ba02`  
-**Source/test SHA:** `e21f5e70695f3fdd6ee349e385fda69210034826` · **Last exact terminal docs head:** `91010365df8c59cbbd1cb0b67b9463d99149a9cc` · **PR:** OPEN / DRAFT / UNMERGED · **Production:** NO-GO.
+**Role:** PHX-HARDWARE · **Task:** cleanup-first #266 / hardware #177 / existing DRAFT PR #355 (stacked on #354)  
+**Branch:** `phoenix/hw-poll-preflight-lab-modules-20261127-utc18` · **Parent/base:** #354 `fc842342596786e072630179acfbbc4feeb2ba02`  
+**Source/test SHA:** `caeea7f30bc959c3264b785592b8e53f28d040b6` · **Pre-sync branch HEAD:** `caeea7f30bc959c3264b785592b8e53f28d040b6` · **PR:** OPEN / DRAFT / UNMERGED · **Production:** NO-GO.
+
+## Verified work
+
+Added a source-extracted startup register deny contract to the Hardware-owned poll-preflight lab. It requires one discarded register POST inside the Wi-Fi-connected branch, no startup remote-config consumer, an unconditional startup deny before `connectSta()`, and an unconditional post-register deny. The test rejects 8/8 unsafe mutations per board and 2/2 response-use variants; comments/string decoys are ignored. No production sketches or shared APIs changed.
 
 ## Exact results
 
-- Focused poll-deny [#45880191752](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45880191752), job `140117311476`: PASS.
-- Mbed TLS [#45880191747](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45880191747): source-contract and ESP32 core 3.3.13/4.0.0 all PASS.
-- Full [#45880191748](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45880191748): CI-0701 PASS; 14/14 target/platform jobs PASS; validation job `140117397355` FAIL at `tests/controllers.sh:20` because QA's legacy assertion requires `applyRemoteConfig`; line 21 also requires `config_revision`, absent from the deny-only sketches. Production import, update, simulations, candidate, signing and publication skipped.
-- Source/test SHA `e21f5e70695f3fdd6ee349e385fda69210034826` unchanged by this docs-only follow-up.
+- Focused [#45882710658](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45882710658), job `140125732751`: **PASS** at `caeea7f30bc959c3264b785592b8e53f28d040b6`; ESP8266 and ESP32 startup register guards and mutation vectors pass.
+- Full [#45882710608](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45882710608): CI-0701 `140125802015` PASS; 13 firmware targets + Android (14 jobs) PASS; validation `140125877416` FAIL at handover freshness because canonical docs still pinned `57b69a4bff7fd15f93c5ba2e0de7d367ff2bdec5`. Production import, update, simulations, candidate, signing and publication skipped.
+- Mbed TLS [#45882710626](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45882710626): source-contract `140126409598` PASS; core 3.3.13 and 4.0.0 target jobs IN PROGRESS at this checkpoint.
+- SIMULATED / CI VERIFIED only; physical GPIO, coin acceptor, electrical recovery, power-cut and soak acceptance NOT TESTED.
 
 ## Blockers
 
-PHX-QA owns deny-only assertion reconciliation; PHX-CORE owns the authenticated poll/receipt contract; PHX-MASTER owns global role assignments and branch pins. Cleanup #266 remains OPEN / 0-of-7. Financial #31/#32, safety #34 and witness #43 remain open.
+QA owns deny-only controller assertion reconciliation; CORE owns authenticated register/poll and receipt/disposition; MASTER owns global role matrix and branch pins. Master role files at `ed6bb786c08d360a611e0e6c5c0505fa90d9b477` do not yet list #355. Cleanup #266 OPEN / 0-of-7. Financial #31/#32, safety #34, witness #43 and production anti-rollback/migration gates remain open. Private Drive registry v11 unavailable; no older registry substituted.
 
-Host tests are SIMULATED / CI VERIFIED only. Physical GPIO/relay, real coin acceptor, electrical recovery, LittleFS power-loss, 150 power cuts and 30-device/24-hour soak are NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO. Private Drive registry v11 unavailable through current connector surface.
+## NEXT EXACT ACTION
 
-**NEXT EXACT ACTION:** QA/CORE/Master reconcile their owned blockers; Hardware reruns Full after approved changes and keeps coin/relay denied.
+Rerun Full after this canonical sync to pass handover freshness and expose the next QA-owned assertion. Keep #355 DRAFT, preserve #354 and deny coin/relay outputs.
 
 
 # CURRENT STATE — 2026-11-27 UTC18 — focused and target builds CI verified; Full validation blocked by deny-only QA assertions
