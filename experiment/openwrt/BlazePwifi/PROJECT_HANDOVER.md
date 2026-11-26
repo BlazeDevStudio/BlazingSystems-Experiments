@@ -1,3 +1,15 @@
+## CURRENT STATUS — 2026-11-27 UTC16 — blocking-poll wait harness IN PROGRESS
+
+**Role:** PHX-HARDWARE · **Issue:** [#177](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/177) · **Existing draft:** [PR #354](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/354)  
+**Branch:** `phoenix/hw-active-v06-poll-intake-deny-20261126-utc05` · **Base:** `blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859`  
+**Current head:** `05be6faf86290de70cc10ea7e6cce8ecb1108f02` · **Work item:** `PHX-HARDWARE-20261126T16-BLOCKING-POLL-WAIT-HARNESS`.
+
+The existing poll-inhibit lab described a 3500 ms wait but only checked the deny outputs immediately after calling `denyRemoteControl()`. A new source-extracted harness now attempts to execute the actual poll block. Its first focused run [#45862503824](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45862503824), job `140056856073`, failed while compiling the new fixture because of test-authoring errors (newline concatenation/string literal and missing `wifiFailures` stub). It did **not** reach the intended wait-duration assertion; this run is not product failure evidence and is not counted as a valid RED.
+
+No production sketch, shared API, finance, pending disposition, relay admission, or physical device was changed. Correct the host fixture, rerun the exact-source focused workflow, and only then count a wait-duration RED followed by a GREEN with injected pulse, output, admission, and pending-evidence assertions. Physical acceptance remains NOT TESTED; HARDWARE ACCEPTED NO; PRODUCTION NO-GO.
+
+The canonical `CHANGE_LEDGER.md` could not be read through the connected GitHub file endpoint because its existing blob exceeds the connector's supported response size. It was not overwritten or truncated; a separate clearly-labelled audit addendum will record this run instead.
+
 ## CURRENT STATUS — 2026-11-26 UTC14 — final poll-inhibit independent polarity evidence
 
 **Role:** PHX-HARDWARE · **Task:** [#177](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/177) / [#354](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/354)  
