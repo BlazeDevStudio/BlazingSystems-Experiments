@@ -24,6 +24,10 @@ CREDENTIAL_GUARD = {
     "ESP8266": "if(!strlen(cfg.key) || !strlen(cfg.id)) return String();",
     "ESP32": "if(cfg.key.isEmpty() || cfg.id.isEmpty()) return String();",
 }
+POST_CREDENTIAL_GUARD = {
+    "ESP8266": 'if(!strlen(cfg.key) || !strlen(cfg.id)) return "";',
+    "ESP32": 'if(cfg.key.isEmpty() || cfg.id.isEmpty()) return "";',
+}
 
 
 def require(condition: bool, message: str) -> None:
@@ -74,7 +78,7 @@ def assert_contract(board: str, source: str) -> None:
             f"{board}: post must allow only register and poll")
     post_compact_code = re.sub(r"\s+", "", post_code)
     action_at = post_compact_code.find("action!=")
-    post_guard = post_compact_code.find(re.sub(r"\s+", "", CREDENTIAL_GUARD[board]))
+    post_guard = post_compact_code.find(re.sub(r"\s+", "", POST_CREDENTIAL_GUARD[board]))
     wifi_at = post_compact_code.find("WiFi.status()")
     body_at = post_compact_code.find("Stringbody=signedBody(action,pulses,target,forcedNonce);")
     body_check = post_compact_code.find("if(!body.length())return")
@@ -112,7 +116,7 @@ def verify_board(board: str, path: Path) -> None:
     )
     expect_rejected(
         board, "missing-post-credential-guard",
-        edit_function(source, "String post(", key_guard, ""),
+        edit_function(source, "String post(", POST_CREDENTIAL_GUARD[board], ""),
     )
     expect_rejected(
         board, "key-only-guard-does-not-reject-empty-ID",
