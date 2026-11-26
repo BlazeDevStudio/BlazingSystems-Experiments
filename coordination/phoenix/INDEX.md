@@ -1,3 +1,13 @@
+## Latest PHX-MASTER checkpoint — scheduled UTC17 / 2026-11-26
+
+- [UTC17 live owner CI, Hardware #353/#354 current source/test heads, release ancestry and COE #26 provenance audit](PHX_MASTER_UTC17_20261126_HW353_AC9E_HW354_FC842_COE26_PROVENANCE_AUDIT.md)
+- Starting Master HEAD: `47678fdf9a38a75298f6d051ece3c7aced66a22d`; Experiments main `6be5d19b`; active v0.6 `2fbd2475`; legacy v0.5.3 `aad3aade`; COE main `a6513ab4`; COE #26 `b382d233`.
+- HARDWARE #353 current head `ac9e754e`: Relay/Quarantine PASS; Full fails missing ESP8266 poll signature; owner PR body stale. HARDWARE #354 current head `fc842342`: focused poll-deny and Mbed TLS matrix PASS; Full/Native fail QA-owned assertions; deny-only behavior preserved.
+- RELEASE #242/#291 ancestry is stale by 22/16 commits respectively; no exact-head CI. COE #26 remains FROZEN with firmware blob divergence, stale intake/map pins, 46/15 vs 47/14 intake discrepancy, contradictory firmware audit and license/NOTICE gaps.
+- Cleanup #266 OPEN / 0-of-7. Private Drive registry v11/newer corrections NOT RECOVERED; Master Python suite NOT RUN; **PRODUCTION NO-GO**.
+
+---
+
 ## PHX-MASTER UTC16 — current exact-head audit (2026-11-26T16:33:57Z)
 
 - Report: [PHX_MASTER_UTC16_20261126_CURRENT_HEAD_HW353_COE26_PROVENANCE_AND_RELEASE_BASE_AUDIT.md](PHX_MASTER_UTC16_20261126_CURRENT_HEAD_HW353_COE26_PROVENANCE_AND_RELEASE_BASE_AUDIT.md)
