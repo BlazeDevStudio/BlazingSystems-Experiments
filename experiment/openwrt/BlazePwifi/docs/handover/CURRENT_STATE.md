@@ -1,3 +1,37 @@
+## CURRENT STATE — 2026-11-27 UTC19 — startup output deny moved ahead of LittleFS recovery; exact-head CI pending
+
+**Role:** PHX-HARDWARE · **Task:** hardware #177 / cleanup-first #266 / DRAFT PR #355 (stacked on #354)  
+**Branch:** `phoenix/hw-poll-preflight-lab-modules-20261127-utc18` · **Parent/base #354:** `fc842342596786e072630179acfbbc4feeb2ba02`  
+**Test-first RED:** `39aa77e56806df3c1febae0f0a097b0f661ca2c6` · **Firmware correction:** `6bb8eafe03e5a2548524b7c693a37a95638c140e`  
+**PR:** OPEN / DRAFT / UNMERGED · **Production:** NO-GO.
+
+### Proven startup-order defect and correction
+
+Both current Vendo sketches mounted/recovered LittleFS before configuring the configured relay/LED pins and calling `denyRemoteControl()`. This left a potentially blocking filesystem mount and pending-journal recovery ahead of the software output-off latch.
+
+The setup order is now:
+1. Load persisted pin/polarity configuration.
+2. Apply configured runtime pins with the existing OFF preload behavior.
+3. Call `denyRemoteControl()` so controller, coin, relay and LED admission remain disabled.
+4. Only then mount/recover LittleFS and inspect pending journal state.
+5. Continue portal/network setup with the existing deny-only behavior.
+
+ESP8266 moves `initPendingStore()` after the output latch. ESP32 moves `LittleFS.begin(false)` and `loadPending()` after it. No pin mapping, polarity, journal format, receipt semantics, positive coin admission or shared API changed.
+
+**Scope limitation:** EEPROM/Preferences configuration loading still precedes pin initialization because the saved pins/polarity are needed to select the correct OFF level. This change does not prove the electrical state during that configuration read; board-level bias and physical boot behavior still require hardware evidence.
+
+### Test-first evidence
+
+- Expected RED at test-only SHA `39aa77e56806df3c1febae0f0a097b0f661ca2c6`: [focused run #45886210859](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45886210859), job `140137430702`. The new guard failed on **both ESP8266 and ESP32** because LittleFS startup preceded configured output pins and the deny latch. This is the expected pre-fix failure.
+- Firmware correction at `6bb8eafe03e5a2548524b7c693a37a95638c140e`. Exact-head focused GREEN and Full results are pending; do not treat the RED as a passing test.
+- Full build [#45886367363](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45886367363) was pending when this checkpoint was written.
+
+### Ownership and release boundary
+
+Only ESP8266/ESP32 sketches and Hardware-owned lab/handover paths changed. QA retains controller assertions, CORE retains authenticated register/poll and receipt/disposition contracts, MASTER retains role assignments and stack pins. #355 stays a DRAFT child of #354; no merge, rebase, retarget or force-push.
+
+Host/source-order tests are **SIMULATED** until exact-head CI completes. Physical GPIO/relay, real coin acceptor, electrical pulse/recovery, LittleFS power-loss, 150 power cuts and 30-device/24-hour soak remain **NOT TESTED**. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+
 # CURRENT STATE — 2026-11-27 UTC19 — startup register guard CI verified; Full integration blocked by QA contract parity
 
 **Role:** PHX-HARDWARE · **Task:** hardware #177 / cleanup-first #266 / DRAFT PR #355 (stacked on #354)  
