@@ -2,7 +2,7 @@
 
 [UTC02 exact-head provider compile, active v0.6 poll-response recheck, COE #26 tree/licence/test identity and role CI audit](PHX_MASTER_UTC02_20261126_HW340_CORE4_PROVIDER_AND_COE26_MIGRATION_AUDIT.md)
 
-- #340 ESP32 core 4.0.0 exact-source compile #45742944327 PASS at source/test SHA d3168ccb; current Full #45743454237 remains IN PROGRESS, not aggregate PASS.
+- #340 ESP32 core 4.0.0 exact-source compile #45742944327 PASS at source/test SHA d3168ccb; Full #45743454237 now PASSes (26 successful jobs / 4 production import/sign/publication skips), not aggregate PASS.
 - Active v0.6 still consumes unsigned poll fields on both boards; CGI poll emits no response_sig.
 - COE #26 remains FROZEN: 2,553/286 tree entries, 64/0 board Python helpers, tests 47/19 (1 exact, 3 divergent), root NOTICE missing; zero check-runs.
 - Role CI, exact heads, and current blockers are in the report and ROLE_ASSIGNMENTS.md / INTEGRATION_MATRIX.md.

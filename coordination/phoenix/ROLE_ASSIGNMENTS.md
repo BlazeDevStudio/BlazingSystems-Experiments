@@ -8,7 +8,7 @@ Master-only update. CORE, RENTAL, PISONET, HARDWARE, QA and RELEASE source owner
 | RENTAL #328 | `10fc200b6dbf470a95e679d3acc58aff4ab2a67f` | APK identity/API/auth runs #45622918340/#45622918364/#45622918551 PASS; shared #45622918468 FAIL. |
 | PISONET #255 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | Synthetic Windows #42462978704 PASS; native COM not invoked. |
 | HARDWARE #283 | `4dd0b01bf04cf80aec6d4dd6fc93b2fdc633da30` | Parent of #340; remains separate OPEN draft. |
-| HARDWARE #340 | `83b002721fedf3b262864d2414cdab510c76e35b` | Core 4.0.0 exact-source compile #45742944327 PASS at source/test SHA `d3168ccb4959fe1eab718912fd04510ef7603253`; core 3.3.13 #45742560223 PASS; provider guard #45742560160 PASS. Current Full #45743454237 IN PROGRESS (23 success / 2 in progress / 4 skipped); prior Full #45742560168 CANCELLED. |
+| HARDWARE #340 | `83b002721fedf3b262864d2414cdab510c76e35b` | Core 4.0.0 exact-source compile #45742944327 PASS at source/test SHA `d3168ccb4959fe1eab718912fd04510ef7603253`; core 3.3.13 #45742560223 PASS; provider guard #45742560160 PASS. Current Full #45743454237 PASS (26 successful jobs / 4 intentional production import-sign/publication skips; zero failures); prior Full #45742560168 CANCELLED. |
 | HARDWARE #348 | `93afd4830b2728d5976e21951610943e1ec96c85` | Full #45731176586 FAIL at ESP32 core 4.0.0 missing `mbedtls/sha256.h`. #340 provider evidence is not yet ported here. |
 | HARDWARE #349 | `1a2ecf5fa8c8c20a0095ac898c1bff254280ad27` | Full #45724609215 FAIL at Missing poll signature check. |
 | HARDWARE #352 | `0e984e267b3a8fb10c314800d1a7f120806354b7` | Full #45683122413 FAIL at Controller protocol parity. |

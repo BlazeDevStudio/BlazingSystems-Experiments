@@ -2,7 +2,7 @@
 
 | Edge / artifact | Exact evidence | Gate / owner |
 |---|---|---|
-| ESP32 core 4.0.0 provider | #340 source/test SHA `d3168ccb4959fe1eab718912fd04510ef7603253`, compile #45742944327 PASS; final docs head `83b002721fedf3b262864d2414cdab510c76e35b`. | Candidate-scoped compile only; current Full #45743454237 still IN PROGRESS. HARDWARE/RELEASE/QA own integration review. |
+| ESP32 core 4.0.0 provider | #340 source/test SHA `d3168ccb4959fe1eab718912fd04510ef7603253`, compile #45742944327 PASS; final docs head `83b002721fedf3b262864d2414cdab510c76e35b`. | Candidate-scoped compile only; Full #45743454237 PASS (26 successful jobs / 4 production import/sign/publication skips; zero failures). HARDWARE/RELEASE/QA own integration review. |
 | Active v0.6 poll response | ESP32 `29f1125d...` and ESP8266 `12c4bb82...` consume `insert`/`target_nonce` and call `applyRemoteConfig`; CGI `db58041c...` poll response has no `response_sig`. | P0 OPEN. CORE must define canonical signed envelope/key/freshness/replay before HARDWARE changes trust/actuation. |
 | COE #26 destination sketches | ESP32 blob `3cc7ec54...`, ESP8266 `c8be98f7...`; both retain `sigOk=true` and conditional verification only when a key is nonempty. | Keyless verification bypass remains; keep #26 FROZEN. |
 | #349 → #26 Hardware mapping | Source tree 2,553 entries / 1,974 blobs; destination 286 / 207. ESP32 16→1 (0 exact); ESP8266 60→1 (0 exact); board Python helpers 64→0. | Import completeness not established; no staging/copy/move. |
