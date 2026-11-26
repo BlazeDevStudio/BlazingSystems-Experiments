@@ -78,3 +78,71 @@ PR #242 is OPEN / DRAFT / UNMERGED at source/test HEAD 9351dd053d4e2ed2349a25f3c
 Next: PHX-INFRA or a repository administrator manually triggers .github/workflows/blazepisonet-softtimer-release.yml for exact PR #242 head 9351dd05; PHX-QA independently reviews the job-permission boundary and negative self-test; PHX-MASTER reconciles #291's stale parent base before integration.
 
 No merge, real signing, tag, GitHub Release, hardware flash, payment migration or customer deployment. **PRODUCTION NO-GO.**
+
+
+## PHX-RELEASE UTC16 — immutable SoftTimer action pins and checkout credential isolation
+
+Observed: 2026-11-26T16:28:30.929Z  
+Repository: BlazeDevStudio/BlazingSystems-Experiments  
+PR: https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/242  
+Branch: `draft/softtimer-future-release-signing-pipeline-20261029`  
+Base: `blazepwifi-v0.6.0-audit-foundation` @ `6d4c9b487af4d768c4d7627654d119417fcc6e00`  
+Starting head: `a7e27fe50e13326a7258bbaed1388594141ddda3`  
+Source-fix head before handover: `3b08e7eb5cd63b94f09141c35dd924b1c0c5cf7f`
+
+### Finding
+
+The RELEASE-owned SoftTimer workflow used mutable major-version action refs for all six external action uses. Two of its three checkout steps also retained the default persisted GitHub token credential. The workflow-wide and build-job permissions were already read-only, and the isolated publisher checkout already disabled credential persistence; this increment closes the remaining checkout gaps and makes all action versions immutable.
+
+### Bounded change
+
+- Added `.github/scripts/test_softtimer_release_action_pins.py`, a RELEASE-owned static guard. It checks every external action ref against a reviewed immutable commit and requires all three checkout steps to set `persist-credentials: false`.
+- Added the script path to the existing PR/push path filters and wired the guard into the read-only handover job before the shared handover checks.
+- Pinned all six workflow action uses to exact upstream tag commit SHAs verified through the official action repositories:
+  - `actions/checkout` v4.2.2 — `11bd71901bbe5b1630ceea73d27597364c9af683` (3 uses).
+  - `actions/setup-dotnet` v4.3.1 — `67a3573c9a986a3f9c594539f4ab511d57bb3ce9`.
+  - `actions/upload-artifact` v4.6.2 — `ea165f8d65b6e75b540449e92b4886f43607fa02`.
+  - `actions/download-artifact` v4.3.0 — `d3f86a106a0bac45b974a628896c90dbdf5c8093`.
+- Added `persist-credentials: false` to the handover and Windows build checkouts. The publisher checkout already had it.
+
+No PISONET application, installer, PowerShell test, product behavior, signer, secret, repository variable, tag, release, COE destination or hardware source was modified. This is a CI supply-chain/credential-boundary change only.
+
+### Commits and local test record
+
+- New static test file: [`1498dc40`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/1498dc4007232f041785d2df16eb934796181ae2).
+- Test wiring / path-filter commit: [`1251bdfe`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/1251bdfe98b44b59870cb7aa3e29ec965c7fb378).
+- Source correction: [`3b08e7eb`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/3b08e7eb5cd63b94f09141c35dd924b1c0c5cf7f).
+
+The committed guard was exercised locally against the exact six action-reference lines and three checkout blocks extracted from the PR workflow:
+- Test-first snapshot at `1251bdfe`: **2 tests failed as expected** — mutable action tags and two checkouts persisting credentials.
+- Corrected snapshot at `3b08e7eb`: **2 tests passed** — all four action repositories use the reviewed commit SHA and all three checkout steps disable credential persistence.
+
+This is a local Python static-guard result, not GitHub Actions evidence.
+
+### Exact-head Actions status
+
+For exact PR head `3b08e7eb5cd63b94f09141c35dd924b1c0c5cf7f`:
+- PR-triggered workflow runs: **0**.
+- Combined commit statuses: **0**.
+- Branch run history contains 35 older runs; the latest returned run [#40882814472](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/40882814472) executed source `734b89d9`, not this head. It is not valid RED/GREEN evidence for this increment.
+- The connected GitHub Actions interface exposes run/job reads and reruns of existing runs, but no workflow-dispatch operation. There is no exact-head run to rerun. No historical run was relabelled as current.
+
+Therefore exact-source hosted RED/GREEN remains **NOT VERIFIED**. Existing Windows/PowerShell release tests also remain unverified at this new head. The next owner action is for PHX-INFRA or a repository administrator to trigger the workflow for the exact current #242 head using an authorized mechanism, then record the actual job outcomes.
+
+### Live ownership / blockers
+
+- PR #242 remains OPEN / DRAFT / UNMERGED.
+- PR #291 remains OPEN / DRAFT on its old parent base `734b89d9`; #242 has advanced beyond that base. PHX-MASTER owns stack reconciliation. No rebase, retarget, force-push or merge was performed.
+- MASTER #288 remains the coordination authority; the 11-route ownership manifest is `DRAFT_REVIEW_ONLY`. RELEASE has no migration or integration authority.
+- Cleanup-first #266 remains OPEN / 0-of-7; this task is one bounded RELEASE contribution, not a completed global cleanup track.
+- COE #26 remains FROZEN; COE #31/#35 are separate packager integration drafts and were not modified in this increment.
+- Private Drive `BLAZE_PROJECT_REGISTRY_v11_20261027.json` was not found after the authorized Library inventory was paged to completion. No older registry snapshot or checkpoint was substituted.
+
+### Next owner actions
+
+1. PHX-INFRA / repository administrator triggers and verifies the exact-head SoftTimer workflow.
+2. PHX-QA independently reviews the action pin map, checkout credential boundary and static guard.
+3. PHX-MASTER reconciles PR #291's stale parent base before any integration.
+4. Registry custodian restores authorized provenance-only access to private Drive v11.
+
+No signing, tag, GitHub Release, hardware flash, real-payment migration, customer deployment, merge or publication. **PRODUCTION NO-GO.**
