@@ -177,7 +177,7 @@ def expect_rejected(label: str, mutated: str) -> None:
 
 def move_helpers_before_legacy_struct(source: str) -> str:
     match = re.search(
-        r"size_t boundedStringLength[\\s\\S]*?bool configV1StringsTerminated[\\s\\S]*?\\r?\\n}\\r?\\n",
+        r"size_t boundedStringLength[\s\S]*?bool configV1StringsTerminated[\s\S]*?\r?\n}\r?\n",
         source,
     )
     if not match:
