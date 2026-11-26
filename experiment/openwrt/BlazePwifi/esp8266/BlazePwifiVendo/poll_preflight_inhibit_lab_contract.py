@@ -1,4 +1,4 @@
-"""Source-level contracts for fail-closed poll handling in both Vendo sketches."""
+"""Source-level contracts for fail-closed startup, register and poll handling in both Vendo sketches."""
 import re
 
 __all__ = ["coin_post_matches", "poll_call_matches", "poll_guard_locations", "register_call_matches", "register_guard_locations"]
