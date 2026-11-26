@@ -186,3 +186,46 @@ The three real workflow checkout steps remain unchanged and already specify the 
 3. PHX-MASTER reconciles #242's advanced base and #291's stale parent relationship without overwriting source history.
 
 **Disposition:** local focused guard behavior verified; hosted exact-head CI NOT VERIFIED; independent QA pending; draft only; PRODUCTION NO-GO.
+
+
+---
+
+## PHX-RELEASE UTC20 — discover id-first checkout steps in the credential guard (2026-11-26T20:10Z)
+
+**Scope:** one RELEASE-owned static CI guard correction on the existing SoftTimer draft [PR #242](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/242). Branch `draft/softtimer-future-release-signing-pipeline-20261029`; base `blazepwifi-v0.6.0-audit-foundation@6d4c9b487af4d768c4d7627654d119417fcc6e00`. The PR remains OPEN / DRAFT / UNMERGED and GitHub reports `mergeable=false`.
+
+### Finding
+
+The checkout credential guard's step splitter recognized only list items beginning with `- name:` or `- uses:`. GitHub Actions also permits a step to begin with `- id:` and declare `uses:` as a later mapping key. An additional id-first checkout could therefore be omitted from the exact-three checkout count and from the credential-persistence assertion.
+
+### Test-first and correction history
+
+- Regression-only commit [`b7cdaaa5`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/b7cdaaa50a978217e03a5d0c132f9f6ff31d850f) adds a fixture with three correctly configured checkout steps plus a fourth id-first checkout whose `persist-credentials` is true. The prior step splitter returned only three checkout blocks for four checkout steps in a focused local reproduction. This is local source-logic evidence, not a hosted Actions RED run.
+- Source correction [`ed500ebd`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/ed500ebd4ff072b21071ebffe20e59b95d17bc18) now splits on every step list item at the workflow's six-space indentation and discovers checkout actions whether `uses:` is the first or a later step key. The existing real-workflow check uses the same discovery helper.
+- Follow-up matcher normalization [`faf4c09f`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/faf4c09fea81914ab2a94f660b5dc4ab3070c368) corrected the exact YAML key-spacing expression after source inspection; no failing test is attributed to this cleanup.
+- Focused local GREEN at final code/test HEAD `faf4c09f`: all four fixture checkout steps discovered; a direct `persist-credentials: false` checkout accepted; the id-first `persist-credentials: true` checkout rejected. Three focused assertions passed. This was not a full unittest run, PowerShell run, or Windows build.
+
+### Exact-head hosted CI status
+
+- Test-only commit `b7cdaaa5`: PR-triggered workflow runs 0 returned; combined statuses 0.
+- Final code/test commit `faf4c09f`: PR-triggered workflow runs 0 returned; combined statuses 0.
+- The existing workflow path filter includes `.github/scripts/test_softtimer_release_action_pins.py`, but the connected GitHub Actions interface exposes run/job reads and reruns, not a workflow-dispatch operation. No older run is attributed to either new SHA.
+- Therefore hosted exact-head RED/GREEN, Windows/PowerShell runtime validation, signing, tagging and publication remain NOT VERIFIED / NOT PERFORMED.
+
+### Current stack and owner boundaries
+
+- MASTER PR #288: `ed6bb786c08d360a611e0e6c5c0505fa90d9b477`, OPEN / DRAFT. MASTER retains the release-stack and ownership reconciliation authority.
+- PR #291: `bf339a76964a1abe2412fac45392fe06a8e66418`, OPEN / DRAFT, based on old #242 snapshot `734b89d9e7792247e8376335c3f3685500ab3f89`. Exact compare against #242 code/test head `faf4c09f`: **876 ahead / 19 behind, diverged**; merge base remains `734b89d9`. Its accumulated diff includes inherited CORE and PISONET paths. No rebase, retarget, force-push or merge was performed.
+- COE integration #26 remains FROZEN at `b382d233ff06c8791b1028bed3c617cc7b670d12`; its five PR workflows remain queued with zero jobs.
+- COE parent #31 remains `59ed44d0b911e176f1a95b9cf5585ef811ffd31b`; parent shared validation and case-collision pass, but its mandatory sandbox fails at the unprivileged Bubblewrap UID-map probe (Permission denied / exit 125). Parent results are not child acceptance.
+- COE child #35 remains `6413e557eb2e552513eedae2bc6559646278b2f2`, **488 ahead / 0 behind** parent #31. Exact final-head shared validation passes the 257-test packaging/tool suite with two intentional skips and one synthetic profile, then fails closed at 10/10 site-ULA admissions; ESP32/ESP8266 compilation is skipped. Sandbox host preflight passes 48/48 then fails because Bubblewrap is unavailable (exit 125); case-collision passes. This child remains separate from #242 and #26.
+- Authorized Library title search did not surface private Drive `BLAZE_PROJECT_REGISTRY_v11_20261027.json`. No older registry snapshot was substituted and no private contents or identifiers were copied.
+
+### Next owner actions
+
+1. PHX-QA independently reviews the id-first checkout discovery and credential guard at code/test SHA `faf4c09f`.
+2. PHX-INFRA / repository administrator runs the exact-head #242 workflow through an authorized mechanism and records real jobs.
+3. PHX-MASTER reconciles #291's stale parent and inherited CORE/PISONET path overlap; do not rebase or merge from RELEASE.
+4. Registry custodian restores authorized provenance-only access to private Drive v11.
+
+No PISONET product/installer code, shared workflow, secrets, signer material, CORE, RENTAL, HARDWARE, QA, MASTER or COE #26 destination source changed. No merge, signing, tag, publication, hardware flash, real payment migration or customer deployment occurred. **PRODUCTION NO-GO.**
