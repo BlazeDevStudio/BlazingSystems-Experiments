@@ -3635,3 +3635,20 @@ PR #354 remains OPEN / DRAFT / UNMERGED. PRs #239/#254/#283 remain OPEN / DRAFT 
 - **Rollback:** revert the three source/test commits on the child branch; do not merge, force-push or retarget the parent stack.
 - **Blockers:** PHX-QA owns `config_revision` / active-clear assertions; PHX-CORE owns authenticated poll/receipt contract; PHX-MASTER owns role assignment and branch-pin reconciliation; private Drive registry v11 unavailable.
 - **NEXT ACTION:** inspect the new docs-head Full run; request QA/CORE changes if inherited assertions remain; keep coin/relay deny-only.
+
+
+## 2026-11-27 02:58 Asia/Manila — PHX-HARDWARE — #355 final docs-head readback — status: validated (scoped), integration blocked
+
+- **Priority:** P2 maintainability; behavior-preserving Hardware host-lab structure.
+- **Status:** scoped focused CI and target builds validated; Full integration blocked by QA-owned controller parity assertions.
+- **Branch / PR:** `phoenix/hw-poll-preflight-lab-modules-20261127-utc18` / DRAFT #355, stacked on DRAFT #354.
+- **Source/test SHA:** `e21f5e70695f3fdd6ee349e385fda69210034826`; last exact tested docs head `8e1785a2e9fe73704798c89f861cc2c94fae444f`.
+- **Canonical sync:** PROJECT_HANDOVER, CURRENT_STATE, append-only CHANGE_LEDGER and narrow handover synchronized after source. This follow-up records the terminal Full and Mbed TLS results; earlier ledger entries remain unchanged.
+- **Focused poll-deny:** [#45879740136](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45879740136), job `140115755212`, PASS.
+- **Mbed TLS:** [#45879740079](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45879740079), source-contract `140115756141`, core 3.3.13 `140115756044`, core 4.0.0 `140115755690`, all PASS.
+- **Full:** [#45879740152](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45879740152), CI-0701 `140115756341` PASS; 14/14 target/platform jobs PASS; validation `140115835125` FAIL at QA-owned `tests/controllers.sh:20` requiring `applyRemoteConfig`; line 21 also requires `config_revision`, both absent from deny-only sketches. Production import, update, simulation, candidate, signing and publication stages SKIPPED.
+- **Host simulation:** both boards report 3500 ms modeled wait, 80 pulse ticks, zero samples during wait, zero accepted pulses, four independent relay/LED polarity combinations; 8/8 scenarios and 14/14 injected regressions rejected. Physical GPIO/relay, coin acceptor, electrical recovery, LittleFS power-loss, 150 power cuts and 30-device/24-hour soak NOT TESTED.
+- **Ownership:** QA owns controller assertion reconciliation; CORE owns authenticated register/poll and receipt/disposition contract; MASTER owns global assignment/branch pins. Cleanup #266 OPEN / 0-of-7. #239/#254/#283/#353 unchanged.
+- **Drive:** private registry v11 unavailable through current connector surface; no registry-derived promotion or migration.
+- **Rollback:** revert the child-branch commits for this lab refactor only; do not merge, force-push, retarget or alter the parent stack.
+- **NEXT ACTION:** QA/CORE publish their approved contract/assertion corrections; Hardware reruns Full and keeps the candidate deny-only until then.

@@ -1,3 +1,29 @@
+# CURRENT STATE — 2026-11-27 UTC18 — focused and target builds CI verified; Full validation blocked by deny-only QA assertions
+
+**Role:** PHX-HARDWARE · **Task:** cleanup-first #266 / hardware #177 / draft PR #355 (stacked on #354)  
+**Branch:** `phoenix/hw-poll-preflight-lab-modules-20261127-utc18` · **Base:** `phoenix/hw-active-v06-poll-intake-deny-20261126-utc05@fc842342596786e072630179acfbbc4feeb2ba02`  
+**Source/test SHA:** `e21f5e70695f3fdd6ee349e385fda69210034826` · **Last exact tested docs head:** `8e1785a2e9fe73704798c89f861cc2c94fae444f` · **PR:** OPEN / DRAFT / UNMERGED · **Production:** NO-GO.
+
+## Verified work
+
+The 776-line poll preflight lab was split into contract, C++ harness and board-case modules. The stable entry point and original test/mutation behavior were preserved. No production sketch or shared API changed.
+
+## Exact results
+
+- Focused poll-deny [#45879740136](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45879740136), job `140115755212`: PASS.
+- ESP32 Mbed TLS matrix [#45879740079](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45879740079): source-contract, core 3.3.13 and core 4.0.0 all PASS.
+- Full [#45879740152](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45879740152): CI-0701 PASS; 14/14 target/platform jobs PASS; validation job `140115835125` FAIL at `tests/controllers.sh:20` because QA's legacy script still requires `applyRemoteConfig`. Line 21 also requires `config_revision`, absent from the deny-only sketches. This is a QA-owned assertion mismatch, not a reason to enable unsigned configuration.
+- Production import, update bundle, simulation, candidate, signing and publication stages skipped.
+
+## Blockers
+
+PHX-QA owns the deny-only assertion reconciliation; PHX-CORE owns the authenticated poll/receipt contract; PHX-MASTER owns global role assignments and branch pins. Cleanup #266 remains OPEN / 0-of-7. Financial #31/#32, safety #34 and witness #43 remain open. #239/#254/#283/#353 unchanged.
+
+Host tests are SIMULATED / CI VERIFIED only. Physical GPIO/relay, real coin acceptor, electrical recovery, LittleFS power-loss, 150 power cuts and 30-device/24-hour soak are NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO. Private Drive registry v11 unavailable through current connector surface.
+
+**NEXT EXACT ACTION:** request QA/CORE reconciliation; rerun Full after their approved changes; keep coin/relay deny-only.
+
+
 # CURRENT STATE — 2026-11-27 UTC18 — poll preflight lab modularization focused CI verified; Full sync recheck pending
 
 **Role:** PHX-HARDWARE · **Task:** cleanup-first #266 / hardware #177 · **Draft PR:** [#355](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/355), stacked on [#354](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/354)  

@@ -40,3 +40,12 @@ The required IN-PROGRESS handover was not staged before the first source commit.
 ## NEXT EXACT ACTION
 
 Recheck the docs-head Full workflow after this sync. If it reaches the inherited QA assertion, request QA's deny-only reconciliation and CORE's approved authenticated poll/receipt contract. Keep PR #355 DRAFT and unmerged.
+
+
+## Final exact docs-head CI readback — 2026-11-26T18:58Z
+
+The canonical sync at `8e1785a2e9fe73704798c89f861cc2c94fae444f` cleared the mandatory handover freshness gate. Focused poll-deny [#45879740136](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45879740136) job `140115755212` PASS. Mbed TLS matrix [#45879740079](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45879740079) has all three jobs PASS (source contract, ESP32 core 3.3.13 and 4.0.0). Full [#45879740152](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45879740152) reports CI-0701 PASS and 14/14 target/platform jobs PASS, but validation job `140115835125` FAILS at `tests/controllers.sh:20` because the QA-owned script still requires `applyRemoteConfig`; line 21 also requires `config_revision`. Production import, update bundle, simulations, candidate, signing and publishing remain skipped. No hardware acceptance.
+
+Adjacent stack recheck: #239 OPEN/DRAFT at `d83b715b`; #254 OPEN/DRAFT at `84c442a4` (the supplied `3692ddf889470da8a0029e16bf0ac2f37f1a9d0` was not found in this repository); #283 OPEN/DRAFT at `4dd0b01b`. The original #283 unconditional-clear finding is no longer present in the current source, but `quarantinePending()` has no active callsite on either board. Current main CGI emits no `response_sig` for register, poll or coin; no approved response contract exists. These remain blocked, not fixed by this lab refactor.
+
+Process deviation: the IN-PROGRESS handover was not staged before the first source commit. The initial missing-brace and missing-import failures are preserved in the preceding section. No Codex, production sketch edit, merge, flash, reset, live money, migration, signing or deployment occurred.

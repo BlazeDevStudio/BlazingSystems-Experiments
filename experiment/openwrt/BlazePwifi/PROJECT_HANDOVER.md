@@ -1,3 +1,34 @@
+## CURRENT STATUS — 2026-11-27 UTC18 — focused and target builds CI verified; Full validation blocked by deny-only QA assertions
+
+**Role:** PHX-HARDWARE · **Task:** cleanup-first #266 / hardware #177 / draft PR #355 (stacked on #354)  
+**Branch:** `phoenix/hw-poll-preflight-lab-modules-20261127-utc18` · **Base:** `phoenix/hw-active-v06-poll-intake-deny-20261126-utc05@fc842342596786e072630179acfbbc4feeb2ba02`  
+**Source/test SHA:** `e21f5e70695f3fdd6ee349e385fda69210034826` · **Last exact tested docs head:** `8e1785a2e9fe73704798c89f861cc2c94fae444f` · **This commit:** canonical post-test status sync  
+**PR:** OPEN / DRAFT / UNMERGED · **Production:** NO-GO.
+
+### Work completed
+
+The 776-line Hardware-owned poll preflight lab was split into contract, deterministic C++ harness, and board-case modules while preserving its function bodies, failure-injection cases, and stable `poll_preflight_inhibit_lab.py` entry point. The focused workflow path filters include all modules. No production `.ino`, GPIO/relay behavior, shared API, QA test, finance, signer, witness, migration or COE destination changed.
+
+### Exact CI at docs head `8e1785a2e9fe73704798c89f861cc2c94fae444f`
+
+- Focused poll-deny [#45879740136](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45879740136), job `140115755212`: **PASS**.
+- ESP32 Mbed TLS matrix [#45879740079](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45879740079): source-contract `140115756141`, core 3.3.13 `140115756044`, and core 4.0.0 `140115755690` all **PASS**.
+- Full PR build [#45879740152](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45879740152): CI-0701 `140115756341` **PASS**; all 14 target/platform jobs **PASS** (ESP8266, ESP32, Android, x86_64, Ruijie and supported/optional Orange Pi targets); validation `140115835125` **FAIL** at QA-owned `tests/controllers.sh:20`, which still requires `applyRemoteConfig`. The next assertion at line 21 requires `config_revision`, also absent from the deny-only sketches. These positive-consumer assertions conflict with the intentionally fail-closed candidate; Hardware did not edit QA tests or restore unsigned response consumption.
+- Production import, update bundle, simulations, candidate gate, signing and publication jobs were **SKIPPED**.
+
+The focused source/test SHA `e21f5e70695f3fdd6ee349e385fda69210034826` also passed [#45879218178](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45879218178), job `140113978484`. Both boards reported 3500 ms modeled wait, 80 pulse ticks, zero samples during wait, zero accepted pulses, four independent relay/LED polarity combinations, and 8/8 scenarios plus 14/14 injected regressions rejected. Earlier extraction mistakes are retained in the narrow handover.
+
+### Cross-role blockers and safety boundary
+
+PHX-QA owns the deny-only-incompatible controller assertions; PHX-CORE owns the authenticated register/poll and receipt/disposition contract; PHX-MASTER owns global assignments and branch-pin reconciliation. Cleanup #266 remains OPEN / 0-of-7. Financial #31/#32, safety #34 and witness #43 remain open. #239/#254/#283/#353 remain untouched.
+
+Host/source-extracted results are **SIMULATED / CI VERIFIED** only. Physical GPIO/relay, real coin acceptor, electrical pulse/recovery, LittleFS power-loss, 150 power cuts and 30-device/24-hour soak remain **NOT TESTED**. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO. Private Drive registry v11 remains unavailable through the current connector surface.
+
+### NEXT EXACT ACTION
+
+PHX-QA must reconcile `controllers.sh` with the deny-only/no-callsite boundary; PHX-CORE must publish the approved authenticated poll/receipt contract; PHX-MASTER must reconcile current role pins. Hardware then reruns Full. Keep coin/relay denied and PR #355 DRAFT.
+
+
 ## CURRENT STATUS — 2026-11-27 UTC18 — poll preflight lab modularization focused CI verified; Full sync recheck pending
 
 **Role:** PHX-HARDWARE · **Task:** cleanup-first #266 / hardware #177 · **Draft PR:** [#355](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/355), stacked on [#354](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/354)  
