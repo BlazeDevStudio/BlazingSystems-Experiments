@@ -1,4 +1,16 @@
-## Latest PHX-MASTER checkpoint — UTC08 / 2026-11-26
+## Latest PHX-MASTER checkpoint — scheduled UTC08 / 2026-11-26
+
+- [UTC08 live role and exact-head CI reconciliation](ROLE_ASSIGNMENTS.md)
+- [UTC08 exact #353 → COE #26 source, test and license provenance](INTEGRATION_MATRIX.md)
+- [UTC08 governance, private-registry access and next owner actions](AUDIT_SUMMARY.md)
+- Starting Master HEAD: \`802c11c8517fc497fc34c1ebd1588432be1bf351\`; scheduled checkpoint: \`2026-11-26T08:37:37Z\`.
+- Experiments main \`6be5d19b\`; development \`aad3aade\`; COE main \`a6513ab4\`; PR #288 was OPEN / DRAFT / UNMERGED at the starting HEAD with 231 changed paths, all under \`coordination/phoenix/\`.
+- HARDWARE #354 exact head \`8d0c179f\`: deny intake and Mbed TLS matrix PASS; QA-owned native sequence and Full Controller protocol parity FAIL. COE #26 remains FROZEN; cleanup #266 remains 0/7; **PRODUCTION NO-GO**.
+- The previous run was scheduled UTC07 and completed 08:21Z; its report label used completion-hour UTC08. Its existing PR/issue comments are corrected in place to scheduled UTC07; no duplicate comment is created.
+
+---
+
+## Previous PHX-MASTER checkpoint — scheduled UTC07 (completed 08:21Z; report label UTC08) / 2026-11-26
 
 - [UTC08 live owner / exact-head CI reconciliation](ROLE_ASSIGNMENTS.md)
 - [UTC08 exact #353 → COE #26 source, test and license provenance](INTEGRATION_MATRIX.md)
