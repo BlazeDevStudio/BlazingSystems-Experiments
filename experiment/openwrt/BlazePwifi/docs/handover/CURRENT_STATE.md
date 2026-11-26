@@ -1,3 +1,19 @@
+# CURRENT STATE — 2026-11-26 UTC09 / PHX-HARDWARE output-enable latch preload
+
+**Task:** [#177](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/177) · **Control:** [#172](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/172) · **Cleanup-first:** [#266](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/266) · **PR:** [#354](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/354)
+
+- **Role:** PHX-HARDWARE; source scope limited to the two Vendo sketches, Hardware-owned host lab and Hardware-owned focused workflow.
+- **Branch:** `phoenix/hw-active-v06-poll-intake-deny-20261126-utc05`; **base:** `2fbd2475e9f54878c316fa7cea2f228386b0e859`; **final source/test SHA:** `b8732704e2ff414f6ab4593acf4ae4e95fc6c280`.
+- **Change:** preload logical OFF for new relay/LED pins before enabling OUTPUT on ESP8266 and ESP32. Keep old-pin OFF and post-enable OFF confirmation.
+- **Test-first RED:** [#45790170219](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45790170219), job `139806889031`, exact assertion `OUTPUT_SEQUENCE_FAIL relay OFF must precede OUTPUT mode`.
+- **Focused GREEN:** [#45790391312](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45790391312), job `139807615868`, PASS; 4/4 board/polarity checks and both unsafe-order mutations rejected.
+- **Other exact-head workflows:** ESP32 core matrix #45790391253 pending; native #45790391185 in progress; Full #45790391321 in progress at the time of this record.
+- **Evidence status:** SIMULATED / CI VERIFIED for source-extracted call ordering. Physical GPIO/relay/electrical/power-cut acceptance NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO.
+- No CORE API, QA tests, finance, pending disposition, signer/witness, migration, release or COE destination was changed. No physical device/relay/coin/flash/live money was operated.
+- [Narrow UTC09 handover](docs/handover/2026-11-26-hw-output-enable-preload-utc09.md).
+
+---
+
 # CURRENT STATE — 2026-11-26 UTC08 follow-up / PHX-HARDWARE active-v0.6 request guard parity
 
 **Task:** [#177](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/177) · **Control:** [#172](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/172) · **Cleanup-first:** [#266](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/266) · **PR:** [#354](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/354)

@@ -1,3 +1,17 @@
+## CURRENT STATUS — 2026-11-26 UTC09 follow-up (PHX-HARDWARE GPIO output-latch ordering)
+
+**Status: PR #354 OPEN / DRAFT / UNMERGED; test-first GPIO output-enable regression corrected; focused exact-source CI PASS; Full/native/core-matrix terminal status pending; physical acceptance NOT TESTED; PRODUCTION NO-GO.**
+
+- Branch: `phoenix/hw-active-v06-poll-intake-deny-20261126-utc05`; base `blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859`.
+- Final source/test SHA: `b8732704e2ff414f6ab4593acf4ae4e95fc6c280`.
+- Both ESP8266 and ESP32 now preload logical relay/LED OFF before `pinMode(..., OUTPUT)`, retaining old-pin shutdown and post-enable OFF confirmation.
+- Test-first RED: [#45790170219](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45790170219), job `139806889031`, expected relay-OFF-before-OUTPUT assertion failure.
+- Focused GREEN: [#45790391312](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45790391312), job `139807615868`, PASS; active-high/active-low on both boards and unsafe-preload mutation rejected (4/4).
+- Source-extracted ordering is SIMULATED / CI VERIFIED only. Physical GPIO/relay transient, coin, electrical recovery, power-cut and soak remain NOT TESTED. No admission or finance behavior changed.
+- Narrow record: [UTC09 output-enable preload handover](docs/handover/2026-11-26-hw-output-enable-preload-utc09.md).
+
+---
+
 ## CURRENT STATUS — 2026-11-26 UTC08 follow-up (PHX-HARDWARE active v0.6 deny-only candidate)
 
 **Status: DRAFT / ESP8266 request-auth guard parity CI VERIFIED / focused exact-source push+PR PASS / Full handover-freshness rerun required / QA native assertion FAIL / physical NOT TESTED / PRODUCTION NO-GO.**

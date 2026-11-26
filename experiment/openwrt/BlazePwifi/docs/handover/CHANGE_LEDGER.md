@@ -3465,3 +3465,16 @@ PR #354 remains OPEN / DRAFT / UNMERGED. PRs #239/#254/#283 remain OPEN / DRAFT 
 - **Safety / rollback:** isolated PR #354 remains OPEN / DRAFT / UNMERGED. Revert only commit `17950ceee07dfc68bf252d76a60ff47296c4cfcd` if the local guard change causes an approved build regression; do not restore permissive behavior. No secrets, live money, flash, device reset, migration, signer/witness operation, release tag, merge or deployment.
 - **Acceptance:** request guard = SIMULATED / CI VERIFIED; physical coin/relay/electrical, LittleFS power loss, 150 power cuts, 30-device/24-hour soak = NOT TESTED; protected signer/witness, v1-to-v2 migration, durable accounting/replay, independent QA/release signoff = NOT ACCEPTED. HARDWARE ACCEPTED NO; PRODUCTION READY NO-GO.
 - **NEXT ACTION:** rerun Full and ESP32 core 3.3.13/4.0.0 matrix at the new handover head; inspect ESP8266 compile. QA updates its own sequence/parity assertions, CORE publishes the approved protocol, and Master reconciles #354 pins. Keep coin and relay denied.
+
+
+## 2026-11-26 UTC09 — PHX-HARDWARE active-v0.6 relay/LED output-enable latch ordering
+
+- **PR:** #354 OPEN / DRAFT / UNMERGED. **Branch:** `phoenix/hw-active-v06-poll-intake-deny-20261126-utc05`. **Base:** `2fbd2475e9f54878c316fa7cea2f228386b0e859`. **Final source/test SHA:** `b8732704e2ff414f6ab4593acf4ae4e95fc6c280`.
+- **Defect:** both `configureRuntimePins()` implementations enabled relay/LED OUTPUT before preloading logical OFF. Active-low hardware can briefly assert if the output latch defaults LOW.
+- **Test-first RED:** [#45790170219](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45790170219), job `139806889031`, failed at `OUTPUT_SEQUENCE_FAIL relay OFF must precede OUTPUT mode` on ESP8266. The source-extracted lab stopped at first board failure; no separate ESP32 RED claim.
+- **Correction:** ESP8266 source commit `24ade54ca09351e7d1c6b0f580c77f0146874284`; ESP32/final source-test commit `b8732704e2ff414f6ab4593acf4ae4e95fc6c280`. Both sketches preload logical relay and LED OFF after pin assignment and before OUTPUT; old-pin shutdown and post-enable confirmation remain.
+- **Focused GREEN:** [#45790391312](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45790391312), job `139807615868`, PASS. Active-high and active-low sequence checks pass for both boards; unsafe missing-preload mutation rejected on each; `4/4 output-enable sequence checks PASS`.
+- **Other exact-head workflows at checkpoint:** core matrix #45790391253 pending; native #45790391185 in progress; Full #45790391321 in progress. Do not infer their results from focused CI.
+- **Limits:** source-extracted ordering SIMULATED / CI VERIFIED; physical GPIO/relay transient, electrical recovery, coin pulse, LittleFS power-loss, 150 power cuts and 30-device/24-hour soak NOT TESTED. HARDWARE ACCEPTED NO; PRODUCTION READY NO-GO.
+- No admission/auth protocol, pending disposition, finance, API, signer, witness, migration, release, COE or physical device behavior was changed.
+- **Next:** inspect exact-head core/native/Full runs to terminal status; request QA review of the host harness and physical scope/logic-analyzer plan before any hardware acceptance.
