@@ -22,7 +22,7 @@ EXPECTED_ACTIONS = {
 def _action_references(workflow: str) -> list[str]:
     """Return every external action reference in workflow step syntax."""
     return re.findall(
-        r"(?m)^[ \t]*(?:-[ \t]*)?uses:[ \t]*([^\s#]+)[ \t]*$",
+        r"(?m)^[ \t]*(?:-[ \t]*)?uses:[ \t]*([^\s#]+)(?:[ \t]+#.*)?[ \t]*$",
         workflow,
     )
 
