@@ -1,3 +1,9 @@
+## PHX-MASTER UTC17 final #353 readback — 2026-11-26T17:54Z
+
+HARDWARE #353 current PR/docs HEAD `f527b33c9e391a9a66490388d96f06d6c8761dfa`, source/test SHA `44de55a0e132cb15fdb60ecf85446e9490fa277e`, parent #352 exact `2fa3b7db1161ddb531ed94bcf60617947fa1a7bd`. Hardware refreshed its PR body/handover; the old cb1787ac/ed2f77d pointers are superseded. Exact-source Relay #45870624293/#45870635699 and Quarantine #45870624386/#45870635503 PASS. Exact-source Full #45870624355 FAILS at the inherited ESP8266 missing poll-signature check. New docs-head Relay #45871096516 and Quarantine #45871096480 PASS; Full #45871096425 FAILS with the same exact message. All 14 target/platform builds and Android pass; production import, update, simulations, candidate, signing and publication stages are skipped. Only the Hardware ISR lab changed; production sketches unchanged. No hardware acceptance.
+
+---
+
 ## PHX-MASTER UTC17 post-checkpoint #353 refresh — 2026-11-26T17:52Z
 
 HARDWARE #353 current PR/docs HEAD is now `f527b33c9e391a9a66490388d96f06d6c8761dfa`, source/test SHA `44de55a0e132cb15fdb60ecf85446e9490fa277e`, parent #352 exact `2fa3b7db1161ddb531ed94bcf60617947fa1a7bd`. The refreshed Hardware handover replaces the earlier stale `cb1787ac/ed2f77d` pointers. New test-only guard snapshots and restores the prior `pollIntakeSuspended` state; production sketches unchanged. Exact source/test Relay and Quarantine runs PASS (#45870624293/#45870635699; #45870624386/#45870635503); Full #45870624355 FAILS at inherited ESP8266 missing poll-signature check. New PR-docs-head runs #45871096480/#45871096516/#45871096425 are IN_PROGRESS, not PASS. See UTC17 audit addendum below.
