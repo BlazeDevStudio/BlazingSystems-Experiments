@@ -13,6 +13,7 @@ helpers. Host C++ uses fake GPIO/time/storage only; no physical acceptance is
 claimed.
 """
 from pathlib import Path
+import re
 from cpp_fixture_runner import run_cpp_fixture
 
 from firmware_lab_source import extract_function, mask_non_code
@@ -121,8 +122,37 @@ def verify_configure_runtime_pins_preserves_edge_baseline(source):
     body = extract_function(source, "configureRuntimePins")
     if "lastHandledCoinEdgeSequence=snapshotCoinEdgeSequence();" in body:
         raise RuntimeError("configureRuntimePins discards unhandled ISR edge baseline after attaching the coin ISR")
-    if body.count("quarantineCoinIngressTransition();") != 2:
-        raise RuntimeError("configureRuntimePins must quarantine ingress on both pin-attachment branches")
+
+    # Count only the two post-attachment fail-closed guards. The earlier
+    # pre-detach quarantine is intentionally separate and uses a different
+    # condition; a bare-call string check misses these guarded expressions.
+    attachments = list(re.finditer(r"\\battachInterrupt\\s*\\(", body))
+    quarantines = list(re.finditer(
+        r"if\\s*\\(\\s*!\\s*quarantineCoinIngressTransition\\s*\\(\\s*\\)\\s*\\)\\s*return\\s+false\\s*;",
+        body,
+    ))
+    if len(attachments) != 2 or len(quarantines) != 2:
+        raise RuntimeError(
+            "configureRuntimePins must fail closed with one guarded quarantine after each pin-attachment branch"
+        )
+
+    for index, attachment in enumerate(attachments):
+        branch_end = attachments[index + 1].start() if index + 1 < len(attachments) else len(body)
+        branch_quarantines = [
+            call for call in quarantines
+            if attachment.end() <= call.start() < branch_end
+        ]
+        if len(branch_quarantines) != 1:
+            raise RuntimeError("each coin ISR attachment branch must have exactly one guarded ingress quarantine")
+        quarantine = branch_quarantines[0]
+        if "coinInterruptAttached=true;" not in body[attachment.end():quarantine.start()]:
+            raise RuntimeError("coin interrupt attachment must be recorded before guarded ingress quarantine")
+        resume = re.search(
+            r"pollIntakeSuspended\\s*=\\s*priorPollIntakeSuspended\\s*;",
+            body[quarantine.end():branch_end],
+        )
+        if resume is None:
+            raise RuntimeError("poll intake must remain suspended until post-attachment quarantine succeeds")
 
 def verify_fixture_routes_edges_through_production_isr():
     if "++coinEdgeSequence" in CPP or "coinEdgeSequence++" in CPP:
