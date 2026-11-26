@@ -60,7 +60,7 @@ def assert_contract(board: str, source: str) -> None:
         "char c=digest[i];",
     ):
         require(token in validator, f"{board}: SHA-256 digest validator missing {token!r}")
-    validator_compact = re.sub(r"\\s+", "", validator_raw)
+    validator_compact = re.sub(r"\s+", "", validator_raw)
     for token in ("c>='0'&&c<='9'", "c>='a'&&c<='f'", "c>='A'&&c<='F'"):
         require(token in validator_compact,
                 f"{board}: SHA-256 digest validator missing hex range {token!r}")
