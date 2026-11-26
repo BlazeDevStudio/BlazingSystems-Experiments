@@ -146,7 +146,7 @@ def assert_esp32(source: str) -> None:
     require(re.search(r"if\s*\(\s*!\s*configStoreValid\s*\|\|\s*cfg\.ssid\.isEmpty\s*\(\s*\)\s*\)", connect) is not None,
             "connectSta must not register or connect using an invalid partial configuration")
     loop = mask_non_code(extract_function(source, "void loop("))
-    require(re.search(r"if\\s*\\(\\s*!\\s*configStoreValid\\s*\\)\\s*\\{\\s*delay\\s*\\(\\s*2\\s*\\)\\s*;\\s*return\\s*;\\s*\\}", loop) is not None,
+    require(re.search(r"if\s*\(\s*!\s*configStoreValid\s*\)\s*\{\s*delay\s*\(\s*2\s*\)\s*;\s*return\s*;\s*\}", loop) is not None,
             "invalid configuration must return from loop before reconnect or polling")
     require("if(WiFi.status()!=WL_CONNECTED" in loop,
             "network reconnect condition must remain compatible with the shared poll guard")
