@@ -126,7 +126,7 @@ def active_write_mutation(configure: str, anchor: str, statement: str) -> str:
     """Inject an active-level write at a precise startup boundary."""
     if anchor not in configure:
         raise RuntimeError(f"active-write mutation anchor missing: {anchor}")
-    return configure.replace(anchor, anchor + "\\n  " + statement, 1)
+    return configure.replace(anchor, anchor + "\n  " + statement, 1)
 
 
 def build_and_run(board: str, write_logical: str, configure: str, expect_pass: bool) -> None:
@@ -163,12 +163,12 @@ for board, path in BOARDS:
     active_write_mutations = (
         (
             "relay-active-before-output-enable",
-            "writeLogical(runRelayPin,false,runRelayActiveHigh);",
+            "  writeLogical(runRelayPin,false,runRelayActiveHigh);\\n  writeLogical(runLedPin,false,runLedActiveHigh);",
             "writeLogical(runRelayPin,true,runRelayActiveHigh);",
         ),
         (
             "led-active-before-output-enable",
-            "writeLogical(runLedPin,false,runLedActiveHigh);",
+            "  writeLogical(runRelayPin,false,runRelayActiveHigh);\\n  writeLogical(runLedPin,false,runLedActiveHigh);",
             "writeLogical(runLedPin,true,runLedActiveHigh);",
         ),
         (
