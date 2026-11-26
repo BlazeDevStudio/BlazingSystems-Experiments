@@ -35,6 +35,28 @@ struct Config {
 
 Config cfg;
 
+ESP8266WebServer web(80);
+const uint32_t MAGIC_V1=0x42505731;
+const uint32_t MAGIC=0x42505732;
+
+bool insertMode=false;
+bool lastCoin=false;
+bool controllerEnabled=true, coinEnabled=true, relayEnabled=true, ledEnabled=true, setupApOn=false;
+bool runCoinActiveLow=true, runRelayActiveHigh=true, runLedActiveHigh=true;
+uint32_t lastPoll=0, lastEdge=0, lastSend=0, configuredApSince=0;
+uint8_t pendingPulses=0;
+bool pendingReady=false, fsReady=false;
+int runCoinPin=4, runLedPin=14, runRelayPin=5, maxWifiRetries=6, wifiFailures=0;
+uint16_t runDebounceMs=40, runPulseGroupMs=400;
+String activeTarget, pendingTarget, pendingNonce, setupApName;
+
+struct LegacyPendingRecord {
+  uint32_t magic;
+  uint8_t pulses;
+  char nonce[17];
+  char target[33];
+  uint32_t checksum;
+};
 size_t boundedStringLength(const char *value,size_t capacity){
   if(!value) return capacity;
   for(size_t i=0;i<capacity;i++){
@@ -59,28 +81,6 @@ bool configV1StringsTerminated(const ConfigV1 &value){
          boundedStringLength(value.key,sizeof(value.key))<sizeof(value.key) &&
          boundedStringLength(value.id,sizeof(value.id))<sizeof(value.id);
 }
-ESP8266WebServer web(80);
-const uint32_t MAGIC_V1=0x42505731;
-const uint32_t MAGIC=0x42505732;
-
-bool insertMode=false;
-bool lastCoin=false;
-bool controllerEnabled=true, coinEnabled=true, relayEnabled=true, ledEnabled=true, setupApOn=false;
-bool runCoinActiveLow=true, runRelayActiveHigh=true, runLedActiveHigh=true;
-uint32_t lastPoll=0, lastEdge=0, lastSend=0, configuredApSince=0;
-uint8_t pendingPulses=0;
-bool pendingReady=false, fsReady=false;
-int runCoinPin=4, runLedPin=14, runRelayPin=5, maxWifiRetries=6, wifiFailures=0;
-uint16_t runDebounceMs=40, runPulseGroupMs=400;
-String activeTarget, pendingTarget, pendingNonce, setupApName;
-
-struct LegacyPendingRecord {
-  uint32_t magic;
-  uint8_t pulses;
-  char nonce[17];
-  char target[33];
-  uint32_t checksum;
-};
 const uint32_t LEGACY_PENDING_MAGIC=0x42504331;
 BpPendingSequence pendingSequenceState;
 

@@ -30,6 +30,11 @@ def require(condition: bool, message: str) -> None:
 
 
 def assert_source_contract(source: str) -> None:
+    masked_source = mask_non_code(source)
+    legacy_struct_at = masked_source.find("struct LegacyPendingRecord")
+    bounded_helper_at = masked_source.find("size_t boundedStringLength(")
+    require(0 <= legacy_struct_at < bounded_helper_at,
+            "LegacyPendingRecord must precede helper definitions for Arduino prototype generation")
     config = mask_non_code(extract_struct(source, "Config"))
     legacy = mask_non_code(extract_struct(source, "ConfigV1"))
     for field in CONFIG_FIELDS:
@@ -169,9 +174,29 @@ def expect_rejected(label: str, mutated: str) -> None:
     raise AssertionError(f"unsafe config-validation mutation accepted: {label}")
 
 
+
+def move_helpers_before_legacy_struct(source: str) -> str:
+    match = re.search(
+        r"size_t boundedStringLength[\\s\\S]*?bool configV1StringsTerminated[\\s\\S]*?\\r?\\n}\\r?\\n",
+        source,
+    )
+    if not match:
+        raise AssertionError("bounded helper block missing for ordering mutation")
+    block = match.group(0)
+    without = source[:match.start()] + source[match.end():]
+    at = without.find("struct LegacyPendingRecord")
+    if at < 0:
+        raise AssertionError("LegacyPendingRecord mutation anchor missing")
+    return without[:at] + block + without[at:]
+
+
 def main() -> None:
     source = SKETCH.read_text(encoding="utf-8")
     assert_source_contract(source)
+    expect_rejected(
+        "arduino-prototype-order",
+        move_helpers_before_legacy_struct(source),
+    )
     expect_rejected(
         "current-config-validation-removed",
         source.replace("configStringsTerminated(cfg)", "true", 1),
