@@ -213,6 +213,48 @@ def _runtime_interrupt_wiring_body(source, board):
     if len(quarantine_positions) != 2:
         raise RuntimeError(f"{board} must quarantine ingress after both interrupt attachment paths")
 
+    # A runtime pin remap must first inhibit the acceptor while the old ISR is
+    # still attached. The preflight quarantine catches an edge already in
+    # flight; a failed preflight must leave the old pin/ISR intact and outputs
+    # inhibited. This is distinct from the post-attach transition check below.
+    inhibit = "pollIntakeSuspended=true;"
+    output_apply = "applyOutputs();"
+    preflight = "if(coinInterruptAttached&&!quarantineCoinIngressTransition())returnfalse;"
+    detached_state = "coinInterruptAttached=false;"
+    attached_state = "coinInterruptAttached=true;"
+    restore = "pollIntakeSuspended=priorPollIntakeSuspended;"
+    if not re.search(r"\\bbool\\s+coinInterruptAttached\\s*=\\s*false\\s*;", mask_non_code(source)):
+        raise RuntimeError(f"{board} must track whether the prior coin ISR is attached")
+    if compact.count(inhibit) != 1:
+        raise RuntimeError(f"{board} must assert pollIntakeSuspended exactly once during pin reconfiguration")
+    inhibit_pos = compact.find(inhibit)
+    pre_output_pos = compact.find(output_apply, inhibit_pos)
+    preflight_pos = compact.find(preflight, pre_output_pos)
+    first_detach = min(detach_positions)
+    if not (0 <= inhibit_pos < pre_output_pos < preflight_pos < first_detach):
+        raise RuntimeError(f"{board} must inhibit outputs and quarantine the old ISR before detaching it")
+    if compact.count(detached_state) != expected_reconfigurations:
+        raise RuntimeError(f"{board} must clear coinInterruptAttached after each prior ISR detach")
+    if compact.count(attached_state) != 2:
+        raise RuntimeError(f"{board} must mark both conditional ISR attachment paths as attached")
+    for detach_pos in detach_positions:
+        false_pos = compact.find(detached_state, detach_pos)
+        next_assign = min((p for p in assign_positions if p > detach_pos), default=-1)
+        if false_pos < 0 or next_assign < 0 or false_pos >= next_assign:
+            raise RuntimeError(f"{board} must clear the attached flag before changing the coin pin")
+    for attach_pos in attach_positions:
+        true_pos = compact.find(attached_state, attach_pos)
+        next_quarantine = min((p for p in quarantine_positions if p > attach_pos), default=-1)
+        if true_pos < attach_pos or next_quarantine < 0 or true_pos >= next_quarantine:
+            raise RuntimeError(f"{board} must publish the attached flag before post-attach quarantine")
+    if compact.count(restore) != 2:
+        raise RuntimeError(f"{board} must restore the prior poll inhibit only on both successful attachment paths")
+    for quarantine_pos in quarantine_positions:
+        restore_pos = compact.find(restore, quarantine_pos)
+        apply_pos = compact.find(output_apply, restore_pos)
+        if restore_pos < 0 or apply_pos < 0 or not (quarantine_pos < restore_pos < apply_pos):
+            raise RuntimeError(f"{board} must pass post-attach quarantine before restoring output admission")
+
     for index, (detach_pos, assign_pos) in enumerate(zip(detach_positions, assign_positions), start=1):
         if detach_pos >= assign_pos:
             raise RuntimeError(f"{board} reconfiguration {index} changes the coin pin before detaching its prior interrupt")
@@ -295,6 +337,39 @@ def verify_runtime_interrupt_wiring(source, board):
     missing_quarantine_body = body.replace("quarantineCoinIngressTransition();", "", 1)
     _expect_runtime_wiring_rejected(
         source, board, _replace_runtime_wiring_body(source, missing_quarantine_body), "missing-post-attach-quarantine"
+    )
+
+    missing_inhibit_body = body.replace("pollIntakeSuspended=true;", "", 1)
+    _expect_runtime_wiring_rejected(
+        source, board, _replace_runtime_wiring_body(source, missing_inhibit_body), "missing-pre-detach-output-inhibit"
+    )
+
+    missing_preflight_body = body.replace(
+        "if(coinInterruptAttached&&!quarantineCoinIngressTransition())return false;",
+        "",
+        1,
+    )
+    _expect_runtime_wiring_rejected(
+        source, board, _replace_runtime_wiring_body(source, missing_preflight_body), "missing-pre-detach-ingress-quarantine"
+    )
+
+    missing_detached_flag_body = body.replace("coinInterruptAttached=false;", "", 1)
+    _expect_runtime_wiring_rejected(
+        source, board, _replace_runtime_wiring_body(source, missing_detached_flag_body), "stale-isr-attached-state"
+    )
+
+    missing_attached_flag_body = body.replace("coinInterruptAttached=true;", "", 1)
+    _expect_runtime_wiring_rejected(
+        source, board, _replace_runtime_wiring_body(source, missing_attached_flag_body), "missing-isr-attached-state"
+    )
+
+    detach_before_inhibit_body = _swap_first_runtime_statements(
+        body,
+        "applyOutputs();",
+        "if(coinInterruptAttached)detachInterrupt(digitalPinToInterrupt(runCoinPin));",
+    )
+    _expect_runtime_wiring_rejected(
+        source, board, _replace_runtime_wiring_body(source, detach_before_inhibit_body), "detach-before-output-inhibit"
     )
 
     print(f"{board}_RUNTIME_INTERRUPT_WIRING_PASS")
