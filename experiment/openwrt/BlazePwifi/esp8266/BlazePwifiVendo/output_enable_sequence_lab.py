@@ -62,6 +62,11 @@ int digitalPinToInterrupt(int pin){ return pin; }
 void detachInterrupt(int) {}
 void attachInterrupt(int,void (*)(void),int) {}
 void coinEdgeISR() {}
+// Dependencies outside this lab's output-order contract are deliberately stubbed.
+bool coinInterruptAttached=false;
+bool pollIntakeSuspended=false;
+bool runtimePinsSafe(int,int,int){ return true; }
+void applyOutputs(){}
 volatile uint32_t coinEdgeSequence=0;
 uint32_t lastHandledCoinEdgeSequence=0;
 uint32_t snapshotCoinEdgeSequence(){ return coinEdgeSequence; }
@@ -88,7 +93,7 @@ int scenario(bool activeHigh){
   runCoinPin=4; runRelayPin=5; runLedPin=14;
   outputPolarityKnown=true; pinConfigSafe=true; insertMode=true; activeTarget="target";
   runRelayActiveHigh=activeHigh; runLedActiveHigh=activeHigh;
-  configureRuntimePins(12,13,15);
+  configureRuntimePins(12,13,15,runCoinActiveLow);
   const int offLevel=activeHigh?LOW:HIGH;
   const int relayOff=firstEvent(1,13,offLevel);
   const int relayOutput=firstEvent(2,13,OUTPUT);
@@ -118,7 +123,7 @@ int unknownPolarityScenario(){
   events.clear();
   runCoinPin=4; runRelayPin=5; runLedPin=14;
   outputPolarityKnown=false; pinConfigSafe=true; insertMode=true; activeTarget="target";
-  configureRuntimePins(12,13,15);
+  configureRuntimePins(12,13,15,runCoinActiveLow);
   if(firstEvent(2,12,INPUT_PULLUP)<0 ||
      firstEvent(2,13,INPUT)<0 || firstEvent(2,15,INPUT)<0){
     std::cerr<<"OUTPUT_UNKNOWN_POLARITY_FAIL relay/LED must remain INPUT"; return 20;
@@ -194,11 +199,11 @@ def build_and_run(board: str, write_logical: str, configure: str, expect_pass: b
 
 
 def remove_local_polarity_gate(configure: str) -> str:
-    # ESP8266 has two combined polarity/pin-safety guards; ESP32 keeps one
-    # early unknown-polarity INPUT-only block. Remove the board's actual gate,
-    # not a textual pattern copied from the other architecture.
+    # Board implementations have converged on one or more combined
+    # polarity/pin-safety guards. Remove the actual guard(s) present; retain
+    # the ESP32 legacy-block fallback for older source shapes.
     mutated, count = re.subn(r"!outputPolarityKnown\s*\|\|\s*", "", configure)
-    if count == 2:
+    if count in (1, 2):
         return mutated
 
     if count == 0:
@@ -213,13 +218,63 @@ def remove_local_polarity_gate(configure: str) -> str:
 
     raise RuntimeError(f"could not remove one board-specific local polarity gate (combined guards={count})")
 
+def verify_runtime_pin_quarantine(configure: str, board: str) -> None:
+    pre_detach = re.search(
+        r"if\s*\(\s*coinInterruptAttached\s*&&\s*!\s*"
+        r"quarantineCoinIngressTransition\s*\(\s*\)\s*\)\s*return\s+false\s*;",
+        configure,
+    )
+    detach = re.search(r"\bdetachInterrupt\s*\(", configure)
+    inhibit = configure.find("pollIntakeSuspended=true")
+    output_off = configure.find("applyOutputs();")
+    if not pre_detach or not detach or not (0 <= inhibit < output_off < pre_detach.start() < detach.start()):
+        raise RuntimeError(f"{board}: ingress must be inhibited and quarantined before detaching the ISR")
+
+    attach_positions = [m.start() for m in re.finditer(r"\battachInterrupt\s*\(", configure)]
+    attached_positions = [m.start() for m in re.finditer(r"coinInterruptAttached\s*=\s*true", configure)]
+    post_pattern = (
+        r"if\s*\(\s*!\s*quarantineCoinIngressTransition\s*\(\s*\)\s*\)\s*return\s+false\s*;"
+    )
+    post_positions = [m.start() for m in re.finditer(post_pattern, configure)]
+    restore_positions = [m.start() for m in re.finditer(
+        r"pollIntakeSuspended\s*=\s*priorPollIntakeSuspended", configure
+    )]
+    if not (len(attach_positions) == len(attached_positions) == len(post_positions) == len(restore_positions) == 2):
+        raise RuntimeError(f"{board}: expected two attach → quarantine → intake-restore paths")
+    for attach, attached, quarantine, restore in zip(
+        attach_positions, attached_positions, post_positions, restore_positions
+    ):
+        if not attach < attached < quarantine < restore:
+            raise RuntimeError(f"{board}: ingress quarantine must succeed before intake resumes")
+
+
+def reject_quarantine_mutation(configure: str, board: str, label: str, pattern: str) -> None:
+    mutated, count = re.subn(pattern, "", configure, count=1)
+    if count != 1:
+        raise RuntimeError(f"{board}: could not inject {label} mutation")
+    try:
+        verify_runtime_pin_quarantine(mutated, board)
+    except RuntimeError:
+        print(f"{board}: {label} mutation rejected")
+        return
+    raise RuntimeError(f"{board}: {label} mutation was not rejected")
 
 for board, path in BOARDS:
     source = path.read_text(encoding="utf-8")
     write_logical = extract(source, "writeLogical")
     configure = extract(source, "configureRuntimePins")
-    if "quarantineCoinIngressTransition();" not in configure:
-        raise RuntimeError(f"{board}: runtime pin attachment must quarantine coin ingress")
+    # Verify source-level ISR quarantine ordering here; runtime behavior is
+    # exercised by the dedicated coin-pulse and blocking-poll labs.
+    verify_runtime_pin_quarantine(configure, board)
+    reject_quarantine_mutation(
+        configure, board, "pre-detach-quarantine",
+        r"if\s*\(\s*coinInterruptAttached\s*&&\s*!\s*"
+        r"quarantineCoinIngressTransition\s*\(\s*\)\s*\)\s*return\s+false\s*;",
+    )
+    reject_quarantine_mutation(
+        configure, board, "post-attach-quarantine",
+        r"if\s*\(\s*!\s*quarantineCoinIngressTransition\s*\(\s*\)\s*\)\s*return\s+false\s*;",
+    )
     has_local_polarity_guard = "outputPolarityKnown" in configure
     build_and_run(board, write_logical, configure, expect_pass=True,
                   has_local_polarity_guard=has_local_polarity_guard)
@@ -229,5 +284,5 @@ for board, path in BOARDS:
         build_and_run(board, write_logical, remove_local_polarity_gate(configure),
                       expect_pass=False, has_local_polarity_guard=True)
 
-print("PHX-HARDWARE: 5/5 output-enable/polarity host checks PASS; physical GPIO/relay behavior NOT TESTED")
+print("PHX-HARDWARE: output-order/polarity and ISR-quarantine source mutations rejected; physical GPIO/relay behavior NOT TESTED")
 

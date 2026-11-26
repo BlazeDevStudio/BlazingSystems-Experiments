@@ -46,6 +46,7 @@ static const uint16_t POLL_FAULT_RECORD_VERSION=1;
 static_assert(sizeof(PollFaultRecord)==20,"PollFaultRecord layout changed; review persistent format");
 
 volatile uint32_t coinEdgeSequence=0;
+bool coinInterruptAttached=false;
 uint32_t lastHandledCoinEdgeSequence=0;
 
 // The ISR only counts the configured active edge. No String, filesystem,
@@ -1032,6 +1033,8 @@ bool configFieldsMatchStored(){
   return configFieldsMatchStored(nullptr);
 }
 
+void applyOutputs();
+
 bool saveConfig(){
   // Deassert outputs before changing NVS; setup stays inhibited until reboot.
   insertMode=false;
@@ -1093,36 +1096,54 @@ bool runtimePinsSafe(int coinPin,int relayPin,int ledPin){
 
 bool quarantineCoinIngressTransition();
 
-void configureRuntimePins(int coinPin,int relayPin,int ledPin){
-  if(!outputPolarityKnown){
-    // No default or remote value can establish physical relay/LED polarity.
-    // Keep both outputs as high-impedance inputs until local confirmation.
-    detachInterrupt(digitalPinToInterrupt(runCoinPin));
-    pinMode(runRelayPin,INPUT);
-    pinMode(runLedPin,INPUT);
-    runCoinPin=coinPin; runRelayPin=relayPin; runLedPin=ledPin;
-    pinMode(runCoinPin,INPUT_PULLUP);
+bool configureRuntimePins(int coinPin,int relayPin,int ledPin,bool coinActiveLow){
+  const bool priorPollIntakeSuspended=pollIntakeSuspended;
+  // Keep the old ISR and polarity live while the acceptor is physically inhibited.
+  pollIntakeSuspended=true;
+  applyOutputs();
+  if(coinInterruptAttached && !quarantineCoinIngressTransition()) return false;
+
+  const bool nextPinsSafe=runtimePinsSafe(coinPin,relayPin,ledPin);
+  if(coinInterruptAttached) detachInterrupt(digitalPinToInterrupt(runCoinPin));
+  coinInterruptAttached=false;
+  if(outputPolarityKnown && runLedPin!=ledPin) writeLogical(runLedPin,false,runLedActiveHigh);
+  if(outputPolarityKnown && runRelayPin!=relayPin) writeLogical(runRelayPin,false,runRelayActiveHigh);
+
+  runCoinPin=coinPin;
+  runRelayPin=relayPin;
+  runLedPin=ledPin;
+  runCoinActiveLow=coinActiveLow;
+  pinConfigSafe=nextPinsSafe;
+  pinMode(runCoinPin,INPUT_PULLUP);
+
+  if(!outputPolarityKnown || !pinConfigSafe){
+    // Unknown polarity or an invalid pin map must remain high-impedance.
     pinMode(runRelayPin,INPUT);
     pinMode(runLedPin,INPUT);
     pinConfigSafe=false;
     insertMode=false;
     activeTarget="";
     attachInterrupt(digitalPinToInterrupt(runCoinPin),coinEdgeISR,runCoinActiveLow?FALLING:RISING);
-    quarantineCoinIngressTransition();
-    return;
+    coinInterruptAttached=true;
+    if(!quarantineCoinIngressTransition()) return false;
+    pollIntakeSuspended=priorPollIntakeSuspended;
+    applyOutputs();
+    return true;
   }
-  if(runLedPin!=ledPin) writeLogical(runLedPin,false,runLedActiveHigh);
-  if(runRelayPin!=relayPin) writeLogical(runRelayPin,false,runRelayActiveHigh);
-  detachInterrupt(digitalPinToInterrupt(runCoinPin));
-  runCoinPin=coinPin; runRelayPin=relayPin; runLedPin=ledPin;
-  // Preload logical OFF before enabling either output driver.
+
+  // Preload the validated logical OFF level before enabling either output driver.
   writeLogical(runRelayPin,false,runRelayActiveHigh);
   writeLogical(runLedPin,false,runLedActiveHigh);
-  pinMode(runCoinPin,INPUT_PULLUP); pinMode(runRelayPin,OUTPUT); pinMode(runLedPin,OUTPUT);
+  pinMode(runRelayPin,OUTPUT);
+  pinMode(runLedPin,OUTPUT);
   attachInterrupt(digitalPinToInterrupt(runCoinPin),coinEdgeISR,runCoinActiveLow?FALLING:RISING);
+  coinInterruptAttached=true;
   writeLogical(runRelayPin,false,runRelayActiveHigh);
   writeLogical(runLedPin,false,runLedActiveHigh);
-  quarantineCoinIngressTransition();
+  if(!quarantineCoinIngressTransition()) return false;
+  pollIntakeSuspended=priorPollIntakeSuspended;
+  applyOutputs();
+  return true;
 }
 
 // Intentionally dormant: register/poll admission signatures do not authenticate
@@ -1146,11 +1167,7 @@ void applyRemoteConfig(const String &r){
   int db=jsonInt(r,"coin_debounce_ms",cfg.coinDebounceMs), pg=jsonInt(r,"pulse_group_ms",cfg.pulseGroupMs), mr=jsonInt(r,"max_wifi_retries",6);
   runDebounceMs=boundedCoinDebounceMs(db); runPulseGroupMs=(uint16_t)constrain(pg,10,10000); maxWifiRetries=constrain(mr,1,60);
   if(nextPinsSafe){
-    runCoinActiveLow=nextCoinActiveLow;
-    // Publish the validated map before configureRuntimePins(): its local
-    // polarity guard must be able to revoke pinConfigSafe when polarity is unknown.
-    pinConfigSafe=true;
-    configureRuntimePins(nextCoin,nextRelay,nextLed);
+    if(!configureRuntimePins(nextCoin,nextRelay,nextLed,nextCoinActiveLow)) return;
   } else {
     pinConfigSafe=false;
     Serial.println("CRITICAL: unsafe or colliding GPIO assignment rejected; outputs disabled.");
@@ -1888,7 +1905,7 @@ void setup(){
   runDebounceMs=cfg.coinDebounceMs; runPulseGroupMs=cfg.pulseGroupMs;
   // NVS fault backup is ready; deassert outputs and attach the coin ISR before
   // LittleFS mount so an early ingress can still persist to the secondary store.
-  configureRuntimePins(runCoinPin,runRelayPin,runLedPin);
+  if(!configureRuntimePins(runCoinPin,runRelayPin,runLedPin,runCoinActiveLow)) Serial.println("CRITICAL: runtime pin setup remained inhibited after ingress quarantine.");
   initPendingStore();
   setupPortal(); connectSta();
 }

@@ -70,7 +70,7 @@ static bool runCoinActiveLow=true, runRelayActiveHigh=false, runLedActiveHigh=fa
 static bool insertMode=false, controllerEnabled=true, coinEnabled=true;
 static bool relayEnabled=true, ledEnabled=true, fsReady=true;
 static bool journalRecoveryRequired=false, pendingReady=false;
-static bool pollIntakeSuspended=false;
+static bool pollIntakeSuspended=false, coinInterruptAttached=false;
 static uint8_t pendingPulses=0;
 static uint32_t coinEdgeSequence=0, lastHandledCoinEdgeSequence=0;
 static int runCoinPin=4, runRelayPin=5, runLedPin=14;
@@ -83,6 +83,7 @@ int digitalPinToInterrupt(int pin){ return pin; }
 void attachInterrupt(int,void(*)(),int){}
 void detachInterrupt(int){}
 void coinEdgeISR(){}
+void applyOutputs(); // configureRuntimePins calls this before its extracted definition.
 uint32_t snapshotCoinEdgeSequence(){ return coinEdgeSequence; }
 bool quarantineCoinIngressTransition(){ return true; }
 bool isDigit(char value){ return value>='0' && value<='9'; }
@@ -103,7 +104,8 @@ static void resetState(){
   runCoinActiveLow=true; runRelayActiveHigh=false; runLedActiveHigh=false;
   insertMode=false; controllerEnabled=true; coinEnabled=true;
   relayEnabled=true; ledEnabled=true; fsReady=true;
-  journalRecoveryRequired=false; pendingReady=false; pollIntakeSuspended=false;
+  journalRecoveryRequired=false; pendingReady=false;
+  pollIntakeSuspended=false; coinInterruptAttached=false;
   pendingPulses=0; coinEdgeSequence=0; lastHandledCoinEdgeSequence=0;
   runCoinPin=4; runRelayPin=5; runLedPin=14;
   maxWifiRetries=6; wifiFailures=0; remoteRevision=0;

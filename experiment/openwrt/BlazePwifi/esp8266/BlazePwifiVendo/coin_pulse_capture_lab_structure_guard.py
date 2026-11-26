@@ -14,6 +14,7 @@ REPO_ROOT = HERE.parents[4]
 RUNNER = HERE / "coin_pulse_capture_lab.py"
 FIXTURES = HERE / "coin_pulse_capture_lab_fixtures.py"
 CONTRACTS = HERE / "coin_pulse_capture_lab_contracts.py"
+ISR_SELECTOR = HERE / "coin_pulse_capture_lab_isr.py"
 SECTION_SPECS = (
     ("coin_pulse_capture_lab_fixture_runtime", "CPP_RUNTIME", "#include <cstdint>"),
     ("coin_pulse_capture_lab_fixture_poll", "CPP_POLL", "static bool runDrainCapture"),
@@ -61,6 +62,14 @@ def assigned_names(tree: ast.Module) -> set[str]:
     return names
 
 
+def defined_functions(tree: ast.Module) -> set[str]:
+    return {
+        node.name
+        for node in tree.body
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+    }
+
+
 def literal_assignment(tree: ast.Module, name: str):
     for node in tree.body:
         if isinstance(node, ast.Assign) and any(
@@ -98,6 +107,34 @@ def tuple_first_strings(tree: ast.Module, name: str) -> list[str]:
 runner_source, runner_tree = parse(RUNNER)
 fixture_source, fixture_tree = parse(FIXTURES)
 contract_source, contract_tree = parse(CONTRACTS)
+
+isr_selector_source, isr_selector_tree = parse(ISR_SELECTOR)
+selector_imports = {
+    "extract_board_coin_edge_isr",
+    "mutate_active_isr_attribute",
+    "verify_board_specific_isr_selection",
+    "verify_inactive_isr_source_decoy_tolerance",
+    "verify_runtime_interrupt_wiring",
+}
+if imported_from(runner_tree, "coin_pulse_capture_lab_isr") != selector_imports:
+    fail("runner must import only the public board-ISR selector contracts")
+if imported_from(isr_selector_tree, "firmware_lab_source") != {
+    "extract_function", "extract_functions", "mask_active_cpp_code", "mask_non_code"
+}:
+    fail("ISR selector must use the shared firmware source parser")
+selector_functions = {
+    "_condition_board_gate",
+    "_active_board_isr_definition",
+    "extract_board_coin_edge_isr",
+    "mutate_active_isr_attribute",
+    "verify_board_specific_isr_selection",
+    "verify_inactive_isr_source_decoy_tolerance",
+    "verify_runtime_interrupt_wiring",
+}
+if not selector_functions.issubset(defined_functions(isr_selector_tree)):
+    fail("ISR selector module does not own all seven board-selection and wiring helpers")
+if selector_functions & defined_functions(runner_tree):
+    fail("runner still owns board-selection helpers")
 
 if imported_from(runner_tree, "coin_pulse_capture_lab_fixtures") != {"CPP"}:
     fail("runner must import only CPP from the fixture assembler")
@@ -224,6 +261,8 @@ for workflow_name in (
             )
             if f'      - "{module_path}"' not in event_source:
                 fail(f"{workflow_name} {event} does not trigger for {module}.py")
+        if f'      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/coin_pulse_capture_lab_isr.py"' not in event_source:
+            fail(f"{workflow_name} {event} does not trigger for coin_pulse_capture_lab_isr.py")
 
 print("COIN_PULSE_CAPTURE_LAB_MODULE_BOUNDARIES_PASS")
-print(f"FIXTURE_SECTIONS={len(SECTION_SPECS)} FUNCTION_SPECS={len(specs)} MUTATIONS={len(mutation_names)}")
+print(f"FIXTURE_SECTIONS={len(SECTION_SPECS)} FUNCTION_SPECS={len(specs)} MUTATIONS={len(mutation_names)} ISR_SELECTOR_HELPERS={len(selector_functions)}")

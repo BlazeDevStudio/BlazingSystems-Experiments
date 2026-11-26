@@ -108,6 +108,7 @@ static_assert(sizeof(Config)<=POLL_FAULT_EEPROM_OFFSET,
 static_assert(POLL_FAULT_EEPROM_OFFSET+sizeof(PollFaultRecord)<=POLL_FAULT_EEPROM_BYTES,"Poll-fault record exceeds EEPROM buffer");
 
 volatile uint32_t coinEdgeSequence=0;
+bool coinInterruptAttached=false;
 uint32_t lastHandledCoinEdgeSequence=0;
 
 // The ISR only counts the configured active edge. No String, filesystem,
@@ -846,32 +847,41 @@ bool runtimePinsSafe(int coinPin,int relayPin,int ledPin){
 }
 
 bool quarantineCoinIngressTransition();
+void applyOutputs();
 
-void configureRuntimePins(int coinPin,int relayPin,int ledPin){
-  // Never drive either output while local polarity or GPIO validation is unknown.
-  if(!outputPolarityKnown || !pinConfigSafe){
-    pinMode(runRelayPin,INPUT);
-    pinMode(runLedPin,INPUT);
-  } else {
-    if(runLedPin!=ledPin) writeLogical(runLedPin,false,runLedActiveHigh);
-    if(runRelayPin!=relayPin) writeLogical(runRelayPin,false,runRelayActiveHigh);
-  }
+bool configureRuntimePins(int coinPin,int relayPin,int ledPin,bool coinActiveLow){
+  const bool priorPollIntakeSuspended=pollIntakeSuspended;
+  // Keep the old ISR and polarity live while the acceptor is physically inhibited.
+  pollIntakeSuspended=true;
+  applyOutputs();
+  if(coinInterruptAttached && !quarantineCoinIngressTransition()) return false;
 
-  detachInterrupt(digitalPinToInterrupt(runCoinPin));
+  const bool nextPinsSafe=runtimePinsSafe(coinPin,relayPin,ledPin);
+  if(coinInterruptAttached) detachInterrupt(digitalPinToInterrupt(runCoinPin));
+  coinInterruptAttached=false;
+  if(outputPolarityKnown && runLedPin!=ledPin) writeLogical(runLedPin,false,runLedActiveHigh);
+  if(outputPolarityKnown && runRelayPin!=relayPin) writeLogical(runRelayPin,false,runRelayActiveHigh);
+
   runCoinPin=coinPin;
   runRelayPin=relayPin;
   runLedPin=ledPin;
+  runCoinActiveLow=coinActiveLow;
+  pinConfigSafe=nextPinsSafe;
   pinMode(runCoinPin,INPUT_PULLUP);
 
   if(!outputPolarityKnown || !pinConfigSafe){
+    // Unknown polarity or an invalid pin map must remain high-impedance.
     pinMode(runRelayPin,INPUT);
     pinMode(runLedPin,INPUT);
     pinConfigSafe=false;
     insertMode=false;
     activeTarget="";
     attachInterrupt(digitalPinToInterrupt(runCoinPin),coinEdgeISR,runCoinActiveLow?FALLING:RISING);
-    quarantineCoinIngressTransition();
-    return;
+    coinInterruptAttached=true;
+    if(!quarantineCoinIngressTransition()) return false;
+    pollIntakeSuspended=priorPollIntakeSuspended;
+    applyOutputs();
+    return true;
   }
 
   // Preload the validated logical OFF level before enabling either output driver.
@@ -880,9 +890,13 @@ void configureRuntimePins(int coinPin,int relayPin,int ledPin){
   pinMode(runRelayPin,OUTPUT);
   pinMode(runLedPin,OUTPUT);
   attachInterrupt(digitalPinToInterrupt(runCoinPin),coinEdgeISR,runCoinActiveLow?FALLING:RISING);
+  coinInterruptAttached=true;
   writeLogical(runRelayPin,false,runRelayActiveHigh);
   writeLogical(runLedPin,false,runLedActiveHigh);
-  quarantineCoinIngressTransition();
+  if(!quarantineCoinIngressTransition()) return false;
+  pollIntakeSuspended=priorPollIntakeSuspended;
+  applyOutputs();
+  return true;
 }
 
 // Intentionally dormant: register/poll admission signatures do not authenticate
@@ -903,12 +917,7 @@ void applyRemoteConfig(const String&r){
   runPulseGroupMs=(uint16_t)constrain(jsonInt(r,"pulse_group_ms",400),10,10000);
   maxWifiRetries=constrain(jsonInt(r,"max_wifi_retries",6),1,60);
   if(nextPinsSafe){
-    runCoinActiveLow=nextCoinActiveLow;
-    // Publish the already-validated map before configureRuntimePins(): ESP8266
-    // intentionally refuses to enable output drivers while pinConfigSafe is false.
-    // The helper may still revoke this flag if local polarity or ingress checks fail.
-    pinConfigSafe=true;
-    configureRuntimePins(nextCoin,nextRelay,nextLed);
+    if(!configureRuntimePins(nextCoin,nextRelay,nextLed,nextCoinActiveLow)) return;
   } else {
     pinConfigSafe=false;
     Serial.println("CRITICAL: unsafe or colliding GPIO assignment rejected; outputs disabled.");
@@ -1996,7 +2005,7 @@ void setup(){
   }
   // loadCfg() has verified the EEPROM fault backup. Deassert outputs and attach
   // the coin ISR before LittleFS mount; early ingress falls back to EEPROM.
-  configureRuntimePins(runCoinPin,runRelayPin,runLedPin);
+  if(!configureRuntimePins(runCoinPin,runRelayPin,runLedPin,runCoinActiveLow)) Serial.println("CRITICAL: runtime pin setup remained inhibited after ingress quarantine.");
   initPendingStore();
   setupPortal();connectSta();
 }

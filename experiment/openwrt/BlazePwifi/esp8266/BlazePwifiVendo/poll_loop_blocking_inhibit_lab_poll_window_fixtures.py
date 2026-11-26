@@ -111,7 +111,7 @@ def post_drain_rollover_main(active_low: bool) -> str:
 int main(){{
   resetState();
   runCoinActiveLow={polarity};
-  configureRuntimePins(runCoinPin,runRelayPin,runLedPin);
+  configureRuntimePins(runCoinPin,runRelayPin,runLedPin,runCoinActiveLow);
   coinEdgeSequence=0xFFFFFFFEUL;
   lastHandledCoinEdgeSequence=0xFFFFFFFEUL;
   injectAfterDrainEdgeCount=2;
@@ -140,7 +140,7 @@ def missed_sample_main(*, active_low: bool, failure_code: int) -> str:
 int main(){{
   resetState();
   runCoinActiveLow={polarity};
-  configureRuntimePins(runCoinPin,runRelayPin,runLedPin);
+  configureRuntimePins(runCoinPin,runRelayPin,runLedPin,runCoinActiveLow);
   injectDrainAbortWithoutIsr=true;
   injectDrainAbortPulseEndsBeforeSample=true;
   loop();

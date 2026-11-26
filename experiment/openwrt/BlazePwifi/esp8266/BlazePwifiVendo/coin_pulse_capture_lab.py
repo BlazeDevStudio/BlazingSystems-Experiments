@@ -15,7 +15,14 @@ claimed.
 from pathlib import Path
 from cpp_fixture_runner import run_cpp_fixture
 
-from firmware_lab_source import extract_function, extract_functions, mask_non_code
+from firmware_lab_source import extract_function, mask_non_code
+from coin_pulse_capture_lab_isr import (
+    extract_board_coin_edge_isr,
+    mutate_active_isr_attribute,
+    verify_board_specific_isr_selection,
+    verify_inactive_isr_source_decoy_tolerance,
+    verify_runtime_interrupt_wiring,
+)
 from coin_pulse_capture_lab_fixtures import CPP
 from coin_pulse_capture_lab_contracts import (
     FUNCTION_SPECS,
@@ -28,53 +35,6 @@ BOARDS = (
     ("ESP8266", ROOT / "esp8266/BlazePwifiVendo/BlazePwifiVendo.ino"),
     ("ESP32", ROOT / "esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino"),
 )
-
-
-
-def active_isr_definition_index(board):
-    if board == "ESP8266":
-        return 0
-    if board == "ESP32":
-        return 1
-    raise RuntimeError(f"unsupported board for conditional coinEdgeISR selection: {board}")
-
-
-def extract_board_coin_edge_isr(source, board):
-    definitions = extract_functions(source, "coinEdgeISR")
-    if len(definitions) != 2:
-        raise RuntimeError(f"{board} expected both conditional coinEdgeISR definitions, found {len(definitions)}")
-    prefixes = [body.split("{", 1)[0] for _, body in definitions]
-    legacy_count = sum("ICACHE_RAM_ATTR" in prefix for prefix in prefixes)
-    iram_count = sum("IRAM_ATTR" in prefix for prefix in prefixes)
-    if legacy_count:
-        raise RuntimeError(
-            f"{board} coinEdgeISR still uses deprecated ICACHE_RAM_ATTR "
-            f"in {legacy_count} conditional definition(s); use IRAM_ATTR"
-        )
-    if iram_count != 2:
-        raise RuntimeError(
-            f"{board} coinEdgeISR must use IRAM_ATTR in both conditional definitions, "
-            f"found {iram_count}"
-        )
-    return definitions[active_isr_definition_index(board)][1]
-
-
-def mutate_active_isr_attribute(source, board):
-    definitions = extract_functions(source, "coinEdgeISR")
-    if len(definitions) != 2:
-        raise RuntimeError(f"{board} expected both conditional coinEdgeISR definitions, found {len(definitions)}")
-    active_offset = definitions[active_isr_definition_index(board)][0]
-    prefix = source[:active_offset]
-    active_source = source[active_offset:]
-    mutated_active = active_source.replace(
-        "IRAM_ATTR coinEdgeISR",
-        "ICACHE_RAM_ATTR coinEdgeISR",
-        1,
-    )
-    if mutated_active == active_source:
-        raise RuntimeError(f"{board} could not inject deprecated ISR attribute into active branch")
-    return prefix + mutated_active
-
 
 def compile_and_run(functions):
     program = CPP.replace("@@FUNCTIONS@@", "\n\n".join(functions))
@@ -157,16 +117,10 @@ def verify_shared_extractor():
     print("SHARED_EXTRACTOR_RAW_STRING_PHASE2_PASS")
     print("SHARED_EXTRACTOR_ISR_ATTRIBUTE_ORDER_PASS")
 
-
-
 def verify_configure_runtime_pins_preserves_edge_baseline(source):
     body = extract_function(source, "configureRuntimePins")
     if "lastHandledCoinEdgeSequence=snapshotCoinEdgeSequence();" in body:
         raise RuntimeError("configureRuntimePins discards unhandled ISR edge baseline after attaching the coin ISR")
-    if body.count("quarantineCoinIngressTransition();") != 2:
-        raise RuntimeError("configureRuntimePins must quarantine ingress on both pin-attachment branches")
-
-
 def verify_fixture_routes_edges_through_production_isr():
     if "++coinEdgeSequence" in CPP or "coinEdgeSequence++" in CPP:
         raise RuntimeError(
@@ -191,45 +145,6 @@ def verify_fixture_routes_edges_through_production_isr():
                 f"{scenario} must inject edges through the extracted production ISR"
             )
 
-
-def verify_board_specific_isr_selection(source, board):
-    definitions = extract_functions(source, "coinEdgeISR")
-    if len(definitions) != 2:
-        raise RuntimeError(f"{board} expected both conditional coinEdgeISR definitions, found {len(definitions)}")
-
-    marker = "coinEdgeSequence = coinEdgeSequence + 1U;"
-    positions = []
-    offset = 0
-    while True:
-        position = source.find(marker, offset)
-        if position < 0:
-            break
-        positions.append(position)
-        offset = position + len(marker)
-    if len(positions) != 2:
-        raise RuntimeError(f"{board} expected one increment in each conditional ISR branch, found {len(positions)}")
-
-    first = source.find("void IRAM_ATTR coinEdgeISR")
-    second = source.find("void IRAM_ATTR coinEdgeISR", first + 1)
-    conditional = source.rfind("#if defined(ESP8266)", 0, first)
-    alternate = source.find("#else", first, second)
-    terminator = source.find("#endif", second)
-    if not (0 <= conditional < first < alternate < second < terminator):
-        raise RuntimeError(f"{board} coinEdgeISR conditional branches are not in the expected order")
-
-    # Make the #else branch observably different without touching repository
-    # source. ESP8266 must select the first branch; ESP32 must select #else.
-    position = positions[1]
-    changed_marker = "coinEdgeSequence = coinEdgeSequence + 2U;"
-    probe = source[:position] + changed_marker + source[position + len(marker):]
-    selected = extract_board_coin_edge_isr(probe, board)
-    expected = marker if board == "ESP8266" else changed_marker
-    if expected not in selected:
-        raise RuntimeError(f"{board} lab selected the inactive conditional coinEdgeISR branch")
-    print(f"{board}_ACTIVE_ISR_BRANCH_SELECTION_PASS")
-
-
-
 def main():
     verify_shared_extractor()
     verify_fixture_routes_edges_through_production_isr()
@@ -238,6 +153,8 @@ def main():
         try:
             source = sketch.read_text(encoding="utf-8")
             verify_board_specific_isr_selection(source, board)
+            verify_inactive_isr_source_decoy_tolerance(source, board)
+            verify_runtime_interrupt_wiring(source, board)
             verify_configure_runtime_pins_preserves_edge_baseline(source)
             functions = []
             for helper_name, expected_signature in FUNCTION_SPECS:

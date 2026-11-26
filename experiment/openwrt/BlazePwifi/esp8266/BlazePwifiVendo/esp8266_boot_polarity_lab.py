@@ -88,7 +88,7 @@ def verify_boot_output_before_littlefs(source: str) -> None:
     setup = setups[0]
     calls = (
         "loadCfg()",
-        "configureRuntimePins(runCoinPin,runRelayPin,runLedPin)",
+        "configureRuntimePins(runCoinPin,runRelayPin,runLedPin,runCoinActiveLow)",
         "initPendingStore()",
     )
     positions = [setup.find(call) for call in calls]
@@ -217,12 +217,23 @@ def main() -> None:
             "local polarity must load before first runtime GPIO configuration")
     require("if(!outputPolarityKnown) return;" in apply_outputs[0],
             "applyOutputs must not drive pins before local polarity is known")
-    require("!outputPolarityKnown" in configure[0] and
+    require("if(!outputPolarityKnown || !pinConfigSafe)" in configure[0] and
             "pinMode(runRelayPin,INPUT)" in configure[0] and
             "pinMode(runLedPin,INPUT)" in configure[0],
-            "unknown polarity must leave relay/LED pins as inputs")
-    require("quarantineCoinIngressTransition();" in configure[0],
-            "pin attachment must quarantine active or unobserved coin ingress")
+            "unknown polarity or unsafe pin mapping must leave relay/LED pins as inputs")
+    require("if(coinInterruptAttached && !quarantineCoinIngressTransition()) return false;" in configure[0] and
+            "if(!quarantineCoinIngressTransition()) return false;" in configure[0],
+            "old and newly attached coin ingress must be quarantined before reconfiguration resumes")
+    require("pollIntakeSuspended=true;" in configure[0] and
+            configure[0].find("pollIntakeSuspended=true;") < configure[0].find("applyOutputs();") <
+            configure[0].find("detachInterrupt("),
+            "runtime reconfiguration must inhibit outputs before detaching the old ISR")
+    require("pinMode(runCoinPin,INPUT_PULLUP);" in configure[0] and
+            configure[0].find("pinMode(runCoinPin,INPUT_PULLUP);") < configure[0].find("attachInterrupt("),
+            "coin input pull-up must be configured before ISR attachment")
+    require("coinInterruptAttached=false;" in configure[0] and
+            "coinInterruptAttached=true;" in configure[0],
+            "runtime ISR attachment state must follow detach/attach operations")
     require("outputPolarityKnown" in can_poll[0] and
             "outputPolarityKnown" in can_post[0],
             "poll and coin POST admission must remain disabled until polarity is known")
@@ -339,6 +350,7 @@ bool runCoinActiveLow=true;
 bool controllerEnabled=true,coinEnabled=true,relayEnabled=true,ledEnabled=true;
 bool fsReady=true,pendingReady=false,pendingPostAttempted=false;
 bool pollIntakeSuspended=false;
+bool coinInterruptAttached=false;
 uint8_t pendingPulses=0;
 int runCoinPin=4,runRelayPin=5,runLedPin=14;
 String activeTarget;
@@ -363,6 +375,8 @@ static const int HIGH=1, LOW=0, FALLING=2, RISING=3;
 void pinMode(int,int);
 void digitalWrite(int,int);
 int digitalPinToInterrupt(int);
+bool runtimePinsSafe(int,int,int);
+void applyOutputs();
 void detachInterrupt(int);
 void coinEdgeISR();
 void attachInterrupt(int,void(*)(),int);
@@ -384,9 +398,11 @@ void digitalWrite(int pin,int level){
   gpioOps.push_back("write:"+std::to_string(pin)+":"+std::to_string(level));
 }
 int digitalPinToInterrupt(int pin){ return pin; }
-void detachInterrupt(int){}
+// Pin-range policy is covered by the exact-source coin-pulse wiring lab.
+bool runtimePinsSafe(int,int,int){ return true; }
+void detachInterrupt(int){ coinInterruptAttached=false; }
 void coinEdgeISR(){}
-void attachInterrupt(int,void(*)(),int){}
+void attachInterrupt(int,void(*)(),int){ coinInterruptAttached=true; }
 int digitalRead(int){ return HIGH; }
 
 void resetState(){
@@ -407,7 +423,7 @@ void resetState(){
   runCoinActiveLow=true;
   controllerEnabled=true;coinEnabled=true;relayEnabled=true;ledEnabled=true;
   fsReady=true;pendingReady=false;pendingPostAttempted=false;
-  pollIntakeSuspended=false;pendingPulses=0;
+  pollIntakeSuspended=false;coinInterruptAttached=false;pendingPulses=0;
   runCoinPin=4;runRelayPin=5;runLedPin=14;
   activeTarget=String("");
   pinModes.clear();pinLevels.clear();gpioOps.clear();
@@ -560,7 +576,7 @@ int main(){
 
   resetState();
   outputPolarityKnown=false;
-  configureRuntimePins(4,5,14);
+  configureRuntimePins(4,5,14,runCoinActiveLow);
   assert(pinModes[5]==INPUT && pinModes[14]==INPUT);
   assert(pinLevels.find(5)==pinLevels.end() && pinLevels.find(14)==pinLevels.end());
   assert(!canStartPoll());
@@ -573,7 +589,7 @@ int main(){
   resetState();
   outputPolarityKnown=true;
   runRelayActiveHigh=true;runLedActiveHigh=true;
-  configureRuntimePins(4,5,14);
+  configureRuntimePins(4,5,14,runCoinActiveLow);
   assert(pinModes[5]==OUTPUT && pinModes[14]==OUTPUT);
   assert(pinLevels[5]==LOW && pinLevels[14]==LOW);
   auto relayWrite=std::find(gpioOps.begin(),gpioOps.end(),"write:5:0");
@@ -585,7 +601,7 @@ int main(){
   resetState();
   outputPolarityKnown=true;
   runRelayActiveHigh=false;runLedActiveHigh=false;
-  configureRuntimePins(4,5,14);
+  configureRuntimePins(4,5,14,runCoinActiveLow);
   assert(pinModes[5]==OUTPUT && pinModes[14]==OUTPUT);
   assert(pinLevels[5]==HIGH && pinLevels[14]==HIGH);
 

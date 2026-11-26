@@ -125,7 +125,7 @@ def pre_poll_active_line_main(*, active_low: bool, failure_code: int) -> str:
 int main(){{
   resetState();
   runCoinActiveLow={polarity};
-  configureRuntimePins(runCoinPin,runRelayPin,runLedPin);
+  configureRuntimePins(runCoinPin,runRelayPin,runLedPin,runCoinActiveLow);
   // Re-establish the normal accepting output state after the helper's
   // safe-pin initialization, then make the line active without an ISR edge.
   applyOutputs();

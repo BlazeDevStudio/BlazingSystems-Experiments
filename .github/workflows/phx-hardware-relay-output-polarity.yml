@@ -5,6 +5,7 @@ on:
       - "phoenix/hardware-poll-fault-dual-store-20261118"
       - "phoenix/hw-coin-ingress-config-helper-reconciled-20261123-utc13"
       - "phoenix/hw-json-array-primitive-guard-20261124-utc00"
+      - "phoenix/hw-board-conditional-isr-selector-20261125-utc17"
     paths:
       - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/cpp_token_normalizer_contract_lab.py"
       - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/cpp_token_normalizer.py"
@@ -59,6 +60,7 @@ on:
       - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/coin_pulse_capture_lab_fixture_faults.py"
       - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/coin_pulse_capture_lab_fixture_edges.py"
       - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/coin_pulse_capture_lab_fixture_entry.py"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/coin_pulse_capture_lab_isr.py"
   pull_request:
     paths:
       - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/cpp_token_normalizer_contract_lab.py"
@@ -112,6 +114,7 @@ on:
       - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/coin_pulse_capture_lab_fixture_faults.py"
       - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/coin_pulse_capture_lab_fixture_edges.py"
       - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/coin_pulse_capture_lab_fixture_entry.py"
+      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/coin_pulse_capture_lab_isr.py"
   workflow_dispatch:
 permissions:
   contents: read

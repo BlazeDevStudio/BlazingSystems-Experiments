@@ -1024,6 +1024,7 @@ Live stack: #239 `d83b715b...`, #254 `84c442a4...` (contains `3692ddf...`, 17 ah
 See [UTC11 narrow handover](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/blob/3f5e8b59e6e72629a3c634abc34e24a082484a13/experiment/openwrt/BlazePwifi/docs/handover/2026-11-25-hw-cpp-user-defined-literal-suffix-boundaries-utc11.md).
 <!-- PHX-HARDWARE-20261125-CPP-UDL-SUFFIX-BOUNDARIES:END -->
 
+
 ## PHX-HARDWARE UTC23 — CRLF line-splice parity guard
 
 - PR #349 remains OPEN / DRAFT / UNMERGED on phoenix/hw-json-array-primitive-guard-20261124-utc00; captured base is #347 at 960184670379f01e20f0e7e8bc23b3e5eedacd3f.
@@ -1037,16 +1038,20 @@ See [UTC11 narrow handover](https://github.com/BlazeDevStudio/BlazingSystems-Exp
 
 See [UTC23 narrow handover](docs/handover/2026-11-25-hw-cpp-crlf-line-splice-guard-utc23.md). Master UTC23 also assigned a separate #348 canonical-handover synchronization; it remains pending and was not modified in this task.
 
+<!-- PHX-HARDWARE-20261126-UTC01-353-352-ANCESTRY:START -->
+> **PHX-HARDWARE UTC01 — PR #353/#352 ancestry reconciled; exact docs-head focused CI PASS / Full validation blocked.** Merge commit [82e65038](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/82e6503890632249c54e9cd9a93180a5e7c52aa6) has parents prior child #353 `dc9cf634...` and live parent #352 `0e984e267...`. Guard path correction [61ed2fc3](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/61ed2fc3e056a1b497dff57009f0e4c624095e32); final tested docs/PR HEAD `b737164310937e4782b7cc5f75ad825b9bcf42df`, 19 ahead / 0 behind. Quarantine [#45739536022](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45739536022) job `139640847937` PASS (ESP8266/ESP32 18/18; 17 fail-open mutations rejected per board; modular guard, JSON grammar, config recovery and boot polarity pass). Relay [#45739536099](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45739536099) jobs `139640848810 / 139640849106` PASS (token normalizer 14/14, bounded HTTP 8/8, 10/10 parity mutations rejected). Full [#45739536013](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45739536013) validation job `139640950883` FAIL at inherited `Missing poll signature check`; all 14/14 firmware targets and Android PASS; production import/signing/update/simulation/candidate jobs SKIPPED. All evidence is SIMULATED / CI VERIFIED, not hardware acceptance. PR #353 remains OPEN / DRAFT / UNMERGED. PR #340 is already reconciled to #283 (45 ahead / 0 behind). #266 remains 0/7. No production `.ino`, controller/API, finance, signer, witness or COE source changed. See [UTC01 narrow handover](docs/handover/2026-11-26-hw-353-352-ancestry-reconciliation-utc01.md). HARDWARE ACCEPTED: NO; PRODUCTION NO-GO.
+<!-- PHX-HARDWARE-20261126-UTC01-353-352-ANCESTRY:END -->
+
 ## PHX-HARDWARE UTC02 — #349 → #352 → #353 stack ancestry reconciliation
 
-- #352's parent #349 was at `1a2ecf5fa8c8c20a0095ac898c1bff254280ad27`; #352 child was at `0e984e267b3a8fb10c314800d1a7f120806354b7`.
-- Their merge base was `2a5c997add4f49fcd74f753101d3a9daac0040bf`; compare showed 43 child commits and 3 parent-only commits.
-- The three parent-only commits changed four paths: this handover, the CRLF narrow handover, `cpp_token_normalizer.py`, and `cpp_token_normalizer_contract_lab.py`. The two Python paths were not changed by #352, so they were imported without source conflict.
-- `PROJECT_HANDOVER.md` was combined additively: #352's existing poll/ISR history is retained and #349's UTC23 evidence is appended. No existing section was replaced.
-- The #352 branch update is a two-parent merge commit with first parent the prior #352 head and second parent the #349 head. The branch ref update is expected-SHA guarded and non-forced.
-- The corresponding #353 child will be advanced as a second two-parent merge, preserving its ISR-specific source and handovers while incorporating the reconciled #352 parent.
-- No production sketch, CGI producer, CORE API, finance, signer/witness, migration, COE destination, physical device, or release artifact was changed.
-- Exact-head focused CI is required after both branch updates; no new CI result is claimed by this handover before those runs complete.
+- #349 parent head: `1a2ecf5fa8c8c20a0095ac898c1bff254280ad27`.
+- #352 now includes #349 through merge commit `a1720e1724a15b5254d9dd1ee57e6212259a4896` (first parent prior #352 `0e984e267b3a8fb10c314800d1a7f120806354b7`; second parent #349 `1a2ecf5fa8c8c20a0095ac898c1bff254280ad27`).
+- #353 is advanced with prior #353 head `4e2185b150ba6d1a614fe86d875a9d2bfc7db9a4` as first parent and reconciled #352 `a1720e1724a15b5254d9dd1ee57e6212259a4896` as second parent.
+- The CRLF-aware C++ token normalizer and 15-case contract are carried into both child stacks; #353's ISR-specific implementation and fixtures remain on its first-parent tree.
+- `PROJECT_HANDOVER.md` is additive: the #349 UTC23 record is inserted before the #353 UTC01 record, and this UTC02 reconciliation follows it. The prior #353 UTC01 handover is retained and marked historical for its earlier parent snapshot.
+- The separate #348 handover synchronization was completed at `93afd4830b2728d5976e21951610943e1ec96c85`; the #349 UTC23 note saying it was pending is historical.
+- Branch updates use expected-SHA checks and `force=false`; no rebase, force-push, PR retarget, merge-to-main or release action occurred.
+- New exact-head CI must be read for both #352 and #353; earlier workflow results are not transferred to the new merge commits.
 
 ## Exact-head CI results after UTC02 ancestry reconciliation
 
@@ -1067,3 +1072,33 @@ All run heads below were read from GitHub Actions and match the source/test merg
 - Full BlazePwifi [run #45744810573](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45744810573): FAIL at validation job `139658174516`, same inherited `Missing poll signature check`. All 14 firmware/platform jobs and Android passed; production import/signing, simulation, candidate and publication jobs were skipped.
 
 These are SIMULATED / CI VERIFIED results. The failure is not fixed by ancestry reconciliation and must not be bypassed by weakening the signature check. No physical coin pulse, relay contact, power cut, or device soak was performed.
+
+
+<!-- PHX-HARDWARE-20261126-UTC03-RUNTIME-COIN-INTERRUPT-WIRING:START -->
+## PHX-HARDWARE UTC03 — runtime coin interrupt wiring contract
+
+- Existing DRAFT [PR #353](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/353), branch `phoenix/hw-board-conditional-isr-selector-20261125-utc17`; parent #352 head `2fa3b7db1161ddb531ed94bcf60617947fa1a7bd`.
+- Source/test head: [`ed2f77d5`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/ed2f77d5924172881f27222cc26649f8f85abe6c); final documentation head is recorded by the follow-up commit.
+- The Hardware-owned ISR lab now checks the `configureRuntimePins()` sequence on ESP8266 and ESP32: detach before pin reassignment, select the coin input as INPUT_PULLUP, attach the ISR using the configured active edge, then quarantine ingress on each path.
+- Four fail-open mutations per board are rejected: inverted active edge, missing detach, attach before INPUT_PULLUP, and missing post-attach quarantine. The existing 18/18 coin pulse scenarios and 17 fail-open source mutations per board remain green.
+- Test-first RED: [Relay #45750332358](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45750332358), job `139676302468`, and [Quarantine #45750332373](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45750332373), job `139676302130`, both exposed the missing wiring contract at the structure guard on test-only commit `94c29c2a`.
+- Exact-source GREEN: [Quarantine #45750631472](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45750631472), job `139677288144`, PASS; [Relay #45750631445](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45750631445), jobs `139677288015 / 139677288298`, PASS. PR-triggered repeats [#45750638451](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45750638451) and [#45750638402](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45750638402) also PASS.
+- Full [#45750631464](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45750631464) FAILS at validation job `139677382199`, inherited `Missing poll signature check`; all 14 firmware/platform targets and Android passed, downstream simulation/signing/publication/candidate jobs skipped. PR-triggered Full [#45750638422](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45750638422) was pending at observation.
+- No production `.ino`, CGI, API, financial source, signer, witness, migration or COE destination was changed. Host/source-extracted tests are SIMULATED / CI VERIFIED only. Physical coin, relay, LittleFS power-cut and electrical acceptance remain NOT TESTED.
+- Active v0.6 remains `blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859`; both sketches still perform synchronous poll before coin sampling and consume unsigned register/poll fields. Main CGI producer blob `2e3a1430d08cc6606429a042df3b5848f53c7267` does not emit `response_sig` for register/ping or poll.
+- PR #283 head `4dd0b01bf04cf80aec6d4dd6fc93b2fdc633da30`: failed quarantine append returns before `clearPending()`, but `quarantinePending()` is definition-only on both sketches. This is not an end-to-end lifecycle or power-loss acceptance.
+- PR #353 remains OPEN / DRAFT / UNMERGED. HARDWARE ACCEPTED: NO; PRODUCTION READY: NO-GO.
+<!-- PHX-HARDWARE-20261126-UTC03-RUNTIME-COIN-INTERRUPT-WIRING:END -->
+
+
+## PHX-HARDWARE UTC04 — PR #353 exact-head reconciliation
+
+- PR #353 remains OPEN / DRAFT / UNMERGED on `phoenix/hw-board-conditional-isr-selector-20261125-utc17`. Source/test SHA: `ed2f77d5924172881f27222cc26649f8f85abe6c`; prior docs head: `832692020a428ff4fe03a197a1bfce65b3f9316c`; parent #352: `2fa3b7db1161ddb531ed94bcf60617947fa1a7bd`.
+- Final prior docs-head Quarantine [#45751177827](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45751177827), job `139679053052`: PASS. Relay [#45751177670](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45751177670), jobs `139679052817 / 139679052900`: PASS / PASS.
+- Full [#45751177730](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45751177730), validation job `139679141206`: FAIL — downloaded log confirms `Missing poll signature check` in ESP8266. All 14 firmware/platform jobs and Android passed; downstream production/simulation/signing/publication gates skipped.
+- This UTC04 update is documentation-only. It does not alter production firmware, GPIO/relay behavior, controller/API, finance, replay, signer, witness or migration.
+- CORE-approved authenticated register/poll contract and QA independent review remain required. Active v0.6 remains at `2fbd2475e9f54878c316fa7cea2f228386b0e859` with the poll-before-sample race. #340 is not integrated into that branch.
+- Physical coin/relay/electrical acceptance, 150 power cuts, 30-device/24-hour soak, protected anti-rollback witness, durable accounting/replay, v1→v2 migration and independent release signoff remain NOT TESTED / NOT ACCEPTED.
+- Private Drive registry v11 remains unavailable through the exposed connector/Library surface; no older snapshot was substituted.
+
+**Status:** scoped #353 checks CI VERIFIED only; HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
