@@ -72,14 +72,15 @@ def assert_contract(board: str, source: str) -> None:
     post_compact = re.sub(r"\s+", "", post)
     require('if(action!="register"&&action!="poll")return"";' in post_compact,
             f"{board}: post must allow only register and poll")
-    action_at = post_code.find("action!=")
-    post_guard = post_code.find(CREDENTIAL_GUARD[board])
-    wifi_at = post_code.find("WiFi.status()")
-    body_at = post_code.find("String body=signedBody(action,pulses,target,forcedNonce);")
-    body_check = post_code.find("if(!body.length())return")
-    client_at = post_code.find("WiFiClient client;")
-    begin_at = post_code.find("h.begin(client,url)")
-    send_at = post_code.find("h.POST(body)")
+    post_compact_code = re.sub(r"\\s+", "", post_code)
+    action_at = post_compact_code.find("action!=")
+    post_guard = post_compact_code.find(re.sub(r"\\s+", "", CREDENTIAL_GUARD[board]))
+    wifi_at = post_compact_code.find("WiFi.status()")
+    body_at = post_compact_code.find("Stringbody=signedBody(action,pulses,target,forcedNonce);")
+    body_check = post_compact_code.find("if(!body.length())return")
+    client_at = post_compact_code.find("WiFiClientclient;")
+    begin_at = post_compact_code.find("h.begin(client,url)")
+    send_at = post_compact_code.find("h.POST(body)")
     require(0 <= action_at < post_guard < wifi_at < body_at < body_check < client_at < begin_at < send_at,
             f"{board}: action, credentials and nonempty body must be checked before HTTP dispatch")
     require("h.POST(signedBody(" not in post_compact,
