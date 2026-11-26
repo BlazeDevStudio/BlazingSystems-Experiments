@@ -38,8 +38,8 @@ ESP32 saveConfig() writes configuration through 13 independent Preferences keys.
   - ESP32_CONFIG_VALIDITY_LATCH_FAILURE_MATRIX_PASS fields=14 marker_failures=2
   - Seven unsafe mutations rejected, including invalid-marker bypass, unguarded network connection, and removal of the main-loop invalid-config return.
   - CONFIG_PERSISTENCE_WRITE_RESULT_PASS ESP8266+ESP32
-- Mbed TLS matrix [#45907063709](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45907063709): source-contract job 140206339633 PASS; core 3.3.13 job 140206339513 and core 4.0.0 job 140206339110 were still running at last read.
-- Full [#45907057845](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45907057845): CI-0701 job 140206208093 PASS; mandatory handover freshness job 140206264328 failed because this record had not yet been refreshed after the source changes. ESP8266 build job 140206264280 PASS; other target jobs were still running. A new Full run is required after this documentation sync.
+- Mbed TLS matrix [#45907063709](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45907063709): source-contract job 140206339633, core 3.3.13 job 140206339513, and core 4.0.0 job 140206339110 all PASS (3/3) at source/test SHA ba24c441.
+- Full [#45907350862](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45907350862) at docs HEAD 9956befb: CI-0701 job 140207225999 PASS; mandatory handover freshness passed; all 14/14 target/platform build jobs passed; validation job 140207288314 FAIL at QA-owned tests/controllers.sh:21 (config_revision). Production import, simulations, update bundle, signing and publication were skipped. This final evidence refresh is documentation-only; source/test SHA remains ba24c441.
 - Native synthetic [#45907063717](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45907063717), job 140206229703, FAIL at QA-owned PAY-0745 active clearPending(true/false) assertion. No pending-disposition callsite was added.
 
 ## Limitations and safety boundaries
