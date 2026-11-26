@@ -69,20 +69,21 @@ int firstEvent(int kind,int pin,int value,int after=-1){
   return -1;
 }
 
-int scenario(bool activeHigh){
+int scenario(bool relayActiveHigh,bool ledActiveHigh){
   events.clear();
   runCoinPin=4; runRelayPin=5; runLedPin=14;
-  runRelayActiveHigh=activeHigh; runLedActiveHigh=activeHigh;
+  runRelayActiveHigh=relayActiveHigh; runLedActiveHigh=ledActiveHigh;
   configureRuntimePins(12,13,15);
-  const int offLevel=activeHigh?LOW:HIGH;
-  const int relayOff=firstEvent(1,13,offLevel);
+  const int relayOffLevel=relayActiveHigh?LOW:HIGH;
+  const int ledOffLevel=ledActiveHigh?LOW:HIGH;
+  const int relayOff=firstEvent(1,13,relayOffLevel);
   const int relayOutput=firstEvent(2,13,OUTPUT);
-  const int ledOff=firstEvent(1,15,offLevel);
+  const int ledOff=firstEvent(1,15,ledOffLevel);
   const int ledOutput=firstEvent(2,15,OUTPUT);
-  const int relayConfirm=firstEvent(1,13,offLevel,relayOutput);
-  const int ledConfirm=firstEvent(1,15,offLevel,ledOutput);
-  const int oldRelayOff=firstEvent(1,5,offLevel);
-  const int oldLedOff=firstEvent(1,14,offLevel);
+  const int relayConfirm=firstEvent(1,13,relayOffLevel,relayOutput);
+  const int ledConfirm=firstEvent(1,15,ledOffLevel,ledOutput);
+  const int oldRelayOff=firstEvent(1,5,relayOffLevel);
+  const int oldLedOff=firstEvent(1,14,ledOffLevel);
   if(relayOff<0 || relayOutput<0 || relayOff>=relayOutput){
     std::cerr<<"OUTPUT_SEQUENCE_FAIL relay OFF must precede OUTPUT mode\n"; return 10;
   }
@@ -95,8 +96,8 @@ int scenario(bool activeHigh){
   if(oldRelayOff<0 || oldLedOff<0 || oldRelayOff>=relayOutput || oldLedOff>=ledOutput){
     std::cerr<<"OUTPUT_SEQUENCE_FAIL old outputs were not disabled before reassignment\n"; return 13;
   }
-  const int relayActiveLevel=activeHigh?HIGH:LOW;
-  const int ledActiveLevel=activeHigh?HIGH:LOW;
+  const int relayActiveLevel=relayActiveHigh?HIGH:LOW;
+  const int ledActiveLevel=ledActiveHigh?HIGH:LOW;
   if(firstEvent(1,13,relayActiveLevel)>=0){
     std::cerr<<"OUTPUT_SEQUENCE_FAIL relay active level was written during startup\\n"; return 14;
   }
@@ -107,9 +108,12 @@ int scenario(bool activeHigh){
 }
 
 int main(){
-  int result=scenario(true); if(result) return result;
-  result=scenario(false); if(result) return result;
-  std::cout<<"OUTPUT_SEQUENCE_PASS active-high and active-low OFF preloaded before OUTPUT\n";
+  const bool polarityPairs[][2]={{true,true},{true,false},{false,true},{false,false}};
+  for(const auto &pair:polarityPairs){
+    int result=scenario(pair[0],pair[1]);
+    if(result) return result;
+  }
+  std::cout<<"OUTPUT_SEQUENCE_PASS all four independent relay/LED polarity combinations\n";
   return 0;
 }
 '''
@@ -135,6 +139,18 @@ def active_write_mutation(configure: str, anchor: str, statement: str) -> str:
     if anchor not in configure:
         raise RuntimeError(f"active-write mutation anchor missing: {anchor}")
     return configure.replace(anchor, anchor + "\n  " + statement, 1)
+
+
+def polarity_coupling_mutation(configure: str, target_pin: str, correct_polarity: str, wrong_polarity: str) -> str:
+    """Make one output incorrectly borrow the other output's polarity setting."""
+    expected = f"writeLogical({target_pin},false,{correct_polarity});"
+    replacement = f"writeLogical({target_pin},false,{wrong_polarity});"
+    mutated, count = re.subn(re.escape(expected), replacement, configure)
+    if count != 2:
+        raise RuntimeError(
+            f"expected exactly two OFF writes for {target_pin}, found {count}"
+        )
+    return mutated
 
 
 def build_and_run(board: str, write_logical: str, configure: str, expect_pass: bool, mutation_label: str = "unsafe output order") -> None:
@@ -193,5 +209,12 @@ for board, path in BOARDS:
     for label, anchor, statement in active_write_mutations:
         mutated = active_write_mutation(configure, anchor, statement)
         build_and_run(board, write_logical, mutated, expect_pass=False, mutation_label=label)
+    polarity_mutations = (
+        ("relay incorrectly borrows LED polarity", "runRelayPin", "runRelayActiveHigh", "runLedActiveHigh"),
+        ("LED incorrectly borrows relay polarity", "runLedPin", "runLedActiveHigh", "runRelayActiveHigh"),
+    )
+    for label, target_pin, correct_polarity, wrong_polarity in polarity_mutations:
+        mutated = polarity_coupling_mutation(configure, target_pin, correct_polarity, wrong_polarity)
+        build_and_run(board, write_logical, mutated, expect_pass=False, mutation_label=label)
 
-print("PHX-HARDWARE: 12/12 output-enable checks PASS; 8 active-level mutations rejected; physical GPIO/relay behavior NOT TESTED")
+print("PHX-HARDWARE: 8/8 independent board/polarity scenarios PASS; 14/14 injected regressions rejected; physical GPIO/relay behavior NOT TESTED")
