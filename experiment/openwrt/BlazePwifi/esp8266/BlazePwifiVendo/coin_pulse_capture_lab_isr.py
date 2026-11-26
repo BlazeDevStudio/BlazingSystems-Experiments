@@ -223,7 +223,7 @@ def _runtime_interrupt_wiring_body(source, board):
     detached_state = "coinInterruptAttached=false;"
     attached_state = "coinInterruptAttached=true;"
     restore = "pollIntakeSuspended=priorPollIntakeSuspended;"
-    if not re.search(r"\\bbool\\s+coinInterruptAttached\\s*=\\s*false\\s*;", mask_non_code(source)):
+    if not re.search(r"\bbool\s+coinInterruptAttached\s*=\s*false\s*;", mask_non_code(source)):
         raise RuntimeError(f"{board} must track whether the prior coin ISR is attached")
     if compact.count(inhibit) != 1:
         raise RuntimeError(f"{board} must assert pollIntakeSuspended exactly once during pin reconfiguration")
