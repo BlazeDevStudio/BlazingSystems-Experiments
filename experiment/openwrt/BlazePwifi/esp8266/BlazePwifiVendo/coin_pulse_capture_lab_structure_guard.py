@@ -259,7 +259,7 @@ for workflow_name in (
             )
             if f'      - "{module_path}"' not in event_source:
                 fail(f"{workflow_name} {event} does not trigger for {module}.py")
-        if f'      - "{selectorPath}"' not in event_source:
+        if f'      - "experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/coin_pulse_capture_lab_isr.py"' not in event_source:
             fail(f"{workflow_name} {event} does not trigger for coin_pulse_capture_lab_isr.py")
 
 print("COIN_PULSE_CAPTURE_LAB_MODULE_BOUNDARIES_PASS")
