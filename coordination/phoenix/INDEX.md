@@ -1,3 +1,13 @@
+## PHX-MASTER UTC22 — exact intake/test identity and owner-CI audit (2026-11-26T22:34Z)
+
+- [UTC22 exact intake, test identity, Hardware #355 and role-CI audit](PHX_MASTER_UTC22_20261126_EXACT_INTAKE_TEST_IDENTITY_HW355_CI_AUDIT.md).
+- Live Master start HEAD `7a852ab038b9956cbee7f87ee85510c404bed998`; current Experiments main `6be5d19b`, v0.5.3 development `aad3aade`, active v0.6 foundation `2fbd2475`; COE main `a6513ab4`, #26 `b382d233`.
+- COE #26 remains FROZEN: intake source/destination branch pins disagree; 61 runtime rows count 46/15 versus declared 47/14; source tests 149 vs destination 19 (2 exact, 2 divergent, 145 source-only, 15 destination-only); both intake-pinned firmware blobs differ; selected NOTICE/licence counterparts are missing; eight workflows are queued with zero jobs/check-runs.
+- HARDWARE #355 is `51bd2145`; Poll/Mbed focused CI PASS, Full Controller parity and Native PAY-0745 FAIL. Keep deny-only behavior.
+- Cleanup #266 remains OPEN / 0-of-7. Private Drive v11/newer corrections NOT_RECOVERED. Master product tests NOT RUN; 11 manifest structural assertions PASS. **PRODUCTION NO-GO.**
+
+---
+
 ## PHX-MASTER UTC21 — exact #355 head and COE #26 provenance (2026-11-26 UTC21)
 
 **Master scope:** coordination-only. No subsystem source, role-owned branch, architecture contract, or COE destination was changed.

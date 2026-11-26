@@ -1,3 +1,22 @@
+## PHX-MASTER UTC22 — exact migration/test/CI matrix (2026-11-26T22:34Z)
+
+| Evidence | Source / owner SHA | Destination / run | Result |
+|---|---|---|---|
+| COE intake rows | SOURCE_INTAKE schema 8 @ blob `1b9018ff...` | 61 runtime rows | Actual 46 identical / 15 derived; declared summary 47 / 14 |
+| Test identity | Experiments `6d4c9b48...` | COE #26 `b382d233...` | 149 source / 19 destination; 2 exact / 2 divergent / 145 missing / 15 destination-only |
+| ESP32 firmware | `29f1125d...` intake pin | `3cc7ec54...` #26 | DIFFERENT |
+| ESP8266 firmware | `12c4bb82...` intake pin | `c8be98f7...` #26 | DIFFERENT |
+| Current Hardware #355 labs | `51bd2145...` (11 board-local Python helpers) | COE Hardware (0 Python helpers) | NOT IMPORTED |
+| #26 Actions | Candidate `b382d233...` | 8 queued / 0 jobs / 0 check-runs | NOT EXECUTED |
+| #355 Poll / Mbed | `51bd2145...` | #45901141684 / #45901141615 | PASS / PASS |
+| #355 Full / Native | `51bd2145...` | #45901141748 / #45901142284 | FAIL / FAIL |
+| COE #35 case / shared / sandbox | `bc57ba8e...` | #45897198239 / #45897198326 / #45897198204 | PASS / FAIL / FAIL |
+| RENTAL #328 focused / shared build | `10fc200b...` | #45622918364 / #45622918551 / #45622918340 / #45622918468 | 3 focused PASS / shared build FAIL |
+
+Licence readback: project LICENSE, QRCode LICENSE, TailAdmin LICENSE and TailAdmin NOTICE are exact matches. Root NOTICE, Tabler LICENSE and Rental Launcher LICENSE destination counterparts are absent. No full licence clearance is claimed.
+
+---
+
 ## PHX-MASTER UTC21 — exact #355 head and COE #26 provenance — route admission hold (2026-11-26 UTC21)
 
 The current `OWNERSHIP_ROUTES.json` is blob `e4db324315a1b3543fec17a148fbf960170fcb29`, schema `phoenix/ownership-routes/v1`, 11 routes, status `DRAFT_REVIEW_ONLY`. Its source_ref remains `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; destination candidate is COE PR #26 at `b382d233ff06c8791b1028bed3c617cc7b670d12`. The PHX-MASTER route remains coordination-only with `target: null`. The Rental broad-prefix overlap remains `manual-file-mapping-required` and `copy_permitted: false`. Eight structural assertions passed; the manifest is not a migration approval.

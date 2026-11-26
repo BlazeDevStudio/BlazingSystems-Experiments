@@ -1,3 +1,21 @@
+## PHX-MASTER UTC22 — live role and exact-head CI reconciliation (2026-11-26T22:34Z)
+
+| Owner | Current exact PR head | Exact-head evidence | Ownership-safe next action |
+|---|---|---|---|
+| PHX-CORE | #252 `c82705f2de865c89ab733b10efa84f26f56a5cc4` | Build #42698139210 PASS; not financial/native acceptance | CORE retains authenticated poll/register and receipt/disposition contract; no Master source edits. |
+| PHX-RENTAL | #328 `10fc200b6dbf470a95e679d3acc58aff4ab2a67f` | API21/API23, auth/installer and APK identity focused runs PASS; shared build #45622918468 FAIL at handover freshness and missing ESP32 `mbedtls/sha256.h` | Rental refreshes own handover/build; Master does not edit Rental source. |
+| PHX-PISONET | #255 `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | Windows synthetic #42462978704 PASS; native COM hardware acceptance NOT TESTED | Pisonet owner retains native COM acceptance. |
+| PHX-HARDWARE | #355 `51bd21451a964cf2f608abd2287a89925fe9f930`; source/test `68416f69bc10dde8b2afa2948b312d4010507ad5` | Poll #45901141684 PASS; Mbed #45901141615 PASS; Full #45901141748 FAIL; Native #45901142284 FAIL on PAY-0745 active-clear assertion | Hardware refreshes its own handover; QA/CORE reconcile the deny-only pending-disposition contract. |
+| PHX-HARDWARE | #354 `fc842342596786e072630179acfbbc4feeb2ba02`; #353 `f527b33c9e391a9a66490388d96f06d6c8761dfa` | #354 focused Poll/Mbed PASS, Full/Native FAIL; #353 Relay/Quarantine PASS, Full missing poll-signature FAIL | Preserve owner stack; no Master rebase or firmware edits. |
+| PHX-QA | #290 `5c29d15994cee1279058f1eca12f2a3180704292`; #292 `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | #290 synthetic Windows #43633486963 PASS; #292 no exact-head run | QA owns independent assertions; do not add unsafe Hardware callsites. |
+| PHX-RELEASE | #242 `931ef2ebf073974f52d1b2c69efa6635276f7db7`; #291 `bf339a76964a1abe2412fac45392fe06a8e66418` | No current exact-head PR workflow runs returned | Release refreshes own PR handovers and reruns at exact heads. |
+| COE RELEASE | #35 `bc57ba8ecc5245ce538c6770a45bb25e2b8b5ef3` | Case guard PASS; 10/10 ULA profile failures; Bubblewrap/private-mask gate FAIL | COE Release owner supplies approved site-scoped ULA authority and trusted sandbox prerequisites. |
+| COE CORE / INTERCON | #45 `9d76a134c1f6512aa40c20ec4d247306a71a8cce`; #49 `aeb8ff11b2f5db9a5f86280ab62ab988245f3919` | #45 focused overlay/case PASS; #49 Stage 5.1/case PASS, Shared Contracts FAIL | Owners retain their source branches and contract evidence. |
+
+COE integration #26 remains `b382d233ff06c8791b1028bed3c617cc7b670d12`; eight workflows queued, zero jobs/check-runs. Master changed no CORE/RENTAL/PISONET/HARDWARE/QA/RELEASE source files. The active automation inventory exposed a PHX-HARDWARE continuation; no competing CORE work was started.
+
+---
+
 ## PHX-MASTER UTC21 — exact #355 head and COE #26 provenance — role/CI readback (2026-11-26 UTC21)
 
 | Owner | Live draft / exact HEAD | Exact-head CI readback | Ownership-safe next action |

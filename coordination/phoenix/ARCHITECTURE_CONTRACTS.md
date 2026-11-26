@@ -1,3 +1,9 @@
+## PHX-MASTER UTC22 — authenticated poll and pending-disposition boundary reaffirmed (2026-11-26T22:34Z)
+
+No new shared interface contract was accepted in this audit. CORE remains the owner of authenticated register/poll and receipt/disposition authority; HARDWARE owns firmware/labs; QA owns independent assertions. Current #355 Native PAY-0745 fails because the QA test requires active `clearPending(true/false)` callsites, while the candidate preserves deny-only behavior. Full validation also fails Controller protocol parity. Do not add unsigned poll-field trust, consume unauthenticated `config_revision`, or clear pending evidence merely to satisfy a test. Keep coin admission denied until CORE publishes the authenticated contract and QA verifies the same exact source SHA. No physical acceptance is implied.
+
+---
+
 ## PHX-MASTER UTC20 — authenticated poll and deny-only boundary (2026-11-26T20:34Z)
 
 The active v0.6 poll/register contract is still not approved for positive admission. HARDWARE #354/#355 remain deny-only; do not add unsigned `config_revision`, consume unsigned poll fields, or clear pending evidence merely to satisfy QA assertions. Exact #355 Native CI fails because the current QA sequence assertion demands active `clearPending(true/false)` callsites; Full fails Controller protocol parity. #353 Full still fails the ESP8266 poll-signature check. CORE owns the authenticated register/poll and receipt/disposition contract; HARDWARE owns firmware and labs; QA owns independent assertions. Preserve the fail-closed boundary until the signed contract is approved. No physical acceptance is inferred from CI.

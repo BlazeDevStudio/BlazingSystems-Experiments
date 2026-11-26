@@ -1,3 +1,21 @@
+## PHX-MASTER UTC22 — decision and blockers (2026-11-26T22:34Z)
+
+**PR #288 OPEN / DRAFT / UNMERGED. COE #26 FROZEN. Cleanup #266 OPEN / 0-of-7. PRODUCTION NO-GO.**
+
+New exact evidence:
+- COE #26 intake source/destination pins disagree with live PR branch; SOURCE_INTAKE runtime rows 46/15 conflict with 47/14 summary.
+- Source test tree 149 vs destination 19: 2 exact, 2 divergent, 145 source-only, 15 destination-only.
+- Both intake-pinned firmware blobs differ from destination; Hardware audit says sketches were not copied but candidate contains two divergent sketches.
+- Current #355 includes 11 board-local Python lab/support files absent from candidate Hardware.
+- #26 has eight queued workflows and no jobs/check-runs.
+- #355 Poll/Mbed focused CI PASS, Full Controller parity and Native PAY-0745 FAIL. Preserve deny-only behavior.
+- COE #35 lacks approved site ULA /48 and trusted Bubblewrap/private-mask prerequisites.
+- Private Drive v11/newer corrections NOT_RECOVERED; no Drive connector. Master product tests NOT RUN; 11 manifest structural assertions PASS only.
+
+Next owners: COE integration reconciles source/destination pins, intake counts, test identities, firmware audit and licences before staging; HARDWARE refreshes #355 handover; CORE/QA reconcile pending disposition; RELEASE refreshes #242/#291 exact-head evidence; registry custodian restores authorized private access; MASTER reruns repository tests when an authenticated checkout/CI path exists.
+
+---
+
 ## PHX-MASTER UTC21 — exact #355 head and COE #26 provenance — current decision and next actions (2026-11-26 UTC21)
 
 **Decision: PRODUCTION NO-GO; COE #26 FROZEN; cleanup #266 OPEN / 0-of-7; PR #288 OPEN / DRAFT / UNMERGED.**

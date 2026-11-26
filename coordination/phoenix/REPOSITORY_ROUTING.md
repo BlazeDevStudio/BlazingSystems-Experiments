@@ -1,3 +1,15 @@
+## PHX-MASTER UTC22 — COE #26 route provenance remains blocked (2026-11-26T22:34Z)
+
+The route manifest remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`, 11 routes, `DRAFT_REVIEW_ONLY`, PHX-MASTER target null. No ownership or route was changed.
+
+COE #26 intake `Pisowifi/SOURCE_INTAKE.json` blob `1b9018ff944f7f673934d0fc2a97e0a0090d3f5f` pins source `6d4c9b487af4d768c4d7627654d119417fcc6e00` but destination branch `feature/pisowifi-cleanup-stabilization`; live PR #26 is on `integration/ecosystem-nonproprietary-candidate-20261111`. `MIGRATION_MAP.md` repeats the old destination branch. The 61 runtime rows are 46 byte-identical / 15 derived, conflicting with the declared 47 / 14 summary.
+
+Exact source/destination recursive trees are 2,391 / 286 entries. The source-pinned test map is 149 / 19 files: 2 exact, 2 divergent, 145 source-only, 15 destination-only. Source-pinned ESP32/ESP8266 firmware blobs `29f1125d...` / `12c4bb82...` differ from COE #26 `3cc7ec54...` / `c8be98f7...`. Current Hardware #355 adds 11 board-local Python lab/support files absent from COE Hardware. The COE Hardware audit says firmware was not copied, while the destination tree contains two divergent sketches; its recorded source hashes do not match the intake pin.
+
+Selected exact licence checks: project LICENSE, QRCode LICENSE and TailAdmin LICENSE/NOTICE match; root NOTICE, Tabler LICENSE and Rental Launcher LICENSE counterparts are absent. Eight #26 workflows are queued, zero jobs/check-runs. **No staging, copy, move, overwrite or cherry-pick is authorized.**
+
+---
+
 ## PHX-MASTER UTC21 — exact #355 head and COE #26 provenance — exact source/destination provenance (2026-11-26 UTC21)
 
 ### Candidate and source pins
