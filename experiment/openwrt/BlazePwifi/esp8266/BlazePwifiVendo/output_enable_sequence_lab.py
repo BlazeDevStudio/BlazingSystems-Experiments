@@ -6,6 +6,8 @@ enables the relay or LED driver. This host lab records the exact call order
 from production configureRuntimePins() and rejects the former OUTPUT-then-OFF
 sequence, especially because LOW can energize an active-low relay.
 
+Production functions are extracted by the shared C/C++ scanner so comments,
+quoted strings and raw-string fixtures cannot masquerade as definitions.
 Host simulation only: no GPIO voltage, relay contact, coin acceptor, or flash
 hardware is measured.
 """
@@ -14,6 +16,8 @@ import re
 import subprocess
 import tempfile
 
+from firmware_source_extract import extract_function
+
 ROOT = Path(__file__).resolve().parents[2]
 BOARDS = (
     ("ESP8266", ROOT / "esp8266/BlazePwifiVendo/BlazePwifiVendo.ino"),
@@ -21,19 +25,21 @@ BOARDS = (
 )
 
 
-def extract(source: str, name: str) -> str:
-    match = re.search(r"\bvoid\s+" + re.escape(name) + r"\s*\([^)]*\)\s*\{", source)
-    if not match:
-        raise RuntimeError(f"missing production function: {name}")
-    depth = 0
-    for index in range(match.end() - 1, len(source)):
-        if source[index] == "{":
-            depth += 1
-        elif source[index] == "}":
-            depth -= 1
-            if depth == 0:
-                return source[match.start():index + 1]
-    raise RuntimeError(f"unbalanced production function: {name}")
+def verify_shared_extractor_contract() -> None:
+    """Ensure non-code decoys cannot shadow a real production definition."""
+    fixture = r'''
+// void configureRuntimePins(int pin) { unsafe(); }
+const char *quoted = "void configureRuntimePins(int pin) { unsafe(); }";
+const char *raw = R"phx(void configureRuntimePins(int pin) { unsafe(); })phx";
+void configureRuntimePins(int pin) { pinMode(pin, OUTPUT); }
+'''
+    extracted = extract_function(fixture, "void configureRuntimePins")
+    expected = "void configureRuntimePins(int pin) { pinMode(pin, OUTPUT); }"
+    if extracted.strip() != expected:
+        raise RuntimeError(
+            "shared C/C++ extractor selected a comment/string decoy or lost the definition"
+        )
+    print("SOURCE_EXTRACTOR_PASS comments, quoted strings and raw strings ignored")
 
 
 CPP = r'''
@@ -140,12 +146,12 @@ def build_and_run(board: str, write_logical: str, configure: str, expect_pass: b
         print(f"{board}: unsafe-order mutation rejected at exit {result.returncode}")
 
 
+verify_shared_extractor_contract()
 for board, path in BOARDS:
     source = path.read_text(encoding="utf-8")
-    write_logical = extract(source, "writeLogical")
-    configure = extract(source, "configureRuntimePins")
+    write_logical = extract_function(source, "void writeLogical")
+    configure = extract_function(source, "void configureRuntimePins")
     build_and_run(board, write_logical, configure, expect_pass=True)
     build_and_run(board, write_logical, unsafe_mutation(configure), expect_pass=False)
 
 print("PHX-HARDWARE: 4/4 output-enable sequence checks PASS; physical GPIO/relay behavior NOT TESTED")
-
