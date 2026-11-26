@@ -4,7 +4,7 @@ Activation: 2026-11-26 UTC04
 PR: [#291](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/291)  
 Branch: `phoenix/release-publisher-isolation-20261115`  
 Starting HEAD: `9b928c9eaa72cb26fdcf3f0e50a0ec024f4e3c30`  
-Source/test/workflow HEAD before handover: `22963e0aaf726dcf0d709898ba219973b5be65ab`  
+Latest source/test/workflow HEAD: `f556769bec30dea156f223f760547f76d99693ca`; final handover branch HEAD: `a0e616b87f42e209148ba5c68c8a80e81334c744`  
 Base PR #242: `a7e27fe50e13326a7258bbaed1388594141ddda3`; #291 still targets former base `734b89d9e7792247e8376335c3f3685500ab3f89`.
 
 **Disposition: SOURCE/TEST/WORKFLOW COMMITTED / STATIC CONTRACT CHECKS PASS / EXACT-HEAD ACTIONS NOT TRIGGERED / QA REVIEW PENDING / PRODUCTION NO-GO.** Strict NO Codex. No merge, signing, tag, publication, hardware flash, payment migration or customer deployment.
@@ -24,17 +24,17 @@ PHX-MASTER UTC03 audit [3b7198d1](https://github.com/BlazeDevStudio/BlazingSyste
 2. Espressif package index is pinned to immutable commit `8f6bee9761f7b15cce27b79cbd1ae199d0df2adf`, Git blob SHA-1 `b3325781b813ec0b4dbc7cccc1913f53aa685004`.
 3. Added [toolchain verifier/provenance capture](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/9639a58c9f231c7eec3a0f85429ed60563b24572). It checks the index blob, platform metadata, tool archive URLs/checksums/sizes, installed versions, builtins, Arduino CLI and core versions. Capture records runner image, compiler versions, source/sketch identity, package-index hashes, both binary/ELF SHA-256 values and SHA256SUMS. Manifest marks evidence HOSTED_CI_ONLY and production_authorized=false.
 4. Updated [ESP32 compatibility workflow](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/986b4f14d53ccb9aca3cbbd1fea2abf2360b4cd7): immutable package index, lock verification before compile, capture after the two builds, and immutable `actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9` retention for 14 days.
-5. Added `test_esp32_toolchain_lock.py`; updated `test_phx_release_esp32_core_compatibility.py` and `test_release_artifact_action_pins.py`. Both push and pull_request path filters include the new lock/script/test. Final path-filter correction: [22963e0a](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/22963e0aaf726dcf0d709898ba219973b5be65ab).
+5. Added `test_esp32_toolchain_lock.py`; updated `test_phx_release_esp32_core_compatibility.py` and `test_release_artifact_action_pins.py`. Both push and pull_request path filters include the new lock/script/test. Final path-filter correction: [22963e0a](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/22963e0aaf726dcf0d709898ba219973b5be65ab). The final compiler capture uses the exact explicit compiler/objdump/nm paths already used by the workflow: [f556769](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/f556769bec30dea156f223f760547f76d99693ca).
 
 ## Verification status and blockers
 
 Static repository assertions passed: lock JSON parses; both core versions and all archive checksums are present; pinned URL/blob match; both path filters include the new files; lock verification precedes compilation; capture/upload follow compilation with `if: always()`; upload action is pinned and retention is 14 days.
 
-**Exact-source Actions are not verified.** GitHub returned zero workflow runs and zero combined statuses for head `22963e0a`. No expected RED/GREEN, hosted lock verification, artifact upload or clean-build result is claimed. The available GitHub connector does not expose workflow_dispatch. PHX-INFRA/repository administrator must dispatch `PHX Release ESP32 core compatibility` and `BlazePwifi build` for this exact PR head. No local execution of the new Python regression suite is claimed.
+**Exact-source Actions are not verified.** No PR-triggered workflow runs or combined statuses were returned for code head `f556769` or final handover head `a0e616b8`. No expected RED/GREEN, hosted lock verification, artifact upload or clean-build result is claimed. The available GitHub connector does not expose workflow_dispatch. PHX-INFRA/repository administrator must dispatch `PHX Release ESP32 core compatibility` and `BlazePwifi build` for final PR #291 head `a0e616b8`. No local execution of the new Python regression suite is claimed.
 
 The workflow still preserves HARDWARE's existing pin `7da74f9d1768a42fc6c15be368eeddae29035d4f` / sketch blob `c07aba7d518ef7eb5d536aafdd77ef6193e676cb`. HARDWARE/MASTER must approve the canonical source SHA/blob before RELEASE refreshes them. No hardware source or sketch was changed.
 
-PR #291 compares 867 commits ahead / 9 behind the live #242 head (merge base remains 734b89d9); it has 36 changed paths. The accumulated stack includes inherited non-RELEASE paths such as BlazePwifi project handovers/change ledger and SoftTimer PowerShell tests. Those paths were not edited in this activation. No rebase, retarget, force-push or merge was performed; MASTER owns stack reconciliation.
+PR #291 compares 870 commits ahead / 9 behind the live #242 head (merge base remains 734b89d9); it has 36 changed paths. The accumulated stack includes inherited non-RELEASE paths such as BlazePwifi project handovers/change ledger and SoftTimer PowerShell tests. Those paths were not edited in this activation. No rebase, retarget, force-push or merge was performed; MASTER owns stack reconciliation.
 
 ## Live control plane and provenance
 
@@ -47,9 +47,9 @@ PR #291 compares 867 commits ahead / 9 behind the live #242 head (merge base rem
 
 ## Next owner actions
 
-1. PHX-INFRA/repository administrator: dispatch both named workflows at exact PR #291 head `22963e0a`; record every job and artifact ID.
+1. PHX-INFRA/repository administrator: dispatch both named workflows at exact PR #291 head `a0e616b8`; record every job and artifact ID.
 2. PHX-HARDWARE + PHX-MASTER: approve the canonical source commit and sketch blob.
-3. PHX-MASTER: reconcile the nine-commit stale #291 base without discarding child history.
+3. PHX-MASTER: reconcile the nine-commit stale #291 base (870 commits ahead / 9 behind) without discarding child history.
 4. PHX-QA: independently review the lock, verifier, tests, retained artifacts and cross-run comparison.
 5. Registry custodian: restore authorized provenance-only access to the actual Drive v11 registry.
 
