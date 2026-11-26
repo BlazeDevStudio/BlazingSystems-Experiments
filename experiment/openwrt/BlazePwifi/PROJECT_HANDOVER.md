@@ -1,3 +1,9 @@
+<!-- PHX-HARDWARE-20261125-POLL-PARITY-LITERAL-TOKEN-FIDELITY-UTC18:START -->
+> **PHX-HARDWARE UTC18 — poll-safety board parity preserves C++ literal bytes.** Existing DRAFT [PR #352](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/352), branch `phoenix/hw-exact-arduino-core-matrix-20261125-utc11`, parent #349 exact HEAD `2a5c997add4f49fcd74f753101d3a9daac0040bf`. Test-only RED [#45671637783](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45671637783), job `139408168966`, reproduced `POLL_SAFETY_LITERAL_WHITESPACE_MUTATION_SURVIVED`. Final source/test SHA [`8eab8260`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/8eab82606ab8bf7ae5c598edde739d7b47e7c7a2) uses existing `tokenize_cpp()` and token-subsequence failure injection. Quarantine [#45672193685](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45672193685) job `139410148857` PASS; Relay [#45672194428](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45672194428) jobs `139410151542 / 139410152270` PASS; ESP8266 core 3.1.2 [#45672193510](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45672193510) job `139410149072` PASS; ESP32 core 3.3.13 / 4.0.0 [#45672193620](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45672193620) jobs `139410149591 / 139410148938` PASS / PASS. Full push [#45672174175](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45672174175), validation job `139410259570`, FAILS at inherited `Missing poll signature check`; all 14 target/platform builds plus Android PASS and downstream stages SKIPPED. Only `poll_loop_blocking_inhibit_lab_source_contracts.py` changed; no `.ino` or production source changed. SIMULATED / CI VERIFIED only; physical acceptance NOT TESTED; PRODUCTION NO-GO. See [UTC18 handover](docs/handover/2026-11-25-hw-poll-parity-literal-token-fidelity-utc18.md).
+>
+> **Live ref revalidation:** Experiments main `6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE #26 remains frozen. Master #288 remains OPEN / DRAFT / UNMERGED; cleanup #266 remains 0/7. Hardware #239/#254 remain stacked OPEN/DRAFT; #283 remains parallel OPEN/DRAFT. Current main CGI register/poll bodies still lack `response_sig`; no shared API change was made. Private Drive registry v11 was not recovered.
+<!-- PHX-HARDWARE-20261125-POLL-PARITY-LITERAL-TOKEN-FIDELITY-UTC18:END -->
+
 <!-- PHX-HARDWARE-20261125-CPP-PPNUMBER-NORMALIZER-UTC10:START -->
 > **PHX-HARDWARE UTC10 — C++ preprocessing-number normalizer extraction.** Existing DRAFT [PR #349](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/349), branch \`phoenix/hw-json-array-primitive-guard-20261124-utc00\`, base #347 \`960184670379f01e20f0e7e8bc23b3e5eedacd3f\`. Source/test [\`fc4ce808\`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/fc4ce8084c8465a75d5c3418bac5a268e49a4ae3) extracts the C++ token scanner into \`cpp_token_normalizer.py\`, reduces \`bounded_http_response_lab.py\` by 139 lines, and fixes decimal/hex exponent signs. Test-first RED: Quarantine [#45598286371](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45598286371) job \`139150080528\`; Relay [#45598497125](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45598497125), job \`139150814811\`, each 3 expected failures. Exact-source Quarantine [#45599003730](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45599003730) job \`139152588586\` PASS; Relay [#45599003585](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45599003585) jobs \`139152587841 / 139152588175\` PASS. Full [#45599003619](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45599003619) fails inherited CORE/QA \`Missing poll signature check\`; 14/14 target/platform + Android builds PASS; downstream release stages skipped. Host-only SIMULATED / CI VERIFIED; physical acceptance NOT TESTED; HARDWARE ACCEPTED NO; PRODUCTION NO-GO. See [UTC10 handover](docs/handover/2026-11-25-hw-cpp-pp-number-normalizer-modularization-utc10.md).
 >
@@ -1018,7 +1024,6 @@ Live stack: #239 `d83b715b...`, #254 `84c442a4...` (contains `3692ddf...`, 17 ah
 See [UTC11 narrow handover](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/blob/3f5e8b59e6e72629a3c634abc34e24a082484a13/experiment/openwrt/BlazePwifi/docs/handover/2026-11-25-hw-cpp-user-defined-literal-suffix-boundaries-utc11.md).
 <!-- PHX-HARDWARE-20261125-CPP-UDL-SUFFIX-BOUNDARIES:END -->
 
-
 ## PHX-HARDWARE UTC23 — CRLF line-splice parity guard
 
 - PR #349 remains OPEN / DRAFT / UNMERGED on phoenix/hw-json-array-primitive-guard-20261124-utc00; captured base is #347 at 960184670379f01e20f0e7e8bc23b3e5eedacd3f.
@@ -1031,3 +1036,34 @@ See [UTC11 narrow handover](https://github.com/BlazeDevStudio/BlazingSystems-Exp
 - Private Drive registry v11 remains NOT RECOVERED; no Google Drive connector is exposed. No older snapshot substituted.
 
 See [UTC23 narrow handover](docs/handover/2026-11-25-hw-cpp-crlf-line-splice-guard-utc23.md). Master UTC23 also assigned a separate #348 canonical-handover synchronization; it remains pending and was not modified in this task.
+
+## PHX-HARDWARE UTC02 — #349 → #352 → #353 stack ancestry reconciliation
+
+- #352's parent #349 was at `1a2ecf5fa8c8c20a0095ac898c1bff254280ad27`; #352 child was at `0e984e267b3a8fb10c314800d1a7f120806354b7`.
+- Their merge base was `2a5c997add4f49fcd74f753101d3a9daac0040bf`; compare showed 43 child commits and 3 parent-only commits.
+- The three parent-only commits changed four paths: this handover, the CRLF narrow handover, `cpp_token_normalizer.py`, and `cpp_token_normalizer_contract_lab.py`. The two Python paths were not changed by #352, so they were imported without source conflict.
+- `PROJECT_HANDOVER.md` was combined additively: #352's existing poll/ISR history is retained and #349's UTC23 evidence is appended. No existing section was replaced.
+- The #352 branch update is a two-parent merge commit with first parent the prior #352 head and second parent the #349 head. The branch ref update is expected-SHA guarded and non-forced.
+- The corresponding #353 child will be advanced as a second two-parent merge, preserving its ISR-specific source and handovers while incorporating the reconciled #352 parent.
+- No production sketch, CGI producer, CORE API, finance, signer/witness, migration, COE destination, physical device, or release artifact was changed.
+- Exact-head focused CI is required after both branch updates; no new CI result is claimed by this handover before those runs complete.
+
+## Exact-head CI results after UTC02 ancestry reconciliation
+
+All run heads below were read from GitHub Actions and match the source/test merge commits, not a physical device:
+
+### PR #352 — source/test SHA `a1720e1724a15b5254d9dd1ee57e6212259a4896`
+
+- Quarantine Byte Readback [run #45744575878](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45744575878), job `139657404426`: PASS. ESP8266 and ESP32 coin pulse capture 18/18 each; C++ token normalizer 15/15 including CRLF line-splice regression; bounded HTTP token normalizer 8/8; JSON/UTF-8, boot-polarity, EEPROM-read failure and fail-closed mutation checks passed.
+- Relay Output Polarity [run #45744575789](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45744575789), jobs `139657404082` and `139657404444`: PASS / PASS.
+- ESP8266 core 3.1.2 [run #45744575794](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45744575794), job `139657404588`: PASS.
+- ESP32 core 3.3.13 and 4.0.0 [run #45744575866](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45744575866), jobs `139657405152` and `139657404946`: PASS / PASS. The actual ESP32 Vendo sketch compiled under both pinned cores; core-4 output was 1,099,857 bytes (83% of 1,310,720 bytes).
+- Full BlazePwifi [run #45744575781](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45744575781): FAIL at validation job `139657404573`, inherited `Missing poll signature check` in the active ESP8266 sketch. All 14 firmware/platform jobs and Android passed; production APK import, signing, simulations, candidate gate and publication were skipped.
+
+### PR #353 — source/test SHA `c42ceae028e21e4061c9d424f28c4bcfdbff7c63`
+
+- Quarantine Byte Readback [run #45744810594](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45744810594), job `139658174292`: PASS. ESP8266 and ESP32 coin pulse capture 18/18 each; C++ token normalizer 15/15; bounded HTTP token normalizer 8/8; JSON/UTF-8, boot-polarity, EEPROM-read failure and fail-closed mutation checks passed.
+- Relay Output Polarity [run #45744810597](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45744810597), jobs `139658174191` and `139658174518`: PASS / PASS.
+- Full BlazePwifi [run #45744810573](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45744810573): FAIL at validation job `139658174516`, same inherited `Missing poll signature check`. All 14 firmware/platform jobs and Android passed; production import/signing, simulation, candidate and publication jobs were skipped.
+
+These are SIMULATED / CI VERIFIED results. The failure is not fixed by ancestry reconciliation and must not be bypassed by weakening the signature check. No physical coin pulse, relay contact, power cut, or device soak was performed.

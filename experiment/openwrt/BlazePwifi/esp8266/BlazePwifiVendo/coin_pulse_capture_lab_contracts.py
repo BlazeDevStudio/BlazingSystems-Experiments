@@ -77,4 +77,7 @@ MUTATIONS = (
      "outputPolarityKnown && pinConfigSafe && fsReady",
      "outputPolarityKnown && fsReady",
      "coin POST remained eligible with an unsafe pin mapping"),
+    ("missing-isr-sequence-increment", "coinEdgeISR",
+     "coinEdgeSequence = coinEdgeSequence + 1U;", "coinEdgeSequence=coinEdgeSequence;",
+     "late-coin-post-edge"),
 )
