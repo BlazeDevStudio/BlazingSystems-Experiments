@@ -95,6 +95,14 @@ int scenario(bool activeHigh){
   if(oldRelayOff<0 || oldLedOff<0 || oldRelayOff>=relayOutput || oldLedOff>=ledOutput){
     std::cerr<<"OUTPUT_SEQUENCE_FAIL old outputs were not disabled before reassignment\n"; return 13;
   }
+  const int relayActiveLevel=activeHigh?HIGH:LOW;
+  const int ledActiveLevel=activeHigh?HIGH:LOW;
+  if(firstEvent(1,13,relayActiveLevel)>=0){
+    std::cerr<<"OUTPUT_SEQUENCE_FAIL relay active level was written during startup\\n"; return 14;
+  }
+  if(firstEvent(1,15,ledActiveLevel)>=0){
+    std::cerr<<"OUTPUT_SEQUENCE_FAIL LED active level was written during startup\\n"; return 15;
+  }
   return 0;
 }
 
@@ -129,7 +137,7 @@ def active_write_mutation(configure: str, anchor: str, statement: str) -> str:
     return configure.replace(anchor, anchor + "\n  " + statement, 1)
 
 
-def build_and_run(board: str, write_logical: str, configure: str, expect_pass: bool) -> None:
+def build_and_run(board: str, write_logical: str, configure: str, expect_pass: bool, mutation_label: str = "unsafe output order") -> None:
     code = CPP.replace("@@WRITE_LOGICAL@@", write_logical).replace("@@CONFIGURE@@", configure)
     with tempfile.TemporaryDirectory(prefix="phx-output-sequence-") as tmp:
         source_path = Path(tmp) / "sequence.cpp"
@@ -146,11 +154,11 @@ def build_and_run(board: str, write_logical: str, configure: str, expect_pass: b
             f"{board}: production sequence failed ({result.returncode}): {result.stderr.strip()}"
         )
     if not expect_pass and result.returncode == 0:
-        raise SystemExit(f"{board}: unsafe OUTPUT-before-OFF mutation was not rejected")
+        raise SystemExit(f"{board}: mutation survived: {mutation_label}")
     if expect_pass:
         print(f"{board}: {result.stdout.strip()}")
     else:
-        print(f"{board}: unsafe-order mutation rejected at exit {result.returncode}")
+        print(f"{board}: mutation rejected: {mutation_label} at exit {result.returncode}")
 
 
 verify_shared_extractor_contract()
@@ -159,7 +167,7 @@ for board, path in BOARDS:
     write_logical = extract_function(source, "void writeLogical")
     configure = extract_function(source, "void configureRuntimePins")
     build_and_run(board, write_logical, configure, expect_pass=True)
-    build_and_run(board, write_logical, unsafe_mutation(configure), expect_pass=False)
+    build_and_run(board, write_logical, unsafe_mutation(configure), expect_pass=False, mutation_label="missing pre-output OFF preload")
     active_write_mutations = (
         (
             "relay-active-before-output-enable",
@@ -184,6 +192,6 @@ for board, path in BOARDS:
     )
     for label, anchor, statement in active_write_mutations:
         mutated = active_write_mutation(configure, anchor, statement)
-        build_and_run(board, write_logical, mutated, expect_pass=False)
+        build_and_run(board, write_logical, mutated, expect_pass=False, mutation_label=label)
 
-print("PHX-HARDWARE: 4/4 output-enable sequence checks PASS; physical GPIO/relay behavior NOT TESTED")
+print("PHX-HARDWARE: 12/12 output-enable checks PASS; 8 active-level mutations rejected; physical GPIO/relay behavior NOT TESTED")
