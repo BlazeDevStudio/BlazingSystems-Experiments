@@ -1,3 +1,19 @@
+# CURRENT STATE — 2026-11-26 UTC09 terminal / PHX-HARDWARE output-enable latch preload
+
+**Task:** [#177](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/177) · **Control:** [#172](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/172) · **Cleanup-first:** [#266](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/266) · **PR:** [#354](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/354)
+
+- **Role:** PHX-HARDWARE; scope limited to the two Vendo sketches, Hardware-owned source lab/workflow and Hardware-owned handovers.
+- **Branch:** `phoenix/hw-active-v06-poll-intake-deny-20261126-utc05`; **base:** `2fbd2475e9f54878c316fa7cea2f228386b0e859`; **source/test SHA:** `b8732704e2ff414f6ab4593acf4ae4e95fc6c280`.
+- **Change:** preload logical OFF for new relay/LED pins before OUTPUT on ESP8266 and ESP32; retain old-pin OFF and post-enable confirmation.
+- **Focused exact-source:** RED [#45790170219](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45790170219) job `139806889031`; GREEN [#45790391253](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45790391253) not the output lab; authoritative output-lab GREEN [#45790391312](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45790391312) job `139807615868` PASS and final docs-head focused [#45790738156](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45790738156) job `139808804664` PASS.
+- **Build matrix:** [#45790738210](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45790738210), source-contract + Arduino core 3.3.13 + 4.0.0 all PASS.
+- **Native:** [#45790738152](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45790738152) FAIL at QA-owned PAY-0745 active `clearPending(true/false)` assertion. **Full:** [#45790738250](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45790738250) validation FAIL at Controller protocol parity; all firmware target jobs and Android PASS; production import/update/simulation/sign/publish/candidate gates skipped.
+- **Evidence status:** SIMULATED / CI VERIFIED for source-extracted call ordering and target builds. Physical GPIO/relay/electrical/power-cut acceptance NOT TESTED. HARDWARE ACCEPTED NO; PRODUCTION READY NO.
+- No CORE API, QA tests, finance, pending disposition, signer/witness, migration, RELEASE workflow, COE destination or physical device was changed/operated.
+- [Narrow UTC09 handover](docs/handover/2026-11-26-hw-output-enable-preload-utc09.md).
+
+---
+
 # CURRENT STATE — 2026-11-26 UTC09 / PHX-HARDWARE output-enable latch preload
 
 **Task:** [#177](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/177) · **Control:** [#172](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/172) · **Cleanup-first:** [#266](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/266) · **PR:** [#354](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/354)

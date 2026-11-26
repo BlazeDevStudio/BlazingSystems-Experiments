@@ -1,3 +1,19 @@
+## CURRENT STATUS — 2026-11-26 UTC09 terminal follow-up (PHX-HARDWARE GPIO output-latch ordering)
+
+**Status: PR #354 OPEN / DRAFT / UNMERGED; output-enable latch correction source/test CI VERIFIED; ESP32 core 3.3.13 and 4.0.0 matrix PASS; native QA assertion FAIL; Full validation FAIL at Controller protocol parity; physical acceptance NOT TESTED; PRODUCTION NO-GO.**
+
+- Branch: `phoenix/hw-active-v06-poll-intake-deny-20261126-utc05`; base `blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859`.
+- Source/test SHA: `b8732704e2ff414f6ab4593acf4ae4e95fc6c280`; final docs head before this terminal-only reconciliation: `d824c3774cf40311037333ad1e62834a5d16297c`.
+- Both ESP8266 and ESP32 preload logical relay/LED OFF before OUTPUT; old-pin shutdown and post-enable confirmation remain.
+- RED [#45790170219](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45790170219), job `139806889031`: expected relay-OFF-before-OUTPUT failure.
+- Focused GREEN [#45790391312](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45790391312), job `139807615868`, and final docs-head focused [#45790738156](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45790738156), job `139808804664`: PASS; active-high/active-low on both boards; unsafe mutation rejected (4/4).
+- Core matrix [#45790738210](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45790738210): source-contract, core 3.3.13 and core 4.0.0 jobs PASS.
+- Native [#45790738152](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45790738152) FAIL at QA-owned PAY-0745 active `clearPending(true/false)` assertion. Full [#45790738250](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45790738250) validation FAIL at Controller protocol parity; all firmware target jobs and Android PASS; production/signing/publication/simulation gates skipped.
+- Physical GPIO/relay/electrical, coin, LittleFS power-cut, 150 power cuts and 30-device/24-hour soak remain NOT TESTED. HARDWARE ACCEPTED NO; PRODUCTION READY NO-GO.
+- [Narrow UTC09 handover](docs/handover/2026-11-26-hw-output-enable-preload-utc09.md).
+
+---
+
 ## CURRENT STATUS — 2026-11-26 UTC09 follow-up (PHX-HARDWARE GPIO output-latch ordering)
 
 **Status: PR #354 OPEN / DRAFT / UNMERGED; test-first GPIO output-enable regression corrected; focused exact-source CI PASS; Full/native/core-matrix terminal status pending; physical acceptance NOT TESTED; PRODUCTION NO-GO.**

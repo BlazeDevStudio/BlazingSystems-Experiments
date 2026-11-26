@@ -3478,3 +3478,14 @@ PR #354 remains OPEN / DRAFT / UNMERGED. PRs #239/#254/#283 remain OPEN / DRAFT 
 - **Limits:** source-extracted ordering SIMULATED / CI VERIFIED; physical GPIO/relay transient, electrical recovery, coin pulse, LittleFS power-loss, 150 power cuts and 30-device/24-hour soak NOT TESTED. HARDWARE ACCEPTED NO; PRODUCTION READY NO-GO.
 - No admission/auth protocol, pending disposition, finance, API, signer, witness, migration, release, COE or physical device behavior was changed.
 - **Next:** inspect exact-head core/native/Full runs to terminal status; request QA review of the host harness and physical scope/logic-analyzer plan before any hardware acceptance.
+
+
+## 2026-11-26 UTC09 terminal CI reconciliation — PHX-HARDWARE output-enable preload
+
+- PR #354 remains OPEN / DRAFT / UNMERGED. Source/test SHA `b8732704e2ff414f6ab4593acf4ae4e95fc6c280`; prior docs head `d824c3774cf40311037333ad1e62834a5d16297c`.
+- Final docs-head focused output-order lab [#45790738156](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45790738156), job `139808804664`: PASS.
+- ESP32 core matrix [#45790738210](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45790738210): source-contract `139809456560`, core 3.3.13 `139809456570`, core 4.0.0 `139809456167` all PASS.
+- Native [#45790738152](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45790738152), job `139808805990`: FAIL at QA-owned PAY-0745 assertion requiring active `clearPending(true/false)` callsites; deny-only candidate intentionally preserves pending evidence and has no active disposition callsite.
+- Full [#45790738250](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45790738250), validation `139809028587`: FAIL at QA-owned Controller protocol parity. All firmware target jobs and Android PASS; production import, update, simulation, signing, publication and candidate gate skipped. No Full PASS.
+- Physical GPIO/relay/electrical, coin, LittleFS power loss, 150 power cuts and 30-device/24-hour soak remain NOT TESTED. HARDWARE ACCEPTED NO; PRODUCTION READY NO-GO.
+- No QA-owned tests or CORE API/producer files were modified. Next: PHX-QA reconcile the deny-only sequence/parity assertions; PHX-MASTER refresh current #354 pin in role and integration matrices.

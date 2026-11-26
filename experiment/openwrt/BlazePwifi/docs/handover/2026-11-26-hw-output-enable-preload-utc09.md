@@ -40,3 +40,16 @@ At the time of this handover update:
 - HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
 
 No coin admission, response trust, pending disposition, finance, API, migration, signer, witness or release behavior changed. No physical relay, coin acceptor, device, flash, live money or customer data was operated.
+
+
+## UTC09 terminal CI reconciliation — 2026-11-26
+
+The prior section recorded matrix/native/Full jobs while they were pending. Their terminal results are now:
+
+- Focused output-order source lab at final docs head [#45790738156](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45790738156), job `139808804664`: PASS.
+- ESP32 clean-build matrix [#45790738210](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45790738210): source-contract job `139809456560` PASS; Arduino core 3.3.13 job `139809456570` PASS; Arduino core 4.0.0 job `139809456167` PASS.
+- Native synthetic [#45790738152](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45790738152), job `139808805990`: FAIL at QA-owned `tests/v060_vendo_sequence_contract.py:20`, which still requires active `clearPending(true/false)` callsites. This deny-only candidate deliberately preserves pending evidence and has no active disposition callsite. Hardware did not edit QA-owned tests.
+- Full [#45790738250](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45790738250): validation job `139809028587` FAIL at QA-owned Controller protocol parity. ESP8266, ESP32, all firmware target jobs and Android completed PASS. Production APK import, update bundle, simulations, signing handoff, publication and candidate-gate jobs were skipped. Full is NOT PASS.
+
+No test result promotes the candidate to HARDWARE ACCEPTED. Physical GPIO/relay transients, coin acceptor, electrical recovery, LittleFS power loss, 150 power cuts and 30-device/24-hour soak remain NOT TESTED. HARDWARE ACCEPTED NO; PRODUCTION READY NO-GO.
+
