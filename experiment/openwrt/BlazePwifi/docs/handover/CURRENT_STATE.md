@@ -1,3 +1,14 @@
+## PHX-HARDWARE UTC22 — current exact state
+
+- PR #355 remains OPEN / DRAFT / UNMERGED on phoenix/hw-poll-preflight-lab-modules-20261127-utc18.
+- Current pre-documentation HEAD: ba24c44144a6b367c12b716944d1957f20003b3f.
+- ESP32 config persistence now uses a false-before / true-after cfgvalid marker around all 14 Preferences writes; invalid marker or Preferences-open failure blocks station connection and polling and opens setup-only recovery defaults.
+- Focused exact-head [#45907063693](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45907063693), job 140206222638: PASS. Test markers include 14-field failure injection, two marker failures, invalid-marker defaults, legacy compatibility, Preferences.begin retry, and seven mutation rejections.
+- Mbed #45907063709 source contract PASS; target builds were still running. Full #45907057845 CI-0701 PASS, handover freshness FAIL (expected before this sync); ESP8266 target PASS, other targets still running. Native #45907063717 fails QA-owned PAY-0745 active-clear assertion.
+- The validity marker is not an atomic-transaction or power-cut proof. Physical NVS, relay, coin, electrical recovery, 150 power cuts and 30-device/24-hour soak remain NOT TESTED.
+- #177 unresolved; #266 OPEN / 0-of-7; #31/#32/#34/#43 open. COE main remains a6513ab4412b4c014eee2863e45cbe32d06cb243; COE PR #26 remains frozen DRAFT at b382d233ff06c8791b1028bed3c617cc7b670d12.
+- Next: finish Mbed/Full exact-head runs, rerun Full after this sync, and obtain QA/CORE contract reconciliation. HARDWARE ACCEPTED NO; PRODUCTION NO-GO.
+
 ## PHX-HARDWARE UTC21 integration readback — exact docs-head results
 
 **Observed UTC:** 2026-11-26T21:52Z  
