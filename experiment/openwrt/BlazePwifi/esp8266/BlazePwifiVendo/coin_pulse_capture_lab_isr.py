@@ -245,18 +245,24 @@ def _runtime_interrupt_wiring_body(source, board):
         next_assign = min((p for p in assign_positions if p > detach_pos), default=-1)
         if false_pos < 0 or next_assign < 0 or false_pos >= next_assign:
             raise RuntimeError(f"{board} must clear the attached flag before changing the coin pin")
-    for attach_pos in attach_positions:
-        true_pos = compact.find(attached_state, attach_pos)
-        next_quarantine = min((p for p in quarantine_positions if p > attach_pos), default=-1)
-        if true_pos < attach_pos or next_quarantine < 0 or true_pos >= next_quarantine:
-            raise RuntimeError(f"{board} must publish the attached flag before post-attach quarantine")
     if compact.count(restore) != 2:
         raise RuntimeError(f"{board} must restore the prior poll inhibit only on both successful attachment paths")
-    for quarantine_pos in quarantine_positions:
+    for index, attach_pos in enumerate(attach_positions):
+        branch_end = attach_positions[index + 1] if index + 1 < len(attach_positions) else len(compact)
+        true_pos = compact.find(attached_state, attach_pos)
+        branch_quarantines = [
+            position for position in quarantine_positions
+            if attach_pos < position < branch_end
+        ]
+        if true_pos < attach_pos or len(branch_quarantines) != 1 or true_pos >= branch_quarantines[0]:
+            raise RuntimeError(f"{board} must publish the attached flag before post-attach quarantine")
+        quarantine_pos = branch_quarantines[0]
         restore_pos = compact.find(restore, quarantine_pos)
         apply_pos = compact.find(output_apply, restore_pos)
-        if restore_pos < 0 or apply_pos < 0 or not (quarantine_pos < restore_pos < apply_pos):
-            raise RuntimeError(f"{board} must pass post-attach quarantine before restoring output admission")
+        if restore_pos < 0 or apply_pos < 0 or not (
+            attach_pos < quarantine_pos < restore_pos < apply_pos < branch_end
+        ):
+            raise RuntimeError(f"{board} must pass post-attach quarantine before restoring output admission within the same branch")
 
     apply_remote = extract_function(source, "applyRemoteConfig")
     apply_remote_compact = re.sub(r"\s+", "", apply_remote)
