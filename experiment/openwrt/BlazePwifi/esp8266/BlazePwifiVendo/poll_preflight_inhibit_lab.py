@@ -316,6 +316,34 @@ def verify_board(name: str, path: Path):
 
     compile_and_run(apply_fn, deny_fn, True, f"{name} safe pre-poll state")
 
+    # Failure injection: the relay OFF path must use relay polarity, not LED polarity.
+    # The existing two-case harness gives both outputs the same polarity, so this
+    # mutation currently survives; the RED run proves that blind spot.
+    mutated_relay_polarity = apply_fn.replace(
+        "writeLogical(runRelayPin,false,runRelayActiveHigh)",
+        "writeLogical(runRelayPin,false,runLedActiveHigh)",
+        1,
+    )
+    if mutated_relay_polarity == apply_fn:
+        raise AssertionError(f"{name}: relay OFF polarity mutation anchor missing")
+    compile_and_run(
+        mutated_relay_polarity, deny_fn, False,
+        f"{name} relay OFF incorrectly borrows LED polarity",
+    )
+
+    # The status LED is independent too; its OFF write must not borrow relay polarity.
+    mutated_led_polarity = apply_fn.replace(
+        "writeLogical(runLedPin,false,runLedActiveHigh)",
+        "writeLogical(runLedPin,false,runRelayActiveHigh)",
+        1,
+    )
+    if mutated_led_polarity == apply_fn:
+        raise AssertionError(f"{name}: LED OFF polarity mutation anchor missing")
+    compile_and_run(
+        mutated_led_polarity, deny_fn, False,
+        f"{name} LED OFF incorrectly borrows relay polarity",
+    )
+
     # Failure injection: remove all four actuation-deny assignments. The
     # source-extracted GPIO model must detect that the relay stays energized.
     mutated_deny = deny_fn
