@@ -65,6 +65,14 @@ String hexDigest(const String &s){
   for(int i=0;i<32;i++) sprintf(buf+i*2,"%02x",out[i]); buf[64]=0; return String(buf);
 }
 
+bool validSha256Hex(const String &digest){
+  if(digest.length()!=64) return false;
+  for(size_t i=0;i<64;i++){
+    char c=digest[i];
+    if(!((c>='0'&&c<='9')||(c>='a'&&c<='f')||(c>='A'&&c<='F'))) return false;
+  }
+  return true;
+}
 String freshNonce(){
   char b[17]; uint32_t a=ESP.random(),c=micros();
   sprintf(b,"%08lx%08lx",(unsigned long)a,(unsigned long)c); return String(b);
@@ -224,19 +232,26 @@ void applyRemoteConfig(const String &response){
 }
 
 String signedBody(const String& action,const String& pulses,const String& target,const String& forcedNonce=""){
+  if(!strlen(cfg.key) || !strlen(cfg.id)) return String();
   String n=forcedNonce.length()?forcedNonce:freshNonce();
   String base=String(cfg.key)+"|"+action+"|"+cfg.id+"|"+n+"|"+pulses+"|"+target+"|"+cfg.key;
-  return "action="+action+"&id="+esc(cfg.id)+"&nonce="+n+"&pulses="+pulses+"&target="+esc(target)+"&sig="+hexDigest(base);
+  String digest=hexDigest(base);
+  if(!validSha256Hex(digest)) return String();
+  return "action="+action+"&id="+esc(cfg.id)+"&nonce="+n+"&pulses="+pulses+"&target="+esc(target)+"&sig="+digest;
 }
 
 String post(const String& action,const String& pulses="0",const String& target="",const String& forcedNonce=""){
+  if(action!="register" && action!="poll") return "";
+  if(!strlen(cfg.key) || !strlen(cfg.id)) return "";
   if(WiFi.status()!=WL_CONNECTED) return "";
+  String body=signedBody(action,pulses,target,forcedNonce);
+  if(!body.length()) return "";
   WiFiClient client; HTTPClient h;
   String url="http://"+String(cfg.server)+":4455/cgi-bin/vendo";
   if(!h.begin(client,url)) return "";
   h.setTimeout(3500);
   h.addHeader("Content-Type","application/x-www-form-urlencoded");
-  int code=h.POST(signedBody(action,pulses,target,forcedNonce));
+  int code=h.POST(body);
   String r=code>0?h.getString():""; h.end(); return r;
 }
 
