@@ -1,6 +1,6 @@
 ## PHX-MASTER UTC10 — current blockers and governance
 
-- HARDWARE #354 actual head 046bced7; PR body still pins e7f63da2. Current native synthetic fails the QA-owned active-clear assertion; Full validation is in progress but its handover-freshness job failed. HARDWARE must refresh the handover/PR body; QA must correct the assertion without weakening deny-only behavior.
+- HARDWARE #354 current PR head 51decb0c (source/test SHA 046bced7); PR body and handover now match. Full is terminal FAIL at QA-owned controllers.sh config_revision parity while all 14 target/Android jobs PASS; Native fails the QA-owned active clearPending assertion. Focused polarity lab and ESP32 core 3.3.13/4.0.0 matrix PASS. QA must correct both deny-only assertions; CORE must publish the authenticated poll/receipt contract. The latest two commits are docs-only.
 - COE RELEASE #35 exact head f66ac305: 247 shared tests, 245 passed / 2 skipped, then 10/10 appliance profiles fail closed because approved site-scoped ULA /48 authority is missing. Sandbox host preflight is 42/42, but Bubblewrap is unavailable (exit 125). No prefix or fallback was invented.
 - COE #26 remains FROZEN: five workflows queued with zero jobs; source/test/license parity incomplete. No staging or destination writes.
 - Cleanup #266 remains OPEN / 0 of 7. Bounded Hardware work is not global cleanup completion.

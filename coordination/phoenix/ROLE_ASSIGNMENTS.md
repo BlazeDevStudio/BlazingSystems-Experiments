@@ -1,6 +1,6 @@
 ## PHX-MASTER UTC10 — live role-head correction and CI status
 
-Starting Master / PR #288 HEAD: 57b7dc10c95579edf56be6470166e3cb9293a29c; Experiments main 6be5d19b; development aad3aade; COE main a6513ab4. PR #288 OPEN / DRAFT / UNMERGED, 607 ahead / 1 behind, merge base f4e8a891, 232 changed paths all under coordination/phoenix/.
+Starting Master / PR #288 starting HEAD: 0e22329781a55cb4eed7b77abecc35e35143f5bb; Experiments main 6be5d19b; development aad3aade; COE main a6513ab4. PR #288 OPEN / DRAFT / UNMERGED, 607 ahead / 1 behind, merge base f4e8a891, 232 changed paths all under coordination/phoenix/.
 
 | Owner / PR | Exact head | Exact-head CI / disposition |
 |---|---|---|
@@ -9,7 +9,7 @@ Starting Master / PR #288 HEAD: 57b7dc10c95579edf56be6470166e3cb9293a29c; Experi
 | PISONET #255 | d01fd164 | Synthetic Windows [#42462978704](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42462978704) PASS; native COM NOT TESTED. |
 | HARDWARE #340 | f70f6af7 | Six exact-head workflows PASS; Full [#45747758154](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45747758154) 26 jobs PASS / 4 production skips. |
 | HARDWARE #353 | cb1787ac | Quarantine/Relay PASS; Full [#45756942184](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45756942184) FAIL at inherited poll-signature parity. |
-| HARDWARE #354 | 046bced7 | PR body stale at e7f63da. Focused [#45802963675](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45802963675) PASS; native [#45802963561](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45802963561) FAIL at QA active-clear assertion; Mbed matrix [#45802963530](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45802963530) PENDING; Full [#45802963678](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45802963678) IN_PROGRESS with handover-freshness validation failure. |
+| HARDWARE #354 | 51decb0c6c269ece5227f75ef5c3de1271002abb (PR head; source/test 046bced7) | PR body/handover current. Focused polarity lab [#45804259395](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45804259395) PASS (8/8 scenarios, 14/14 mutations rejected); ESP32 matrix [#45804259478](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45804259478) PASS on core 3.3.13/4.0.0; Full [#45804259412](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45804259412) terminal FAIL at QA-owned controllers.sh config_revision assertion while all 14 target/Android jobs PASS; Native [#45804259481](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45804259481) FAIL at QA-owned active clearPending assertion. QA/CORE review requested. |
 | QA #290 | 5c29d159 | Synthetic Windows PASS; native COM NOT TESTED. |
 | QA #292 | 75a3f66d | No exact-head PR runs/statuses. |
 | RELEASE #291 | bf339a76 | No exact-head PR runs/statuses. |
