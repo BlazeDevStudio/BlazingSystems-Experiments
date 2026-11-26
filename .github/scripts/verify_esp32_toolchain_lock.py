@@ -447,15 +447,23 @@ def capture_manifest(
         if item["packager"] == "esp32" and item["name"] == "esp-x32"
     )
     compiler_root = packages_root / "esp32" / "tools" / "esp-x32" / x32["version"] / "bin"
+    if not compiler_root.is_dir() or compiler_root.is_symlink():
+        raise ToolchainLockError(f"pinned Xtensa tool directory is missing or unsafe: {compiler_root}")
+    gcc_candidates = sorted(compiler_root.glob("*xtensa*elf-gcc"))
+    if len(gcc_candidates) != 1:
+        raise ToolchainLockError(
+            f"expected exactly one Xtensa ELF GCC compiler in {compiler_root}; found {[p.name for p in gcc_candidates]}"
+        )
+    compiler_binary = gcc_candidates[0]
+    compiler_prefix = compiler_binary.name.removesuffix("gcc")
     compiler_names = {
-        "gcc": "xtensa-esp32-elf-gcc",
-        "objdump": "xtensa-esp32-elf-objdump",
-        "nm": "xtensa-esp32-elf-nm",
+        "gcc": compiler_binary,
+        "objdump": compiler_root / (compiler_prefix + "objdump"),
+        "nm": compiler_root / (compiler_prefix + "nm"),
     }
     runner = command_runner or _run_command
     compiler_versions: dict[str, str] = {}
-    for label, filename in compiler_names.items():
-        executable = compiler_root / filename
+    for label, executable in compiler_names.items():
         if not executable.is_file() or executable.is_symlink():
             raise ToolchainLockError(f"pinned compiler tool is missing or unsafe: {executable}")
         version_output = runner([str(executable), "--version"])
