@@ -1,3 +1,9 @@
+## PHX-MASTER UTC17 final #353 source/test and CI readback — 2026-11-26T17:54Z
+
+Current #353 docs HEAD `f527b33c9e391a9a66490388d96f06d6c8761dfa`; source/test SHA `44de55a0e132cb15fdb60ecf85446e9490fa277e`; parent #352 `2fa3b7db1161ddb531ed94bcf60617947fa1a7bd`. The only source/test change is the Hardware-owned `coin_pulse_capture_lab_isr.py` guard that snapshots and restores the pre-existing `pollIntakeSuspended` state after successful post-attach quarantine. Exact-source Relay and Quarantine PASS; Full fails at missing ESP8266 poll-signature check. New docs-head Relay #45871096516 and Quarantine #45871096480 PASS; Full #45871096425 FAILS at the same assertion. All 14 target/platform jobs and Android pass; downstream production/simulation/signing/publishing stages skip. Production sketches unchanged; no physical acceptance. Prior #353 test identity counts remain historical and must be recomputed at `44de55a0` before staging.
+
+---
+
 ## PHX-MASTER UTC17 post-checkpoint #353 source/test refresh — 2026-11-26T17:52Z
 
 Current #353 docs HEAD `f527b33c9e391a9a66490388d96f06d6c8761dfa`; source/test SHA `44de55a0e132cb15fdb60ecf85446e9490fa277e`; parent #352 `2fa3b7db1161ddb531ed94bcf60617947fa1a7bd`. The only source/test change is the Hardware-owned `coin_pulse_capture_lab_isr.py` pre-existing inhibit snapshot/restore guard. Relay and Quarantine exact-source/test checks PASS; Full exact-source/test remains blocked by the ESP8266 missing poll-signature check. Current docs-head Relay/Quarantine/Full runs #45871096516/#45871096480/#45871096425 are still IN_PROGRESS. Production sketches unchanged; no hardware acceptance. The earlier #353 source-tree test-identity counts remain historical and must be recomputed at `44de55a0` before staging.
