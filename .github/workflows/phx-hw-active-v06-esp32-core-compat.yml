@@ -92,7 +92,7 @@ jobs:
           arduino-cli core list | tee "$RUNNER_TEMP/arduino-cores.txt"
           grep -E '^esp32:esp32[[:space:]]+${{ matrix.core }}([[:space:]]|$)' \
             "$RUNNER_TEMP/arduino-cores.txt"
-      - name: Build twice from clean state at canonical paths and compare application images
+      - name: Build twice from clean source staging at canonical paths and compare application images
         shell: bash
         run: |
           set -euo pipefail
@@ -118,17 +118,24 @@ jobs:
           stage_dir="$evidence/stage"
           build_dir="$evidence/build"
           output_dir="$evidence/output"
-          python3 experiment/openwrt/BlazePwifi/tools/package-vendo-source.py esp32 "$stage_dir"
+          stage_sha_a=""
+          stage_sha_b=""
           staged_tree_sha() {
             (cd "$stage_dir" && find . -type f -print0 | LC_ALL=C sort -z | xargs -0 sha256sum | sha256sum | cut -d' ' -f1)
           }
-          stage_sha_before="$(staged_tree_sha)"
-          printf 'STAGED_SOURCE_TREE_SHA256=%s\n' "$stage_sha_before" | tee -a "$evidence/build-metadata.txt"
-          printf 'BUILD_PATH_POLICY=CANONICAL_PATH_CLEANED_BETWEEN_RUNS\n' | tee -a "$evidence/build-metadata.txt"
+          printf 'BUILD_PATH_POLICY=CANONICAL_PATH_RESTAGED_AND_CLEANED_BETWEEN_RUNS\n' | tee -a "$evidence/build-metadata.txt"
           build_once() {
             label="$1"
-            rm -rf "$build_dir" "$output_dir"
+            rm -rf "$stage_dir" "$build_dir" "$output_dir"
             mkdir -p "$build_dir" "$output_dir"
+            python3 experiment/openwrt/BlazePwifi/tools/package-vendo-source.py esp32 "$stage_dir"
+            stage_sha="$(staged_tree_sha)"
+            printf 'STAGED_SOURCE_TREE_%s_SHA256=%s\n' "$label" "$stage_sha" | tee -a "$evidence/build-metadata.txt"
+            case "$label" in
+              clean-a) stage_sha_a="$stage_sha" ;;
+              clean-b) stage_sha_b="$stage_sha" ;;
+              *) echo "unexpected build label: $label" >&2; exit 2 ;;
+            esac
             arduino-cli compile --clean --warnings all \
               --fqbn esp32:esp32:esp32 \
               --libraries "$stage_dir/source/libraries" \
@@ -149,11 +156,9 @@ jobs:
               | tee "$evidence/$label.sha256"
           }
           build_once clean-a
-          stage_sha_after_a="$(staged_tree_sha)"
-          test "$stage_sha_before" = "$stage_sha_after_a"
           build_once clean-b
-          stage_sha_after_b="$(staged_tree_sha)"
-          test "$stage_sha_before" = "$stage_sha_after_b"
+          test -n "$stage_sha_a"
+          test "$stage_sha_a" = "$stage_sha_b"
           sha_a="$(cut -d' ' -f1 "$evidence/clean-a.sha256")"
           sha_b="$(cut -d' ' -f1 "$evidence/clean-b.sha256")"
           printf 'CLEAN_BUILD_A_SHA256=%s\nCLEAN_BUILD_B_SHA256=%s\n' "$sha_a" "$sha_b" \
