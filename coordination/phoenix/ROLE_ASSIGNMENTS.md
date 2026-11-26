@@ -1,3 +1,27 @@
+## PHX-MASTER scheduled UTC15 — live role heads and exact-head CI (2026-11-26T15:35Z)
+
+**Master starting HEAD:** `780b9cdbefcc3c24d91b6e954960d76f627ac987`; branch `phoenix/master-coordination`. **PR #288:** OPEN / DRAFT / UNMERGED, 616 ahead / 1 behind `main`, merge base `f4e8a891`, 236 paths all under `coordination/phoenix/`.
+
+| Role / PR | Exact current head | Exact-head disposition |
+|---|---|---|
+| CORE #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | Scoped build #42698139210 PASS; no financial acceptance. |
+| RENTAL #328 | `10fc200b6dbf470a95e679d3acc58aff4ab2a67f` | API21/23 #45622918364, auth #45622918551, APK identity #45622918340 PASS; shared build #45622918468 FAIL. |
+| PISONET #255 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | Windows synthetic #42462978704 PASS; native COM NOT TESTED. |
+| HARDWARE #340 | `f70f6af78c64ef86ba0f631faeb02b6cb6eb2725` | Six exact-head workflows PASS; Full #45747758154 has 26 successful jobs / 4 production skips. |
+| HARDWARE #353 | `df1a633474cdfac139df9254a5c885961df94985` | Relay #45843872877, quarantine #45843872813, Full #45843872829 FAIL. PR body still pins old docs/source-test refs `cb1787ac` / `ed2f77d`; owner refresh required. |
+| HARDWARE #354 | `bbb209f55ddcd48f248eb8d700629db8754dc13a` (source/test `9bb46bb27e4be80f6506dbebf2846700efd4cb81`) | Focused #45836227697 + Mbed TLS #45836227855 PASS; Full #45836227694 fails `controllers.sh` because both sketches omit unsigned `config_revision`; Native #45836227876 fails an assertion requiring active `clearPending(true/false)`. Candidate remains deny-only. |
+| QA #290 | `5c29d15994cee1279058f1eca12f2a3180704292` | Windows synthetic #43633486963 PASS; native COM NOT TESTED. |
+| QA #292 | `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | No exact-head PR-triggered runs. |
+| RELEASE #291 | `bf339a76964a1abe2412fac45392fe06a8e66418` | No exact-head PR-triggered runs; mergeable=false. |
+| COE #26 | `b382d233ff06c8791b1028bed3c617cc7b670d12` | Five queued workflows / zero jobs; destination frozen. |
+| COE RELEASE #35 | `e1ad4fad1c234976ba76a34758d1ca993a897776` | Shared #45848921260: 255 tests PASS / 2 skipped, 10/10 ULA-profile failures. Sandbox #45848921270: 48/48 host tests PASS, Bubblewrap missing / exit 125. Case guard #45848921527 PASS. |
+| COE CORE #45 | `9d76a134c1f6512aa40c20ec4d247306a71a8cce` | Overlay/Shell #44295049727 + case guard #44295049903 PASS. |
+| COE INTERCON #49 | `aeb8ff11b2f5db9a5f86280ab62ab988245f3919` | Stage 5.1 #44646341873 + case guard #44646341992 PASS; shared #44646341922 FAIL. |
+
+CORE, RENTAL, PISONET, HARDWARE, QA and RELEASE source branches remain owner-controlled. COE #35's former `1cb3a434` pointer is superseded by current `e1ad4fad`; this section corrects the stale Master child pointer. Full exact run URLs and log findings: [scheduled UTC15 audit](`coordination/phoenix/PHX_MASTER_SCHEDULED_UTC15_20261126T153737Z_LIVE_OWNER_CI_COE26_PROVENANCE_AUDIT.md`).
+
+---
+
 ## PHX-MASTER UTC15 — live owner heads and CI reconciliation (2026-11-26T15:10Z)
 
 **Starting Master HEAD:** `8287045b861f019e011745fc054478747630bc5f`; branch `phoenix/master-coordination`. **PR #288:** OPEN / DRAFT / UNMERGED.  

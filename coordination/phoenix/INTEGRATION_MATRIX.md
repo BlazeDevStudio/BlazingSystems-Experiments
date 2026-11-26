@@ -1,3 +1,24 @@
+## PHX-MASTER scheduled UTC15 — exact source/destination tree and migration hold (2026-11-26T15:35Z)
+
+Complete recursive trees at exact current heads, all `truncated=false`: HARDWARE #353 2,572 entries; #354 2,406; COE #26 286; Experiments main 2,341.
+
+| Route | Source | Destination | Exact blob+mode | Divergent | Source-only | Destination-only |
+|---|---:|---:|---:|---:|---:|---:|
+| ESP32 #353 | 16 | 1 | 0 | 1 | 15 | 0 |
+| ESP8266 #353 | 67 | 1 | 0 | 1 | 66 | 0 |
+| ESP32 #354 | 4 | 1 | 0 | 1 | 3 | 0 |
+| ESP8266 #354 | 8 | 1 | 0 | 1 | 7 | 0 |
+| Vendo tests #353 | 47 | 19 | 1 | 3 | 43 | 15 |
+| Vendo tests #354 | 150 | 19 | 2 | 2 | 146 | 15 |
+
+Both destination sketches exist but differ from both current source candidates. #354 test import is incomplete: 150 source tests vs 19 destination tests; only 2 exact, 2 divergent, 146 source-only, 15 destination-only. SOURCE_INTAKE schema 8 recounts 46 identical / 15 derived rows vs summary 47 / 14; MIGRATION_MAP pins historical source `6d4c9b4` and old destination branch; HARDWARE_FIRMWARE_AUDIT says sketches were not copied although both exist in the current destination tree. Current #26 PR body claims P0-1 resolved while the live exact-tree/provenance conflicts remain.
+
+License gaps at COE #26: source root NOTICE, BlazeRentalLauncher LICENSE, Tabler LICENSE, jsqr 1.4.0 LICENSE and COE root LICENSE are absent. Product MIT, QRCode and TailAdmin counterparts match. The 11-route ownership manifest remains DRAFT_REVIEW_ONLY with Master target null. No destination write or move is authorized.
+
+Full route/blob/license evidence: [scheduled UTC15 audit](`coordination/phoenix/PHX_MASTER_SCHEDULED_UTC15_20261126T153737Z_LIVE_OWNER_CI_COE26_PROVENANCE_AUDIT.md`). COE #26 remains frozen; no staging, copy, move, overwrite or cherry-pick occurred.
+
+---
+
 ## PHX-MASTER UTC15 — exact recursive-tree / blob / test / license comparison (2026-11-26)
 
 Complete recursive trees at exact PR heads, all `truncated=false`: HARDWARE #353 `df1a633474cdfac139df9254a5c885961df94985` = 2,572 entries; HARDWARE #354 `bbb209f55ddcd48f248eb8d700629db8754dc13a` = 2,406; COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12` = 286 entries / 207 blobs.

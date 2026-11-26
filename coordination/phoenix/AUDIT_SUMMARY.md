@@ -1,3 +1,17 @@
+## PHX-MASTER scheduled UTC15 — current disposition and blockers (2026-11-26T15:35Z)
+
+**Master coordination:** starting HEAD `780b9cdbefcc3c24d91b6e954960d76f627ac987`; current refs and owner CI were re-read. PR #288 remains OPEN / DRAFT / UNMERGED; all 236 existing paths are Master-owned. Current owner status: HARDWARE #353 has three exact-head failures; HARDWARE #354 has two QA assertion mismatches while preserving deny-only behavior; COE #26 remains frozen with firmware/test/license provenance conflicts; COE RELEASE #35 remains blocked by ULA authority and Bubblewrap.
+
+**Master audit assertions:** 15/15 PASS (inline coordination assertions only; not repository tests or CI). Master Python suite and `verify_coordination.py` NOT RUN because local GitHub DNS resolution failed. Master Actions: zero runs / zero combined statuses at starting HEAD.
+
+**Registry:** private Drive v11 and newer corrections NOT RECOVERED; available Library inventory only contains v3–v7. No Google Drive connector was exposed; no older registry was substituted. **Cleanup #266:** OPEN, 0/7. Both repository ruleset lists are empty; classic branch-protection reads return 403, so effective required-check enforcement is UNKNOWN.
+
+**Production:** NO-GO. Independent protected signing/anti-rollback, crash-atomic financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized release gates remain mandatory.
+
+See [scheduled UTC15 audit](`coordination/phoenix/PHX_MASTER_SCHEDULED_UTC15_20261126T153737Z_LIVE_OWNER_CI_COE26_PROVENANCE_AUDIT.md`) for exact SHAs, runs, source/destination blob comparisons and owner actions.
+
+---
+
 ## PHX-MASTER UTC15 — current disposition and blockers (2026-11-26T15:10Z)
 
 **Master audit result:** 14/14 static/source-tree assertions PASS. These are coordination checks, not repository tests or CI. Exact-head Master Actions: 0 runs / 0 combined statuses. Local clone attempt failed DNS resolution for `github.com`; Master Python suite and `verify_coordination.py` NOT RUN.

@@ -1,3 +1,13 @@
+## PHX-MASTER scheduled UTC15 — live owner CI and COE #26 provenance (2026-11-26T15:35Z)
+
+- Report: [PHX_MASTER_SCHEDULED_UTC15_20261126T153737Z_LIVE_OWNER_CI_COE26_PROVENANCE_AUDIT.md](PHX_MASTER_SCHEDULED_UTC15_20261126T153737Z_LIVE_OWNER_CI_COE26_PROVENANCE_AUDIT.md)
+- Starting Master HEAD: `780b9cdbefcc3c24d91b6e954960d76f627ac987`; current main `6be5d19b`; active v0.6 base `2fbd2475`; legacy v0.5.3 development `aad3aade`; COE main `a6513ab4`; COE #26 `b382d233`.
+- Current HARDWARE #353/#354 exact-head failures and COE #26 route/test/license discrepancies are recorded in the report. COE #26 remains frozen; no destination writes.
+- Master assertions 15/15 PASS; Master repository Python suite NOT RUN; private Drive registry v11 NOT RECOVERED.
+- **PRODUCTION NO-GO.**
+
+---
+
 ## UTC15 — PHX-MASTER active development / HARDWARE / COE provenance re-audit
 
 - Report: [PHX_MASTER_UTC15_20261126_ACTIVE_DEV_HW353_EXACT_HEAD_COE26_PROVENANCE_AUDIT.md](PHX_MASTER_UTC15_20261126_ACTIVE_DEV_HW353_EXACT_HEAD_COE26_PROVENANCE_AUDIT.md)
