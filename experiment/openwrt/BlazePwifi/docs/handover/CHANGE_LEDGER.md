@@ -3423,3 +3423,13 @@ Application/source snapshot is still exact520; this note is metadata only.
 - Platform results at readback: ESP8266 PASS; Android PASS; 13/14 target/platform jobs PASS; ESP32 job 140225968098 FAILS with missing mbedtls/sha256.h. This is inherited from active v0.6 base; no sketch changed in #356.
 - Status: focused preflight SIMULATED / CI VERIFIED; Full integration NOT COMPLETE; physical acceptance NOT TESTED; production NO-GO.
 - NEXT ACTION: inspect terminal Full run; Master add #356 to assignment/integration matrix; QA review guard. No physical trial, merge or release.
+
+## 2026-11-26 — STORCHK-0674 latest docs-head CI readback
+
+- Role/task: PHX-HARDWARE / STORCHK-0674 / DRAFT PR #356.
+- Docs head at readback: b453272130e2839f404db4adb42eacd7a76f5fcb.
+- Focused exact-head PR run 45913560571 job 140227322280 PASS; log confirms exact checkout SHA, STORCHK-0674 PASS, SIMULATED_ONLY=1, PHYSICAL_POWER_CUT_VERIFIED=0, CUSTOMER_INSTALL_AUTHORIZED=0.
+- Full run 45913088776 at docs head 3295381 remains IN_PROGRESS: 121 validation steps passed; ESP8266 and Android passed; 13/14 target/platform jobs passed; ESP32 failed missing mbedtls/sha256.h; validation job 140225968163 not terminal.
+- New Full run 45913560627 at docs head b453 remains IN_PROGRESS; ESP32, Android and validation were still running at last read.
+- Status: focused preflight SIMULATED / CI VERIFIED; Full integration NOT COMPLETE; physical acceptance NOT TESTED; production NO-GO.
+- NEXT ACTION: inspect terminal Full runs, Master assignment update and independent QA review. No merge, physical trial or release authorized.

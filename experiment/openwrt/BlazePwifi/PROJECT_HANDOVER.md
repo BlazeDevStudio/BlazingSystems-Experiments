@@ -1,3 +1,13 @@
+## PHX-HARDWARE UTC23 — latest exact-head readback
+
+**DRAFT PR #356 · docs head b453272130e2839f404db4adb42eacd7a76f5fcb.**
+
+Focused run 45913560571 job 140227322280 PASS at exact docs head b453; checkout SHA matched and STORCHK-0674 PASS. The log explicitly states simulated-only, physical-power-cut verification zero and customer-install authorization zero.
+
+Full run 45913088776 remains in progress at docs head 3295381: 121 validation steps passed, Android and ESP8266 passed, 13/14 target/platform jobs passed, ESP32 failed missing mbedtls/sha256.h, and validation job 140225968163 was not terminal. New Full run 45913560627 at docs head b453 is in progress; no terminal result yet. No Full PASS is claimed.
+
+Next exact action: inspect both Full runs when terminal, request Master assignment of #356 and independent QA review. No physical acceptance, merge, release or production cutover.
+
 ## PHX-HARDWARE UTC23 — STORCHK-0674 Full-integration readback
 
 **Docs head:** 3295381dc3a6f9051ccef40d938130b33ab7afd4 · **PR #356:** OPEN / DRAFT / UNMERGED.
