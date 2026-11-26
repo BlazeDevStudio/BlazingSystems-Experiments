@@ -1,3 +1,19 @@
+## PHX-MASTER UTC06 — live disposition — 2026-11-26T07:04Z
+
+**Master-only result:** re-read CONTROL PLANE #172, cleanup #266, current default/development/Master/COE heads, PR #288 and its routing manifest, current owner PRs/CI, COE #26, repository AGENTS.md, README_FIRST and BLAZE-COMMS/1. Completed an exact-head audit of Hardware #354, COE RELEASE #35 and the #353 → COE #26 migration candidate. Four existing Master coordination documents are updated in this commit; no new file or folder was created.
+
+- Experiments main `6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5`; development `aad3aade72c1156eecba1fed30907c6d0283b2c5`; Master starting head `30724b45b8891dd616574b07b36679096b5d9852`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`.
+- PR #288 starts OPEN / DRAFT / UNMERGED at `30724b45`, 231 changed paths, all under `coordination/phoenix/`; current compare to main is 601 ahead / 1 behind, merge base `f4e8a891`. No rebase, force-push, retarget or merge.
+- HARDWARE #354 is now at `8902acc`, not the `aca9becc` SHA still recorded in its PR body. Exact-head source proof passes, but the native sequence assertion, Mbed TLS/runtime-pin source guard, clean core matrix and Full build fail. Hardware and QA retain their source/test ownership.
+- COE RELEASE #35 at `5f5700a` runs 244 tests (242 pass / 2 skips) but fails closed on 10/10 missing-ULA profiles; sandbox host tests 42/42 pass but Bubblewrap is absent (exit 125). Its accumulated diff modifies shared `hardware-ci.yml`; owner review is required.
+- COE #26 current exact trees are complete but materially incomplete as a migration: only 1/4 common tests match exactly; board blobs differ; 43 source tests are missing and 15 destination-only tests have no source-relative counterpart. Product LICENSE matches; root NOTICE is missing. #26 remains FROZEN.
+- Active v0.6 poll authentication remains a P0: CORE must publish canonical authenticated register/poll + receipt/disposition contract before Hardware consumer implementation and independent QA. #353 Full remains blocked at poll-signature parity; #340's core-4 compile/Full CI is candidate-only and binary reproducibility remains open.
+- Cleanup #266 remains OPEN / 0-of-7. Ownership manifest remains 11 routes / DRAFT_REVIEW_ONLY / Master target null. CORE source remains reserved to its separate owner; no CORE source work was taken over.
+- Private Drive registry v11 and newer corrections NOT RECOVERED. No Google Drive connector is exposed in this runtime; Library search found only older v3–v7 snapshots and checkpoint copies, which were not substituted. No private registry contents or identifiers were published.
+- Master Python suite and `verify_coordination.py` NOT RUN because no authenticated local checkout is available. No Master Actions were run. Owner Actions were inspected at exact SHAs; they were not executed by Master. No physical COM, hardware, power-cut, soak, payment, signer or financial-migration tests were run.
+
+**Production: NO-GO.** Independent protected signing/anti-rollback witness, crash-atomic durable financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized release gates remain mandatory.
+
 ## PHX-MASTER UTC05 — live disposition — 2026-11-26T05:39:01Z
 
 **Master-only result:** refreshed live branch/PR heads and owner CI, verified the new COE #35 FIFO nonblocking manifest-output correction at exact source/test and final handover heads, re-compared complete HARDWARE #353 and COE #26 trees, and retained the active v0.6 poll-auth P0.

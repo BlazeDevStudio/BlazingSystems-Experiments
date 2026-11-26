@@ -1,3 +1,43 @@
+## PHX-MASTER UTC06 — exact-head Hardware deny candidate and COE provenance — 2026-11-26T07:04Z
+
+### Active v0.6 Hardware #354 — exact current branch, not the stale PR body
+
+- PR #354 actual branch head is `8902acc187e89194412e8ee09a058f646e2ab3d7`; source/test commit is `61ec831e56e19f58b33af106deb1b6b0bb0e8baa`. Base is active v0.6 `2fbd2475e9f54878c316fa7cea2f228386b0e859`.
+- The current PR description still reports `aca9becc35d2c68faeecbf6e14c70b7d71d1d91b`; GitHub compare shows the actual head is 17 commits ahead / 0 behind that body-pinned SHA. The last 17 commits add provider/source-contract tests, ESP32 core matrix/workflows and handover corrections. Hardware owner must update the PR description to the actual head before review.
+- Exact current-head runs: source checkout proof [#45772346892](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45772346892) PASS; native synthetic [#45772347023](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45772347023) FAILS at QA-owned `tests/v060_vendo_sequence_contract.py:20`, which still requires active `clearPending(true/false)` callsites; core matrix [#45772346893](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45772346893) FAILS because the extracted ESP32 source lacks `configureRuntimePins` and the Mbed TLS provider/version header; Full [#45772347028](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45772347028) FAILS at `tests/handover_gate.sh` because source/workflow changes are newer than `PROJECT_HANDOVER.md`, and ESP32 compile fails with `mbedtls/sha256.h` missing. Other target/Android jobs pass; downstream update/simulation/signing/publication gates skip.
+- Hardware must repair its own source/extractor/provider/workflow/handover at the exact current head. QA must replace the obsolete active-disposition assertion with a deny-only invariant that proves pending evidence is retained and no active disposition callsite exists. CORE must publish the approved authenticated register/poll and receipt/disposition contract first. Master does not edit Hardware or QA files and does not invent a shared API.
+
+### COE RELEASE #35 — exact current child and shared workflow overlap
+
+- Final head `5f5700a0684d5ca43e051dc8af46e5b90f3fa383`; source/test `7b309112ad9ee320cd71b82866ca7475f82b1d8c`; parent #31 `59ed44d0b911e176f1a95b9cf5585ef811ffd31b`; 444 ahead / 0 behind; 14 accumulated paths.
+- Exact latest shared run [#45768842711](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45768842711) executes 244 tests (242 pass / 2 intentional skips), then fails closed on all 10 appliance profiles because no approved site-scoped RFC 4193 ULA /48 is defined. Sandbox [#45768842759](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45768842759) runs 42/42 host tests successfully, then blocks because Bubblewrap is absent (exit 125). Case guard [#45768842746](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45768842746) PASS.
+- The accumulated child diff modifies `.github/workflows/hardware-ci.yml` (immutable checkout / Arduino CLI pins), in addition to the release-owned packager/sandbox files. This is a shared Hardware CI surface. PHX-RELEASE / COE-RELEASE must keep the change explicit and obtain Hardware owner review; PHX-MASTER made no workflow edits.
+
+### COE #26 — exact current tree, blobs, tests and licence
+
+Source candidate is Experiments HARDWARE #353 at `cb1787ac8f89562f20b6ecdee0c7969fbd12bd01`; destination candidate is COE PR #26 at `b382d233ff06c8791b1028bed3c617cc7b670d12`. Both recursive trees are complete / non-truncated: 2,572 vs 286 entries.
+
+| Manifest route | Source blobs | Destination blobs | Common paths | Exact blob+mode matches | Divergent | Source-only | Destination-only |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| ESP32 → Hardware/esp32 | 16 | 1 | 1 | 0 | 1 | 15 | 0 |
+| ESP8266 → Hardware/esp8266 | 67 | 1 | 1 | 0 | 1 | 66 | 0 |
+| Tests → Pisowifi/tests | 47 | 19 | 4 | 1 | 3 | 43 | 15 |
+
+Exact firmware blobs:
+- #353 ESP32 `1412cf57b70c6ee3061da9831b8d9abf6d58d94e` vs COE #26 `3cc7ec54b476943dc04a8d1af5e2df5fe054e422`.
+- #353 ESP8266 `b99f1f21d8ad1e6df0e403b2b34507f97bd90c16` vs COE #26 `c8be98f72596681e36a3ad1f8939bf8046c96887`.
+- Active-v0.6 #354 source blobs are also distinct: ESP32 `3ee12123ec16eca978e097299cbb935ff2d510ea`, ESP8266 `d3a4edf051001fa30db6b3ca39b6ebe078e9a990`.
+
+Licence / notice:
+- Product MIT LICENSE matches byte-for-byte: source `1ee55b94183417be977ca287cd7391f9a6f7e721` equals COE `Pisowifi/LICENSE` `1ee55b94183417be977ca287cd7391f9a6f7e721`.
+- Source root NOTICE `f6d92cd21465312be5993631fe26977219be0fb9` has no COE root `NOTICE.md` counterpart. COE root `LICENSE` is also absent; only the product `Pisowifi/LICENSE` is present.
+- The ownership manifest still pins historical source_ref `f4e8a891...`, destination #26 `b382d233...`, 11 routes and `DRAFT_REVIEW_ONLY`. It is not a current #353/#354 source pin or a copy/move authorization.
+- #26's five workflow runs remain QUEUED with zero jobs. No source import completeness, CI or destination admission can be claimed.
+
+**Decision: COE #26 stays FROZEN.** No copy, staging, move, overwrite, cherry-pick, target rewrite or destination write. The current authenticated poll/register response contract is still missing; the active v0.6 unsigned poll path and the destination keyless `sigOk=true` bypass are not accepted as an integration interface.
+
+---
+
 ## PHX-MASTER UTC05 — exact interface, owner CI and migration provenance — 2026-11-26T05:39:01Z
 
 | Edge / artifact | Exact current evidence | Gate / owner |

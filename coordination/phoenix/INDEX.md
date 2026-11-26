@@ -1,3 +1,14 @@
+## PHX-MASTER UTC06 — live exact-head owner CI, Hardware #354 and COE #26 provenance — 2026-11-26T07:04Z
+
+[UTC06 live disposition and exact-head migration/CI evidence](AUDIT_SUMMARY.md)
+
+- Hardware #354 actual head `8902acc` is 17 commits ahead of the SHA still recorded in its PR body; native sequence, Mbed TLS/runtime-pin guard and Full build fail. Hardware / QA owners retain their files.
+- COE RELEASE #35 exact head `5f5700a`: 244 tests / 242 pass / 2 skips, then 10/10 ULA admission failures; sandbox 42/42 host tests pass, then Bubblewrap absent / exit 125.
+- COE #26 exact #353 mapping: 0/1 ESP32 blob matches, 0/1 ESP8266 matches, 1/4 common tests match; root NOTICE absent. Candidate remains FROZEN / DRAFT_REVIEW_ONLY.
+- Cleanup #266 OPEN / 0-of-7; private Drive registry v11/newer corrections unavailable; **PRODUCTION NO-GO**.
+
+---
+
 ## PHX-MASTER UTC05 — 2026-11-26T05:39:01Z
 
 [Exact-head COE #35 FIFO artifact-verifier correction, current role CI, active v0.6 poll-auth P0 and #353→COE #26 provenance](PHX_MASTER_UTC05_20261126_COE35_FIFO_RELEASE_AND_ROLE_CI_COE26_PROVENANCE_AUDIT.md)
