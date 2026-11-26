@@ -34,6 +34,31 @@ struct Config {
 };
 
 Config cfg;
+
+size_t boundedStringLength(const char *value,size_t capacity){
+  if(!value) return capacity;
+  for(size_t i=0;i<capacity;i++){
+    if(value[i]=='\\0') return i;
+  }
+  return capacity;
+}
+
+bool configStringsTerminated(const Config &value){
+  return boundedStringLength(value.ssid,sizeof(value.ssid))<sizeof(value.ssid) &&
+         boundedStringLength(value.pass,sizeof(value.pass))<sizeof(value.pass) &&
+         boundedStringLength(value.server,sizeof(value.server))<sizeof(value.server) &&
+         boundedStringLength(value.key,sizeof(value.key))<sizeof(value.key) &&
+         boundedStringLength(value.id,sizeof(value.id))<sizeof(value.id) &&
+         boundedStringLength(value.apPass,sizeof(value.apPass))<sizeof(value.apPass);
+}
+
+bool configV1StringsTerminated(const ConfigV1 &value){
+  return boundedStringLength(value.ssid,sizeof(value.ssid))<sizeof(value.ssid) &&
+         boundedStringLength(value.pass,sizeof(value.pass))<sizeof(value.pass) &&
+         boundedStringLength(value.server,sizeof(value.server))<sizeof(value.server) &&
+         boundedStringLength(value.key,sizeof(value.key))<sizeof(value.key) &&
+         boundedStringLength(value.id,sizeof(value.id))<sizeof(value.id);
+}
 ESP8266WebServer web(80);
 const uint32_t MAGIC_V1=0x42505731;
 const uint32_t MAGIC=0x42505732;
@@ -191,11 +216,12 @@ void saveCfg(){ EEPROM.put(0,cfg); EEPROM.commit(); }
 void loadCfg(){
   EEPROM.begin(sizeof(Config));
   EEPROM.get(0,cfg);
-  if(cfg.magic==MAGIC && strlen(cfg.apPass)>=8) return;
+  if(cfg.magic==MAGIC && configStringsTerminated(cfg) &&
+     boundedStringLength(cfg.apPass,sizeof(cfg.apPass))>=8) return;
 
   ConfigV1 oldCfg;
   EEPROM.get(0,oldCfg);
-  if(oldCfg.magic==MAGIC_V1){
+  if(oldCfg.magic==MAGIC_V1 && configV1StringsTerminated(oldCfg)){
     defaults();
     strlcpy(cfg.ssid,oldCfg.ssid,sizeof(cfg.ssid));
     strlcpy(cfg.pass,oldCfg.pass,sizeof(cfg.pass));

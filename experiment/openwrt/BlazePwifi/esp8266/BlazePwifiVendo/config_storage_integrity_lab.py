@@ -116,9 +116,6 @@ int main() {
     if (boundedStringLength(empty, sizeof(empty)) != 0) return 3;
 
     Config current{};
-    for (auto field : {current.ssid, current.pass, current.server, current.key, current.id, current.apPass}) {
-        (void)field;
-    }
     fillTerminated(current.ssid, sizeof(current.ssid));
     fillTerminated(current.pass, sizeof(current.pass));
     fillTerminated(current.server, sizeof(current.server));
