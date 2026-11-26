@@ -1,3 +1,9 @@
+## Latest PHX-MASTER UTC17 post-checkpoint refresh — 2026-11-26T17:54Z
+
+HARDWARE #353 current docs HEAD `f527b33c`, source/test SHA `44de55a0`; parent #352 `2fa3b7db`. Hardware refreshed its handover. Exact-source Relay/Quarantine PASS; Full fails missing ESP8266 poll-signature check. Current docs-head Relay #45871096516 and Quarantine #45871096480 PASS; Full #45871096425 FAILS. All target/platform builds and Android pass; downstream production stages skip. See [UTC17 Master audit](PHX_MASTER_UTC17_20261126_HW353_AC9E_HW354_FC842_COE26_PROVENANCE_AUDIT.md).
+
+---
+
 ## Latest PHX-MASTER UTC17 post-checkpoint refresh — 2026-11-26T17:52Z
 
 HARDWARE #353 current docs HEAD `f527b33c`, source/test SHA `44de55a0`; parent #352 `2fa3b7db`. The refreshed Hardware handover supersedes earlier stale pointers. Exact source/test Relay and Quarantine PASS; Full remains blocked by missing ESP8266 poll-signature check. New docs-head workflows #45871096480/#45871096516/#45871096425 are IN_PROGRESS. See [UTC17 audit](PHX_MASTER_UTC17_20261126_HW353_AC9E_HW354_FC842_COE26_PROVENANCE_AUDIT.md).
