@@ -112,3 +112,15 @@ PR #354 remains OPEN / DRAFT / UNMERGED. PRs #239/#254/#283 remain OPEN / DRAFT 
 - Hardware requests PHX-QA to reconcile both tests against the deny-only contract, PHX-CORE to publish the authenticated register/poll + receipt/disposition contract, and PHX-MASTER to reconcile the stale #354 pin in `INTEGRATION_MATRIX.md`. Hardware did not edit any of those owners' files.
 
 **Status:** focused and target CI VERIFIED; Full validation FAIL; native QA assertion FAIL; physical acceptance NOT TESTED; HARDWARE ACCEPTED NO; PRODUCTION NO-GO.
+
+
+## PHX-HARDWARE UTC09 — shared C++ source extractor in output-enable lab
+
+- **Task:** #177 / PR #354; Hardware-owned host-lab maintainability improvement only. The two production sketches and their GPIO behavior are unchanged by this follow-up.
+- **Branch:** `phoenix/hw-active-v06-poll-intake-deny-20261126-utc05`; source/test commit: [`87ef824d7d4dd88c712da1a690a3ebb30989ac86`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/87ef824d7d4dd88c712da1a690a3ebb30989ac86); PR #354 remains OPEN / DRAFT / UNMERGED.
+- **Change:** `output_enable_sequence_lab.py` now imports the shared `firmware_source_extract.extract_function` instead of maintaining a second regex/brace-count extractor. A small fixture verifies that comment, quoted-string and C++ raw-string decoys cannot shadow the actual function definition. Existing active-high/active-low output ordering and unsafe-mutation checks remain intact.
+- **Focused exact-source push:** [#45794249849](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45794249849), job `139820705126`, PASS.
+- **Focused exact-source PR:** [#45794256145](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45794256145), job `139820725334`, PASS. Logs show `SOURCE_EXTRACTOR_PASS`, ESP8266 and ESP32 `OUTPUT_SEQUENCE_PASS`, unsafe-order mutation rejected on both boards, and 4/4 output-enable checks PASS.
+- **Other exact-source checks:** ESP32 Mbed TLS matrix [#45794256223](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45794256223), native synthetic [#45794256041](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45794256041), and Full PR [#45794256126](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45794256126) were still running at the initial handover update. Full push [#45794249945](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45794249945) reached the mandatory handover-freshness gate before this append and failed there; it is not a source/test failure. Final-head reruns are required after this documentation update.
+- **Evidence limits:** this is host/source-extracted SIMULATED / CI VERIFIED test tooling. Physical GPIO voltage, relay contact transient, coin acceptor, LittleFS power-loss, electrical recovery, 150 power cuts and 30-device/24-hour soak remain NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+- No CORE API, QA-owned tests, finance, receipt/disposition, signer, witness, COE destination, production device or physical firmware was changed.
