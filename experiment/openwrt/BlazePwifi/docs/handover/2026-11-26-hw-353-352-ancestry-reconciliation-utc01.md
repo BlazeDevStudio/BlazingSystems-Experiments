@@ -63,3 +63,9 @@ The final handover/PR head at the time of this validation was `b737164310937e478
 - Full [#45739536013](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45739536013), validation job `139640950883`: **FAIL** at inherited `Missing poll signature check`. All 14/14 firmware target jobs and Android PASS; production import/signing, update, simulation and candidate jobs are skipped.
 
 The focused workflow logs explicitly retain `SIMULATED_ONLY=1`, `PHYSICAL_COIN_PULSE_ACCEPTANCE=0`, `PHYSICAL_RELAY_ACCEPTANCE=0` and `PHYSICAL_POWER_CUT_ACCEPTANCE=0`. No hardware acceptance is claimed.
+
+## Superseded by UTC02 stack reconciliation
+
+On 2026-11-26 UTC02, #352 advanced to `a1720e1724a15b5254d9dd1ee57e6212259a4896`, with prior #352 `0e984e267b3a8fb10c314800d1a7f120806354b7` as first parent and #349 `1a2ecf5fa8c8c20a0095ac898c1bff254280ad27` as second parent. The current #353 branch is being advanced with the reconciled #352 head as its second parent. The UTC01 statement that #353 was ahead of the prior #352 head was accurate at that time and is superseded by the UTC02 ancestry.
+
+New exact-head CI must be read from the resulting UTC02 #352 and #353 commits; UTC01 CI remains historical and is not transferred to the new heads.

@@ -1025,6 +1025,30 @@ See [UTC11 narrow handover](https://github.com/BlazeDevStudio/BlazingSystems-Exp
 <!-- PHX-HARDWARE-20261125-CPP-UDL-SUFFIX-BOUNDARIES:END -->
 
 
+## PHX-HARDWARE UTC23 — CRLF line-splice parity guard
+
+- PR #349 remains OPEN / DRAFT / UNMERGED on phoenix/hw-json-array-primitive-guard-20261124-utc00; captured base is #347 at 960184670379f01e20f0e7e8bc23b3e5eedacd3f.
+- Test-first RED: 62f7813ef482e7ac9bc0d2010f8f7e2113cf29ef; Relay run #45723546132, job 139587561096, failed only at the new CRLF line-splice regression after the prior 14 tests passed.
+- Source fix: 9dc0ae39832e5fe7db79694b670a841f0c90ffe0. The C++ normalizer now recognizes backslash-LF and backslash-CRLF splices in // comments.
+- Exact-source Quarantine #45723944288 job 139588898662 PASS; Relay #45723944279 jobs 139588898747 / 139588899114 PASS. Logs: CPP_TOKEN_NORMALIZER_CONTRACT_PASS 15/15; BOUNDED_HTTP_RESPONSE_TOKEN_NORMALIZER_PASS 8/8.
+- Full #45723944321 validation job 139589011037 FAIL at inherited “Missing poll signature check”; all 14 firmware target jobs and Android pass. Production import/sign/simulation/candidate/publication stages skipped.
+- Only Hardware-owned host parity-lab source/tests and handovers changed. No production sketch, CGI producer, CORE API, finance, signer/witness, migration or COE destination changed. SIMULATED / CI VERIFIED only; HARDWARE ACCEPTED NO; PRODUCTION NO-GO.
+- The active v0.6 response trust boundary remains a separate P0: unsigned poll response consumption and empty-key verification skip, per Master UTC23 report. CORE owns the approved response/HMAC/key contract; Hardware implementation must follow that contract with QA negative vectors.
+- Private Drive registry v11 remains NOT RECOVERED; no Google Drive connector is exposed. No older snapshot substituted.
+
+See [UTC23 narrow handover](docs/handover/2026-11-25-hw-cpp-crlf-line-splice-guard-utc23.md). Master UTC23 also assigned a separate #348 canonical-handover synchronization; it remains pending and was not modified in this task.
+
 <!-- PHX-HARDWARE-20261126-UTC01-353-352-ANCESTRY:START -->
 > **PHX-HARDWARE UTC01 — PR #353/#352 ancestry reconciled; exact docs-head focused CI PASS / Full validation blocked.** Merge commit [82e65038](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/82e6503890632249c54e9cd9a93180a5e7c52aa6) has parents prior child #353 `dc9cf634...` and live parent #352 `0e984e267...`. Guard path correction [61ed2fc3](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/61ed2fc3e056a1b497dff57009f0e4c624095e32); final tested docs/PR HEAD `b737164310937e4782b7cc5f75ad825b9bcf42df`, 19 ahead / 0 behind. Quarantine [#45739536022](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45739536022) job `139640847937` PASS (ESP8266/ESP32 18/18; 17 fail-open mutations rejected per board; modular guard, JSON grammar, config recovery and boot polarity pass). Relay [#45739536099](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45739536099) jobs `139640848810 / 139640849106` PASS (token normalizer 14/14, bounded HTTP 8/8, 10/10 parity mutations rejected). Full [#45739536013](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45739536013) validation job `139640950883` FAIL at inherited `Missing poll signature check`; all 14/14 firmware targets and Android PASS; production import/signing/update/simulation/candidate jobs SKIPPED. All evidence is SIMULATED / CI VERIFIED, not hardware acceptance. PR #353 remains OPEN / DRAFT / UNMERGED. PR #340 is already reconciled to #283 (45 ahead / 0 behind). #266 remains 0/7. No production `.ino`, controller/API, finance, signer, witness or COE source changed. See [UTC01 narrow handover](docs/handover/2026-11-26-hw-353-352-ancestry-reconciliation-utc01.md). HARDWARE ACCEPTED: NO; PRODUCTION NO-GO.
 <!-- PHX-HARDWARE-20261126-UTC01-353-352-ANCESTRY:END -->
+
+## PHX-HARDWARE UTC02 — #349 → #352 → #353 stack ancestry reconciliation
+
+- #349 parent head: `1a2ecf5fa8c8c20a0095ac898c1bff254280ad27`.
+- #352 now includes #349 through merge commit `a1720e1724a15b5254d9dd1ee57e6212259a4896` (first parent prior #352 `0e984e267b3a8fb10c314800d1a7f120806354b7`; second parent #349 `1a2ecf5fa8c8c20a0095ac898c1bff254280ad27`).
+- #353 is advanced with prior #353 head `4e2185b150ba6d1a614fe86d875a9d2bfc7db9a4` as first parent and reconciled #352 `a1720e1724a15b5254d9dd1ee57e6212259a4896` as second parent.
+- The CRLF-aware C++ token normalizer and 15-case contract are carried into both child stacks; #353's ISR-specific implementation and fixtures remain on its first-parent tree.
+- `PROJECT_HANDOVER.md` is additive: the #349 UTC23 record is inserted before the #353 UTC01 record, and this UTC02 reconciliation follows it. The prior #353 UTC01 handover is retained and marked historical for its earlier parent snapshot.
+- The separate #348 handover synchronization was completed at `93afd4830b2728d5976e21951610943e1ec96c85`; the #349 UTC23 note saying it was pending is historical.
+- Branch updates use expected-SHA checks and `force=false`; no rebase, force-push, PR retarget, merge-to-main or release action occurred.
+- New exact-head CI must be read for both #352 and #353; earlier workflow results are not transferred to the new merge commits.

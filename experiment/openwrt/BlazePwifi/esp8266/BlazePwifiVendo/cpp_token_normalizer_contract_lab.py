@@ -114,6 +114,15 @@ class CppTokenNormalizerContractTests(unittest.TestCase):
         )
 
 
+    def test_crlf_line_splice_continues_line_comment(self):
+        # C++ phase 2 removes backslash-CRLF before // comment recognition.
+        # The first return remains inside the continued line comment; the
+        # ordinary CRLF version contains both return statements as code.
+        continued = "int f() { // comment\\\r\n return 1;\r\n return 2;\r\n}"
+        ordinary = "int f() { // comment\r\n return 1;\r\n return 2;\r\n}"
+        self.assertNotEqual(tokenize_cpp(continued), tokenize_cpp(ordinary))
+
+
 if __name__ == "__main__":
     suite = unittest.defaultTestLoader.loadTestsFromTestCase(
         CppTokenNormalizerContractTests
@@ -121,4 +130,4 @@ if __name__ == "__main__":
     result = unittest.TextTestRunner(verbosity=2).run(suite)
     if not result.wasSuccessful():
         raise SystemExit(1)
-    print("CPP_TOKEN_NORMALIZER_CONTRACT_PASS 14/14")
+    print("CPP_TOKEN_NORMALIZER_CONTRACT_PASS 15/15")

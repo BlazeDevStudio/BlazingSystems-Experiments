@@ -61,6 +61,19 @@ def _scan_user_defined_literal_suffix(source, index):
     return index
 
 
+def _has_backslash_line_splice_before_lf(source, newline):
+    """Recognize C++ phase-2 backslash-LF and backslash-CRLF splices."""
+    if newline <= 0:
+        return False
+    if source[newline - 1] == "\\":
+        return True
+    return (
+        newline > 1
+        and source[newline - 1] == "\r"
+        and source[newline - 2] == "\\"
+    )
+
+
 def tokenize_cpp(source):
     """Return a conservative C++ token sequence for parity comparisons."""
     tokens = []
@@ -73,11 +86,7 @@ def tokenize_cpp(source):
 
         if source.startswith("//", index):
             newline = source.find("\n", index + 2)
-            while (
-                newline >= 0
-                and newline > index
-                and source[newline - 1] == "\\"
-            ):
+            while _has_backslash_line_splice_before_lf(source, newline):
                 newline = source.find("\n", newline + 1)
             index = len(source) if newline < 0 else newline + 1
             continue
