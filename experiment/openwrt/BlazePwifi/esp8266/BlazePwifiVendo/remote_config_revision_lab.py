@@ -126,6 +126,9 @@ static bool pollIntakeSuspended, coinInterruptAttached;
 static bool runRelayActiveHigh, runLedActiveHigh, insertMode;
 static int runCoinPin, runRelayPin, runLedPin, remoteRevision, maxWifiRetries;
 static uint16_t runDebounceMs, runPulseGroupMs;
+// One initial inhibit + one selected configureRuntimePins branch exit + the
+// final applyRemoteConfig refresh. The two branch-exit callsites are exclusive.
+static constexpr int EXPECTED_APPLY_OUTPUT_CALLS=3;
 static int applyOutputsCalls, quarantineCalls, outputModeCalls, pinModeCalls;
 static int digitalWriteCalls;
 static int pinModes[64], pinLevels[64];
@@ -216,7 +219,7 @@ int main() {
   if(remoteRevision!=6 || !controllerEnabled || !coinEnabled || !relayEnabled ||
      !ledEnabled || !runCoinActiveLow || runCoinPin!=2 || runRelayPin!=14 ||
      runLedPin!=15 || runDebounceMs!=100 || runPulseGroupMs!=1200 ||
-     maxWifiRetries!=20 || quarantineCalls!=1 || applyOutputsCalls!=2 ||
+     maxWifiRetries!=20 || quarantineCalls!=1 || applyOutputsCalls!=EXPECTED_APPLY_OUTPUT_CALLS ||
      outputModeCalls!=2 || pinModes[14]!=OUTPUT || pinModes[15]!=OUTPUT) return 13;
   std::cout<<"REMOTE_CONFIG_NEWER_REVISION_ACCEPT_PASS\n";
 
@@ -229,7 +232,7 @@ int main() {
   if(remoteRevision!=6 || pinConfigSafe || pinModes[2]!=INPUT_PULLUP ||
      pinModes[14]!=INPUT || pinModes[15]!=INPUT || outputModeCalls!=0 ||
      insertMode || activeTarget.length()!=0 || quarantineCalls!=1 ||
-     applyOutputsCalls!=2) return 14;
+     applyOutputsCalls!=EXPECTED_APPLY_OUTPUT_CALLS) return 14;
   std::cout<<"REMOTE_CONFIG_UNKNOWN_POLARITY_DENY_PASS\n";
   return 0;
 }
