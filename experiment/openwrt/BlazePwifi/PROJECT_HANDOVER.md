@@ -1,36 +1,43 @@
-## CURRENT STATUS — 2026-11-26 UTC14 — independent poll-inhibit GPIO polarity matrix
+## CURRENT STATUS — 2026-11-26 UTC14 — final poll-inhibit independent polarity evidence
 
 **Role:** PHX-HARDWARE · **Task:** [#177](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/177) / [#354](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/354)  
-**Branch:** `phoenix/hw-active-v06-poll-intake-deny-20261126-utc05`  
-**Base:** `blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859`  
+**Branch:** `phoenix/hw-active-v06-poll-intake-deny-20261126-utc05` · **Base:** `blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859`  
 **Source/test SHA:** `9bb46bb27e4be80f6506dbebf2846700efd4cb81`  
-**PR state:** OPEN / DRAFT / UNMERGED. Candidate remains deny-only; no production promotion.
+**Current PR/docs head before this reconciliation:** `199d0b239c8e313fe61c5f0f0402e6e7e7569540`  
+**PR #354:** OPEN / DRAFT / UNMERGED · deny-only candidate.
 
-### This activation — one Hardware-owned test-hardening task
+### One bounded Hardware-owned task
 
-The source-extracted `poll_preflight_inhibit_lab.py` previously set relay and LED polarity to the same value. That meant the poll-inhibit test could not detect an OFF path accidentally borrowing the other output's polarity. The harness now exercises all four independent relay/LED combinations, checks both outputs are OFF after `denyRemoteControl()`, and preserves pending pulse/nonce/target evidence through its simulated 3500 ms synchronous HTTP wait. The runner now prints successful harness output and mutation rejections for human-readable CI evidence.
+Hardened `poll_preflight_inhibit_lab.py`: the old harness assigned identical active polarity to relay and LED, so it could miss cross-wired OFF writes. The final harness tests all four independent combinations, checks both outputs are logical OFF after `denyRemoteControl()`, preserves pending pulse/nonce/target evidence through a simulated 3500 ms synchronous HTTP wait, and prints its results and rejected mutations.
 
-- Test-first RED commit: [`0e27daaf9440dba2f0d7907e5332d0c876d3f000`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/0e27daaf9440dba2f0d7907e5332d0c876d3f000). PR run [#45833611464](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45833611464), job `139956531105`, and push run [#45833601391](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45833601391), job `139956496937`, failed as expected: the old same-polarity harness did not detect the relay OFF path borrowing LED polarity.
-- Corrected matrix commit: [`96d6cfc3b9914fcd2d346f3d1bbfc95b07892290`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/96d6cfc3b9914fcd2d346f3d1bbfc95b07892290).
-- Final observability commit: [`9bb46bb27e4be80f6506dbebf2846700efd4cb81`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/9bb46bb27e4be80f6506dbebf2846700efd4cb81); `compile_and_run()` now emits the harness result and each rejected mutation.
-- Focused exact-source GREEN: [#45834845699](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45834845699), job `139960864159`, PASS. Logs show `POLL_INTAKE_GPIO_POLARITY_PASS 4/4` for ESP8266 and ESP32, both cross-polarity mutations rejected on each board (exit 12), and deny-state mutation rejected (exit 11). Existing pre/post-poll control-flow, no-coin-POST, no-pending-clear, remote-config-deny, request-auth and output-enable checks also pass.
-- Full build [#45834845628](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45834845628), validation job `139960957851`, failed at the mandatory handover-freshness gate because this checkpoint had not yet been refreshed. This is not a source compile result and does not establish Full PASS. A post-handover Full rerun is required.
+- RED commit [`0e27daaf9440dba2f0d7907e5332d0c876d3f000`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/0e27daaf9440dba2f0d7907e5332d0c876d3f000): PR [#45833611464](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45833611464), job `139956531105`, and push [#45833601391](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45833601391), job `139956496937`, failed as expected because the old symmetric harness did not detect relay OFF borrowing LED polarity.
+- Independent 4-way matrix commit [`96d6cfc3b9914fcd2d346f3d1bbfc95b07892290`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/96d6cfc3b9914fcd2d346f3d1bbfc95b07892290).
+- Final source/test SHA [`9bb46bb27e4be80f6506dbebf2846700efd4cb81`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/9bb46bb27e4be80f6506dbebf2846700efd4cb81) adds visible harness output and mutation outcomes.
+- Final docs-head focused [#45835204586](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45835204586), job `139962121142`, PASS. The log explicitly prints `POLL_INTAKE_GPIO_POLARITY_PASS 4/4` for ESP8266 and ESP32; relay/LED cross-polarity mutations are rejected on both boards (exit 12); deny-state mutation is rejected (exit 11).
+- Final docs-head ESP32 Mbed TLS matrix [#45835204598](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45835204598): source contract `139962747733`, core 3.3.13 `139962747342`, core 4.0.0 `139962747496` — all PASS.
+- Final docs-head Full [#45835204641](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45835204641): handover freshness / CI-0701 job `139962277374` PASS; validation job `139962374783` FAIL at QA-owned **Controller protocol parity**. All 14/14 firmware/platform and Android build jobs PASS. Simulations, update bundle, signing handoff, candidate gate and publication were skipped after validation failure.
+- Final docs-head Native [#45835204563](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45835204563), job `139962121765`, FAIL at QA-owned PAY-0745 assertion requiring active `clearPending(true/false)` callsites. The deny-only candidate intentionally has no active pending-disposition callsite and preserves pending evidence.
 
-### Scope and evidence limits
+### Scope / status
 
-Only the Hardware-owned host lab changed in the source/test commits. The ESP8266 and ESP32 production sketches are unchanged by this activation; the existing candidate remains deny-only, discards unsigned poll responses, rejects coin POST, and preserves pending evidence. No positive coin or relay admission, API, financial state, QA-owned test, signer, witness, migration, release, or COE destination changed.
+Only the Hardware-owned host lab changed in source/test commits. Production ESP8266/ESP32 sketches were not changed in this activation. Candidate remains deny-only: no unsigned poll response consumption, no coin POST, no pending disposition and no positive relay admission. No API, finance, QA-owned source, signer, witness, migration, COE destination or release files were modified.
 
-- Host/source-extracted behavior: **SIMULATED / CI VERIFIED** only.
-- Physical GPIO/relay voltage and contact transient, physical coin acceptor, electrical pulse/recovery, LittleFS power-loss durability, 150 power cuts, and 30-device/24-hour soak: **NOT TESTED**.
+- Host/source-extracted behavior: **SIMULATED / CI VERIFIED**.
+- Physical GPIO/relay voltage/contact transient, real coin acceptor, electrical pulse/recovery, LittleFS power-loss, 150 power cuts and 30-device/24-hour soak: **NOT TESTED**.
 - HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
 
 ### Process note
 
-The test-only RED commit was created before a new `IN PROGRESS` entry was staged in `CURRENT_STATE.md`. This is a handover-policy ordering deviation; it is recorded here rather than represented as compliant. No production sketch was changed. Future source work must write the IN PROGRESS record before the first source commit.
+The test-only RED commit preceded a new `IN PROGRESS` entry in CURRENT_STATE.md. This handover-policy ordering deviation is disclosed, not represented as compliant. No production sketch changed. Future source work must stage IN PROGRESS before the first source commit.
 
-### Next exact action
+### Cross-role blockers / next exact action
 
-PHX-QA reconciles the deny-only native/controller-parity assertions without restoring unsigned `config_revision` consumption or active pending disposition. PHX-CORE publishes the authenticated register/poll and event receipt/disposition contract. PHX-MASTER refreshes the #354 branch pin in ROLE_ASSIGNMENTS and INTEGRATION_MATRIX. PHX-HARDWARE then revalidates exact heads and reruns Full; keep coin and relay actuation denied until those contracts and independent hardware acceptance are complete.
+- **PHX-QA:** reconcile the deny-only native PAY-0745 and controller-parity assertions without restoring unsigned `config_revision` consumption or active pending disposition; independently review the new polarity matrix.
+- **PHX-CORE:** publish the approved authenticated register/poll and receipt/disposition contract before any positive response consumer.
+- **PHX-MASTER:** refresh #354 branch pins in `ROLE_ASSIGNMENTS.md` and `INTEGRATION_MATRIX.md`; current Master snapshot still pins `51decb0c`, not this branch head.
+- **PHX-HARDWARE:** after those owner changes, revalidate exact heads and rerun Full. Keep coin and relay denied until then.
+
+The private Drive `BLAZE_PROJECT_REGISTRY_v11_20261027.json` was not available through this runtime; the Library checkpoint only references its historical name and is not a replacement. No registry-derived migration or promotion occurred.
 
 ## CURRENT STATUS — 2026-11-26 UTC12 — unconditional poll-deny control-flow regression
 

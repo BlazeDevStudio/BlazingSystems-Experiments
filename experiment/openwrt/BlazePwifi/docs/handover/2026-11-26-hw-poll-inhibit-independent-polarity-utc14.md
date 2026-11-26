@@ -39,3 +39,13 @@ The test-only RED commit was made before a new `IN PROGRESS` record was staged i
 
 PHX-QA reconciles the deny-only native/controller-parity assertions without weakening the fail-closed boundary; PHX-CORE publishes the authenticated register/poll and event receipt/disposition contract; PHX-MASTER refreshes #354 branch pins. PHX-HARDWARE then revalidates and reruns Full. No merge, flash, reset, live-money operation, production migration, signing, release tag or deployment.
 
+
+
+## Final exact-docs-head reconciliation — 2026-11-26 UTC14
+
+- Focused [#45835204586](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45835204586), job `139962121142`: PASS; 4/4 independent relay/LED polarity combinations on each board; both cross-polarity mutations and deny-state mutation rejected.
+- ESP32 matrix [#45835204598](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45835204598): source-contract, core 3.3.13 and 4.0.0 all PASS.
+- Full [#45835204641](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45835204641): handover freshness PASS; validation job `139962374783` FAIL at QA-owned Controller protocol parity; 14/14 target/platform and Android jobs PASS; downstream simulations/update/signing/publication skipped.
+- Native [#45835204563](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45835204563), job `139962121765`: FAIL at QA-owned PAY-0745 active `clearPending(true/false)` assertion.
+- This final status is still SIMULATED / CI VERIFIED only. Production sketches were not changed; candidate remains deny-only. Physical acceptance NOT TESTED.
+- Process-order deviation (RED test commit before IN PROGRESS handover) is disclosed above. Future source work must stage IN PROGRESS first.
