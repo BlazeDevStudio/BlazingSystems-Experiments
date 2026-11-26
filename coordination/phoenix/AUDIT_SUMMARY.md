@@ -1,3 +1,18 @@
+## PHX-MASTER UTC17 — current disposition and blockers (2026-11-26)
+
+**Starting Master HEAD:** 47678fdf9a38a75298f6d051ece3c7aced66a22d. PR #288 OPEN / DRAFT / UNMERGED; 619 ahead / 1 behind main; 238 changed paths all under coordination/phoenix/. This activation changes only Master coordination records.
+
+- HARDWARE #353 ac9e754e: Relay/Quarantine PASS; Full fails missing ESP8266 poll-signature check. PR body still pins cb1787ac / ed2f77d.
+- HARDWARE #354 fc842342 / source-test 145aac96: focused poll-deny and Mbed TLS matrix PASS; Full fails QA config_revision assertion; Native fails QA clearPending assertion. Preserve deny-only and pending evidence.
+- RELEASE #242/#291 bases are 22/16 commits stale; no exact-head CI; both mergeable=false.
+- COE #26 b382d233 remains FROZEN. Firmware blobs differ; test identity comparisons need refresh after source test changes; intake recount 46/15 conflicts with 47/14 summary; firmware audit is internally contradictory; root NOTICE/Tabler/Launcher and COE root license/notice gaps remain.
+- Cleanup #266 OPEN / 0-of-7. Private Drive v11/newer corrections NOT RECOVERED; no Drive connector. Master Python tests and verify_coordination.py NOT RUN; no Master Actions at starting HEAD.
+- CORE source remained untouched/reserved; no subsystem source or COE destination writes occurred.
+
+**PRODUCTION NO-GO:** independent protected signing/anti-rollback, crash-atomic durable financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized release gates remain mandatory.
+
+---
+
 ## PHX-MASTER UTC16 — current disposition (2026-11-26T16:33:57Z)
 
 **Starting Master HEAD:** 6bdb731b5ca5af1dfa7cb95134f8ed8ff71d96aa. **PR #288:** OPEN / DRAFT / UNMERGED; 617 ahead / 1 behind main; 237 existing paths all Master-owned. UTC16 changes remain under coordination/phoenix/.
