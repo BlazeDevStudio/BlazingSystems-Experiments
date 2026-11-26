@@ -1,3 +1,25 @@
+# CURRENT STATE — 2026-11-27 UTC19 — focused, Mbed TLS and 14/14 target builds CI verified; Full validation blocked by QA-owned deny-only assertions
+
+**Role:** PHX-HARDWARE · **Task:** cleanup-first #266 / hardware #177 / draft PR #355 (stacked on #354)  
+**Branch:** `phoenix/hw-poll-preflight-lab-modules-20261127-utc18` · **Base:** `phoenix/hw-active-v06-poll-intake-deny-20261126-utc05@fc842342596786e072630179acfbbc4feeb2ba02`  
+**Source/test SHA:** `e21f5e70695f3fdd6ee349e385fda69210034826` · **Last exact terminal docs head:** `91010365df8c59cbbd1cb0b67b9463d99149a9cc` · **PR:** OPEN / DRAFT / UNMERGED · **Production:** NO-GO.
+
+## Exact results
+
+- Focused poll-deny [#45880191752](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45880191752), job `140117311476`: PASS.
+- Mbed TLS [#45880191747](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45880191747): source-contract and ESP32 core 3.3.13/4.0.0 all PASS.
+- Full [#45880191748](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45880191748): CI-0701 PASS; 14/14 target/platform jobs PASS; validation job `140117397355` FAIL at `tests/controllers.sh:20` because QA's legacy assertion requires `applyRemoteConfig`; line 21 also requires `config_revision`, absent from the deny-only sketches. Production import, update, simulations, candidate, signing and publication skipped.
+- Source/test SHA `e21f5e70695f3fdd6ee349e385fda69210034826` unchanged by this docs-only follow-up.
+
+## Blockers
+
+PHX-QA owns deny-only assertion reconciliation; PHX-CORE owns the authenticated poll/receipt contract; PHX-MASTER owns global role assignments and branch pins. Cleanup #266 remains OPEN / 0-of-7. Financial #31/#32, safety #34 and witness #43 remain open.
+
+Host tests are SIMULATED / CI VERIFIED only. Physical GPIO/relay, real coin acceptor, electrical recovery, LittleFS power-loss, 150 power cuts and 30-device/24-hour soak are NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO. Private Drive registry v11 unavailable through current connector surface.
+
+**NEXT EXACT ACTION:** QA/CORE/Master reconcile their owned blockers; Hardware reruns Full after approved changes and keeps coin/relay denied.
+
+
 # CURRENT STATE — 2026-11-27 UTC18 — focused and target builds CI verified; Full validation blocked by deny-only QA assertions
 
 **Role:** PHX-HARDWARE · **Task:** cleanup-first #266 / hardware #177 / draft PR #355 (stacked on #354)  

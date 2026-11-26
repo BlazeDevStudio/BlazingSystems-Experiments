@@ -3652,3 +3652,15 @@ PR #354 remains OPEN / DRAFT / UNMERGED. PRs #239/#254/#283 remain OPEN / DRAFT 
 - **Drive:** private registry v11 unavailable through current connector surface; no registry-derived promotion or migration.
 - **Rollback:** revert the child-branch commits for this lab refactor only; do not merge, force-push, retarget or alter the parent stack.
 - **NEXT ACTION:** QA/CORE publish their approved contract/assertion corrections; Hardware reruns Full and keeps the candidate deny-only until then.
+
+
+## 2026-11-27 03:01 Asia/Manila — PHX-HARDWARE — docs-head 91010365 terminal CI readback — status: validated (scoped), integration blocked
+
+- **Branch / PR:** `phoenix/hw-poll-preflight-lab-modules-20261127-utc18` / OPEN DRAFT #355, stacked on #354.
+- **Source/test SHA:** `e21f5e70695f3fdd6ee349e385fda69210034826`; exact terminal docs head `91010365df8c59cbbd1cb0b67b9463d99149a9cc`.
+- **Docs-only follow-up:** no firmware, lab logic, shared API or test vector changed.
+- **Focused poll-deny:** [#45880191752](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45880191752), job `140117311476`, PASS.
+- **Mbed TLS:** [#45880191747](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45880191747), source-contract `140117311864`, core 3.3.13 `140117311638`, core 4.0.0 `140117311924`, all PASS.
+- **Full:** [#45880191748](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45880191748), CI-0701 `140117312099` PASS; 14/14 target/platform jobs PASS; validation `140117397355` FAIL at QA-owned `tests/controllers.sh:20` requiring `applyRemoteConfig`; line 21 also requires `config_revision`, absent from deny-only sketches. Production import, update bundle, simulations, candidate, signing and publication SKIPPED.
+- **Disposition:** scoped CI VERIFIED; Full integration BLOCKED. No hardware acceptance; no production readiness.
+- **NEXT ACTION:** QA/CORE/Master reconcile their owned contract/assignment blockers; Hardware reruns Full after approval.
