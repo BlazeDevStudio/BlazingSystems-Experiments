@@ -54,3 +54,12 @@
 - Mbed matrix `45897118552`: source-contract PASS; core 3.3.13 and 4.0.0 builds still running. Native `45897118723` job `140173656134` FAIL at QA-owned PAY-0745 pending sequence/corruption assertion.
 - Master coordination HEAD `0e8a59a0463d522ddff95371a60cf271d4c752bc` records #355 in both role assignment and integration matrix. #177 remains unresolved; #266 OPEN / 0-of-7; #31/#32/#34/#43 open.
 - Physical acceptance NOT TESTED; HARDWARE ACCEPTED NO; PRODUCTION NO-GO.
+
+
+## 2026-11-27 UTC21 — terminal target and Mbed evidence
+
+- Exact focused source/test head `facf4cd7efee2df199475e6ae2e135429210eb87`: run `45897118576`, job `140173655648`, PASS; EEPROM commit result and 13/13 Preferences write results propagated; 4/4 injected config-persistence regressions rejected.
+- Full `45897118594`: CI-0701 + handover freshness PASS; validation `140173820395` FAIL at QA-owned `tests/controllers.sh:21` (`config_revision`). All 14/14 target/platform build jobs PASS (ESP8266, ESP32, Android and 11 firmware targets). Production import, simulation, candidate, signing and publication skipped.
+- ESP32 Mbed matrix `45897118552`: 3/3 PASS — source-contract `140174115684`, core 3.3.13 `140174116287`, core 4.0.0 `140174115903`.
+- Native synthetic `45897118723`, job `140173656134`, FAIL at QA-owned PAY-0745. #177 remains unresolved; #266 OPEN / 0-of-7; #31/#32/#34/#43 open.
+- Physical acceptance NOT TESTED; HARDWARE ACCEPTED NO; PRODUCTION NO-GO.
