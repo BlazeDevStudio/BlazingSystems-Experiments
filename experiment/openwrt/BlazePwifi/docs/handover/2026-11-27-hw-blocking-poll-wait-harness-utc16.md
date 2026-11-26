@@ -48,3 +48,15 @@ The harness also removes the pre-poll deny in a negative mutation and changes th
 The canonical `CHANGE_LEDGER.md` was successfully appended in this checkpoint after retrieving its large blob through Git Data. No history was truncated or replaced. The private Google Drive `BLAZE_PROJECT_REGISTRY_v11_20261027.json` was not available through the connected runtime; no registry-derived migration or promotion occurred.
 
 Rollback is limited to reverting this work item's source/test commits `05be6faf`, `f93cf9b8` and `145aac96` on this existing Hardware draft branch. Preserve the pre-existing #239, #254 and #283 branches and do not rebase or force-push.
+
+
+## Post-sync terminal exact-head results
+
+All results below are for source/test SHA `145aac9607682071e2db05944a6f9db5aa06e524` at tested docs head `fcedf8a8c90128a33983c77f853abbbc7d95e258`.
+
+- **Full** [#45863473436](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45863473436) completed with overall FAILURE. Mandatory handover freshness and CI-0701 job `140060351112` PASS; all 14/14 ESP8266, ESP32, x86_64, Ruijie, Orange Pi and Android target/platform jobs PASS. Validation job `140060447896` fails at QA-owned Controller protocol parity because `tests/controllers.sh:21` requires `config_revision` in both deny-only sketches. Signing, release, update-bundle, preview and simulation stages are skipped.
+- **Native** [#45863473523](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45863473523), job `140060214162`, terminal FAILURE at QA-owned `tests/v060_vendo_sequence_contract.py:20`, which requires active `clearPending(true/false)` callsites. The deny-only candidate intentionally preserves pending evidence and does not perform disposition.
+- **ESP32 Mbed TLS matrix** [#45863473433](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45863473433) completed SUCCESS: source-contract `140061337553`, core 3.3.13 `140061338064`, and core 4.0.0 `140061337907` all PASS. Both clean builds match per core. Staged source tree SHA-256 `b4528d827c2eb93cf5d1144e73f22b68f1ae7df31042a713470f3d52f7ff476a`; core 3.3.13 binary A/B SHA-256 `c28a935b454dec63bae8dcc26db73e919cc3639795a805de422ab73cd0a6c4d5`; core 4.0.0 binary A/B SHA-256 `b9baf73c04037964bec33c65c620eb8848b2471f3c892561113f936a0d990587`.
+- **Overall:** focused and Mbed TLS matrix CI VERIFIED; 14/14 target/platform builds CI VERIFIED; Full validation BLOCKED by QA-owned protocol parity; Native BLOCKED by QA-owned active-clear assertion. No production sketch changed. Physical hardware acceptance remains NOT TESTED; PRODUCTION NO-GO.
+
+The stale Master `ROLE_ASSIGNMENTS.md` / `INTEGRATION_MATRIX.md` still pin #354 at `bbb209f55ddcd48f248eb8d700629db8754dc13a`; PHX-MASTER must refresh the current docs head. PHX-QA owns the two assertion reconciliations; PHX-CORE owns the authenticated register/poll and receipt/disposition contract. Keep coin and relay denied.
