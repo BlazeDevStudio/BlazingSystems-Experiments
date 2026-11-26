@@ -33,3 +33,13 @@
 
 
 2026-11-27 UTC20 | PHX-HARDWARE | PR #355 | Exact docs-head focused #45894378940/job 140164527129 PASS: current 6/6, legacy 5/5, 5/5 unsafe mutations rejected. Exact source/test Mbed TLS #45894193769 source-contract + ESP32 core 3.3.13/4.0.0 PASS. Full docs-head #45894378927: handover freshness + CI-0701 PASS, all 13/13 target/platform jobs PASS, Android still running; validation FAIL at QA-owned tests/controllers.sh:21 config_revision assertion. Native #45894379001 FAIL at QA-owned active clearPending assertion. Physical acceptance NOT TESTED; PRODUCTION NO-GO.
+
+
+## 2026-11-27 UTC21 — ESP configuration persistence write-result guard
+
+- Firmware correction: `26a28c763168e2881d5b8e36d859a0a72d704524`; exact focused source/test SHA: `835017d95c129fb52b8fdca82032f1fb9a83ac33`.
+- ESP8266 now propagates `EEPROM.commit()`; ESP32 checks all 13 Preferences write results. Both setup-save handlers deny outputs, return HTTP 500 and do not reboot on storage failure. ESP32 multi-key writes remain non-atomic.
+- Expected RED: [#45896260968](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45896260968), job `140170795839`. Focused GREEN: [#45896670130](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45896670130), job `140172158275`, PASS; EEPROM failure propagation, 13/13 Preferences write checks and 4/4 injected regressions.
+- Test-authoring failures #45896421871 and #45896529929 were corrected; they were not firmware failures.
+- Full #45896670128 CI-0701 passed but validation stopped at the stale handover freshness gate before this sync; target jobs were still running. Native #45896670074 fails QA-owned PAY-0745. Mbed #45896670138 pending.
+- Physical storage/power-cut/relay acceptance NOT TESTED; HARDWARE ACCEPTED NO; PRODUCTION NO-GO.

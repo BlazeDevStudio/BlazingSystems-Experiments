@@ -1,3 +1,28 @@
+## CURRENT STATUS — 2026-11-27 UTC21 — ESP configuration persistence failure propagation CI verified; integration gates remain open
+
+**Role:** PHX-HARDWARE · **Task:** PR #355 · **PR:** OPEN / DRAFT / UNMERGED  
+**Repository:** BlazeDevStudio/BlazingSystems-Experiments · **Branch:** phoenix/hw-poll-preflight-lab-modules-20261127-utc18 · **Parent #354:** fc842342596786e072630179acfbbc4feeb2ba02  
+**Firmware correction:** 26a28c763168e2881d5b8e36d859a0a72d704524  
+**Exact focused source/test SHA:** 835017d95c129fb52b8fdca82032f1fb9a83ac33  
+**Documentation parent before this sync:** 835017d95c129fb52b8fdca82032f1fb9a83ac33  
+**Narrow handover:** [UTC21 configuration persistence evidence](2026-11-27-hw-config-persistence-write-results-utc21.md)
+
+### Current result
+
+ESP8266 now propagates the boolean EEPROM commit result. ESP32 checks all 13 Preferences write results. Both setup-save handlers keep remote/coin outputs denied, return HTTP 500, and do not reboot when storage reports failure.
+
+Exact focused workflow [#45896670130](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45896670130), job `140172158275`: PASS. The test-first RED is [#45896260968](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45896260968), job `140170795839`. Host storage stubs are SIMULATED; Preferences writes remain non-atomic as a group.
+
+The Full workflow [#45896670128](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45896670128) passed CI-0701 but its validation job stopped at the handover freshness gate before this sync. Full target jobs were still running. Native synthetic [#45896670074](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45896670074), job `140172158388`, fails the QA-owned PAY-0745 pending-sequence/corruption assertion. ESP32 Mbed TLS matrix [#45896670138](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45896670138) was pending at last check.
+
+### Unchanged blockers
+
+Issue #177 synchronous poll/pulse-loss P0 is not resolved by this configuration-save change. #266 remains OPEN / 0-of-7. #31/#32/#34/#43 remain OPEN. PRs #239/#254/#283 remain DRAFT and unmerged. Google Drive registry `BLAZE_PROJECT_REGISTRY_v11_20261027.json` was not available through the exposed connector or Library search.
+
+**SIMULATED / CI VERIFIED only. Physical acceptance NOT TESTED. HARDWARE ACCEPTED: NO. PRODUCTION READY: NO-GO.**
+
+---
+
 ## CURRENT STATUS — 2026-11-27 UTC20 — EEPROM fixed-array guard CI verified; Full integration blocked by QA contract
 
 **Role:** PHX-HARDWARE · **Task:** #177 / #266 / PR #355 · **PR:** OPEN / DRAFT / UNMERGED  
