@@ -1,3 +1,18 @@
+## PHX-MASTER UTC17 final post-checkpoint #353 readback — 2026-11-26T17:54Z
+
+This supersedes the earlier 17:52Z IN_PROGRESS note. HARDWARE refreshed PR #353 to docs HEAD `f527b33c9e391a9a66490388d96f06d6c8761dfa`, source/test SHA `44de55a0e132cb15fdb60ecf85446e9490fa277e`, parent #352 `2fa3b7db1161ddb531ed94bcf60617947fa1a7bd`. The latest source/test commit changes only `coin_pulse_capture_lab_isr.py`: snapshot the prior `pollIntakeSuspended` state before temporary inhibit and restore that exact value only after successful post-attach quarantine. The PR body/handover is now current; previous cb1787ac/ed2f77d pointers are superseded.
+
+- Exact-source Relay push [#45870624293](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45870624293) and PR [#45870635699](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45870635699): PASS.
+- Exact-source Quarantine push [#45870624386](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45870624386) and PR [#45870635503](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45870635503): PASS.
+- Exact-source Full [#45870624355](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45870624355): FAIL, inherited ESP8266 missing poll-signature check.
+- Current docs-head Relay [#45871096516](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45871096516): PASS; Quarantine [#45871096480](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45871096480): PASS.
+- Current docs-head Full [#45871096425](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45871096425): FAIL; raw validate log explicitly says `Missing poll signature check` in the ESP8266 sketch. All 14 target/platform jobs and Android PASS; production import, update bundle, simulations, candidate gate, signing handoff and publication are SKIPPED.
+- No production `.ino`, controller/API, finance, signer, witness, migration or COE destination changed. These are source-extracted host simulations and CI only; HARDWARE ACCEPTED remains NO.
+
+CORE owns authenticated poll/register producer contract; QA owns independent assertions; HARDWARE owns the lab. Do not add an ad-hoc signature or weaken default-deny.
+
+---
+
 ## PHX-MASTER UTC17 post-checkpoint refresh — 2026-11-26T17:52Z
 
 **This addendum supersedes the earlier #353 head, handover and current-run status recorded below.** During this same UTC17 activation, HARDWARE advanced #353 after the initial Master checkpoint.
