@@ -1,35 +1,42 @@
-# CURRENT STATE — 2026-11-27 UTC16 — blocking-poll wait harness CI VERIFIED; integrated gates blocked
+# CURRENT STATE — 2026-11-27 UTC17 — focused and target builds verified; integrated validation blocked
 
 **Role:** PHX-HARDWARE · **Issue:** [#177](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/177) · **Draft PR:** [#354](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/354)  
 **Branch:** `phoenix/hw-active-v06-poll-intake-deny-20261126-utc05` · **Base:** `blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859`  
-**Source/test SHA:** `145aac9607682071e2db05944a6f9db5aa06e524` · **Status:** OPEN / DRAFT / UNMERGED.
+**Source/test SHA:** `145aac9607682071e2db05944a6f9db5aa06e524` · **Tested docs head:** `fcedf8a8c90128a33983c77f853abbbc7d95e258`  
+**PR:** OPEN / DRAFT / UNMERGED · **Production:** NO-GO.
 
-## This activation — one bounded Hardware-owned test-evidence improvement
+## Work completed — one Hardware-owned test-fidelity correction
 
-The old poll-inhibit lab claimed a 3500 ms wait but only checked deny outputs immediately; it did not execute the actual poll block or advance time. The new harness extracts and executes the real poll block from both board sketches and models the configured `HTTPClient::setTimeout(3500)` with an 80 ms coin-line pulse during the blocking interval.
+The old poll-inhibit lab claimed a 3500 ms HTTP wait but only called `denyRemoteControl()` and immediately inspected outputs. The new host harness executes the actual extracted poll block from both board sketches, models the configured 3500 ms synchronous `post("poll")`, injects an 80 ms coin-line pulse, and verifies no sample/acceptance during the wait, relay/LED OFF, denied admission, pending pulse/nonce/target preservation, and four independent relay/LED polarity combinations. Missing pre-poll deny and relay-OFF polarity-borrow mutations are rejected.
 
-- Exact-source focused push [#45862938002](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45862938002), job `140058369164`, PASS.
-- Exact-source focused PR [#45862948688](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45862948688), job `140058405613`, PASS.
-- Both ESP8266 and ESP32 logs: `BLOCKING_POLL_WAIT_PASS 3500ms pulse_ticks=80 samples_during_wait=0 accepted=0 polarity_combinations=4`.
-- Missing pre-poll deny and relay-OFF borrowing LED polarity are rejected on both boards; independent polarity and deny-state mutations are also rejected. Existing output-enable lab: 8/8 polarity scenarios and 14/14 injected regressions rejected.
-- Test-first RED: [#45862737466](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45862737466), job `140057673814`, and [#45862745148](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45862745148), job `140057700491`, both compiled and failed specifically at `elapsed_ms=0 expected=3500`. Initial fixture compile failure [#45862503824](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45862503824) is disclosed but excluded from RED evidence.
+No production `.ino`, shared API, finance, receipt, signer, witness, migration, QA test, or other-role source changed.
 
-## Integrated blockers
+## Exact evidence
 
-- Native [#45862948850](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45862948850), job `140058431258`, FAILS at QA-owned `tests/v060_vendo_sequence_contract.py:20` requiring active `clearPending(true/false)` callsites. The deny-only candidate deliberately preserves pending evidence and does not perform disposition. PHX-QA must reconcile this assertion; Hardware will not edit QA tests or restore unsafe behavior.
-- Full [#45862948745](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45862948745), validation job `140058560211`, FAILS the mandatory handover freshness gate because the prior docs commits predated source/test SHA `145aac9607682071e2db05944a6f9db5aa06e524`. Canonical `CHANGE_LEDGER.md`, `CURRENT_STATE.md`, `PROJECT_HANDOVER.md` and the narrow UTC16 handover are now synchronized after the source commit; rerun Full on the new docs head. Do not count the stale-docs run as a product build failure.
-- PHX-CORE must publish the authenticated register/poll and receipt/disposition contract before any positive response consumer. PHX-MASTER must refresh #354's branch pins in `ROLE_ASSIGNMENTS.md` and `INTEGRATION_MATRIX.md`.
-- No production `.ino` changed. Both sketch source blobs remain unchanged. No shared API, finance, receipt, signer, witness, migration, or other-role files were edited.
+- Focused push [#45862938002](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45862938002), job `140058369164`, PASS.
+- Focused PR [#45862948688](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45862948688), job `140058405613`, PASS.
+- Both board logs: `BLOCKING_POLL_WAIT_PASS 3500ms pulse_ticks=80 samples_during_wait=0 accepted=0 polarity_combinations=4`; existing output-enable lab: 8/8 scenarios and 14/14 injected regressions rejected.
+- Valid RED: [#45862737466](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45862737466), job `140057673814`, and [#45862745148](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45862745148), job `140057700491`, both compiled and failed at `elapsed_ms=0 expected=3500`. Initial fixture compile error [#45862503824](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45862503824), job `140056856073`, is disclosed but excluded from RED evidence.
+- Full [#45863473436](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45863473436): mandatory handover freshness and CI-0701 job `140060351112` PASS; all 14/14 ESP8266, ESP32, x86_64, Ruijie, Orange Pi and Android target/platform jobs PASS. Overall validation job `140060447896` FAILS only at QA-owned Controller protocol parity because `tests/controllers.sh:21` still requires `config_revision` in both deny-only sketches. Signing, release, update-bundle, preview and simulation stages are skipped.
+- Native [#45863473523](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45863473523), job `140060214162`, FAILS at QA-owned `tests/v060_vendo_sequence_contract.py:20`, which requires active `clearPending(true/false)` callsites. The deny-only candidate intentionally preserves pending evidence and does not perform disposition.
+- ESP32 Mbed TLS matrix [#45863473433](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45863473433) SUCCESS: source-contract job `140061337553`, core 3.3.13 job `140061338064`, core 4.0.0 job `140061337907` all PASS. Both cores produced identical clean A/B builds. Staged source-tree SHA-256 `b4528d827c2eb93cf5d1144e73f22b68f1ae7df31042a713470f3d52f7ff476a`; 3.3.13 binary A/B SHA-256 `c28a935b454dec63bae8dcc26db73e919cc3639795a805de422ab73cd0a6c4d5`; 4.0.0 binary A/B SHA-256 `b9baf73c04037964bec33c65c620eb8848b2471f3c892561113f936a0d990587`.
 
-## Evidence boundary
+## Cross-role blockers and limits
 
-Host/source-extracted behavior is **SIMULATED / CI VERIFIED** only. Physical GPIO voltage/contact transient, real coin acceptor, electrical pulse/recovery, LittleFS power-loss, 150 power cuts, and 30-device/24-hour soak are **NOT TESTED**. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+- PHX-QA must reconcile `config_revision` parity and active-clear assertions with the deny-only/pending-preservation boundary; Hardware will not edit QA tests or restore unsafe unsigned response consumption.
+- PHX-CORE must publish the authenticated register/poll and receipt/disposition contract plus canonical vectors before any positive consumer.
+- PHX-MASTER's latest `ROLE_ASSIGNMENTS.md` and `INTEGRATION_MATRIX.md` still pin #354 at stale `bbb209f55ddcd48f248eb8d700629db8754dc13a`; refresh to the current docs head.
+- Cleanup-first #266 remains open (0/7); this run does not claim its cross-role cleanup gate complete.
+- Financial #31/#32, safety #34 and witness #43 remain open release blockers. #239/#254/#283/#353 were revalidated and left untouched.
+- Private Drive registry `BLAZE_PROJECT_REGISTRY_v11_20261027.json` is not available through this runtime; no registry-derived migration or promotion occurred.
 
-The canonical ledger was appended (preserving its full prior history) and a narrow record was added at [2026-11-27-hw-blocking-poll-wait-harness-utc16.md](docs/handover/2026-11-27-hw-blocking-poll-wait-harness-utc16.md). The private Drive registry was not accessible in this runtime; no registry-derived promotion or migration occurred.
+Host behavior is **SIMULATED / CI VERIFIED** only. Physical GPIO/relay voltage/contact transient, real coin acceptor, electrical pulse/recovery, LittleFS power-loss, 150 power cuts, and 30-device/24-hour soak remain **NOT TESTED**. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+
+Canonical `CHANGE_LEDGER.md` was appended without truncation; the narrow handover is `docs/handover/2026-11-27-hw-blocking-poll-wait-harness-utc16.md`. The role checkpoint is recorded on #172 and linked from #177.
 
 ## NEXT EXACT ACTION
 
-Re-run `.github/workflows/blazepwifi-build.yml` on the post-source handover-synced PR head and inspect the exact validation job. Then request PHX-QA to reconcile deny-only assertions and PHX-CORE to publish the authenticated poll/receipt contract; keep coin and relay denied until those owners approve.
+PHX-MASTER must refresh #354's branch pins; PHX-QA must reconcile the two deny-only assertions; PHX-CORE must publish the authenticated poll/receipt contract. Keep coin/relay admission denied and the PR draft. No merge, flash, reset, live money, migration, signer, release tag or deployment.
 
 # CURRENT STATE — 2026-11-26 UTC14 — final poll-inhibit independent polarity evidence
 
