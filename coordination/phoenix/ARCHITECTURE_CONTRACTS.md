@@ -1,3 +1,15 @@
+## UTC16 contract gate — active v0.6 poll remains unsigned; deny-only candidate retained (2026-11-26T16:33:57Z)
+
+At active v0.6 HEAD 2fbd2475, CGI blob db58041c0575ad0a1101d99cb85403e03c8dcb22 emits poll fields ok, insert, target_nonce, expires and controller, but no response_sig. Member snapshot/auth/mutation endpoints do include response_sig; those signatures do not authenticate poll.
+
+Active v0.6 ESP32 blob 29f1125d52ff474a0d028ad41f7af201be1f0f9d and ESP8266 blob 12c4bb82b6fddafe813674a0b5f692c1d3634073 still read insert/target_nonce and call applyRemoteConfig. This is an unsigned poll trust boundary, not an accepted interface.
+
+HARDWARE #354 deny-only source blobs: ESP32 3edbe38da543ef118b287f3e04c1601692cfa99f; ESP8266 b45eb2d0bebfc0088e1c9f506c5e94c59cf054d9. They have no response_sig/config_revision and only a clearPending function declaration, no active callsites. QA assertions must not be satisfied by adding unsigned config consumption or clearing pending evidence. CORE owns the versioned authenticated register/poll and receipt/disposition contract; HARDWARE implements after approval; QA independently verifies both boards. Physical GPIO/relay/coin/power-cut acceptance NOT TESTED.
+
+HARDWARE #353 current head 5a5f319 has two exact-source remote-config revision lab failures and a Full poll-signature failure. This does not authorize weakening the interface boundary.
+
+---
+
 ## UTC13 evidence note — active-v0.6 relay/LED polarity and poll-inhibit lab (LAB ONLY; not production acceptance)
 
 At HARDWARE #354 source/test SHA `9bb46bb27e4be80f6506dbebf2846700efd4cb81` and final documentation HEAD `bbb209f55ddcd48f248eb8d700629db8754dc13a`, the Hardware-owned `poll_preflight_inhibit_lab.py` exercises four independent relay/LED polarity combinations on ESP8266 and ESP32, verifies both outputs are logical OFF after `denyRemoteControl()`, and preserves pending pulse/nonce/target evidence across a simulated 3500 ms synchronous HTTP wait. Focused run [#45836227697](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45836227697) and ESP32 Mbed TLS matrix [#45836227855](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45836227855) PASS.

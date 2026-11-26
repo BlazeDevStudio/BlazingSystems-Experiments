@@ -1,3 +1,24 @@
+## PHX-MASTER UTC16 — COE #26 exact-source migration hold (2026-11-26T16:33:57Z)
+
+Complete recursive trees, all truncated=false: HARDWARE #353 2,572 entries; HARDWARE #354 2,406; COE #26 286.
+
+| Route | Source | Source files | Destination files | Exact | Divergent | Source-only | Destination-only |
+|---|---|---:|---:|---:|---:|---:|---:|
+| ESP32 #353 | 5a5f319 | 16 | 1 | 0 | 1 | 15 | 0 |
+| ESP8266 #353 | 5a5f319 | 67 | 1 | 0 | 1 | 66 | 0 |
+| ESP32 #354 | bbb209f | 4 | 1 | 0 | 1 | 3 | 0 |
+| ESP8266 #354 | bbb209f | 8 | 1 | 0 | 1 | 7 | 0 |
+| Vendo tests #353 | 5a5f319 | 47 | 19 | 1 | 3 | 43 | 15 |
+| Vendo tests #354 | bbb209f | 150 | 19 | 2 | 2 | 146 | 15 |
+
+Firmware destination blobs: ESP32 3cc7ec54b476943dc04a8d1af5e2df5fe054e422; ESP8266 c8be98f72596681e36a3ad1f8939bf8046c96887. Neither matches either source candidate. #354 test import: 150 source vs 19 destination; 2 exact, 2 divergent, 146 source-only, 15 destination-only.
+
+SOURCE_INTAKE.json blob 1b9018ff944f7f673934d0fc2a97e0a0090d3f5f has 61 runtime rows recounting 46 identical / 15 derived; summary says 47 / 14. It pins source 6d4c9b4 and destination branch feature/pisowifi-cleanup-stabilization, not current #26 branch integration/ecosystem-nonproprietary-candidate-20261111. MIGRATION_MAP.md blob b54fc15d83bc2269de03db8aadd0e76259fd13d9 repeats those historical pins. HARDWARE_FIRMWARE_AUDIT.md blob 86c06e7574761465b80482430296eb712d985367 says firmware not copied, though both sketches exist in #26. PR #26 body claims P0-1 resolved, but SOURCE_INTAKE says hardware_tested=false, full_ci_tested=false, source_admission_complete=false.
+
+Missing destination counterparts: source root NOTICE.md, BlazeRentalLauncher LICENSE, Tabler LICENSE and COE root LICENSE. PisoWiFi MIT, QRCode and TailAdmin LICENSE/NOTICE counterparts match. Manifest remains DRAFT_REVIEW_ONLY; Master target null. No destination writes/moves.
+
+---
+
 ## PHX-MASTER scheduled UTC15 — exact source/destination tree and migration hold (2026-11-26T15:35Z)
 
 Complete recursive trees at exact current heads, all `truncated=false`: HARDWARE #353 2,572 entries; #354 2,406; COE #26 286; Experiments main 2,341.

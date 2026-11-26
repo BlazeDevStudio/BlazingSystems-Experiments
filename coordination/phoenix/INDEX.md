@@ -1,3 +1,14 @@
+## PHX-MASTER UTC16 — current exact-head audit (2026-11-26T16:33:57Z)
+
+- Report: [PHX_MASTER_UTC16_20261126_CURRENT_HEAD_HW353_COE26_PROVENANCE_AND_RELEASE_BASE_AUDIT.md](PHX_MASTER_UTC16_20261126_CURRENT_HEAD_HW353_COE26_PROVENANCE_AND_RELEASE_BASE_AUDIT.md)
+- Starting Master HEAD: 6bdb731b5ca5af1dfa7cb95134f8ed8ff71d96aa; main 6be5d19b; active v0.6 2fbd2475; legacy v0.5.3 aad3aade; COE main a6513ab4; COE #26 b382d233.
+- HARDWARE #353 exact head 5a5f319 has two remote-config revision lab failures and a Full poll-signature failure; #354 remains deny-only with QA Full/Native assertion failures.
+- Active v0.6 poll remains unsigned; CORE contract required before positive admission.
+- COE #26 firmware/test imports, intake counts, branch pins, firmware audit and license/NOTICE records conflict; destination remains frozen.
+- RELEASE #242/#291 have stale base ancestry and no exact-head CI. Private Drive v11/newer corrections NOT RECOVERED; Master Python suite NOT RUN. **PRODUCTION NO-GO.**
+
+---
+
 ## PHX-MASTER scheduled UTC15 — live owner CI and COE #26 provenance (2026-11-26T15:35Z)
 
 - Report: [PHX_MASTER_SCHEDULED_UTC15_20261126T153737Z_LIVE_OWNER_CI_COE26_PROVENANCE_AUDIT.md](PHX_MASTER_SCHEDULED_UTC15_20261126T153737Z_LIVE_OWNER_CI_COE26_PROVENANCE_AUDIT.md)

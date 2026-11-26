@@ -1,3 +1,20 @@
+## PHX-MASTER UTC16 — current disposition (2026-11-26T16:33:57Z)
+
+**Starting Master HEAD:** 6bdb731b5ca5af1dfa7cb95134f8ed8ff71d96aa. **PR #288:** OPEN / DRAFT / UNMERGED; 617 ahead / 1 behind main; 237 existing paths all Master-owned. UTC16 changes remain under coordination/phoenix/.
+
+- HARDWARE #353 5a5f319: two exact-source remote-config revision lab failures (exit 13 on ESP8266/ESP32) and Full poll-signature failure; handover stale.
+- HARDWARE #354 bbb209f: focused/Mbed TLS PASS; Full/Native fail QA assertions requiring config_revision and active clearPending calls. Preserve deny-only behavior.
+- Active v0.6 poll has no response_sig; firmware reads insert/target_nonce and calls applyRemoteConfig. CORE contract not approved.
+- COE #26 b382d233: firmware differs from both source candidates; tests incomplete; intake 46/15 conflicts with summary 47/14; branch pins and firmware audit conflict; license/NOTICE gaps remain.
+- RELEASE #242/#291 base branches advanced 22/13 commits beyond recorded pins; both mergeable=false and no exact-head CI.
+- COE #35 blocked by missing approved ULA /48 and Bubblewrap; COE #26 five workflows queued with zero jobs.
+
+Private Drive registry v11/newer corrections NOT RECOVERED; Library only surfaced v3-v7, no Drive connector. Master Python suite and verify_coordination.py NOT RUN because local git ls-remote failed DNS. Exact tree/blob and source-record audits were executed in the connected runtime, not repository tests.
+
+**Decision:** COE #26 FROZEN; cleanup #266 OPEN / 0-of-7; no subsystem or destination writes. **PRODUCTION NO-GO** pending independent signing/anti-rollback, crash-atomic financial state, reversible migration, QA, native acceptance, 150 power cuts, 30-device/24-hour soak and owner-authorized gates.
+
+---
+
 ## PHX-MASTER scheduled UTC15 — current disposition and blockers (2026-11-26T15:35Z)
 
 **Master coordination:** starting HEAD `780b9cdbefcc3c24d91b6e954960d76f627ac987`; current refs and owner CI were re-read. PR #288 remains OPEN / DRAFT / UNMERGED; all 236 existing paths are Master-owned. Current owner status: HARDWARE #353 has three exact-head failures; HARDWARE #354 has two QA assertion mismatches while preserving deny-only behavior; COE #26 remains frozen with firmware/test/license provenance conflicts; COE RELEASE #35 remains blocked by ULA authority and Bubblewrap.

@@ -1,3 +1,13 @@
+## PHX-MASTER UTC16 — exact route-pin reconciliation (2026-11-26T16:33:57Z)
+
+OWNERSHIP_ROUTES.json remains 11 routes, DRAFT_REVIEW_ONLY, source_ref f4e8a891 (historical merge base), destination candidate PR #26 at b382d233, PHX-MASTER target null.
+
+Current COE #26 branch is integration/ecosystem-nonproprietary-candidate-20261111 at b382d233. SOURCE_INTAKE.json and MIGRATION_MAP.md instead name destination branch feature/pisowifi-cleanup-stabilization and source commit 6d4c9b4. Those are different branch/source identities. The 61 runtime rows recount 46 identical / 15 derived, not summary 47 / 14. Until COE integration owner reconciles exact destination branch, source pin, firmware/test blobs and licenses, no migration route is eligible for move/copy staging.
+
+Master destination remains null. COE #26 stays frozen. No file was moved, copied, overwritten or cherry-picked.
+
+---
+
 ## PHX-MASTER UTC20 — route admission and stack hold — 2026-11-25T20:54Z
 
 Live \`OWNERSHIP_ROUTES.json\` remains blob \`e4db324315a1b3543fec17a148fbf960170fcb29\`: 11 routes, \`DRAFT_REVIEW_ONLY\`, PHX-MASTER source \`coordination/phoenix/\`, destination null. No route grants recursive copy or migration authority.

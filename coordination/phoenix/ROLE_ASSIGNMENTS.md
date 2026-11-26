@@ -1,3 +1,26 @@
+## PHX-MASTER UTC16 — current role heads and exact-head CI (2026-11-26T16:33:57Z)
+
+| Owner / PR | Exact HEAD | Current disposition |
+|---|---|---|
+| CORE #252 | c82705f2de865c89ab733b10efa84f26f56a5cc4 | Scoped build #42698139210 PASS; no financial acceptance. |
+| RENTAL #328 | 10fc200b6dbf470a95e679d3acc58aff4ab2a67f | API/auth/APK focused PASS; shared build #45622918468 FAIL. |
+| PISONET #255 | d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | Windows synthetic #42462978704 PASS; native COM NOT TESTED. |
+| HARDWARE #340 | f70f6af78c64ef86ba0f631faeb02b6cb6eb2725 | Six workflows PASS; Full #45747758154 = 26 successful jobs / 4 production skips. |
+| HARDWARE #353 | 5a5f31908acf88272fe890ca64f95255c35ed7aa | Relay #45852949294 + Quarantine #45852949605 fail exact-source revision lab (exit 13 on both boards); Full #45852949273 fails poll-signature validation. PR body stale at cb1787ac / ed2f77d. |
+| HARDWARE #354 | bbb209f55ddcd48f248eb8d700629db8754dc13a | Focused #45836227697 + Mbed TLS #45836227855 PASS; Full #45836227694 fails config_revision assertion; Native #45836227876 fails active clearPending assertion. Deny-only. |
+| QA #290 | 5c29d15994cee1279058f1eca12f2a3180704292 | Windows synthetic #43633486963 PASS; native COM NOT TESTED. |
+| QA #292 | 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | No exact-head PR runs. |
+| RELEASE #242 | 842abd8ab29042ccdd928c1332a94770dcb6c0c7 | Updated 16:30Z; no exact-head CI; base v0.6 advanced 22 commits; mergeable=false. |
+| RELEASE #291 | bf339a76964a1abe2412fac45392fe06a8e66418 | No exact-head CI; parent release branch advanced 13 commits; mergeable=false. |
+| COE CORE #45 | 9d76a134c1f6512aa40c20ec4d247306a71a8cce | Overlay/Shell #44295049727 + case guard #44295049903 PASS. |
+| COE INTERCON #49 | aeb8ff11b2f5db9a5f86280ab62ab988245f3919 | Stage 5.1 #44646341873 + case guard #44646341992 PASS; shared #44646341922 FAIL. |
+| COE RELEASE #35 | e1ad4fad1c234976ba76a34758d1ca993a897776 | Shared #45848921260: 255 PASS / 2 skipped, 10/10 ULA failures; sandbox #45848921270: 48/48 host PASS then Bubblewrap exit 125; case guard #45848921527 PASS. |
+| COE #26 | b382d233ff06c8791b1028bed3c617cc7b670d12 | Five workflows queued / zero jobs; frozen. |
+
+HARDWARE owns firmware, QA owns assertions, CORE owns authenticated poll/receipt contract, RELEASE owns #242/#291 ancestry and CI. Master made no subsystem source edits. See [UTC16 audit](PHX_MASTER_UTC16_20261126_CURRENT_HEAD_HW353_COE26_PROVENANCE_AND_RELEASE_BASE_AUDIT.md).
+
+---
+
 ## PHX-MASTER scheduled UTC15 — live role heads and exact-head CI (2026-11-26T15:35Z)
 
 **Master starting HEAD:** `780b9cdbefcc3c24d91b6e954960d76f627ac987`; branch `phoenix/master-coordination`. **PR #288:** OPEN / DRAFT / UNMERGED, 616 ahead / 1 behind `main`, merge base `f4e8a891`, 236 paths all under `coordination/phoenix/`.
