@@ -1,3 +1,9 @@
+## Latest PHX-MASTER UTC17 post-checkpoint refresh — 2026-11-26T17:52Z
+
+HARDWARE #353 current docs HEAD `f527b33c`, source/test SHA `44de55a0`; parent #352 `2fa3b7db`. The refreshed Hardware handover supersedes earlier stale pointers. Exact source/test Relay and Quarantine PASS; Full remains blocked by missing ESP8266 poll-signature check. New docs-head workflows #45871096480/#45871096516/#45871096425 are IN_PROGRESS. See [UTC17 audit](PHX_MASTER_UTC17_20261126_HW353_AC9E_HW354_FC842_COE26_PROVENANCE_AUDIT.md).
+
+---
+
 ## Latest PHX-MASTER checkpoint — scheduled UTC17 / 2026-11-26
 
 - [UTC17 live owner CI, Hardware #353/#354 current source/test heads, release ancestry and COE #26 provenance audit](PHX_MASTER_UTC17_20261126_HW353_AC9E_HW354_FC842_COE26_PROVENANCE_AUDIT.md)
