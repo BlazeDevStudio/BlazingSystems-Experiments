@@ -112,7 +112,7 @@ def validate_mbedtls_provider(source: str) -> None:
 
     signed = mask_non_code(extract_function(
         source,
-        'String signedBody(const String &action,const String &pulses,const String &target,const String &forcedNonce="")',
+        "String signedBody(const String &action",
     ))
     digest_at = signed.find("String digest=hexDigest(base);")
     deny_at = signed.find("if(!validSha256Hex(digest)) return String();")
@@ -123,7 +123,7 @@ def validate_mbedtls_provider(source: str) -> None:
 
     post_source = extract_function(
         source,
-        'String post(const String &action,const String &pulses="0",const String &target="",const String &forcedNonce="")',
+        "String post(const String &action",
     )
     post = mask_non_code(post_source)
     action_guard = re.search(
