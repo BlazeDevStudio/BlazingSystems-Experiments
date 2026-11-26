@@ -33,7 +33,7 @@ def _poll_call_matches(source: str):
 
 
 def _coin_post_matches(source: str):
-    pattern = re.compile(r'\\bpost\\s*\\(\\s*"coin"\\s*\\)')
+    pattern = re.compile(r'\bpost\s*\(\s*"coin"\s*\)')
     masked = mask_non_code(source)
     return [
         match for match in pattern.finditer(source)
@@ -46,7 +46,7 @@ def poll_guard_locations(source: str):
     masked_loop = mask_non_code(loop)
     if _coin_post_matches(loop):
         raise AssertionError("automatic coin POST remains in loop before authenticated receipt contract approval")
-    if re.search(r"\\bclearPending\\s*\\(", masked_loop):
+    if re.search(r"\bclearPending\s*\(", masked_loop):
         raise AssertionError("pending coin disposition remains active in loop before authenticated receipt contract approval")
     condition = re.search(
         r"if\s*\(\s*WiFi\.status\(\)\s*==\s*WL_CONNECTED\s*&&\s*"
@@ -279,7 +279,7 @@ def verify_board(name: str, path: Path):
         raise AssertionError(f"{name}: unguarded second-poll mutation was not rejected")
 
     # Failure injection: reintroducing an automatic coin POST must be rejected.
-    mutated_loop = loop.replace("delay(2);", 'post("coin");\\n    delay(2);', 1)
+    mutated_loop = loop.replace("delay(2);", 'post("coin");\n    delay(2);', 1)
     try:
         poll_guard_locations(mutated_loop)
     except AssertionError:
@@ -289,7 +289,7 @@ def verify_board(name: str, path: Path):
 
     # Failure injection: clearing a pending event without an authenticated
     # receipt/disposition contract must be rejected.
-    mutated_loop = loop.replace("delay(2);", "clearPending();\\n    delay(2);", 1)
+    mutated_loop = loop.replace("delay(2);", "clearPending();\n    delay(2);", 1)
     try:
         poll_guard_locations(mutated_loop)
     except AssertionError:
