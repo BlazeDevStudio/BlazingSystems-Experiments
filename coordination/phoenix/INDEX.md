@@ -1,3 +1,17 @@
+## Latest PHX-MASTER checkpoint — scheduled UTC10 / 2026-11-26
+
+- [UTC10 exact owner-head and CI reconciliation](ROLE_ASSIGNMENTS.md)
+- [UTC10 exact per-owner source-tree, test and license provenance](INTEGRATION_MATRIX.md)
+- [UTC10 governance, registry access and release blockers](AUDIT_SUMMARY.md)
+- [Full UTC10 audit report](PHX_MASTER_UTC10_20261126_HW354_HEAD_DRIFT_COE26_ROUTE_REAUDIT_COE35_RELEASE_GATE.md)
+- Starting Master HEAD: 57b7dc10c95579edf56be6470166e3cb9293a29c; Experiments main 6be5d19b; development aad3aade; COE main a6513ab4.
+- HARDWARE #354 actual head 046bced7; PR body stale at e7f63da2; native QA assertion fails and Full handover-freshness validation fails while target jobs remain in progress.
+- COE RELEASE #35 head f66ac305; site ULA /48 and Bubblewrap remain blocked.
+- COE #26 remains FROZEN; 11-route manifest remains DRAFT_REVIEW_ONLY; no destination writes.
+- Cleanup #266 remains 0/7; private Drive v11 registry NOT_RECOVERED; **PRODUCTION NO-GO**.
+
+---
+
 ## Latest PHX-MASTER checkpoint — scheduled UTC09 / 2026-11-26
 
 - [UTC09 exact owner-head and CI reconciliation](ROLE_ASSIGNMENTS.md)

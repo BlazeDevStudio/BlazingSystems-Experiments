@@ -1,3 +1,27 @@
+## PHX-MASTER UTC10 — exact per-owner tree and COE #26 route revalidation
+
+All owner-source recursive trees and COE #26 returned truncated=false. Exact tree SHAs, route-by-route blob/mode comparison, test identity and license/NOTICE inventory are in the [UTC10 audit](PHX_MASTER_UTC10_20261126_HW354_HEAD_DRIFT_COE26_ROUTE_REAUDIT_COE35_RELEASE_GATE.md).
+
+| Owner source | Tree SHA | Entries |
+|---|---|---:|
+| CORE #252 | 47244f4a86cf38911d33cd04e9927cefb46a393e | 2,394 |
+| RENTAL #328 | c25b705412e6f31a2cce457a5430d6e5cb80c050 | 2,412 |
+| PISONET #255 | de2534cf0416854ef9a9d09d7079c8c98fce7301 | 2,411 |
+| HARDWARE #340 | 21b59155f8e88fecff58b5862d2830796c187251 | 2,372 |
+| HARDWARE #353 | 7cea8fde4b705dbbf37aa600503a20ad819e1c6c | 2,572 |
+| HARDWARE #354 | f9ff27480aad325c1e7984dc770603e54b1d574a | 2,404 |
+| QA #290 | 5b144b573c4c26ccc6ba142f19a7ad2bc196b254 | 2,411 |
+| RELEASE #291 | 60ceadb25830ed473473bf108724c09e412e7f73 | 2,426 |
+| COE #26 | 8a7d4cf81d7227118b876c1138dd2da12345fefa | 286 entries / 207 blobs |
+
+Route counts: CORE rootfs 20/20 (13 exact, 7 divergent), CGI 1/1 divergent; RENTAL Android 994/8 (no common path), Rental Server 12/4 (one common divergent); PISONET SoftTimer 68/47 (38 common, 27 exact, 11 divergent, 30 source-only, 9 destination-only); HARDWARE #340 ESP32/ESP8266 9/1 and 6/1 (both divergent); #353 16/1 and 67/1 (both divergent); #354 4/1 and 8/1 (both divergent); QA tests 145/19 (4 common, 2 exact, 2 divergent, 141 source-only, 15 destination-only); RELEASE workflow 1/1 divergent. Standalone Rental remains manual-file-mapping-required.
+
+Product MIT, QRCode and TailAdmin LICENSE/NOTICE counterparts match exactly. Source root NOTICE, Tabler LICENSE and BlazeRentalLauncher LICENSE are missing from the destination; COE root LICENSE is absent.
+
+The ownership manifest remains 11 routes / DRAFT_REVIEW_ONLY / historical source_ref / null Master target. **COE #26 remains FROZEN; no destination writes or migration staging.**
+
+---
+
 ## PHX-MASTER UTC09 — exact current-owner route matrix and COE #26 provenance (2026-11-26T10:00:41.993Z)
 
 **Destination:** COE integration PR #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`, base COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`, OPEN / DRAFT, 205 changed files, 286 recursive-tree entries / 207 blobs. All inspected recursive trees were non-truncated. Comparisons use exact relative paths and Git blob SHA + mode at each owner PR head; these are evidence of divergence, not permission to copy.

@@ -1,3 +1,21 @@
+## PHX-MASTER UTC10 — current blockers and governance
+
+- HARDWARE #354 actual head 046bced7; PR body still pins e7f63da2. Current native synthetic fails the QA-owned active-clear assertion; Full validation is in progress but its handover-freshness job failed. HARDWARE must refresh the handover/PR body; QA must correct the assertion without weakening deny-only behavior.
+- COE RELEASE #35 exact head f66ac305: 247 shared tests, 245 passed / 2 skipped, then 10/10 appliance profiles fail closed because approved site-scoped ULA /48 authority is missing. Sandbox host preflight is 42/42, but Bubblewrap is unavailable (exit 125). No prefix or fallback was invented.
+- COE #26 remains FROZEN: five workflows queued with zero jobs; source/test/license parity incomplete. No staging or destination writes.
+- Cleanup #266 remains OPEN / 0 of 7. Bounded Hardware work is not global cleanup completion.
+- Experiments main/development and COE main report protected=false; both rulesets endpoints return empty arrays. Master slash-branch protection flag could not be read; effective required-check enforcement remains NOT ESTABLISHED.
+- Experiments AGENTS.md was read. COE AGENTS.md returned 404; COE README is only a title.
+- Private Drive v11 and newer corrections remain NOT_RECOVERED: no Drive connector was exposed and accessible Library search did not return the canonical file. No older snapshot substituted; no private content or IDs published.
+- Available automation inventory surfaced Master, Hardware and Release continuations, but not the exact title “Blaze Production Continuation”. CORE was not touched or started by Master.
+- Master exact-head workflow runs: none. Master Python suite and verify_coordination.py: NOT RUN because no authenticated local checkout or Master runner was available.
+
+**Next:** QA corrects deny-only tests; HARDWARE refreshes #354 and reruns Full; CORE publishes authenticated register/poll and receipt/disposition contract; RELEASE/INFRA obtain approved ULA authority and Bubblewrap; COE owner reconciles #26 per-file provenance; registry custodian restores v11; repository admin establishes verifiable branch protection.
+
+**PRODUCTION NO-GO.** Independent protected signing/anti-rollback witness, crash-atomic financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized release remain mandatory.
+
+---
+
 ## PHX-MASTER UTC09 — live audit summary and owner actions (2026-11-26T10:00:41.993Z)
 
 - Master starting HEAD `59cc5ca71e615fa9a732ad3b8a26fbf0762388b2`; Experiments main `6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5`; development `aad3aade72c1156eecba1fed30907c6d0283b2c5`; v0.6 comparison base `2fbd2475e9f54878c316fa7cea2f228386b0e859`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`. PR #288 OPEN / DRAFT / UNMERGED, 231 existing coordination-only paths, 606 ahead / 1 behind main, merge base `f4e8a891`.

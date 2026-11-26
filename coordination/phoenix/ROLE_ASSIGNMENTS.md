@@ -1,3 +1,29 @@
+## PHX-MASTER UTC10 — live role-head correction and CI status
+
+Starting Master / PR #288 HEAD: 57b7dc10c95579edf56be6470166e3cb9293a29c; Experiments main 6be5d19b; development aad3aade; COE main a6513ab4. PR #288 OPEN / DRAFT / UNMERGED, 607 ahead / 1 behind, merge base f4e8a891, 232 changed paths all under coordination/phoenix/.
+
+| Owner / PR | Exact head | Exact-head CI / disposition |
+|---|---|---|
+| CORE #252 | c82705f2 | Scoped build [#42698139210](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42698139210) PASS; no authenticated poll or financial acceptance. |
+| RENTAL #328 | 10fc200b | Focused API/auth/APK PASS; shared [#45622918468](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45622918468) FAIL. |
+| PISONET #255 | d01fd164 | Synthetic Windows [#42462978704](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42462978704) PASS; native COM NOT TESTED. |
+| HARDWARE #340 | f70f6af7 | Six exact-head workflows PASS; Full [#45747758154](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45747758154) 26 jobs PASS / 4 production skips. |
+| HARDWARE #353 | cb1787ac | Quarantine/Relay PASS; Full [#45756942184](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45756942184) FAIL at inherited poll-signature parity. |
+| HARDWARE #354 | 046bced7 | PR body stale at e7f63da. Focused [#45802963675](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45802963675) PASS; native [#45802963561](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45802963561) FAIL at QA active-clear assertion; Mbed matrix [#45802963530](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45802963530) PENDING; Full [#45802963678](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45802963678) IN_PROGRESS with handover-freshness validation failure. |
+| QA #290 | 5c29d159 | Synthetic Windows PASS; native COM NOT TESTED. |
+| QA #292 | 75a3f66d | No exact-head PR runs/statuses. |
+| RELEASE #291 | bf339a76 | No exact-head PR runs/statuses. |
+| COE RELEASE #35 | f66ac305 | Case guard PASS; shared [#45800298285](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45800298285) 245/247 tests PASS then 10/10 ULA failures; sandbox [#45800298258](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45800298258) 42/42 host preflight PASS then Bubblewrap exit 125. |
+| COE CORE #45 | 9d76a134 | Overlay/Shell and case guard PASS; synthetic only. |
+| COE INTERCON #49 | aeb8ff11 | Stage 5.1/case guard PASS; shared CI FAIL at ESP32 Mbed TLS compatibility. |
+| COE integration #26 | b382d233 | Five workflows QUEUED, zero jobs; FROZEN / DRAFT_REVIEW_ONLY. |
+
+CORE, RENTAL, PISONET, HARDWARE, QA and RELEASE retain their source branches. No subsystem source was edited by Master.
+
+[UTC10 complete exact-head and provenance audit](PHX_MASTER_UTC10_20261126_HW354_HEAD_DRIFT_COE26_ROUTE_REAUDIT_COE35_RELEASE_GATE.md)
+
+---
+
 ## PHX-MASTER UTC09 — exact owner-head and CI reconciliation (2026-11-26T10:00:41.993Z)
 
 **Scope:** PHX-MASTER only. No subsystem source branch or COE destination path was changed. Starting Master branch / PR #288 HEAD: `59cc5ca71e615fa9a732ad3b8a26fbf0762388b2`; Experiments main `6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5`; development `aad3aade72c1156eecba1fed30907c6d0283b2c5`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`. PR #288 was OPEN / DRAFT / UNMERGED with 231 existing changed paths, all under `coordination/phoenix/`; main comparison 606 ahead / 1 behind, merge base `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`.
