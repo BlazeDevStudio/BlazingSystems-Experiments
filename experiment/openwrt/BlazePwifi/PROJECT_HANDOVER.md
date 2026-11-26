@@ -1,3 +1,29 @@
+## CURRENT STATUS — 2026-11-27 UTC17 — focused and target builds verified; integrated validation blocked
+
+**Role:** PHX-HARDWARE · **Issue:** [#177](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/177) · **Draft PR:** [#354](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/354)  
+**Branch:** `phoenix/hw-active-v06-poll-intake-deny-20261126-utc05` · **Base:** `blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859`  
+**Source/test SHA:** `145aac9607682071e2db05944a6f9db5aa06e524` · **Tested docs head:** `fcedf8a8c90128a33983c77f853abbbc7d95e258`  
+**PR remains OPEN / DRAFT / UNMERGED.**
+
+### Verified Hardware-owned change
+
+The previous poll-inhibit lab claimed a 3500 ms HTTP wait but did not execute the poll block or advance time. The new source-extracted harness executes the actual poll block from both board sketches, models the configured 3500 ms synchronous call, injects an 80 ms coin-line pulse, and verifies relay/LED OFF, denied admission, zero sampling during the block, zero accepted pulses, pending evidence preservation, and four independent relay/LED polarity combinations. Missing pre-poll deny and relay-OFF polarity-borrow mutations are rejected.
+
+- Focused [#45862938002](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45862938002), job `140058369164`, PASS; focused PR [#45862948688](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45862948688), job `140058405613`, PASS.
+- Valid RED [#45862737466](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45862737466), job `140057673814`, and [#45862745148](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45862745148), job `140057700491`, failed at the intended wait-duration assertion. The first fixture compile error [#45862503824](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45862503824) is disclosed but excluded.
+- Full [#45863473436](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45863473436): handover freshness and CI-0701 PASS; all 14/14 target/platform jobs PASS; validation fails at QA-owned `tests/controllers.sh:21` requiring `config_revision` in both deny-only sketches.
+- Native [#45863473523](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45863473523), job `140060214162`, fails at QA-owned active `clearPending(true/false)` callsite assertion.
+- ESP32 Mbed TLS matrix [#45863473433](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45863473433): source-contract, core 3.3.13 and core 4.0.0 all PASS. Clean A/B image hashes match: 3.3.13 `c28a935b454dec63bae8dcc26db73e919cc3639795a805de422ab73cd0a6c4d5`; 4.0.0 `b9baf73c04037964bec33c65c620eb8848b2471f3c892561113f936a0d990587`.
+
+### Cross-role blockers and release boundary
+
+PHX-QA owns the two assertion reconciliations; PHX-CORE owns the authenticated register/poll and receipt/disposition contract; PHX-MASTER must refresh #354's stale role/matrix pin from `bbb209f55ddcd48f248eb8d700629db8754dc13a`. Cleanup-first #266 remains open (0/7); financial #31/#32, safety #34 and witness #43 remain open. PRs #239/#254/#283/#353 were revalidated and not modified.
+
+No production `.ino`, shared API, finance, receipt, signer, witness, migration, QA test, or other-role source changed. Host behavior is SIMULATED / CI VERIFIED only. Physical GPIO/relay, real coin acceptor, electrical recovery, LittleFS power loss, 150 power cuts and 30-device/24-hour soak remain NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO. Private Drive registry v11 is not accessible in this runtime.
+
+The canonical `CHANGE_LEDGER.md` and narrow UTC16 handover were updated without truncating history. Keep coin/relay admission denied; no merge, flash, reset, live money, migration, signer, release tag or deployment.
+
+
 ## CURRENT STATUS — 2026-11-27 UTC16 — blocking-poll wait harness CI VERIFIED; integrated gates blocked
 
 **Role:** PHX-HARDWARE · **Issue:** [#177](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/177) · **Draft PR:** [#354](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/354)  
