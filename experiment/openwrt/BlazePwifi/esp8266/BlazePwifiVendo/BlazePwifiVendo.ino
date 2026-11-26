@@ -38,7 +38,7 @@ Config cfg;
 size_t boundedStringLength(const char *value,size_t capacity){
   if(!value) return capacity;
   for(size_t i=0;i<capacity;i++){
-    if(value[i]=='\\0') return i;
+    if(value[i]=='\0') return i;
   }
   return capacity;
 }

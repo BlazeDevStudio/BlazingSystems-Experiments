@@ -51,6 +51,7 @@ def assert_source_contract(source: str) -> None:
     )
     require("return capacity;" in length_fn, "unterminated input must return the capacity sentinel")
     require("strlen(" not in length_fn, "bounded length must not call unbounded strlen")
+    require(r"value[i]=='\0'" in length_fn, "bounded length must stop at the first NUL byte")
 
     config_validator = mask_non_code(extract_function(source, "bool configStringsTerminated("))
     legacy_validator = mask_non_code(extract_function(source, "bool configV1StringsTerminated("))
@@ -179,6 +180,10 @@ def main() -> None:
         source.replace("configV1StringsTerminated(oldCfg)", "true", 1),
     )
     expect_rejected(
+        "nul-terminator-comparison-removed",
+        source.replace(r"value[i]=='\0'", r"value[i]=='X'", 1),
+    )
+    expect_rejected(
         "unbounded-ap-password-length",
         source.replace(
             "boundedStringLength(cfg.apPass,sizeof(cfg.apPass))",
@@ -191,16 +196,21 @@ def main() -> None:
         cpp = Path(directory) / "config_integrity.cpp"
         binary = Path(directory) / "config_integrity"
         cpp.write_text(cxx_harness(source), encoding="utf-8")
-        subprocess.run(
-            [
-                "g++", "-std=c++11", "-Wall", "-Wextra", "-Werror",
-                "-fsanitize=address,undefined", "-fno-omit-frame-pointer",
-                str(cpp), "-o", str(binary),
-            ],
-            check=True,
-            capture_output=True,
-            text=True,
-        )
+        try:
+            subprocess.run(
+                [
+                    "g++", "-std=c++11", "-Wall", "-Wextra", "-Werror",
+                    "-fsanitize=address,undefined", "-fno-omit-frame-pointer",
+                    str(cpp), "-o", str(binary),
+                ],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+        except subprocess.CalledProcessError as exc:
+            raise AssertionError(
+                "sanitizer harness compilation failed:\n" + (exc.stderr or exc.stdout)
+            ) from exc
         result = subprocess.run(
             [str(binary)],
             check=True,
