@@ -1,3 +1,15 @@
+## PHX-MASTER UTC00 — current exact-head Hardware / COE #26 provenance audit — 2026-11-26T00:33Z
+
+[Exact-head Hardware #349 source/test, #352/#353/#340 ancestry, active v0.6 response-auth boundary, and COE #26 migration provenance](PHX_MASTER_UTC00_20261126_EXACT_HEAD_HARDWARE_COE26_PROVENANCE_AUDIT.md)
+
+- #349 Full #45724609215 FAILS at Missing poll signature check; #352 is 3 commits behind current #349; #353 is 11 commits behind current #352.
+- #340 remains 4 commits behind current #283 despite Full PASS; #348 Full and COE #49 shared ESP32 compile fail at missing `mbedtls/sha256.h`.
+- Exact #349→#26 trees: 2,552 / 286 entries; 76 / 2 board blobs; 64 / 0 board-local Python helpers; 47 / 19 mapped tests (1 exact, 3 divergent, 43 source-only, 15 destination-only); no Hardware intake/map.
+- COE #35: 240 tests PASS / 2 skips then 10/10 ULA fail-closed; sandbox 42/42 host PASS then Bubblewrap absent / exit 125; case guard PASS.
+- Active v0.6 register/poll responses remain unsigned; COE #26 keyless response-auth bypass remains. Candidate FROZEN; no staging or destination writes.
+- Cleanup #266 OPEN / 0-of-7; private Drive registry v11/newer corrections NOT_RECOVERED. **PRODUCTION NO-GO.**
+
+---
 ## PHX-MASTER UTC23 — #348 Mbed TLS 4 / COE release gate reconciliation — 2026-11-25T23:38Z
 
 [UTC23 exact-head Hardware #348 helper vs ESP32 core 4.0.0 Full build, #340/#352/#353 ancestry, COE #35 ULA/Bubblewrap and COE #49 shared compile](PHX_MASTER_UTC23_20261125_HW348_MBEDTLS4_COE35_EXACT_HEAD_AUDIT.md)

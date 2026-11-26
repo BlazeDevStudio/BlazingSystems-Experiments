@@ -1,3 +1,20 @@
+## PHX-MASTER UTC00 — current Hardware ancestry, response-auth and COE #26 provenance — 2026-11-26T00:33Z
+
+| Integration edge | Exact observation | Gate / owner |
+|---|---|---|
+| HARDWARE #349 → #352 → #353 | Current #349 `1a2ecf5` / source-test `9dc0ae39`; #352 `0e984e26` is 43 ahead / 3 behind current #349 (merge base `2a5c997`); #353 `dc9cf634` is 17 ahead / 11 behind #352 (merge base `6d743ae`). #349 Full #45724609215 fails at Missing poll signature check. | HARDWARE owns stack reconciliation and current-head PR/handover evidence; Master did not rebase or retarget. |
+| HARDWARE #340 → #283 | #340 `547148ee` is 43 ahead / 4 behind current #283 `4dd0b01b` (merge base `88581eef`); #340 Full #45708073607 passes. | HARDWARE owns ancestry refresh; passing Full does not close the stale-parent edge. |
+| HARDWARE #348 / COE #49 | #348 focused helper PASS but Full #45716221609 fails inherited ESP32 Arduino core 4.0.0 include `mbedtls/sha256.h`; COE #49 shared #44646341922 fails on the same header. | HARDWARE/RELEASE must approve the Mbed TLS 4 provider/toolchain path; no silent port by Master. |
+| Active v0.6 poll/register producer-consumer | Exact active v0.6 blobs ESP32 `29f1125d`, ESP8266 `12c4bb82`, CGI `db58041c`: CGI poll/register body lacks `response_sig`; both sketches consume `insert` / `target_nonce` and call `applyRemoteConfig()` on register/poll responses. | P0: CORE owns canonical response schema and golden vectors; HARDWARE owns fail-closed consumer; QA owns independent negative/positive vectors. |
+| COE #26 keyless candidate | Current destination ESP32 `3cc7ec54` and ESP8266 `c8be98f7` initialize `sigOk=true` and only verify inside a nonempty-key branch; setup allows empty key. | P0: candidate remains FROZEN; no destination writes or migration staging. CORE/HARDWARE/QA own correction and review. |
+| Current #349 → COE #26 exact tree | Source/test `9dc0ae39` tree `3e1e70d9` (2,552 entries, non-truncated); destination #26 `b382d233` tree `8a7d4cf8` (286 entries, non-truncated). Board source 76 blobs / destination 2; both destination sketches diverge; 64 source board-local Python helpers / zero destination. | Migration provenance incomplete; do not copy, move, overwrite, cherry-pick or propose staging. |
+| Test identity | Source `tests/` 47 files vs COE `Pisowifi/tests/` 19 files: 4 same-relative-path matches; 1 exact (`portal.sh`), 3 divergent (`config.sh`, `integration.sh`, `security.sh`), 43 source-only, 15 destination-only. `Hardware/tests/` contains only one script. | QA/COE owners must complete per-file test mapping and exact-head destination CI before any migration proposal. |
+| License / intake provenance | Source product `LICENSE` and root `NOTICE.md` exist; COE #26 has no root counterparts. No Hardware `SOURCE_INTAKE` / `MIGRATION_MAP` exists; only PisoWiFi intake/map are present and are not Hardware provenance. | COE integration owner must supply exact blob/mode/license/test provenance. Candidate remains FROZEN. |
+| COE RELEASE #35 | Final head `2f87287f`, source/test `781a7ad5`: 240 tests PASS / 2 skips, then 10/10 ULA profiles fail closed; sandbox 42/42 host tests PASS then Bubblewrap absent / exit 125; case guard PASS. | RELEASE/INFRA/CORE must provide approved site-scoped RFC 4193 ULA /48 authority and authorized Bubblewrap runner; no release admission. |
+
+No shared response schema, crypto provider, financial state or migration authority was approved. No source move or destination write was performed. Green focused CI is not a substitute for exact-head Full validation, independent QA or hardware acceptance.
+
+---
 ## PHX-MASTER UTC23 — exact dependency and evidence-boundary matrix — 2026-11-25T23:38Z
 
 | Integration edge | Exact observation | Gate / owner |

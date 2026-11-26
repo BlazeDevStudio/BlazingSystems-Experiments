@@ -1,3 +1,17 @@
+## PHX-MASTER UTC00 — exact-head role CI and COE #26 source-provenance recheck — 2026-11-26T00:33Z
+
+Master completed a current-head audit of the active Hardware #349 source/test update, its #352/#353 ancestry, the COE #35 release-owned correction, the active v0.6 poll/register boundary and the exact #349→COE #26 candidate tree. Only Master-owned coordination documents changed; no subsystem source or COE destination path changed.
+
+- HARDWARE #349 current Full [#45724609215](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45724609215) fails at `Missing poll signature check`; its new source/test change is a CRLF C++ token-normalizer fix, not a firmware authentication fix.
+- HARDWARE stack remains stale: #352 is 43 ahead / 3 behind current #349; #353 is 17 ahead / 11 behind #352; #340 is 43 ahead / 4 behind #283. Owner-controlled reconciliation only.
+- COE #26 exact source/destination trees are 2,552 / 286 entries. Hardware source has 76 board blobs and 64 Python helpers versus 2 divergent destination sketches and no helpers. Tests, licenses, and Hardware intake provenance remain incomplete.
+- COE #35 current final head `2f87287f`: 240 tests PASS / 2 skips before 10/10 ULA profiles fail closed; 42/42 sandbox host tests PASS before missing Bubblewrap / exit 125; case guard PASS.
+- Active v0.6 still emits unsigned register/poll responses consumed by both boards; COE #26 retains a keyless `sigOk=true` bypass. P0 response-auth gate remains open.
+- Cleanup #266 OPEN / 0-of-7; ownership manifest 11 routes / `DRAFT_REVIEW_ONLY` / Master target null; private Drive registry v11/newer corrections NOT_RECOVERED.
+
+Full report: [UTC00 exact-head Hardware / COE #26 provenance audit](PHX_MASTER_UTC00_20261126_EXACT_HEAD_HARDWARE_COE26_PROVENANCE_AUDIT.md). **PRODUCTION NO-GO.**
+
+---
 ## PHX-MASTER UTC23 — exact-head Hardware / COE release audit — 2026-11-25T23:38Z
 
 Committed a source-grounded coordination update for the current #348 helper and the cross-repository Mbed TLS 4 build boundary. #348's focused native helper run #45716221522 PASS; its exact-head Full build #45716221609 FAILS at the inherited ESP32 application include `mbedtls/sha256.h` under Arduino core 4.0.0. The canonical Hardware handovers still record pre-sync #348 head/run evidence and need an owner update. #340 Full passes but is 43 ahead / 4 behind current #283; #353 is 17 ahead / 11 behind current #352 and has no exact-head runs. COE #35 has 238 tests PASS / 2 skips before 10/10 ULA profile fail-closed results; its sandbox has 42/42 host tests PASS then blocks because `bwrap` is missing. COE #49 shared ESP32 compile fails at the same missing Mbed TLS header. COE #26 remains FROZEN.
