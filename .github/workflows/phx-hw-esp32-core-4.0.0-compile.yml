@@ -7,11 +7,6 @@ on:
       - 'experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino'
       - 'experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/mbedtls_sha256_compat_lab.py'
       - '.github/workflows/phx-hw-esp32-core-4.0.0-compile.yml'
-  pull_request:
-    paths:
-      - 'experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino'
-      - 'experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/mbedtls_sha256_compat_lab.py'
-      - '.github/workflows/phx-hw-esp32-core-4.0.0-compile.yml'
   workflow_dispatch:
 
 permissions:
@@ -65,8 +60,16 @@ jobs:
           arduino-cli compile --warnings all --fqbn esp32:esp32:esp32 \
             --output-dir "$output" \
             experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32
-          binary="$(find "$output" -type f -name '*.bin' -print -quit)"
+          find "$output" -type f -name '*.bin' -printf '%f\n' | sort
+          binary="$(find "$output" -type f -name '*.ino.bin' -print -quit)"
+          if [ -z "$binary" ]; then
+            binary="$(find "$output" -type f -name '*.bin' \
+              ! -name '*.bootloader.bin' \
+              ! -name '*.partitions.bin' \
+              ! -name '*.merged.bin' -print -quit)"
+          fi
           test -n "$binary"
           test -s "$binary"
+          printf 'FIRMWARE_BIN=%s\n' "$binary"
           sha256sum "$binary"
           printf '%s\n' "ARDUINO_ESP32_CORE=4.0.0" "SIMULATED_ONLY=1" "PHYSICAL_ACCEPTANCE=0"
