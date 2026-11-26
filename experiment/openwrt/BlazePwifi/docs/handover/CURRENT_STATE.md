@@ -103,6 +103,8 @@ Private Drive registry v11 and hourly signal YAML unavailable; no older registry
 
 Request QA/CORE/Master reconciliation as above; keep #355 DRAFT, parent #354 unchanged, and coin/relay admission denied. Do not add a dummy `config_revision` or consume the startup register response without the approved contract.
 
+Fresh exact-head Full verification is now required after this canonical handover sync. Earlier Full runs #45887518479 and #45887507847 were cancelled by later documentation-only commits; do not count them. Mbed TLS matrix #45886748407 is now fully PASS (source contract plus ESP32 core 3.3.13 and 4.0.0). Verify the new Full run's handover gate and target jobs, then update GitHub checkpoints without further source/doc commits in this activation.
+
 
 # CURRENT STATE — 2026-11-27 UTC18 — focused and target builds CI verified; Full validation blocked by deny-only QA assertions
 
