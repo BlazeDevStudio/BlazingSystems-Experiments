@@ -34,15 +34,15 @@ Static repository assertions passed: lock JSON parses; both core versions and al
 
 The workflow still preserves HARDWARE's existing pin `7da74f9d1768a42fc6c15be368eeddae29035d4f` / sketch blob `c07aba7d518ef7eb5d536aafdd77ef6193e676cb`. HARDWARE/MASTER must approve the canonical source SHA/blob before RELEASE refreshes them. No hardware source or sketch was changed.
 
-PR #291 is nine commits behind its advanced #242 base. No rebase, retarget, force-push or merge was performed; MASTER owns stack reconciliation.
+PR #291 compares 867 commits ahead / 9 behind the live #242 head (merge base remains 734b89d9); it has 36 changed paths. The accumulated stack includes inherited non-RELEASE paths such as BlazePwifi project handovers/change ledger and SoftTimer PowerShell tests. Those paths were not edited in this activation. No rebase, retarget, force-push or merge was performed; MASTER owns stack reconciliation.
 
 ## Live control plane and provenance
 
-- MASTER #288: OPEN / DRAFT; 11 ownership routes remain DRAFT_REVIEW_ONLY; PHX-RELEASE route is reimplementation-review.
+- MASTER #288: OPEN / DRAFT; [OWNERSHIP_ROUTES.json](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/blob/3b7198d1d1ddc1651f95bb8065253ba8e68ae46b/coordination/phoenix/OWNERSHIP_ROUTES.json) has 11 routes and remains DRAFT_REVIEW_ONLY. The explicit PHX-RELEASE route is only `.github/workflows/blazepwifi-build.yml` → `.github/workflows/pisowifi-ci.yml`, kind `reimplementation-review`; the new compatibility workflow/lock remain draft release work under the MASTER assignment, not a migration or merge.
 - Cleanup-first #266: OPEN, 0/7 tracks complete; RELEASE track remains bounded to PR #242 build/version/manifest/signing configuration.
 - PR #242 head: `a7e27fe50e13326a7258bbaed1388594141ddda3`; its UTC03 SoftTimer handover records no exact-head Actions for the publisher admission change.
 - PR #291 remains OPEN / DRAFT / UNMERGED.
-- COE #26 remains FROZEN; COE #31 and #35 remain unmerged draft packaging work. No COE writes or subsystem changes.
+- COE #26 remains FROZEN with five queued workflows and zero jobs. COE #31 exact runs: shared/board validation [#44222517238](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44222517238) PASS (ESP32 and ESP8266 compile jobs PASS), case-collision [#44222517258](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44222517258) PASS, sandbox [#44222517263](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/44222517263) FAIL at unprivileged Bubblewrap namespace preflight. COE #35: shared [#45742049762](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45742049762) FAIL at all-profile admission (ULA authority missing; board builds skipped), sandbox [#45742051077](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45742051077) FAIL because Bubblewrap is unavailable (namespace/package tests skipped), case-collision [#45742049684](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/45742049684) PASS. No COE writes or subsystem changes.
 - The actual private `BLAZE_PROJECT_REGISTRY_v11_20261027.json` was not recovered. Only an earlier checkpoint referencing v11 was surfaced; it was not substituted for the registry. No private contents or identifiers were copied into GitHub.
 
 ## Next owner actions
