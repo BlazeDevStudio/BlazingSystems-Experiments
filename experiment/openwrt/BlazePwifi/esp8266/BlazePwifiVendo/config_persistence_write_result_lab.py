@@ -160,14 +160,21 @@ Config cfg{};
 FakePreferences prefs;
 """ + save + r"""
 int main() {
-    prefs.fail_key = "server";
-    if (saveConfig()) return 1;
-    if (prefs.writes != 13) return 2;
+    const char *keys[] = {
+        "ssid", "pass", "server", "key", "id", "coinpin", "ledpin",
+        "relaypin", "coinlow", "relayhi", "ledhi", "debounce", "groupms"
+    };
+    for (const char *key : keys) {
+        prefs.fail_key = key;
+        prefs.writes = 0;
+        if (saveConfig()) return 1;
+        if (prefs.writes != 13) return 2;
+    }
     prefs.fail_key.clear();
     prefs.writes = 0;
     if (!saveConfig()) return 3;
     if (prefs.writes != 13) return 4;
-    std::cout << "ESP32_PREFERENCES_WRITE_FAILURE_PROPAGATED_PASS writes=13/13\n";
+    std::cout << "ESP32_PREFERENCES_WRITE_FAILURE_MATRIX_PASS cases=13 writes=13/13\\n";
     return 0;
 }
 """
