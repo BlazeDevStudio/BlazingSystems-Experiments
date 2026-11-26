@@ -194,33 +194,37 @@ void writeLogical(int pin, bool on, bool activeHigh) {
 """ + apply_fn + "\n" + deny_fn + r"""
 
 int main() {
-    for (int polarity = 0; polarity < 2; ++polarity) {
-        controllerEnabled = true;
-        coinEnabled = true;
-        relayEnabled = true;
-        ledEnabled = true;
-        insertMode = true;
-        fsReady = true;
-        pendingReady = false;
-        runRelayActiveHigh = (polarity != 0);
-        runLedActiveHigh = (polarity != 0);
-        pendingPulses = 3;
-        pendingNonce = "pending-nonce";
-        pendingTarget = "pending-target";
+    for (int relayPolarity = 0; relayPolarity < 2; ++relayPolarity) {
+        for (int ledPolarity = 0; ledPolarity < 2; ++ledPolarity) {
+            controllerEnabled = true;
+            coinEnabled = true;
+            relayEnabled = true;
+            ledEnabled = true;
+            insertMode = true;
+            fsReady = true;
+            pendingReady = false;
+            runRelayActiveHigh = (relayPolarity != 0);
+            runLedActiveHigh = (ledPolarity != 0);
+            pendingPulses = 3;
+            pendingNonce = "pending-nonce";
+            pendingTarget = "pending-target";
 
-        applyOutputs();
-        if (relayLevelHigh != runRelayActiveHigh) return 10;
+            applyOutputs();
+            if (relayLevelHigh != runRelayActiveHigh ||
+                ledLevelHigh != runLedActiveHigh) return 10;
 
-        denyRemoteControl();
-        if (controllerEnabled || coinEnabled || relayEnabled ||
-            ledEnabled || insertMode || !activeTarget.empty()) return 11;
+            denyRemoteControl();
+            if (controllerEnabled || coinEnabled || relayEnabled ||
+                ledEnabled || insertMode || !activeTarget.empty()) return 11;
 
-        // Hold the state through a simulated 3500 ms synchronous HTTP wait.
-        if (relayLevelHigh == runRelayActiveHigh) return 12;
-        if (pendingPulses != 3 || pendingNonce != "pending-nonce" ||
-            pendingTarget != "pending-target") return 13;
+            // Hold both independent OFF levels through a simulated 3500 ms HTTP wait.
+            if (relayLevelHigh == runRelayActiveHigh ||
+                ledLevelHigh == runLedActiveHigh) return 12;
+            if (pendingPulses != 3 || pendingNonce != "pending-nonce" ||
+                pendingTarget != "pending-target") return 13;
+        }
     }
-    std::cout << "POLL_INTAKE_GPIO_POLARITY_PASS 2/2\n";
+    std::cout << "POLL_INTAKE_GPIO_POLARITY_PASS 4/4\n";
     return 0;
 }
 """
