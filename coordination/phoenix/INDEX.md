@@ -1,3 +1,14 @@
+## UTC15 — PHX-MASTER active development / HARDWARE / COE provenance re-audit
+
+- Report: [PHX_MASTER_UTC15_20261126_ACTIVE_DEV_HW353_EXACT_HEAD_COE26_PROVENANCE_AUDIT.md](PHX_MASTER_UTC15_20261126_ACTIVE_DEV_HW353_EXACT_HEAD_COE26_PROVENANCE_AUDIT.md)
+- Starting Master HEAD: `8287045b861f019e011745fc054478747630bc5f` on `phoenix/master-coordination`
+- Updated: ROLE_ASSIGNMENTS.md, INTEGRATION_MATRIX.md, AUDIT_SUMMARY.md and this index.
+- 14/14 Master-side static/source-tree assertions passed; no repository tests or Master CI were run.
+- HARDWARE #353 current head is `df1a633` with three failing exact-head workflows; #354 remains deny-only and has Full/Native failures.
+- COE #26 remains frozen after exact-tree/blob/test/license and intake-provenance discrepancies.
+- Private Drive registry v11/newer corrections were unavailable; no older registry was substituted.
+- PRODUCTION NO-GO; no subsystem source or COE destination writes.
+
 ## Latest PHX-MASTER checkpoint — scheduled UTC13 / 2026-11-26
 
 - [UTC13 exact owner-head, HARDWARE #353/#354 CI and COE #26 source-tree/test/license audit](PHX_MASTER_UTC13_20261126_HW353_HW354_COE26_CURRENT_SOURCE_TREE_AND_CI_AUDIT.md)
