@@ -6134,3 +6134,28 @@ Complete, non-truncated recursive trees at exact refs: pinned source `6d4c9b487a
 - SOURCE_INTAKE declares 47/14; 61 runtime rows recount to 46/15.
 - Root NOTICE, Tabler LICENSE and BlazeRentalLauncher LICENSE are source-present / destination-absent.
 - Five COE #26 workflows queued / zero jobs. Candidate remains FROZEN; no staging/copy/move/overwrite.
+
+## PHX-MASTER UTC18 COE #26 source/destination provenance revalidation — 2026-11-26T18:37:27Z
+
+Destination ref: COE PR #26 @ b382d233ff06c8791b1028bed3c617cc7b670d12. Current source refs: HARDWARE #353 @ f527b33c9e391a9a66490388d96f06d6c8761dfa and #354 @ fc842342596786e072630179acfbbc4feeb2ba02.
+
+Firmware blobs:
+
+| Path | #353 source | #354 source | COE destination |
+|---|---|---|---|
+| ESP32 Vendo | 8154297e30e72d82692987ed5690983df4955aea | 3edbe38da543ef118b287f3e04c1601692cfa99f | 3cc7ec54b476943dc04a8d1af5e2df5fe054e422 |
+| ESP8266 Vendo | 2613bfc36b0ddac9dd720592d4ff37e32a891744 | b45eb2d0bebfc0088e1c9f506c5e94c59cf054d9 | c8be98f72596681e36a3ad1f8939bf8046c96887 |
+
+Selected test blobs:
+
+| Test | #353 | #354 | COE #26 |
+|---|---|---|---|
+| security.sh | 8e2e5cf929546c37498f48a925c27e4b49f161db | bd40ccbd7c0c339bce6128c7b19f1467316d6fc4 | bd40ccbd7c0c339bce6128c7b19f1467316d6fc4 |
+| integration.sh | 1fb2ff1c1bd215da3e3297b600fcd0c67b27716f | f6e98112da059f0c853fbfc90ebc70192f78c692 | 557b4d3d5d8478811ad057eb59a2d9ecf5c3a6a5 |
+| config.sh | a42a7d5ef27169f5aa72e7bf8d19b8637fbd3d80 | a42a7d5ef27169f5aa72e7bf8d19b8637fbd3d80 | d585b772538030bac20400197a981639eb3dd4b2 |
+
+Only #354 security.sh is an exact selected test match. The #354 mbedtls compatibility lab and poll-preflight inhibit lab have no same-path destination counterpart. Full recursive tree enumeration is unavailable from the exposed GitHub tools; no full test-import count is asserted.
+
+Intake and map: SOURCE_INTAKE.json blob 1b9018ff944f7f673934d0fc2a97e0a0090d3f5f pins source commit 6d4c9b487af4d768c4d7627654d119417fcc6e00 and old destination branch feature/pisowifi-cleanup-stabilization. Its 61 runtime rows count 46 byte-identical / 15 derived, while summary declares 47 / 14. MIGRATION_MAP.md blob b54fc15d83bc2269de03db8aadd0e76259fd13d9 repeats the old source and branch pins. HARDWARE_FIRMWARE_AUDIT.md blob 86c06e7574761465b80482430296eb712d985367 says the sketches were not copied, but both are present in COE with divergent blobs. PR #26 body says P0-1 resolved; these records require owner reconciliation.
+
+License readback: PisoWiFi project LICENSE exact blob 1ee55b94183417be977ca287cd7391f9a6f7e721; QRCode LICENSE exact 150770c0fc2994865ccdbef6662735cc083e780d; TailAdmin LICENSE exact cb92d4176b21b0594e5a6caf94d79340505e3d33; TailAdmin NOTICE exact f0425bbbe34c1227311098173b1eae0c3e2a807b. Source project root and destination Pisowifi root both lack NOTICE.md, so a source NOTICE omission is not established. No staging or destination writes.
