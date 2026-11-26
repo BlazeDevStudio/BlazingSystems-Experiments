@@ -1,19 +1,18 @@
-# CURRENT STATE — 2026-11-27 UTC16 — blocking-poll wait harness IN PROGRESS (first CI attempt failed in test construction)
+# CURRENT STATE — 2026-11-27 UTC16 — blocking-poll wait harness RED VERIFIED, fix IN PROGRESS
 
 **Role:** PHX-HARDWARE · **Issue:** [#177](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/177) · **PR:** [#354](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/354)  
 **Branch:** `phoenix/hw-active-v06-poll-intake-deny-20261126-utc05` · **Base:** `blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859`  
-**Current PR head:** `05be6faf86290de70cc10ea7e6cce8ecb1108f02` · **Source/test attempt:** same SHA.  
-**Work item:** `PHX-HARDWARE-20261126T16-BLOCKING-POLL-WAIT-HARNESS` · **Status:** IN_PROGRESS.
+**Current PR head:** `f93cf9b80f7777f6b2aff31cc15b41ac005e1a14` · **Work item:** `PHX-HARDWARE-20261126T16-BLOCKING-POLL-WAIT-HARNESS`.
 
-## Latest transition — test-authoring failure, not product evidence
+## Test-first evidence and correction
 
-The first harness commit attempted to execute the actual extracted poll block, but exact focused CI [#45862503824](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45862503824), job `140056856073`, failed during C++ fixture compilation. The log showed incorrect newline escaping between extracted functions, a split C++ diagnostic string, and an omitted `wifiFailures` stub required by the actual poll block. The test did not reach the 3500 ms assertion; this is a harness-authoring error, **not** a firmware regression and **not** the intended RED evidence.
-
-The initial code inspection remains valid: the prior harness only invoked `denyRemoteControl()` and immediately checked outputs; it did not execute the actual poll block or advance simulated time. The production sketches remain unchanged by this work item.
+- First attempt `05be6faf86290de70cc10ea7e6cce8ecb1108f02` failed during fixture compilation (newline escaping, split diagnostic literal, missing `wifiFailures` stub). This is a test-authoring failure and is not counted as RED.
+- Corrected fixture at `f93cf9b80f7777f6b2aff31cc15b41ac005e1a14` compiled and executed the actual extracted ESP8266 poll block. Focused push [#45862737466](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45862737466), job `140057673814`, and PR run [#45862745148](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45862745148), job `140057700491`, both failed at the intended assertion: `BLOCKING_POLL_WAIT_RED elapsed_ms=0 expected=3500`. This is valid RED evidence for the missing blocking-wait simulation in the old harness, **not** a firmware defect.
+- Both production sketches independently confirm `HTTPClient::setTimeout(3500)`; their firmware source blobs remain unchanged: ESP8266 `b45eb2d0bebfc0088e1c9f506c5e94c59cf054d9`, ESP32 `3edbe38da543ef118b287f3e04c1601692cfa99f`.
 
 ## NEXT EXACT ACTION
 
-Correct the harness concatenation with an explicit newline, add the missing `wifiFailures` stub, use stream terminators instead of embedded diagnostic newlines, then rerun the focused exact-head workflow. Count a RED only if the corrected harness compiles and fails specifically because the modeled poll wait does not advance to 3500 ms.
+Implement the deterministic 3500 ms `post("poll")` stub: inject an 80 ms coin-line pulse while blocked, verify both outputs and admission remain denied on all four relay/LED polarity combinations, preserve pending pulse/nonce/target, and reject a mutation that removes the pre-poll deny. Then rerun the exact-source focused workflow.
 
 # CURRENT STATE — 2026-11-26 UTC14 — final poll-inhibit independent polarity evidence
 
