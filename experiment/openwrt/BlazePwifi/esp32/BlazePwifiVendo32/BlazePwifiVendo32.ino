@@ -325,15 +325,18 @@ void connectSta(){
 
 void setup(){
   Serial.begin(115200); loadConfig();
+  runCoinPin=cfg.coinPin; runLedPin=cfg.insertLedPin; runRelayPin=cfg.relayPin;
+  runCoinActiveLow=cfg.coinActiveLow; runRelayActiveHigh=cfg.relayActiveHigh; runLedActiveHigh=cfg.ledActiveHigh;
+  runDebounceMs=cfg.coinDebounceMs; runPulseGroupMs=cfg.pulseGroupMs;
+  configureRuntimePins(runCoinPin,runRelayPin,runLedPin);
+  denyRemoteControl();
+
+  // Keep relay/LED outputs OFF before LittleFS mount and pending-journal recovery.
   fsReady=LittleFS.begin(false);
   if(fsReady && !loadPending()){
     fsReady=false;
     Serial.println("CRITICAL: Vendo sequence journal is corrupt; coin relay will stay disabled.");
   } else if(!fsReady) Serial.println("CRITICAL: LittleFS unavailable; relay remains disabled.");
-  runCoinPin=cfg.coinPin; runLedPin=cfg.insertLedPin; runRelayPin=cfg.relayPin;
-  runCoinActiveLow=cfg.coinActiveLow; runRelayActiveHigh=cfg.relayActiveHigh; runLedActiveHigh=cfg.ledActiveHigh;
-  runDebounceMs=cfg.coinDebounceMs; runPulseGroupMs=cfg.pulseGroupMs;
-  configureRuntimePins(runCoinPin,runRelayPin,runLedPin);denyRemoteControl();
   setupPortal(); connectSta();
 }
 

@@ -346,9 +346,13 @@ bool clearPending(bool committed){
 }
 
 void setup(){
-  Serial.begin(115200); loadCfg(); initPendingStore();
+  Serial.begin(115200); loadCfg();
   runCoinPin=cfg.coinPin;runLedPin=cfg.insertLedPin;runRelayPin=cfg.relayPin;runCoinActiveLow=cfg.coinActiveLow;
-  configureRuntimePins(runCoinPin,runRelayPin,runLedPin);denyRemoteControl();setupPortal();connectSta();
+  configureRuntimePins(runCoinPin,runRelayPin,runLedPin);
+  denyRemoteControl();
+  // Keep relay/LED outputs OFF before LittleFS mount and pending-journal recovery.
+  initPendingStore();
+  setupPortal();connectSta();
 }
 
 void loop(){
