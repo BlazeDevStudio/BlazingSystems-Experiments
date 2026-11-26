@@ -121,6 +121,8 @@ static constexpr int HIGH=1, LOW=0, INPUT=0, INPUT_PULLUP=2, OUTPUT=1;
 static constexpr int FALLING=4, RISING=5;
 static bool controllerEnabled, coinEnabled, relayEnabled, ledEnabled;
 static bool runCoinActiveLow, pinConfigSafe, outputPolarityKnown;
+// configureRuntimePins owns these runtime states on both boards.
+static bool pollIntakeSuspended, coinInterruptAttached;
 static bool runRelayActiveHigh, runLedActiveHigh, insertMode;
 static int runCoinPin, runRelayPin, runLedPin, remoteRevision, maxWifiRetries;
 static uint16_t runDebounceMs, runPulseGroupMs;
@@ -161,6 +163,7 @@ static void resetState() {
   for(int i=0;i<64;++i) { pinModes[i]=INPUT; pinLevels[i]=LOW; }
   controllerEnabled=false; coinEnabled=false; relayEnabled=false; ledEnabled=false;
   runCoinActiveLow=false; pinConfigSafe=true; outputPolarityKnown=true;
+  pollIntakeSuspended=false; coinInterruptAttached=false;
   runRelayActiveHigh=false; runLedActiveHigh=false; insertMode=false; activeTarget="";
   runCoinPin=3; runRelayPin=12; runLedPin=13;
   remoteRevision=5; maxWifiRetries=9;
