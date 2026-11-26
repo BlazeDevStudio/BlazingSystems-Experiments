@@ -92,7 +92,7 @@ class SoftTimerReleaseActionPinTests(unittest.TestCase):
 
     def test_action_reference_with_inline_yaml_comment_is_not_ignored(self):
         workflow = (
-            "      - uses: actions/checkout@v4 # valid YAML comment\\n"
+            "      - uses: actions/checkout@v4 # valid YAML comment\n"
         )
         self.assertEqual(
             _action_references(workflow),
