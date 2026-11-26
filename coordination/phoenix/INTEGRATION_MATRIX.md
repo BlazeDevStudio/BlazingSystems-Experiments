@@ -1,3 +1,21 @@
+## PHX-MASTER UTC15 — exact recursive-tree / blob / test / license comparison (2026-11-26)
+
+Complete recursive trees at exact PR heads, all `truncated=false`: HARDWARE #353 `df1a633474cdfac139df9254a5c885961df94985` = 2,572 entries; HARDWARE #354 `bbb209f55ddcd48f248eb8d700629db8754dc13a` = 2,406; COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12` = 286 entries / 207 blobs.
+
+| Route | Source PR | Source | Destination | Common | Exact blob+mode | Divergent | Source-only | Destination-only |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| ESP32 | #353 | 16 | 1 | 1 | 0 | 1 | 15 | 0 |
+| ESP8266 | #353 | 67 | 1 | 1 | 0 | 1 | 66 | 0 |
+| Vendo tests | #353 | 47 | 19 | 4 | 1 | 3 | 43 | 15 |
+| ESP32 | #354 | 4 | 1 | 1 | 0 | 1 | 3 | 0 |
+| ESP8266 | #354 | 8 | 1 | 1 | 0 | 1 | 7 | 0 |
+| Vendo tests | #354 | 150 | 19 | 4 | 2 | 2 | 146 | 15 |
+
+Exact current firmware blobs differ from COE #26 destination: #353 ESP32 `8154297e30e72d82692987ed5690983df4955aea` vs `3cc7ec54b476943dc04a8d1af5e2df5fe054e422`; #353 ESP8266 `2613bfc36b0ddac9dd720592d4ff37e32a891744` vs `c8be98f72596681e36a3ad1f8939bf8046c96887`. #354 ESP32 `3edbe38da543ef118b287f3e04c1601692cfa99f` and ESP8266 `b45eb2d0bebfc0088e1c9f506c5e94c59cf054d9` also differ from those destination blobs.
+
+COE #26 `SOURCE_INTAKE.json` blob `1b9018ff944f7f673934d0fc2a97e0a0090d3f5f` pins historical source `6d4c9b4` and old destination branch `feature/pisowifi-cleanup-stabilization`; current #26 branch is `integration/ecosystem-nonproprietary-candidate-20261111`. Its summary says 47 identical / 14 derived, but its 61 row statuses recount to 46 identical / 15 non-identical/derived. `MIGRATION_MAP.md` repeats the old source/branch. `HARDWARE_FIRMWARE_AUDIT.md` blob `86c06e7574761465b80482430296eb712d985367` says the Vendo sketches were not copied, but both exist in the destination tree with divergent blobs. Reconcile records before proposing any move.
+
+Product MIT LICENSE blob `1ee55b94183417be977ca287cd7391f9a6f7e721` matches. #354 source jsqr 1.4.0 LICENSE blob `8f71f43fee3f78649d238238cbde51e6d7055c82` has no destination counterpart; source root NOTICE, Tabler LICENSE, BlazeRentalLauncher LICENSE and COE root LICENSE are absent. The 11-route ownership manifest remains `DRAFT_REVIEW_ONLY`, with Master target `null`. Five COE #26 workflows remain queued with zero jobs. No destination write or staging occurred.
 ## PHX-MASTER scheduled UTC13 — exact COE #26 source/tree, test and license revalidation
 
 **Source candidate:** Experiments HARDWARE #354 source/test commit `9bb46bb27e4be80f6506dbebf2846700efd4cb81`, recursive tree `e90960df658625f5c7ea714e210e85c33442f085`, 2,405 entries, `truncated=false`.  
