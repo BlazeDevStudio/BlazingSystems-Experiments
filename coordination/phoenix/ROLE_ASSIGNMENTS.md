@@ -1,3 +1,29 @@
+## PHX-MASTER UTC15 — live owner heads and CI reconciliation (2026-11-26T15:10Z)
+
+**Starting Master HEAD:** `8287045b861f019e011745fc054478747630bc5f`; branch `phoenix/master-coordination`. **PR #288:** OPEN / DRAFT / UNMERGED.  
+**Experiments default main:** `6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5`.  
+**Active v0.6 development base:** `blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859`.  
+**Legacy v0.5.3 line:** `blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5`.  
+**COE main:** `a6513ab4412b4c014eee2863e45cbe32d06cb243`; **COE #26:** `b382d233ff06c8791b1028bed3c617cc7b670d12`.
+
+| Role / PR | Exact PR HEAD | Exact-head CI |
+|---|---|---|
+| CORE #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | Scoped build #42698139210 PASS |
+| RENTAL #328 | `10fc200b6dbf470a95e679d3acc58aff4ab2a67f` | API21/API23, auth/installer and APK identity #45622918364/#45622918551/#45622918340 PASS; shared build #45622918468 FAIL |
+| PISONET #255 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | Windows synthetic #42462978704 PASS; native COM NOT TESTED |
+| HARDWARE #353 | `df1a633474cdfac139df9254a5c885961df94985` | Relay #45843872877 FAIL; quarantine #45843872813 FAIL; Full #45843872829 FAIL |
+| HARDWARE #354 | `bbb209f55ddcd48f248eb8d700629db8754dc13a` | Focused #45836227697 + Mbed TLS #45836227855 PASS; Full #45836227694 + Native #45836227876 FAIL |
+| QA #290 | `5c29d15994cee1279058f1eca12f2a3180704292` | Windows synthetic #43633486963 PASS; native COM NOT TESTED |
+| QA #292 | `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | No exact-head runs |
+| RELEASE #291 | `bf339a76964a1abe2412fac45392fe06a8e66418` | No exact-head runs; mergeable=false |
+| COE CORE #45 | `9d76a134c1f6512aa40c20ec4d247306a71a8cce` | Overlay/Shell #44295049727 + case guard #44295049903 PASS |
+| COE INTERCON #49 | `aeb8ff11b2f5db9a5f86280ab62ab988245f3919` | Stage 5.1 #44646341873 + case guard #44646341992 PASS; shared CI #44646341922 FAIL |
+| COE RELEASE #35 | `1cb3a4346c64d257ebc18e55c9724998b689f6b6` | Case guard #45837377963 PASS; shared #45837377899 and sandbox #45837377925 FAIL |
+| COE integration #26 | `b382d233ff06c8791b1028bed3c617cc7b670d12` | Five workflows QUEUED, zero jobs |
+
+HARDWARE #353's current PR body still pins old docs/source-test heads `cb1787ac` / `ed2f77d`; actual PR HEAD is `df1a633`. Owner refresh required. #354 remains deny-only; QA owns the incompatible `clearPending(true/false)` assertion and CORE owns the authenticated disposition contract. COE #35 is blocked by missing approved site-scoped ULA /48 authority and absent Bubblewrap. See the UTC15 audit report for exact logs and owner actions.
+
+CORE, RENTAL, PISONET, HARDWARE, QA and RELEASE source branches remain owner-controlled. No subsystem source or COE destination was modified.
 ## PHX-MASTER scheduled UTC13 — live role-head and exact-head CI reconciliation
 
 **Observed UTC:** 2026-11-26T14:21:35.125Z (scheduled role-hour UTC13; delayed activation reconciled against the live control plane).  
