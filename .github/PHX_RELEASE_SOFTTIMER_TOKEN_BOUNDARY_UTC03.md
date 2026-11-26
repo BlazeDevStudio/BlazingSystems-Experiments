@@ -267,3 +267,57 @@ At exact source/test commit `fc01d676030ac0bd018610f92567dc5111365e34`, GitHub A
 Next action: PHX-INFRA/repository administrator runs the SoftTimer release workflow on exact PR #242 head after confirming workflow availability; PHX-QA independently reviews the corrected fixture; PHX-MASTER reconciles #291 ancestry and ownership routes.
 
 No merge, rebase, retarget, force-push, real signing, secret access, tag, release, hardware flash, payment migration, or customer deployment occurred. **PRODUCTION NO-GO.**
+
+
+---
+
+## PHX-RELEASE UTC23 — inline-comment action-reference pin bypass
+
+Observed: 2026-11-26T23:11Z  
+PR: https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/242  
+Branch: `draft/softtimer-future-release-signing-pipeline-20261029`  
+Base: `blazepwifi-v0.6.0-audit-foundation@6d4c9b487af4d768c4d7627654d119417fcc6e00`  
+Starting PR HEAD: `931ef2ebf073974f52d1b2c69efa6635276f7db7`
+
+### Finding
+
+The RELEASE-owned `.github/scripts/test_softtimer_release_action_pins.py` scanner used a line regex that required the action reference to be followed only by whitespace and end-of-line. Valid GitHub Actions YAML permits an inline comment after a `uses:` value, for example:
+
+```yaml
+      - uses: actions/checkout@v4 # valid YAML comment
+```
+
+The old scanner returned no reference for that line. The existing immutable-SHA validator therefore never examined the unpinned `@v4` reference. This was a static guard false-negative; the live workflow's current action references were not changed.
+
+### Test-first and correction history
+
+- Initial test insertion [`7397248f`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/7397248f1df1ac9a612fa58e089b9def5744e5b6) contained an over-escaped newline in the fixture. This authoring defect was caught during diff inspection and is **not** counted as RED evidence.
+- Corrected fixture [`dbcc809a`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/dbcc809afb67c3fb08bca24160dc409a518b7bce) uses a real line break. Focused local RED reproduction: old scanner returns `[]` for the valid commented `uses:` line instead of `["actions/checkout@v4"]`.
+- Source correction [`c4aba59b`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/c4aba59be0ecba5965479e04e1cea80c5061c439) permits an optional whitespace-prefixed YAML inline comment while retaining the captured action reference. The existing full-SHA validation then sees `v4` and rejects it as not a 40-character lowercase commit SHA.
+- Focused local GREEN reproduction: corrected scanner returns `["actions/checkout@v4"]`; the existing immutable-ref predicate rejects the `v4` revision. This is a focused regex/guard reproduction, **not** a full repository unittest or Windows/PowerShell run.
+
+### Exact-head hosted CI
+
+- Test-only corrected-fixture SHA `dbcc809afb67c3fb08bca24160dc409a518b7bce`: PR-triggered workflow runs 0 returned; combined commit statuses 0.
+- Source-fix SHA `c4aba59be0ecba5965479e04e1cea80c5061c439`: PR-triggered workflow runs 0 returned; combined commit statuses 0.
+- The existing SoftTimer workflow path filter includes `.github/scripts/test_softtimer_release_action_pins.py`, but the connected Actions readback returned no exact-head run. No hosted RED/GREEN, Windows build, signing or publishing is claimed.
+
+### Current control-plane pins observed this activation
+
+- MASTER [PR #288](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/288): `fb71a17bbe33c82da4c8286ee702289bf38ad916`, OPEN / DRAFT / UNMERGED; 242 changed paths under `coordination/phoenix/`. `OWNERSHIP_ROUTES.json` blob `e4db324315a1b3543fec17a148fbf960170fcb29` remains `DRAFT_REVIEW_ONLY`; PHX-RELEASE route is `reimplementation-review`.
+- Experiments [PR #242](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/242): source/test HEAD `c4aba59be0ecba5965479e04e1cea80c5061c439`, OPEN / DRAFT / UNMERGED / mergeable=false.
+- Experiments [PR #291](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/291): `bf339a76964a1abe2412fac45392fe06a8e66418`, based on old #242 snapshot `734b89d9e7792247e8376335c3f3685500ab3f89`; OPEN / DRAFT / UNMERGED / mergeable=false. MASTER owns ancestry and inherited CORE/PISONET path reconciliation; RELEASE did not rebase, retarget or force-push.
+- COE [PR #26](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/pull/26): `b382d233ff06c8791b1028bed3c617cc7b670d12`, FROZEN; five queued workflows, zero completed jobs.
+- COE parent [PR #31](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/pull/31): `59ed44d0b911e176f1a95b9cf5585ef811ffd31b`, OPEN / DRAFT. Shared validation and case-collision pass; mandatory Bubblewrap sandbox fails at UID-map setup (exit 125).
+- COE child [PR #35](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/pull/35): `bc57ba8ecc5245ce538c6770a45bb25e2b8b5ef3`, OPEN / DRAFT. Shared workflow completes 259 packaging/tool tests with two intentional skips, then fails closed at 10/10 ULA admissions; sandbox host preflight 48/48 then Bubblewrap unavailable (exit 125); case-collision passes.
+- Cleanup-first [#266](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/266) remains OPEN / 0-of-7.
+- Authorized Library title/content search did not recover canonical private Drive `BLAZE_PROJECT_REGISTRY_v11_20261027.json`. Older v3–v7 snapshots and the November 9 checkpoint are not substitutes; no private identifiers or contents were copied into GitHub.
+
+### Next owner actions
+
+1. PHX-QA independently reviews the inline-comment pin-guard regression and source correction at `c4aba59b`.
+2. PHX-INFRA / repository administrator obtains authorized exact-head #242 Actions execution and records the actual Python and Windows/PowerShell jobs.
+3. PHX-MASTER reconciles #242/#291 ancestry and inherited ownership paths; no RELEASE-side rebase or merge.
+4. Registry custodian supplies read-only v11 access through an authorized Drive connector.
+
+Only RELEASE-owned `.github/scripts/test_softtimer_release_action_pins.py` and this narrow RELEASE handover were changed. No PISONET installer/product source, workflow, secret, signer, CORE, RENTAL, HARDWARE, QA, MASTER or COE destination file changed. No merge, signing, tag, publication, hardware flash, payment migration or customer deployment occurred. **PRODUCTION NO-GO.**
