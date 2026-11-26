@@ -52,3 +52,14 @@ Focused exact-head status is pending until the two current jobs complete. No phy
 - PRODUCTION READY: NO.
 
 Next: finish exact-head Quarantine/Relay runs on the current branch head, then re-read Master/CORE/QA contract decisions before any authenticated response or active v0.6 firmware changes.
+
+
+## Final docs-head validation — 2026-11-26 UTC01
+
+The final handover/PR head at the time of this validation was `b737164310937e4782b7cc5f75ad825b9bcf42df` (parent #352 `0e984e267b3a8fb10c314800d1a7f120806354b7`, compare 19 ahead / 0 behind).
+
+- Quarantine [#45739536022](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45739536022), job `139640847937`: **PASS**. Both ESP8266 and ESP32 report `COIN_PULSE_CAPTURE_PASS 18/18`; 17 fail-open mutations are rejected per board; modular fixture/ISR guard, JSON grammar boundary, EEPROM config-read recovery and boot-polarity checks pass.
+- Relay [#45739536099](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45739536099), jobs `139640848810` / `139640849106`: **PASS / PASS**. C++ token normalizer 14/14, bounded HTTP response 8/8, both-board parity and 10/10 parity mutations pass.
+- Full [#45739536013](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45739536013), validation job `139640950883`: **FAIL** at inherited `Missing poll signature check`. All 14/14 firmware target jobs and Android PASS; production import/signing, update, simulation and candidate jobs are skipped.
+
+The focused workflow logs explicitly retain `SIMULATED_ONLY=1`, `PHYSICAL_COIN_PULSE_ACCEPTANCE=0`, `PHYSICAL_RELAY_ACCEPTANCE=0` and `PHYSICAL_POWER_CUT_ACCEPTANCE=0`. No hardware acceptance is claimed.
