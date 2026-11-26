@@ -221,7 +221,7 @@ def _runtime_interrupt_wiring_body(source, board):
     detached_state = "coinInterruptAttached=false;"
     attached_state = "coinInterruptAttached=true;"
     restore = "pollIntakeSuspended=priorPollIntakeSuspended;"
-    prior_snapshot = "const bool priorPollIntakeSuspended=pollIntakeSuspended;"
+    prior_snapshot = "constboolpriorPollIntakeSuspended=pollIntakeSuspended;"
     if compact.count(prior_snapshot) != 1:
         raise RuntimeError(f"{board} must preserve the prior poll intake inhibit snapshot exactly once")
     if not re.search(r"\bbool\s+coinInterruptAttached\s*=\s*false\s*;", mask_non_code(source)):
