@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Stable command entry point for the modular poll-intake regression suite."""
+"""Stable entry point for poll and startup-register deny regressions."""
 
 from poll_preflight_inhibit_lab_cases import main
 
