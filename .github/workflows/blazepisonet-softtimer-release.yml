@@ -5,11 +5,13 @@ on:
     paths:
       - 'experiment/windows/BlazePisonet-SoftTimer/**'
       - '.github/workflows/blazepisonet-softtimer-release.yml'
+      - '.github/scripts/test_softtimer_release_action_pins.py'
   push:
     branches: [main]
     paths:
       - 'experiment/windows/BlazePisonet-SoftTimer/**'
       - '.github/workflows/blazepisonet-softtimer-release.yml'
+      - '.github/scripts/test_softtimer_release_action_pins.py'
   workflow_dispatch:
 
 permissions:
@@ -33,6 +35,8 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Verify SoftTimer release action pins and checkout credential isolation
+        run: python3 .github/scripts/test_softtimer_release_action_pins.py
       - name: Verify shared BlazePwifi and SoftTimer handover freshness
         run: sh experiment/openwrt/BlazePwifi/tests/handover_gate.sh
       - name: Verify stale and partial handovers are rejected
