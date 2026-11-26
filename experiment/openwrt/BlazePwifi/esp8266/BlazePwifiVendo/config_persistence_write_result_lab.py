@@ -42,8 +42,10 @@ def require_failure_gate(source: str, save_name: str) -> None:
             f"{save_name} failure must stop the handler")
     require("ESP.restart()" not in failure,
             f"{save_name} failure must not reboot")
-    success = portal.find("web.send(200")
-    restart = portal.find("ESP.restart()")
+    successes = [m.start() for m in re.finditer(r"web\\.send\\s*\\(\\s*200\\s*,", portal)]
+    require(len(successes) >= 2, f"{save_name} route must retain GET and save-success responses")
+    success = successes[-1]
+    restart = portal.find("ESP.restart()", success)
     require(success > match.end() and restart > success,
             f"{save_name} success response/reboot must follow the failure gate")
 
