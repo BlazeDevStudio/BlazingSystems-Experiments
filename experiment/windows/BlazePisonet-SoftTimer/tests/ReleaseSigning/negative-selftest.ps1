@@ -66,13 +66,35 @@ try {
     throw 'A separate read-only release-admission job is required before the write-capable publisher'
   }
   $admissionJob=$workflow.Substring($admissionStart,$publisherStart-$admissionStart)
-  if ($admissionJob -notmatch '(?m)^    permissions:\r?\n      contents: read\r?
+  if (-not $admissionJob.Contains('permissions:') -or
+      -not $admissionJob.Contains('contents: read') -or
+      -not $admissionJob.Contains("github.event_name == 'push'") -or
+      -not $admissionJob.Contains("github.ref == 'refs/heads/main'") -or
+      -not $admissionJob.Contains("vars.SOFTTIMER_RELEASE_APPROVED == 'true'") -or
+      -not $admissionJob.Contains("vars.SOFTTIMER_RELEASE_VERSION != ''") -or
+      -not $admissionJob.Contains("vars.SOFTTIMER_RELEASE_VERSION != '0.4.0'") -or
+      -not $admissionJob.Contains('approved:') -or
+      -not $admissionJob.Contains('steps.version.outputs.approved') -or
+      -not $admissionJob.Contains('$VERSION') -or
+      -not $admissionJob.Contains('$SOFTTIMER_RELEASE_VERSION') -or
+      -not $admissionJob.Contains('approved=false') -or
+      -not $admissionJob.Contains('approved=true') -or
+      $admissionJob.Contains('contents: write') -or
+      $admissionJob.Contains('GH_TOKEN:')) {
+    throw 'Release admission must compare the approved version with workflow VERSION using read-only permissions'
+  }
+
+  $publisherJob=$workflow.Substring($publisherStart)
+  if ($publisherJob -notmatch '(?m)^    permissions:\\r?\\n      contents: write\\r?\\n      actions: read\\r?$' -or
+      -not $publisherJob.Contains('needs: [build-windows, release-admission]') -or
+      -not $publisherJob.Contains("if: needs.release-admission.outputs.approved == 'true'") -or
+      -not $publisherJob.Contains('actions/download-artifact@v4') -or
       -not $publisherJob.Contains('persist-credentials: false') -or
       -not $publisherJob.Contains('GH_TOKEN: ${{ github.token }}') -or
       -not $publisherJob.Contains('candidate/out/bundle/BlazePisonet.SoftTimer.exe') -or
       -not $publisherJob.Contains('candidate/out/bundle/BlazePisonet.SoftTimer.Watchdog.exe') -or
       -not $publisherJob.Contains('GITHUB_SHA_EXPECTED: ${{ github.sha }}')) {
-    throw 'Publisher must be isolated, approval/version gated, source-pinned and re-admit downloaded artifacts'
+    throw 'Publisher must be isolated, approved by the read-only version gate, source-pinned and re-admit downloaded artifacts'
   }
   $uploadStart=$workflow.IndexOf('      - name: Upload validated release candidates')
   if ($uploadStart -lt 0 -or $uploadStart -ge $publisherStart) { throw 'Build artifact upload must precede isolated publisher' }
