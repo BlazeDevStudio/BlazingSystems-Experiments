@@ -1,34 +1,34 @@
 ## PHX-MASTER UTC08 — scheduled 2026-11-26T08:37:37Z; exact #353 → COE #26 recursive tree revalidation
 
-This is a read-only, complete-tree comparison of the current mapped Hardware source candidate and the existing COE integration draft. Both recursive Git trees returned \`truncated=false\`; no destination file was created or changed.
+This is a read-only, complete-tree comparison of the current mapped Hardware source candidate and the existing COE integration draft. Both recursive Git trees returned `truncated=false`; no destination file was created or changed.
 
-- Source: HARDWARE #353 at \`cb1787ac8f89562f20b6ecdee0c7969fbd12bd01\`, tree \`7cea8fde4b705dbbf37aa600503a20ad819e1c6c\`, 2,572 entries.
-- Destination: COE #26 at \`b382d233ff06c8791b1028bed3c617cc7b670d12\`, tree \`8a7d4cf81d7227118b876c1138dd2da12345fefa\`, 286 entries.
-- COE main remains a three-entry structure-only scaffold at \`a6513ab4412b4c014eee2863e45cbe32d06cb243\`.
-- Active-v0.6 HARDWARE #354 at \`8d0c179f4d29f24735dea0fe04ed142db5bb9245\` is a separate deny-only candidate, not an approved replacement migration source for #26.
+- Source: HARDWARE #353 at `cb1787ac8f89562f20b6ecdee0c7969fbd12bd01`, tree `7cea8fde4b705dbbf37aa600503a20ad819e1c6c`, 2,572 entries.
+- Destination: COE #26 at `b382d233ff06c8791b1028bed3c617cc7b670d12`, tree `8a7d4cf81d7227118b876c1138dd2da12345fefa`, 286 entries.
+- COE main remains a three-entry structure-only scaffold at `a6513ab4412b4c014eee2863e45cbe32d06cb243`.
+- Active-v0.6 HARDWARE #354 at `8d0c179f4d29f24735dea0fe04ed142db5bb9245` is a separate deny-only candidate, not an approved replacement migration source for #26.
 
 | Route | Source blobs | Destination blobs | Same relative paths | Exact blob+mode | Source-only | Destination-only |
 |---|---:|---:|---:|---:|---:|---:|
-| \`experiment/openwrt/BlazePwifi/esp32/\` → \`Hardware/esp32/\` | 16 | 1 | 1 | 0 | 15 | 0 |
-| \`experiment/openwrt/BlazePwifi/esp8266/\` → \`Hardware/esp8266/\` | 67 | 1 | 1 | 0 | 66 | 0 |
-| \`experiment/openwrt/BlazePwifi/tests/\` → \`Pisowifi/tests/\` | 47 | 19 | 4 | 1 | 43 | 15 |
+| `experiment/openwrt/BlazePwifi/esp32/` → `Hardware/esp32/` | 16 | 1 | 1 | 0 | 15 | 0 |
+| `experiment/openwrt/BlazePwifi/esp8266/` → `Hardware/esp8266/` | 67 | 1 | 1 | 0 | 66 | 0 |
+| `experiment/openwrt/BlazePwifi/tests/` → `Pisowifi/tests/` | 47 | 19 | 4 | 1 | 43 | 15 |
 
 **Exact firmware blob identities**
-- ESP32 source \`1412cf57b70c6ee3061da9831b8d9abf6d58d94e\` differs from destination \`3cc7ec54b476943dc04a8d1af5e2df5fe054e422\`.
-- ESP8266 source \`b99f1f21d8ad1e6df0e403b2b34507f97bd90c16\` differs from destination \`c8be98f72596681e36a3ad1f8939bf8046c96887\`.
+- ESP32 source `1412cf57b70c6ee3061da9831b8d9abf6d58d94e` differs from destination `3cc7ec54b476943dc04a8d1af5e2df5fe054e422`.
+- ESP8266 source `b99f1f21d8ad1e6df0e403b2b34507f97bd90c16` differs from destination `c8be98f72596681e36a3ad1f8939bf8046c96887`.
 
 **Test identity**
-The four common relative test paths are \`config.sh\`, \`integration.sh\`, \`portal.sh\` and \`security.sh\`. Only \`portal.sh\` is exact at blob/mode level (\`71b3c9622f51a80dc09a446389ba6faa001b7897\`); the other three differ. There are 43 source-only tests and 15 destination-only tests. Path presence is not test equivalence.
+The four common relative test paths are `config.sh`, `integration.sh`, `portal.sh` and `security.sh`. Only `portal.sh` is exact at blob/mode level (`71b3c9622f51a80dc09a446389ba6faa001b7897`); the other three differ. There are 43 source-only tests and 15 destination-only tests. Path presence is not test equivalence.
 
 **Licensing / notice provenance**
-- Product PisoWiFi LICENSE source \`experiment/openwrt/BlazePwifi/LICENSE\` and destination \`Pisowifi/LICENSE\` are byte-identical at \`1ee55b94183417be977ca287cd7391f9a6f7e721\`.
-- Source root \`NOTICE.md\` exists at \`f6d92cd21465312be5993631fe26977219be0fb9\`; destination root has no \`NOTICE.md\`.
-- Source Tabler license \`experiment/openwrt/BlazePwifi/ui/vendor/tabler/LICENSE\` exists at \`22ee8122400915cbff18e5f69368fa9eea6145eb\`; no destination counterpart exists.
-- Source BlazeRentalLauncher license exists at \`experiment/openwrt/BlazePwifi/android/BlazeRentalLauncher/LICENSE\` (\`c5b1efa7aac764ae6d8da63476a2d5cec02a6a5d\`); no destination counterpart exists in #26.
+- Product PisoWiFi LICENSE source `experiment/openwrt/BlazePwifi/LICENSE` and destination `Pisowifi/LICENSE` are byte-identical at `1ee55b94183417be977ca287cd7391f9a6f7e721`.
+- Source root `NOTICE.md` exists at `f6d92cd21465312be5993631fe26977219be0fb9`; destination root has no `NOTICE.md`.
+- Source Tabler license `experiment/openwrt/BlazePwifi/ui/vendor/tabler/LICENSE` exists at `22ee8122400915cbff18e5f69368fa9eea6145eb`; no destination counterpart exists.
+- Source BlazeRentalLauncher license exists at `experiment/openwrt/BlazePwifi/android/BlazeRentalLauncher/LICENSE` (`c5b1efa7aac764ae6d8da63476a2d5cec02a6a5d`); no destination counterpart exists in #26.
 - Both trees have no repository-root LICENSE. QRCode and TailAdmin license/notice paths have destination counterparts; those do not replace the missing root NOTICE or Tabler/Launcher license provenance.
 
 **Routing / destination CI**
-The 11-route \`OWNERSHIP_ROUTES.json\` remains \`DRAFT_REVIEW_ONLY\`, its source pin remains historical merge base \`f4e8a891aed8af86d5fd315d28750a0ac3a7372b\`, and PHX-MASTER destination remains null. COE #26 has five queued workflows and zero jobs. No source-intake completeness, license acceptance, import completeness, test equivalence or destination CI acceptance is claimed.
+The 11-route `OWNERSHIP_ROUTES.json` remains `DRAFT_REVIEW_ONLY`, its source pin remains historical merge base `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`, and PHX-MASTER destination remains null. COE #26 has five queued workflows and zero jobs. No source-intake completeness, license acceptance, import completeness, test equivalence or destination CI acceptance is claimed.
 
 **Decision: COE #26 remains FROZEN.** No staging, copy, move, overwrite, rebase, cherry-pick, retarget or promotion.
 
