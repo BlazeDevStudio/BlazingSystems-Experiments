@@ -232,5 +232,29 @@ class PollResponseArchitectureTests(unittest.TestCase):
             with self.subTest(required=required):
                 self.assertIn(required, section)
 
+
+    def test_firmware_build_reproducibility_requires_exact_toolchain_and_retained_artifacts(self):
+        section = DOC[DOC.index("## 7.23 Firmware build provenance and reproducibility gate"):]
+        for required in (
+            "source/test commit SHA",
+            "source tree SHA",
+            "workflow file blob SHA",
+            "Arduino CLI version and binary checksum",
+            "package-index URL and SHA-256",
+            "compiler, linker, bundled tool and transitive package versions",
+            "runner OS/architecture and immutable image/container digest",
+            "board FQBN",
+            "Firmware binary, byte size, SHA-256",
+            "Two independent clean builds",
+            "must be identical",
+            "NONDETERMINISTIC / REPRODUCIBILITY UNVERIFIED",
+            "f9489e1df0d075cbfce549120c37af2778c53cb055f165c14a1d790623293c31",
+            "ea6bfb5fbf31f4fca3ed7942e92cede58b75c1d087cd74ac15414d9d568f0a2e",
+            "PRODUCTION NO-GO",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, section)
+
+
 if __name__ == "__main__":
     unittest.main()
