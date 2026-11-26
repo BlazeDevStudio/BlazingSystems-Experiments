@@ -79,3 +79,15 @@
 - Full #45900652616 CI-0701 job 140186298232 PASS; validation job 140186375629 FAIL at QA-owned controllers.sh:21 config_revision assertion. Target builds were in progress; no final target count claimed.
 - Native #45900652601 job 140185311226 FAIL at QA-owned active clearPending assertion. Mbed #45900652645 source-contract job 140185906703 PASS; 3.3.13/4.0.0 target builds in progress.
 - No QA source or production firmware changed. NVS multi-key write remains non-atomic; hardware acceptance NOT TESTED; production NO-GO.
+
+
+## 2026-11-27 UTC22 — ESP32 NVS interrupted-save validity latch
+
+- Test-first RED: [#45906591317](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45906591317), job 140204687313, exact test-only head 669167c17a15c17435b61551df0bb82cc735a5b9; old sketch rejected because it had no persisted-config validity state.
+- Firmware logic commit cadf8605ba8cfc9ed64fb0ff96dba34c3d739105; test mutation correction 909bbf9699f156f9687d7deb49e4aa79fe1c099f; exact focused source/test head ba24c44144a6b367c12b716944d1957f20003b3f.
+- ESP32 cfgvalid marker now brackets all 14 Preferences fields. Explicit false marker or Preferences.begin() failure selects setup-only defaults and blocks station reconnect/poll; missing marker remains legacy-compatible. Save failure leaves marker false and does not reboot.
+- Focused exact-head [#45907063693](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45907063693), job 140206222638: PASS. Host harness confirms invalid-marker defaults, legacy compatibility, begin retry, 14 independent field-write failures, both marker-write failure points, all-success control, EEPROM commit propagation, and seven unsafe mutations rejected.
+- Mbed #45907063709 source-contract job 140206339633 PASS; 3.3.13/4.0.0 target jobs were still running. Full #45907057845 CI-0701 PASS, but mandatory handover freshness failed before validation because docs had not yet been refreshed; ESP8266 target PASS, other targets still running. Native #45907063717 job 140206229703 FAILS QA-owned PAY-0745 active-clear assertion.
+- This is a software validity marker, not atomic NVS transaction or power-cut proof. Physical NVS, custom pin/polarity recovery, GPIO/relay, coin pulse, 150 power cuts and 30-device/24-hour soak remain NOT TESTED. No positive coin/relay admission or other-role source changes.
+- #177 unresolved; #266 OPEN / 0-of-7; #31/#32/#34/#43 open; COE #26 remains frozen. HARDWARE ACCEPTED NO; PRODUCTION NO-GO.
+
