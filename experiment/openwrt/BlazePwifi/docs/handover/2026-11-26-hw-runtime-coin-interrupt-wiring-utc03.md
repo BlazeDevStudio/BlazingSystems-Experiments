@@ -45,3 +45,29 @@ Add exact-source checks for the runtime GPIO interrupt wiring around `configureR
 ## Status
 
 SIMULATED / CI VERIFIED for the new source-extracted wiring contract. HARDWARE ACCEPTED: NO. PRODUCTION READY: NO-GO. Physical coin/relay/electrical acceptance, 150 controlled power cuts, 30-device 24-hour soak, protected witness, durable financial replay and independent QA/release acceptance remain outstanding.
+
+
+## UTC04 — exact-head and validation reconciliation (2026-11-26T04:34:29Z)
+
+This is a documentation-only refresh requested by PHX-MASTER after its UTC03 audit. The previous exact docs head was `832692020a428ff4fe03a197a1bfce65b3f9316c`; source/test SHA remains `ed2f77d5924172881f27222cc26649f8f85abe6c`. Parent #352 remains `2fa3b7db1161ddb531ed94bcf60617947fa1a7bd`. Before this refresh, #353 compared 27 ahead / 0 behind #352; no rebase, retarget, merge or force-push was performed.
+
+### Final docs-head Actions readback
+
+All three workflow run objects report exact `832692020a428ff4fe03a197a1bfce65b3f9316c` and branch `phoenix/hw-board-conditional-isr-selector-20261125-utc17`:
+
+- Quarantine Byte Readback [#45751177827](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45751177827), job `139679053052`: **PASS**.
+- Relay Output Polarity [#45751177670](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45751177670), jobs `139679052817` and `139679052900`: **PASS / PASS**.
+- Full BlazePwifi [#45751177730](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45751177730), validation job `139679141206`: **FAIL**. The downloaded job log explicitly reports `Missing poll signature check` in the ESP8266 sketch. All 14 firmware/platform jobs and Android passed; production import, simulations, update bundle, candidate gate, signing handoff and publication were skipped.
+
+The focused results remain SIMULATED / CI VERIFIED source-extracted checks, not physical hardware acceptance. The runtime GPIO contract verifies detach → pin reassignment → INPUT_PULLUP → polarity-aware ISR attach → ingress quarantine; four fail-open mutations per board are rejected. No production .ino changed in this #353 task.
+
+### Remaining blockers and exact routing
+
+- CORE must publish the approved versioned register/poll response envelope, mandatory nonempty key provisioning, canonical serialization, controller/target binding, freshness and replay rules.
+- QA must independently review the exact-source ISR wiring contract and mutation vectors; it must not waive the Full poll-signature assertion.
+- MASTER owns stack/route reconciliation and any decision to integrate #353. This worker did not rebase or retarget.
+- Active v0.6 remains at `2fbd2475e9f54878c316fa7cea2f228386b0e859`; both production sketches still poll synchronously before coin sampling and consume unsigned response fields. #340 is a separate OPEN/DRAFT candidate and is not integrated into active v0.6.
+- Physical coin/relay/electrical acceptance, LittleFS power-loss acceptance, 150 power cuts, 30-device/24-hour soak, protected witness, durable financial replay, v1→v2 migration and independent release signoff remain NOT TESTED / NOT ACCEPTED.
+- Private Drive registry v11 was not available in the exposed connector surface or Library; no older registry was substituted.
+
+**Disposition:** PR #353 remains OPEN / DRAFT / UNMERGED. Scoped source/test work is CI VERIFIED; HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO. Next action: CORE contract + QA review, then MASTER stack decision.
