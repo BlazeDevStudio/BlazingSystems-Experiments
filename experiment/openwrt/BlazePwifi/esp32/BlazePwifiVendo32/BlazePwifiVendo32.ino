@@ -36,6 +36,7 @@ Preferences prefs;
 WebServer web(80);
 bool insertMode=false, lastCoin=false, pendingReady=false, fsReady=false;
 bool controllerEnabled=true, coinEnabled=true, relayEnabled=true, ledEnabled=true, setupApOn=false;
+bool configStoreValid=true, preferencesReady=false;
 bool runCoinActiveLow=true, runRelayActiveHigh=true, runLedActiveHigh=true;
 uint32_t lastPoll=0, lastEdge=0, lastSend=0, configuredApSince=0;
 uint8_t pendingPulses=0;
@@ -177,8 +178,32 @@ bool clearPending(bool committed){
   return true;
 }
 
+void useSafeConfigDefaults(){
+  cfg=Config();
+  cfg.server="10.0.0.1";
+  cfg.id="vendo-01";
+  cfg.coinPin=27; cfg.insertLedPin=2; cfg.relayPin=26;
+  cfg.coinActiveLow=true; cfg.relayActiveHigh=true; cfg.ledActiveHigh=true;
+  cfg.coinDebounceMs=40; cfg.pulseGroupMs=400;
+  char b[17]; snprintf(b,sizeof(b),"%08lX%08lX",(unsigned long)esp_random(),(unsigned long)esp_random());
+  cfg.apPass=String(b);
+}
+
 void loadConfig(){
-  prefs.begin("blazevendo",false);
+  preferencesReady=prefs.begin("blazevendo",false);
+  if(!preferencesReady){
+    configStoreValid=false;
+    useSafeConfigDefaults();
+    Serial.println("CRITICAL: Preferences unavailable; using deny-only setup defaults.");
+    return;
+  }
+  if(prefs.isKey("cfgvalid") && !prefs.getBool("cfgvalid",false)){
+    configStoreValid=false;
+    useSafeConfigDefaults();
+    Serial.println("CRITICAL: saved config is incomplete; using deny-only setup defaults.");
+    return;
+  }
+  configStoreValid=true;
   cfg.ssid=prefs.getString("ssid","");
   cfg.pass=prefs.getString("pass","");
   cfg.server=prefs.getString("server","10.0.0.1");
@@ -199,14 +224,22 @@ void loadConfig(){
   }
 }
 
-// Preferences put* return zero on failure; this multi-key write is not atomic.
+// Preferences put* return zero on failure. cfgvalid brackets the multi-key write:
+// false is durable before field changes; true is published only after every field succeeds.
 bool saveConfig(){
+  configStoreValid=false;
+  if(!preferencesReady){
+    preferencesReady=prefs.begin("blazevendo",false);
+    if(!preferencesReady) return false;
+  }
+  if(prefs.putBool("cfgvalid",false)==0) return false;
   bool ok=true;
   if(prefs.putString("ssid",cfg.ssid)==0) ok=false;
   if(prefs.putString("pass",cfg.pass)==0) ok=false;
   if(prefs.putString("server",cfg.server)==0) ok=false;
   if(prefs.putString("key",cfg.key)==0) ok=false;
   if(prefs.putString("id",cfg.id)==0) ok=false;
+  if(prefs.putString("appass",cfg.apPass)==0) ok=false;
   if(prefs.putInt("coinpin",cfg.coinPin)==0) ok=false;
   if(prefs.putInt("ledpin",cfg.insertLedPin)==0) ok=false;
   if(prefs.putInt("relaypin",cfg.relayPin)==0) ok=false;
@@ -215,7 +248,10 @@ bool saveConfig(){
   if(prefs.putBool("ledhi",cfg.ledActiveHigh)==0) ok=false;
   if(prefs.putUInt("debounce",cfg.coinDebounceMs)==0) ok=false;
   if(prefs.putUInt("groupms",cfg.pulseGroupMs)==0) ok=false;
-  return ok;
+  if(!ok) return false;
+  if(prefs.putBool("cfgvalid",true)==0) return false;
+  configStoreValid=true;
+  return true;
 }
 
 void denyRemoteControl();
@@ -328,7 +364,7 @@ void setupPortal(){
 }
 
 void connectSta(){
-  if(cfg.ssid.isEmpty()) return;
+  if(!configStoreValid || cfg.ssid.isEmpty()) return;
   WiFi.begin(cfg.ssid.c_str(),cfg.pass.c_str());
   uint32_t t=millis();
   while(WiFi.status()!=WL_CONNECTED && millis()-t<12000){ delay(250); }
@@ -358,11 +394,11 @@ void setup(){
 
 void loop(){
   web.handleClient();
-  if(WiFi.status()!=WL_CONNECTED && !cfg.ssid.isEmpty() && millis()-lastPoll>8000){
+  if(configStoreValid && WiFi.status()!=WL_CONNECTED && !cfg.ssid.isEmpty() && millis()-lastPoll>8000){
     WiFi.disconnect(); WiFi.begin(cfg.ssid.c_str(),cfg.pass.c_str()); wifiFailures++; lastPoll=millis();
     if(wifiFailures>=maxWifiRetries) startSetupAp();
   }
-  if(WiFi.status()==WL_CONNECTED && millis()-lastPoll>1500){
+  if(configStoreValid && WiFi.status()==WL_CONNECTED && millis()-lastPoll>1500){
     wifiFailures=0;
     // P0: disable the physical coin acceptor before the blocking 3.5s HTTP wait.
     // Keep the poll response discarded until CORE's authenticated contract is approved.
