@@ -1,3 +1,36 @@
+## CURRENT STATUS — 2026-11-26 UTC12 — unconditional poll-deny control-flow regression
+
+**Role:** PHX-HARDWARE · **Task:** [#177](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/177) / [#354](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/354)  
+**Branch:** `phoenix/hw-active-v06-poll-intake-deny-20261126-utc05`  
+**Base:** `blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859`  
+**Source/test SHA:** `ea24229ee3b46424997fd3e68012ef50a65897f9`  
+**PR state:** OPEN / DRAFT / UNMERGED; deny-only; no production promotion.
+
+### This activation — one Hardware-owned test-hardening change
+
+The source-extracted `poll_preflight_inhibit_lab.py` previously accepted a `denyRemoteControl()` call nested under a false conditional, and did not reject a control transfer between the blocking poll and the post-poll deny. The firmware itself currently uses direct unconditional pre/post deny calls; the lab was not proving that property.
+
+- Test-first RED: [#45819429664](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45819429664), job `139907519235`, failed as expected at the braced conditional pre-poll guard mutation: the old lab accepted it.
+- Corrected source/test commit: [`ea24229ee3b46424997fd3e68012ef50a65897f9`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/ea24229ee3b46424997fd3e68012ef50a65897f9).
+- Focused exact-head GREEN: [#45819620598](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45819620598), job `139908174414`, PASS.
+- The GREEN log rejects five control-flow mutations per board: braced and unbraced conditional pre-poll deny, braced and unbraced conditional post-poll deny, and early return before the post-poll deny. Both ESP8266 and ESP32 poll-intake labs pass.
+- Existing response-discard, no-remote-config, no-automatic-coin-POST, no-pending-clear, GPIO output-order, and request-auth guards also pass in the focused job.
+
+### Scope and evidence limits
+
+Only the Hardware-owned host lab changed in this source/test commit. Both production sketches are unchanged by this activation: they remain deny-only, with unconditional `denyRemoteControl()` before and after synchronous `post("poll")`, discarded poll response, no automatic coin POST, and no active pending disposition.
+
+- Native synthetic run [#45819620637](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45819620637), job `139908175159`, fails at QA-owned PAY-0745 active `clearPending(true/false)` assertion; Hardware did not change QA tests or restore unsafe pending disposition.
+- Full build run [#45819620932](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45819620932), validation job `139908452391`, currently fails the mandatory handover freshness gate because this record had not yet been refreshed after source SHA `ea24229ee3b46424997fd3e68012ef50a65897f9`.
+- ESP32 Mbed TLS 3/4 matrix run [#45819620625](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45819620625) and remaining target jobs were still running at this checkpoint; no result is inferred.
+- Host/source-extracted evidence is SIMULATED / CI VERIFIED only. Physical GPIO/relay, physical coin acceptor, LittleFS power loss, electrical recovery, 150 controlled power cuts, and 30-device/24-hour soak remain NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+
+### Next exact action
+
+After this handover refresh, rerun Full validation at the new exact PR head. PHX-QA must reconcile the deny-only pending-evidence assertion; PHX-CORE must publish the authenticated register/poll and receipt/disposition contract; PHX-MASTER must refresh the #354 head pin. Keep coin/relay admission denied until those owners approve the shared contracts.
+
+---
+
 ## CURRENT STATUS — 2026-11-26 UTC10 final exact-docs-head validation
 
 **PR #354 remains OPEN / DRAFT / UNMERGED** at documentation head `45418f9069ba40ad3d2a71930b8469d5d8623de7`, source/test `046bced7c8765d5e27daeb2885f0654f9ec62149`. Focused Hardware PR [#45803466556](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45803466556), focused push [#45802954262](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45802954262), ESP32 core matrix PR [#45803466620](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45803466620), and matrix push [#45803459247](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45803459247) PASS. The source-extracted lab covers all four independent relay/LED polarity combinations on both boards; 8/8 scenarios pass and 14/14 injected regressions are rejected.
