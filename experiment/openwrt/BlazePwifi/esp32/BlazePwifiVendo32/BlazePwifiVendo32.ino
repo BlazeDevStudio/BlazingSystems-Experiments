@@ -3,7 +3,14 @@
 #include <HTTPClient.h>
 #include <Preferences.h>
 #include <LittleFS.h>
+#include <mbedtls/version.h>
+#if MBEDTLS_VERSION_MAJOR == 4
+#include <psa/crypto.h>
+#elif MBEDTLS_VERSION_MAJOR == 3
 #include <mbedtls/sha256.h>
+#else
+#error "Unsupported Mbed TLS major version: BlazePwifi ESP32 supports 3.x and 4.x only"
+#endif
 #include <esp_system.h>
 
 struct Config {
@@ -30,18 +37,35 @@ bool controllerEnabled=false, coinEnabled=false, relayEnabled=false, ledEnabled=
 bool runCoinActiveLow=true, runRelayActiveHigh=true, runLedActiveHigh=true;
 uint32_t lastPoll=0, lastEdge=0, lastSend=0, configuredApSince=0;
 uint8_t pendingPulses=0;
-int runCoinPin=27, runLedPin=2, runRelayPin=26, maxWifiRetries=6, wifiFailures=0, remoteRevision=0;
+int runCoinPin=27, runLedPin=2, runRelayPin=26, maxWifiRetries=6, wifiFailures=0;
 uint16_t runDebounceMs=40, runPulseGroupMs=400;
 String activeTarget, pendingTarget, pendingNonce, setupApName;
 
 String hexDigest(const String &s){
   unsigned char out[32]; char buf[65];
+#if MBEDTLS_VERSION_MAJOR == 4
+  // Mbed TLS 4 removes the legacy SHA module API; keep the same SHA-256
+  // digest bytes through the supported PSA one-shot hash interface.
+  if(psa_crypto_init()!=PSA_SUCCESS) return String();
+  size_t digestLength=0;
+  psa_status_t status=psa_hash_compute(
+    PSA_ALG_SHA_256,
+    (const uint8_t*)s.c_str(),
+    s.length(),
+    out,
+    sizeof(out),
+    &digestLength
+  );
+  if(status!=PSA_SUCCESS || digestLength!=sizeof(out)) return String();
+#elif MBEDTLS_VERSION_MAJOR == 3
   mbedtls_sha256_context c;
   mbedtls_sha256_init(&c);
-  mbedtls_sha256_starts(&c,0);
-  mbedtls_sha256_update(&c,(const unsigned char*)s.c_str(),s.length());
-  mbedtls_sha256_finish(&c,out);
+  int status=mbedtls_sha256_starts(&c,0);
+  if(status==0) status=mbedtls_sha256_update(&c,(const unsigned char*)s.c_str(),s.length());
+  if(status==0) status=mbedtls_sha256_finish(&c,out);
   mbedtls_sha256_free(&c);
+  if(status!=0) return String();
+#endif
   for(int i=0;i<32;i++) sprintf(buf+i*2,"%02x",out[i]);
   buf[64]=0; return String(buf);
 }
@@ -338,19 +362,9 @@ void saveConfig(){
   prefs.putUInt("debounce",cfg.coinDebounceMs); prefs.putUInt("groupms",cfg.pulseGroupMs);
 }
 
-String jsonString(const String &r,const String &k){
-  String n="\""+k+"\":\""; int p=r.indexOf(n); if(p<0) return "";
-  p+=n.length(); int e=r.indexOf('"',p); if(e<0) return ""; return r.substring(p,e);
-}
-bool jsonTrue(const String &r,const String &k){ return r.indexOf("\""+k+"\":1")>=0 || r.indexOf("\""+k+"\":true")>=0; }
-int jsonInt(const String &r,const String &k,int def){
-  String n="\""+k+"\":"; int p=r.indexOf(n); if(p<0) return def; p+=n.length();
-  while(p<(int)r.length() && r[p]==' ') p++;
-  int e=p; if(e<(int)r.length() && r[e]=='-') e++;
-  while(e<(int)r.length() && isDigit(r[e])) e++;
-  if(e==p || (e==p+1 && r[p]=='-')) return def;
-  return r.substring(p,e).toInt();
-}
+
+
+
 
 void configureRuntimePins(int coinPin,int relayPin,int ledPin){
   if(runLedPin!=ledPin) writeLogical(runLedPin,false,runLedActiveHigh);
@@ -360,34 +374,28 @@ void configureRuntimePins(int coinPin,int relayPin,int ledPin){
   writeLogical(runRelayPin,false,runRelayActiveHigh); writeLogical(runLedPin,false,runLedActiveHigh);
 }
 
-// Retained for a future separately authenticated configuration envelope only.
-// Master Architecture Contracts §6.4 forbids calling this from register/poll.
-void applyRemoteConfig(const String &r){
-  int rev=jsonInt(r,"config_revision",remoteRevision);
-  if(rev==remoteRevision && remoteRevision!=0) return;
-  controllerEnabled=jsonInt(r,"enabled",1)!=0;
-  coinEnabled=jsonInt(r,"coin_enabled",1)!=0;
-  relayEnabled=jsonInt(r,"relay_enabled",1)!=0;
-  ledEnabled=jsonInt(r,"led_enabled",1)!=0;
-  int cp=jsonInt(r,"coin_pin",-1), rp=jsonInt(r,"relay_pin",-1), lp=jsonInt(r,"led_pin",-1);
-  int nextCoin=(cp>=0&&cp<=39)?cp:cfg.coinPin;
-  int nextRelay=(rp>=0&&rp<=39)?rp:cfg.relayPin;
-  int nextLed=(lp>=0&&lp<=39)?lp:cfg.insertLedPin;
-  runCoinActiveLow=jsonInt(r,"coin_active_low",cfg.coinActiveLow?1:0)!=0;
-  runRelayActiveHigh=jsonInt(r,"relay_active_high",cfg.relayActiveHigh?1:0)!=0;
-  runLedActiveHigh=jsonInt(r,"led_active_high",cfg.ledActiveHigh?1:0)!=0;
-  int db=jsonInt(r,"coin_debounce_ms",cfg.coinDebounceMs), pg=jsonInt(r,"pulse_group_ms",cfg.pulseGroupMs), mr=jsonInt(r,"max_wifi_retries",6);
-  runDebounceMs=(uint16_t)constrain(db,1,2000); runPulseGroupMs=(uint16_t)constrain(pg,10,10000); maxWifiRetries=constrain(mr,1,60);
-  configureRuntimePins(nextCoin,nextRelay,nextLed); remoteRevision=rev; applyOutputs();
+
+
+bool validSha256Hex(const String &digest){
+  if(digest.length()!=64) return false;
+  for(size_t i=0;i<64;i++){
+    const char c=digest[i];
+    if(!((c>='0'&&c<='9') ||
+         (c>='a'&&c<='f') ||
+         (c>='A'&&c<='F'))) return false;
+  }
+  return true;
 }
 
 String lastSentNonce;
 
 String signedBody(const String &action,const String &pulses,const String &target,const String &forcedNonce=""){
   String n=forcedNonce.length()?forcedNonce:freshNonce();
-  lastSentNonce=n;
   String base=cfg.key+"|"+action+"|"+cfg.id+"|"+n+"|"+pulses+"|"+target+"|"+cfg.key;
-  return "action="+action+"&id="+esc(cfg.id)+"&nonce="+n+"&pulses="+pulses+"&target="+esc(target)+"&sig="+hexDigest(base);
+  String digest=hexDigest(base);
+  if(!validSha256Hex(digest)) return String();
+  lastSentNonce=n;
+  return "action="+action+"&id="+esc(cfg.id)+"&nonce="+n+"&pulses="+pulses+"&target="+esc(target)+"&sig="+digest;
 }
 
 String post(const String &action,const String &pulses="0",const String &target="",const String &forcedNonce=""){
@@ -399,11 +407,13 @@ String post(const String &action,const String &pulses="0",const String &target="
     return "";
   }
   if(WiFi.status()!=WL_CONNECTED) return "";
+  String body=signedBody(action,pulses,target,forcedNonce);
+  if(!body.length()) return "";
   WiFiClient client; HTTPClient h;
   String url="http://"+cfg.server+":4455/cgi-bin/vendo";
   if(!h.begin(client,url)) return "";
   h.setTimeout(3500); h.addHeader("Content-Type","application/x-www-form-urlencoded");
-  int code=h.POST(signedBody(action,pulses,target,forcedNonce));
+  int code=h.POST(body);
   String r=code>0?h.getString():""; h.end(); return r;
 }
 
@@ -426,6 +436,16 @@ void denyRemoteControl(){
   activeTarget="";
   applyOutputs();
 }
+
+// Compatibility sentinel only: register/poll responses are not an authenticated
+// configuration envelope. Never parse remote fields or enable actuation here.
+// Reserved v0.4 config fields: config_revision, coin_debounce_ms, pulse_group_ms, max_wifi_retries.
+// They are intentionally ignored until CORE publishes an authenticated configuration envelope.
+void applyRemoteConfig(const String &response){
+  (void)response;
+  denyRemoteControl();
+}
+
 
 void startSetupAp(){
   if(setupApName.isEmpty()) setupApName="BlazePwifi-Vendo32-"+String((uint32_t)(ESP.getEfuseMac() & 0xffffffffULL),HEX);
@@ -526,6 +546,9 @@ void loop(){
   }
   if(WiFi.status()==WL_CONNECTED && millis()-lastPoll>1500){
     wifiFailures=0;
+    // HW-P0: de-energize the coin acceptor before the synchronous HTTP wait.
+    // Keep this deny-only until CORE's authenticated poll contract is approved.
+    denyRemoteControl();
     // Current main poll replies have no response_sig. The derived |poll|
     // candidate is not an approved producer/consumer contract; ignore all fields.
     (void)post("poll");

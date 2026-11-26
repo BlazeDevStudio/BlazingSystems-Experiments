@@ -655,3 +655,55 @@ Use this default prompt structure and specialize it to the latest milestone:
 ```
 
 Failures should also be logged when meaningful, including reproduction/evidence, suspected cause, what was tried, and the safest next action.
+
+
+## PHX-HARDWARE UTC03 — PSA initialization ordering and unsupported-major fail-closed regression
+
+**Date:** 2026-11-26 UTC03  
+**Role:** PHX-HARDWARE  
+**PR:** [#340 — OPEN / DRAFT / UNMERGED](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/340)  
+**Branch:** `phoenix/hardware-prepoll-intake-deny-20261122-utc01`  
+**Parent #283:** `4dd0b01bf04cf80aec6d4dd6fc93b2fdc633da30`  
+**Source/test commit:** `d1380acf80c0b631c5814d746dca36b2fad7a986`
+
+### Bounded source/test change
+
+Updated only `experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/mbedtls_sha256_compat_lab.py`.
+
+The lab now asserts that `psa_crypto_init()` succeeds before `psa_hash_compute()`, and its mutation suite rejects:
+- ignoring PSA initialization failure;
+- invoking SHA-256 before successful PSA initialization;
+- removing the compile-time denial for unsupported Mbed TLS major versions.
+
+No production `.ino`, controller API, response schema, coin/relay policy, financial logic, signer, witness, updater or COE destination file changed.
+
+### Exact-source focused CI
+
+- Provider guard [#45747199083](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45747199083), job `139666018101`: PASS. Seven fail-open mutations were rejected, including all three new cases. Log confirms `SIMULATED_ONLY=1`, `TARGET_BUILD_REQUIRED=1`, `COIN_ADMISSION_ENABLED=0`.
+- Poll preflight [#45747199112](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45747199112), job `139666018314`: PASS for ESP8266 and ESP32 source guards; remote-config deny checks PASS. SIMULATED ONLY.
+- Quarantine append/readback [#45747199138](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45747199138), job `139666018487`: PASS. Pending-journal boot fault cases 14/14 per board; quarantine append/readback and clear-commit cases 10/10 per board. SIMULATED ONLY; no physical filesystem/power cut.
+- ESP8266 Arduino core 3.1.2 [#45747199174](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45747199174), job `139666018959`: PASS.
+- ESP32 Arduino core 3.3.13 [#45747199118](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45747199118), job `139666018483`: PASS at exact SHA `d1380acf80c0b631c5814d746dca36b2fad7a986`; sketch uses 1,028,940 / 1,310,720 bytes (78%).
+- ESP32 Arduino core 4.0.0 [#45747192648](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45747192648), job `139665996232`: PASS at exact SHA `d1380acf80c0b631c5814d746dca36b2fad7a986`; sketch uses 1,083,073 / 1,310,720 bytes (82%). Application binary `BlazePwifiVendo32.ino.bin` SHA-256: `ea6bfb5fbf31f4fca3ed7942e92cede58b75c1d087cd74ac15414d9d568f0a2e`. Log explicitly states `SIMULATED_ONLY=1` and `PHYSICAL_ACCEPTANCE=0`.
+
+### Full integration status at handover time
+
+- Push Full run [#45747192586](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45747192586): validation and all 14 target/platform jobs PASS; update bundle and completed browser/Ruijie/Orange Pi/ESP simulations PASS; x86 simulation artifact upload and Android-emulator job were still IN_PROGRESS at the time of this handover. Production import, prerelease, production-sign handoff and release publication are SKIPPED.
+- PR Full run [#45747199081](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45747199081): validation PASS; remaining target/simulation jobs were still running/queued at the time of this handover. No aggregate Full PASS is claimed here. Recheck exact-head status before promotion or further integration.
+
+### Reproducibility observation — RELEASE review requested
+
+The `.ino` blob is identical at prior source/test SHA `d3168ccb4959fe1eab718912fd04510ef7603253` and this source/test SHA `d1380acf80c0b631c5814d746dca36b2fad7a986` (`fc883d20ef76ec5521a5872a175ec73a16cf8cbe`). Both builds report Arduino CLI 1.6.0 and ESP32 core 4.0.0, with identical sketch/program and global-variable sizes, but the application binary hashes differ: prior `f9489e1df0d075cbfce549120c37af2778c53cb055f165c14a1d790623293c31`; current `ea6bfb5fbf31f4fca3ed7942e92cede58b75c1d087cd74ac15414d9d568f0a2e`. The workflow does not retain both binaries for byte-level comparison. This is an observed reproducibility gap; its cause is not established. Request PHX-RELEASE to pin the full compiler/tool package set and preserve artifacts/provenance before treating firmware hashes as reproducible.
+
+### Active blockers and boundaries
+
+- Active `blazepwifi-v0.6.0-audit-foundation` remains `2fbd2475e9f54878c316fa7cea2f228386b0e859`; both production sketches still consume unsigned poll fields / apply remote config before coin sampling. PR #340 is a separate deny-only candidate and is not integrated.
+- Current main CGI blob `2e3a1430d08cc6606429a042df3b5848f53c7267` emits `response_sig` for member endpoints, but not `register|ping` or `poll`. CORE must publish the canonical authenticated response/key/freshness/replay contract; Hardware will not invent it.
+- #239, #254 and #283 remain OPEN / DRAFT / UNMERGED. #348 still has a separate Mbed TLS 4 header failure; the #340 provider path has not been ported to #348 or active v0.6.
+- #177 remains P0. #266 remains OPEN with seven role checkboxes unchecked. #31/#32/#34/#43 remain open.
+- COE #26 remains FROZEN / DRAFT_REVIEW_ONLY; no COE destination writes.
+- Private `BLAZE_PROJECT_REGISTRY_v11_20261027.json` was not recovered. No Google Drive connector is exposed in this run; no older registry snapshot was substituted.
+
+**Evidence classification:** provider/source guards and target builds are CI VERIFIED (the guards themselves are SIMULATED); physical coin, relay, LittleFS power-cut, 150-cut and 30-device/24-hour acceptance remain NOT TESTED. HARDWARE ACCEPTED = NO. PRODUCTION READY = NO-GO.
+
+**Next exact action:** recheck the two Full runs to terminal state; request RELEASE review of the non-identical core-4 binary hashes/toolchain pinning; request QA review of the added provider mutation vectors; continue only after CORE publishes the approved response contract. Keep all coin/relay/finance/replay/witness/downgrade paths fail-closed.

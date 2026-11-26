@@ -1,0 +1,71 @@
+name: PHX-HARDWARE ESP32 Arduino core 3.3.13 compile
+on:
+  push:
+    branches:
+      - phoenix/hardware-prepoll-intake-deny-20261122-utc01
+    paths:
+      - 'experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino'
+      - 'experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/mbedtls_sha256_compat_lab.py'
+      - '.github/workflows/phx-hw-esp32-core-3.3.13-compile.yml'
+  pull_request:
+    paths:
+      - 'experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino'
+      - 'experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/mbedtls_sha256_compat_lab.py'
+      - '.github/workflows/phx-hw-esp32-core-3.3.13-compile.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: phx-hw-esp32-core-3-3-13-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  exact-source-core-3-3-13:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Verify exact source checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected="${{ github.event.pull_request.head.sha || github.sha }}"
+          actual="$(git rev-parse HEAD)"
+          printf 'EXPECTED_SHA=%s\nACTUAL_SHA=%s\n' "$expected" "$actual"
+          test "$actual" = "$expected"
+
+      - uses: arduino/setup-arduino-cli@v2
+
+      - name: Install pinned Arduino ESP32 core 3.3.13
+        shell: bash
+        run: |
+          set -euo pipefail
+          arduino-cli config init --overwrite
+          arduino-cli config add board_manager.additional_urls https://espressif.github.io/arduino-esp32/package_esp32_index.json
+          arduino-cli core update-index
+          arduino-cli core install esp32:esp32@3.3.13
+          arduino-cli core list
+          arduino-cli core list | grep -E '^esp32:esp32[[:space:]]+3\.3\.13([[:space:]]|$)'
+
+      - name: Run fail-closed provider and mutation guards
+        run: python3 experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/mbedtls_sha256_compat_lab.py
+
+      - name: Compile the actual ESP32 Vendo sketch against core 3.3.13
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$RUNNER_TEMP/esp32-core-3.3.13"
+          mkdir -p "$output"
+          arduino-cli compile --warnings all --fqbn esp32:esp32:esp32 \
+            --output-dir "$output" \
+            experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32
+          binary="$(find "$output" -type f -name '*.bin' -print -quit)"
+          test -n "$binary"
+          test -s "$binary"
+          sha256sum "$binary"
+          printf 'ARDUINO_ESP32_CORE=3.3.13\nSIMULATED_ONLY=1\nPHYSICAL_ACCEPTANCE=0\n'
