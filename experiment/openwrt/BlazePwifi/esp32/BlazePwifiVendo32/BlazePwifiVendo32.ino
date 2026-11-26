@@ -199,6 +199,7 @@ void loadConfig(){
   }
 }
 
+// Preferences put* return zero on failure; this multi-key write is not atomic.
 bool saveConfig(){
   bool ok=true;
   if(prefs.putString("ssid",cfg.ssid)==0) ok=false;

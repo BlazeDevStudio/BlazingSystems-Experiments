@@ -43,3 +43,5 @@
 - Test-authoring failures #45896421871 and #45896529929 were corrected; they were not firmware failures.
 - Full #45896670128 CI-0701 passed but validation stopped at the stale handover freshness gate before this sync; target jobs were still running. Native #45896670074 fails QA-owned PAY-0745. Mbed #45896670138 pending.
 - Physical storage/power-cut/relay acceptance NOT TESTED; HARDWARE ACCEPTED NO; PRODUCTION NO-GO.
+
+- Source-comment clarification: EEPROM commit result must be honored; ESP32 Preferences multi-key writes are not atomic. Comment-only source sync is included with this documentation refresh.

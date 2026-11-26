@@ -211,6 +211,7 @@ void defaults(){
   makeSetupPassword();
 }
 
+// EEPROM.commit() is the persistence result; callers must not report success or reboot on false.
 bool saveCfg(){ EEPROM.put(0,cfg); return EEPROM.commit(); }
 
 void loadCfg(){

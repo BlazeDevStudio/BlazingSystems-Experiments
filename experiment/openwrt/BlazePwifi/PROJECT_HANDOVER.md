@@ -1,10 +1,10 @@
-## CURRENT STATUS — 2026-11-27 UTC21 — ESP configuration persistence failure propagation CI verified; integration gates remain open
+## CURRENT STATUS — 2026-11-27 UTC21 — ESP configuration persistence failure propagation CI verified; source comments and handover synchronized
 
 **Role:** PHX-HARDWARE · **Task:** PR #355 · **PR:** OPEN / DRAFT / UNMERGED  
 **Repository:** BlazeDevStudio/BlazingSystems-Experiments · **Branch:** phoenix/hw-poll-preflight-lab-modules-20261127-utc18 · **Parent #354:** fc842342596786e072630179acfbbc4feeb2ba02  
 **Firmware correction:** 26a28c763168e2881d5b8e36d859a0a72d704524  
 **Exact focused source/test SHA:** 835017d95c129fb52b8fdca82032f1fb9a83ac33  
-**Documentation parent before this sync:** 835017d95c129fb52b8fdca82032f1fb9a83ac33  
+**Documentation/source-comment sync parent:** 7ddcd897a3e69708294813a65e9eb6152b5e506b · **Focused test SHA:** 835017d95c129fb52b8fdca82032f1fb9a83ac33  
 **Narrow handover:** [UTC21 configuration persistence evidence](2026-11-27-hw-config-persistence-write-results-utc21.md)
 
 ### Current result

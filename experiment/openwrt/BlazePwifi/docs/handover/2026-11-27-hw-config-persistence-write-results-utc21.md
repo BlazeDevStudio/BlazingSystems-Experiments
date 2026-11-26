@@ -9,7 +9,7 @@
 **Current PR:** [#355](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/355), OPEN / DRAFT / UNMERGED  
 **Firmware correction commit:** `26a28c763168e2881d5b8e36d859a0a72d704524`  
 **Exact focused source/test SHA:** `835017d95c129fb52b8fdca82032f1fb9a83ac33`  
-**Documentation parent before this sync:** `835017d95c129fb52b8fdca82032f1fb9a83ac33`
+**Documentation/source-comment sync parent:** `7ddcd897a3e69708294813a65e9eb6152b5e506b` · **Focused test SHA:** `835017d95c129fb52b8fdca82032f1fb9a83ac33`
 
 ## Proven defect
 
