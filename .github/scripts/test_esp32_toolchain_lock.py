@@ -100,6 +100,7 @@ def synthetic_fixture(root: Path):
         "schema": "phx/arduino-esp32-toolchain-lock/v1",
         "source": {
             "url": INDEX_URL,
+            "commit": "c" * 40,
             "git_blob_sha1": verifier.git_blob_sha1(esp32_bytes),
         },
         "arduino_cli": {"version": "1.6.0"},
