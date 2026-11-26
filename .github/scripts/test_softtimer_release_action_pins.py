@@ -31,11 +31,23 @@ def _step_blocks(workflow: str) -> list[str]:
     """Split job steps at the workflow's six-space step indentation."""
     starts = [
         match.start()
-        for match in re.finditer(r"(?m)^      - (?:name:|uses:)", workflow)
+        for match in re.finditer(r"(?m)^      - ", workflow)
     ]
     return [
         workflow[start : starts[index + 1] if index + 1 < len(starts) else len(workflow)]
         for index, start in enumerate(starts)
+    ]
+
+
+def _checkout_step_blocks(workflow: str) -> list[str]:
+    """Return checkout steps regardless of which mapping key appears first."""
+    return [
+        block
+        for block in _step_blocks(workflow)
+        if re.search(
+            r"(?m)^(?:      - uses:|        uses:)[ \\t]*actions/checkout@",
+            block,
+        )
     ]
 
 
@@ -114,11 +126,7 @@ class SoftTimerReleaseActionPinTests(unittest.TestCase):
         self.assertFalse(problems, "\n".join(problems))
 
     def test_every_checkout_step_disables_persisted_credentials(self):
-        checkout_blocks = [
-            block
-            for block in _step_blocks(self.workflow)
-            if re.search(r"(?m)^      - uses: actions/checkout@", block)
-        ]
+        checkout_blocks = _checkout_step_blocks(self.workflow)
         self.assertEqual(
             len(checkout_blocks),
             3,
@@ -175,15 +183,15 @@ class SoftTimerReleaseActionPinTests(unittest.TestCase):
             "        with:\\n"
             "          persist-credentials: true\\n"
         )
-        checkout_blocks = [
-            block
-            for block in _step_blocks(workflow)
-            if re.search(r"(?m)^      - uses: actions/checkout@", block)
-        ]
+        checkout_blocks = _checkout_step_blocks(workflow)
         self.assertEqual(
             len(checkout_blocks),
             4,
             "id-first steps with a later uses: actions/checkout key must be counted",
+        )
+        self.assertFalse(
+            _checkout_has_read_only_credentials(checkout_blocks[-1]),
+            "id-first checkout steps must also disable persisted credentials",
         )
 
 
