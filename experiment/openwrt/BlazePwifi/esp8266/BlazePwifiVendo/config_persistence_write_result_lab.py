@@ -63,11 +63,21 @@ def assert_esp8266(source: str) -> None:
 
 
 def assert_esp32(source: str) -> None:
+    global_source = mask_non_code(source)
+    require(re.search(r"\bbool\s+configStoreValid\s*=\s*true", global_source) is not None,
+            "ESP32 must track whether the persisted configuration is valid")
+    require(re.search(r"\bbool\s+preferencesReady\s*=\s*false", global_source) is not None,
+            "ESP32 must track whether Preferences.begin succeeded")
+
+    raw_defaults = extract_function(source, "void useSafeConfigDefaults(")
+    defaults = mask_non_code(raw_defaults)
+    require("cfg=Config();" in defaults and 'cfg.server="10.0.0.1";' in raw_defaults and
+            'cfg.id="vendo-01";' in raw_defaults and "cfg.apPass=String(b);" in raw_defaults,
+            "invalid configuration recovery must use documented safe defaults and a fresh setup password")
+
     raw_load = extract_function(source, "void loadConfig(")
     load = mask_non_code(raw_load)
-    require(re.search(r"\bbool\s+configStoreValid\s*=\s*true", mask_non_code(source)) is not None,
-            "ESP32 must track whether the persisted configuration is valid")
-    begin = re.search(r"if\s*\(\s*!\s*prefs\.begin\s*\(", load)
+    begin = raw_load.find('preferencesReady=prefs.begin("blazevendo",false)')
     marker = re.search(
         r"if\s*\(\s*prefs\.isKey\s*\(\s*\"cfgvalid\"\s*\)\s*&&\s*!\s*"
         r"prefs\.getBool\s*\(\s*\"cfgvalid\"\s*,\s*false\s*\)\s*\)",
@@ -75,34 +85,43 @@ def assert_esp32(source: str) -> None:
     )
     first_read_positions = [
         raw_load.find(token) for token in
-        ("prefs.getString(", "prefs.getInt(", "prefs.getUInt(", "prefs.getBool(")
+        ("prefs.getString(", "prefs.getInt(", "prefs.getUInt(")
         if raw_load.find(token) >= 0
     ]
-    require(begin is not None, "loadConfig must fail closed when Preferences.begin fails")
-    require(marker is not None, "loadConfig must recognize an explicit invalid cfgvalid marker")
+    require(begin >= 0, "loadConfig must check Preferences.begin")
+    require(marker is not None and begin < marker.start(),
+            "loadConfig must check the validity marker after opening Preferences")
     require(bool(first_read_positions) and marker.start() < min(first_read_positions),
             "cfgvalid must be checked before reading any persisted configuration fields")
     require(load.count("configStoreValid=false") >= 2,
             "Preferences-open and invalid-marker paths must mark the configuration invalid")
-    require(load.count("cfg=Config()") >= 2,
-            "invalid persisted state must discard partially written fields and use safe defaults")
-    require("return;" in load, "invalid configuration paths must return before loading partial fields")
+    require(raw_load.count("useSafeConfigDefaults()") >= 2,
+            "both invalid-storage paths must discard partial fields and use safe defaults")
+    require(re.search(r"if\s*\(\s*!\s*preferencesReady\s*\)\s*\{", load) is not None,
+            "Preferences.begin failure must return before field reads")
+    require(load.count("return;") >= 2,
+            "invalid-storage paths must return before reading partial fields")
 
     raw_save = extract_function(source, "bool saveConfig(")
     save = mask_non_code(raw_save)
     require(re.search(r"configStoreValid\s*=\s*false", save) is not None,
             "saveConfig must deny network use while a new configuration is being persisted")
+    require(re.search(
+        r"if\s*\(\s*!\s*preferencesReady\s*\)\s*\{\s*preferencesReady\s*=\s*prefs\.begin\s*\(",
+        save,
+    ) is not None, "saveConfig must retry Preferences.begin for setup recovery")
     invalid_marker = raw_save.find('prefs.putBool("cfgvalid",false)')
     valid_marker = raw_save.find('prefs.putBool("cfgvalid",true)')
-    data_positions = [
-        raw_save.find(f'prefs.{method}("')
-        for method in ("putString", "putInt", "putUInt")
-        if raw_save.find(f'prefs.{method}("') >= 0
-    ]
-    require(invalid_marker >= 0 and bool(data_positions) and invalid_marker < min(data_positions),
+    first_data = min(
+        raw_save.find(token) for token in
+        ('prefs.putString("ssid"', 'prefs.putInt("coinpin"', 'prefs.putBool("coinlow"',
+         'prefs.putUInt("debounce"')
+    )
+    last_data = raw_save.rfind('prefs.putUInt("groupms"')
+    require(invalid_marker >= 0 and invalid_marker < first_data,
             "saveConfig must persist cfgvalid=false before changing any configuration field")
-    require(valid_marker > max(data_positions),
-            "saveConfig must publish cfgvalid=true only after all configuration writes")
+    require(valid_marker > last_data,
+            "saveConfig must publish cfgvalid=true only after every configuration write")
     require(re.search(
         r"if\s*\(\s*prefs\.putBool\s*\(\s*\"cfgvalid\"\s*,\s*false\s*\)\s*==\s*0\s*\)\s*return\s+false\s*;",
         raw_save,
@@ -180,11 +199,13 @@ int main() {
 
 
 def preferences_harness(source: str) -> str:
+    defaults = extract_function(source, "void useSafeConfigDefaults(")
     load = extract_function(source, "void loadConfig(")
     save = extract_function(source, "bool saveConfig(")
     return r"""
 #include <cstddef>
 #include <cstdint>
+#include <cstdio>
 #include <cstdlib>
 #include <iostream>
 #include <map>
@@ -197,6 +218,7 @@ struct Config {
     uint16_t coinDebounceMs = 40, pulseGroupMs = 400;
 };
 bool configStoreValid = true;
+bool preferencesReady = false;
 uint32_t esp_random() { return 0x12345678UL; }
 struct FakeSerial { void println(const char *) {} };
 FakeSerial Serial;
@@ -207,6 +229,7 @@ struct FakePreferences {
     std::map<std::string, std::string> values;
     std::string fail_key;
     int fail_occurrence = 0;
+    int begin_calls = 0;
     int writes = 0;
     int data_writes = 0;
     int data_reads = 0;
@@ -215,9 +238,10 @@ struct FakePreferences {
     void reset() {
         begin_ok = true; marker_exists = false; marker_value = false;
         values.clear(); fail_key.clear(); fail_occurrence = 0;
-        writes = 0; data_writes = 0; data_reads = 0; cfgvalid_calls = 0; seen.clear();
+        begin_calls = 0; writes = 0; data_writes = 0; data_reads = 0;
+        cfgvalid_calls = 0; seen.clear();
     }
-    bool begin(const char *, bool) { return begin_ok; }
+    bool begin(const char *, bool) { ++begin_calls; return begin_ok; }
     bool isKey(const char *key) const {
         if (std::string(key) == "cfgvalid") return marker_exists;
         return values.count(key) != 0;
@@ -276,14 +300,16 @@ struct FakePreferences {
 };
 Config cfg{};
 FakePreferences prefs;
-""" + load + "\n" + save + r"""
+""" + defaults + "\n" + load + "\n" + save + r"""
+
 int main() {
     // A durable false marker means the previous multi-key save was interrupted.
     prefs.reset(); prefs.marker_exists = true; prefs.marker_value = false;
     prefs.values["ssid"] = "partial-ssid"; prefs.values["server"] = "10.99.0.1";
     prefs.values["coinpin"] = "99"; prefs.values["appass"] = "partial-ap-pass";
-    configStoreValid = true; cfg = Config(); loadConfig();
-    if (configStoreValid || !cfg.ssid.empty() || cfg.server != "10.0.0.1" || cfg.coinPin != 27) return 1;
+    configStoreValid = true; preferencesReady = false; cfg = Config(); loadConfig();
+    if (configStoreValid || !preferencesReady || !cfg.ssid.empty() ||
+        cfg.server != "10.0.0.1" || cfg.id != "vendo-01" || cfg.coinPin != 27) return 1;
     if (prefs.data_reads != 0 || prefs.data_writes != 0 || cfg.apPass.size() < 8) return 2;
     std::cout << "ESP32_INVALID_CONFIG_MARKER_DEFAULTS_PASS\n";
 
@@ -291,14 +317,20 @@ int main() {
     prefs.reset(); prefs.values["ssid"] = "legacy-ssid"; prefs.values["pass"] = "legacy-pass";
     prefs.values["server"] = "10.0.0.2"; prefs.values["key"] = "legacy-key";
     prefs.values["id"] = "legacy-id"; prefs.values["appass"] = "legacy-ap-pass";
-    prefs.values["coinpin"] = "4"; configStoreValid = false; cfg = Config(); loadConfig();
-    if (!configStoreValid || cfg.ssid != "legacy-ssid" || cfg.server != "10.0.0.2" || cfg.coinPin != 4) return 3;
+    prefs.values["coinpin"] = "4"; configStoreValid = false; preferencesReady = false;
+    cfg = Config(); loadConfig();
+    if (!configStoreValid || !preferencesReady || cfg.ssid != "legacy-ssid" ||
+        cfg.server != "10.0.0.2" || cfg.coinPin != 4) return 3;
     std::cout << "ESP32_LEGACY_CONFIG_WITHOUT_MARKER_COMPAT_PASS\n";
 
-    // Preferences.open failure must not fall through to defaults as a valid store.
-    prefs.reset(); prefs.begin_ok = false; configStoreValid = true; cfg = Config(); loadConfig();
-    if (configStoreValid || !cfg.ssid.empty() || cfg.server != "10.0.0.1" || prefs.data_reads != 0) return 4;
-    std::cout << "ESP32_PREFERENCES_BEGIN_FAILURE_DENIED_PASS\n";
+    // Preferences.open failure is denied; the setup-save path may retry later.
+    prefs.reset(); prefs.begin_ok = false; configStoreValid = true; preferencesReady = false;
+    cfg = Config(); loadConfig();
+    if (configStoreValid || preferencesReady || !cfg.ssid.empty() ||
+        cfg.server != "10.0.0.1" || prefs.data_reads != 0) return 4;
+    prefs.begin_ok = true; cfg.apPass = "setup-pass";
+    if (!saveConfig() || prefs.begin_calls != 2 || !prefs.marker_value || !configStoreValid) return 5;
+    std::cout << "ESP32_PREFERENCES_BEGIN_FAILURE_RETRY_PASS\n";
 
     const char *keys[] = {
         "ssid", "pass", "server", "key", "id", "appass", "coinpin", "ledpin",
@@ -307,29 +339,29 @@ int main() {
     for (const char *key : keys) {
         prefs.reset(); prefs.marker_exists = true; prefs.marker_value = true;
         prefs.fail_key = key; prefs.fail_occurrence = 1;
-        configStoreValid = true; cfg = Config(); cfg.apPass = "setup-pass";
-        if (saveConfig()) return 5;
-        if (prefs.data_writes != 14 || !prefs.marker_exists || prefs.marker_value || configStoreValid) return 6;
-        if (prefs.cfgvalid_calls != 1) return 7;
+        preferencesReady = true; configStoreValid = true; cfg = Config(); cfg.apPass = "setup-pass";
+        if (saveConfig()) return 6;
+        if (prefs.data_writes != 14 || !prefs.marker_exists || prefs.marker_value || configStoreValid) return 7;
+        if (prefs.cfgvalid_calls != 1) return 8;
     }
 
     // If the old marker cannot be invalidated, no configuration field may be changed.
     prefs.reset(); prefs.marker_exists = true; prefs.marker_value = true;
     prefs.fail_key = "cfgvalid"; prefs.fail_occurrence = 1;
-    configStoreValid = true; cfg = Config(); cfg.apPass = "setup-pass";
-    if (saveConfig() || prefs.data_writes != 0 || !prefs.marker_value || configStoreValid) return 8;
+    preferencesReady = true; configStoreValid = true; cfg = Config(); cfg.apPass = "setup-pass";
+    if (saveConfig() || prefs.data_writes != 0 || !prefs.marker_value || configStoreValid) return 9;
 
     // If the final valid marker cannot be written, the stored marker remains false.
     prefs.reset(); prefs.marker_exists = true; prefs.marker_value = true;
     prefs.fail_key = "cfgvalid"; prefs.fail_occurrence = 2;
-    configStoreValid = true; cfg = Config(); cfg.apPass = "setup-pass";
-    if (saveConfig() || prefs.data_writes != 14 || prefs.marker_value || configStoreValid) return 9;
-    if (prefs.cfgvalid_calls != 2) return 10;
+    preferencesReady = true; configStoreValid = true; cfg = Config(); cfg.apPass = "setup-pass";
+    if (saveConfig() || prefs.data_writes != 14 || prefs.marker_value || configStoreValid) return 10;
+    if (prefs.cfgvalid_calls != 2) return 11;
 
     prefs.reset(); prefs.marker_exists = true; prefs.marker_value = true;
-    configStoreValid = false; cfg = Config(); cfg.apPass = "setup-pass";
-    if (!saveConfig()) return 11;
-    if (prefs.data_writes != 14 || prefs.cfgvalid_calls != 2 || !prefs.marker_value || !configStoreValid) return 12;
+    preferencesReady = true; configStoreValid = false; cfg = Config(); cfg.apPass = "setup-pass";
+    if (!saveConfig()) return 12;
+    if (prefs.data_writes != 14 || prefs.cfgvalid_calls != 2 || !prefs.marker_value || !configStoreValid) return 13;
     std::cout << "ESP32_CONFIG_VALIDITY_LATCH_FAILURE_MATRIX_PASS fields=14 marker_failures=2\n";
     return 0;
 }
