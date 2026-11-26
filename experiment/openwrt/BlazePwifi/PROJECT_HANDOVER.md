@@ -1,35 +1,26 @@
-## CURRENT STATUS — 2026-11-27 UTC20 — EEPROM fixed-array validation CI verified; integration still blocked
+## CURRENT STATUS — 2026-11-27 UTC20 — EEPROM validation CI verified; ESP8266 target compile correction in progress
 
-**Role:** PHX-HARDWARE · **Task:** #177 / cleanup-first #266 / PR #355 · **PR:** OPEN / DRAFT / UNMERGED  
-**Repository:** `BlazeDevStudio/BlazingSystems-Experiments` · **Branch:** `phoenix/hw-poll-preflight-lab-modules-20261127-utc18` · **Parent #354:** `fc842342596786e072630179acfbbc4feeb2ba02`  
-**Source/test SHA:** `93e850db847760f51a4470c4bda1c46bfc730278` · **Firmware fix:** `106aabb007b7b4c2aee1978645d07214cf668e87`  
-**Test-first RED:** `1f7af928c9ecf51454e262e3b45483c6488f22d8`.
+**Role:** PHX-HARDWARE · **Task:** #177 / #355 · **PR:** OPEN / DRAFT / UNMERGED  
+**Branch:** phoenix/hw-poll-preflight-lab-modules-20261127-utc18 · **Current docs HEAD before this update:** 6495ab4bcd5d7af5e526c12c3b68a133a5d9cf7b  
+**Source/test SHA:** 93e850db847760f51a4470c4bda1c46bfc730278 · **Firmware fix:** 106aabb007b7b4c2aee1978645d07214cf668e87.
 
-### Proven defect and correction
+### Verified task result
 
-ESP8266 `Config` and `ConfigV1` contain fixed-size EEPROM character arrays. The previous `loadCfg()` used unbounded `strlen(cfg.apPass)` on raw EEPROM bytes and migrated legacy strings with `strlcpy` before proving that the source arrays contained NUL terminators.
+The new bounded EEPROM config guard is source-extracted and sanitizer-tested. Exact focused run [#45893204086](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45893204086), job 140160658946, PASS: current arrays 6/6 and legacy arrays 5/5 reject unterminated values; 3/3 unsafe source mutations rejected.
 
-The firmware now uses `boundedStringLength(value, capacity)`, `configStringsTerminated()`, and `configV1StringsTerminated()`. Current records are accepted only when all six fixed arrays are terminated and the AP password is at least eight bytes. Legacy records are copied only after all five legacy arrays pass the bounded check. Invalid records follow the existing defaults path.
+### New target-build blocker
 
-No EEPROM layout, field size, magic, valid-record migration, pin mapping, journal format, network protocol, relay/coin admission or financial behavior was changed. ESP32 uses Preferences `String` fields and was not modified for this ESP8266-specific defect.
+Full run [#45893204180](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45893204180) failed its handover freshness gate because this source/test SHA followed the previous checkpoint. Separately, its ESP8266 compile job 140160838218 failed:
 
-### Exact test evidence
+BlazePwifiVendo.ino:106:38: error: 'LegacyPendingRecord' does not name a type
 
-- Test-first RED: [#45892727658](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45892727658), job `140159081554`: failed because the new lab could not find the not-yet-implemented bounded validator.
-- Initial implementation attempt: [#45892930825](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45892930825), job `140159758106`: failed in sanitizer harness compilation; the first helper draft encoded the NUL character literal incorrectly. Corrected in `106aabb`.
-- Test assertion iteration: [#45893091506](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45893091506), job `140160286995`: failed because the source masker blanked the character literal before the assertion inspected it. The test now inspects raw source for the NUL token and uses masked source only for structural checks.
-- Exact source/test GREEN: [#45893204086](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45893204086), job `140160658946`: PASS. AddressSanitizer/UBSan C++ harness reports `EEPROM_CONFIG_BOUNDED_VALIDATION_PASS current=6/6 legacy=5/5`; all three unsafe mutations are rejected.
-- Current-head ESP32 Mbed TLS matrix [#45893204195](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45893204195): pending at this documentation checkpoint.
-- Native synthetic [#45893204123](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45893204123), job `140160659781`: FAIL at QA-owned active `clearPending(true/false)` assertion; no Hardware-side bypass added.
-- Full [#45893204180](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45893204180), validation job `140160838183`: FAIL at the mandatory handover freshness gate because the last checkpoint was `382f8ea` and source/test commits followed it. This is a documentation-sync failure, not a new firmware compile result. A fresh docs-head Full run is required after this commit.
+The bounded helper block was inserted before LegacyPendingRecord. Arduino's sketch prototype generation now places the legacyPendingChecksum(const LegacyPendingRecord &) prototype before the type declaration. This is a source ordering/build failure, not a test failure. Move the helper block after the LegacyPendingRecord declaration and add a source-order regression assertion. No behavior change is intended.
 
-### Boundaries and physical status
+Native synthetic [#45893204123](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45893204123), job 140160659781, remains FAIL at QA-owned active clearPending(true/false) assertion. Do not add a callsite without CORE's authenticated disposition contract.
 
-The new lab is `config_storage_integrity_lab.py`, included in the focused workflow path filters and exact-source job. It compiles extracted production helper/struct code under `-fsanitize=address,undefined`, checks every current and legacy fixed array, and injects removal of current validation, legacy validation, the NUL comparison and the bounded AP-password check.
+### Next exact action
 
-No EEPROM was read from a physical device; no flash, reset, filesystem migration, payment, secret or customer data was touched. Host/sanitizer evidence is **SIMULATED / CI VERIFIED**, not hardware acceptance. Electrical boot behavior, physical GPIO/relay, coin pulses, 150 power cuts and 30-device/24-hour soak remain **NOT TESTED**. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
-
-**Next exact action:** run a fresh Full validation at the post-sync docs HEAD, retain the QA-owned pending-disposition failure, and request CORE/QA contract reconciliation without adding positive coin admission.
+Move the bounded helpers below LegacyPendingRecord, assert the declaration ordering in the lab, then rerun focused and ESP8266 target builds at the exact source SHA. Keep the candidate deny-only. Physical acceptance remains NOT TESTED; HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
 
 ---
 
