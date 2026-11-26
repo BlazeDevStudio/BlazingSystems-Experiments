@@ -119,7 +119,7 @@ selector_imports = {
 if imported_from(runner_tree, "coin_pulse_capture_lab_isr") != selector_imports:
     fail("runner must import only the public board-ISR selector contracts")
 if imported_from(isr_selector_tree, "firmware_lab_source") != {
-    "extract_functions", "mask_active_cpp_code", "mask_non_code"
+    "extract_function", "extract_functions", "mask_active_cpp_code", "mask_non_code"
 }:
     fail("ISR selector must use the shared firmware source parser")
 selector_functions = {

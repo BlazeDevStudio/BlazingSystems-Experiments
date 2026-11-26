@@ -7,7 +7,7 @@ branch selection so each contract can be inspected and changed independently.
 """
 import re
 
-from firmware_lab_source import extract_functions, mask_active_cpp_code, mask_non_code
+from firmware_lab_source import extract_function, extract_functions, mask_active_cpp_code, mask_non_code
 
 def _condition_board_gate(source, board):
     if board not in ("ESP8266", "ESP32"):
@@ -176,3 +176,125 @@ def verify_inactive_isr_source_decoy_tolerance(source, board):
     # sketch, not only the small synthetic probe above.
     verify_board_specific_isr_selection(mutated_source, board)
     print(f"{board}_INACTIVE_ISR_SOURCE_DECOY_IGNORED")
+
+
+def _runtime_interrupt_wiring_body(source, board):
+    if board not in ("ESP8266", "ESP32"):
+        raise RuntimeError(f"unsupported board for runtime coin interrupt wiring: {board}")
+    body = extract_function(source, "configureRuntimePins")
+    if not body:
+        raise RuntimeError(f"{board} configureRuntimePins function is missing")
+    compact = re.sub(r"\\s+", "", body)
+
+    attach = "attachInterrupt(digitalPinToInterrupt(runCoinPin),coinEdgeISR,runCoinActiveLow?FALLING:RISING);"
+    detach = "detachInterrupt(digitalPinToInterrupt(runCoinPin));"
+    assign = "runCoinPin=coinPin;"
+    input_mode = "pinMode(runCoinPin,INPUT_PULLUP);"
+    quarantine = "quarantineCoinIngressTransition();"
+
+    attach_positions = [match.start() for match in re.finditer(re.escape(attach), compact)]
+    detach_positions = [match.start() for match in re.finditer(re.escape(detach), compact)]
+    assign_positions = [match.start() for match in re.finditer(re.escape(assign), compact)]
+    input_positions = [match.start() for match in re.finditer(re.escape(input_mode), compact)]
+    quarantine_positions = [match.start() for match in re.finditer(re.escape(quarantine), compact)]
+
+    expected_reconfigurations = 2 if board == "ESP32" else 1
+    if compact.count("attachInterrupt(") != 2 or len(attach_positions) != 2:
+        raise RuntimeError(f"{board} must attach exactly two fail-closed coin ISR paths with the configured edge polarity")
+    for label, positions in (
+        ("detach", detach_positions),
+        ("pin assignment", assign_positions),
+        ("coin input mode", input_positions),
+    ):
+        if len(positions) != expected_reconfigurations:
+            raise RuntimeError(
+                f"{board} expected {expected_reconfigurations} {label} operation(s), found {len(positions)}"
+            )
+    if len(quarantine_positions) != 2:
+        raise RuntimeError(f"{board} must quarantine ingress after both interrupt attachment paths")
+
+    for index, (detach_pos, assign_pos) in enumerate(zip(detach_positions, assign_positions), start=1):
+        if detach_pos >= assign_pos:
+            raise RuntimeError(f"{board} reconfiguration {index} changes the coin pin before detaching its prior interrupt")
+
+    for index, attach_pos in enumerate(attach_positions, start=1):
+        prior_assignments = [position for position in assign_positions if position < attach_pos]
+        prior_detaches = [position for position in detach_positions if position < attach_pos]
+        prior_input_modes = [position for position in input_positions if position < attach_pos]
+        if not prior_assignments or not prior_detaches or not prior_input_modes:
+            raise RuntimeError(f"{board} attachment path {index} lacks detach, pin assignment, or INPUT_PULLUP setup")
+        if max(prior_detaches) >= max(prior_assignments):
+            raise RuntimeError(f"{board} attachment path {index} does not detach before changing the coin pin")
+        if max(prior_input_modes) < max(prior_assignments):
+            raise RuntimeError(f"{board} attachment path {index} attaches before configuring the selected coin pin as INPUT_PULLUP")
+        next_attach = attach_positions[index] if index < len(attach_positions) else len(compact) + 1
+        if not any(attach_pos < position < next_attach for position in quarantine_positions):
+            raise RuntimeError(f"{board} attachment path {index} is not followed by ingress quarantine before another attachment path")
+    return body
+
+
+def _replace_runtime_wiring_body(source, body):
+    original = extract_function(source, "configureRuntimePins")
+    if not original:
+        raise RuntimeError("configureRuntimePins function is missing")
+    start = source.find(original)
+    if start < 0:
+        raise RuntimeError("could not locate configureRuntimePins source span")
+    return source[:start] + body + source[start + len(original):]
+
+
+def _swap_first_runtime_statements(body, first, second):
+    first_pos = body.find(first)
+    second_pos = body.find(second)
+    if first_pos < 0 or second_pos <= first_pos + len(first):
+        raise RuntimeError("could not construct runtime interrupt ordering mutation")
+    between = body[first_pos + len(first):second_pos]
+    return body[:first_pos] + second + between + first + body[second_pos + len(second):]
+
+
+def _expect_runtime_wiring_rejected(source, board, mutated_source, mutation_name):
+    try:
+        _runtime_interrupt_wiring_body(mutated_source, board)
+    except RuntimeError:
+        print(f"{board}_RUNTIME_INTERRUPT_MUTATION_REJECTED {mutation_name}")
+        return
+    raise RuntimeError(f"{board} runtime interrupt wiring accepted unsafe mutation: {mutation_name}")
+
+
+def verify_runtime_interrupt_wiring(source, board):
+    """Verify detach → pin selection → INPUT_PULLUP → polarity-aware ISR attach → quarantine."""
+    _runtime_interrupt_wiring_body(source, board)
+    body = extract_function(source, "configureRuntimePins")
+    expected_attach = "attachInterrupt(digitalPinToInterrupt(runCoinPin),coinEdgeISR,runCoinActiveLow?FALLING:RISING);"
+
+    wrong_polarity = source.replace(
+        "runCoinActiveLow?FALLING:RISING",
+        "runCoinActiveLow?RISING:FALLING",
+        1,
+    )
+    _expect_runtime_wiring_rejected(source, board, wrong_polarity, "inverted-active-edge")
+
+    missing_detach_body = body.replace(
+        "detachInterrupt(digitalPinToInterrupt(runCoinPin));",
+        "",
+        1,
+    )
+    _expect_runtime_wiring_rejected(
+        source, board, _replace_runtime_wiring_body(source, missing_detach_body), "missing-detach-before-reconfigure"
+    )
+
+    attach_before_input_body = _swap_first_runtime_statements(
+        body,
+        "pinMode(runCoinPin,INPUT_PULLUP);",
+        expected_attach,
+    )
+    _expect_runtime_wiring_rejected(
+        source, board, _replace_runtime_wiring_body(source, attach_before_input_body), "attach-before-input-pullup"
+    )
+
+    missing_quarantine_body = body.replace("quarantineCoinIngressTransition();", "", 1)
+    _expect_runtime_wiring_rejected(
+        source, board, _replace_runtime_wiring_body(source, missing_quarantine_body), "missing-post-attach-quarantine"
+    )
+
+    print(f"{board}_RUNTIME_INTERRUPT_WIRING_PASS")
