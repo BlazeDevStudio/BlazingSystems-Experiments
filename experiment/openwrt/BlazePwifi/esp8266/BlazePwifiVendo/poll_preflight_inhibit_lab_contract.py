@@ -1,11 +1,11 @@
 """Source-level contracts for fail-closed poll handling in both Vendo sketches."""
 import re
 
-__all__ = ["coin_post_matches", "poll_guard_locations"]
+__all__ = ["coin_post_matches", "poll_call_matches", "poll_guard_locations"]
 
 from firmware_source_extract import extract_braced, extract_function, mask_non_code
 
-def _poll_call_matches(source: str):
+def poll_call_matches(source: str):
     # Match the literal argument in source, but accept it only when the call
     # identifier itself is code rather than a comment/string decoy.
     pattern = re.compile(r'\bpost\s*\(\s*"poll"\s*\)')
@@ -72,8 +72,8 @@ def poll_guard_locations(source: str):
     brace = masked_loop.find("{", condition.end())
     poll_block = extract_braced(loop, brace)
     masked_poll_block = mask_non_code(poll_block)
-    loop_poll_matches = _poll_call_matches(loop)
-    poll_matches = _poll_call_matches(poll_block)
+    loop_poll_matches = poll_call_matches(loop)
+    poll_matches = poll_call_matches(poll_block)
     if len(loop_poll_matches) != len(poll_matches):
         raise AssertionError("synchronous poll request exists outside the bounded guarded block")
     if not poll_matches:

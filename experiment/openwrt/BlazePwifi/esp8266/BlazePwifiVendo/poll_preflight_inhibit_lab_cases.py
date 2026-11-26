@@ -7,7 +7,11 @@ from firmware_source_extract import (
     has_empty_string_assignment,
     mask_non_code,
 )
-from poll_preflight_inhibit_lab_contract import coin_post_matches, poll_guard_locations
+from poll_preflight_inhibit_lab_contract import (
+    coin_post_matches,
+    poll_call_matches,
+    poll_guard_locations,
+)
 from poll_preflight_inhibit_lab_harness import (
     compile_and_run,
     compile_blocking_poll_and_run,
@@ -180,7 +184,7 @@ def verify_board(name: str, path: Path):
 
     # Failure injection: a poll request outside the bounded guarded block
     # must be rejected, not hidden by the first guarded site.
-    poll_matches = _poll_call_matches(loop)
+    poll_matches = poll_call_matches(loop)
     poll_at = poll_matches[0].start() if poll_matches else -1
     sample_at = mask_non_code(loop).find("digitalRead(runCoinPin)", poll_at)
     if poll_at < 0 or sample_at < 0:
