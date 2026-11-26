@@ -1,3 +1,43 @@
+## CURRENT STATUS — 2026-11-27 UTC19 — startup output latch CI verified; Full integration blocked by QA contract
+
+**Role:** PHX-HARDWARE · **Issues:** #177 / #266 · **PR:** [#355](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/355), OPEN / DRAFT / UNMERGED, stacked on #354  
+**Repository:** `BlazeDevStudio/BlazingSystems-Experiments` · **Branch:** `phoenix/hw-poll-preflight-lab-modules-20261127-utc18`  
+**Pre-documentation HEAD:** `d4a35e5e12b8abd85b6a45fa6902d09471c84e4d` · **Exact source/test SHA:** `6b4f7a873dd72663c00c4e08f23131d58e662584`  
+**Firmware correction:** `6bb8eafe03e5a2548524b7c693a37a95638c140e` · **Test-first RED:** `39aa77e56806df3c1febae0f0a097b0f661ca2c6`.
+
+### Verified source change
+
+ESP8266 now configures persisted runtime pins and calls `denyRemoteControl()` before `initPendingStore()`. ESP32 now configures persisted pins/polarity, preloads outputs OFF, and calls `denyRemoteControl()` before `LittleFS.begin(false)` and `loadPending()`. This removes the LittleFS mount/journal-recovery window before the software output-off latch.
+
+The 776-line poll-preflight lab remains modularized into contract, deterministic C++ harness and board-case modules behind the stable entrypoint. The ESP32 Mbed TLS lab now uses whitespace-tolerant setup mutations and asserts LittleFS mount/recovery occurs after the output deny.
+
+No pin mapping, polarity, journal format, response contract, shared API, coin admission, financial behavior, QA source, or CORE source changed. EEPROM/Preferences configuration reads still precede GPIO setup because persisted pin/polarity determine the OFF level; electrical state during that read is not established. The branch remains deny-only.
+
+### Exact test evidence
+
+- **Expected RED:** [#45886210859](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45886210859), job `140137430702`, test-only SHA `39aa77e56806df3c1febae0f0a097b0f661ca2c6`: both ESP8266 and ESP32 rejected the unsafe pre-fix ordering.
+- **Focused GREEN:** [#45886748490](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45886748490), job `140139222908`, exact source/test SHA `6b4f7a873dd72663c00c4e08f23131d58e662584`: PASS. Both boards report startup output-before-LittleFS PASS and reject the injected early-mount mutation. Register startup 8/8 mutation rejection, poll wait/pulse-loss model, remote-config deny, request-auth and polarity tests pass.
+- **Final-docs focused rerun:** [#45887618603](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45887618603), job `140142163199`, docs head `d4a35e5e`: PASS.
+- **ESP32 Mbed TLS exact-source matrix:** [#45886748407](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45886748407): source-contract `140139828100`, core 3.3.13 `140139827987`, core 4.0.0 `140139827660` all PASS at source/test SHA `6b4f7a873dd72663c00c4e08f23131d58e662584`.
+- **Fresh-docs Mbed rerun:** [#45887618583](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45887618583): source-contract `140142728139` PASS; clean target builds were still running at last check. The exact source/test matrix above already completed PASS.
+- **Full at pre-docs source head:** [#45886742357](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45886742357): all OpenWrt target jobs, ESP8266, ESP32 and Android jobs PASS; validation failed because the earlier CHANGE_LEDGER lacked the required dated heading. This run is not an overall Full pass.
+- **Full after canonical handover sync:** [#45887618795](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45887618795): CI-0701 job `140142273647` PASS and mandatory handover freshness gate/history tests PASS. Validation then fails at QA-owned `experiment/openwrt/BlazePwifi/tests/controllers.sh:21`, which requires `config_revision`. Current sketches have zero `config_revision` tokens and only a definition (no callsite) for `applyRemoteConfig`; do not add a dummy field or enable unsigned config to satisfy the grep. ESP8266 job `140142357556` PASS; all 13 OpenWrt/target jobs PASS; ESP32 and Android were still in progress at last check. Update bundle, simulations, candidate gate, signing and publication skipped.
+- **Native synthetic:** [#45887618600](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45887618600) FAIL at QA-owned `tests/v060_vendo_sequence_contract.py`, which asserts both `clearPending(true)` and `clearPending(false)` callsites. Current sketches have only the helper definition (one occurrence each) and no active pending disposition callsite; this is intentional deny-only until CORE's authenticated receipt/disposition contract exists.
+
+### Revalidated integration state and ownership
+
+- #239 remains Phase-A deny, OPEN / DRAFT. #254 is OPEN / DRAFT at `84c442a46ee2ee48dcbe68b71ff0f54edbc09ba9`; the supplied cleanup SHA `3692ddf889470da8a0029e16bf0ac2f37f1a9d0` does not resolve (GitHub 422). Current #254 focused [#44683629378](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44683629378) PASS; Full [#44683629491](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/44683629491) FAIL on ESP32 core 4.0.0 missing `mbedtls/sha256.h` and the inherited empty-ledger gate.
+- #283 remains OPEN / DRAFT at `4dd0b01bf04cf80aec6d4dd6fc93b2fdc633da30`. `quarantinePending()` is definition-only in both sketches; failed append returns before `clearPending()`, so the original unconditional-clear pattern is absent, but the lifecycle is not wired and physical durability is not accepted. Main CGI producer `2e3a1430d08cc6606429a042df3b5848f53c7267` still emits no `response_sig` for register/poll. Keep deny-only.
+- Master coordination HEAD `ed6bb786c08d360a611e0e6c5c0505fa90d9b477` still does not list #355 in `ROLE_ASSIGNMENTS.md` / `INTEGRATION_MATRIX.md`; request remains on #172. Master owns assignment and stack reconciliation.
+- #266 remains OPEN / 0-of-7. #31/#32 financial, #34 hardware acceptance and #43 witness remain OPEN. COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE #26 remains frozen at `b382d233ff06c8791b1028bed3c617cc7b670d12`.
+- The private Drive registry v11 is not available through the current connector surface. The accessible Nov 9 checkpoint only records its prior canonical name/Drive ID; it is not the live registry and was not substituted.
+
+### Status and next action
+
+Source-extracted host checks = **SIMULATED**; focused and Mbed workflows = **CI VERIFIED**. Full handover freshness gate = **CI VERIFIED**, but Full integration validation = **FAIL** on QA-owned controller assertion. Physical GPIO/relay, real coin acceptor, electrical pulse/recovery, LittleFS power-loss, 150 controlled power cuts and 30-device/24-hour soak = **NOT TESTED**. Protected anti-rollback signer/witness, durable accounting/replay, v1→v2 migration and independent QA/release signoff = **NOT ACCEPTED**. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+
+**Next exact action:** PHX-QA reconcile `controllers.sh:20–21` and the Native `clearPending` assertion with the deny-only/no-callsite candidate; PHX-CORE publish the authenticated register/poll and pending-disposition contract; PHX-MASTER record #355 and reconcile the stack. Hardware keeps coin/relay denied and does not alter QA/CORE-owned source.
+
 ## CURRENT STATUS — 2026-11-27 UTC19 — startup output latch before LittleFS recovery (source/test CI verified)
 
 **Role:** PHX-HARDWARE · **Issues:** #177 / #266 · **PR:** [#355](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/355), OPEN / DRAFT / UNMERGED, stacked on #354  
