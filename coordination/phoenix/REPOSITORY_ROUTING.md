@@ -1,3 +1,9 @@
+## PHX-MASTER UTC17 final source refresh — 2026-11-26T17:54Z
+
+HARDWARE #353 is now docs HEAD `f527b33c9e391a9a66490388d96f06d6c8761dfa`, source/test `44de55a0e132cb15fdb60ecf85446e9490fa277e`; parent #352 remains exact at `2fa3b7db1161ddb531ed94bcf60617947fa1a7bd`. The refreshed handover is current. Only the Hardware-owned ISR lab changed; production sketches and COE #26 destination did not. Exact-source Relay/Quarantine pass; Full still fails missing ESP8266 poll signature. This does not alter the 11-route DRAFT_REVIEW_ONLY manifest or authorize staging. Recompute test identity at the new source/test SHA before any migration review.
+
+---
+
 ## PHX-MASTER UTC17 post-checkpoint source refresh — 2026-11-26T17:52Z
 
 HARDWARE #353 advanced to docs HEAD `f527b33c9e391a9a66490388d96f06d6c8761dfa`, source/test `44de55a0e132cb15fdb60ecf85446e9490fa277e`; parent #352 remains `2fa3b7db1161ddb531ed94bcf60617947fa1a7bd`. Only the Hardware-owned ISR lab changed; no production sketch or COE destination changed. This does not alter the 11-route DRAFT_REVIEW_ONLY manifest or authorize any staging. Recompute test identity at the new source/test SHA before any migration review.
