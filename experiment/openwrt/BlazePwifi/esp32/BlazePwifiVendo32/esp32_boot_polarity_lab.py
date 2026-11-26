@@ -131,7 +131,7 @@ def verify_boot_output_before_littlefs(source: str) -> None:
     calls = (
         "loadConfig()",
         "initPollFaultBackupStore()",
-        "configureRuntimePins(runCoinPin,runRelayPin,runLedPin)",
+        "configureRuntimePins(runCoinPin,runRelayPin,runLedPin,runCoinActiveLow)",
         "initPendingStore()",
     )
     positions = [setup.find(call) for call in calls]
