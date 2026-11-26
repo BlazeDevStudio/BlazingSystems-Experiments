@@ -198,7 +198,7 @@ def _runtime_interrupt_wiring_body(source, board):
     input_positions = [match.start() for match in re.finditer(re.escape(input_mode), compact)]
     quarantine_positions = [match.start() for match in re.finditer(re.escape(quarantine), compact)]
 
-    expected_reconfigurations = 2 if board == "ESP32" else 1
+    expected_reconfigurations = 1
     if compact.count("attachInterrupt(") != 2 or len(attach_positions) != 2:
         raise RuntimeError(f"{board} must attach exactly two fail-closed coin ISR paths with the configured edge polarity")
     for label, positions in (
@@ -213,10 +213,8 @@ def _runtime_interrupt_wiring_body(source, board):
     if len(quarantine_positions) != 2:
         raise RuntimeError(f"{board} must quarantine ingress after both interrupt attachment paths")
 
-    # A runtime pin remap must first inhibit the acceptor while the old ISR is
-    # still attached. The preflight quarantine catches an edge already in
-    # flight; a failed preflight must leave the old pin/ISR intact and outputs
-    # inhibited. This is distinct from the post-attach transition check below.
+    # Reconfiguration is a fail-closed transition: inhibit outputs while the old
+    # ISR/polarity are still active, quarantine any in-flight edge, then remap.
     inhibit = "pollIntakeSuspended=true;"
     output_apply = "applyOutputs();"
     preflight = "if(coinInterruptAttached&&!quarantineCoinIngressTransition())returnfalse;"
@@ -225,6 +223,8 @@ def _runtime_interrupt_wiring_body(source, board):
     restore = "pollIntakeSuspended=priorPollIntakeSuspended;"
     if not re.search(r"\bbool\s+coinInterruptAttached\s*=\s*false\s*;", mask_non_code(source)):
         raise RuntimeError(f"{board} must track whether the prior coin ISR is attached")
+    if not re.search(r"\bbool\s+configureRuntimePins\s*\(", mask_non_code(source)):
+        raise RuntimeError(f"{board} configureRuntimePins must report preflight failure")
     if compact.count(inhibit) != 1:
         raise RuntimeError(f"{board} must assert pollIntakeSuspended exactly once during pin reconfiguration")
     inhibit_pos = compact.find(inhibit)
@@ -233,6 +233,9 @@ def _runtime_interrupt_wiring_body(source, board):
     first_detach = min(detach_positions)
     if not (0 <= inhibit_pos < pre_output_pos < preflight_pos < first_detach):
         raise RuntimeError(f"{board} must inhibit outputs and quarantine the old ISR before detaching it")
+    polarity_pos = compact.find("runCoinActiveLow=coinActiveLow;")
+    if not (preflight_pos < polarity_pos < min(attach_positions)):
+        raise RuntimeError(f"{board} must retain the old edge polarity through preflight and set the new polarity before attach")
     if compact.count(detached_state) != expected_reconfigurations:
         raise RuntimeError(f"{board} must clear coinInterruptAttached after each prior ISR detach")
     if compact.count(attached_state) != 2:
@@ -254,6 +257,13 @@ def _runtime_interrupt_wiring_body(source, board):
         apply_pos = compact.find(output_apply, restore_pos)
         if restore_pos < 0 or apply_pos < 0 or not (quarantine_pos < restore_pos < apply_pos):
             raise RuntimeError(f"{board} must pass post-attach quarantine before restoring output admission")
+
+    apply_remote = extract_function(source, "applyRemoteConfig")
+    apply_remote_compact = re.sub(r"\s+", "", apply_remote)
+    if "if(!configureRuntimePins(nextCoin,nextRelay,nextLed,nextCoinActiveLow))return;" not in apply_remote_compact:
+        raise RuntimeError(f"{board} remote pin changes must abort when preflight quarantine fails")
+    if "runCoinActiveLow=nextCoinActiveLow;" in apply_remote_compact:
+        raise RuntimeError(f"{board} must not publish new coin polarity before pin-remap preflight")
 
     for index, (detach_pos, assign_pos) in enumerate(zip(detach_positions, assign_positions), start=1):
         if detach_pos >= assign_pos:
@@ -370,6 +380,24 @@ def verify_runtime_interrupt_wiring(source, board):
     )
     _expect_runtime_wiring_rejected(
         source, board, _replace_runtime_wiring_body(source, detach_before_inhibit_body), "detach-before-output-inhibit"
+    )
+
+    polarity_before_preflight_body = _swap_first_runtime_statements(
+        body,
+        "if(coinInterruptAttached&&!quarantineCoinIngressTransition())return false;",
+        "runCoinActiveLow=coinActiveLow;",
+    )
+    _expect_runtime_wiring_rejected(
+        source, board, _replace_runtime_wiring_body(source, polarity_before_preflight_body), "new-polarity-before-old-isr-preflight"
+    )
+
+    restore_before_quarantine_body = _swap_first_runtime_statements(
+        body,
+        "quarantineCoinIngressTransition();",
+        "pollIntakeSuspended=priorPollIntakeSuspended;",
+    )
+    _expect_runtime_wiring_rejected(
+        source, board, _replace_runtime_wiring_body(source, restore_before_quarantine_body), "restore-output-before-post-attach-quarantine"
     )
 
     print(f"{board}_RUNTIME_INTERRUPT_WIRING_PASS")
