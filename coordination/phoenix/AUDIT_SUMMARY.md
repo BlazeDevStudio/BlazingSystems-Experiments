@@ -1,3 +1,9 @@
+## PHX-MASTER UTC17 final post-checkpoint readback — 2026-11-26T17:54Z
+
+HARDWARE #353 current docs HEAD `f527b33c`, source/test SHA `44de55a0`; refreshed handover supersedes the earlier stale pointers. Exact-source Relay/Quarantine PASS; Full fails missing ESP8266 poll signature. New docs-head Relay/Quarantine PASS; Full FAILS at the same assertion. All target/platform builds and Android pass, but downstream production import/update/simulation/signing/publishing stages skip. Production sketches unchanged; no hardware acceptance. All COE #26, registry, release ancestry and financial release blockers below remain unchanged.
+
+---
+
 ## PHX-MASTER UTC17 post-checkpoint refresh — 2026-11-26T17:52Z
 
 HARDWARE #353 is now `f527b33c9e391a9a66490388d96f06d6c8761dfa` (source/test `44de55a0e132cb15fdb60ecf85446e9490fa277e`), with a refreshed owner handover and a test-only snapshot/restore guard. Exact-source Relay and Quarantine PASS; Full still fails missing ESP8266 poll signature. New docs-head workflows remain IN_PROGRESS. Production sketches unchanged; no hardware acceptance. All COE #26, registry, release ancestry and financial release blockers below remain unchanged.
