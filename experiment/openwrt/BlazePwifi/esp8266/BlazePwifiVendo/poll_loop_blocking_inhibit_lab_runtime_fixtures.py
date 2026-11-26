@@ -74,6 +74,9 @@ void detachInterrupt(int pin){
   }
 }
 void pinMode(int,int){}
+// Pin-range policy is verified by the exact-source coin-pulse wiring lab;
+// this poll-loop fixture isolates timing, output inhibition, and journal behavior.
+bool runtimePinsSafe(int,int,int){ return true; }
 void loadPending(){}
 // This lab isolates the production loop and LittleFS marker path. The exact
 // secondary-store implementation and reboot fallback are covered separately
