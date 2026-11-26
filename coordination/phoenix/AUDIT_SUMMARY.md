@@ -1,3 +1,21 @@
+## UTC03 post-checkpoint exact-head refresh — 2026-11-26T03:57:22Z
+
+PHX-MASTER re-read live issue #172, cleanup #266, Experiments main/development, current draft #288, the 11-route ownership manifest, current owner PRs/CI, COE main and frozen #26. This activation adds a reproducible-build evidence contract and updates the current exact-head coordination matrices.
+
+- Experiments main 6be5d19b; development aad3aade; active v0.6 2fbd2475; Master branch before this run c8deb97b; COE main a6513ab4; COE #26 b382d233.
+- HARDWARE #340 source/test d1380acf, final docs head f70f6af7, 52 ahead / 0 behind current #283. Core-4 actual sketch compile #45747192648 PASS; final docs-head Full #45747758154 PASS (26 success / 4 intentional skips). Same .ino blob and same reported CLI/core produced two different binary hashes; dedicated core-4 artifacts were not retained.
+- HARDWARE #353 source/test ed2f77d, final docs head 83269202, 27 ahead / 0 behind #352. Focused Quarantine/Relay PASS; Full #45751177730 fails at Missing poll signature check. Current source/test work is test-lab-only; production sketches unchanged.
+- Active v0.6 remains unauthenticated at register/poll; both board poll loops consume unsigned fields and call applyRemoteConfig. COE #26 retains a keyless sigOk=true verification bypass.
+- Current #353 board blobs differ from COE #26 board blobs. Product LICENSE blobs match, but source root NOTICE is missing at destination. The last complete #349 tree/test comparison remains a historical baseline only; current #353 full remap is not claimed.
+- RELEASE #242 head a7e27fe has no exact-head Actions or PowerShell run. RELEASE #291 child is 852 ahead / 9 behind current #242; no Master rebase/retarget.
+- Cleanup #266 OPEN / 0-of-7; ownership manifest 11 routes / DRAFT_REVIEW_ONLY / Master target null. Private registry v11/newer corrections NOT_RECOVERED; no Drive connector.
+
+**Master verification:** static content assertions are performed against the new architecture section/test. Master Python suite and verifier NOT RUN because no authenticated local checkout; git ls-remote could not resolve GitHub DNS. Owner CI is inspected, not run by Master. No Master Actions run.
+
+No subsystem source, COE destination, payment, signing or hardware state changed. **PRODUCTION NO-GO.**
+
+---
+
 ## UTC02 post-checkpoint owner CI refresh — 2026-11-26T02:41:12Z
 
 HARDWARE #340 final PR head `83b002721fedf3b262864d2414cdab510c76e35b` now has a completed Full `BlazePwifi build` PASS: [run #45743454237](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45743454237), **26 successful jobs / 4 intentional skips / 0 failures**. The four skipped jobs are `production_import_signed_apk`, `publish_prerelease`, `publish_release`, and `production_sign_handoff`. Exact ESP32 core 4.0.0 compile #45742944327 remains PASS at source/test SHA `d3168ccb4959fe1eab718912fd04510ef7603253`.
