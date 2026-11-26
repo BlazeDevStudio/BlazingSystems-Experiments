@@ -1,3 +1,11 @@
+## PHX-MASTER UTC20 — current exact-head integration matrix (2026-11-26T20:34Z)
+
+The current role PR heads and run IDs are recorded in the [UTC20 audit](PHX_MASTER_UTC20_20261126_LIVE_HEAD_ROLE_CI_COE26_ROUTE_AUDIT.md). Material deltas: #355 Poll-deny/Mbed TLS PASS but Native PAY-0745 and Full Controller protocol parity FAIL; #354 Poll-deny/Mbed TLS PASS but Full/Native FAIL; #353 Relay/Quarantine PASS but Full poll-signature FAIL. #328 API/auth/APK focused runs PASS while shared build fails; #242/#291 have no exact-head runs; COE #26's five workflows are queued with zero jobs.
+
+COE #26 provenance remains blocked: SOURCE_INTAKE 61 runtime rows = 46 identical + 15 derived, while summary says 47/14; source/destination branch pins differ; current ESP32/ESP8266 blobs do not match destination; firmware audit and license/NOTICE inventory are incomplete. No destination staging or writes.
+
+---
+
 ## PHX-MASTER UTC17 final #353 source/test and CI readback — 2026-11-26T17:54Z
 
 Current #353 docs HEAD `f527b33c9e391a9a66490388d96f06d6c8761dfa`; source/test SHA `44de55a0e132cb15fdb60ecf85446e9490fa277e`; parent #352 `2fa3b7db1161ddb531ed94bcf60617947fa1a7bd`. The only source/test change is the Hardware-owned `coin_pulse_capture_lab_isr.py` guard that snapshots and restores the pre-existing `pollIntakeSuspended` state after successful post-attach quarantine. Exact-source Relay and Quarantine PASS; Full fails at missing ESP8266 poll-signature check. New docs-head Relay #45871096516 and Quarantine #45871096480 PASS; Full #45871096425 FAILS at the same assertion. All 14 target/platform jobs and Android pass; downstream production/simulation/signing/publishing stages skip. Production sketches unchanged; no physical acceptance. Prior #353 test identity counts remain historical and must be recomputed at `44de55a0` before staging.

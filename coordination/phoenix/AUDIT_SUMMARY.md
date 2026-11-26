@@ -1,3 +1,11 @@
+## PHX-MASTER UTC20 — current disposition (2026-11-26T20:34Z)
+
+**PR #288 OPEN / DRAFT / UNMERGED. COE #26 FROZEN. Cleanup #266 OPEN / 0-of-7. PRODUCTION NO-GO.** The current exact-head role CI, migration provenance, branch pins and blockers are recorded in [the UTC20 audit](PHX_MASTER_UTC20_20261126_LIVE_HEAD_ROLE_CI_COE26_ROUTE_AUDIT.md).
+
+No subsystem source or COE destination files changed. The private Drive v11 registry/newer corrections are NOT_RECOVERED; Master repository tests were NOT RUN because GitHub DNS resolution failed; no Master Actions exist at the exact starting head. The manifest remains draft-only and grants no migration authority.
+
+---
+
 ## PHX-MASTER UTC17 final post-checkpoint readback — 2026-11-26T17:54Z
 
 HARDWARE #353 current docs HEAD `f527b33c`, source/test SHA `44de55a0`; refreshed handover supersedes the earlier stale pointers. Exact-source Relay/Quarantine PASS; Full fails missing ESP8266 poll signature. New docs-head Relay/Quarantine PASS; Full FAILS at the same assertion. All target/platform builds and Android pass, but downstream production import/update/simulation/signing/publishing stages skip. Production sketches unchanged; no hardware acceptance. All COE #26, registry, release ancestry and financial release blockers below remain unchanged.

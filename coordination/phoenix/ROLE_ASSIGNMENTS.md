@@ -1,3 +1,9 @@
+## PHX-MASTER UTC20 — exact current role heads and CI (2026-11-26T20:34Z)
+
+See [full UTC20 audit](PHX_MASTER_UTC20_20261126_LIVE_HEAD_ROLE_CI_COE26_ROUTE_AUDIT.md). Current exact owner heads and run dispositions are refreshed there. CORE #252 scoped build PASS; RENTAL #328 API/auth/APK focused runs PASS but shared build fails handover freshness and ESP32 Mbed TLS include; PISONET #255 Windows synthetic PASS; HARDWARE #355/#354 retain deny-only behavior but Native/Full QA parity gates fail; HARDWARE #353 Relay/Quarantine PASS and Full poll-signature gate fails; QA #292 has no exact-head run; RELEASE #242/#291 have no exact-head runs and stale ancestry; COE RELEASE #35 remains blocked by missing approved ULA /48 and Bubblewrap. CORE source remains reserved/untouched by MASTER.
+
+---
+
 ## PHX-MASTER UTC17 final #353 readback — 2026-11-26T17:54Z
 
 HARDWARE #353 current PR/docs HEAD `f527b33c9e391a9a66490388d96f06d6c8761dfa`, source/test SHA `44de55a0e132cb15fdb60ecf85446e9490fa277e`, parent #352 exact `2fa3b7db1161ddb531ed94bcf60617947fa1a7bd`. Hardware refreshed its PR body/handover; the old cb1787ac/ed2f77d pointers are superseded. Exact-source Relay #45870624293/#45870635699 and Quarantine #45870624386/#45870635503 PASS. Exact-source Full #45870624355 FAILS at the inherited ESP8266 missing poll-signature check. New docs-head Relay #45871096516 and Quarantine #45871096480 PASS; Full #45871096425 FAILS with the same exact message. All 14 target/platform builds and Android pass; production import, update, simulations, candidate, signing and publication stages are skipped. Only the Hardware ISR lab changed; production sketches unchanged. No hardware acceptance.

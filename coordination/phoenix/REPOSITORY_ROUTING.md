@@ -1,3 +1,11 @@
+## PHX-MASTER UTC20 — route admission remains frozen (2026-11-26T20:34Z)
+
+Live manifest blob `e4db324315a1b3543fec17a148fbf960170fcb29`: 11 routes, `DRAFT_REVIEW_ONLY`, source_ref `f4e8a891`, COE candidate #26 `b382d233`; PHX-MASTER target remains null. The source_ref is the historical PR merge base, not current Experiments main `6be5d19b`. The broad Rental parent target remains manual-file-mapping-only and not copy-permitted.
+
+COE #26 is still pinned to a different destination branch than SOURCE_INTAKE/MIGRATION_MAP. Exact #354 ESP32/ESP8266 source blobs still differ from #26 destination blobs; firmware audit remains internally contradictory; license/NOTICE counterparts and test identity remain unresolved. No staging, copy, move, overwrite or cherry-pick authority is granted. See [full UTC20 audit](PHX_MASTER_UTC20_20261126_LIVE_HEAD_ROLE_CI_COE26_ROUTE_AUDIT.md).
+
+---
+
 ## PHX-MASTER UTC17 final source refresh — 2026-11-26T17:54Z
 
 HARDWARE #353 is now docs HEAD `f527b33c9e391a9a66490388d96f06d6c8761dfa`, source/test `44de55a0e132cb15fdb60ecf85446e9490fa277e`; parent #352 remains exact at `2fa3b7db1161ddb531ed94bcf60617947fa1a7bd`. The refreshed handover is current. Only the Hardware-owned ISR lab changed; production sketches and COE #26 destination did not. Exact-source Relay/Quarantine pass; Full still fails missing ESP8266 poll signature. This does not alter the 11-route DRAFT_REVIEW_ONLY manifest or authorize staging. Recompute test identity at the new source/test SHA before any migration review.

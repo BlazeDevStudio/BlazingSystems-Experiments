@@ -1,3 +1,11 @@
+## PHX-MASTER UTC20 — authenticated poll and deny-only boundary (2026-11-26T20:34Z)
+
+The active v0.6 poll/register contract is still not approved for positive admission. HARDWARE #354/#355 remain deny-only; do not add unsigned `config_revision`, consume unsigned poll fields, or clear pending evidence merely to satisfy QA assertions. Exact #355 Native CI fails because the current QA sequence assertion demands active `clearPending(true/false)` callsites; Full fails Controller protocol parity. #353 Full still fails the ESP8266 poll-signature check. CORE owns the authenticated register/poll and receipt/disposition contract; HARDWARE owns firmware and labs; QA owns independent assertions. Preserve the fail-closed boundary until the signed contract is approved. No physical acceptance is inferred from CI.
+
+See [UTC20 exact-head audit](PHX_MASTER_UTC20_20261126_LIVE_HEAD_ROLE_CI_COE26_ROUTE_AUDIT.md).
+
+---
+
 ## UTC16 contract gate — active v0.6 poll remains unsigned; deny-only candidate retained (2026-11-26T16:33:57Z)
 
 At active v0.6 HEAD 2fbd2475, CGI blob db58041c0575ad0a1101d99cb85403e03c8dcb22 emits poll fields ok, insert, target_nonce, expires and controller, but no response_sig. Member snapshot/auth/mutation endpoints do include response_sig; those signatures do not authenticate poll.

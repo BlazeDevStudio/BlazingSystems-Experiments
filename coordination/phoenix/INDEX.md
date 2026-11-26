@@ -1,3 +1,14 @@
+## Latest PHX-MASTER UTC20 — live exact-head, role CI and COE #26 provenance audit (2026-11-26T20:34Z)
+
+- [Full UTC20 audit](PHX_MASTER_UTC20_20261126_LIVE_HEAD_ROLE_CI_COE26_ROUTE_AUDIT.md)
+- Experiments main `6be5d19b`; legacy v0.5.3 development `aad3aade`; active v0.6 base `2fbd2475`; Master starting HEAD `ed6bb786c08d360a611e0e6c5c0505fa90d9b477`; COE main `a6513ab4`; COE #26 `b382d233`.
+- PR #288 remains OPEN / DRAFT / UNMERGED. Starting comparison: 642 ahead / 1 behind, 240 changed paths all under `coordination/phoenix/`; no exact-head Master CI. No rebase or merge.
+- Cleanup #266 remains OPEN / 0-of-7. Current #355/#354/#353 Hardware CI, #328 Rental failure, stale Release #242/#291 ancestry, and COE #35 ULA/Bubblewrap gates are recorded in the audit.
+- COE #26 remains FROZEN: five workflows queued / zero jobs; manifest DRAFT_REVIEW_ONLY; intake count/pin mismatch and both firmware blob mismatches unresolved.
+- Private Drive v11/newer corrections NOT_RECOVERED; no Drive connector. Master repository tests NOT RUN due GitHub DNS failure. PRODUCTION NO-GO.
+
+---
+
 ## Latest PHX-MASTER UTC17 post-checkpoint refresh — 2026-11-26T17:54Z
 
 HARDWARE #353 current docs HEAD `f527b33c`, source/test SHA `44de55a0`; parent #352 `2fa3b7db`. Hardware refreshed its handover. Exact-source Relay/Quarantine PASS; Full fails missing ESP8266 poll-signature check. Current docs-head Relay #45871096516 and Quarantine #45871096480 PASS; Full #45871096425 FAILS. All target/platform builds and Android pass; downstream production stages skip. See [UTC17 Master audit](PHX_MASTER_UTC17_20261126_HW353_AC9E_HW354_FC842_COE26_PROVENANCE_AUDIT.md).
