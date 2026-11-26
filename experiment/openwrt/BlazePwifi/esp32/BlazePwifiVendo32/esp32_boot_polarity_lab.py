@@ -190,12 +190,23 @@ def main() -> None:
             'if(prefs.putUChar("polarityv",0)!=1) return false;' in save_config and
             "return persistLocalOutputPolarity();" in save_config,
             "saveConfig must invalidate first and propagate polarity persistence/readback failure")
-    require("if(!outputPolarityKnown)" in configure and
+    require("if(!outputPolarityKnown || !pinConfigSafe)" in configure and
             "pinMode(runRelayPin,INPUT)" in configure and
             "pinMode(runLedPin,INPUT)" in configure,
-            "unknown local polarity must leave relay and LED as INPUT")
-    require("quarantineCoinIngressTransition();" in configure,
-            "pin attachment must quarantine active or unobserved coin ingress")
+            "unknown local polarity or unsafe pin mapping must leave relay and LED as INPUT")
+    require("if(coinInterruptAttached && !quarantineCoinIngressTransition()) return false;" in configure and
+            "if(!quarantineCoinIngressTransition()) return false;" in configure,
+            "old and newly attached coin ingress must be quarantined before reconfiguration resumes")
+    require("pollIntakeSuspended=true;" in configure and
+            configure.index("pollIntakeSuspended=true;") < configure.index("applyOutputs();") <
+            configure.index("detachInterrupt("),
+            "runtime reconfiguration must inhibit outputs before detaching the old ISR")
+    require("pinMode(runCoinPin,INPUT_PULLUP);" in configure and
+            configure.index("pinMode(runCoinPin,INPUT_PULLUP);") < configure.index("attachInterrupt("),
+            "coin input pull-up must be configured before ISR attachment")
+    require("coinInterruptAttached=false;" in configure and
+            "coinInterruptAttached=true;" in configure,
+            "runtime ISR attachment state must follow detach/attach operations")
     require("if(!outputPolarityKnown) return;" in apply_outputs,
             "applyOutputs must not drive unknown-polarity outputs")
     require("outputPolarityKnown" in can_poll and
@@ -296,6 +307,7 @@ bool insertMode=false;
 bool controllerEnabled=true,coinEnabled=true,relayEnabled=true,ledEnabled=true;
 bool fsReady=true,journalRecoveryRequired=false,pendingReady=false;
 bool pollIntakeSuspended=false,pendingPostAttempted=false;
+bool coinInterruptAttached=false;
 bool runCoinActiveLow=true,runRelayActiveHigh=false,runLedActiveHigh=false;
 uint8_t pendingPulses=0;
 int runCoinPin=27,runRelayPin=26,runLedPin=2;
@@ -313,12 +325,14 @@ void digitalWrite(int pin,int level) {
   gpio_ops.push_back("write:"+std::to_string(pin)+":"+std::to_string(level));
 }
 int digitalPinToInterrupt(int pin) { return pin; }
-void detachInterrupt(int) {}
+// Pin-range policy is covered by the exact-source coin-pulse wiring lab.
+bool runtimePinsSafe(int,int,int){ return true; }
+void detachInterrupt(int) { coinInterruptAttached=false; }
 volatile uint32_t coinEdgeSequence=0;
 uint32_t lastHandledCoinEdgeSequence=0;
 uint32_t snapshotCoinEdgeSequence(){ return coinEdgeSequence; }
 void coinEdgeISR() {}
-void attachInterrupt(int,void(*)(),int) {}
+void attachInterrupt(int,void(*)(),int) { coinInterruptAttached=true; }
 bool coinLineIdle() { return true; }
 struct SerialStub { void println(const char *) {} } Serial;
 
@@ -334,7 +348,7 @@ void resetState() {
   insertMode=false;
   controllerEnabled=true;coinEnabled=true;relayEnabled=true;ledEnabled=true;
   fsReady=true;journalRecoveryRequired=false;pendingReady=false;
-  pollIntakeSuspended=false;pendingPostAttempted=false;
+  pollIntakeSuspended=false;pendingPostAttempted=false;coinInterruptAttached=false;
   runCoinActiveLow=true;runRelayActiveHigh=false;runLedActiveHigh=false;
   pendingPulses=0;
   runCoinPin=27;runRelayPin=26;runLedPin=2;
@@ -367,7 +381,7 @@ int main() {
   prefs.values["ledhi"]=1;
   assert(!loadLocalOutputPolarity());
   assert(!outputPolarityKnown && !pinConfigSafe);
-  configureRuntimePins(27,26,2);
+  configureRuntimePins(27,26,2,runCoinActiveLow);
   assert(pin_modes[26]==INPUT && pin_modes[2]==INPUT);
   assert(!hasWrite(26) && !hasWrite(2));
   assert(!canStartPoll());
@@ -426,7 +440,7 @@ int main() {
   prefs.values["relayhi"]=1;
   prefs.values["ledhi"]=1;
   assert(loadLocalOutputPolarity());
-  configureRuntimePins(27,26,2);
+  configureRuntimePins(27,26,2,runCoinActiveLow);
   assert(pin_modes[26]==OUTPUT && pin_modes[2]==OUTPUT);
   assert(firstWriteLevel(26)==LOW && firstWriteLevel(2)==LOW);
   assert(opIndex("write:26:0")<opIndex("mode:26:1"));
@@ -438,7 +452,7 @@ int main() {
   prefs.values["relayhi"]=0;
   prefs.values["ledhi"]=0;
   assert(loadLocalOutputPolarity());
-  configureRuntimePins(27,26,2);
+  configureRuntimePins(27,26,2,runCoinActiveLow);
   assert(pin_modes[26]==OUTPUT && pin_modes[2]==OUTPUT);
   assert(firstWriteLevel(26)==HIGH && firstWriteLevel(2)==HIGH);
   assert(opIndex("write:26:1")<opIndex("mode:26:1"));

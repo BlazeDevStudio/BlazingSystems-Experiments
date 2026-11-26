@@ -40,7 +40,7 @@ void resetState(){
   pendingPulses=0; runCoinPin=4; runLedPin=2; runRelayPin=26;
   maxWifiRetries=6; wifiFailures=0; runDebounceMs=40; runPulseGroupMs=400;
   activeTarget="target-01"; pendingTarget=""; pendingNonce="";
-  configureRuntimePins(runCoinPin,runRelayPin,runLedPin);
+  configureRuntimePins(runCoinPin,runRelayPin,runLedPin,runCoinActiveLow);
   applyOutputs();
 }
 bool recordedPulseState(){
@@ -60,7 +60,7 @@ int runDrainAbortWithoutIsr(bool activeLow, int holdFailureCode, int releaseFail
   resetState();
   if(!activeLow){
     runCoinActiveLow=false;
-    configureRuntimePins(runCoinPin,runRelayPin,runLedPin);
+    configureRuntimePins(runCoinPin,runRelayPin,runLedPin,runCoinActiveLow);
   }
   injectDrainAbortWithoutIsr=true;
   loop();

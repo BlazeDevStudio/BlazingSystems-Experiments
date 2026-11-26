@@ -59,7 +59,9 @@ struct FakeLittleFS {
     return found==files.end()?File():File(&found->second);
   }
 } LittleFS;
-static bool interruptAttached=false;
+static bool coinInterruptAttached=false;
+// Keep legacy scenario assertions bound to the production interrupt state.
+static bool &interruptAttached=coinInterruptAttached;
 static int attachedPin=-1, attachedMode=-1;
 static void (*attachedIsr)()=nullptr;
 int digitalPinToInterrupt(int pin){ return pin; }

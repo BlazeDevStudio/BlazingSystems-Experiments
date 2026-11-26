@@ -94,7 +94,7 @@ DEFAULT_MAIN = r"""int main(){
 
   // Active-high input polarity must attach the opposite edge and fail closed too.
   resetState(); runCoinActiveLow=false;
-  configureRuntimePins(runCoinPin,runRelayPin,runLedPin);
+  configureRuntimePins(runCoinPin,runRelayPin,runLedPin,runCoinActiveLow);
   injectDuringHttp=true; loop();
   if(attachedMode!=RISING || !journalRecoveryRequired ||
      !LittleFS.exists("/pollpulse.fault") || relayOn || ledOn) return 16;
@@ -135,7 +135,7 @@ DEFAULT_MAIN = r"""int main(){
 
   // The same drain-abort edge must be caught for active-high coin wiring.
   resetState(); runCoinActiveLow=false;
-  configureRuntimePins(runCoinPin,runRelayPin,runLedPin);
+  configureRuntimePins(runCoinPin,runRelayPin,runLedPin,runCoinActiveLow);
   injectDuringDrainAbort=true; loop();
   if(!drainAbortInjected || drainAbortSawRelayOn || drainAbortSampleSawRelayOn ||
      drainAbortReenabledBeforeLatch || pollCalls!=0 || !journalRecoveryRequired ||
@@ -207,7 +207,7 @@ DEFAULT_MAIN = r"""int main(){
   // Existing pulse-drain behavior remains intact for a pulse observed before poll.
   resetState(); pulseStart=2050; pulseEnd=2130; loop();
   if(!recordedPulseState() || !releaseRecordedPulseAfterIdle()) return 31;
-  resetState(); runCoinActiveLow=false; configureRuntimePins(runCoinPin,runRelayPin,runLedPin);
+  resetState(); runCoinActiveLow=false; configureRuntimePins(runCoinPin,runRelayPin,runLedPin,runCoinActiveLow);
   pulseStart=2200; pulseEnd=2280; loop();
   if(!recordedPulseState() || !releaseRecordedPulseAfterIdle()) return 32;
   resetState(); pulseStart=2250; pulseEnd=2330; loop();

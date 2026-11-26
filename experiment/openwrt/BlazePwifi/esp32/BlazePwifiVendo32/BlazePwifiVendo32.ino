@@ -1033,6 +1033,8 @@ bool configFieldsMatchStored(){
   return configFieldsMatchStored(nullptr);
 }
 
+void applyOutputs();
+
 bool saveConfig(){
   // Deassert outputs before changing NVS; setup stays inhibited until reboot.
   insertMode=false;
@@ -1093,7 +1095,6 @@ bool runtimePinsSafe(int coinPin,int relayPin,int ledPin){
 }
 
 bool quarantineCoinIngressTransition();
-void applyOutputs();
 
 bool configureRuntimePins(int coinPin,int relayPin,int ledPin,bool coinActiveLow){
   const bool priorPollIntakeSuspended=pollIntakeSuspended;
