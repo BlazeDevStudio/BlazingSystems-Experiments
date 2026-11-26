@@ -1,3 +1,26 @@
+## CURRENT STATUS — 2026-11-27 UTC16 — blocking-poll wait harness CI VERIFIED; integrated gates blocked
+
+**Role:** PHX-HARDWARE · **Issue:** [#177](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/177) · **Draft PR:** [#354](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/354)  
+**Branch:** `phoenix/hw-active-v06-poll-intake-deny-20261126-utc05` · **Base:** `blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859`  
+**Source/test SHA:** `145aac9607682071e2db05944a6f9db5aa06e524` · **PR remains OPEN / DRAFT / UNMERGED.**
+
+### Verified Hardware-owned change
+
+The previous poll-inhibit lab claimed a 3500 ms HTTP wait but only called `denyRemoteControl()` and immediately inspected outputs. The new source-extracted harness executes the actual poll block from both board sketches, advances the modeled `post("poll")` wait for 3500 ms, injects an 80 ms coin-line pulse, and verifies no sample or accepted pulse while blocked. It also verifies pending pulse/nonce/target preservation and all four independent relay/LED polarity combinations.
+
+- Focused push [#45862938002](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45862938002), job `140058369164`, PASS.
+- Focused PR [#45862948688](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45862948688), job `140058405613`, PASS.
+- Both boards report `BLOCKING_POLL_WAIT_PASS 3500ms pulse_ticks=80 samples_during_wait=0 accepted=0 polarity_combinations=4`; missing pre-poll deny and relay OFF polarity-borrow mutations are rejected. Existing output-enable tests report 8/8 scenarios and 14/14 mutations rejected.
+- Valid test-first RED: [#45862737466](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45862737466), job `140057673814`, and [#45862745148](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45862745148), job `140057700491`, failed at the intended `elapsed_ms=0 expected=3500` assertion. Earlier fixture compile failure [#45862503824](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45862503824) is disclosed but excluded.
+
+### Current blockers and limits
+
+Native [#45862948850](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45862948850), job `140058431258`, fails at QA-owned `clearPending(true/false)` callsite assertion; deny-only firmware intentionally has no active pending disposition. Full [#45862948745](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45862948745), validation job `140058560211`, failed the mandatory handover freshness gate because docs predated source SHA `145aac9607682071e2db05944a6f9db5aa06e524`. All canonical handovers have now been synchronized after source; a new Full run is required. The stale-docs run is not product build evidence.
+
+PHX-QA owns the assertion reconciliation; PHX-CORE owns the authenticated register/poll and receipt/disposition contract; PHX-MASTER owns current branch pins in `ROLE_ASSIGNMENTS.md` and `INTEGRATION_MATRIX.md`. Keep coin/relay admission denied. No production sketch, API, finance, signer, witness, migration or other-role source changed.
+
+Host evidence is SIMULATED / CI VERIFIED only. Physical GPIO/relay, real coin acceptor, electrical pulse/recovery, LittleFS power loss, 150 power cuts and 30-device/24-hour soak remain NOT TESTED. HARDWARE ACCEPTED NO; PRODUCTION READY NO-GO. The canonical ledger was appended without truncation; the private Drive registry could not be accessed in this runtime.
+
 ## CURRENT STATUS — 2026-11-27 UTC16 — blocking-poll wait harness RED VERIFIED; fix in progress
 
 **Role:** PHX-HARDWARE · **Issue:** [#177](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/177) · **Existing draft:** [PR #354](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/354)  
