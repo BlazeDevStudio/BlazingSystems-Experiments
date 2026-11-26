@@ -1,3 +1,4 @@
+# RED harness re-run after correcting matcher escaping.
 #!/usr/bin/env python3
 """Source-extracted regression for fail-closed coin-intake inhibition before blocking poll.
 
