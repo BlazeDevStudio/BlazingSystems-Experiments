@@ -173,15 +173,15 @@ class SoftTimerReleaseActionPinTests(unittest.TestCase):
 
     def test_checkout_step_discovery_counts_id_first_action_steps(self):
         valid_step = (
-            "      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683\\n"
-            "        with:\\n"
-            "          persist-credentials: false\\n"
+            "      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683\n"
+            "        with:\n"
+            "          persist-credentials: false\n"
         )
         workflow = valid_step * 3 + (
-            "      - id: additional-checkout\\n"
-            "        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683\\n"
-            "        with:\\n"
-            "          persist-credentials: true\\n"
+            "      - id: additional-checkout\n"
+            "        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683\n"
+            "        with:\n"
+            "          persist-credentials: true\n"
         )
         checkout_blocks = _checkout_step_blocks(workflow)
         self.assertEqual(
