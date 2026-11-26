@@ -163,12 +163,12 @@ for board, path in BOARDS:
     active_write_mutations = (
         (
             "relay-active-before-output-enable",
-            "  writeLogical(runRelayPin,false,runRelayActiveHigh);\\n  writeLogical(runLedPin,false,runLedActiveHigh);",
+            "  writeLogical(runRelayPin,false,runRelayActiveHigh);\n  writeLogical(runLedPin,false,runLedActiveHigh);",
             "writeLogical(runRelayPin,true,runRelayActiveHigh);",
         ),
         (
             "led-active-before-output-enable",
-            "  writeLogical(runRelayPin,false,runRelayActiveHigh);\\n  writeLogical(runLedPin,false,runLedActiveHigh);",
+            "  writeLogical(runRelayPin,false,runRelayActiveHigh);\n  writeLogical(runLedPin,false,runLedActiveHigh);",
             "writeLogical(runLedPin,true,runLedActiveHigh);",
         ),
         (
