@@ -229,3 +229,41 @@ The checkout credential guard's step splitter recognized only list items beginni
 4. Registry custodian restores authorized provenance-only access to private Drive v11.
 
 No PISONET product/installer code, shared workflow, secrets, signer material, CORE, RENTAL, HARDWARE, QA, MASTER or COE #26 destination source changed. No merge, signing, tag, publication, hardware flash, real payment migration or customer deployment occurred. **PRODUCTION NO-GO.**
+
+
+## UTC22 — ID-first checkout regression fixture repair
+
+Observed: 2026-11-26T22:12Z  
+PR: https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/242  
+Branch: `draft/softtimer-future-release-signing-pipeline-20261029`  
+Starting head: `44708e127d6f03bc8458a190bfef98067a355255`  
+Test-fixture correction: `fc01d676030ac0bd018610f92567dc5111365e34`
+
+### Finding
+
+The UTC20 id-first checkout regression fixture used doubled backslash-n sequences in seven Python string fragments. Those fragments contained literal `\\n` text rather than physical line breaks. Consequently `_step_blocks()` saw one checkout block instead of the intended four, and the test could not exercise an id-first `uses: actions/checkout` step.
+
+This corrects the regression fixture only. It does not change the checkout parser, the SoftTimer workflow, permissions, signing conditions, publisher behavior, PISONET application code, or installer source.
+
+### Correction and focused verification
+
+- Commit: [fc01d676](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/fc01d676030ac0bd018610f92567dc5111365e34).
+- Changed only `.github/scripts/test_softtimer_release_action_pins.py` in the source/test commit.
+- Reproduced the previous fixture failure: 1 discovered checkout block instead of 4.
+- Corrected fixture focused Python reproduction: 4 checkout blocks discovered; the three safe controls accepted; the id-first checkout with `persist-credentials: true` rejected.
+- This was a focused helper/fixture reproduction, not a full repository test-suite run.
+
+### Exact-head CI status
+
+At exact source/test commit `fc01d676030ac0bd018610f92567dc5111365e34`, GitHub Actions lookup returned zero PR-triggered workflow runs and zero combined commit statuses. No hosted RED/GREEN or Windows/PowerShell execution is claimed. The existing SoftTimer workflow remains present in the PR base and has a pull-request trigger, but the current connector readback still shows no exact-head run.
+
+### Current ownership and limitations
+
+- PR #242 remains OPEN / DRAFT / UNMERGED and non-mergeable at the time of this handover.
+- PR #291 remains based on the former #242 snapshot `734b89d9e7792247e8376335c3f3685500ab3f89`; PHX-MASTER owns branch-stack reconciliation.
+- Cleanup-first #266 remains OPEN / 0-of-7. This bounded regression-fixture repair does not complete the RELEASE track.
+- Private Drive registry v11 was not recovered through the authorized Library/connector surface; no older registry was substituted and no private identifiers or contents were copied into GitHub.
+
+Next action: PHX-INFRA/repository administrator runs the SoftTimer release workflow on exact PR #242 head after confirming workflow availability; PHX-QA independently reviews the corrected fixture; PHX-MASTER reconciles #291 ancestry and ownership routes.
+
+No merge, rebase, retarget, force-push, real signing, secret access, tag, release, hardware flash, payment migration, or customer deployment occurred. **PRODUCTION NO-GO.**
