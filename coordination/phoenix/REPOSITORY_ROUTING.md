@@ -1,3 +1,9 @@
+## PHX-MASTER UTC17 post-checkpoint source refresh — 2026-11-26T17:52Z
+
+HARDWARE #353 advanced to docs HEAD `f527b33c9e391a9a66490388d96f06d6c8761dfa`, source/test `44de55a0e132cb15fdb60ecf85446e9490fa277e`; parent #352 remains `2fa3b7db1161ddb531ed94bcf60617947fa1a7bd`. Only the Hardware-owned ISR lab changed; no production sketch or COE destination changed. This does not alter the 11-route DRAFT_REVIEW_ONLY manifest or authorize any staging. Recompute test identity at the new source/test SHA before any migration review.
+
+---
+
 ## PHX-MASTER UTC17 — route admission remains frozen (2026-11-26)
 
 Live OWNERSHIP_ROUTES.json blob e4db324315a1b3543fec17a148fbf960170fcb29: 11 routes, DRAFT_REVIEW_ONLY, source_ref f4e8a891 (historical merge base), destination candidate PR #26 at b382d233. PHX-MASTER source remains coordination/phoenix/ and destination remains null.
