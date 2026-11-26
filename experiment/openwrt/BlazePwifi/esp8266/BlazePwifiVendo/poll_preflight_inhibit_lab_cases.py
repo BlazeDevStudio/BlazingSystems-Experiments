@@ -116,7 +116,7 @@ def verify_register_preflight(name: str, source: str):
         raise AssertionError(f"{name}: loop() anchor missing for duplicate-register mutation")
     mutated_source = (
         source[:loop_brace + 1]
-        + '\\n    (void)post("register");'
+        + '\n    (void)post("register");'
         + source[loop_brace + 1:]
     )
     expect_rejected(
@@ -128,8 +128,8 @@ def verify_register_preflight(name: str, source: str):
     # Comment and string decoys must not be counted as executable register POSTs.
     decoy_source = (
         source
-        + '\\n// post("register");'
-        + '\\nconst char *registerNote = "post(\\\\"register\\\\");";'
+        + '\n// post("register");'
+        + '\nconst char *registerNote = "post(\\"register\\");";'
     )
     register_guard_locations(decoy_source)
 
