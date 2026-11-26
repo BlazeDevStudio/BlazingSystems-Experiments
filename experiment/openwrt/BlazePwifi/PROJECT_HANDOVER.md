@@ -1023,3 +1023,27 @@ Live stack: #239 `d83b715b...`, #254 `84c442a4...` (contains `3692ddf...`, 17 ah
 
 See [UTC11 narrow handover](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/blob/3f5e8b59e6e72629a3c634abc34e24a082484a13/experiment/openwrt/BlazePwifi/docs/handover/2026-11-25-hw-cpp-user-defined-literal-suffix-boundaries-utc11.md).
 <!-- PHX-HARDWARE-20261125-CPP-UDL-SUFFIX-BOUNDARIES:END -->
+
+## PHX-HARDWARE UTC23 — CRLF line-splice parity guard
+
+- PR #349 remains OPEN / DRAFT / UNMERGED on phoenix/hw-json-array-primitive-guard-20261124-utc00; captured base is #347 at 960184670379f01e20f0e7e8bc23b3e5eedacd3f.
+- Test-first RED: 62f7813ef482e7ac9bc0d2010f8f7e2113cf29ef; Relay run #45723546132, job 139587561096, failed only at the new CRLF line-splice regression after the prior 14 tests passed.
+- Source fix: 9dc0ae39832e5fe7db79694b670a841f0c90ffe0. The C++ normalizer now recognizes backslash-LF and backslash-CRLF splices in // comments.
+- Exact-source Quarantine #45723944288 job 139588898662 PASS; Relay #45723944279 jobs 139588898747 / 139588899114 PASS. Logs: CPP_TOKEN_NORMALIZER_CONTRACT_PASS 15/15; BOUNDED_HTTP_RESPONSE_TOKEN_NORMALIZER_PASS 8/8.
+- Full #45723944321 validation job 139589011037 FAIL at inherited “Missing poll signature check”; all 14 firmware target jobs and Android pass. Production import/sign/simulation/candidate/publication stages skipped.
+- Only Hardware-owned host parity-lab source/tests and handovers changed. No production sketch, CGI producer, CORE API, finance, signer/witness, migration or COE destination changed. SIMULATED / CI VERIFIED only; HARDWARE ACCEPTED NO; PRODUCTION NO-GO.
+- The active v0.6 response trust boundary remains a separate P0: unsigned poll response consumption and empty-key verification skip, per Master UTC23 report. CORE owns the approved response/HMAC/key contract; Hardware implementation must follow that contract with QA negative vectors.
+- Private Drive registry v11 remains NOT RECOVERED; no Google Drive connector is exposed. No older snapshot substituted.
+
+See [UTC23 narrow handover](docs/handover/2026-11-25-hw-cpp-crlf-line-splice-guard-utc23.md). Master UTC23 also assigned a separate #348 canonical-handover synchronization; it remains pending and was not modified in this task.
+
+## PHX-HARDWARE UTC02 — #349 → #352 → #353 stack ancestry reconciliation
+
+- #352's parent #349 was at `1a2ecf5fa8c8c20a0095ac898c1bff254280ad27`; #352 child was at `0e984e267b3a8fb10c314800d1a7f120806354b7`.
+- Their merge base was `2a5c997add4f49fcd74f753101d3a9daac0040bf`; compare showed 43 child commits and 3 parent-only commits.
+- The three parent-only commits changed four paths: this handover, the CRLF narrow handover, `cpp_token_normalizer.py`, and `cpp_token_normalizer_contract_lab.py`. The two Python paths were not changed by #352, so they were imported without source conflict.
+- `PROJECT_HANDOVER.md` was combined additively: #352's existing poll/ISR history is retained and #349's UTC23 evidence is appended. No existing section was replaced.
+- The #352 branch update is a two-parent merge commit with first parent the prior #352 head and second parent the #349 head. The branch ref update is expected-SHA guarded and non-forced.
+- The corresponding #353 child will be advanced as a second two-parent merge, preserving its ISR-specific source and handovers while incorporating the reconciled #352 parent.
+- No production sketch, CGI producer, CORE API, finance, signer/witness, migration, COE destination, physical device, or release artifact was changed.
+- Exact-head focused CI is required after both branch updates; no new CI result is claimed by this handover before those runs complete.
