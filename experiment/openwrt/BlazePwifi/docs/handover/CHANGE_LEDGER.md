@@ -1,3 +1,10 @@
+## PHX-RELEASE UTC 2026-11-26 — supersession audit: ESP32 toolchain lock and provenance
+
+- Compatible draft head `0441a8e5ead737a1a160b6e7eea0b4ec836f457f` already contains the release-owned ESP32 package-index/toolchain lock, verifier, compatibility workflow hardening, and UTC04 provenance handover. No implementation was duplicated and no non-RELEASE source was changed.
+- The live workflow query returned no Actions runs for this exact head at audit time. Static source evidence is recorded only; exact-head build, compatibility, and Windows evidence remains **VERIFICATION PENDING**.
+- No signing, publishing, flashing, migration, or deployment was performed. The production evidence gates remain open: MASTER acceptance, independent QA, protected signer/witness, durable finance/migration proof, and physical acceptance.
+- Next: wait for/re-run the exact-head workflows, then evaluate the lock verifier and retained-artifact provenance against their stated acceptance criteria.
+
 ## PHX-RELEASE UTC 2026-11-25 — supersession audit: Arduino CLI archive-verifier repair
 
 - Final documentation-successor evidence: [BlazePwifi build #45659246220](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45659246220) again completed docs proof plus scoped Android, ESP32 and ESP8266 jobs, with only \`validate\` failed; [Windows #45659245510](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45659245510) stopped at \`handover\`; [ESP32 compatibility #45659245624](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45659245624) succeeded on both pinned cores. Signing and publishing remained skipped. This is scoped CI evidence only.
