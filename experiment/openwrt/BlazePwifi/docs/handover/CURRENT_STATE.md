@@ -1,3 +1,39 @@
+# CURRENT STATE — 2026-11-26 UTC05 / PHX-HARDWARE active-v0.6 poll intake deny
+
+**Task:** [#177](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/177) · **Control:** [#172](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/172) · **PR:** [#354](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/354)
+
+- **Role:** PHX-HARDWARE. No shared API, finance backend, QA-owned test, release workflow, COE destination or another role's source was changed.
+- **Base:** `blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859`.
+- **Branch:** `phoenix/hw-active-v06-poll-intake-deny-20261126-utc05`.
+- **Source implementation commit:** `dc619870a096f01d0d1cba24f0bf3c0c981a08d2`.
+- **Corrected source/test head:** `f381f6d38699e953b32e1d0c603524bc6da86541`.
+- **Current pre-refresh docs head:** `2bd7a25c2a00e74079b83a3953b190bdd929a11e`.
+
+## Implemented
+
+Both ESP8266 and ESP32 now call `denyRemoteControl()` after pin setup, before and after every synchronous poll, and after register. The helper disables controller, coin, relay and LED flags, clears the active target, and applies the existing polarity-aware logical OFF path. Register/poll response bodies are discarded. The legacy config parser and unused JSON helpers/revision state are removed. Automatic coin POST/retry/clear is removed from `loop()`; existing pending pulse/nonce/target and durable journal records remain untouched.
+
+The candidate is deliberately deny-only. It does not resume paid operation on unsigned `insert` or `target_nonce` fields.
+
+## Exact test evidence
+
+- RED: [#45764293566](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45764293566), job `139721362633`, expected failure on test-only head because pending disposition remained in the active loop.
+- GREEN focused final docs head: [#45765161847](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45765161847), job `139724228280`, PASS.
+- Native journal workflow: [#45765161848](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45765161848), job `139724228753`, FAIL at QA-owned `clearPending(true/false)` source assertion; preceding native journal, CGI denial, migration preflight, maintenance freeze and frozen-capture tests passed.
+- Full build: [#45765161859](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45765161859), validation job `139724399274`, FAIL at handover freshness before target matrix terminal results. Canonical docs are being refreshed; rerun required.
+
+## Status distinctions
+
+- Host/source-extracted regression: SIMULATED / CI VERIFIED.
+- Board compilation on this final handover head: NOT YET VERIFIED.
+- Physical relay/coin acceptance and power-loss durability: NOT TESTED.
+- HARDWARE ACCEPTED: NO.
+- PRODUCTION READY: NO.
+
+## NEXT EXACT ACTION
+
+PHX-QA reviews the deny-only pending-disposition invariant and updates its owned sequence contract; PHX-CORE publishes the authenticated poll and event receipt/disposition contract; PHX-HARDWARE then reruns Full CI at the canonical handover head. No physical flash, device reset, live money, signing, migration, merge or deployment.
+
 <!-- FULL-QR-TERMINAL-20261113:START -->
 > **Full offline QR merged-head CI / 2026-11-13 Asia/Manila / VALIDATED** — The Full push for the PR 278 merge, `d4c06e2c5ca223cc95ff04bd60a9f6cf0a69e1bb`, completed successfully on attempt 1 on `blazepwifi-v0.6.0-audit-foundation`. All 27 jobs that ran succeeded, including the required and optional firmware matrices. The complete 32-job REST inventory shows five expected skips for signed APK import, signing handoff, prerelease, release and lab-preview publication. [Full run 42475439223](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42475439223)
 >

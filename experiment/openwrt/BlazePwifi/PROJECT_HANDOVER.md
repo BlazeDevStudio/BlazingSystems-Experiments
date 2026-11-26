@@ -1,3 +1,32 @@
+## CURRENT STATUS — 2026-11-26 UTC05 (PHX-HARDWARE active v0.6 deny-only candidate)
+
+**Status: DRAFT / focused CI VERIFIED / Full validation BLOCKED / physical NOT TESTED / PRODUCTION NO-GO.**
+
+- Active development target: `blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859`.
+- Hardware-owned isolated child: [PR #354](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/354), branch `phoenix/hw-active-v06-poll-intake-deny-20261126-utc05`, OPEN / DRAFT / UNMERGED.
+- Source implementation: `dc619870a096f01d0d1cba24f0bf3c0c981a08d2`; corrected test matcher: `f381f6d38699e953b32e1d0c603524bc6da86541`; narrow handover: [2026-11-26-hw-active-v06-poll-intake-deny-utc05.md](docs/handover/2026-11-26-hw-active-v06-poll-intake-deny-utc05.md).
+- Both board sketches now deny controller/coin/relay/LED outputs at setup, before and after synchronous poll, and after register; register/poll bodies are discarded; legacy remote-config parsing is removed; automatic coin POST/clear is disabled; unresolved pending journal state is preserved.
+- **Focused exact-head:** [#45765161847](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45765161847), job `139724228280`, PASS on docs head `2bd7a25c2a00e74079b83a3953b190bdd929a11e`. Both source-extracted board labs and deny-only remote-config lab passed, including GPIO polarity and pending-evidence preservation mutations.
+- **Test-first RED:** [#45764293566](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45764293566), job `139721362633`, failed on test-only head `95a32f53824591ceacfbc6317b3f80c95a883b75` because the active source still had pending disposition in `loop()`. This is valid RED evidence. Earlier regex-escaping attempts are explicitly not counted.
+- **Full build:** [#45765161859](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45765161859), validation job `139724399274`, failed at the mandatory handover freshness gate because this canonical root/current/ledger update had not yet been committed. Target builds were still running at last inspection; no Full PASS is claimed.
+- **QA-owned native sequence contract:** [#45765161848](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45765161848), job `139724228753`, failed only at `tests/v060_vendo_sequence_contract.py:20`, which still requires active `clearPending(true/false)` callsites. This candidate intentionally removes automatic pending disposition until CORE's authenticated receipt contract is approved. PHX-QA review/update is requested; Hardware did not edit QA-owned tests.
+- Existing PR #239, #254, #283, #340, #352 and #353 remain separate, open and unmerged. This active-branch PR does not rebase, merge or overwrite them.
+
+## AUTHORITATIVE LIVE LINKS
+
+- [Control plane #172](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/172)
+- [Cleanup-first #266](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/266)
+- [Hardware P0 #177](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/177)
+- [Active-v0.6 deny-only PR #354](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/354)
+- [Narrow Hardware handover](docs/handover/2026-11-26-hw-active-v06-poll-intake-deny-utc05.md)
+
+## NEXT EXACT ACTION
+
+1. PHX-QA must review the deny-only branch and replace the stale active-callsite assertion with a candidate-aware invariant: `clearPending` remains defined for future approved disposition but has no active callsite; pending evidence is preserved.
+2. PHX-CORE must publish the authenticated register/poll and event receipt/disposition contract, including mandatory key provisioning, canonical serialization, target binding, freshness and replay.
+3. PHX-HARDWARE reruns Full exact-head after the canonical handover refresh and keeps coin admission/relay deny-only until QA and CORE approvals.
+4. Physical relay polarity, coin acceptor cutoff timing, electrical pulse/recovery, 150 power cuts and 30-device/24-hour soak remain NOT TESTED.
+
 <!-- FULL-QR-TERMINAL-20261113:START -->
 > **Full offline QR merged-head CI / 2026-11-13 Asia/Manila / VALIDATED** — The Full push for the PR 278 merge, `d4c06e2c5ca223cc95ff04bd60a9f6cf0a69e1bb`, completed successfully on attempt 1 on `blazepwifi-v0.6.0-audit-foundation`. All 27 jobs that ran succeeded, including the required and optional firmware matrices. The complete 32-job REST inventory shows five expected skips for signed APK import, signing handoff, prerelease, release and lab-preview publication. [Full run 42475439223](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42475439223)
 >
