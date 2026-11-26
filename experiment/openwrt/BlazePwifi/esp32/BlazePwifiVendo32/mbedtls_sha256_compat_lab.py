@@ -183,8 +183,8 @@ def main() -> None:
     )
     expect_rejected("missing-runtime-pin-helper", source.replace(runtime_helper, "", 1))
     moved_pin_order, pin_order_count = re.subn(
-        r"configureRuntimePins\\(runCoinPin,runRelayPin,runLedPin\\);\\s*denyRemoteControl\\(\\);",
-        "denyRemoteControl();\\n  configureRuntimePins(runCoinPin,runRelayPin,runLedPin);",
+        r"configureRuntimePins\(runCoinPin,runRelayPin,runLedPin\);\s*denyRemoteControl\(\);",
+        "denyRemoteControl();\n  configureRuntimePins(runCoinPin,runRelayPin,runLedPin);",
         source,
         count=1,
     )
@@ -192,8 +192,8 @@ def main() -> None:
     expect_rejected("setup-pins-after-deny", moved_pin_order)
 
     moved_fs_early, fs_order_count = re.subn(
-        r"(Serial\\.begin\\(115200\\);\\s*loadConfig\\(\\);)",
-        r"\\1\\n  fsReady=LittleFS.begin(false);",
+        r"(Serial\.begin\(115200\);\s*loadConfig\(\);)",
+        r"\1\n  fsReady=LittleFS.begin(false);",
         source,
         count=1,
     )
