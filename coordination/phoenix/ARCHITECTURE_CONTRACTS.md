@@ -2221,3 +2221,47 @@ The active development branch remains blazepwifi-v0.6.0-audit-foundation at 2fbd
 - PHX-MASTER records exact source/test and docs heads separately; no candidate promotion, source merge or contract invention.
 
 CI/simulation is not physical acceptance. No coin pulse, relay/electrical recovery, LittleFS power-loss, 150 real power cuts or 30-device/24-hour soak is established by these runs. **PRODUCTION NO-GO.**
+## UTC03 evidence note — #340 core-4 compile is real but not yet reproducible; #353 remains blocked — 2026-11-26T03:57:22Z
+
+HARDWARE #340 now has an actual ESP32 Vendo sketch compile against ESP32 Arduino core 4.0.0: [run #45747192648](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45747192648), exact source/test SHA d1380acf80c0b631c5814d746dca36b2fad7a986. The final PR/docs head is f70f6af78c64ef86ba0f631faeb02b6cb6eb2725; the source/test SHA to final docs head comparison adds only PROJECT_HANDOVER.md and the UTC03 handover note. The ESP32 sketch blob is fc883d20ef76ec5521a5872a175ec73a16cf8cbe at both prior source/test SHA d3168ccb4959fe1eab718912fd04510ef7603253 and current source/test SHA d1380acf80c0b631c5814d746dca36b2fad7a986.
+
+However, the two exact core-4 compile runs report the same Arduino CLI 1.6.0 and ESP32 core 4.0.0, yet their application binary SHA-256 values differ: prior run #45742944327 produced f9489e1df0d075cbfce549120c37af2778c53cb055f165c14a1d790623293c31; current run #45747192648 produced ea6bfb5fbf31f4fca3ed7942e92cede58b75c1d087cd74ac15414d9d568f0a2e. The dedicated core-4 workflow blob is 0598839f92831698a60bc8715df14db1c56b6fac. It uses arduino/setup-arduino-cli@v2, updates the live package index, installs core 4.0.0, and does not retain the resulting core-4 binary as a workflow artifact. No root cause is established. This is a reproducibility evidence gap, not proof of compromise or a failed compile.
+
+The later final docs-head Full build [#45747758154](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45747758154) PASSes with 26 successful jobs / 4 intentional skips. The earlier source/test Full #45747199081 was cancelled. Full-build success does not replace the missing dedicated core-4 artifacts or establish bit-for-bit reproducibility.
+
+HARDWARE #353 current source/test SHA is ed2f77d5924172881f27222cc26649f8f85abe6c and final docs head is 832692020a428ff4fe03a197a1bfce65b3f9316c, 27 ahead / 0 behind parent #352 2fa3b7db1161ddb531ed94bcf60617947fa1a7bd. The final docs commit adds only PROJECT_HANDOVER.md and the UTC03 handover note. Quarantine #45751177827 and Relay #45751177670 PASS. Full #45751177730 fails in validation job 139679141206 at Missing poll signature check; the 14 target/platform jobs and Android pass, while downstream simulation, update, signing, publication and candidate gates are skipped. The current source/test change adds source-extracted runtime-pin/ISR ordering mutations; no production .ino was changed in this PR.
+
+Active v0.6 remains unauthenticated at register/poll. Both board sketches consume unsigned insert/target_nonce and call applyRemoteConfig; the CGI poll response has no response_sig. COE #26 still has a keyless sigOk=true bypass. No authenticated response contract is approved.
+
+---
+
+## 7.23 Firmware build provenance and reproducibility gate — P1 release evidence / production blocker (2026-11-26 UTC03)
+
+A successful compile proves only that one exact source/toolchain tuple compiled. It does not prove that a second build from the same inputs yields the same firmware bytes, and it does not establish signing, physical acceptance or release readiness.
+
+### Observed #340 evidence
+
+- Source/test SHA d1380acf80c0b631c5814d746dca36b2fad7a986 and prior source/test SHA d3168ccb4959fe1eab718912fd04510ef7603253 contain the same ESP32 sketch blob fc883d20ef76ec5521a5872a175ec73a16cf8cbe.
+- Both exact-source runs report Arduino CLI 1.6.0 and ESP32 core 4.0.0, but the binary hashes differ: f9489e1df0d075cbfce549120c37af2778c53cb055f165c14a1d790623293c31 versus ea6bfb5fbf31f4fca3ed7942e92cede58b75c1d087cd74ac15414d9d568f0a2e.
+- The dedicated workflow file blob is 0598839f92831698a60bc8715df14db1c56b6fac. It installs a pinned ESP32 core version but updates the live package index and does not upload/retain the core-4 binary. The two core-4 workflow runs returned no retained artifacts.
+- The final docs/PR head f70f6af78c64ef86ba0f631faeb02b6cb6eb2725 is two documentation-only commits beyond source/test SHA d1380acf80c0b631c5814d746dca36b2fad7a986. Full #45747758154 PASS is a separate matrix result; do not substitute its regular ESP32 artifact for the dedicated core-4 compile output.
+
+### Required build provenance tuple
+
+Before a firmware binary can be described as reproducible or promoted to a release candidate, retain the following for every build:
+
+1. Exact source/test commit SHA, source tree SHA, each compiled source blob SHA and file mode; separately record final PR/docs SHA and every docs-only delta.
+2. Exact workflow file blob SHA and run/job IDs.
+3. Arduino CLI version and binary checksum; package-index URL and SHA-256; exact platform/core version; compiler, linker, bundled tool and transitive package versions plus checksums or a lock manifest.
+4. Runner OS/architecture and immutable image/container digest; board FQBN, menu options, build properties, compiler flags, library versions and clean-build state.
+5. Firmware binary, byte size, SHA-256, SHA256SUMS, machine-readable manifest, full compile log and artifact ID/retention location. Do not store secrets in the manifest.
+6. Two independent clean builds from the same pinned inputs. Their output firmware bytes and SHA-256 must be identical. Preserve both artifacts and manifests until the comparison is independently reviewed.
+
+### Failure classification and owner boundary
+
+If any supposedly identical clean builds differ, classify the result as NONDETERMINISTIC / REPRODUCIBILITY UNVERIFIED, preserve both run IDs and hashes, and block artifact promotion until PHX-RELEASE identifies and pins the missing input or explains the deterministic build transformation. Candidate CI may remain green, but no release, signing or production acceptance may be inferred.
+
+PHX-RELEASE owns workflow/toolchain pinning, artifact retention and reproducibility investigation. PHX-HARDWARE owns source/build intent and exact sketch identity. PHX-QA independently reviews the evidence. PHX-MASTER owns this cross-role contract only; it does not edit the owner workflow, re-run owner jobs, sign, publish or approve a release.
+
+This contract does not close the separate authenticated register/poll response P0, durable financial state, migration, QA, native acceptance, 150 real power cuts or 30-device/24-hour soak. **PRODUCTION NO-GO.**
+
