@@ -199,11 +199,11 @@ def build_and_run(board: str, write_logical: str, configure: str, expect_pass: b
 
 
 def remove_local_polarity_gate(configure: str) -> str:
-    # ESP8266 has two combined polarity/pin-safety guards; ESP32 keeps one
-    # early unknown-polarity INPUT-only block. Remove the board's actual gate,
-    # not a textual pattern copied from the other architecture.
+    # Board implementations have converged on one or more combined
+    # polarity/pin-safety guards. Remove the actual guard(s) present; retain
+    # the ESP32 legacy-block fallback for older source shapes.
     mutated, count = re.subn(r"!outputPolarityKnown\s*\|\|\s*", "", configure)
-    if count == 2:
+    if count in (1, 2):
         return mutated
 
     if count == 0:
