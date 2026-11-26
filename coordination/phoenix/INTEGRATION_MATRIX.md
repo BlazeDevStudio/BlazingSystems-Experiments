@@ -1,3 +1,43 @@
+## PHX-MASTER UTC07 — exact-tree migration and interface reconciliation — 2026-11-26T07:37:35Z
+
+### COE #26 remains frozen
+
+Exact recursive Git trees were fetched at the live candidate SHAs; all three API tree responses were complete (`truncated=false`):
+
+| Tree | Exact SHA | Entries |
+|---|---|---:|
+| HARDWARE #353 source candidate | `cb1787ac8f89562f20b6ecdee0c7969fbd12bd01` | 2,572 |
+| HARDWARE #354 active-v0.6 deny candidate | `8d1023f986cc1b4d9aacebb90143bcfc903d7cc5` | 2,399 |
+| COE #26 destination | `b382d233ff06c8791b1028bed3c617cc7b670d12` | 286 |
+
+| Route | Source files | Destination files | Common mapped | Exact blob+mode | Source-only | Destination-only |
+|---|---:|---:|---:|---:|---:|---:|
+| #353 ESP32 | 16 | 1 | 1 | 0 | 15 | 0 |
+| #353 ESP8266 | 67 | 1 | 1 | 0 | 66 | 0 |
+| #354 ESP32 | 4 | 1 | 1 | 0 | 3 | 0 |
+| #354 ESP8266 | 6 | 1 | 1 | 0 | 5 | 0 |
+| #353 tests | 47 | 19 | 4 | 1 | 43 | 15 |
+
+The sole common ESP32 and ESP8266 sketch paths are divergent at both source candidates. For #353, source blobs are `1412cf57…` / `b99f1f21…`; COE destination blobs are `3cc7ec54…` / `c8be98f7…`. For active-v0.6 #354, source blobs are `33ef94e8…` / `d3a4edf0…`, still different from COE #26. The test route has three divergent common files; only one of four common test paths is an exact blob+mode match.
+
+### Licence and notice provenance
+
+- Source product `experiment/openwrt/BlazePwifi/LICENSE` and destination `Pisowifi/LICENSE` are byte-identical: blob `1ee55b94183417be977ca287cd7391f9a6f7e721`.
+- Source repository-root `NOTICE.md` exists at blob `f6d92cd21465312be5993631fe26977219be0fb9`; COE destination root has no `NOTICE.md`.
+- COE destination root also has no root `LICENSE`; only `Pisowifi/LICENSE` matches the product license.
+
+### CI and route authority
+
+COE #26 exact head `b382d233ff06c8791b1028bed3c617cc7b670d12` has five workflows still QUEUED, zero jobs and zero combined statuses. The current route manifest is unchanged: 11 routes, `DRAFT_REVIEW_ONLY`, source reference `f4e8a891`, PHX-MASTER target null. These measurements do not authorize source promotion or destination edits.
+
+**Decision: FROZEN.** No copying, staging, moving, overwriting, cherry-picking, branch retargeting or COE destination modification was performed. The #354 deny-only v0.6 candidate is not interchangeable with the #353 candidate and is not a migration approval.
+
+### Interface boundary
+
+COE CORE #45 verifies synthetic event-bound receipt vectors, but its current scope does not establish the missing authenticated controller register/poll response envelope, mandatory key provisioning, controller/target binding, freshness or replay contract. CORE remains the producer/interface owner. HARDWARE implements only after that contract is approved; QA owns independent negative-path assertions. The #354 PAY-0745 failure is a QA test/source-contract mismatch, not authority for Master to edit QA or Hardware source.
+
+---
+
 ## PHX-MASTER UTC06 — exact-head Hardware deny candidate and COE provenance — 2026-11-26T07:04Z
 
 ### Active v0.6 Hardware #354 — exact current branch, not the stale PR body

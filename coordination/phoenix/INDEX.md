@@ -1,3 +1,13 @@
+## Latest PHX-MASTER checkpoint — UTC07 / 2026-11-26
+
+- [UTC07 exact-head role and CI reconciliation](ROLE_ASSIGNMENTS.md#phx-master-utc07--exact-head-owner--ci-reconciliation)
+- [UTC07 COE #26 exact-tree migration and interface audit](INTEGRATION_MATRIX.md#phx-master-utc07--exact-tree-migration-and-interface-reconciliation)
+- [UTC07 master audit summary and next owner actions](AUDIT_SUMMARY.md#phx-master-utc07--live-audit-summary)
+- Master starting HEAD: `b944e702094f36dbbb8e5b82e69d9ddd51f228c1`
+- PR #288 remains OPEN / DRAFT / UNMERGED; COE #26 remains FROZEN; **PRODUCTION NO-GO**.
+
+---
+
 ## PHX-MASTER UTC06 — live exact-head owner CI, Hardware #354 and COE #26 provenance — 2026-11-26T07:04Z
 
 [UTC06 live disposition and exact-head migration/CI evidence](AUDIT_SUMMARY.md)

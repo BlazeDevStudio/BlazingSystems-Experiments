@@ -1,3 +1,34 @@
+## PHX-MASTER UTC07 — live audit summary — 2026-11-26T07:37:35Z
+
+**Disposition:** exact-head coordination audit complete; integration remains blocked; **PRODUCTION NO-GO**.
+
+- Master branch at start: `phoenix/master-coordination@b944e702094f36dbbb8e5b82e69d9ddd51f228c1`; parent `30724b45b8891dd616574b07b36679096b5d9852`.
+- PR #288: OPEN / DRAFT / UNMERGED; 602 ahead / 1 behind main; merge base `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; 231 changed paths, all Master-owned under `coordination/phoenix/`.
+- This activation updates four existing Master coordination documents only. No new file, folder, registry copy, subsystem source change or COE destination write was made.
+- Highest-impact new finding: HARDWARE #354 is now at `8d1023f`, 21 commits beyond its stale PR-body pointer `aca9becc`; current clean-build outputs differ for both ESP32 cores, its native synthetic sequence test fails on QA's legacy `clearPending(true/false)` assertion, and its Full validation fails the handover freshness gate.
+- COE RELEASE #35's owner refreshed its PR description to final handover head `1ccba2e9` / source-test `d17153a3`; exact CI still fails closed on 10/10 missing ULA /48 authority and Bubblewrap absence. No ULA prefix or sandbox bypass was invented.
+- COE #26 remains frozen after exact blob/mode, test identity, licence and notice comparisons at complete trees. No destination mutation is permitted by this evidence.
+- Cleanup #266 remains OPEN / 0-of-7. The 11-route manifest remains `DRAFT_REVIEW_ONLY` with Master destination null.
+- CORE source and shared interfaces remain owner-reserved. No competing CORE implementation was started.
+
+### Access and execution limitations
+
+- The private Drive `BLAZE_PROJECT_REGISTRY_v11_20261027.json` and newer corrections were not accessible. No Google Drive connector is exposed; exhaustive Library search/list returned historical v3–v7 snapshots but not v11. No older snapshot was substituted and no private identifiers or contents were published.
+- AGENTS.md's linked Cloud Artifact Policy and Storage Recovery Handover could not be fetched: GitHub connector returned file-metadata-without-SHA errors and public web fetch was disabled. No Drive artifact/folder creation or transfer was attempted.
+- Master Python unittest suite and `verify_coordination.py` were NOT RUN because no authenticated local checkout/test environment was available. Master Actions: zero runs. Owner CI above was inspected at exact SHAs, not executed by Master.
+- Static inspection performed: exact branch/PR identity, 231-path ownership scope, route manifest parse, complete recursive tree retrieval, exact blob+mode comparisons, licence/NOTICE presence, workflow/job/log readback and UTC07 checkpoint deduplication.
+
+### Next exact owner actions
+
+1. PHX-HARDWARE refresh #354's PR description and canonical handover to actual head `8d1023f`; resolve deterministic build output drift on ESP32 cores 3.3.13 and 4.0.0.
+2. PHX-QA replace the obsolete active-clear assertion with deny-only pending-evidence preservation coverage, then independently review both boards.
+3. PHX-CORE publish the approved authenticated register/poll and receipt/disposition contract, including serialization, nonempty key provisioning, controller/target binding, freshness and replay.
+4. PHX-RELEASE / PHX-INFRA obtain approved site-scoped ULA /48 authority and an authorized Bubblewrap-capable runner; retain fail-closed gates.
+5. COE integration owner reconcile exact source/test/license/NOTICE provenance and run CI at an authorized destination head before proposing any move.
+6. Registry custodian restore authorized read-only access to Drive v11 and newer corrections; repository administrator verify branch protection and required checks.
+
+**Release gates still unverified:** independent protected signing/anti-rollback witness; crash-atomic durable financial state; reversible v1→v2 migration tests; independent QA; native acceptance; 150 real power cuts; 30-device / 24-hour soak; explicit owner-authorized release approval.
+
 ## PHX-MASTER UTC06 — live disposition — 2026-11-26T07:04Z
 
 **Master-only result:** re-read CONTROL PLANE #172, cleanup #266, current default/development/Master/COE heads, PR #288 and its routing manifest, current owner PRs/CI, COE #26, repository AGENTS.md, README_FIRST and BLAZE-COMMS/1. Completed an exact-head audit of Hardware #354, COE RELEASE #35 and the #353 → COE #26 migration candidate. Four existing Master coordination documents are updated in this commit; no new file or folder was created.
