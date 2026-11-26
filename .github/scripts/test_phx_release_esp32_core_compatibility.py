@@ -926,6 +926,7 @@ def main() -> int:
         "Release artifact provenance regression suite",
         "python3 .github/scripts/test_build_provenance.py",
         "python3 .github/scripts/test_arduino_cli_archive_verifier.py",
+        'python3 .github/scripts/verify_arduino_cli_archive.py --binary "$(command -v arduino-cli)"',
         "python3 .github/scripts/test_release_artifact_action_pins.py",
         "python3 .github/scripts/test_esp32_toolchain_lock.py",
         "python3 .github/scripts/verify_esp32_toolchain_lock.py --phase verify",
