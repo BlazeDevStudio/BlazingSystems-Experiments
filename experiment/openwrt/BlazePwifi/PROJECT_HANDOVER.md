@@ -691,3 +691,17 @@ Member and rental code now fail closed on corrupt, noncanonical, overflowing pai
 From live development HEAD, create an isolated #31 work branch. Inspect the **existing** `tests/v060_member_receipt_failure_repro.sh`, `member.sh` paid mutation/transfer, and `tools/v060_journal_authority_native.c`; do not repeat established RED fixtures. Implement a bounded, crash-recoverable single authoritative paid-member balance+receipt journal with durable event deduplication and failure-injection for ACK-lost/partial writes. Keep #43/#34 and v0.6 migration blocked. Append verified evidence to the ledger and update the short CURRENT_STATE, not another megabyte-long root document.
 
 **Copy to new chat:** @GitHub CONTINUE `BlazingSystems/BlazingSystems-Experiments` Full BlazePwifi draft PR #30. Read `experiment/openwrt/BlazePwifi/docs/handover/CURRENT_STATE.md`; check live HEAD. P0-0710 source `e0229927` Full #38076579117 PASS. P0 #31/#32/#34/#43 open; VERSION=0.5.3, no production v0.6.0. Next #31 integrated member money+receipt durability. No Codex, no Standalone Rental edits.
+
+
+## PHX-HARDWARE UTC06 — append-only ledger preservation correction
+
+The UTC05 active-v0.6 deny candidate remains OPEN / DRAFT / UNMERGED. A documentation audit found that the UTC05 `CHANGE_LEDGER.md` refresh had replaced the 1,080,830-character, 400-section historical ledger with a 2,454-character checkpoint. The historical blob was recovered from the PR base and restored byte-for-byte, with one new UTC06 section appended.
+
+- Restoration commit: [d718c873](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/d718c873f4def0807ebf0fc40aa6e1ff60bb3122).
+- Restored ledger blob: `eee163aba624160ddeccea184a7c21c4c86d59ce`, 1,082,506 characters, 401 section headings.
+- Focused exact-head PR workflow at d718c873: [#45766610880](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45766610880), job `139728911769`, PASS.
+- Full PR build [#45766611060](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45766611060): still running at the last read; the mandatory handover freshness step passed. No Full aggregate result is claimed.
+- Native journal run [#45766610898](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45766610898), job `139728911987`: FAILED only at QA-owned `tests/v060_vendo_sequence_contract.py:20`, whose legacy assertion requires active `clearPending(true/false)` callsites. The earlier native journal, CGI denial, migration preflight, maintenance freeze and frozen-capture steps passed. Hardware did not edit that QA-owned test.
+- The firmware candidate remains deny-only: no coin POST/retry/clear, no unauthenticated register/poll response consumption, and pending evidence is preserved. No CORE contract or financial schema changed.
+
+Next: PHX-QA updates its own sequence contract to assert the safe definition-only/no-active-callsite state; PHX-CORE publishes the authenticated register/poll and event receipt/disposition contract; PHX-HARDWARE reruns Full at the final canonical handover head. Physical acceptance remains NOT TESTED.
