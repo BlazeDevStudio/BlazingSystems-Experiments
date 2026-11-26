@@ -42,6 +42,40 @@ def _coin_post_matches(source: str):
     ]
 
 
+def _assert_unconditional_guard(masked_block: str, guard_at: int, label: str) -> int:
+    """Require a direct, unconditional deny statement at the poll block's top level."""
+    depth = masked_block[:guard_at].count("{") - masked_block[:guard_at].count("}")
+    if depth != 1:
+        raise AssertionError(
+            f"{label}: deny guard must be an unconditional standalone statement"
+        )
+
+    boundary = max(
+        masked_block.rfind(";", 0, guard_at),
+        masked_block.rfind("{", 0, guard_at),
+        masked_block.rfind("}", 0, guard_at),
+    )
+    if masked_block[boundary + 1:guard_at].strip():
+        raise AssertionError(
+            f"{label}: deny guard must be an unconditional standalone statement"
+        )
+
+    call_end = guard_at + len("denyRemoteControl()")
+    semicolon = masked_block.find(";", call_end)
+    if semicolon < 0 or masked_block[call_end:semicolon].strip():
+        raise AssertionError(
+            f"{label}: deny guard must be an unconditional standalone statement"
+        )
+    return semicolon + 1
+
+
+def _assert_no_control_transfer(
+    masked_block: str, start: int, end: int, label: str
+):
+    if re.search(r"\b(?:return|goto|break|continue|throw)\b", masked_block[start:end]):
+        raise AssertionError(f"{label}: control transfer can bypass deny guard")
+
+
 def poll_guard_locations(source: str):
     loop = extract_function(source, "void loop()")
     masked_loop = mask_non_code(loop)
@@ -96,6 +130,15 @@ def poll_guard_locations(source: str):
             raise AssertionError(
                 f"coin intake is not denied before blocking poll request {index + 1}"
             )
+        pre_guard_end = _assert_unconditional_guard(
+            masked_poll_block, pre_guard, "pre-poll"
+        )
+        if pre_guard_end > match.start():
+            raise AssertionError("pre-poll deny guard overlaps the blocking poll call")
+        _assert_no_control_transfer(
+            masked_poll_block, pre_guard_end, match.start(), "pre-poll"
+        )
+
         post_guard = masked_poll_block.find(
             "denyRemoteControl();", match.end(), next_start
         )
@@ -103,6 +146,10 @@ def poll_guard_locations(source: str):
             raise AssertionError(
                 f"post-poll deny guard is missing for request {index + 1}"
             )
+        _assert_unconditional_guard(masked_poll_block, post_guard, "post-poll")
+        _assert_no_control_transfer(
+            masked_poll_block, match.end(), post_guard, "post-poll"
+        )
         if index == 0:
             first_pre_guard = pre_guard
         last_post_guard = post_guard
