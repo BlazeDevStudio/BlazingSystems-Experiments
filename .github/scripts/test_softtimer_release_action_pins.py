@@ -40,12 +40,36 @@ def _step_blocks(workflow: str) -> list[str]:
 
 
 def _checkout_has_read_only_credentials(block: str) -> bool:
-    """Return whether the checkout block contains the read-only setting."""
-    return bool(
-        re.search(
-            r"(?m)^[ \t]+persist-credentials:[ \t]*false[ \t]*$",
-            block,
+    """Require persist-credentials to be a direct key under the checkout with mapping."""
+    lines = block.splitlines()
+    with_indexes = [
+        index
+        for index, line in enumerate(lines)
+        if re.fullmatch(r" {8}with:[ \t]*(?:#.*)?", line)
+    ]
+    if len(with_indexes) != 1:
+        return False
+
+    mapping_lines = []
+    for line in lines[with_indexes[0] + 1 :]:
+        if line.strip():
+            indentation = len(line) - len(line.lstrip(" "))
+            if indentation <= 8:
+                break
+        mapping_lines.append(line)
+
+    credential_entries = [
+        line
+        for line in mapping_lines
+        if re.match(r"^ {10}persist-credentials:", line)
+    ]
+    return (
+        len(credential_entries) == 1
+        and re.fullmatch(
+            r" {10}persist-credentials:[ \t]*false[ \t]*(?:#.*)?",
+            credential_entries[0],
         )
+        is not None
     )
 
 
