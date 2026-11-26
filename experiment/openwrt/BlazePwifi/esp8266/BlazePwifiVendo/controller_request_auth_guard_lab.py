@@ -52,16 +52,18 @@ def assert_contract(board: str, source: str) -> None:
     require(0 <= signed_guard < nonce_at < base_at < digest_at < digest_check,
             f"{board}: signedBody must reject empty key/ID and invalid digest before serialization")
 
-    validator = mask_non_code(extract_function(source, "bool validSha256Hex("))
+    validator_raw = extract_function(source, "bool validSha256Hex(")
+    validator = mask_non_code(validator_raw)
     for token in (
         "if(digest.length()!=64) return false;",
         "for(size_t i=0;i<64;i++){",
         "char c=digest[i];",
-        "c>='0'&&c<='9'",
-        "c>='a'&&c<='f'",
-        "c>='A'&&c<='F'",
     ):
         require(token in validator, f"{board}: SHA-256 digest validator missing {token!r}")
+    validator_compact = re.sub(r"\\s+", "", validator_raw)
+    for token in ("c>='0'&&c<='9'", "c>='a'&&c<='f'", "c>='A'&&c<='F'"):
+        require(token in validator_compact,
+                f"{board}: SHA-256 digest validator missing hex range {token!r}")
 
     signed_compact = re.sub(r"\s+", "", signed)
     require('&sig="+digest;' in signed_compact,
