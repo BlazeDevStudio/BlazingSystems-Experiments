@@ -92,14 +92,22 @@ jobs:
           arduino-cli core list | tee "$RUNNER_TEMP/arduino-cores.txt"
           grep -E '^esp32:esp32[[:space:]]+${{ matrix.core }}([[:space:]]|$)' \
             "$RUNNER_TEMP/arduino-cores.txt"
-      - name: Build twice from clean independent directories and compare application images
+      - name: Build twice with a fixed source timestamp and compare application images
         shell: bash
         run: |
           set -euo pipefail
           evidence="$RUNNER_TEMP/phx-hw-esp32-core-${{ matrix.core }}"
           mkdir -p "$evidence"
+          expected="${{ github.event.pull_request.head.sha || github.sha }}"
+          source_date_epoch="$(git show -s --format=%ct "$expected")"
+          test "$source_date_epoch" -gt 0
+          export SOURCE_DATE_EPOCH="$source_date_epoch"
+          export TZ=UTC
+          export LC_ALL=C
           {
-            printf 'SOURCE_SHA=%s\n' "${{ github.event.pull_request.head.sha || github.sha }}"
+            printf 'SOURCE_SHA=%s\n' "$expected"
+            printf 'SOURCE_DATE_EPOCH=%s\n' "$SOURCE_DATE_EPOCH"
+            printf 'BUILD_TIMESTAMP_POLICY=SOURCE_DATE_EPOCH_UTC\n'
             printf 'ESP32_CORE=%s\n' "${{ matrix.core }}"
             printf 'ARDUINO_CLI_VERSION=1.6.0\n'
             printf 'ESPRESSIF_INDEX_COMMIT=8f6bee9761f7b15cce27b79cbd1ae199d0df2adf\n'
