@@ -4,7 +4,7 @@ Activation: 2026-11-26 UTC04
 PR: [#291](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/291)  
 Branch: `phoenix/release-publisher-isolation-20261115`  
 Starting HEAD: `9b928c9eaa72cb26fdcf3f0e50a0ec024f4e3c30`  
-Latest source/test/workflow HEAD: `f556769bec30dea156f223f760547f76d99693ca`; final handover branch HEAD: `4edbe5529276069ecfe8d1cb97473bb9475e0860`  
+Latest source/test/workflow HEAD: `f556769bec30dea156f223f760547f76d99693ca`; prior handover checkpoint HEAD: `4edbe5529276069ecfe8d1cb97473bb9475e0860`. Subsequent docs-only head updates are recorded in live issue #172.  
 Base PR #242: `a7e27fe50e13326a7258bbaed1388594141ddda3`; #291 still targets former base `734b89d9e7792247e8376335c3f3685500ab3f89`.
 
 **Disposition: SOURCE/TEST/WORKFLOW COMMITTED / STATIC CONTRACT CHECKS PASS / EXACT-HEAD ACTIONS NOT TRIGGERED / QA REVIEW PENDING / PRODUCTION NO-GO.** Strict NO Codex. No merge, signing, tag, publication, hardware flash, payment migration or customer deployment.
@@ -30,11 +30,11 @@ PHX-MASTER UTC03 audit [3b7198d1](https://github.com/BlazeDevStudio/BlazingSyste
 
 Static repository assertions passed: lock JSON parses; both core versions and all archive checksums are present; pinned URL/blob match; both path filters include the new files; lock verification precedes compilation; capture/upload follow compilation with `if: always()`; upload action is pinned and retention is 14 days.
 
-**Exact-source Actions are not verified.** No PR-triggered workflow runs or combined statuses were returned for code head `f556769` or final handover head `4edbe552`. No expected RED/GREEN, hosted lock verification, artifact upload or clean-build result is claimed. The available GitHub connector does not expose workflow_dispatch. PHX-INFRA/repository administrator must dispatch `PHX Release ESP32 core compatibility` and `BlazePwifi build` for final PR #291 head `4edbe552`. No local execution of the new Python regression suite is claimed.
+**Exact-source Actions are not verified.** No PR-triggered workflow runs or combined statuses were returned for code head `f556769` or prior handover checkpoint `4edbe552`; the latest live PR head/status is tracked in issue #172. No expected RED/GREEN, hosted lock verification, artifact upload or clean-build result is claimed. The available GitHub connector does not expose workflow_dispatch. PHX-INFRA/repository administrator must dispatch `PHX Release ESP32 core compatibility` and `BlazePwifi build` for final PR #291 head `4edbe552`. No local execution of the new Python regression suite is claimed.
 
 The workflow still preserves HARDWARE's existing pin `7da74f9d1768a42fc6c15be368eeddae29035d4f` / sketch blob `c07aba7d518ef7eb5d536aafdd77ef6193e676cb`. HARDWARE/MASTER must approve the canonical source SHA/blob before RELEASE refreshes them. No hardware source or sketch was changed.
 
-PR #291 compares 871 commits ahead / 9 behind the live #242 head (merge base remains 734b89d9); it has 36 changed paths. The accumulated stack includes inherited non-RELEASE paths such as BlazePwifi project handovers/change ledger and SoftTimer PowerShell tests. Those paths were not edited in this activation. No rebase, retarget, force-push or merge was performed; MASTER owns stack reconciliation.
+At prior handover checkpoint `4edbe552`, PR #291 compared 871 commits ahead / 9 behind the live #242 head (merge base remains 734b89d9); the latest live compare is recorded in issue #172. it has 36 changed paths. The accumulated stack includes inherited non-RELEASE paths such as BlazePwifi project handovers/change ledger and SoftTimer PowerShell tests. Those paths were not edited in this activation. No rebase, retarget, force-push or merge was performed; MASTER owns stack reconciliation.
 
 ## Live control plane and provenance
 
@@ -47,7 +47,7 @@ PR #291 compares 871 commits ahead / 9 behind the live #242 head (merge base rem
 
 ## Next owner actions
 
-1. PHX-INFRA/repository administrator: dispatch both named workflows at exact PR #291 head `4edbe552`; record every job and artifact ID.
+1. PHX-INFRA/repository administrator: dispatch both named workflows at the exact live PR #291 head recorded in issue #172; record every job and artifact ID.
 2. PHX-HARDWARE + PHX-MASTER: approve the canonical source commit and sketch blob.
 3. PHX-MASTER: reconcile the nine-commit stale #291 base (870 commits ahead / 9 behind) without discarding child history.
 4. PHX-QA: independently review the lock, verifier, tests, retained artifacts and cross-run comparison.
