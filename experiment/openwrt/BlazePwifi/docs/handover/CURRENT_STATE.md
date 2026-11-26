@@ -1,3 +1,26 @@
+# CURRENT STATE — 2026-11-26 UTC14 — poll-inhibit independent GPIO polarity matrix
+
+**Role:** PHX-HARDWARE · **Issue:** [#177](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/177) · **PR:** [#354](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/354)  
+**Branch:** `phoenix/hw-active-v06-poll-intake-deny-20261126-utc05` · **Base:** `2fbd2475e9f54878c316fa7cea2f228386b0e859`  
+**Source/test SHA:** `9bb46bb27e4be80f6506dbebf2846700efd4cb81` · **PR:** OPEN / DRAFT / UNMERGED · **Production:** NO-GO.
+
+## Validated change
+
+The Hardware-owned poll-inhibit source-extracted lab now tests relay and LED polarities independently (four combinations per board), checks both logical OFF levels after `denyRemoteControl()`, and confirms pending pulse/nonce/target evidence remains unchanged through the simulated synchronous HTTP wait. The harness prints its result and mutation outcomes to CI logs.
+
+- RED: [#45833611464](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45833611464), job `139956531105`, failed as expected because the old same-polarity harness accepted the relay-OFF/LED-polarity mutation.
+- GREEN: [#45834845699](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45834845699), job `139960864159`, PASS. Logs explicitly show 4/4 combinations on ESP8266 and ESP32 and reject both cross-polarity mutations on both boards.
+- Source/test SHA: `9bb46bb27e4be80f6506dbebf2846700efd4cb81`. Only `poll_preflight_inhibit_lab.py` changed; production sketches did not change.
+- Full [#45834845628](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45834845628), validation `139960957851`, failed the mandatory handover-freshness gate before controller parity. Post-refresh Full rerun is required.
+
+## Safety and blockers
+
+The candidate remains deny-only; poll responses are not trusted, coin POST and pending disposition remain disabled. This is SIMULATED / CI VERIFIED only. Physical GPIO/relay, coin acceptor, electrical recovery, LittleFS power-loss, 150 power cuts and 30-device/24-hour soak are NOT TESTED. CORE authentication contract, QA parity review, Master branch pin and independent hardware acceptance remain outstanding.
+
+**Process deviation:** the test-only RED commit preceded a new IN PROGRESS handover entry. This is disclosed, not treated as compliant. No production firmware changed. Future source work must stage IN PROGRESS first.
+
+**NEXT EXACT ACTION:** QA fixes its owned deny-only assertions; CORE publishes the authenticated poll and receipt/disposition contract; Master refreshes #354 pins; Hardware reruns exact-head Full after those changes. No merge, flash, reset, live-money, migration, signing, release or deployment.
+
 # CURRENT STATE — 2026-11-26 UTC12 — poll guard control-flow regression
 
 **Role:** PHX-HARDWARE · **Task:** [#177](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/177) / [#354](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/354)  
