@@ -18,3 +18,6 @@
 - Full run `45887618795`: CI-0701 `140142273647` and mandatory handover freshness/history gates PASS; QA-owned `tests/controllers.sh:21` fails because the deny-only sketches intentionally have no `config_revision` response consumer. ESP8266 and 13 OpenWrt target jobs PASS; ESP32/Android still running at last check.
 - Native run `45887618600` fails QA-owned active-`clearPending` assertion; current sketches have definition-only clear helper and no disposition callsite.
 - Production/HARDWARE ACCEPTED = NO; physical acceptance NOT TESTED; PRODUCTION READY = NO-GO.
+
+
+2026-11-27 UTC20 | PHX-HARDWARE | PR #355 | Test-first EEPROM config integrity guard committed at `1f7af928c9ecf51454e262e3b45483c6488f22d8`; new source-extracted lab fails as expected because bounded current/legacy validators are not implemented. Expected RED #45892727658/job 140159081554. No firmware fix yet; source remains deny-only; physical acceptance NOT TESTED; PRODUCTION NO-GO.
