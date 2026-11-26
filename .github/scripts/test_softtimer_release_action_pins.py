@@ -45,7 +45,7 @@ def _checkout_step_blocks(workflow: str) -> list[str]:
         block
         for block in _step_blocks(workflow)
         if re.search(
-            r"(?m)^(?:      - uses:|        uses:)[ \\t]*actions/checkout@",
+            r"(?m)^(?:      - uses:|        uses:) actions/checkout@",
             block,
         )
     ]
