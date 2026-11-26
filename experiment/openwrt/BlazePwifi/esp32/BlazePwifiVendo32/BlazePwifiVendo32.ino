@@ -198,6 +198,7 @@ void loadConfig(){
     Serial.println("CRITICAL: Preferences unavailable; using deny-only setup defaults.");
     return;
   }
+  // Missing marker is a pre-latch legacy store; explicit false means an interrupted multi-key save.
   if(prefs.isKey("cfgvalid") && !prefs.getBool("cfgvalid",false)){
     configStoreValid=false;
     useSafeConfigDefaults();
@@ -395,6 +396,7 @@ void setup(){
 
 void loop(){
   web.handleClient();
+  // Keep the setup portal responsive while invalid storage blocks STA, registration and polling.
   if(!configStoreValid){ delay(2); return; }
   if(WiFi.status()!=WL_CONNECTED && !cfg.ssid.isEmpty() && millis()-lastPoll>8000){
     WiFi.disconnect(); WiFi.begin(cfg.ssid.c_str(),cfg.pass.c_str()); wifiFailures++; lastPoll=millis();
