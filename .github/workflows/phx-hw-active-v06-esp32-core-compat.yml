@@ -14,6 +14,8 @@ on:
   pull_request:
     paths:
       - 'experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino'
+      - 'experiment/openwrt/BlazePwifi/tools/package-vendo-source.py'
+      - 'experiment/openwrt/BlazePwifi/docs/handover/CURRENT_STATE.md'
       - 'experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/mbedtls_sha256_compat_lab.py'
       - 'experiment/openwrt/BlazePwifi/docs/handover/2026-11-26-hw-active-v06-poll-intake-deny-utc05.md'
       - '.github/workflows/phx-hw-active-v06-esp32-core-compat.yml'
@@ -139,6 +141,9 @@ jobs:
         if: always()
         with:
           name: phx-hw-active-v06-esp32-core-${{ matrix.core }}-${{ github.sha }}
-          path: ${{ runner.temp }}/phx-hw-esp32-core-${{ matrix.core }}/
+          path: |
+            ${{ runner.temp }}/phx-hw-esp32-core-${{ matrix.core }}/build-metadata.txt
+            ${{ runner.temp }}/phx-hw-esp32-core-${{ matrix.core }}/BlazePwifiVendo32-*.ino.bin
+            ${{ runner.temp }}/phx-hw-esp32-core-${{ matrix.core }}/*.sha256
           if-no-files-found: warn
           retention-days: 30
