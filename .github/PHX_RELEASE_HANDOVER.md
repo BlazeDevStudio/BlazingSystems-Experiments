@@ -1,3 +1,71 @@
+## PHX-RELEASE UTC 2026-11-26 — ESP32 toolchain lock and retained CI provenance
+
+Activation: 2026-11-26 UTC04
+Repository: BlazeDevStudio/BlazingSystems-Experiments
+PR: https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/291
+Branch: phoenix/release-publisher-isolation-20261115
+Base branch: draft/softtimer-future-release-signing-pipeline-20261029
+Base SHA at inspection: 734b89d9e7792247e8376335c3f3685500ab3f89
+Starting head: 9b928c9eaa72cb26fdcf3f0e50a0ec024f4e3c30
+Release source/test/workflow head before this handover: 22963e0aaf726dcf0d709898ba219973b5be65ab
+
+**Disposition: RELEASE SOURCE/TEST/WORKFLOW COMMITTED / STATIC CONTRACT CHECKS PASS / EXACT-HEAD ACTIONS NOT TRIGGERED / QA REVIEW PENDING / PRODUCTION NO-GO.** Strict NO Codex. No merge, signing, tag, publication, hardware flashing, payment migration or customer deployment.
+
+### MASTER-assigned task and ownership
+
+PHX-MASTER UTC03 audit [3b7198d1](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/3b7198d1d1ddc1651f95bb8065253ba8e68ae46b) assigns PHX-RELEASE full ESP32 compiler/package toolchain pinning, core-4 binary and manifest retention, and two-clean-build reproducibility investigation. PHX-HARDWARE retains source identity/build intent; PHX-QA independently reviews evidence. No hardware source, sketch, shared interface, CORE, RENTAL, PISONET or MASTER source was changed.
+
+### Observed reproducibility gap
+
+- Core-4 compile [#45747192648](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45747192648), job 139665996232, passed; binary SHA-256 `ea6bfb5fbf31f4fca3ed7942e92cede58b75c1d087cd74ac15414d9d568f0a2e`.
+- Prior core-4 compile [#45742944327](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45742944327), job 139652109745, passed at source/test SHA `d3168ccb`; same sketch blob, binary SHA-256 `f9489e1df0d075cbfce549120c37af2778c53cb055f165c14a1d790623293c31`.
+- Runner image versions differed (`20261116.376.1` and `20261116.133.1`). This is an observed environment difference, not a proven cause. The two source/test commits were also different; matching sketch blob alone does not establish identical full source inputs.
+- MASTER reports zero retained artifacts from both core-4 runs. No cross-run byte comparison is possible from those runs; no compromise or nondeterminism root cause is inferred.
+
+### RELEASE-owned changes
+
+1. Added `.github/locks/esp32-core-toolchains.json` with exact ESP32 core 3.3.13 and 4.0.0 platform archive metadata, all 18/19 Linux tool dependencies and SHA-256 archive checksums, five Arduino CLI builtins per core, Arduino CLI 1.6.0 archive identity, and the dfu-util 0.11.0-arduino5 archive checksum.
+2. Pinned the Espressif package index to immutable commit `8f6bee9761f7b15cce27b79cbd1ae199d0df2adf`; expected Git blob SHA-1 is `b3325781b813ec0b4dbc7cccc1913f53aa685004`.
+3. Added `.github/scripts/verify_esp32_toolchain_lock.py` to verify the exact index blob, platform metadata, every platform tool archive URL/checksum/size, installed package versions, builtins, Arduino CLI version and installed core. Capture mode records runner image, compiler versions, source/sketch identity, both binary/ELF SHA-256 values, package-index hashes and a retained SHA256SUMS file. It marks evidence HOSTED_CI_ONLY and production_authorized=false.
+4. Updated `.github/workflows/phx-release-esp32-core-compatibility.yml` to use the immutable Espressif index, verify the lock before compilation, capture both clean-build outputs, and upload the two build directories, indexes, manifest and checksums with pinned `actions/upload-artifact` v7.0.2 for 14-day CI evidence retention.
+5. Added `.github/scripts/test_esp32_toolchain_lock.py`; updated `test_phx_release_esp32_core_compatibility.py` and `test_release_artifact_action_pins.py` for the new lock, archive verifier and immutable artifact action. Both push and pull_request path filters include the new lock/script/test.
+
+Key commits:
+- Lock: [6173a2f2](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/6173a2f2dc5f523611be2c0d8678fbc07d60dbae)
+- Verifier: [9639a58c](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/9639a58c9f231c7eec3a0f85429ed60563b24572)
+- Compiler-tool discovery correction: [70d47c60](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/70d47c60adeb0dd58a9d58036c850a4faad29bea)
+- Workflow lock/artifact implementation: [986b4f14](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/986b4f14d53ccb9aca3cbbd1fea2abf2360b4cd7)
+- Final PR path-filter correction: [22963e0a](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/22963e0aaf726dcf0d709898ba219973b5be65ab)
+
+### Verification and exact limitations
+
+- Static repository checks passed: lock JSON parses; both core versions are present; all 37 ESP32 tool dependency entries have SHA-256 archive checksums; immutable index URL/blob agree; both path filters include the new files; the lock verification step precedes compilation; capture and artifact upload are after compilation and use `if: always()`; upload action is pinned and retention is 14 days.
+- The GitHub connection returned zero workflow runs and zero combined statuses for final head `22963e0a`. No exact-source RED/GREEN, hosted lock verification, actual artifact upload or clean-build result is claimed. The GitHub write connector does not expose workflow_dispatch; repository administrator/PHX-INFRA must dispatch the existing `PHX Release ESP32 core compatibility` workflow and `BlazePwifi build` for this exact PR head.
+- No local execution of the new Python regression suite is claimed. Static checks are not substitutes for hosted execution.
+- The workflow still uses the existing HARDWARE source pin `7da74f9d1768a42fc6c15be368eeddae29035d4f` and sketch blob `c07aba7d518ef7eb5d536aafdd77ef6193e676cb`. HARDWARE/MASTER must confirm the canonical source SHA/sketch blob before RELEASE changes either. The later #340/#353 hardware source heads are not silently substituted.
+- PR #291 remains OPEN / DRAFT / UNMERGED and is nine commits behind its advanced #242 base. #242 head is `a7e27fe50e13326a7258bbaed1388594141ddda3`; #291 still targets former base `734b89d9e7792247e8376335c3f3685500ab3f89`. No rebase, retarget, force-push or merge was performed. MASTER owns stack reconciliation.
+- Private `BLAZE_PROJECT_REGISTRY_v11_20261027.json` was not recovered. Library retrieval surfaced an earlier checkpoint that references v11, not the actual registry. No older registry snapshot was substituted and no private identifiers/content were copied into GitHub.
+
+### Cross-repository state at activation
+
+- MASTER PR #288: OPEN / DRAFT; 11 ownership routes remain DRAFT_REVIEW_ONLY; PHX-RELEASE route remains reimplementation-review.
+- Cleanup-first #266: OPEN, 0/7 tracks complete; its RELEASE track remains bounded to PR #242 build/version/manifest/signing configuration.
+- Release PR #242: head `a7e27fe5`; SoftTimer publisher admission change is committed, but exact-head Actions remain unverified in its current handover.
+- PR #291: current child release draft; no stack migration performed.
+- COE #26 remains FROZEN; COE #31 and #35 remain unmerged draft packager work. No COE destination writes or subsystem changes occurred.
+
+### Next owner actions
+
+1. PHX-INFRA/repository administrator: dispatch both named workflows for exact PR #291 head `22963e0a`; retain failing and passing jobs and confirm the artifact IDs.
+2. PHX-HARDWARE + PHX-MASTER: approve the canonical source commit and sketch blob for the next reproducibility run.
+3. PHX-MASTER: reconcile PR #291's nine-commit stale base without discarding its child history.
+4. PHX-QA: independently review the lock, verifier, test fixtures, retained artifacts and cross-run byte comparison.
+5. Registry custodian: restore authorized provenance-only access to the actual Drive v11 registry.
+
+**Production remains NO-GO.** Protected signer, independent freshness witness, durable financial accounting/migration, independent QA/MASTER approval, approved target binaries, 150 physical power cuts and 30-device/24-hour soak remain unproven. No signing, publishing, hardware flashing, payment migration or customer deployment occurred.
+
+---
+
 ## PHX-RELEASE UTC 2026-11-25 — supersession audit: Arduino CLI archive-verifier repair
 
 - Final documentation-successor evidence: [BlazePwifi build #45659246220](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45659246220) again completed docs proof plus scoped Android, ESP32 and ESP8266 jobs, with only \`validate\` failed; [Windows #45659245510](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45659245510) stopped at \`handover\`; [ESP32 compatibility #45659245624](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45659245624) succeeded on both pinned cores. Signing and publishing remained skipped. This is scoped CI evidence only.
