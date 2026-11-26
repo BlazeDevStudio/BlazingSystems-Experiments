@@ -30,6 +30,7 @@ HARDWARE_PR_HEAD_SHA = "2a5c997add4f49fcd74f753101d3a9daac0040bf"
 HARDWARE_PR_HEAD_SKETCH_BLOB = "c07aba7d518ef7eb5d536aafdd77ef6193e676cb"
 CHECKOUT_SHA = "3d3c42e5aac5ba805825da76410c181273ba90b1"
 ARDUINO_SETUP_SHA = "b3cda96fddef6af6c56b4c5efb5c47e2357935db"
+UPLOAD_ARTIFACT_SHA = "cf430e030ddbb5b0abf93d22962f4752f3646cd9"
 
 
 def fail(message: str) -> int:
@@ -926,6 +927,12 @@ def main() -> int:
         "python3 .github/scripts/test_build_provenance.py",
         "python3 .github/scripts/test_arduino_cli_archive_verifier.py",
         "python3 .github/scripts/test_release_artifact_action_pins.py",
+        "python3 .github/scripts/test_esp32_toolchain_lock.py",
+        "python3 .github/scripts/verify_esp32_toolchain_lock.py --phase verify",
+        "python3 .github/scripts/verify_esp32_toolchain_lock.py --phase capture",
+        "https://raw.githubusercontent.com/espressif/arduino-esp32/8f6bee9761f7b15cce27b79cbd1ae199d0df2adf/package_esp32_index.json",
+        ".github/locks/esp32-core-toolchains.json",
+        "retention-days: 14",
         '"draft/softtimer-future-release-signing-pipeline-20261029"',
     )
     missing = [value for value in required if value not in content]
@@ -981,8 +988,12 @@ def main() -> int:
     if end < 0:
         return fail("compatibility workflow action-pin entry is malformed")
     pin_entry = pin_guard[start:end]
-    if '"actions/checkout": 3' not in pin_entry or '"arduino/setup-arduino-cli": 1' not in pin_entry:
-        return fail("compatibility workflow action-pin counts are not 3 checkout + 1 Arduino setup")
+    if (
+        '"actions/checkout": 3' not in pin_entry
+        or '"arduino/setup-arduino-cli": 1' not in pin_entry
+        or '"actions/upload-artifact": 1' not in pin_entry
+    ):
+        return fail("compatibility workflow action-pin counts are not 3 checkout + 1 Arduino setup + 1 artifact upload")
 
     action_refs = re.findall(
         r"(?m)^\s*(?:-\s*)?uses:\s*([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)@([^\s#]+)",
@@ -991,6 +1002,7 @@ def main() -> int:
     expected = {
         "actions/checkout": (CHECKOUT_SHA, 3),
         "arduino/setup-arduino-cli": (ARDUINO_SETUP_SHA, 1),
+        "actions/upload-artifact": (UPLOAD_ARTIFACT_SHA, 1),
     }
     found: dict[str, list[str]] = {}
     for name, ref in action_refs:
@@ -1003,7 +1015,6 @@ def main() -> int:
             return fail(f"{name} must use {count} immutable invocation(s) at {sha}; found {refs}")
 
     forbidden = (
-        "actions/upload-artifact",
         "contents: write",
         "gh release",
         "esptool",
