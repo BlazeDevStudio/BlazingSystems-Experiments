@@ -21,3 +21,6 @@
 
 
 2026-11-27 UTC20 | PHX-HARDWARE | PR #355 | Test-first EEPROM config integrity guard committed at `1f7af928c9ecf51454e262e3b45483c6488f22d8`; new source-extracted lab fails as expected because bounded current/legacy validators are not implemented. Expected RED #45892727658/job 140159081554. No firmware fix yet; source remains deny-only; physical acceptance NOT TESTED; PRODUCTION NO-GO.
+
+
+2026-11-27 UTC20 | PHX-HARDWARE | PR #355 | EEPROM fixed-array validation: test-first RED #45892727658/job 140159081554; initial helper compilation failed #45892930825/job 140159758106 due incorrect NUL literal; test assertion failed #45893091506/job 140160286995 because mask_non_code erased the char literal; both defects corrected. Exact source/test GREEN #45893204086/job 140160658946: current=6/6 and legacy=5/5 unterminated-array checks pass under ASan/UBSan; 3/3 injected unsafe mutations rejected. Native #45893204123 remains FAIL at QA-owned active-clear assertion. Full #45893204180 validation fails only the handover freshness gate pending this docs sync. Physical acceptance NOT TESTED; PRODUCTION NO-GO.
