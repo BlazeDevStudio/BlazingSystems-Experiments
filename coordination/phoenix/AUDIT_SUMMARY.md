@@ -1,3 +1,9 @@
+## PHX-MASTER UTC17 post-checkpoint refresh — 2026-11-26T17:52Z
+
+HARDWARE #353 is now `f527b33c9e391a9a66490388d96f06d6c8761dfa` (source/test `44de55a0e132cb15fdb60ecf85446e9490fa277e`), with a refreshed owner handover and a test-only snapshot/restore guard. Exact-source Relay and Quarantine PASS; Full still fails missing ESP8266 poll signature. New docs-head workflows remain IN_PROGRESS. Production sketches unchanged; no hardware acceptance. All COE #26, registry, release ancestry and financial release blockers below remain unchanged.
+
+---
+
 ## PHX-MASTER UTC17 — current disposition and blockers (2026-11-26)
 
 **Starting Master HEAD:** 47678fdf9a38a75298f6d051ece3c7aced66a22d. PR #288 OPEN / DRAFT / UNMERGED; 619 ahead / 1 behind main; 238 changed paths all under coordination/phoenix/. This activation changes only Master coordination records.
