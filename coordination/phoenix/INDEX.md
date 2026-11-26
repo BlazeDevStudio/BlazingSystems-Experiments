@@ -1,3 +1,14 @@
+## Latest PHX-MASTER checkpoint — scheduled UTC13 / 2026-11-26
+
+- [UTC13 exact owner-head, HARDWARE #353/#354 CI and COE #26 source-tree/test/license audit](PHX_MASTER_UTC13_20261126_HW353_HW354_COE26_CURRENT_SOURCE_TREE_AND_CI_AUDIT.md)
+- Starting Master HEAD: `1b0b6890acac63a05f4bb7bd377c2d6cb5e4d064`; Experiments main `6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5`; development `aad3aade72c1156eecba1fed30907c6d0283b2c5`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`.
+- PR #288: OPEN / DRAFT / UNMERGED; 610 ahead / 1 behind; merge base `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; 234 existing paths, all Master-owned.
+- HARDWARE #354: focused + Mbed TLS PASS; Full / Native FAIL at QA-owned deny-only assertions. HARDWARE #353: Relay, Quarantine and Full FAIL at source/fixture/poll-parity issues.
+- COE #26 remains FROZEN: current #354 exact tree shows divergent board sketches, 150 source tests vs 19 destination, two divergent common tests, 146 source-only and 15 destination-only; intake/map/audit provenance is inconsistent with the current destination tree.
+- Cleanup #266 remains OPEN / 0-of-7; private Drive v11/newer corrections NOT RECOVERED; Master suite NOT RUN; **PRODUCTION NO-GO**.
+
+---
+
 ## Latest PHX-MASTER checkpoint — scheduled UTC11 / 2026-11-26
 
 - [UTC11 complete role-head, exact-head CI, source-tree, test-identity and licensing audit](PHX_MASTER_UTC11_20261126_COE35_CHECKOUT_GUARD_HW354_TEST_IDENTITY_COE26_REVALIDATION.md)

@@ -1,3 +1,13 @@
+## UTC13 evidence note — active-v0.6 relay/LED polarity and poll-inhibit lab (LAB ONLY; not production acceptance)
+
+At HARDWARE #354 source/test SHA `9bb46bb27e4be80f6506dbebf2846700efd4cb81` and final documentation HEAD `bbb209f55ddcd48f248eb8d700629db8754dc13a`, the Hardware-owned `poll_preflight_inhibit_lab.py` exercises four independent relay/LED polarity combinations on ESP8266 and ESP32, verifies both outputs are logical OFF after `denyRemoteControl()`, and preserves pending pulse/nonce/target evidence across a simulated 3500 ms synchronous HTTP wait. Focused run [#45836227697](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45836227697) and ESP32 Mbed TLS matrix [#45836227855](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45836227855) PASS.
+
+The exact same docs-head Full [#45836227694](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45836227694) fails QA-owned Controller protocol parity; Native [#45836227876](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45836227876) fails PAY-0745 because its current assertion requires active `clearPending(true/false)` callsites. Do not add an unsafe clear callsite merely to satisfy that stale assertion. QA must assert deny-only behavior and pending-evidence preservation; CORE owns the authenticated register/poll and receipt/disposition contract; HARDWARE owns firmware/labs.
+
+The candidate must not consume unsigned `config_revision`, trust an unsigned poll `insert`, re-enable coin admission, or clear pending evidence before the authenticated contract is approved. The lab is source-extracted/simulated CI evidence only: no physical GPIO polarity, relay, coin acceptor, LittleFS power-loss or native device acceptance was performed. HARDWARE #353's separate unknown-polarity and pin-attachment tests currently fail; therefore no physical fail-safe claim is inferred from #354's host lab.
+
+---
+
 # Project Phoenix — Architecture Contracts & System Invariants
 
 **Protocol Specification:** BLAZE-COMMS/1  

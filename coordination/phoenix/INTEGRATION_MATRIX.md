@@ -1,3 +1,41 @@
+## PHX-MASTER scheduled UTC13 — exact COE #26 source/tree, test and license revalidation
+
+**Source candidate:** Experiments HARDWARE #354 source/test commit `9bb46bb27e4be80f6506dbebf2846700efd4cb81`, recursive tree `e90960df658625f5c7ea714e210e85c33442f085`, 2,405 entries, `truncated=false`.  
+**Destination candidate:** COE integration #26 head `b382d233ff06c8791b1028bed3c617cc7b670d12`, recursive tree `8a7d4cf81d7227118b876c1138dd2da12345fefa`, 286 entries, `truncated=false`.
+
+| Route | Source blobs | Destination blobs | Common | Exact blob+mode | Divergent | Source-only | Destination-only |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| ESP32 | 4 | 1 | 1 | 0 | 1 | 3 | 0 |
+| ESP8266 | 8 | 1 | 1 | 0 | 1 | 7 | 0 |
+| Tests | 150 | 19 | 4 | 2 | 2 | 146 | 15 |
+
+Exact firmware identities:
+- ESP32 `BlazePwifiVendo32.ino`: source `3edbe38da543ef118b287f3e04c1601692cfa99f`; destination `3cc7ec54b476943dc04a8d1af5e2df5fe054e422` (different).
+- ESP8266 `BlazePwifiVendo.ino`: source `b45eb2d0bebfc0088e1c9f506c5e94c59cf054d9`; destination `c8be98f72596681e36a3ad1f8939bf8046c96887` (different).
+- Common test `config.sh`: source `a42a7d5ef27169f5aa72e7bf8d19b8637fbd3d80`; destination `d585b772538030bac20400197a981639eb3dd4b2` (different).
+- Common test `integration.sh`: source `f6e98112da059f0c853fbfc90ebc70192f78c692`; destination `557b4d3d5d8478811ad057eb59a2d9ecf5c3a6a5` (different).
+- `portal.sh` and `security.sh` are the two exact common test blobs. The 146 source-only and 15 destination-only test paths remain unresolved; no test identity or CI equivalence is inferred.
+
+License/notice comparison at these exact trees:
+- Product PisoWiFi MIT LICENSE matches exactly: `1ee55b94183417be977ca287cd7391f9a6f7e721`.
+- QRCode LICENSE `150770c0fc2994865ccdbef6662735cc083e780d`, TailAdmin LICENSE `cb92d4176b21b0594e5a6caf94d79340505e3d33`, and TailAdmin NOTICE `f0425bbbe34c1227311098173b1eae0c3e2a807b` have exact destination counterparts.
+- Missing destination counterparts: source root `NOTICE.md` (`f6d92cd21465312be5993631fe26977219be0fb9`), Tabler LICENSE (`22ee8122400915cbff18e5f69368fa9eea6145eb`), BlazeRentalLauncher LICENSE (`c5b1efa7aac764ae6d8da63476a2d5cec02a6a5d`), jsqr 1.4.0 LICENSE (`8f71f43fee3f78649d238238cbde51e6d7055c82`), and a COE repository-root LICENSE.
+
+### Destination provenance discrepancy requiring COE owner reconciliation
+
+- Current #26 `Pisowifi/SOURCE_INTAKE.json` blob `1b9018ff944f7f673934d0fc2a97e0a0090d3f5f`, schema 8, pins source commit `6d4c9b487af4d768c4d7627654d119417fcc6e00`, original rootfs tree `f4a923aaacf1374e90c7bab5f335efe6c6ec55cf`, and original tests tree `7e3b16f2a981c1c8ecab3b1da0d34a82b4e44f17`. Its declared rootfs scope is 61 files (47 byte-identical / 14 locally derived / 0 unrecovered) and its primary mapped test list has four paths (two exact / two derived), with 15 separately derived test entries.
+- Current #26 `Pisowifi/MIGRATION_MAP.md` blob `b54fc15d83bc2269de03db8aadd0e76259fd13d9` also pins source `6d4c9b4` and destination branch `feature/pisowifi-cleanup-stabilization`; the live #26 PR branch is instead `integration/ecosystem-nonproprietary-candidate-20261111`. These records are historical rootfs intake, not a complete import manifest for the current 150-test #354 source route.
+- Current #26 `docs/audits/HARDWARE_FIRMWARE_AUDIT.md` blob `86c06e7574761465b80482430296eb712d985367` states that the two Vendo sketches were not copied pending P0-1, while the current destination tree contains both board sketches under `Hardware/esp32/` and `Hardware/esp8266/` with blobs that differ from current #354 source. The COE integration owner must reconcile this audit narrative, intake/map pins, current destination branch, and actual files before any staging proposal.
+- COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243` has only three tree entries (`Pisonet/`, `Pisonet/README.md`, `README.md`); root README is only `# CoinOperatedEcosystem`, and no root AGENTS.md is present in that tree.
+- Experiments `coordination/phoenix/OWNERSHIP_ROUTES.json` remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`, 11 routes, `DRAFT_REVIEW_ONLY`, historical source_ref `f4e8a891`, and PHX-MASTER destination `null`. It is not a move/copy instruction.
+
+All five #26 destination workflows are still QUEUED with zero jobs: case guard #43096752609, Pisonet Windows synthetic #43096752632, shared contracts #43096752800, Rental standalone #43096752563, and Pisowifi Overlay/Shell #43096752557. Combined statuses are empty.
+
+**Decision:** COE #26 stays FROZEN. No staging, copy, move, overwrite, cherry-pick, rebase, or destination write is authorized or performed by PHX-MASTER.
+
+
+---
+
 ## PHX-MASTER UTC10 — exact per-owner tree and COE #26 route revalidation
 
 All owner-source recursive trees and COE #26 returned truncated=false. Exact tree SHAs, route-by-route blob/mode comparison, test identity and license/NOTICE inventory are in the [UTC10 audit](PHX_MASTER_UTC10_20261126_HW354_HEAD_DRIFT_COE26_ROUTE_REAUDIT_COE35_RELEASE_GATE.md).

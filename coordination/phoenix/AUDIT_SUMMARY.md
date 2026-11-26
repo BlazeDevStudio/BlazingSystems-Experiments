@@ -1,3 +1,22 @@
+## PHX-MASTER scheduled UTC13 — current blockers, governance and execution limits
+
+- HARDWARE #354 current PR head `bbb209f55ddcd48f248eb8d700629db8754dc13a` / source-test `9bb46bb27e4be80f6506dbebf2846700efd4cb81`: focused and Mbed TLS matrix PASS; Full fails QA-owned Controller protocol parity; Native fails PAY-0745 active-clear assertion. QA must revise assertions to prove deny-only/pending-evidence preservation; CORE owns the authenticated poll/receipt contract; HARDWARE owns firmware/labs.
+- HARDWARE #353 current head `67cdc861f14918ddf55236b43aa57fda7dc6a31a`: focused Relay and Quarantine runs fail on unknown-polarity/pin-attachment assertions and source compile errors (`coinInterruptAttached` undeclared; `configureRuntimePins` arity mismatch). Full fails Missing poll signature and ESP32 `applyOutputs` declaration. HARDWARE owns remediation; QA/CORE retain assertion/producer responsibilities.
+- COE RELEASE #35 current head `44f70249d045fd17c053a5f14a1f5e01b0440d0b`: case guard PASS; all 10 appliance profiles fail closed without approved site-scoped ULA /48 authority; required Bubblewrap is unavailable / exit 125. RELEASE's UTC14 canonical-path validation is already IN_PROGRESS.
+- COE #26 remains FROZEN. Current #354 board blobs differ from destination; test route is 150/19 with 2 exact and 2 divergent common paths, 146 source-only and 15 destination-only. Source intake/map are pinned to historical `6d4c9b4` and an earlier destination branch; Hardware audit narrative conflicts with actual destination board sketches. License/NOTICE gaps and five queued/zero-job workflows remain.
+- Cleanup #266 is OPEN / 0 of 7. This audit does not complete the seven-role cleanup gate or authorize mass moves/deletions.
+- Branch objects report `protected=false` for Experiments main, development, Master and COE main; both repository rulesets endpoints return empty arrays; classic branch-protection reads return 403. Effective required-check enforcement is NOT ESTABLISHED; repository administrators must verify.
+- Private `BLAZE_PROJECT_REGISTRY_v11_20261027.json` and newer corrections remain NOT RECOVERED. No Google Drive connector is exposed in this runtime; exact Library search did not find v11. Older v3–v7 snapshots were not substituted and no private contents/IDs were published.
+- Automation inventory shows the current Master and Release continuations and a separate active `Blaze Hourly Production Development`; the exact title `Blaze Production Continuation` did not surface. CORE was not touched and no competing CORE worker was started.
+- Master local checkout attempt failed before clone because the container could not resolve `github.com`. Master Python suite and `verify_coordination.py` are NOT RUN; Master Actions runs/statuses are empty. GitHub source/tree/blob, PR, issue and owner-CI inspections were executed. Owner CI is not Master test execution.
+
+**Next:** QA corrects the #354 deny-only assertions; HARDWARE fixes #353 compile/polarity regressions and reruns exact-head checks; CORE publishes authenticated poll/register and receipt/disposition contract; RELEASE/INFRA obtains approved ULA authority and Bubblewrap-capable runner; COE integration owner reconciles historical intake/map/audit against current #26 branch and exact source blobs/tests/licenses; registry custodian restores authorized v11 access; repository administrators establish effective branch protection.
+
+**PRODUCTION NO-GO.** Independent protected signing/anti-rollback witness, crash-atomic durable financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and explicit owner-authorized release approval remain mandatory.
+
+
+---
+
 ## PHX-MASTER UTC10 — current blockers and governance
 
 - HARDWARE #354 current PR head 51decb0c (source/test SHA 046bced7); PR body and handover now match. Full is terminal FAIL at QA-owned controllers.sh config_revision parity while all 14 target/Android jobs PASS; Native fails the QA-owned active clearPending assertion. Focused polarity lab and ESP32 core 3.3.13/4.0.0 matrix PASS. QA must correct both deny-only assertions; CORE must publish the authenticated poll/receipt contract. The latest two commits are docs-only.
