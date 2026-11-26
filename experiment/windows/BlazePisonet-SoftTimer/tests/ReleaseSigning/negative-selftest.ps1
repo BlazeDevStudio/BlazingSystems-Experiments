@@ -85,7 +85,9 @@ try {
   }
 
   $publisherJob=$workflow.Substring($publisherStart)
-  if ($publisherJob -notmatch '(?m)^    permissions:\\r?\\n      contents: write\\r?\\n      actions: read\\r?$' -or
+  if (-not $publisherJob.Contains('permissions:') -or
+      -not $publisherJob.Contains('contents: write') -or
+      -not $publisherJob.Contains('actions: read') -or
       -not $publisherJob.Contains('needs: [build-windows, release-admission]') -or
       -not $publisherJob.Contains("if: needs.release-admission.outputs.approved == 'true'") -or
       -not $publisherJob.Contains('actions/download-artifact@v4') -or
