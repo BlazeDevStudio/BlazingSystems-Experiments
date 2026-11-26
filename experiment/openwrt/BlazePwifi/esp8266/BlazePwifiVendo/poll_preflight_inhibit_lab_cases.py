@@ -65,6 +65,18 @@ def verify_register_preflight(name: str, source: str):
         "startup pre-register: deny guard must be an unconditional standalone statement",
     )
 
+    # A register request must not move outside the actual Wi-Fi-connected branch.
+    mutated_connect = connect.replace(
+        "WiFi.status()==WL_CONNECTED", "true", 1
+    )
+    if mutated_connect == connect:
+        raise AssertionError(f"{name}: connected-branch mutation anchor missing")
+    expect_rejected(
+        "register outside Wi-Fi-connected branch",
+        source.replace(connect, mutated_connect, 1),
+        "register POST must remain inside the Wi-Fi-connected startup branch",
+    )
+
     # Registration must be followed by a direct deny in the connected branch.
     mutated_connect = connect.replace("denyRemoteControl();", "", 1)
     if mutated_connect == connect:
@@ -134,7 +146,7 @@ def verify_register_preflight(name: str, source: str):
     register_guard_locations(decoy_source)
 
     print(f"REGISTER_STARTUP_DENY_PASS {name}")
-    print(f"REGISTER_STARTUP_DENY_MUTATIONS_REJECTED {name} 7/7")
+    print(f"REGISTER_STARTUP_DENY_MUTATIONS_REJECTED {name} 8/8")
     print(f"REGISTER_POST_RESPONSE_USE_MUTATIONS_REJECTED {name} 2/2")
     print(f"REGISTER_POST_DECOY_MUTATIONS_IGNORED {name}")
 
