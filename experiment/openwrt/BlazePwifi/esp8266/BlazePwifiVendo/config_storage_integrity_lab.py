@@ -43,7 +43,8 @@ def assert_source_contract(source: str) -> None:
             f"ConfigV1 fixed-size field missing: {field}",
         )
 
-    length_fn = mask_non_code(extract_function(source, "size_t boundedStringLength("))
+    length_fn_source = extract_function(source, "size_t boundedStringLength(")
+    length_fn = mask_non_code(length_fn_source)
     require("if(!value) return capacity;" in length_fn, "bounded length must reject a null pointer")
     require(
         re.search(r"for\s*\(\s*size_t\s+\w+\s*=\s*0\s*;\s*\w+\s*<\s*capacity\s*;", length_fn) is not None,
@@ -51,7 +52,7 @@ def assert_source_contract(source: str) -> None:
     )
     require("return capacity;" in length_fn, "unterminated input must return the capacity sentinel")
     require("strlen(" not in length_fn, "bounded length must not call unbounded strlen")
-    require(r"value[i]=='\0'" in length_fn, "bounded length must stop at the first NUL byte")
+    require(r"value[i]=='\0'" in length_fn_source, "bounded length must stop at the first NUL byte")
 
     config_validator = mask_non_code(extract_function(source, "bool configStringsTerminated("))
     legacy_validator = mask_non_code(extract_function(source, "bool configV1StringsTerminated("))
