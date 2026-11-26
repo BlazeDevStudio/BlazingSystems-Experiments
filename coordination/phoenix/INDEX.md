@@ -1,3 +1,44 @@
+## PHX-MASTER UTC21 — exact #355 head and COE #26 provenance (2026-11-26 UTC21)
+
+**Master scope:** coordination-only. No subsystem source, role-owned branch, architecture contract, or COE destination was changed.
+
+### Live refs at audit start
+
+- Experiments default `main`: `6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5`.
+- Experiments development `blazepwifi-v0.5.3-development`: `aad3aade72c1156eecba1fed30907c6d0283b2c5`.
+- Experiments active v0.6 audit foundation: `2fbd2475e9f54878c316fa7cea2f228386b0e859`.
+- Master `phoenix/master-coordination`: `0e8a59a0463d522ddff95371a60cf271d4c752bc` before this documentation update.
+- COE default `main`: `a6513ab4412b4c014eee2863e45cbe32d06cb243`; integration PR #26 head `b382d233ff06c8791b1028bed3c617cc7b670d12`.
+
+PR #288 remains OPEN / DRAFT / UNMERGED. Its base is the historical merge-base `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; comparison with current Experiments main is 643 commits ahead / 1 behind. Its 241 changed paths remain exclusively under `coordination/phoenix/`. No exact-head Master Actions run or commit status is present. No rebase or merge was attempted.
+
+### Highest-priority live delta
+
+Hardware PR #355 is now at live PR head `28ac0d770247478174bb9eb387a55f13a1bd3a6a`, based on PR #354 head `fc842342596786e072630179acfbbc4feeb2ba02`. The new 28ac commit changes the ESP32 Preferences failure-injection lab to test all 13 keys. The PR body still pins the prior docs head `9977cd3b` and source/test head `facf4cd7`; those references are stale and remain Hardware-owner work to refresh.
+
+Exact current-head evidence:
+- [Poll-intake deny / exact-source run #45900237420](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45900237420), job `140183954825`: PASS; logs include `CONFIG_PERSISTENCE_WRITE_RESULT_PASS ESP8266+ESP32`, all 13 ESP32 write-failure cases, and four mutation rejections.
+- [Mbed TLS matrix #45900237392](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45900237392): 3/3 PASS (source contract, core 3.3.13, core 4.0.0).
+- [Native synthetic journal #45900237254](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45900237254), job `140183954853`: FAIL at QA-owned `tests/v060_vendo_sequence_contract.py:20`, which requires active `clearPending(true/false)` callsites. The deny-only candidate has no such callsite; do not add an unsafe clear to satisfy the assertion.
+- [BlazePwifi build #45900237341](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45900237341): QUEUED at readback.
+
+### COE #26 destination admission remains frozen
+
+The exact recursive trees are 2,416 entries at the current Hardware source branch and 286 entries at COE #26. The ESP32 and ESP8266 firmware blobs differ; the new source persistence lab is absent from the candidate. The current source ESP32/ESP8266 subtree has 11 Python lab files; candidate `Hardware/` has zero Python files and only `Hardware/tests/test_firmware_hardening.sh`.
+
+The #26 candidate has eight queued Actions runs, zero jobs, zero check runs, and pending commit status. Its intake JSON has 61 runtime rows: 46 `byte_identical` and 15 `derived_cleanup_review_required_real_router_test`, while its summary says 47/14. It also records 15 derived tests (11 NOT_RUN, 4 PENDING_CI_RUN). Its source pin is `6d4c9b487af4d768c4d7627654d119417fcc6e00`, while the routing manifest source_ref is `f4e8a891...`; the intake destination branch is `feature/pisowifi-cleanup-stabilization`, while PR #26 is on `integration/ecosystem-nonproprietary-candidate-20261111`. These pins are not reconciled.
+
+### Current gates and limitations
+
+- Cleanup issue #266 remains OPEN / 0-of-7.
+- Private `BLAZE_PROJECT_REGISTRY_v11_20261027.json` and newer corrections were not recovered through the available Library/connector surface; no older registry was substituted and no private contents were published.
+- Master Python suite and `verify_coordination.py` were NOT RUN: the local `git ls-remote` attempt failed because `github.com` DNS could not resolve. Eight read-only ownership-manifest structural assertions passed; that is not a repository test or CI run.
+- No physical test, flash, payment operation, secret provisioning, merge, release, or migration was performed.
+
+**Production remains NO-GO.** Protected signing/independent anti-rollback witness, crash-atomic durable financial state, reversible migration proof, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak, and owner-authorized release gates remain unverified.
+
+---
+
 ## Latest PHX-MASTER UTC20 — live exact-head, role CI and COE #26 provenance audit (2026-11-26T20:34Z)
 
 - [Full UTC20 audit](PHX_MASTER_UTC20_20261126_LIVE_HEAD_ROLE_CI_COE26_ROUTE_AUDIT.md)

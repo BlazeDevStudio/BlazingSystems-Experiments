@@ -1,3 +1,39 @@
+## PHX-MASTER UTC21 — exact #355 head and COE #26 provenance — exact source/destination provenance (2026-11-26 UTC21)
+
+### Candidate and source pins
+
+- Current source branch: `BlazeDevStudio/BlazingSystems-Experiments` / `phoenix/hw-poll-preflight-lab-modules-20261127-utc18` at `28ac0d770247478174bb9eb387a55f13a1bd3a6a`.
+- COE #26 candidate: `BlazeDevStudio/CoinOperatedEcosystem` / `integration/ecosystem-nonproprietary-candidate-20261111` at `b382d233ff06c8791b1028bed3c617cc7b670d12`.
+- Recursive tree counts: source 2,416; candidate 286; neither tree response was truncated.
+- Current route manifest blob: `e4db324315a1b3543fec17a148fbf960170fcb29`; 11 routes; `DRAFT_REVIEW_ONLY`; Master target remains null.
+
+### Exact hardware blobs
+
+| File | Current source blob | COE #26 destination blob | Result |
+|---|---|---|---|
+| ESP32 `BlazePwifiVendo32.ino` | `a0da7aa072f404fc3c1b098227308f50306e45f9` | `3cc7ec54b476943dc04a8d1af5e2df5fe054e422` | DIFFERENT |
+| ESP8266 `BlazePwifiVendo.ino` | `9f0f4829cf57a6a12f4d940b051f17035e0a1670` | `c8be98f72596681e36a3ad1f8939bf8046c96887` | DIFFERENT |
+| ESP8266 `config_persistence_write_result_lab.py` | `5db4d53e9ce0c22992c84d27a8bedf9e090b5e7a` | expected `Hardware/esp8266/BlazePwifiVendo/config_persistence_write_result_lab.py` | ABSENT (404) |
+
+The current source ESP32/ESP8266 subtree contains 11 Python lab/support files; COE `Hardware/` contains zero Python files and only `Hardware/tests/test_firmware_hardening.sh`. Thus the destination does not preserve the current source test identities or the newly added 13-key Preferences failure-injection lab. The COE hardware audit says the two sketches were not copied pending P0-1, but the candidate tree contains different firmware blobs at both paths; this contradiction is unresolved.
+
+### Licence and notice parity
+
+- `experiment/openwrt/BlazePwifi/LICENSE` and `Pisowifi/LICENSE` match exactly at blob `1ee55b94183417be977ca287cd7391f9a6f7e721`.
+- Source root `NOTICE.md` blob `f6d92cd21465312be5993631fe26977219be0fb9` has no COE root counterpart.
+- COE `Hardware/LICENSE` and `Hardware/NOTICE` are absent.
+- Source `android/BlazeRentalLauncher/LICENSE` and `ui/vendor/tabler/LICENSE` have no candidate counterparts under `Rental/android/` and `Pisowifi/ui/vendor/tabler/`.
+
+### Intake and destination CI
+
+The live `Pisowifi/SOURCE_INTAKE.json` blob `1b9018ff944f7f673934d0fc2a97e0a0090d3f5f` contains 61 runtime rows: 46 `byte_identical`, 15 `derived_cleanup_review_required_real_router_test`. Its summary contradicts those rows with 47 identical / 14 derived. It lists 15 derived tests: 11 `NOT_RUN`, 4 `PENDING_CI_RUN`. Its source pin is `6d4c9b487af4d768c4d7627654d119417fcc6e00` and destination branch `feature/pisowifi-cleanup-stabilization`; the route manifest uses source_ref `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`, while PR #26 is on the separate integration candidate branch. These pins must be reconciled before import.
+
+At #26 head `b382d233...`, GitHub reports eight queued Actions runs (two pushes' duplicate workflow entries), zero jobs across all eight, zero check runs, and commit status PENDING. No CI result can be inferred from a queued workflow.
+
+**Decision:** COE #26 remains FROZEN. No staging, copy, move, cherry-pick, overwrite, licence normalization or migration proposal is authorized by this audit. Require owner-resolved source/target pins, exact blob/test identity, licence/NOTICE completion, consistent intake counts and completed exact-head CI first.
+
+---
+
 ## PHX-MASTER UTC20 — route admission remains frozen (2026-11-26T20:34Z)
 
 Live manifest blob `e4db324315a1b3543fec17a148fbf960170fcb29`: 11 routes, `DRAFT_REVIEW_ONLY`, source_ref `f4e8a891`, COE candidate #26 `b382d233`; PHX-MASTER target remains null. The source_ref is the historical PR merge base, not current Experiments main `6be5d19b`. The broad Rental parent target remains manual-file-mapping-only and not copy-permitted.

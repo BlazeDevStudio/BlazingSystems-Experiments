@@ -1,3 +1,13 @@
+## PHX-MASTER UTC21 — exact #355 head and COE #26 provenance — route admission hold (2026-11-26 UTC21)
+
+The current `OWNERSHIP_ROUTES.json` is blob `e4db324315a1b3543fec17a148fbf960170fcb29`, schema `phoenix/ownership-routes/v1`, 11 routes, status `DRAFT_REVIEW_ONLY`. Its source_ref remains `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; destination candidate is COE PR #26 at `b382d233ff06c8791b1028bed3c617cc7b670d12`. The PHX-MASTER route remains coordination-only with `target: null`. The Rental broad-prefix overlap remains `manual-file-mapping-required` and `copy_permitted: false`. Eight structural assertions passed; the manifest is not a migration approval.
+
+The current Hardware source head is #355 `28ac0d770247478174bb9eb387a55f13a1bd3a6a`, not the manifest's historical source_ref. COE #26 `SOURCE_INTAKE.json` independently pins source `6d4c9b487af4d768c4d7627654d119417fcc6e00` and destination branch `feature/pisowifi-cleanup-stabilization`, while the PR #26 branch is `integration/ecosystem-nonproprietary-candidate-20261111`. Exact ESP32/ESP8266 blobs differ; the current source's 11 Python lab files are absent from destination Hardware; intake row counts disagree with the summary; NOTICE and additional license counterparts are missing; #26 Actions remain 8 queued / 0 jobs.
+
+**Route decision:** keep every route in review-only state. Do not stage or propose a move until COE integration owner reconciles the source commit, candidate branch, per-file source/destination blobs, test identities, licenses/NOTICE and exact-head CI. Registry custodian must separately provide the private v11 registry and newer corrections through an authorized private channel. No private registry data is copied into this public repository.
+
+---
+
 ## PHX-MASTER UTC20 — current exact-head integration matrix (2026-11-26T20:34Z)
 
 The current role PR heads and run IDs are recorded in the [UTC20 audit](PHX_MASTER_UTC20_20261126_LIVE_HEAD_ROLE_CI_COE26_ROUTE_AUDIT.md). Material deltas: #355 Poll-deny/Mbed TLS PASS but Native PAY-0745 and Full Controller protocol parity FAIL; #354 Poll-deny/Mbed TLS PASS but Full/Native FAIL; #353 Relay/Quarantine PASS but Full poll-signature FAIL. #328 API/auth/APK focused runs PASS while shared build fails; #242/#291 have no exact-head runs; COE #26's five workflows are queued with zero jobs.

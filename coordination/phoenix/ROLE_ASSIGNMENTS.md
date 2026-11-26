@@ -1,3 +1,22 @@
+## PHX-MASTER UTC21 — exact #355 head and COE #26 provenance — role/CI readback (2026-11-26 UTC21)
+
+| Owner | Live draft / exact HEAD | Exact-head CI readback | Ownership-safe next action |
+|---|---|---|---|
+| PHX-CORE | Experiments #252 `c82705f2de865c89ab733b10efa84f26f56a5cc4` | Build #42698139210 PASS; this is not financial/native acceptance | CORE retains its branch and authenticated receipt/poll contract; Master made no CORE source edits. |
+| PHX-RENTAL | #328 `10fc200b6dbf470a95e679d3acc58aff4ab2a67f` | Shared BlazePwifi build #45622918468 FAIL; API21/API23 #45622918364 PASS; auth/installer #45622918551 PASS; APK identity #45622918340 PASS | Rental owner resolves shared build without Master changes. |
+| PHX-PISONET | #255 `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | Windows synthetic release #42462978704 PASS; native COM hardware acceptance NOT TESTED | Pisonet owner retains native COM acceptance. |
+| PHX-HARDWARE | #355 `28ac0d770247478174bb9eb387a55f13a1bd3a6a`, parent #354 `fc842342596786e072630179acfbbc4feeb2ba02` | Poll deny #45900237420 PASS; Mbed matrix #45900237392 3/3 PASS; Native #45900237254 FAIL on QA-owned pending-clear assertion; build #45900237341 QUEUED | Hardware refreshes stale #355 body/handover pins; QA/CORE reconcile assertion/contract. No Master firmware edits. |
+| PHX-HARDWARE | #354 `fc842342596786e072630179acfbbc4feeb2ba02`; #353 `f527b33c9e391a9a66490388d96f06d6c8761dfa` | #354 Poll/Mbed focused PASS but shared build and Native fail; #353 Relay #45871096516 and Quarantine #45871096480 PASS, Full #45871096425 FAIL on poll-signature validation | Preserve the existing stack; no rebase, retarget or independent merge. |
+| PHX-QA | #290 `5c29d15994cee1279058f1eca12f2a3180704292`; #292 `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | #290 Windows synthetic #43633486963 PASS; #292 has no exact-head run | QA independently resolves deny-only controller and pending-disposition assertions; no Master test edits. |
+| PHX-RELEASE | #242 `44708e127d6f03bc8458a190bfef98067a355255`; #291 `bf339a76964a1abe2412fac45392fe06a8e66418` | No exact-head workflow runs returned for either current SHA; both PRs remain non-mergeable | Release owner reconciles ancestry and obtains exact-head CI. |
+| COE-RELEASE | COE #35 `bc57ba8ecc5245ce538c6770a45bb25e2b8b5ef3` | Case guard #45897198239 PASS; shared validation #45897198326 FAIL; ImageBuilder sandbox #45897198204 FAIL; ESP32/ESP8266 compile jobs SKIPPED | Release owner resolves site ULA authority and trusted bwrap/host-mask prerequisites. |
+| COE-CORE | COE #45 `9d76a134c1f6512aa40c20ec4d247306a71a8cce` | Overlay #44295049727 and case guard #44295049903 PASS | CORE owner retains receipt-contract scope. |
+| COE-INTERCON | COE #49 `aeb8ff11b2f5db9a5f86280ab62ab988245f3919` | Stage 5.1 #44646341873 and case guard #44646341992 PASS; shared Hardware/contracts #44646341922 FAIL | Interconnect owner resolves shared compile failure. |
+
+**Master boundary:** only `coordination/phoenix/` was changed. Role branches, role PR bodies, QA tests, firmware, COE source/destination files and release artifacts remain owner-controlled. #266 remains OPEN / 0-of-7.
+
+---
+
 ## PHX-MASTER UTC20 — exact current role heads and CI (2026-11-26T20:34Z)
 
 See [full UTC20 audit](PHX_MASTER_UTC20_20261126_LIVE_HEAD_ROLE_CI_COE26_ROUTE_AUDIT.md). Current exact owner heads and run dispositions are refreshed there. CORE #252 scoped build PASS; RENTAL #328 API/auth/APK focused runs PASS but shared build fails handover freshness and ESP32 Mbed TLS include; PISONET #255 Windows synthetic PASS; HARDWARE #355/#354 retain deny-only behavior but Native/Full QA parity gates fail; HARDWARE #353 Relay/Quarantine PASS and Full poll-signature gate fails; QA #292 has no exact-head run; RELEASE #242/#291 have no exact-head runs and stale ancestry; COE RELEASE #35 remains blocked by missing approved ULA /48 and Bubblewrap. CORE source remains reserved/untouched by MASTER.

@@ -1,3 +1,30 @@
+## PHX-MASTER UTC21 — exact #355 head and COE #26 provenance — current decision and next actions (2026-11-26 UTC21)
+
+**Decision: PRODUCTION NO-GO; COE #26 FROZEN; cleanup #266 OPEN / 0-of-7; PR #288 OPEN / DRAFT / UNMERGED.**
+
+The bounded Master task completed: exact branch/PR/role CI refresh, exact source/destination firmware blob comparison, test identity inventory, licence/NOTICE parity review, and an eight-assertion ownership-manifest structural check. No subsystem source or COE destination was changed. No architecture contract was altered because the Hardware configuration-save fix does not define a new shared API or authenticated response contract.
+
+### Blocking evidence
+
+1. #355 current head `28ac0d77...`: exact Poll/config-persistence lab PASS and Mbed TLS matrix 3/3 PASS; Native synthetic suite FAILS on QA-owned active `clearPending(true/false)` assertion; preserve deny-only behavior. PR body/handover pins are stale at `9977cd3b`.
+2. COE #26 current head `b382d233...`: firmware blobs differ; 11 current source Python labs versus zero destination Hardware Python files; intake counts 46/15 conflict with summary 47/14; source and destination pins disagree; several licence/NOTICE counterparts absent; eight workflows queued with zero jobs and zero check runs.
+3. COE #35 current head `bc57ba8e...`: 10/10 appliance profiles fail closed because approved site-scoped RFC 4193 ULA /48 authority is absent; sandbox fails because trusted `bwrap` and private host-mask target are unavailable; firmware compile jobs skipped.
+4. Cleanup #266 remains 0-of-7. No subsystem cleanup checkbox is inferred from individual CI passes.
+5. Private registry v11/newer corrections were not recovered. No old registry snapshot was substituted.
+6. Master Python suite and `verify_coordination.py` NOT RUN because local GitHub DNS resolution failed; no exact-head Master Actions were returned. The eight manifest assertions are structural checks only, not repository tests.
+
+### Next owner actions
+
+- **PHX-HARDWARE:** refresh PR #355 body and handover to live head `28ac0d77...`; preserve the current test-lab result and deny-only boundary.
+- **PHX-QA + PHX-CORE:** reconcile the pending-sequence assertion with the authenticated pending-disposition contract; do not add unsafe clear callsites to obtain green CI.
+- **COE integration owner:** reconcile #26 source/destination pins, firmware blobs, all 11 missing Python lab identities, intake row-count discrepancy, licence/NOTICE files and queued workflows before any staging.
+- **Registry custodian:** supply the private v11 registry and newer corrections through an authorized Google Drive/private connector path.
+- **PHX-MASTER:** rerun the Master suite when an authenticated checkout or CI execution path is available; continue coordination-only updates and keep the migration frozen.
+
+Independent protected signing/anti-rollback witness, crash-atomic durable financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized release gates remain mandatory. No hardware acceptance, real money, production signing, release, flash or cutover is claimed.
+
+---
+
 ## PHX-MASTER UTC20 — current disposition (2026-11-26T20:34Z)
 
 **PR #288 OPEN / DRAFT / UNMERGED. COE #26 FROZEN. Cleanup #266 OPEN / 0-of-7. PRODUCTION NO-GO.** The current exact-head role CI, migration provenance, branch pins and blockers are recorded in [the UTC20 audit](PHX_MASTER_UTC20_20261126_LIVE_HEAD_ROLE_CI_COE26_ROUTE_AUDIT.md).
