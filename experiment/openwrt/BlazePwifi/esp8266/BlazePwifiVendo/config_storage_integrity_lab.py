@@ -245,7 +245,7 @@ def main() -> None:
         )
         print(result.stdout.strip())
     print("EEPROM_CONFIG_SOURCE_CONTRACT_PASS")
-    print("EEPROM_CONFIG_FAILURE_INJECTION_PASS 3/3")
+    print("EEPROM_CONFIG_FAILURE_INJECTION_PASS 5/5")
 
 
 if __name__ == "__main__":
