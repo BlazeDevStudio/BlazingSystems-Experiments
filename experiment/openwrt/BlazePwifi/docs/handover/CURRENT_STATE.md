@@ -1,17 +1,25 @@
-# CURRENT STATE — 2026-11-26 UTC08 / PHX-HARDWARE active-v0.6 poll intake deny
+# CURRENT STATE — 2026-11-26 UTC08 follow-up / PHX-HARDWARE active-v0.6 request guard parity
 
 **Task:** [#177](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/177) · **Control:** [#172](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/172) · **Cleanup-first:** [#266](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/266) · **PR:** [#354](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/354)
 
-- **Role:** PHX-HARDWARE. No CORE producer/API, QA-owned test, finance backend, release-owned code or COE destination was changed.
+- **Role:** PHX-HARDWARE. Only Hardware-owned ESP8266 firmware, Hardware-owned request-auth source lab and Hardware-owned focused workflow were changed. No CORE API/producer, QA-owned tests, finance backend, RELEASE-owned workflow, or COE destination changed.
 - **Base:** `blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859`.
 - **Branch:** `phoenix/hw-active-v06-poll-intake-deny-20261126-utc05`.
-- **PR/docs head before this terminal handover update:** `6a54ce6f7fcdc584cddb4ac5fe7602311fab5f3f`; firmware/test source remains at exact tested checkout `ec622923ef6b5dbcc386ecae70cc853725085561`.
-- **Focused deny-intake:** [#45782867707](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45782867707), job `139782314563`, PASS.
-- **ESP32 provider/build matrix:** [#45782867878](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45782867878): source contract `139782315794`, core 4.0.0 `139782316056`, core 3.3.13 `139782316163` all PASS; clean A/B staged source and application hashes matched.
-- **Native synthetic:** [#45782867712](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45782867712), job `139782315303`, FAIL at QA-owned `v060_vendo_sequence_contract.py:20` due to the legacy active-clear assertion.
-- **Full BlazePwifi:** [#45782867810](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45782867810), validation job `139782454950`: handover freshness and regression PASS; static, foundation, admin, config and template steps PASS; Controller protocol parity step 14 FAILS because QA-owned `tests/controllers.sh` still greps for `config_revision`, intentionally absent from the deny-only firmware. ESP8266, ESP32, Android and all listed OpenWrt target jobs PASS. Downstream production/simulation/update/signing/publication/candidate gates skipped. No Full PASS.
-- **Why no source patch:** the two remaining failures are in QA-owned tests. Restoring unsigned config parsing or adding a dummy `config_revision` token would bypass the deny-only security boundary. CORE has not published the authenticated response/receipt contract, so Hardware cannot implement a positive consumer path.
-- **Status:** SIMULATED / CI VERIFIED only. Physical coin/relay/electrical acceptance and durability remain NOT TESTED; HARDWARE ACCEPTED = NO; PRODUCTION READY = NO.
+- **Source implementation commit:** `17950ceee07dfc68bf252d76a60ff47296c4cfcd`; ESP8266 sketch blob `d8aeb524f8d0c33065d976a03413c7d5b60ec152`.
+- **Test-first RED:** [#45787241292](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45787241292), job `139797013376`; ESP8266 failed the missing request-guard contract while ESP32 passed its baseline and mutation tests.
+- **Focused GREEN push:** [#45787375680](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45787375680), job `139797466705`, PASS.
+- **Focused GREEN PR:** [#45787384111](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45787384111), job `139797496182`, PASS.
+- **Native synthetic:** [#45787384107](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45787384107), job `139797496443`, FAIL at QA-owned `clearPending(true/false)` callsite assertion; pending evidence remains intentionally undisposed.
+- **Full:** [#45787384199](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45787384199), validation job `139797731892`, FAIL at handover freshness because this source change had not yet been documented. Rerun required after this update.
+- **Status:** request-guard host regression SIMULATED / CI VERIFIED. Full integration NOT PASS. Physical coin/relay/electrical and power-cut acceptance NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO.
+
+## UTC08 request-guard change
+
+ESP8266 now mirrors the existing ESP32 request guard: `signedBody()` refuses empty key or ID and validates the generated SHA-256 hex; `post()` allows only `register` and `poll`, rejects empty key/ID, requires a nonempty signed body before opening HTTP, and sends only that validated body. The request format and BearSSL SHA-256 algorithm are unchanged. No positive coin, relay, remote-config or pending-disposition path was enabled.
+
+## Next exact action
+
+Rerun Full and both ESP32 core targets on the final handover head. QA owns the stale sequence and controller-parity assertions; CORE owns the authenticated response and receipt/disposition contract. Keep coin/relay denied.
 
 ## Implemented
 
