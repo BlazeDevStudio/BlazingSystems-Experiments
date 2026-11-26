@@ -1,3 +1,9 @@
+## PHX-MASTER UTC17 post-checkpoint #353 source/test refresh — 2026-11-26T17:52Z
+
+Current #353 docs HEAD `f527b33c9e391a9a66490388d96f06d6c8761dfa`; source/test SHA `44de55a0e132cb15fdb60ecf85446e9490fa277e`; parent #352 `2fa3b7db1161ddb531ed94bcf60617947fa1a7bd`. The only source/test change is the Hardware-owned `coin_pulse_capture_lab_isr.py` pre-existing inhibit snapshot/restore guard. Relay and Quarantine exact-source/test checks PASS; Full exact-source/test remains blocked by the ESP8266 missing poll-signature check. Current docs-head Relay/Quarantine/Full runs #45871096516/#45871096480/#45871096425 are still IN_PROGRESS. Production sketches unchanged; no hardware acceptance. The earlier #353 source-tree test-identity counts remain historical and must be recomputed at `44de55a0` before staging.
+
+---
+
 ## PHX-MASTER UTC17 — exact current source/destination and provenance delta (2026-11-26)
 
 - Current #354 source/test SHA advanced to 145aac9607682071e2db05944a6f9db5aa06e524; only `poll_preflight_inhibit_lab.py` changed. Current #353 head ac9e754e changed only `coin_pulse_capture_lab_isr.py`. Previous test identity counts at #354 9bb46bb2 / #353 5a5f319 are historical and must be recomputed before staging.
