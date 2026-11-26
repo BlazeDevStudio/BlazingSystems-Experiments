@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Board-specific C++ preprocessor selection and mutation contracts for the coin ISR lab.
+"""Board-specific ISR selection, attachment-order and mutation contracts for the coin pulse lab.
 
 This module owns only the board-conditioned ISR selector. The main runner
 keeps pulse scenarios and persistence mutations separate from preprocessor
@@ -184,7 +184,7 @@ def _runtime_interrupt_wiring_body(source, board):
     body = extract_function(source, "configureRuntimePins")
     if not body:
         raise RuntimeError(f"{board} configureRuntimePins function is missing")
-    compact = re.sub(r"\\s+", "", body)
+    compact = re.sub(r"\s+", "", body)
 
     attach = "attachInterrupt(digitalPinToInterrupt(runCoinPin),coinEdgeISR,runCoinActiveLow?FALLING:RISING);"
     detach = "detachInterrupt(digitalPinToInterrupt(runCoinPin));"

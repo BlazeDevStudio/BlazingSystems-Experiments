@@ -132,7 +132,7 @@ selector_functions = {
     "verify_runtime_interrupt_wiring",
 }
 if not selector_functions.issubset(defined_functions(isr_selector_tree)):
-    fail("ISR selector module does not own all six board-selection helpers")
+    fail("ISR selector module does not own all seven board-selection and wiring helpers")
 if selector_functions & defined_functions(runner_tree):
     fail("runner still owns board-selection helpers")
 
