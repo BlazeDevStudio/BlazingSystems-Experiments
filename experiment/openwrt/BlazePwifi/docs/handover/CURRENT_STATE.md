@@ -1,27 +1,30 @@
-# CURRENT STATE — 2026-11-27 UTC19 — startup register deny guard CI verified; Full handover sync required
+# CURRENT STATE — 2026-11-27 UTC19 — startup register guard CI verified; Full integration blocked by QA contract parity
 
-**Role:** PHX-HARDWARE · **Task:** cleanup-first #266 / hardware #177 / existing DRAFT PR #355 (stacked on #354)  
-**Branch:** `phoenix/hw-poll-preflight-lab-modules-20261127-utc18` · **Parent/base:** #354 `fc842342596786e072630179acfbbc4feeb2ba02`  
-**Source/test SHA:** `caeea7f30bc959c3264b785592b8e53f28d040b6` · **Pre-sync branch HEAD:** `caeea7f30bc959c3264b785592b8e53f28d040b6` · **PR:** OPEN / DRAFT / UNMERGED · **Production:** NO-GO.
+**Role:** PHX-HARDWARE · **Task:** hardware #177 / cleanup-first #266 / DRAFT PR #355 (stacked on #354)  
+**Branch:** `phoenix/hw-poll-preflight-lab-modules-20261127-utc18` · **Parent/base #354:** `fc842342596786e072630179acfbbc4feeb2ba02`  
+**Source/test SHA:** `caeea7f30bc959c3264b785592b8e53f28d040b6` · **Prior canonical docs-sync HEAD:** `375bbd4824f12e0c6ffe513432c988f95394ca45` · **PR:** OPEN / DRAFT / UNMERGED · **Production:** NO-GO.
 
 ## Verified work
 
-Added a source-extracted startup register deny contract to the Hardware-owned poll-preflight lab. It requires one discarded register POST inside the Wi-Fi-connected branch, no startup remote-config consumer, an unconditional startup deny before `connectSta()`, and an unconditional post-register deny. The test rejects 8/8 unsafe mutations per board and 2/2 response-use variants; comments/string decoys are ignored. No production sketches or shared APIs changed.
+Added source-extracted startup register guards to the Hardware-owned poll-preflight lab. Both ESP8266 and ESP32 require one register POST inside the Wi-Fi-connected branch, explicit response discard, no startup response consumer, unconditional deny before connectSta and after register. Eight unsafe mutations per board and two response-use variants are rejected; comments/string decoys are ignored. No production sketches or shared APIs changed.
 
 ## Exact results
 
-- Focused [#45882710658](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45882710658), job `140125732751`: **PASS** at `caeea7f30bc959c3264b785592b8e53f28d040b6`; ESP8266 and ESP32 startup register guards and mutation vectors pass.
-- Full [#45882710608](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45882710608): CI-0701 `140125802015` PASS; 13 firmware targets + Android (14 jobs) PASS; validation `140125877416` FAIL at handover freshness because canonical docs still pinned `57b69a4bff7fd15f93c5ba2e0de7d367ff2bdec5`. Production import, update, simulations, candidate, signing and publication skipped.
-- Mbed TLS [#45882710626](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45882710626): source-contract `140126409598` PASS; core 3.3.13 and 4.0.0 target jobs IN PROGRESS at this checkpoint.
-- SIMULATED / CI VERIFIED only; physical GPIO, coin acceptor, electrical recovery, power-cut and soak acceptance NOT TESTED.
+- Focused [#45882710658](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45882710658), job `140125732751`: PASS at `caeea7f30bc959c3264b785592b8e53f28d040b6`.
+- Focused docs-head [#45883295366](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45883295366), job `140127681438`: PASS; 8/8 mutations, 2/2 response-use variants, decoys ignored; poll 4/4 polarity and 3500 ms blocking-wait model PASS.
+- Mbed TLS [#45882710626](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45882710626): source-contract, core 3.3.13 and 4.0.0 jobs all PASS at exact source/test SHA.
+- Full pre-sync [#45882710608](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45882710608): 13 firmware targets + Android PASS; validation failed stale handover, now superseded.
+- Full post-sync [#45883295442](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45883295442): CI-0701 and mandatory handover gate PASS; validation job `140127752453` fails QA-owned `tests/controllers.sh:21` because `config_revision` is absent. Both sketches retain `applyRemoteConfig` only as a deny-only stub with no callsite. Thirteen firmware targets PASS; Android `140127752382` was IN_PROGRESS at last check. Production import/update/simulation/candidate/signing/publication skipped.
 
 ## Blockers
 
-QA owns deny-only controller assertion reconciliation; CORE owns authenticated register/poll and receipt/disposition; MASTER owns global role matrix and branch pins. Master role files at `ed6bb786c08d360a611e0e6c5c0505fa90d9b477` do not yet list #355. Cleanup #266 OPEN / 0-of-7. Financial #31/#32, safety #34, witness #43 and production anti-rollback/migration gates remain open. Private Drive registry v11 unavailable; no older registry substituted.
+QA owns the stale `config_revision` assertion; CORE owns the authenticated register/poll and receipt/disposition contract; MASTER owns role assignments/branch pins and has not recorded #355. Cleanup #266 OPEN / 0-of-7. #31/#32/#34/#43 remain open. #239/#254/#283 remain unmerged; supplied #254 SHA `3692ddf...` is not resolvable, actual #254 head `84c442a4`.
+
+Private Drive registry v11 and hourly signal YAML unavailable; no older registry substituted. Physical GPIO, coin acceptor, electrical recovery, power-cut and 30-device soak acceptance NOT TESTED.
 
 ## NEXT EXACT ACTION
 
-Rerun Full after this canonical sync to pass handover freshness and expose the next QA-owned assertion. Keep #355 DRAFT, preserve #354 and deny coin/relay outputs.
+Request QA/CORE/Master reconciliation as above; keep #355 DRAFT, parent #354 unchanged, and coin/relay admission denied. Do not add a dummy `config_revision` or consume the startup register response without the approved contract.
 
 
 # CURRENT STATE — 2026-11-27 UTC18 — focused and target builds CI verified; Full validation blocked by deny-only QA assertions

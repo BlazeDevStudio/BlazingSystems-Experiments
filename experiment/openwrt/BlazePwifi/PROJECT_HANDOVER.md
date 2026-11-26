@@ -1,35 +1,40 @@
-## CURRENT STATUS — 2026-11-27 UTC19 — startup register deny guard CI verified; Full handover sync required
+## CURRENT STATUS — 2026-11-27 UTC19 — startup register guard CI verified; Full integration blocked by QA contract parity
 
-**Role:** PHX-HARDWARE · **Task:** cleanup-first #266 / hardware #177 / existing DRAFT PR #355 (stacked on #354)  
-**Branch:** `phoenix/hw-poll-preflight-lab-modules-20261127-utc18` · **Parent/base:** #354 `fc842342596786e072630179acfbbc4feeb2ba02`  
-**Source/test SHA:** `caeea7f30bc959c3264b785592b8e53f28d040b6` · **Pre-sync branch HEAD:** `caeea7f30bc959c3264b785592b8e53f28d040b6`  
+**Role:** PHX-HARDWARE · **Task:** hardware #177 / cleanup-first #266 / DRAFT PR #355 (stacked on #354)  
+**Branch:** `phoenix/hw-poll-preflight-lab-modules-20261127-utc18` · **Parent/base #354:** `fc842342596786e072630179acfbbc4feeb2ba02`  
+**Source/test SHA:** `caeea7f30bc959c3264b785592b8e53f28d040b6` · **Prior canonical docs-sync HEAD:** `375bbd4824f12e0c6ffe513432c988f95394ca45`  
 **PR:** OPEN / DRAFT / UNMERGED · **Production:** NO-GO.
 
-### One bounded Hardware-owned test-integrity task
+### Completed Hardware-owned work
 
-The two sketches already start deny-only before the synchronous startup `post("register")`, explicitly discard the register response, and deny again after registration. That invariant was not protected by the modular poll-preflight lab. Added source-extracted checks on both ESP8266 and ESP32 requiring:
-- exactly one executable register POST, only inside the Wi-Fi-connected `connectSta()` branch;
-- the response to be explicitly discarded, with no `applyRemoteConfig()` consumer in startup;
-- an unconditional top-level startup deny before `connectSta()` and an unconditional post-register deny;
-- comment/string decoys to remain ignored.
+The modular poll-preflight lab now also protects the synchronous startup register path on both ESP8266 and ESP32. It requires one executable `post("register")` inside the Wi-Fi-connected `connectSta()` branch, explicit response discard, no startup `applyRemoteConfig()` consumer, an unconditional deny before `connectSta()`, and an unconditional deny after registration. Comment/string decoys are ignored.
 
-Failure injection rejects **8/8** unsafe mutations per board, including missing/conditional startup deny, moving register outside the Wi-Fi-connected branch, missing/conditional post-register deny, consuming/applying the response, and adding a second register POST outside `connectSta()`. The two response-consumption variants are separately reported as **2/2 rejected**. No production `.ino`, shared API, QA/CORE/Master source, finance, signer, witness, migration, or COE destination was changed.
+Failure injection rejects **8/8** unsafe mutations per board; the two response-use variants are separately **2/2 rejected**. The existing poll lab still models a 3500 ms blocking request and an 80 ms pulse with zero samples during the wait, zero accepted pulses, and four relay/LED polarity combinations. These are host/source-extracted simulations, not physical measurements.
 
-### Exact-source CI evidence
+Only Hardware-owned lab modules, the stable entrypoint docstring, and Hardware handovers changed. No production `.ino`, QA/CORE/Master source, shared API, financial logic, signer, witness, migration or COE destination changed.
 
-- Focused poll-deny [run #45882710658](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45882710658), job `140125732751`: **PASS** at source/test SHA `caeea7f30bc959c3264b785592b8e53f28d040b6`. Both boards report `REGISTER_STARTUP_DENY_PASS`, `REGISTER_STARTUP_DENY_MUTATIONS_REJECTED 8/8`, `REGISTER_POST_RESPONSE_USE_MUTATIONS_REJECTED 2/2`, and decoy fixtures ignored. Existing poll test also reports 3500 ms modeled wait, 80 ms pulse, zero samples during wait, zero accepted pulses, and four independent relay/LED polarity combinations. SIMULATED / CI VERIFIED only.
-- Full [run #45882710608](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45882710608): CI-0701 job `140125802015` **PASS**; 13 firmware target builds plus Android (14 jobs total) **PASS**. Validation job `140125877416` **FAIL** at `tests/handover_gate.sh`: the canonical handover checkpoint was still `57b69a4bff7fd15f93c5ba2e0de7d367ff2bdec5`, predating the three lab-file changes. This is a handover-freshness failure, not yet the QA controller assertion. Production import, update bundle, simulations, candidate gate, signing and publication jobs **SKIPPED**.
-- ESP32 Mbed TLS matrix [run #45882710626](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45882710626): source-contract job `140126409598` **PASS**; target builds for core 3.3.13 and 4.0.0 were **IN PROGRESS** at this checkpoint, not claimed PASS.
+### Exact evidence
 
-### Cross-role blockers and evidence boundary
+- Focused source/test [#45882710658](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45882710658), job `140125732751`: **PASS** at `caeea7f30bc959c3264b785592b8e53f28d040b6`.
+- Focused docs-head [#45883295366](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45883295366), job `140127681438`: **PASS** at docs head `375bbd4824f12e0c6ffe513432c988f95394ca45`; both boards report 8/8 mutations rejected, 2/2 response-use variants rejected, decoys ignored, poll polarity 4/4 and blocking-wait PASS.
+- ESP32 Mbed TLS source/test [#45882710626](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45882710626): source-contract `140126409598`, core 3.3.13 `140126410030`, core 4.0.0 `140126410147`: **PASS** at `caeea7f30bc959c3264b785592b8e53f28d040b6`.
+- Pre-sync Full [#45882710608](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45882710608): CI-0701 `140125802015` PASS; 13 firmware target builds + Android (14 jobs total) PASS; validation `140125877416` failed only because the canonical handover was stale. This was superseded by the docs-head run below.
+- Post-sync Full [#45883295442](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45883295442): CI-0701 `140127682638` PASS; mandatory handover freshness gate and its history tests PASS; validation `140127752453` reaches QA-owned `tests/controllers.sh` and fails at line 21, `grep -q 'config_revision'`. Both sketches contain `applyRemoteConfig` only as a deny-only stub (`(void)response; denyRemoteControl();`), with no callsite; `config_revision` is absent. The 13 firmware target jobs are PASS; Android job `140127752382` was still IN_PROGRESS at the last check. Production import, update, simulation, candidate, signing and publication stages are SKIPPED.
+- Docs-head Mbed TLS [#45883295415](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45883295415): source-contract PASS; 3.3.13 and 4.0.0 target jobs still IN_PROGRESS at the last check. Exact source/test matrix #45882710626 above is terminal PASS.
 
-PHX-QA owns the legacy deny-only/controller assertion reconciliation; PHX-CORE owns the authenticated register/poll and receipt/disposition contract; PHX-MASTER owns global assignments and branch-pin reconciliation. Current Master role files still do not record #355. Cleanup #266 remains OPEN / 0-of-7. Financial #31/#32, safety #34 and witness #43 remain open. #239/#254/#283 are unchanged and unmerged.
+### Cross-role blockers
 
-Host/source-extracted checks are **SIMULATED / CI VERIFIED** only. Physical GPIO/relay polarity, real coin acceptor, electrical pulse/recovery, LittleFS power-loss, 150 power cuts and 30-device/24-hour soak remain **NOT TESTED**. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO. Private Drive registry v11 and the hourly signal YAML were not surfaced by the available connector/Library search; no older registry was substituted.
+PHX-QA owns the deny-only-incompatible `config_revision` assertion in `tests/controllers.sh:21`. PHX-CORE owns the authenticated register/poll receipt and disposition contract; no approved contract/golden vectors authorize consuming startup register responses or enabling positive coin admission. PHX-MASTER owns the global role matrix and branch pins; its current `ROLE_ASSIGNMENTS.md` / `INTEGRATION_MATRIX.md` at `ed6bb786c08d360a611e0e6c5c0505fa90d9b477` do not list PR #355.
+
+PR #239 remains deny-only; #254 current head is `84c442a4` and the supplied `3692ddf889470da8a0029e16bf0ac2f37f1a9d0` cannot be resolved in the current repository; #283 remains parallel/unmerged, with no active `quarantinePending()` callsite and unresolved `response_sig` parity. Cleanup #266 remains OPEN / 0-of-7. Financial #31/#32, safety #34 and witness #43 remain open.
+
+### Evidence boundary
+
+Focused and target-build results are **CI VERIFIED** only. Real GPIO/relay polarity, coin acceptor behavior, electrical pulse/recovery, LittleFS power-loss, 150 power cuts and 30-device/24-hour soak remain **NOT TESTED**. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO. Private Drive registry v11 and the hourly signal YAML were not surfaced by the available connector/Library search; no older registry was substituted.
 
 ## NEXT EXACT ACTION
 
-Complete the canonical post-source handover sync, rerun Full so `handover_gate.sh` passes and the inherited QA-owned controller assertion becomes the next explicit integration result, then request Master/QA/CORE reconciliation. Keep PR #355 DRAFT, parent #354 unchanged, and coin/relay admission denied.
+Request PHX-QA to reconcile `controllers.sh:21` with the current deny-only candidate, PHX-CORE to publish the authenticated register/poll and receipt/disposition contract, and PHX-MASTER to record #355 in the role matrix. Do not add a placeholder `config_revision`, consume the register response, or enable coin/relay admission before those approvals. Keep PR #355 DRAFT and parent #354 unchanged.
 
 
 ## CURRENT STATUS — 2026-11-27 UTC18 — focused and target builds CI verified; Full validation blocked by deny-only QA assertions
