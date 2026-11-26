@@ -39,6 +39,16 @@ def _step_blocks(workflow: str) -> list[str]:
     ]
 
 
+def _checkout_has_read_only_credentials(block: str) -> bool:
+    """Return whether the checkout block contains the read-only setting."""
+    return bool(
+        re.search(
+            r"(?m)^[ \t]+persist-credentials:[ \t]*false[ \t]*$",
+            block,
+        )
+    )
+
+
 class SoftTimerReleaseActionPinTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -94,16 +104,39 @@ class SoftTimerReleaseActionPinTests(unittest.TestCase):
         missing = [
             index
             for index, block in enumerate(checkout_blocks, start=1)
-            if not re.search(
-                r"(?m)^[ \t]+persist-credentials:[ \t]*false[ \t]*$",
-                block,
-            )
+            if not _checkout_has_read_only_credentials(block)
         ]
         self.assertFalse(
             missing,
             "checkout steps still persist GITHUB_TOKEN credentials: "
             + ", ".join(str(index) for index in missing),
         )
+
+
+    def test_checkout_guard_does_not_accept_run_script_text_as_with_setting(self):
+        malformed_workflow = (
+            "      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683\n"
+            "        run: |\n"
+            "          persist-credentials: false\n"
+            "      - name: Later step\n"
+            "        run: echo later\n"
+        )
+        block = _step_blocks(malformed_workflow)[0]
+        self.assertFalse(
+            _checkout_has_read_only_credentials(block),
+            "run-script text must not satisfy the checkout with-mapping guard",
+        )
+
+    def test_checkout_guard_accepts_direct_with_mapping_setting(self):
+        valid_workflow = (
+            "      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683\n"
+            "        with:\n"
+            "          persist-credentials: false\n"
+            "      - name: Later step\n"
+            "        run: echo later\n"
+        )
+        block = _step_blocks(valid_workflow)[0]
+        self.assertTrue(_checkout_has_read_only_credentials(block))
 
 
 if __name__ == "__main__":
