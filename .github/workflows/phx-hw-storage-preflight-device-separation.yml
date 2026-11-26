@@ -7,7 +7,6 @@ on:
       - 'experiment/openwrt/BlazePwifi/tests/v060_lab_storage_preflight.sh'
       - 'experiment/openwrt/BlazePwifi/tools/v060_lab_mountinfo_guard.awk'
       - '.github/workflows/phx-hw-storage-preflight-device-separation.yml'
-      - 'experiment/openwrt/BlazePwifi/docs/handover/2026-11-27-hw-storage-preflight-device-separation-utc23.md'
   pull_request:
     paths:
       - 'experiment/openwrt/BlazePwifi/tests/v060_lab_storage_preflight.sh'
