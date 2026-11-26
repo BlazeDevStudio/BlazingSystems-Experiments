@@ -114,6 +114,7 @@ selector_imports = {
     "mutate_active_isr_attribute",
     "verify_board_specific_isr_selection",
     "verify_inactive_isr_source_decoy_tolerance",
+    "verify_runtime_interrupt_wiring",
 }
 if imported_from(runner_tree, "coin_pulse_capture_lab_isr") != selector_imports:
     fail("runner must import only the public board-ISR selector contracts")
@@ -128,6 +129,7 @@ selector_functions = {
     "mutate_active_isr_attribute",
     "verify_board_specific_isr_selection",
     "verify_inactive_isr_source_decoy_tolerance",
+    "verify_runtime_interrupt_wiring",
 }
 if not selector_functions.issubset(defined_functions(isr_selector_tree)):
     fail("ISR selector module does not own all six board-selection helpers")

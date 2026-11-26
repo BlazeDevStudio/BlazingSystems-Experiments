@@ -21,6 +21,7 @@ from coin_pulse_capture_lab_isr import (
     mutate_active_isr_attribute,
     verify_board_specific_isr_selection,
     verify_inactive_isr_source_decoy_tolerance,
+    verify_runtime_interrupt_wiring,
 )
 from coin_pulse_capture_lab_fixtures import CPP
 from coin_pulse_capture_lab_contracts import (
@@ -156,6 +157,7 @@ def main():
             source = sketch.read_text(encoding="utf-8")
             verify_board_specific_isr_selection(source, board)
             verify_inactive_isr_source_decoy_tolerance(source, board)
+            verify_runtime_interrupt_wiring(source, board)
             verify_configure_runtime_pins_preserves_edge_baseline(source)
             functions = []
             for helper_name, expected_signature in FUNCTION_SPECS:
