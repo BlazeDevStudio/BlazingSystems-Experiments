@@ -30,3 +30,6 @@
 
 
 2026-11-27 UTC20 | PHX-HARDWARE | PR #355 | ESP8266 EEPROM fixed-array validator and legacy migration guard implemented. Source/test SHA ec70269ddc052351606165f06e4a3c6586616c04; firmware ordering correction 5aa21736213c609398f1f1c4a42f41c106cf7e84. Focused #45894193755/job 140163917362 PASS: current 6/6, legacy 5/5, failure injection 5/5. Mbed TLS matrix #45893670154 all 3 jobs PASS at preceding source/test SHA. Full #45893670193: 13/13 target builds PASS, ESP8266 and ESP32 PASS, Android still running when canceled; validation failed stale handover gate. Native #45894193808 fails QA-owned active clearPending assertion. No physical acceptance; PRODUCTION NO-GO.
+
+
+2026-11-27 UTC20 | PHX-HARDWARE | PR #355 | Exact docs-head focused #45894378940/job 140164527129 PASS: current 6/6, legacy 5/5, 5/5 unsafe mutations rejected. Exact source/test Mbed TLS #45894193769 source-contract + ESP32 core 3.3.13/4.0.0 PASS. Full docs-head #45894378927: handover freshness + CI-0701 PASS, all 13/13 target/platform jobs PASS, Android still running; validation FAIL at QA-owned tests/controllers.sh:21 config_revision assertion. Native #45894379001 FAIL at QA-owned active clearPending assertion. Physical acceptance NOT TESTED; PRODUCTION NO-GO.
