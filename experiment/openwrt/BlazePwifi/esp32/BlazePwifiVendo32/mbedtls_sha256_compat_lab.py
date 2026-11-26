@@ -49,7 +49,7 @@ def validate_runtime_pin_setup(source: str) -> None:
     setup = mask_non_code(extract_function(source, "void setup()"))
     pin_call = setup.find("configureRuntimePins(runCoinPin,runRelayPin,runLedPin)")
     deny_call = setup.find("denyRemoteControl()", pin_call + 1)
-    ap_call = setup.find("startSetupAp()", deny_call + 1)
+    ap_call = setup.find("setupPortal()", deny_call + 1)
     connect_call = setup.find("connectSta()", ap_call + 1)
     require(0 <= pin_call < deny_call < ap_call < connect_call,
             "runtime pins and deny must precede setup AP and station/network work")
@@ -133,12 +133,13 @@ def validate_mbedtls_provider(source: str) -> None:
     require(action_guard is not None, "post must allow only register and poll actions")
     allowlist_at = post.find("if(action!=")
     deny_return_at = post.find("return", allowlist_at)
+    key_guard_at = post.find("if(cfg.key.isEmpty() || cfg.id.isEmpty()) return")
     body_at = post.find("String body=signedBody(")
     empty_at = post.find("if(!body.length()) return")
     begin_at = post.find("h.begin(client,url)")
     send_at = post.find("h.POST(body)")
-    require(0 <= allowlist_at < deny_return_at < body_at < empty_at < begin_at < send_at,
-            "post must deny unsupported actions and empty signatures before network I/O")
+    require(0 <= allowlist_at < deny_return_at < key_guard_at < body_at < empty_at < begin_at < send_at,
+            "post must deny unsupported actions and missing key/id before signing or network I/O")
     require("h.POST(signedBody(" not in post_source,
             "post must not construct/send the signed body inside HTTPClient::POST")
     print("POST_ACTION_AND_EMPTY_SIGNATURE_DENY_PASS")
@@ -247,6 +248,14 @@ def main() -> None:
         source.replace(
             'if(!body.length()) return "";',
             "/* mutation: empty request sent */",
+            1,
+        ),
+    )
+    expect_rejected(
+        "missing-key-provisioning-deny",
+        source.replace(
+            'if(cfg.key.isEmpty() || cfg.id.isEmpty()) return "";',
+            "/* mutation: missing key/id accepted */",
             1,
         ),
     )
