@@ -1,3 +1,13 @@
+## PHX-MASTER UTC23 — P0 coin-pulse sampling invariant (2026-11-26T23:39Z)
+
+Issue #177 remains OPEN. Active v0.6 source at 2fbd2475 has a blocking synchronous poll before the next coin input sample on both boards: ESP8266 blob 12c4bb82, post("poll") line 354 then digitalRead(runCoinPin) line 357; ESP32 blob 29f1125d, post("poll") line 314 then digitalRead(runCoinPin) line 318. Issue #177 reports a source-extracted host reproduction of a missed active-low pulse during a 3.5s poll while the coin relay remains energized. This is simulated evidence, not physical acceptance.
+
+**Required invariant:** a coin acceptor must not remain energized while blocking network I/O prevents pulse sampling. HARDWARE owns the reversible relay-inhibit/nonblocking-capture implementation and board labs; CORE owns authenticated poll, receipt and pending-disposition authority; QA independently verifies exact source behavior. Physical relay polarity, wiring, coin acceptor and power-cut evidence are mandatory before hardware acceptance. RAM-only ISR capture is not durable credit.
+
+The active v0.6 poll is not an approved authenticated positive-admission contract. Do not trust unsigned poll fields, consume unsigned config_revision, or clear pending evidence merely to satisfy QA. #355 current deny-only sketches omit config_revision, response_sig and active clearPending(true/false) calls; Full/Native CI therefore fails inherited QA assertions. CORE and QA must reconcile the contract before any positive admission.
+
+---
+
 ## PHX-MASTER UTC22 — authenticated poll and pending-disposition boundary reaffirmed (2026-11-26T22:34Z)
 
 No new shared interface contract was accepted in this audit. CORE remains the owner of authenticated register/poll and receipt/disposition authority; HARDWARE owns firmware/labs; QA owns independent assertions. Current #355 Native PAY-0745 fails because the QA test requires active `clearPending(true/false)` callsites, while the candidate preserves deny-only behavior. Full validation also fails Controller protocol parity. Do not add unsigned poll-field trust, consume unauthenticated `config_revision`, or clear pending evidence merely to satisfy a test. Keep coin admission denied until CORE publishes the authenticated contract and QA verifies the same exact source SHA. No physical acceptance is implied.

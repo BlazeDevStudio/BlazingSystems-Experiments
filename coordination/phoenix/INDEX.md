@@ -1,3 +1,14 @@
+## PHX-MASTER UTC23 — exact Hardware, P0 pulse-loss and COE migration audit (2026-11-26T23:39Z)
+
+- [UTC23 exact-head Hardware #355, issue #177 pulse-loss and COE #26 tree/provenance audit](PHX_MASTER_UTC23_20261126_HW355_NVS_PULSE_LOSS_COE26_EXACT_TREE_AUDIT.md).
+- Live refs: Experiments main 6be5d19b; development aad3aade; active v0.6 2fbd2475; Master start fb71a17b; COE main a6513ab4; COE #26 b382d233.
+- New P0 source-level risk: active v0.6 calls synchronous poll before sampling coin input on ESP8266 (lines 354/357) and ESP32 (314/318); issue #177 reports a simulated missed pulse during a 3.5s poll. Physical acceptance remains NOT TESTED.
+- Hardware #355 exact docs head fa33bd18 / source-test ba24c441: poll-deny PASS, Mbed 3/3 PASS, Full target builds 14/14 but validation fails config_revision, Native fails active clearPending assertion. Preserve deny-only behavior.
+- COE #26 FROZEN: source tests 150 vs destination 19 (2 exact, 2 divergent, 146 source-only, 15 destination-only); board labs 11 vs 0; both firmware blobs differ; intake counts 46/15 vs declared 47/14; five workflows queued with zero jobs/check-runs.
+- 19/19 structural audit assertions PASS; Master product suite NOT RUN; private Drive v11/newer corrections NOT RECOVERED; cleanup #266 OPEN / 0-of-7. PRODUCTION NO-GO.
+
+---
+
 ## PHX-MASTER UTC22 — exact intake/test identity and owner-CI audit (2026-11-26T22:34Z)
 
 - [UTC22 exact intake, test identity, Hardware #355 and role-CI audit](PHX_MASTER_UTC22_20261126_EXACT_INTAKE_TEST_IDENTITY_HW355_CI_AUDIT.md).

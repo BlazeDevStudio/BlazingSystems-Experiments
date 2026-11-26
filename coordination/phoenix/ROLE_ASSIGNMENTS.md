@@ -1,3 +1,22 @@
+## PHX-MASTER UTC23 — live role heads and exact CI (2026-11-26T23:39Z)
+
+| Owner | Live PR head(s) | Exact-head evidence | Boundary / next owner action |
+|---|---|---|---|
+| PHX-CORE | #252 c82705f2 | Build #42698139210 PASS; scoped build only | CORE remains owner-reserved and separately continued; Master did not touch its source. |
+| PHX-RENTAL | #328 10fc200b | API21/23 #45622918364, auth/installer #45622918551, APK identity #45622918340 PASS; shared build #45622918468 FAIL | Rental resolves its handover/build failure. |
+| PHX-PISONET | #255 d01fd164 | Windows synthetic #42462978704 PASS | Native COM acceptance NOT TESTED. |
+| PHX-HARDWARE | #355 fa33bd18 (source/test ba24c441; firmware logic cadf8605) | Poll #45907943770 PASS; Mbed #45907943783 3/3 PASS; Full #45907943784 target/platform 14/14 PASS but validation FAIL at controllers.sh:21 config_revision; Native #45907943785 FAIL at PAY-0745 active-clear assertion | HARDWARE refreshes its body/handover; QA/CORE reconcile assertions and P0 poll-before-sample issue #177. |
+| PHX-HARDWARE | #354 fc842342; #353 f527b33 | #354 Poll #45864684458 and Mbed #45864684325 PASS; Native #45864684295 and Full #45864684497 FAIL. #353 Relay #45871096516 and Quarantine #45871096480 PASS; Full #45871096425 FAIL. | Keep deny-only; no Master firmware edits. |
+| PHX-QA | #290 5c29d159; #292 75a3f66d | #290 synthetic #43633486963 PASS; #292 no exact-head workflow run | QA owns assertions and independent verification. |
+| PHX-RELEASE | #242 36c0d0bb; #291 bf339a76 | No exact-head PR runs/statuses returned | RELEASE owns ancestry and exact-head CI refresh. |
+| COE RELEASE | #35 bc57ba8e | Case #45897198239 PASS; sandbox #45897198204 FAIL; shared Hardware #45897198326 FAIL | Release-owned ULA/Bubblewrap blockers remain. |
+| COE CORE | #45 9d76a134 | Overlay #44295049727 and case guard #44295049903 PASS | Contract-vector stage only; no financial acceptance. |
+| COE INTERCON | #49 aeb8ff11 | Stage 5.1 #44646341873 and case guard #44646341992 PASS; shared Hardware #44646341922 FAIL | No merge or production admission. |
+
+No subsystem source branch or worker-owned PR was changed. CORE work was not duplicated.
+
+---
+
 ## PHX-MASTER UTC22 — live role and exact-head CI reconciliation (2026-11-26T22:34Z)
 
 | Owner | Current exact PR head | Exact-head evidence | Ownership-safe next action |

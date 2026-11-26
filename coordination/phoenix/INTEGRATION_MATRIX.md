@@ -1,3 +1,24 @@
+## PHX-MASTER UTC23 — exact migration and CI matrix (2026-11-26T23:39Z)
+
+| Evidence | Exact source | Exact destination / run | Result |
+|---|---|---|---|
+| Root tests | Hardware/source branch fa33bd18: 150 files | COE #26 Pisowifi/tests: 19 files | 2 exact, 2 divergent, 146 source-only, 15 destination-only |
+| Board Python labs | 11 files at fa33bd18 | COE Hardware: 0 Python files | NOT IMPORTED |
+| ESP32 firmware | blob fcf26a50... | blob 3cc7ec54... | DIFFERENT |
+| ESP8266 firmware | blob 9f0f4829... | blob c8be98f7... | DIFFERENT |
+| SOURCE_INTAKE | blob 1b9018ff; 61 runtime rows | Actual 46 identical / 15 derived; summary 47 / 14 | INCONSISTENT |
+| Project LICENSE | blob 1ee55b94... | Pisowifi/LICENSE same blob | MATCH |
+| QRCode/TailAdmin | QRCode 150770c0...; TailAdmin cb92d417... / NOTICE f0425bbb... | Exact counterparts in COE | MATCH |
+| Missing licence/notice | Root NOTICE f6d92cd2...; Tabler LICENSE 22ee8122...; Launcher LICENSE c5b1efa7...; jsQR LICENSE 8f71f43f... | No destination counterparts | REVIEW REQUIRED |
+| COE #26 Actions | head b382d233... | Five queued / zero jobs / zero check-runs | NOT EXECUTED |
+| Hardware #355 Poll/Mbed | docs fa33bd18; source/test ba24c441 | #45907943770 / #45907943783 | PASS / 3 of 3 PASS |
+| Hardware #355 Full/Native | same exact docs head | #45907943784 / #45907943785 | Full target builds 14/14 PASS but validation FAIL; Native FAIL |
+| Active v0.6 poll | ESP8266 blob 12c4bb82...; ESP32 blob 29f1125d... | Issue #177 source-level host repro | P0 pulse-loss risk; physical NOT TESTED |
+
+The whole recursive trees were complete/non-truncated. Counts above are scoped to project tests and board firmware/lab directories, not a claim that the two repository root trees are equivalent. No destination staging or file movement was performed.
+
+---
+
 ## PHX-MASTER UTC22 — exact migration/test/CI matrix (2026-11-26T22:34Z)
 
 | Evidence | Source / owner SHA | Destination / run | Result |

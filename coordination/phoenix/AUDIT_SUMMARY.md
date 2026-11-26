@@ -1,3 +1,18 @@
+## PHX-MASTER UTC23 — decision and blockers (2026-11-26T23:39Z)
+
+**PR #288 OPEN / DRAFT / UNMERGED. COE #26 FROZEN. Cleanup #266 OPEN / 0-of-7. PRODUCTION NO-GO.**
+
+- Active v0.6 has a P0 source-level coin-pulse sampling risk: synchronous poll precedes coin input sampling on both ESP boards; issue #177 host reproduction is simulated, not physical.
+- Hardware #355 fa33bd18: poll-deny PASS, Mbed 3/3 PASS, Full target builds 14/14 PASS but QA validation fails config_revision; Native fails active pending-clear assertion. Preserve deny-only.
+- COE #26 exact tree: 150 source tests / 19 destination tests (2 exact, 2 divergent, 146 source-only, 15 destination-only); 11 board Python labs absent; ESP32/ESP8266 firmware blobs differ; intake 46/15 contradicts 47/14; root NOTICE and three additional license counterparts missing; five workflows queued with zero jobs/check-runs.
+- Manifest remains DRAFT_REVIEW_ONLY, Master target null. No migration staging or copy/move.
+- 19/19 structural audit assertions PASS; Master Python suite and verify_coordination.py NOT RUN because github.com DNS failed.
+- Private Drive v11/newer corrections NOT_RECOVERED; direct Drive connector unavailable; no older registry substituted.
+
+Next owners: HARDWARE and QA/CORE reconcile issue #177 and the deny-only/pending contract; COE integration owner reconciles #26 pins, exact blobs, tests, licences and CI; registry custodian supplies v11 through authorized private access; RELEASE refreshes #242/#291 exact-head evidence; MASTER reruns its suite when checkout or CI is available.
+
+---
+
 ## PHX-MASTER UTC22 — decision and blockers (2026-11-26T22:34Z)
 
 **PR #288 OPEN / DRAFT / UNMERGED. COE #26 FROZEN. Cleanup #266 OPEN / 0-of-7. PRODUCTION NO-GO.**

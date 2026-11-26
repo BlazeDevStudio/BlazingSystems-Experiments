@@ -1,3 +1,13 @@
+## PHX-MASTER UTC23 — route provenance re-read (2026-11-26T23:39Z)
+
+Current manifest blob e4db324315a1b3543fec17a148fbf960170fcb29 remains schema phoenix/ownership-routes/v1, 11 routes, DRAFT_REVIEW_ONLY. PHX-MASTER remains coordination-only with target null. The manifest source_ref f4e8a891 is historical; current Experiments main is 6be5d19b. COE destination candidate remains PR #26 at b382d233ff06c8791b1028bed3c617cc7b670d12.
+
+COE #26 SOURCE_INTAKE blob 1b9018ff pins source 6d4c9b48 and destination branch feature/pisowifi-cleanup-stabilization, while PR #26 itself targets branch integration/ecosystem-nonproprietary-candidate-20261111. Current Hardware source PR #355 is fa33bd18, not the historical intake source. Exact firmware/test/license comparisons are in the [UTC23 audit](PHX_MASTER_UTC23_20261126_HW355_NVS_PULSE_LOSS_COE26_EXACT_TREE_AUDIT.md).
+
+No route, target, ownership or manifest blob was changed. Do not stage or propose any move until the COE integration owner reconciles per-file source/destination provenance, test identity, licence/NOTICE and exact-head CI. The broad Rental parent remains manual-file-mapping-only and copy_permitted=false. Private Drive v11/newer corrections are NOT_RECOVERED; no old registry is substituted.
+
+---
+
 ## PHX-MASTER UTC22 — COE #26 route provenance remains blocked (2026-11-26T22:34Z)
 
 The route manifest remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`, 11 routes, `DRAFT_REVIEW_ONLY`, PHX-MASTER target null. No ownership or route was changed.
