@@ -146,9 +146,9 @@ def polarity_coupling_mutation(configure: str, target_pin: str, correct_polarity
     expected = f"writeLogical({target_pin},false,{correct_polarity});"
     replacement = f"writeLogical({target_pin},false,{wrong_polarity});"
     mutated, count = re.subn(re.escape(expected), replacement, configure)
-    if count != 2:
+    if count != 3:
         raise RuntimeError(
-            f"expected exactly two OFF writes for {target_pin}, found {count}"
+            f"expected exactly three OFF writes for {target_pin} (old-pin shutdown, preload, confirmation), found {count}"
         )
     return mutated
 
