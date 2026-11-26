@@ -212,6 +212,29 @@ def remove_first_code_token(source: str, token: str) -> str:
     return source[:start] + source[start + len(token):]
 
 
+def expect_poll_guard_mutation_rejected(
+    name: str,
+    loop: str,
+    pattern: str,
+    replacement: str,
+    label: str,
+    expected_fragment: str,
+):
+    mutated, count = re.subn(pattern, replacement, loop, count=1)
+    if count != 1:
+        raise AssertionError(f"{name}: could not create {label} mutation")
+    try:
+        poll_guard_locations(mutated)
+    except AssertionError as exc:
+        if expected_fragment not in str(exc):
+            raise AssertionError(
+                f"{name}: {label} mutation failed for an unexpected reason: {exc}"
+            ) from exc
+    else:
+        raise AssertionError(f"{name}: {label} mutation was not rejected")
+    print(f"POLL_GUARD_CONTROL_FLOW_MUTATION_REJECTED {name} {label}")
+
+
 def verify_board(name: str, path: Path):
     source = path.read_text(encoding="utf-8")
     masked_source = mask_non_code(source)
@@ -268,6 +291,47 @@ def verify_board(name: str, path: Path):
         pass
     else:
         raise AssertionError(f"{name}: missing pre-poll guard mutation was not rejected")
+
+
+    # Failure injection: a deny call nested under a false condition must not
+    # satisfy the pre-poll guard requirement.
+    expect_poll_guard_mutation_rejected(
+        name, loop,
+        r"denyRemoteControl\(\);\s*\(void\)post\(\"poll\"\);",
+        'if (false) { denyRemoteControl(); }\n    (void)post("poll");',
+        "braced conditional pre-poll guard",
+        "pre-poll: deny guard must be an unconditional standalone statement",
+    )
+    expect_poll_guard_mutation_rejected(
+        name, loop,
+        r"denyRemoteControl\(\);\s*\(void\)post\(\"poll\"\);",
+        'if (false) denyRemoteControl();\n    (void)post("poll");',
+        "unbraced conditional pre-poll guard",
+        "pre-poll: deny guard must be an unconditional standalone statement",
+    )
+    # Failure injection: a conditional post-poll deny or an early return must
+    # not allow the blocking poll to bypass the final fail-closed state.
+    expect_poll_guard_mutation_rejected(
+        name, loop,
+        r"\(void\)post\(\"poll\"\);\s*denyRemoteControl\(\);",
+        '(void)post("poll");\n    if (false) { denyRemoteControl(); }',
+        "braced conditional post-poll guard",
+        "post-poll: deny guard must be an unconditional standalone statement",
+    )
+    expect_poll_guard_mutation_rejected(
+        name, loop,
+        r"\(void\)post\(\"poll\"\);\s*denyRemoteControl\(\);",
+        '(void)post("poll");\n    if (false) denyRemoteControl();',
+        "unbraced conditional post-poll guard",
+        "post-poll: deny guard must be an unconditional standalone statement",
+    )
+    expect_poll_guard_mutation_rejected(
+        name, loop,
+        r"\(void\)post\(\"poll\"\);\s*denyRemoteControl\(\);",
+        '(void)post("poll");\n    return;\n    denyRemoteControl();',
+        "early return before post-poll guard",
+        "post-poll: control transfer can bypass deny guard",
+    )
 
     # Failure injection: a poll request outside the bounded guarded block
     # must be rejected, not hidden by the first guarded site.
