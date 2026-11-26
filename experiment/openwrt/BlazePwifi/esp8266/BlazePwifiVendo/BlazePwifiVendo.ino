@@ -45,7 +45,7 @@ bool runCoinActiveLow=true, runRelayActiveHigh=true, runLedActiveHigh=true;
 uint32_t lastPoll=0, lastEdge=0, lastSend=0, configuredApSince=0;
 uint8_t pendingPulses=0;
 bool pendingReady=false, fsReady=false;
-int runCoinPin=4, runLedPin=14, runRelayPin=5, maxWifiRetries=6, wifiFailures=0, remoteRevision=0;
+int runCoinPin=4, runLedPin=14, runRelayPin=5, maxWifiRetries=6, wifiFailures=0;
 uint16_t runDebounceMs=40, runPulseGroupMs=400;
 String activeTarget, pendingTarget, pendingNonce, setupApName;
 
@@ -207,23 +207,6 @@ void loadCfg(){
   saveCfg();
 }
 
-String jsonString(const String&r,const String&k){
-  String needle="\""+k+"\":\""; int p=r.indexOf(needle); if(p<0)return "";
-  p+=needle.length(); int e=r.indexOf('\"',p); if(e<0)return ""; return r.substring(p,e);
-}
-
-bool jsonTrue(const String&r,const String&k){
-  return r.indexOf("\""+k+"\":1")>=0 || r.indexOf("\""+k+"\":true")>=0;
-}
-int jsonInt(const String&r,const String&k,int def){
-  String needle="\""+k+"\":"; int p=r.indexOf(needle); if(p<0)return def; p+=needle.length();
-  while(p<(int)r.length() && r[p]==' ')p++;
-  int e=p; if(e<(int)r.length() && r[e]=='-')e++;
-  while(e<(int)r.length() && isDigit(r[e]))e++;
-  if(e==p || (e==p+1 && r[p]=='-'))return def;
-  return r.substring(p,e).toInt();
-}
-
 void writeLogical(int pin,bool on,bool activeHigh){ digitalWrite(pin,(on==activeHigh)?HIGH:LOW); }
 
 void configureRuntimePins(int coinPin,int relayPin,int ledPin){
@@ -234,19 +217,10 @@ void configureRuntimePins(int coinPin,int relayPin,int ledPin){
   writeLogical(runRelayPin,false,runRelayActiveHigh); writeLogical(runLedPin,false,runLedActiveHigh);
 }
 
-void applyRemoteConfig(const String&r){
-  int rev=jsonInt(r,"config_revision",remoteRevision);
-  if(rev==remoteRevision && remoteRevision!=0)return;
-  controllerEnabled=jsonInt(r,"enabled",1)!=0; coinEnabled=jsonInt(r,"coin_enabled",1)!=0;
-  relayEnabled=jsonInt(r,"relay_enabled",1)!=0; ledEnabled=jsonInt(r,"led_enabled",1)!=0;
-  int cp=jsonInt(r,"coin_pin",-1),rp=jsonInt(r,"relay_pin",-1),lp=jsonInt(r,"led_pin",-1);
-  int nextCoin=(cp>=0&&cp<=16)?cp:cfg.coinPin, nextRelay=(rp>=0&&rp<=16)?rp:cfg.relayPin, nextLed=(lp>=0&&lp<=16)?lp:cfg.insertLedPin;
-  runCoinActiveLow=jsonInt(r,"coin_active_low",cfg.coinActiveLow?1:0)!=0;
-  runRelayActiveHigh=jsonInt(r,"relay_active_high",1)!=0; runLedActiveHigh=jsonInt(r,"led_active_high",1)!=0;
-  runDebounceMs=(uint16_t)constrain(jsonInt(r,"coin_debounce_ms",40),1,2000);
-  runPulseGroupMs=(uint16_t)constrain(jsonInt(r,"pulse_group_ms",400),10,10000);
-  maxWifiRetries=constrain(jsonInt(r,"max_wifi_retries",6),1,60);
-  configureRuntimePins(nextCoin,nextRelay,nextLed); remoteRevision=rev; applyOutputs();
+void denyRemoteControl();
+void applyRemoteConfig(const String &response){
+  (void)response;
+  denyRemoteControl();
 }
 
 String signedBody(const String& action,const String& pulses,const String& target,const String& forcedNonce=""){
@@ -270,6 +244,19 @@ void applyOutputs(){
   bool accepting=controllerEnabled && coinEnabled && insertMode && fsReady && !pendingReady;
   if(ledEnabled) writeLogical(runLedPin,accepting,runLedActiveHigh); else writeLogical(runLedPin,false,runLedActiveHigh);
   if(relayEnabled) writeLogical(runRelayPin,accepting,runRelayActiveHigh); else writeLogical(runRelayPin,false,runRelayActiveHigh);
+}
+
+// Register/poll replies are not an approved authenticated control envelope.
+// Keep coin, relay and LED outputs denied until CORE publishes that contract
+// and QA independently validates the exact producer/consumer vectors.
+void denyRemoteControl(){
+  controllerEnabled=false;
+  coinEnabled=false;
+  relayEnabled=false;
+  ledEnabled=false;
+  insertMode=false;
+  activeTarget="";
+  applyOutputs();
 }
 
 void startSetupAp(){
@@ -317,11 +304,15 @@ void setupPortal(){
 }
 
 void connectSta(){
-  if(!strlen(cfg.ssid))return;
+  if(!strlen(cfg.ssid)) return;
   WiFi.begin(cfg.ssid,cfg.pass);
   uint32_t t=millis();
-  while(WiFi.status()!=WL_CONNECTED && millis()-t<12000){delay(250);yield();}
-  if(WiFi.status()==WL_CONNECTED){wifiFailures=0;String r=post("register");applyRemoteConfig(r);}
+  while(WiFi.status()!=WL_CONNECTED && millis()-t<12000){ delay(250);yield(); }
+  if(WiFi.status()==WL_CONNECTED){
+    wifiFailures=0;
+    (void)post("register");
+    denyRemoteControl();
+  }
 }
 
 bool clearPending(bool committed){
@@ -339,7 +330,7 @@ bool clearPending(bool committed){
 void setup(){
   Serial.begin(115200); loadCfg(); initPendingStore();
   runCoinPin=cfg.coinPin;runLedPin=cfg.insertLedPin;runRelayPin=cfg.relayPin;runCoinActiveLow=cfg.coinActiveLow;
-  configureRuntimePins(runCoinPin,runRelayPin,runLedPin);setupPortal();connectSta();
+  configureRuntimePins(runCoinPin,runRelayPin,runLedPin);denyRemoteControl();setupPortal();connectSta();
 }
 
 void loop(){
@@ -351,7 +342,13 @@ void loop(){
   }
 
   if(WiFi.status()==WL_CONNECTED && millis()-lastPoll>1500){
-    wifiFailures=0;String r=post("poll");insertMode=jsonTrue(r,"insert");activeTarget=jsonString(r,"target_nonce");applyRemoteConfig(r);applyOutputs();lastPoll=millis();
+    wifiFailures=0;
+    // P0: disable the physical coin acceptor before the blocking 3.5s HTTP wait.
+    // Keep the poll response discarded until CORE's authenticated contract is approved.
+    denyRemoteControl();
+    (void)post("poll");
+    denyRemoteControl();
+    lastPoll=millis();
   }
 
   bool raw=digitalRead(runCoinPin);
@@ -379,18 +376,9 @@ void loop(){
     applyOutputs();
   }
 
-  if(pendingPulses && pendingReady && WiFi.status()==WL_CONNECTED && (lastSend==0 || millis()-lastSend>900)){
-    String r=post("coin",String(pendingPulses),pendingTarget,pendingNonce);
-    lastSend=millis();
-    if(r.indexOf("\"ok\":true")>=0){
-      clearPending(true);
-      applyOutputs();
-    } else if(r.indexOf("coin window expired")>=0 || r.indexOf("coin target mismatch")>=0 ||
-              r.indexOf("no active coin window")>=0 || r.indexOf("another vendo selected")>=0){
-      clearPending(false);
-      applyOutputs();
-    }
-  }
+  // Keep unresolved coin journal entries durable. No automatic coin POST, retry,
+  // or clear is allowed until CORE's authenticated receipt/disposition contract
+  // is approved and independently verified.
 
   if(setupApOn && strlen(cfg.ssid) && WiFi.status()==WL_CONNECTED && millis()-configuredApSince>600000UL){
     WiFi.softAPdisconnect(true);setupApOn=false;

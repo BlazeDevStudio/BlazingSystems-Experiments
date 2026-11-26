@@ -9,6 +9,7 @@ on:
       - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_preflight_inhibit_lab.py'
       - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/remote_config_deny_lab.py'
       - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/firmware_source_extract.py'
+      - 'experiment/openwrt/BlazePwifi/docs/handover/2026-11-26-hw-active-v06-poll-intake-deny-utc05.md'
       - '.github/workflows/phx-hw-active-v06-poll-intake-deny.yml'
   pull_request:
     paths:

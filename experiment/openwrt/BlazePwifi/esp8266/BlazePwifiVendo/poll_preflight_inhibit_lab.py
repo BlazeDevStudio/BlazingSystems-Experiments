@@ -214,6 +214,11 @@ def remove_first_code_token(source: str, token: str) -> str:
 
 def verify_board(name: str, path: Path):
     source = path.read_text(encoding="utf-8")
+    masked_source = mask_non_code(source)
+    if len(re.findall(r"\\bclearPending\\s*\\(", masked_source)) != 1:
+        raise AssertionError(f"{name}: clearPending must remain definition-only until authenticated receipt approval")
+    if _coin_post_matches(source):
+        raise AssertionError(f"{name}: automatic coin POST must remain absent from firmware")
     loop, pre_guard, poll_at, post_guard = poll_guard_locations(source)
     if not (pre_guard < poll_at < post_guard):
         raise AssertionError(f"{name}: invalid poll guard order")
