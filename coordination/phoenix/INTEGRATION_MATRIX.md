@@ -1,3 +1,15 @@
+## PHX-MASTER UTC17 — exact current source/destination and provenance delta (2026-11-26)
+
+- Current #354 source/test SHA advanced to 145aac9607682071e2db05944a6f9db5aa06e524; only `poll_preflight_inhibit_lab.py` changed. Current #353 head ac9e754e changed only `coin_pulse_capture_lab_isr.py`. Previous test identity counts at #354 9bb46bb2 / #353 5a5f319 are historical and must be recomputed before staging.
+- Current #354 ESP32 source blob 3edbe38da543ef118b287f3e04c1601692cfa99f differs from COE #26 Hardware/esp32 blob 3cc7ec54b476943dc04a8d1af5e2df5fe054e422. ESP8266 source b45eb2d0bebfc0088e1c9f506c5e94c59cf054d9 differs from COE #26 Hardware/esp8266 blob c8be98f72596681e36a3ad1f8939bf8046c96887.
+- #354 focused poll-deny and Mbed TLS 3.3.13/4.0.0 matrix pass; Full fails QA-owned config_revision assertion; Native fails QA-owned active clearPending assertion. #353 Relay/Quarantine pass; Full fails missing ESP8266 poll-signature check. Neither is hardware acceptance.
+- #26 SOURCE_INTAKE.json blob 1b9018ff944f7f673934d0fc2a97e0a0090d3f5f has 61 runtime rows = 46 byte-identical + 15 derived/review-required, while summary says 47/14. It pins source 6d4c9b48 and destination branch feature/pisowifi-cleanup-stabilization, not current #26 branch integration/ecosystem-nonproprietary-candidate-20261111. Flags hardware_tested/full_ci_tested/source_admission_complete remain false.
+- MIGRATION_MAP.md repeats historical source/destination pins. HARDWARE_FIRMWARE_AUDIT.md contradicts itself: line 16 says sketches not copied; 2026-11-11 addendum says migrated under PR #27 and merged into #26. Both sketches exist in #26 but differ from current #354 source blobs.
+- Product LICENSE matches; QRCode and TailAdmin LICENSE/NOTICE match. Source root NOTICE, Tabler LICENSE and BlazeRentalLauncher LICENSE are absent from candidate; COE root LICENSE and NOTICE are absent. jsqr 1.4.0 LICENSE remains unresolved and must not be treated as cleared.
+- The 11-route manifest remains DRAFT_REVIEW_ONLY; Master target null. No destination staging or writes.
+
+---
+
 ## PHX-MASTER UTC16 — COE #26 exact-source migration hold (2026-11-26T16:33:57Z)
 
 Complete recursive trees, all truncated=false: HARDWARE #353 2,572 entries; HARDWARE #354 2,406; COE #26 286.
