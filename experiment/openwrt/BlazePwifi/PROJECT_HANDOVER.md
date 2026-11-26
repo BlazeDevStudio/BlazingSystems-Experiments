@@ -1023,3 +1023,8 @@ Live stack: #239 `d83b715b...`, #254 `84c442a4...` (contains `3692ddf...`, 17 ah
 
 See [UTC11 narrow handover](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/blob/3f5e8b59e6e72629a3c634abc34e24a082484a13/experiment/openwrt/BlazePwifi/docs/handover/2026-11-25-hw-cpp-user-defined-literal-suffix-boundaries-utc11.md).
 <!-- PHX-HARDWARE-20261125-CPP-UDL-SUFFIX-BOUNDARIES:END -->
+
+
+<!-- PHX-HARDWARE-20261126-UTC01-353-352-ANCESTRY:START -->
+> **PHX-HARDWARE UTC01 — PR #353 ancestry reconciled onto current #352.** Child branch now contains merge commit [82e65038](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/82e6503890632249c54e9cd9a93180a5e7c52aa6) with prior child head `dc9cf634...` and parent #352 head `0e984e267b3a8fb10c314800d1a7f120806354b7` as parents. A one-line merged-guard defect was corrected in [61ed2fc3](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/61ed2fc3e056a1b497dff57009f0e4c624095e32). Current comparison: 19 ahead / 0 behind; PR #353 remains OPEN / DRAFT / UNMERGED. Full validation fails at inherited `Missing poll signature check`; focused exact-head Quarantine/Relay jobs are pending. No production sketch or hardware behavior changed. See [UTC01 narrow handover](docs/handover/2026-11-26-hw-353-352-ancestry-reconciliation-utc01.md). HARDWARE ACCEPTED: NO; PRODUCTION NO-GO.
+<!-- PHX-HARDWARE-20261126-UTC01-353-352-ANCESTRY:END -->
