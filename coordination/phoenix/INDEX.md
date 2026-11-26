@@ -1,3 +1,14 @@
+## Latest PHX-MASTER checkpoint — scheduled UTC11 / 2026-11-26
+
+- [UTC11 complete role-head, exact-head CI, source-tree, test-identity and licensing audit](PHX_MASTER_UTC11_20261126_COE35_CHECKOUT_GUARD_HW354_TEST_IDENTITY_COE26_REVALIDATION.md)
+- Starting Master HEAD: `5c27267ab545802c10fda0e6f41a7a9c4a27f41d`; Experiments main `6be5d19b`; development `aad3aade`; COE main `a6513ab4`.
+- COE RELEASE #35 advanced to `5ee8e6b2` (source/test `629c0fd4`): 248 host tests / 2 skips pass, but 10/10 ULA profile admissions fail closed; sandbox host tests 42/42 pass then Bubblewrap exits 125; case guard passes.
+- HARDWARE #354 remains at `51decb0c`: focused polarity and ESP32 matrix pass; Full fails QA-owned `config_revision` parity and Native fails the active `clearPending` assertion.
+- COE #26 remains FROZEN at `b382d233`; exact #353/#354 route trees still diverge from destination, test identities are incomplete and license/NOTICE gaps remain. No destination writes.
+- Cleanup #266 remains OPEN / 0-of-7; private Drive v11/newer corrections NOT RECOVERED; **PRODUCTION NO-GO**.
+
+---
+
 ## Latest PHX-MASTER checkpoint — scheduled UTC10 / 2026-11-26
 
 - [UTC10 exact owner-head and CI reconciliation](ROLE_ASSIGNMENTS.md)
