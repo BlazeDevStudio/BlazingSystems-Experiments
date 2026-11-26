@@ -4886,3 +4886,21 @@ The current RELEASE UTC14 role lock is `PHX-RELEASE-20261124T14-ELF-ABSOLUTE-SYM
 | COE integration #26 | b382d233ff06c8791b1028bed3c617cc7b670d12 | Five workflows queued / zero jobs; FROZEN. |
 
 CORE retains authenticated producer and canonical handover ownership; HARDWARE retains firmware; QA retains independent poll-signature assertion review; RELEASE retains workflow/rerun ownership. No transfer or subsystem source edit occurred.
+
+## PHX-MASTER UTC18 live owner-head / exact-head CI reconciliation — 2026-11-26T18:37:27Z
+
+| Owner / PR | Exact PR head | Exact-head CI / disposition |
+|---|---|---|
+| CORE #252 | c82705f2de865c89ab733b10efa84f26f56a5cc4 | Build #42698139210 PASS (scoped only). |
+| RENTAL #328 | 10fc200b6dbf470a95e679d3acc58aff4ab2a67f | APK #45622918340, API #45622918364 and instrumentation #45622918551 PASS; build #45622918468 FAIL, ESP32 missing mbedtls/sha256.h. |
+| PISONET #255 | d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | Windows synthetic #42462978704 PASS; native COM acceptance NOT TESTED. |
+| HARDWARE #340 | f70f6af78c64ef86ba0f631faeb02b6cb6eb2725 | Six focused/build workflows PASS; separate candidate. |
+| HARDWARE #353 | docs f527b33c9e391a9a66490388d96f06d6c8761dfa; source/test 44de55a0e132cb15fdb60ecf85446e9490fa277e | Relay #45871096516 and Quarantine #45871096480 PASS; Full #45871096425 FAIL at Missing poll signature check. |
+| HARDWARE #354 | docs fc842342596786e072630179acfbbc4feeb2ba02; source/test 145aac9607682071e2db05944a6f9db5aa06e524 | Poll-deny #45864684458 and Mbed TLS #45864684325 PASS; Full #45864684497 fails the QA config_revision assertion; Native #45864684295 fails the QA clearPending(true/false) assertion. |
+| QA #290 / #292 | 5c29d15994cee1279058f1eca12f2a3180704292 / 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | #290 Windows #43633486963 PASS; #292 has no PR-triggered runs. |
+| RELEASE #291 | bf339a76964a1abe2412fac45392fe06a8e66418 | No exact-head PR runs; mergeable=false, old base snapshot. |
+| COE RELEASE #35 | fdd7a7d36674b69243c4523dea55021046e35c45 | Shared #45876024450 256 PASS / 2 skips then 10/10 ULA denials; sandbox #45876024481 48/48 host PASS then Bubblewrap exit 125; case #45876024459 PASS. |
+| COE CORE #45 / INTERCON #49 | 9d76a134c1f6512aa40c20ec4d247306a71a8cce / aeb8ff11b2f5db9a5f86280ab62ab988245f3919 | #45 Overlay/Shell and case PASS; #49 Stage 5.1/case PASS, Shared Contracts FAIL. |
+| COE integration #26 | b382d233ff06c8791b1028bed3c617cc7b670d12 | Five workflows queued, zero jobs/statuses; FROZEN. |
+
+Master #288 starts at 0730fff529d62ae2b6c436e14cfd520025291f6c; no Master PR-triggered Actions runs exist at that SHA. CORE ownership remains with its separate continuation; Master made no CORE or subsystem source edits.
