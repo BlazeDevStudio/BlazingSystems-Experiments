@@ -1,3 +1,26 @@
+## PHX-MASTER UTC17 — exact current role heads and CI (2026-11-26T17:31Z)
+
+| Owner / PR | Exact HEAD | Current disposition |
+|---|---|---|
+| CORE #252 | c82705f2de865c89ab733b10efa84f26f56a5cc4 | Scoped build #42698139210 PASS; no financial acceptance. CORE source reserved/untouched. |
+| RENTAL #328 | 10fc200b6dbf470a95e679d3acc58aff4ab2a67f | API/auth/APK focused #45622918364/#45622918551/#45622918340 PASS; shared #45622918468 FAIL. |
+| PISONET #255 | d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | Windows synthetic #42462978704 PASS; native COM NOT TESTED. |
+| HARDWARE #340 | f70f6af78c64ef86ba0f631faeb02b6cb6eb2725 | Six workflows PASS; Full #45747758154 = 26 successful jobs / 4 production skips. |
+| HARDWARE #353 | ac9e754e95b4dcc8486a39fb9f672f907fa5931e | Relay #45868482870 PASS; Quarantine #45868483008 PASS; Full #45868482753 FAIL: missing poll-signature check in ESP8266. PR body stale at cb1787ac / ed2f77d. |
+| HARDWARE #354 | fc842342596786e072630179acfbbc4feeb2ba02 (source/test 145aac9607682071e2db05944a6f9db5aa06e524) | Poll-deny #45864684458 + Mbed TLS matrix #45864684325 PASS; Full #45864684497 fails QA config_revision assertion; Native #45864684295 fails QA active clearPending assertion. Deny-only preserved. |
+| QA #290 | 5c29d15994cee1279058f1eca12f2a3180704292 | Windows synthetic #43633486963 PASS; native COM NOT TESTED. |
+| QA #292 | 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | No exact-head PR runs; mergeable=false. |
+| RELEASE #242 | d19fa750f55ed65dc06f77ab116ab33e046a34bf | No exact-head runs/status; base v0.6 pin is 22 commits behind; mergeable=false. |
+| RELEASE #291 | bf339a76964a1abe2412fac45392fe06a8e66418 | No exact-head runs/status; base #242 pin is 16 commits behind; mergeable=false. |
+| COE CORE #45 | 9d76a134c1f6512aa40c20ec4d247306a71a8cce | Overlay/Shell #44295049727 + case guard #44295049903 PASS. |
+| COE INTERCON #49 | aeb8ff11b2f5db9a5f86280ab62ab988245f3919 | Stage 5.1 #44646341873 + case guard #44646341992 PASS; shared #44646341922 FAIL. |
+| COE RELEASE #35 | e1ad4fad1c234976ba76a34758d1ca993a897776 | Shared #45848921260: 255 PASS / 2 skipped, 10/10 ULA profiles fail; sandbox #45848921270: 48/48 host PASS then Bubblewrap exit 125; case guard #45848921527 PASS. |
+| COE #26 | b382d233ff06c8791b1028bed3c617cc7b670d12 | Five workflows queued / zero jobs; FROZEN. |
+
+HARDWARE #353 child base exactly matches parent #352 HEAD 2fa3b7db. HARDWARE #354 base exactly matches active v0.6 HEAD 2fbd2475. RELEASE #242/#291 ancestry is stale; RELEASE owns reconciliation. See [UTC17 audit](PHX_MASTER_UTC17_20261126_HW353_AC9E_HW354_FC842_COE26_PROVENANCE_AUDIT.md).
+
+---
+
 ## PHX-MASTER UTC16 — current role heads and exact-head CI (2026-11-26T16:33:57Z)
 
 | Owner / PR | Exact HEAD | Current disposition |
