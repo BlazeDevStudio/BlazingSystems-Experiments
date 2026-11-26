@@ -1,3 +1,28 @@
+## PHX-MASTER UTC05 — live exact-head role / CI reconciliation — 2026-11-26T05:39:01Z
+
+Master-only reconciliation. CORE, RENTAL, PISONET, HARDWARE, QA and RELEASE retain source-branch ownership. No subsystem source or COE destination branch was modified.
+
+| Owner / PR | Exact current PR head (source/test where distinct) | Exact-head evidence / disposition |
+|---|---|---|
+| CORE #252 | c82705f2de865c89ab733b10efa84f26f56a5cc4 | Scoped build #42698139210 PASS; not financial acceptance. CORE remains owner-reserved. |
+| RENTAL #328 | 10fc200b6dbf470a95e679d3acc58aff4ab2a67f | API21/23 smoke, auth/installer and APK identity focused checks PASS; shared build #45622918468 FAIL at mandatory handover freshness and ESP32 compile. |
+| PISONET #255 | d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | Synthetic Windows #42462978704 PASS; native COM NOT TESTED. |
+| HARDWARE #340 | PR/docs f70f6af78c64ef86ba0f631faeb02b6cb6eb2725; source/test d1380acf80c0b631c5814d746dca36b2fad7a986 | Core 4.0.0 actual sketch compile #45747192648 PASS; Full #45747758154 PASS (26 success / 4 intentional skips). Reproducibility still unproven. |
+| HARDWARE #348 | 93afd4830b2728d5976e21951610943e1ec96c85 | Full #45731176586 FAIL: core-4 missing Mbed TLS header. |
+| HARDWARE #349 | 1a2ecf5fa8c8c20a0095ac898c1bff254280ad27 | Full #45724609215 FAIL: Controller protocol parity. |
+| HARDWARE #352 | 2fa3b7db1161ddb531ed94bcf60617947fa1a7bd | Full #45745420916 FAIL: Controller protocol parity. |
+| HARDWARE #353 | docs cb1787ac8f89562f20b6ecdee0c7969fbd12bd01; source/test ed2f77d5924172881f27222cc26649f8f85abe6c; parent #352 2fa3b7db | 29 ahead / 0 behind; Quarantine #45756942179 and Relay #45756942276 PASS; Full #45756942184 FAIL at Controller protocol parity. |
+| QA #290 / #292 | 5c29d15994cee1279058f1eca12f2a3180704292 / 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | #290 synthetic Windows PASS; native COM NOT TESTED. #292 has no PR runs. |
+| RELEASE #242 | a7e27fe50e13326a7258bbaed1388594141ddda3 | No exact-head Actions/PowerShell evidence. |
+| RELEASE #291 | docs 0441a8e5; source/test/workflow f556769b | 873 ahead / 9 behind #242; zero exact-head PR runs/statuses. |
+| COE RELEASE #35 | final d628bb62f7b6d31bdc0b88b8816d57817bb9ca77; source/test 829662af | FIFO correction CI-verified; final shared/sandbox gates remain blocked by ULA/Bubblewrap. |
+| COE CORE #45 / INTERCON #49 | 9d76a134 / aeb8ff11 | #45 focused Overlay/Shell and case guard PASS; #49 Stage 5.1 and case guard PASS, shared ESP32 compile FAIL. |
+| COE integration #26 | b382d233ff06c8791b1028bed3c617cc7b670d12 | OPEN / DRAFT / FROZEN; five workflows QUEUED. |
+
+Exact refs: Experiments main 6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5; development aad3aade72c1156eecba1fed30907c6d0283b2c5; Master 0d4dc02e3262d35bea6125dbfde97d3d0f03d6ec; COE main a6513ab4412b4c014eee2863e45cbe32d06cb243. Manifest 11 routes / DRAFT_REVIEW_ONLY / Master target null. Cleanup #266 OPEN / 0-of-7. Private registry v11/newer corrections NOT_RECOVERED. **PRODUCTION NO-GO.**
+
+---
+
 ## PHX-MASTER UTC04 — live exact-head role / CI reconciliation — 2026-11-26T04:53:01Z
 
 Master-only reconciliation. CORE, RENTAL, PISONET, HARDWARE, QA and RELEASE retain their source-branch ownership. No subsystem source or COE destination branch was modified.

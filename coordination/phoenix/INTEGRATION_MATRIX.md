@@ -1,3 +1,28 @@
+## PHX-MASTER UTC05 — exact interface, owner CI and migration provenance — 2026-11-26T05:39:01Z
+
+| Edge / artifact | Exact current evidence | Gate / owner |
+|---|---|---|
+| COE #35 published-manifest verifier | Final head d628bb62; source/test 829662af; exact _verify_published_output uses O_NOFOLLOW + O_NONBLOCK; FIFO regression asserts the flag. Exact-source 243-test green #45760797475/#45760803647; final shared #45761155808 241 pass / 2 skips, then 10/10 ULA profiles fail closed. Sandbox #45761155710 42/42 host tests pass then Bubblewrap absent; case guard #45761155732 PASS. | RELEASE owns implementation. QA review, approved ULA /48 and authorized Bubblewrap runner remain required. Not production release. |
+| Active v0.6 register/poll trust | Branch 2fbd2475; both board poll loops consume insert/target_nonce and call applyRemoteConfig; CGI poll body lacks response_sig. | P0 OPEN. CORE contract first; HARDWARE consumer; QA independent vectors. |
+| HARDWARE #353 stack | Source/test ed2f77d; docs cb1787ac; parent #352 2fa3b7db; 29 ahead / 0 behind. Focused Quarantine/Relay pass; Full fails Controller protocol parity. | HARDWARE owns firmware/ancestry; QA owns independent assertion review. |
+| HARDWARE #340 core-4 candidate | Source/test d1380acf; docs f70f6af7. Actual core-4 sketch compile and Full pass; 26 successful jobs / 4 intentional production skips. | Candidate CI only; binary reproducibility and physical acceptance remain unproven. |
+| RELEASE #291 reproducibility stack | Source/test/workflow f556769b; docs 0441a8e5; 873 ahead / 9 behind #242. Exact-head Actions/statuses zero. | RELEASE owns lock/verifier; INFRA dispatches exact-head workflows; QA independently reviews. |
+| COE #26 source/destination | Source #353 recursive tree 2,572 entries; destination #26 286 entries, both complete/non-truncated. | Exact per-file identity and licensing below; candidate remains FROZEN. |
+
+### Exact #353 → COE #26 mapped blob identity
+
+| Route | Source blobs | Destination blobs | Same relative paths | Exact blob+mode matches | Divergent | Source-only | Destination-only |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| ESP32 → Hardware/esp32 | 16 | 1 | 1 | 0 | 1 | 15 | 0 |
+| ESP8266 → Hardware/esp8266 | 67 | 1 | 1 | 0 | 1 | 66 | 0 |
+| Tests → Pisowifi/tests | 47 | 19 | 4 | 1 | 3 | 43 | 15 |
+
+Product LICENSE source/destination blob matches exactly: 1ee55b94183417be977ca287cd7391f9a6f7e721. Source root NOTICE f6d92cd2 has no destination counterpart. Board firmware blobs differ; three of four common tests diverge; 43 source tests are missing at destination and 15 destination tests are destination-only.
+
+**COE #26 remains FROZEN / DRAFT_REVIEW_ONLY.** No copy, staging, move, overwrite, cherry-pick or destination write. Manifest source_ref f4e8a891 is historical, not a current #353 pin.
+
+---
+
 ## PHX-MASTER UTC04 — exact interface, owner CI and migration provenance — 2026-11-26T04:53:01Z
 
 | Edge / artifact | Exact current evidence | Gate / owner |

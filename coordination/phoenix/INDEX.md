@@ -1,3 +1,14 @@
+## PHX-MASTER UTC05 — 2026-11-26T05:39:01Z
+
+[Exact-head COE #35 FIFO artifact-verifier correction, current role CI, active v0.6 poll-auth P0 and #353→COE #26 provenance](PHX_MASTER_UTC05_20261126_COE35_FIFO_RELEASE_AND_ROLE_CI_COE26_PROVENANCE_AUDIT.md)
+
+- COE #35 final head d628bb62 / source-test 829662af: FIFO O_NONBLOCK correction test-first; 243 tests / 241 pass / 2 skips; final shared gate fails closed on 10/10 ULA profiles; sandbox host tests 42/42 then Bubblewrap unavailable.
+- HARDWARE #353 focused checks pass but Full fails Controller protocol parity; #340 core-4 Full passes but binary reproducibility remains open.
+- Active v0.6 poll remains unsigned; COE #26 keyless verification bypass remains. Current exact #353→#26 trees 2,572 / 286 entries; board blobs differ; only 1/4 common tests exact; source root NOTICE absent at destination. #26 remains FROZEN.
+- Cleanup #266 OPEN / 0-of-7; private registry v11/newer corrections NOT_RECOVERED. **PRODUCTION NO-GO.**
+
+---
+
 ## PHX-MASTER UTC04 — 2026-11-26T04:53:01Z
 
 [Exact-head role/CI reconciliation, active v0.6 poll-response P0, HARDWARE #353 current Full result, RELEASE #291 toolchain evidence and #353→COE #26 migration provenance](PHX_MASTER_UTC04_20261126_HW353_RELEASE291_COE26_PROVENANCE_AND_ROLE_CI_AUDIT.md)
