@@ -1,3 +1,21 @@
+## PHX-MASTER UTC09 — live audit summary and owner actions (2026-11-26T10:00:41.993Z)
+
+- Master starting HEAD `59cc5ca71e615fa9a732ad3b8a26fbf0762388b2`; Experiments main `6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5`; development `aad3aade72c1156eecba1fed30907c6d0283b2c5`; v0.6 comparison base `2fbd2475e9f54878c316fa7cea2f228386b0e859`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`. PR #288 OPEN / DRAFT / UNMERGED, 231 existing coordination-only paths, 606 ahead / 1 behind main, merge base `f4e8a891`.
+- Current exact owner heads/CI are refreshed in ROLE_ASSIGNMENTS.md. HARDWARE #354 now at `e7f63da`; focused and Mbed TLS checks pass, native PAY-0745 and Full Controller-protocol validation fail. QA owns the incompatible assertions; CORE owns the authenticated producer contract.
+- Exact current-owner tree comparison finds material path/blob/test gaps across CORE, RENTAL, PISONET, HARDWARE, QA and RELEASE routes. Historical COE #26 intake is validly pinned to `6d4c9b48`, but its summary is off by one (46/15 row evidence vs 47/14 summary); the current role-head matrix is not represented by that old snapshot. #26 remains FROZEN with five queued workflows / zero jobs.
+- Cleanup #266 remains OPEN / 0-of-7. Experiments main, development, Master and COE main branch objects report `protected=false`; both repositories' ruleset lists are empty. Effective required-check enforcement is NOT ESTABLISHED.
+- The canonical private Drive registry v11 and newer corrections were not recovered. No Google Drive connector is exposed; older Library registry snapshots were not substituted and no private contents or IDs were published.
+- Executed: live GitHub issue/PR/branch/CI/job/log reads; complete non-truncated recursive tree reads; exact relative-path/blob/mode comparisons at current owner PR heads; historical 61-row intake/source/destination blob reconciliation; license/NOTICE presence audit; static consistency assertions.
+- NOT RUN: Master Python unittest suite and `verify_coordination.py`; no authenticated local checkout is available. No Master Actions runs or combined statuses exist at the starting #288 HEAD. Owner CI links are evidence at their respective exact SHAs, not Master test executions.
+- No subsystem source, COE destination, ownership manifest, signer, secret, financial state, hardware, release artifact or customer/payment state changed. No migration, merge, release, flash, physical test or payment operation occurred. **PRODUCTION NO-GO.**
+
+**Next owner actions**
+1. PHX-QA: replace #354's legacy active-clear and unsigned `config_revision` assertions with deny-only / no-callsite / pending-evidence-preservation assertions.
+2. PHX-CORE: publish the authenticated register/poll and receipt/disposition contract; do not let Hardware or Master invent it.
+3. PHX-HARDWARE: keep #354's current docs/head/CI evidence synchronized and rerun Full after QA's correction.
+4. COE integration owner: correct the intake summary, separately identify `blaze-appliance-diag`, pin per-role source heads and reconcile the current QA/Android/Rental/Pisonet/Hardware route gaps.
+5. COE-RELEASE / infrastructure: obtain authorized site-scoped ULA /48 authority and a Bubblewrap-capable sandbox; do not invent a prefix or bypass isolation.
+6. Registry custodian: restore authorized v11 Drive access; repository administrator: establish effective branch protection and required checks.
 ## PHX-MASTER UTC08 — scheduled 2026-11-26T08:37:37Z live audit summary
 
 **Disposition:** Master coordination audit VERIFIED; PR #288 remains OPEN / DRAFT / UNMERGED; COE #26 remains FROZEN; cleanup #266 remains OPEN / 0-of-7; **PRODUCTION NO-GO**. Strict NO CODEX.

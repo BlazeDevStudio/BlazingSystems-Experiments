@@ -1,3 +1,40 @@
+## PHX-MASTER UTC09 — exact current-owner route matrix and COE #26 provenance (2026-11-26T10:00:41.993Z)
+
+**Destination:** COE integration PR #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`, base COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`, OPEN / DRAFT, 205 changed files, 286 recursive-tree entries / 207 blobs. All inspected recursive trees were non-truncated. Comparisons use exact relative paths and Git blob SHA + mode at each owner PR head; these are evidence of divergence, not permission to copy.
+
+| Owner source head / route | Source blobs | Destination blobs | Common | Exact | Divergent | Source-only | Destination-only |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| CORE #252 `c82705f2` — rootfs library | 20 | 20 | 20 | 13 | 7 | 0 | 0 |
+| CORE #252 — vendo CGI | 1 | 1 | 1 | 0 | 1 | 0 | 0 |
+| RENTAL #328 `10fc200b` — Android | 994 | 8 | 0 | 0 | 0 | 994 | 8 |
+| RENTAL #328 — standalone profile to broad `Rental/` target | 30 | 19 | — | — | — | — | — |
+| RENTAL #328 — Rental Server | 12 | 4 | 1 | 0 | 1 | 11 | 3 |
+| PISONET #255 `d01fd164` — SoftTimer | 68 | 47 | 38 | 27 | 11 | 30 | 9 |
+| HARDWARE #340 `f70f6af7` — ESP32 | 9 | 1 | 1 | 0 | 1 | 8 | 0 |
+| HARDWARE #340 — ESP8266 | 6 | 1 | 1 | 0 | 1 | 5 | 0 |
+| HARDWARE #353 `cb1787ac` — ESP32 | 16 | 1 | 1 | 0 | 1 | 15 | 0 |
+| HARDWARE #353 — ESP8266 | 67 | 1 | 1 | 0 | 1 | 66 | 0 |
+| HARDWARE #354 `e7f63da2` — ESP32 | 4 | 1 | 1 | 0 | 1 | 3 | 0 |
+| HARDWARE #354 — ESP8266 | 8 | 1 | 1 | 0 | 1 | 7 | 0 |
+| QA #290 `5c29d159` — tests | 145 | 19 | 4 | 2 | 2 | 141 | 15 |
+| RELEASE #291 `bf339a76` — build workflow | 1 | 1 | 1 | 0 | 1 | 0 | 0 |
+
+The standalone Rental profile route is explicitly `manual-file-mapping-required`; its broad `Rental/` target overlaps other routes and is not a safe recursive-copy mapping. The RELEASE workflow route is a reimplementation review, not a direct-copy route. PHX-MASTER target remains null. The ownership manifest is unchanged: 11 routes, source_ref `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`, destination candidate `b382d233ff06c8791b1028bed3c617cc7b670d12`, status `DRAFT_REVIEW_ONLY`.
+
+### Historical 61-row rootfs intake — exact pinned-source verification
+
+- `SOURCE_INTAKE.json` pins historical source commit `6d4c9b487af4d768c4d7627654d119417fcc6e00`; its recorded rootfs subtree `f4a923aaacf1374e90c7bab5f335efe6c6ec55cf` and tests subtree `7e3b16f2a981c1c8ecab3b1da0d34a82b4e44f17` both match the actual historical Git tree.
+- All 61 runtime rows' source and destination blob identities match that historical source tree and the current COE #26 destination tree. The destination currently has 62 rootfs files: the 61 mapped rows plus destination-only derived `usr/sbin/blaze-appliance-diag` (blob `6690c739`), described separately in the migration plan.
+- **One-row summary defect:** the intake summary says 47 byte-identical / 14 locally derived, but the 61 runtime-row statuses are 46 `byte_identical` / 15 derived-cleanup-review. `MIGRATION_MAP.md` likewise records 46 copied unchanged, 13 intentionally edited and 2 locally derived (46 exact + 15 non-identical). The row-level data agrees; the summary is off by one.
+- The intake records destination head `cf59b41e` before its manifest; current #26 is `b382d233`. All 61 recorded destination blobs still match the current #26 tree. The map header still names historical branch `feature/pisowifi-cleanup-stabilization`, not current PR branch `integration/ecosystem-nonproprietary-candidate-20261111`.
+- This historical intake is not the current owner-branch matrix above. Current owner PR heads differ from the historical source pin; the global manifest source_ref does not provide per-role source pins. The current QA #290 branch has 145 test blobs versus 19 in COE #26 (only 4 common paths, 2 exact and 2 divergent); the 141 source-only tests are not represented by the 4 original-test rows in the historical intake.
+- Product MIT license is exact: source `experiment/openwrt/BlazePwifi/LICENSE` and destination `Pisowifi/LICENSE` both blob `1ee55b94183417be977ca287cd7391f9a6f7e721`. Source root `NOTICE.md` has no destination root counterpart; Tabler LICENSE and BlazeRentalLauncher LICENSE are also absent. QRCode and TailAdmin license/notice counterparts match.
+- Intake flags remain `release_authorized=false`, `hardware_tested=false`, `full_ci_tested=false`, `source_admission_complete=false`. Five COE #26 workflows are queued with zero jobs. The migration plan's 95% software-readiness narrative is not current exact-head CI or physical-acceptance evidence.
+
+**Decision:** keep #26 FROZEN. No staging, copying, moving, overwriting, cherry-picking, or destination modification. The COE integration owner must correct the 47/14 summary, separately record the diagnostic addition, refresh branch/source pins, and reconcile current owner route/test/license identities before requesting review.
+
+---
+
 ## PHX-MASTER UTC08 — scheduled 2026-11-26T08:37:37Z; exact #353 → COE #26 recursive tree revalidation
 
 This is a read-only, complete-tree comparison of the current mapped Hardware source candidate and the existing COE integration draft. Both recursive Git trees returned `truncated=false`; no destination file was created or changed.

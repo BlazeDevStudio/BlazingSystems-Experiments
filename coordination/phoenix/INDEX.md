@@ -1,3 +1,16 @@
+## Latest PHX-MASTER checkpoint — scheduled UTC09 / 2026-11-26
+
+- [UTC09 exact owner-head and CI reconciliation](ROLE_ASSIGNMENTS.md)
+- [UTC09 exact current-owner route matrix and COE #26 provenance](INTEGRATION_MATRIX.md)
+- [UTC09 governance, limitations and next owner actions](AUDIT_SUMMARY.md)
+- [Full cross-role route-tree and COE #26 intake audit](PHX_MASTER_UTC09_20261126_CROSS_ROLE_ROUTE_PROVENANCE_AND_HW354_CI_RECONCILIATION.md)
+- Observed at `2026-11-26T10:00:41.993Z`; starting Master HEAD `59cc5ca71e615fa9a732ad3b8a26fbf0762388b2`.
+- Experiments main `6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5`; development `aad3aade72c1156eecba1fed30907c6d0283b2c5`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; comparison v0.6 base `2fbd2475e9f54878c316fa7cea2f228386b0e859`.
+- PR #288 was OPEN / DRAFT / UNMERGED at the starting HEAD with 231 changed paths, all under `coordination/phoenix/`; live compare was 606 ahead / 1 behind main, merge base `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`.
+- HARDWARE #354 exact head `e7f63da`: focused source-extractor and ESP32 core matrix PASS; native PAY-0745 and Full Controller-protocol assertions FAIL; all firmware targets and Android pass, downstream gates skipped. COE #26 remains FROZEN; cleanup #266 remains 0/7; **PRODUCTION NO-GO**.
+
+---
+
 ## Latest PHX-MASTER checkpoint — scheduled UTC08 / 2026-11-26
 
 - [UTC08 live role and exact-head CI reconciliation](ROLE_ASSIGNMENTS.md)
