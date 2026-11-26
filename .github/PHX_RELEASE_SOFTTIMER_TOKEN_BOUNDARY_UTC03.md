@@ -146,3 +146,43 @@ Therefore exact-source hosted RED/GREEN remains **NOT VERIFIED**. Existing Windo
 4. Registry custodian restores authorized provenance-only access to private Drive v11.
 
 No signing, tag, GitHub Release, hardware flash, real-payment migration, customer deployment, merge or publication. **PRODUCTION NO-GO.**
+
+
+---
+
+## PHX-RELEASE UTC17 — checkout credential guard must inspect YAML with mapping (2026-11-26T17:15Z)
+
+**Disposition:** one RELEASE-owned CI guard false-positive was reproduced and corrected on the existing SoftTimer draft [PR #242](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/242). The prior test searched the entire checkout step block for a line containing persist-credentials: false. Text inside a run: | script or another nested field could satisfy that assertion even when the checkout action had no with.persist-credentials input.
+
+### Bounded correction
+
+The guard now:
+- requires exactly one checkout-step with: mapping;
+- scans only that mapping, stopping at the next peer step key;
+- accepts exactly one direct persist-credentials: false entry;
+- rejects a script-text false positive, missing/duplicate entries, and any non-false value.
+
+The three real workflow checkout steps remain unchanged and already specify the correct direct with.persist-credentials: false input. No PISONET product, installer, PowerShell test, publisher permission, secret, signer, or release behavior was changed.
+
+### Test-first and source evidence
+
+- Test-first commit [f4fb4a0f](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/f4fb4a0f8df24ebb56d48a82b9ff25f8210b4fae) adds a synthetic malformed checkout whose run: script contains the misleading text, plus a positive direct-with fixture.
+- Local RED reproduction against the previous broad predicate: the malformed run: text was incorrectly accepted. This was a focused local Python reproduction, **not** a hosted Actions run.
+- Source correction [e97048fb](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/e97048fbae6894eb15433fe62dd1ec85b7ad6e45) restricts the guard to the direct YAML with: mapping.
+- Local focused post-fix checks: malformed run: text rejected; direct with.persist-credentials: false accepted. This is a narrow local check, **not** a full workflow or PowerShell test run.
+
+### Exact-head CI and stack status
+
+- Final source/test HEAD: e97048fbae6894eb15433fe62dd1ec85b7ad6e45.
+- PR #242 remains OPEN / DRAFT / UNMERGED. Current base is blazepwifi-v0.6.0-audit-foundation@6d4c9b487af4d768c4d7627654d119417fcc6e00; GitHub reports mergeable=false.
+- Exact-head PR Actions runs: **zero returned**. Combined commit statuses: **zero returned**. Do not treat older branch runs as evidence for this SHA.
+- No PowerShell runtime test, Windows build, signing, tagging or publishing was performed.
+- Child PR #291 still targets the older #242 snapshot 734b89d9e7792247e8376335c3f3685500ab3f89; MASTER owns reconciliation. No rebase, retarget, force-push or merge was performed.
+
+### Next owner actions
+
+1. PHX-QA independently reviews the guard's YAML-scope parsing and regression at e97048fb.
+2. PHX-INFRA / repository administrator enables or triggers the authorized exact-head PR workflow and records actual jobs.
+3. PHX-MASTER reconciles #242's advanced base and #291's stale parent relationship without overwriting source history.
+
+**Disposition:** local focused guard behavior verified; hosted exact-head CI NOT VERIFIED; independent QA pending; draft only; PRODUCTION NO-GO.
