@@ -1,3 +1,15 @@
+## CURRENT STATUS — 2026-11-27 UTC16 — blocking-poll wait harness RED VERIFIED; fix in progress
+
+**Role:** PHX-HARDWARE · **Issue:** [#177](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/177) · **Existing draft:** [PR #354](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/354)  
+**Branch:** `phoenix/hw-active-v06-poll-intake-deny-20261126-utc05` · **Base:** `blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859`  
+**Current head:** `f93cf9b80f7777f6b2aff31cc15b41ac005e1a14` · **Work item:** `PHX-HARDWARE-20261126T16-BLOCKING-POLL-WAIT-HARNESS`.
+
+The existing lab's "simulated 3500 ms" comment was not backed by a clock advance or an executed poll block. The new harness now extracts and executes the actual board poll block. The first fixture attempt `05be6faf` had C++ construction errors and is excluded. After correction, focused push [#45862737466](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45862737466), job `140057673814`, and PR [#45862745148](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45862745148), job `140057700491`, compile and reach the intended RED: `BLOCKING_POLL_WAIT_RED elapsed_ms=0 expected=3500`. This proves the old host harness did not simulate the blocking wait; it does not indicate a production firmware failure.
+
+Both sketches confirm `setTimeout(3500)`; no production sketch changed. The next step is to model the full 3500 ms wait and an 80 ms pulse, verify no sample/acceptance while blocked, preserve pending evidence, and add a missing-pre-poll-deny mutation. Physical acceptance remains NOT TESTED; HARDWARE ACCEPTED NO; PRODUCTION NO-GO.
+
+The canonical `CHANGE_LEDGER.md` remains untouched because its 1 MB+ blob is rejected by the connected GitHub file reader; the final checkpoint will include a separate audit addendum without pretending it replaces the canonical ledger.
+
 ## CURRENT STATUS — 2026-11-27 UTC16 — blocking-poll wait harness IN PROGRESS
 
 **Role:** PHX-HARDWARE · **Issue:** [#177](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/177) · **Existing draft:** [PR #354](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/354)  
