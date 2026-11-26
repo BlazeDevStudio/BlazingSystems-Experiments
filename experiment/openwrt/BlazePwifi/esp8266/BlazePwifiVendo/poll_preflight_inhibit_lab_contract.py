@@ -245,3 +245,67 @@ def register_guard_locations(source: str):
             "setup() must not apply unauthenticated register configuration"
         )
     return setup, connect
+
+def startup_storage_guard_locations(source: str):
+    """Require configured outputs and the deny latch before LittleFS startup work."""
+    setup = extract_function(source, "void setup()")
+    masked_setup = mask_non_code(setup)
+
+    config_loads = list(re.finditer(
+        r"\b(?:loadCfg|loadConfig)\s*\(\s*\)\s*;",
+        masked_setup,
+    ))
+    pin_initializers = list(re.finditer(
+        r"\bconfigureRuntimePins\s*\(",
+        masked_setup,
+    ))
+    deny_guards = list(re.finditer(
+        r"\bdenyRemoteControl\s*\(\s*\)\s*;",
+        masked_setup,
+    ))
+    storage_calls = []
+    for pattern in (
+        r"\binitPendingStore\s*\(\s*\)\s*;",
+        r"\bLittleFS\s*\.\s*begin\s*\(",
+    ):
+        storage_calls.extend(re.finditer(pattern, masked_setup))
+
+    if len(config_loads) != 1:
+        raise AssertionError("setup must load persisted pin configuration exactly once")
+    if len(pin_initializers) != 1:
+        raise AssertionError("setup must configure runtime output pins exactly once")
+    if len(deny_guards) != 1:
+        raise AssertionError("setup must apply one startup output-deny latch")
+    if len(storage_calls) != 1:
+        raise AssertionError("setup must have one explicit LittleFS startup entrypoint")
+
+    config_load = config_loads[0]
+    pin_init = pin_initializers[0]
+    deny = deny_guards[0]
+    storage = storage_calls[0]
+
+    pin_depth = (
+        masked_setup[:pin_init.start()].count("{")
+        - masked_setup[:pin_init.start()].count("}")
+    )
+    if pin_depth != 1:
+        raise AssertionError("runtime output pin initialization must be unconditional")
+    deny_end = _assert_unconditional_guard(
+        masked_setup, deny.start(), "startup output deny", expected_depth=1
+    )
+    storage_depth = (
+        masked_setup[:storage.start()].count("{")
+        - masked_setup[:storage.start()].count("}")
+    )
+    if storage_depth != 1:
+        raise AssertionError("LittleFS startup must remain an unconditional setup step")
+    if not (
+        config_load.end() <= pin_init.start()
+        < deny.start() < deny_end <= storage.start()
+    ):
+        raise AssertionError(
+            "filesystem initialization must follow configured output pins and the startup deny latch"
+        )
+
+    return setup
+
