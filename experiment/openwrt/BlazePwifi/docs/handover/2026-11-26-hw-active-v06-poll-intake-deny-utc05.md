@@ -55,3 +55,15 @@ The companion remote-config lab verifies the compatibility sentinel remains deny
 - **PHX-QA:** independently review the source-extracted deny/polarity/pending-preservation tests and mutation vectors at the final PR head.
 - **PHX-CORE:** publish the authenticated register/poll and event receipt/disposition contracts before any future re-enable or pending-event disposition.
 - **PHX-MASTER:** reconcile this active-branch child with #340 and the #239/#254/#283 stack; do not merge automatically.
+
+
+## UTC06 preservation correction and current exact-head CI
+
+A source-preservation audit found the UTC05 `CHANGE_LEDGER.md` refresh had replaced the original 1,080,830-character / 400-section ledger with a 2,454-character checkpoint. The original base blob `f16d5774366cf3a4c358dd2a0c2e7ee5e945f668` was recovered and restored byte-for-byte, then this UTC06 entry was appended. Restoration commit: [d718c873](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/d718c873f4def0807ebf0fc40aa6e1ff60bb3122). Restored blob `eee163aba624160ddeccea184a7c21c4c86d59ce`: 1,082,506 characters / 401 section headings.
+
+Exact-head at d718c873:
+- Focused PR workflow [#45766610880](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45766610880), job `139728911769`: PASS.
+- Full PR workflow [#45766611060](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45766611060): IN PROGRESS at last inspection; mandatory handover freshness passed; no aggregate result claimed.
+- Native journal [#45766610898](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45766610898), job `139728911987`: FAIL at QA-owned `v060_vendo_sequence_contract.py:20` because the old assertion still requires active `clearPending(true/false)` callsites. Preceding native journal, CGI denial, migration preflight, maintenance freeze and frozen capture checks passed. Hardware did not modify the QA-owned test.
+
+No firmware source changed in this UTC06 preservation correction. Keep the candidate deny-only and do not re-enable automatic coin disposition. QA must revise its own sequence invariant; CORE must publish the authenticated response/receipt contract. Physical acceptance remains NOT TESTED; HARDWARE ACCEPTED NO; PRODUCTION NO-GO.
