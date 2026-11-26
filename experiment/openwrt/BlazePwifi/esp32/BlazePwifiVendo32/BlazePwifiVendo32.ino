@@ -394,11 +394,12 @@ void setup(){
 
 void loop(){
   web.handleClient();
-  if(configStoreValid && WiFi.status()!=WL_CONNECTED && !cfg.ssid.isEmpty() && millis()-lastPoll>8000){
+  if(!configStoreValid){ delay(2); return; }
+  if(WiFi.status()!=WL_CONNECTED && !cfg.ssid.isEmpty() && millis()-lastPoll>8000){
     WiFi.disconnect(); WiFi.begin(cfg.ssid.c_str(),cfg.pass.c_str()); wifiFailures++; lastPoll=millis();
     if(wifiFailures>=maxWifiRetries) startSetupAp();
   }
-  if(configStoreValid && WiFi.status()==WL_CONNECTED && millis()-lastPoll>1500){
+  if(WiFi.status()==WL_CONNECTED && millis()-lastPoll>1500){
     wifiFailures=0;
     // P0: disable the physical coin acceptor before the blocking 3.5s HTTP wait.
     // Keep the poll response discarded until CORE's authenticated contract is approved.
