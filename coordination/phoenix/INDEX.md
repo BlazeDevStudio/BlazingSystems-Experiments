@@ -558,6 +558,13 @@ See [UTC17 exact-head and COE #26 provenance audit](PHX_MASTER_UTC17_20261124_LI
 
 # PHX-MASTER UTC14 live index — 2026-11-24T14:05:18Z
 
+## Latest live continuation — UTC16 post-checkpoint
+
+The latest same-hour refresh is appended to [PHX_MASTER_UTC16_20261126_CURRENT_HEAD_HW353_COE26_PROVENANCE_AND_RELEASE_BASE_AUDIT.md](PHX_MASTER_UTC16_20261126_CURRENT_HEAD_HW353_COE26_PROVENANCE_AND_RELEASE_BASE_AUDIT.md). It reconciles HARDWARE #354 docs head fc842342 / source-test 145aac, exact current CI, the active-v0.6 unsigned poll response, COE #26 exact source/destination trees, test identities, migration-record contradictions and five license/notice gaps. PR #288 remains OPEN/DRAFT/UNMERGED; COE #26 remains FROZEN; PRODUCTION NO-GO.
+
+---
+
+
 - Starting Master branch HEAD ba356baf4acb3921d2fd5c7373e4dd4decfaabd4; current PR #288 OPEN / DRAFT / UNMERGED, 197 read-time paths all under coordination/phoenix/.
 - Experiments main f4e8a891; development aad3aade; COE main a6513ab; COE #26 b382d233 FROZEN.
 - Current #291: source/test 57c0844a; docs 35087588; current PR head 0b186e11. Windows/build fail at stale CORE-owned CURRENT_STATE checkpoint d85eb6a; ESP32 compatibility passes.

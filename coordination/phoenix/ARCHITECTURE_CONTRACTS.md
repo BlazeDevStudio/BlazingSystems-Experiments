@@ -22,6 +22,17 @@ The candidate must not consume unsigned `config_revision`, trust an unsigned pol
 
 # Project Phoenix — Architecture Contracts & System Invariants
 
+## UTC16 post-checkpoint contract refresh — live source and exact #354 CI (2026-11-26T17:13Z)
+
+Active development remains blazepwifi-v0.6.0-audit-foundation at 2fbd2475e9f54878c316fa7cea2f228386b0e859. The exact CGI source file experiment/openwrt/BlazePwifi/openwrt/rootfs/www/blazepwifi/cgi-bin/vendo is blob db58041c0575ad0a1101d99cb85403e03c8dcb22. Its poll handler at lines 119–138 returns ok, insert, target_nonce, expires and controller, but no response_sig. The member snapshot response_sig at lines 149–153 is a separate response and does not authenticate poll.
+
+HARDWARE #354 current PR/docs HEAD is fc842342596786e072630179acfbbc4feeb2ba02; owner-declared source/test HEAD is 145aac9607682071e2db05944a6f9db5aa06e524. Current ESP32 and ESP8266 sketch blobs are 3edbe38da543ef118b287f3e04c1601692cfa99f and b45eb2d0bebfc0088e1c9f506c5e94c59cf054d9. The QA controllers.sh blob 53a7af25fdee9a650e10e870c4204e0fb43239c requires config_revision at line 21; neither exact sketch contains it. The QA sequence contract blob 301d6d9287b7a059595e541ab570b9b4dd8fe226 requires active clearPending(true/false) calls at line 20; both sketches only define clearPending and have no active callsite.
+
+At exact current PR/docs HEAD fc842342: poll-intake deny run 45864684458 PASS; ESP32 Mbed TLS 3.3.13/4.0.0 reproducible-build matrix 45864684325 PASS; Native synthetic journal run 45864684295 FAILS at the QA-owned active-clear assertion; Full run 45864684497 FAILS its QA-owned Controller protocol parity validation. Preserve deny-only behavior and pending evidence. Do not consume unsigned poll configuration or add an unsafe pending-clear call merely to satisfy stale QA assertions. CORE owns the authenticated register/poll and receipt/disposition contract; QA owns its assertions; HARDWARE owns firmware and labs. Physical GPIO/coin/power-cut acceptance remains NOT TESTED.
+
+---
+
+
 **Protocol Specification:** BLAZE-COMMS/1  
 **Authority:** Master Auditor / Integration Coordinator (`PHX-MASTER`)  
 **Scope:** Cross-subsystem integration rules for BlazePwifi (OpenWrt), BlazeRental (Android), BlazePisonet SoftTimer (Windows), ESP32/ESP8266 Firmware, QA Regression, and Release Engineering.

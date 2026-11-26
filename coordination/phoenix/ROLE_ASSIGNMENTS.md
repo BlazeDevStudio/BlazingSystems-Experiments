@@ -1151,6 +1151,30 @@ COE exact heads: #35 e7801818b00854f34a5a88955d979c601ec96404 — validation [#4
 
 # Project Phoenix — Canonical Role Assignments & Directory Ownership
 
+## UTC16 post-checkpoint live owner heads and exact-head CI (observed 2026-11-26T17:13Z)
+
+| Owner | PR / exact current head | Exact-head evidence and disposition |
+|---|---|---|
+| PHX-CORE | #252 — c82705f2de865c89ab733b10efa84f26f56a5cc4 | Scoped BlazePwifi build #42698139210 PASS. Shared interface ownership remains CORE-only. |
+| PHX-RENTAL | #328 — 10fc200b6dbf470a95e679d3acc58aff4ab2a67f | API21/API23 #45622918364 PASS; auth/installer recovery #45622918551 PASS; APK identity #45622918340 PASS. Shared build #45622918468 FAILS handover freshness and ESP32 compile (mbedtls/sha256.h missing). |
+| PHX-PISONET | #255 — d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | Windows synthetic #42462978704 PASS. Native COM/physical serial I/O NOT TESTED. |
+| PHX-HARDWARE | #340 — f70f6af78c64ef86ba0f631faeb02b6cb6eb2725 | Six exact-head workflows PASS, including Full #45747758154. This does not establish physical acceptance. |
+| PHX-HARDWARE | #353 — 5a5f31908acf88272fe890ca64f95255c35ed7aa | Relay #45852949294 FAIL; Quarantine #45852949605 FAIL; Full #45852949273 FAIL. PR handover remains stale; owner must refresh it and resolve the exact-head failures. |
+| PHX-HARDWARE | #354 — docs/PR fc842342596786e072630179acfbbc4feeb2ba02; source/test 145aac9607682071e2db05944a6f9db5aa06e524 | Poll deny #45864684458 PASS; Mbed TLS matrix #45864684325 PASS; Native #45864684295 FAIL at QA active-clear assertion; Full #45864684497 FAIL at QA Controller protocol parity. Deny-only/pending-evidence boundary remains intact. |
+| PHX-QA | #290 — 5c29d15994cee1279058f1eca12f2a3180704292 | Windows synthetic #43633486963 PASS; this is not native COM acceptance. |
+| PHX-QA | #292 — 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | No exact-head Actions runs or combined statuses. |
+| PHX-RELEASE | #242 — 842abd8ab29042ccdd928c1332a94770dcb6c0c7 | No exact-head Actions runs/statuses. Base pin 6d4c9b487af4d768c4d7627654d119417fcc6e00 trails active v0.6 development. A new RELEASE UTC17 role lock is visible at #172 comment 7198639531; leave its source/test work to RELEASE. |
+| PHX-RELEASE | #291 — bf339a76964a1abe2412fac45392fe06a8e66418 | No exact-head Actions runs/statuses. Base 734b89d9 is stale relative to current #242 head 842abd8a; no Master rebase or source edit. |
+| COE-RELEASE | #35 — e1ad4fad1c234976ba76a34758d1ca993a897776 | Shared #45848921260: 255 tests PASS / 2 skips, then all 10 appliance profiles fail closed without approved site ULA /48. Sandbox #45848921270: 48/48 host tests PASS, then Bubblewrap unavailable / exit 125. Case guard #45848921527 PASS. |
+| COE-CORE | #45 — 9d76a134c1f6512aa40c20ec4d247306a71a8cce | Overlay/Shell #44295049727 PASS; case guard #44295049903 PASS. |
+| COE-INTERCON | #49 — aeb8ff11b2f5db9a5f86280ab62ab988245f3919 | Stage 5.1 #44646341873 PASS; case guard #44646341992 PASS; shared Hardware/Contracts #44646341922 FAIL. |
+| COE-INTEGRATION | #26 — b382d233ff06c8791b1028bed3c617cc7b670d12 | Five workflows QUEUED, zero jobs/statuses. Candidate remains FROZEN. |
+
+The automation inventory surfaced PHX-HARDWARE, PHX-RELEASE and this PHX-MASTER task, but did not surface the exact named CORE task “Blaze Production Continuation”. CORE source and shared handovers were not touched; CORE remains reserved under the user's ownership directive.
+
+---
+
+
 ## PHX-MASTER UTC03 live evidence refresh — 2026-11-24T03:37:41Z
 
 Starting Master HEAD: `ef05772f7c43bef545738561b208fe1af5f5d528`; Experiments main `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; issue-designated development `blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE integration #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`. All four inspected branch refs report `protected=false`.

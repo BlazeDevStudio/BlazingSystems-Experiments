@@ -1110,6 +1110,42 @@ The tree comparison is a current exact-head review baseline, not permission to c
 
 # Project Phoenix — Subsystem Integration Matrix & Gate Hierarchy
 
+## UTC16 post-checkpoint exact refs and migration provenance (2026-11-26T17:13Z)
+
+| Tree | Exact ref | Recursive entries | Truncated |
+|---|---|---:|---|
+| Experiments main | 6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5 | 2,341 | No |
+| HARDWARE #353 | 5a5f31908acf88272fe890ca64f95255c35ed7aa | 2,572 | No |
+| HARDWARE #354 | fc842342596786e072630179acfbbc4feeb2ba02 | 2,407 | No |
+| COE #26 | b382d233ff06c8791b1028bed3c617cc7b670d12 | 286 | No |
+
+### Exact source-to-destination route comparison
+
+| Route | Source files | Destination files | Exact blobs | Divergent common | Source-only | Destination-only |
+|---|---:|---:|---:|---:|---:|---:|
+| #354 ESP32 | 4 | 1 | 0 | 1 | 3 | 0 |
+| #354 ESP8266 | 8 | 1 | 0 | 1 | 7 | 0 |
+| #354 tests | 150 | 19 | 2 | 2 | 146 | 15 |
+| #353 tests | 47 | 19 | 1 | 3 | 43 | 15 |
+
+Current #354 firmware blobs are ESP32 3edbe38da543ef118b287f3e04c1601692cfa99f and ESP8266 b45eb2d0bebfc0088e1c9f506c5e94c59cf054d9; destination blobs remain 3cc7ec54b476943dc04a8d1af5e2df5fe054e422 and c8be98f72596681e36a3ad1f8939bf8046c96887. Neither board sketch is byte-identical. No copy or move is proposed.
+
+### Migration-record and license contradictions
+
+- SOURCE_INTAKE.json blob 1b9018ff944f7f673934d0fc2a97e0a0090d3f5f has 61 runtime rows: 46 byte_identical and 15 derived_cleanup_review_required_real_router_test. Its summary still says 47 identical / 14 derived. It lists 4 original test rows and 15 derived_tests.
+- MIGRATION_MAP.md blob b54fc15d83bc2269de03db8aadd0e76259fd13d9 still pins Experiments 6d4c9b487af4d768c4d7627654d119417fcc6e00 and destination branch feature/pisowifi-cleanup-stabilization, not the current active v0.6/#26 route. Its test table has 4 original + 14 derived rows, but the destination contains 19 test files. The map's run_focus.sh hash fa1f4f2c... differs from destination 2b7b861e...; member_txn_journal.sh 01dc9c65... differs from destination d04df3c6...; voucher_txn_journal.sh exists at destination blob 4277a56a... but has no map row.
+- HARDWARE_FIRMWARE_AUDIT.md blob 86c06e7574761465b80482430296eb712d985367 pins older sketch blobs 117c6e93... / bfb94920... and says the two Vendo sketches have not been copied. Both sketches are present in the current destination Hardware/ tree, with blobs different from current #354 source.
+- COE #26 PR body says P0-1 is formally resolved, but SOURCE_INTAKE flags release_authorized=false, hardware_tested=false, full_ci_tested=false and source_admission_complete=false. The records do not support a completed admission claim.
+
+### License/notice counterparts still missing
+
+The current source tree contains root NOTICE.md, BlazeRentalLauncher/LICENSE, jsqr-1.4.0/LICENSE and Tabler/LICENSE. The COE #26 tree has no destination counterpart for those four, and no COE repository-root LICENSE. Existing Pisowifi/LICENSE, QRCode LICENSE and TailAdmin LICENSE/NOTICE blobs match. No licensing approval is inferred from presence alone.
+
+OWNERSHIP_ROUTES.json remains unchanged at blob e4db324315a1b3543fec17a148fbf960170fcb29: 11 routes, DRAFT_REVIEW_ONLY, PHX-MASTER target null, source_ref f4e8a891... and destination candidate PR #26 at b382d233.... No staging, copy, move, overwrite, cherry-pick or COE destination write occurred.
+
+---
+
+
 ## PHX-MASTER UTC03 exact #349-to-COE #26 provenance and current owner overlap — 2026-11-24T03:37:41Z
 
 Current HARDWARE child #349 head is `40b80bb075c008f3251c31f09a4dc9eb9e6c17e5`, based on parent #347 `960184670379f01e20f0e7e8bc23b3e5eedacd3f`. The current #349 head's last commit is test-only (`poll_json_array_primitive_lab.py`); the parser implementation remains in the child history. COE #26 remains frozen at `b382d233ff06c8791b1028bed3c617cc7b670d12`, based on COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`.

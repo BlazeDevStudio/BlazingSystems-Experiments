@@ -110,3 +110,54 @@ Source root NOTICE.md, BlazeRentalLauncher LICENSE, Tabler LICENSE and COE root 
 6. Master cleanup-first inventory remains open under #266; no mass moves/deletions.
 
 **PRODUCTION NO-GO.** Independent protected signing/anti-rollback witness, crash-atomic durable financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized release gates remain mandatory. No merge, release, signing, secret provisioning, firmware flashing, physical test, real-payment operation, customer cutover or financial migration occurred.
+
+
+---
+
+## UTC16 post-checkpoint live refresh — observed 2026-11-26T17:13:07Z
+
+This is a same-hour continuation of the existing PHX-MASTER UTC16 checkpoint. It updates the prior UTC16 snapshot after the live HARDWARE #354 docs/PR head advanced to fc842342; the existing issue checkpoint is updated in place, not duplicated.
+
+### Exact identities
+
+- Starting Master branch HEAD: a89a075061392c92c35fa803487403e8ce76b611.
+- Experiments default branch main: 6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5.
+- Active v0.6 development: 2fbd2475e9f54878c316fa7cea2f228386b0e859.
+- Legacy v0.5.3 development: aad3aade72c1156eecba1fed30907c6d0283b2c5.
+- COE main: a6513ab4412b4c014eee2863e45cbe32d06cb243; COE integration PR #26: b382d233ff06c8791b1028bed3c617cc7b670d12.
+- Before this increment, Master PR #288 was OPEN / DRAFT / UNMERGED, 618 ahead / 1 behind (merge base f4e8a891aed8af86d5fd315d28750a0ac3a7372b), 238 changed paths all under coordination/phoenix/, mergeable=true. The routing manifest remained 11 routes / DRAFT_REVIEW_ONLY / Master target null.
+
+### Owner CI refresh
+
+- CORE #252 c82705f2: scoped build #42698139210 PASS.
+- RENTAL #328 10fc200b: API21/API23 #45622918364, auth/installer #45622918551 and APK identity #45622918340 PASS; shared build #45622918468 FAILS handover freshness and ESP32 compile due missing mbedtls/sha256.h.
+- PISONET #255 d01fd164: Windows synthetic #42462978704 PASS; native COM NOT TESTED.
+- HARDWARE #340 f70f6af7: six workflows PASS, including Full #45747758154.
+- HARDWARE #353 5a5f3190: Relay #45852949294, Quarantine #45852949605 and Full #45852949273 FAIL. Exact failure classes are runtime-pin ingress quarantine, undeclared runtimePinsSafe in the fixture, and missing ESP8266 poll-signature check. Owner handover is stale.
+- HARDWARE #354 docs/PR HEAD fc842342; source/test HEAD 145aac96. Poll deny #45864684458 PASS; Mbed TLS 3.3.13/4.0.0 matrix #45864684325 PASS; Native #45864684295 FAILS the QA-owned active clearPending assertion; Full #45864684497 FAILS QA Controller protocol parity. Current source tests prove the QA expectations conflict with the deny-only candidate; do not add unsafe calls.
+- QA #290 5c29d159: Windows synthetic #43633486963 PASS. QA #292 75a3f66d: no exact-head runs.
+- RELEASE #242 842abd8a and #291 bf339a76: no exact-head Actions/statuses. #242 base 6d4c9b is stale against active v0.6 development; #291 base 734b89 is stale against current #242. RELEASE has a new UTC17 lock at issue #172 comment 7198639531; Master did not edit RELEASE files.
+- COE #35 e1ad4fad: shared #45848921260 fails all ten site-ULA admissions after 255 tests PASS / 2 skips; sandbox #45848921270 passes 48/48 host tests then fails because Bubblewrap is absent (exit 125); case guard #45848921527 PASS.
+- COE #45 9d76a134: Overlay/Shell #44295049727 and case guard #44295049903 PASS.
+- COE #49 aeb8ff11: Stage 5.1 #44646341873 and case guard #44646341992 PASS; shared CI #44646341922 FAIL.
+- COE #26 b382d233: five workflows QUEUED, zero jobs/statuses.
+
+### COE #26 exact tree and record reconciliation
+
+Complete recursive trees: Experiments main 2,341 entries; HARDWARE #353 2,572; HARDWARE #354 2,407; COE #26 286. Current #354-to-COE mapping: ESP32 4 source files / 1 destination / 0 exact; ESP8266 8 / 1 / 0 exact; tests 150 source / 19 destination / 2 exact / 2 divergent / 146 source-only / 15 destination-only. #353 tests are 47 / 19 / 1 exact / 3 divergent / 43 source-only / 15 destination-only. Both board firmware blobs differ.
+
+SOURCE_INTAKE.json blob 1b9018ff944f7f673934d0fc2a97e0a0090d3f5f contains 61 runtime rows: 46 identical / 15 derived, while its summary declares 47 / 14. It has 4 original test rows and 15 derived_tests. MIGRATION_MAP.md blob b54fc15d83bc2269de03db8aadd0e76259fd13d9 pins old source 6d4c9b and destination branch feature/pisowifi-cleanup-stabilization. Its test map has 18 rows (4 original + 14 derived) against 19 destination test files; run_focus and member_txn_journal hashes are stale, and voucher_txn_journal.sh exists at destination blob 4277a56a but has no map row. HARDWARE_FIRMWARE_AUDIT.md blob 86c06e7574761465b80482430296eb712d985367 pins older firmware blobs and says the sketches were not copied, although both are present in the destination Hardware tree. The PR #26 body says P0-1 was resolved, but SOURCE_INTAKE still sets release_authorized, hardware_tested, full_ci_tested and source_admission_complete to false.
+
+Missing destination counterparts: source root NOTICE.md; BlazeRentalLauncher/LICENSE; jsqr-1.4.0/LICENSE; Tabler/LICENSE; and COE repository-root LICENSE. Existing PisoWiFi project LICENSE, QRCode LICENSE and TailAdmin LICENSE/NOTICE match. The 11-route ownership manifest is unchanged at e4db324315a1b3543fec17a148fbf960170fcb29, DRAFT_REVIEW_ONLY, Master target null. No staging or destination write occurred.
+
+### Interface and governance
+
+At active v0.6, CGI file blob db58041c0575ad0a1101d99cb85403e03c8dcb22 lines 119–138 returns poll ok/insert/target_nonce/expires/controller without response_sig; member snapshot signing is separate. #354 QA controllers.sh blob 53a7af25fdee9a650e10e870c4204e0fb43239c requires config_revision, absent from both exact sketches; v060_vendo_sequence_contract.py blob 301d6d9287b7a059595e541ab570b9b4dd8fe226 requires active clearPending calls, which the deny-only sketches intentionally do not make.
+
+Cleanup #266 remains OPEN / 0-of-7. Experiments and COE rulesets are empty; classic branch protection returns 403, so effective required-check enforcement is UNKNOWN. AGENTS.md, the current Cloud Artifact Policy and recovery handover were read from the current BlazeDevStudio/BlazingSystems repository after resolving the stale AGENTS owner URL. No Google Drive connector is exposed; Library search only surfaced registry versions v3–v7. Private v11 and newer corrections remain NOT_RECOVERED; no older registry or private IDs/content were substituted.
+
+Local git ls-remote failed because github.com could not be resolved. Master Python tests and verify_coordination.py were NOT RUN; Master Actions at the starting HEAD had zero runs. GitHub tree, blob, PR, issue, CI and failure-log inspections were executed; these are not Master product-test results.
+
+**Disposition:** PR #288 remains OPEN / DRAFT / UNMERGED; COE #26 remains FROZEN; PRODUCTION NO-GO. No subsystem source, shared CORE handover, route manifest, COE destination, secret, signer, payment system, hardware, or release path was changed. No merge, release, flash, physical test, financial migration or production approval occurred.
+
+**Next:** QA corrects the two #354 assertions to verify deny-only/no-callsite/pending preservation; CORE publishes the authenticated register/poll and receipt/disposition contract; HARDWARE refreshes #353 and resolves its three exact-head failures; COE integration reconciles intake/map/firmware/test/license provenance; RELEASE/INFRA supplies approved site ULA /48 and Bubblewrap execution; registry custodian restores authorized v11 access.
