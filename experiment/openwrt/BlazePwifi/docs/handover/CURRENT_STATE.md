@@ -1,18 +1,35 @@
-# CURRENT STATE — 2026-11-27 UTC16 — blocking-poll wait harness RED VERIFIED, fix IN PROGRESS
+# CURRENT STATE — 2026-11-27 UTC16 — blocking-poll wait harness CI VERIFIED; integrated gates blocked
 
-**Role:** PHX-HARDWARE · **Issue:** [#177](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/177) · **PR:** [#354](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/354)  
+**Role:** PHX-HARDWARE · **Issue:** [#177](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/177) · **Draft PR:** [#354](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/354)  
 **Branch:** `phoenix/hw-active-v06-poll-intake-deny-20261126-utc05` · **Base:** `blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859`  
-**Current PR head:** `f93cf9b80f7777f6b2aff31cc15b41ac005e1a14` · **Work item:** `PHX-HARDWARE-20261126T16-BLOCKING-POLL-WAIT-HARNESS`.
+**Source/test SHA:** `145aac9607682071e2db05944a6f9db5aa06e524` · **Status:** OPEN / DRAFT / UNMERGED.
 
-## Test-first evidence and correction
+## This activation — one bounded Hardware-owned test-evidence improvement
 
-- First attempt `05be6faf86290de70cc10ea7e6cce8ecb1108f02` failed during fixture compilation (newline escaping, split diagnostic literal, missing `wifiFailures` stub). This is a test-authoring failure and is not counted as RED.
-- Corrected fixture at `f93cf9b80f7777f6b2aff31cc15b41ac005e1a14` compiled and executed the actual extracted ESP8266 poll block. Focused push [#45862737466](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45862737466), job `140057673814`, and PR run [#45862745148](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45862745148), job `140057700491`, both failed at the intended assertion: `BLOCKING_POLL_WAIT_RED elapsed_ms=0 expected=3500`. This is valid RED evidence for the missing blocking-wait simulation in the old harness, **not** a firmware defect.
-- Both production sketches independently confirm `HTTPClient::setTimeout(3500)`; their firmware source blobs remain unchanged: ESP8266 `b45eb2d0bebfc0088e1c9f506c5e94c59cf054d9`, ESP32 `3edbe38da543ef118b287f3e04c1601692cfa99f`.
+The old poll-inhibit lab claimed a 3500 ms wait but only checked deny outputs immediately; it did not execute the actual poll block or advance time. The new harness extracts and executes the real poll block from both board sketches and models the configured `HTTPClient::setTimeout(3500)` with an 80 ms coin-line pulse during the blocking interval.
+
+- Exact-source focused push [#45862938002](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45862938002), job `140058369164`, PASS.
+- Exact-source focused PR [#45862948688](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45862948688), job `140058405613`, PASS.
+- Both ESP8266 and ESP32 logs: `BLOCKING_POLL_WAIT_PASS 3500ms pulse_ticks=80 samples_during_wait=0 accepted=0 polarity_combinations=4`.
+- Missing pre-poll deny and relay-OFF borrowing LED polarity are rejected on both boards; independent polarity and deny-state mutations are also rejected. Existing output-enable lab: 8/8 polarity scenarios and 14/14 injected regressions rejected.
+- Test-first RED: [#45862737466](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45862737466), job `140057673814`, and [#45862745148](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45862745148), job `140057700491`, both compiled and failed specifically at `elapsed_ms=0 expected=3500`. Initial fixture compile failure [#45862503824](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45862503824) is disclosed but excluded from RED evidence.
+
+## Integrated blockers
+
+- Native [#45862948850](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45862948850), job `140058431258`, FAILS at QA-owned `tests/v060_vendo_sequence_contract.py:20` requiring active `clearPending(true/false)` callsites. The deny-only candidate deliberately preserves pending evidence and does not perform disposition. PHX-QA must reconcile this assertion; Hardware will not edit QA tests or restore unsafe behavior.
+- Full [#45862948745](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45862948745), validation job `140058560211`, FAILS the mandatory handover freshness gate because the prior docs commits predated source/test SHA `145aac9607682071e2db05944a6f9db5aa06e524`. Canonical `CHANGE_LEDGER.md`, `CURRENT_STATE.md`, `PROJECT_HANDOVER.md` and the narrow UTC16 handover are now synchronized after the source commit; rerun Full on the new docs head. Do not count the stale-docs run as a product build failure.
+- PHX-CORE must publish the authenticated register/poll and receipt/disposition contract before any positive response consumer. PHX-MASTER must refresh #354's branch pins in `ROLE_ASSIGNMENTS.md` and `INTEGRATION_MATRIX.md`.
+- No production `.ino` changed. Both sketch source blobs remain unchanged. No shared API, finance, receipt, signer, witness, migration, or other-role files were edited.
+
+## Evidence boundary
+
+Host/source-extracted behavior is **SIMULATED / CI VERIFIED** only. Physical GPIO voltage/contact transient, real coin acceptor, electrical pulse/recovery, LittleFS power-loss, 150 power cuts, and 30-device/24-hour soak are **NOT TESTED**. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+
+The canonical ledger was appended (preserving its full prior history) and a narrow record was added at [2026-11-27-hw-blocking-poll-wait-harness-utc16.md](docs/handover/2026-11-27-hw-blocking-poll-wait-harness-utc16.md). The private Drive registry was not accessible in this runtime; no registry-derived promotion or migration occurred.
 
 ## NEXT EXACT ACTION
 
-Implement the deterministic 3500 ms `post("poll")` stub: inject an 80 ms coin-line pulse while blocked, verify both outputs and admission remain denied on all four relay/LED polarity combinations, preserve pending pulse/nonce/target, and reject a mutation that removes the pre-poll deny. Then rerun the exact-source focused workflow.
+Re-run `.github/workflows/blazepwifi-build.yml` on the post-source handover-synced PR head and inspect the exact validation job. Then request PHX-QA to reconcile deny-only assertions and PHX-CORE to publish the authenticated poll/receipt contract; keep coin and relay denied until those owners approve.
 
 # CURRENT STATE — 2026-11-26 UTC14 — final poll-inhibit independent polarity evidence
 
