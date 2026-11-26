@@ -122,6 +122,13 @@ def unsafe_mutation(configure: str) -> str:
     return mutated
 
 
+def active_write_mutation(configure: str, anchor: str, statement: str) -> str:
+    """Inject an active-level write at a precise startup boundary."""
+    if anchor not in configure:
+        raise RuntimeError(f"active-write mutation anchor missing: {anchor}")
+    return configure.replace(anchor, anchor + "\\n  " + statement, 1)
+
+
 def build_and_run(board: str, write_logical: str, configure: str, expect_pass: bool) -> None:
     code = CPP.replace("@@WRITE_LOGICAL@@", write_logical).replace("@@CONFIGURE@@", configure)
     with tempfile.TemporaryDirectory(prefix="phx-output-sequence-") as tmp:
@@ -153,5 +160,30 @@ for board, path in BOARDS:
     configure = extract_function(source, "void configureRuntimePins")
     build_and_run(board, write_logical, configure, expect_pass=True)
     build_and_run(board, write_logical, unsafe_mutation(configure), expect_pass=False)
+    active_write_mutations = (
+        (
+            "relay-active-before-output-enable",
+            "writeLogical(runRelayPin,false,runRelayActiveHigh);",
+            "writeLogical(runRelayPin,true,runRelayActiveHigh);",
+        ),
+        (
+            "led-active-before-output-enable",
+            "writeLogical(runLedPin,false,runLedActiveHigh);",
+            "writeLogical(runLedPin,true,runLedActiveHigh);",
+        ),
+        (
+            "relay-active-after-output-enable",
+            "pinMode(runCoinPin,INPUT_PULLUP); pinMode(runRelayPin,OUTPUT); pinMode(runLedPin,OUTPUT);",
+            "writeLogical(runRelayPin,true,runRelayActiveHigh);",
+        ),
+        (
+            "led-active-after-output-enable",
+            "pinMode(runCoinPin,INPUT_PULLUP); pinMode(runRelayPin,OUTPUT); pinMode(runLedPin,OUTPUT);",
+            "writeLogical(runLedPin,true,runLedActiveHigh);",
+        ),
+    )
+    for label, anchor, statement in active_write_mutations:
+        mutated = active_write_mutation(configure, anchor, statement)
+        build_and_run(board, write_logical, mutated, expect_pass=False)
 
 print("PHX-HARDWARE: 4/4 output-enable sequence checks PASS; physical GPIO/relay behavior NOT TESTED")
