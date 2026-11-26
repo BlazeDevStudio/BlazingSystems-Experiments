@@ -1,7 +1,7 @@
 """Source-level contracts for fail-closed poll handling in both Vendo sketches."""
 import re
 
-__all__ = ["coin_post_matches", "poll_call_matches", "poll_guard_locations"]
+__all__ = ["coin_post_matches", "poll_call_matches", "poll_guard_locations", "register_call_matches", "register_guard_locations"]
 
 from firmware_source_extract import extract_braced, extract_function, mask_non_code
 
@@ -23,10 +23,12 @@ def coin_post_matches(source: str):
         if masked[match.start():match.start() + 4] == "post"
     ]
 
-def _assert_unconditional_guard(masked_block: str, guard_at: int, label: str) -> int:
-    """Require a direct, unconditional deny statement at the poll block's top level."""
+def _assert_unconditional_guard(
+    masked_block: str, guard_at: int, label: str, expected_depth: int = 1
+) -> int:
+    """Require a direct, unconditional deny statement at its expected block depth."""
     depth = masked_block[:guard_at].count("{") - masked_block[:guard_at].count("}")
-    if depth != 1:
+    if depth != expected_depth:
         raise AssertionError(
             f"{label}: deny guard must be an unconditional standalone statement"
         )
@@ -140,3 +142,88 @@ def poll_guard_locations(source: str):
             "coin input sampling moved before/inside the blocking poll sequence"
         )
     return loop, poll_block, first_pre_guard, poll_matches[0].start(), last_post_guard
+
+
+def register_call_matches(source: str):
+    """Find executable register POST calls, excluding comments and literals."""
+    pattern = re.compile(r'\bpost\s*\(\s*"register"\s*\)')
+    masked = mask_non_code(source)
+    return [
+        match for match in pattern.finditer(source)
+        if masked[match.start():match.start() + 4] == "post"
+    ]
+
+
+def register_guard_locations(source: str):
+    """Require startup and post-register deny guards before any response consumer."""
+    setup = extract_function(source, "void setup()")
+    connect = extract_function(source, "void connectSta()")
+    masked_setup = mask_non_code(setup)
+    masked_connect = mask_non_code(connect)
+
+    all_register = register_call_matches(source)
+    connect_register = register_call_matches(connect)
+    if len(all_register) != 1 or len(connect_register) != 1:
+        raise AssertionError(
+            "register POST must exist exactly once, inside connectSta()"
+        )
+
+    register = connect_register[0]
+    prefix = masked_connect[max(0, register.start() - 32):register.start()]
+    suffix = masked_connect[register.end():]
+    if not re.search(r"\(\s*void\s*\)\s*$", prefix):
+        raise AssertionError(
+            "register response must be explicitly discarded until authenticated contract approval"
+        )
+    if not re.match(r"\s*;", suffix):
+        raise AssertionError("register response must not be consumed")
+
+    if re.search(r"\bapplyRemoteConfig\s*\(", masked_connect):
+        raise AssertionError(
+            "startup register response must not apply remote configuration before authenticated contract approval"
+        )
+
+    register_depth = (
+        masked_connect[:register.start()].count("{")
+        - masked_connect[:register.start()].count("}")
+    )
+    if register_depth != 2:
+        raise AssertionError(
+            "register POST must remain inside the connected startup branch"
+        )
+
+    post_guard = masked_connect.find("denyRemoteControl();", register.end())
+    if post_guard < 0:
+        raise AssertionError("post-register deny guard is missing")
+    post_end = _assert_unconditional_guard(
+        masked_connect, post_guard, "post-register", expected_depth=register_depth
+    )
+    if post_end <= register.end():
+        raise AssertionError("post-register deny guard does not follow register POST")
+    _assert_no_control_transfer(
+        masked_connect, register.end(), post_guard, "post-register"
+    )
+
+    connect_calls = list(re.finditer(r"\bconnectSta\s*\(\s*\)", masked_setup))
+    if len(connect_calls) != 1:
+        raise AssertionError("setup() must invoke connectSta() exactly once")
+    connect_call = connect_calls[0]
+    pre_guard = masked_setup.rfind("denyRemoteControl();", 0, connect_call.start())
+    if pre_guard < 0:
+        raise AssertionError(
+            "startup pre-register deny guard is missing before connectSta()"
+        )
+    pre_end = _assert_unconditional_guard(
+        masked_setup, pre_guard, "startup pre-register", expected_depth=1
+    )
+    if pre_end > connect_call.start():
+        raise AssertionError("startup deny guard overlaps connectSta()")
+    _assert_no_control_transfer(
+        masked_setup, pre_end, connect_call.start(), "startup pre-register"
+    )
+
+    if re.search(r"\bapplyRemoteConfig\s*\(", masked_setup):
+        raise AssertionError(
+            "setup() must not apply unauthenticated register configuration"
+        )
+    return setup, connect
