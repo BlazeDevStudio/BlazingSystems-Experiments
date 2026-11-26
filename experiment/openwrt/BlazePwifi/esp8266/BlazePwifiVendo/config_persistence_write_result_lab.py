@@ -424,8 +424,8 @@ def main() -> None:
     expect_rejected(
         "controller-poll-ignores-config-validity",
         esp32.replace(
-            "if(configStoreValid && WiFi.status()==WL_CONNECTED",
-            "if(WiFi.status()==WL_CONNECTED",
+            "if(!configStoreValid){ delay(2); return; }",
+            "if(false){ delay(2); return; }",
             1,
         ),
         assert_esp32,
