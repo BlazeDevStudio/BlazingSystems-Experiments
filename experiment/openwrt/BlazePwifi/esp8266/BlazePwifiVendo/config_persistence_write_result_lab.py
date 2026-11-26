@@ -174,7 +174,7 @@ int main() {
     prefs.writes = 0;
     if (!saveConfig()) return 3;
     if (prefs.writes != 13) return 4;
-    std::cout << "ESP32_PREFERENCES_WRITE_FAILURE_MATRIX_PASS cases=13 writes=13/13\\n";
+    std::cout << "ESP32_PREFERENCES_WRITE_FAILURE_MATRIX_PASS cases=13 writes=13/13\n";
     return 0;
 }
 """
