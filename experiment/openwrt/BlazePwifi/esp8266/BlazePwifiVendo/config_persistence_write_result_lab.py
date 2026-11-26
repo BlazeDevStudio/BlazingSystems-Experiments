@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Prove setup configuration writes cannot be reported successful after storage failure."""
+"""Prove ESP configuration persistence fails closed across partial NVS writes and reboot."""
 from pathlib import Path
 import re
 import subprocess
@@ -63,17 +63,74 @@ def assert_esp8266(source: str) -> None:
 
 
 def assert_esp32(source: str) -> None:
-    save = mask_non_code(extract_function(source, "bool saveConfig("))
-    require(re.search(r"\bbool\s+ok\s*=\s*true\s*;", save) is not None,
-            "ESP32 saveConfig must aggregate all Preferences write results")
-    expected = {"putString": 5, "putInt": 3, "putBool": 3, "putUInt": 2}
+    raw_load = extract_function(source, "void loadConfig(")
+    load = mask_non_code(raw_load)
+    require(re.search(r"\bbool\s+configStoreValid\s*=\s*true", mask_non_code(source)) is not None,
+            "ESP32 must track whether the persisted configuration is valid")
+    begin = re.search(r"if\s*\(\s*!\s*prefs\.begin\s*\(", load)
+    marker = re.search(
+        r"if\s*\(\s*prefs\.isKey\s*\(\s*\"cfgvalid\"\s*\)\s*&&\s*!\s*"
+        r"prefs\.getBool\s*\(\s*\"cfgvalid\"\s*,\s*false\s*\)\s*\)",
+        raw_load,
+    )
+    first_read_positions = [
+        raw_load.find(token) for token in
+        ("prefs.getString(", "prefs.getInt(", "prefs.getUInt(", "prefs.getBool(")
+        if raw_load.find(token) >= 0
+    ]
+    require(begin is not None, "loadConfig must fail closed when Preferences.begin fails")
+    require(marker is not None, "loadConfig must recognize an explicit invalid cfgvalid marker")
+    require(bool(first_read_positions) and marker.start() < min(first_read_positions),
+            "cfgvalid must be checked before reading any persisted configuration fields")
+    require(load.count("configStoreValid=false") >= 2,
+            "Preferences-open and invalid-marker paths must mark the configuration invalid")
+    require(load.count("cfg=Config()") >= 2,
+            "invalid persisted state must discard partially written fields and use safe defaults")
+    require("return;" in load, "invalid configuration paths must return before loading partial fields")
+
+    raw_save = extract_function(source, "bool saveConfig(")
+    save = mask_non_code(raw_save)
+    require(re.search(r"configStoreValid\s*=\s*false", save) is not None,
+            "saveConfig must deny network use while a new configuration is being persisted")
+    invalid_marker = raw_save.find('prefs.putBool("cfgvalid",false)')
+    valid_marker = raw_save.find('prefs.putBool("cfgvalid",true)')
+    data_positions = [
+        raw_save.find(f'prefs.{method}("')
+        for method in ("putString", "putInt", "putUInt")
+        if raw_save.find(f'prefs.{method}("') >= 0
+    ]
+    require(invalid_marker >= 0 and bool(data_positions) and invalid_marker < min(data_positions),
+            "saveConfig must persist cfgvalid=false before changing any configuration field")
+    require(valid_marker > max(data_positions),
+            "saveConfig must publish cfgvalid=true only after all configuration writes")
+    require(re.search(
+        r"if\s*\(\s*prefs\.putBool\s*\(\s*\"cfgvalid\"\s*,\s*false\s*\)\s*==\s*0\s*\)\s*return\s+false\s*;",
+        raw_save,
+    ) is not None, "failure to invalidate the old marker must stop before field writes")
+    require(re.search(r"if\s*\(\s*!\s*ok\s*\)\s*return\s+false\s*;", save) is not None,
+            "any field-write failure must leave the validity marker false")
+    require(re.search(
+        r"if\s*\(\s*prefs\.putBool\s*\(\s*\"cfgvalid\"\s*,\s*true\s*\)\s*==\s*0\s*\)\s*return\s+false\s*;",
+        raw_save,
+    ) is not None, "failure to publish the final valid marker must fail the save")
+    require(save.rfind("configStoreValid=true") > valid_marker,
+            "network use may resume only after the final valid marker succeeds")
+
+    expected = {"putString": 6, "putInt": 3, "putBool": 5, "putUInt": 2}
     for method, count in expected.items():
         calls = len(re.findall(rf"\bprefs\.{method}\s*\(", save))
         checked = len(re.findall(rf"\bif\s*\(\s*prefs\.{method}\s*\(", save))
         require(calls == count and checked == count,
                 f"all {count} Preferences.{method} writes must be checked; found {checked}/{calls}")
-    require(re.search(r"\breturn\s+ok\s*;", save) is not None,
-            "ESP32 saveConfig must return aggregate write status")
+
+    connect = mask_non_code(extract_function(source, "void connectSta("))
+    require(re.search(r"if\s*\(\s*!\s*configStoreValid\s*\|\|\s*cfg\.ssid\.isEmpty\s*\(\s*\)\s*\)", connect) is not None,
+            "connectSta must not register or connect using an invalid partial configuration")
+    loop = mask_non_code(extract_function(source, "void loop("))
+    require("if(configStoreValid && WiFi.status()!=WL_CONNECTED" in loop,
+            "network reconnect must require a valid persisted configuration")
+    require("if(configStoreValid && WiFi.status()==WL_CONNECTED" in loop,
+            "controller polling must require a valid persisted configuration")
     require_failure_gate(source, "saveConfig")
 
 
@@ -123,58 +180,157 @@ int main() {
 
 
 def preferences_harness(source: str) -> str:
+    load = extract_function(source, "void loadConfig(")
     save = extract_function(source, "bool saveConfig(")
     return r"""
 #include <cstddef>
 #include <cstdint>
+#include <cstdlib>
 #include <iostream>
+#include <map>
 #include <string>
 using String = std::string;
 struct Config {
-    String ssid, pass, server, key, id;
+    String ssid, pass, server, key, id, apPass;
     int coinPin = 27, insertLedPin = 2, relayPin = 26;
     bool coinActiveLow = true, relayActiveHigh = true, ledActiveHigh = true;
     uint16_t coinDebounceMs = 40, pulseGroupMs = 400;
 };
+bool configStoreValid = true;
+uint32_t esp_random() { return 0x12345678UL; }
+struct FakeSerial { void println(const char *) {} };
+FakeSerial Serial;
 struct FakePreferences {
+    bool begin_ok = true;
+    bool marker_exists = false;
+    bool marker_value = false;
+    std::map<std::string, std::string> values;
     std::string fail_key;
+    int fail_occurrence = 0;
     int writes = 0;
+    int data_writes = 0;
+    int data_reads = 0;
+    int cfgvalid_calls = 0;
+    std::map<std::string, int> seen;
+    void reset() {
+        begin_ok = true; marker_exists = false; marker_value = false;
+        values.clear(); fail_key.clear(); fail_occurrence = 0;
+        writes = 0; data_writes = 0; data_reads = 0; cfgvalid_calls = 0; seen.clear();
+    }
+    bool begin(const char *, bool) { return begin_ok; }
+    bool isKey(const char *key) const {
+        if (std::string(key) == "cfgvalid") return marker_exists;
+        return values.count(key) != 0;
+    }
+    bool getBool(const char *key, bool fallback) {
+        if (std::string(key) == "cfgvalid" && marker_exists) return marker_value;
+        ++data_reads; return fallback;
+    }
+    String getString(const char *key, const char *fallback) {
+        ++data_reads;
+        auto it = values.find(key);
+        return it == values.end() ? String(fallback) : it->second;
+    }
+    int getInt(const char *key, int fallback) {
+        ++data_reads;
+        auto it = values.find(key);
+        return it == values.end() ? fallback : std::stoi(it->second);
+    }
+    uint32_t getUInt(const char *key, uint32_t fallback) {
+        ++data_reads;
+        auto it = values.find(key);
+        return it == values.end() ? fallback : static_cast<uint32_t>(std::stoul(it->second));
+    }
     size_t result(const char *key, size_t bytes) {
         ++writes;
-        return fail_key == key ? 0 : bytes;
+        std::string name(key);
+        int occurrence = ++seen[name];
+        if (name == "cfgvalid") ++cfgvalid_calls; else ++data_writes;
+        if (fail_key == name && (fail_occurrence == 0 || fail_occurrence == occurrence)) return 0;
+        return bytes;
     }
     size_t putString(const char *key, const String &value) {
-        return result(key, value.size() + 1);
+        size_t n = result(key, value.size() + 1);
+        if (n) values[key] = value;
+        return n;
     }
     size_t putInt(const char *key, int32_t value) {
-        (void)value; return result(key, sizeof(value));
+        size_t n = result(key, sizeof(value));
+        if (n) values[key] = std::to_string(value);
+        return n;
     }
     size_t putUInt(const char *key, uint32_t value) {
-        (void)value; return result(key, sizeof(value));
+        size_t n = result(key, sizeof(value));
+        if (n) values[key] = std::to_string(value);
+        return n;
     }
     size_t putBool(const char *key, bool value) {
-        (void)value; return result(key, sizeof(value));
+        size_t n = result(key, sizeof(value));
+        if (n) {
+            if (std::string(key) == "cfgvalid") {
+                marker_exists = true; marker_value = value;
+            } else values[key] = value ? "1" : "0";
+        }
+        return n;
     }
 };
 Config cfg{};
 FakePreferences prefs;
-""" + save + r"""
+""" + load + "\n" + save + r"""
 int main() {
+    // A durable false marker means the previous multi-key save was interrupted.
+    prefs.reset(); prefs.marker_exists = true; prefs.marker_value = false;
+    prefs.values["ssid"] = "partial-ssid"; prefs.values["server"] = "10.99.0.1";
+    prefs.values["coinpin"] = "99"; prefs.values["appass"] = "partial-ap-pass";
+    configStoreValid = true; cfg = Config(); loadConfig();
+    if (configStoreValid || !cfg.ssid.empty() || cfg.server != "10.0.0.1" || cfg.coinPin != 27) return 1;
+    if (prefs.data_reads != 0 || prefs.data_writes != 0 || cfg.apPass.size() < 8) return 2;
+    std::cout << "ESP32_INVALID_CONFIG_MARKER_DEFAULTS_PASS\n";
+
+    // A missing marker is a pre-upgrade legacy configuration and remains readable.
+    prefs.reset(); prefs.values["ssid"] = "legacy-ssid"; prefs.values["pass"] = "legacy-pass";
+    prefs.values["server"] = "10.0.0.2"; prefs.values["key"] = "legacy-key";
+    prefs.values["id"] = "legacy-id"; prefs.values["appass"] = "legacy-ap-pass";
+    prefs.values["coinpin"] = "4"; configStoreValid = false; cfg = Config(); loadConfig();
+    if (!configStoreValid || cfg.ssid != "legacy-ssid" || cfg.server != "10.0.0.2" || cfg.coinPin != 4) return 3;
+    std::cout << "ESP32_LEGACY_CONFIG_WITHOUT_MARKER_COMPAT_PASS\n";
+
+    // Preferences.open failure must not fall through to defaults as a valid store.
+    prefs.reset(); prefs.begin_ok = false; configStoreValid = true; cfg = Config(); loadConfig();
+    if (configStoreValid || !cfg.ssid.empty() || cfg.server != "10.0.0.1" || prefs.data_reads != 0) return 4;
+    std::cout << "ESP32_PREFERENCES_BEGIN_FAILURE_DENIED_PASS\n";
+
     const char *keys[] = {
-        "ssid", "pass", "server", "key", "id", "coinpin", "ledpin",
+        "ssid", "pass", "server", "key", "id", "appass", "coinpin", "ledpin",
         "relaypin", "coinlow", "relayhi", "ledhi", "debounce", "groupms"
     };
     for (const char *key : keys) {
-        prefs.fail_key = key;
-        prefs.writes = 0;
-        if (saveConfig()) return 1;
-        if (prefs.writes != 13) return 2;
+        prefs.reset(); prefs.marker_exists = true; prefs.marker_value = true;
+        prefs.fail_key = key; prefs.fail_occurrence = 1;
+        configStoreValid = true; cfg = Config(); cfg.apPass = "setup-pass";
+        if (saveConfig()) return 5;
+        if (prefs.data_writes != 14 || !prefs.marker_exists || prefs.marker_value || configStoreValid) return 6;
+        if (prefs.cfgvalid_calls != 1) return 7;
     }
-    prefs.fail_key.clear();
-    prefs.writes = 0;
-    if (!saveConfig()) return 3;
-    if (prefs.writes != 13) return 4;
-    std::cout << "ESP32_PREFERENCES_WRITE_FAILURE_MATRIX_PASS cases=13 writes=13/13\n";
+
+    // If the old marker cannot be invalidated, no configuration field may be changed.
+    prefs.reset(); prefs.marker_exists = true; prefs.marker_value = true;
+    prefs.fail_key = "cfgvalid"; prefs.fail_occurrence = 1;
+    configStoreValid = true; cfg = Config(); cfg.apPass = "setup-pass";
+    if (saveConfig() || prefs.data_writes != 0 || !prefs.marker_value || configStoreValid) return 8;
+
+    // If the final valid marker cannot be written, the stored marker remains false.
+    prefs.reset(); prefs.marker_exists = true; prefs.marker_value = true;
+    prefs.fail_key = "cfgvalid"; prefs.fail_occurrence = 2;
+    configStoreValid = true; cfg = Config(); cfg.apPass = "setup-pass";
+    if (saveConfig() || prefs.data_writes != 14 || prefs.marker_value || configStoreValid) return 9;
+    if (prefs.cfgvalid_calls != 2) return 10;
+
+    prefs.reset(); prefs.marker_exists = true; prefs.marker_value = true;
+    configStoreValid = false; cfg = Config(); cfg.apPass = "setup-pass";
+    if (!saveConfig()) return 11;
+    if (prefs.data_writes != 14 || prefs.cfgvalid_calls != 2 || !prefs.marker_value || !configStoreValid) return 12;
+    std::cout << "ESP32_CONFIG_VALIDITY_LATCH_FAILURE_MATRIX_PASS fields=14 marker_failures=2\n";
     return 0;
 }
 """
@@ -213,8 +369,35 @@ def main() -> None:
         esp32.replace("if(!saveConfig())", "if(false)", 1),
         assert_esp32,
     )
+    expect_rejected(
+        "invalid-config-marker-ignored",
+        esp32.replace(
+            'if(prefs.isKey("cfgvalid") && !prefs.getBool("cfgvalid",false))',
+            "if(false)",
+            1,
+        ),
+        assert_esp32,
+    )
+    expect_rejected(
+        "network-connect-ignores-config-validity",
+        esp32.replace(
+            "if(!configStoreValid || cfg.ssid.isEmpty())",
+            "if(cfg.ssid.isEmpty())",
+            1,
+        ),
+        assert_esp32,
+    )
+    expect_rejected(
+        "controller-poll-ignores-config-validity",
+        esp32.replace(
+            "if(configStoreValid && WiFi.status()==WL_CONNECTED",
+            "if(WiFi.status()==WL_CONNECTED",
+            1,
+        ),
+        assert_esp32,
+    )
     print("CONFIG_PERSISTENCE_WRITE_RESULT_PASS ESP8266+ESP32")
-    
+
 
 if __name__ == "__main__":
     main()
