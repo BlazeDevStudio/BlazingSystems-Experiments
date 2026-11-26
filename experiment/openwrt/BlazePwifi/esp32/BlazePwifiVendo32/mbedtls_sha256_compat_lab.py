@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Fail-closed Mbed TLS 3/4 SHA-256 selector guard for active-v0.6 ESP32.
+"""Fail-closed ESP32 runtime-pin and Mbed TLS 3/4 SHA-256 source contract.
 
-This is a source-extracted contract test. The pinned Arduino-core workflow
-performs the actual target compile twice and retains both application images.
-It is not cryptographic runtime or physical-hardware acceptance evidence.
+The companion workflow compiles the packaged Vendo source twice per pinned
+Arduino core and retains only application binaries plus provenance. This lab
+is source-extracted; it is not cryptographic runtime or physical acceptance.
 """
 from pathlib import Path
 import re
@@ -22,7 +22,41 @@ def require(condition: bool, message: str) -> None:
         raise AssertionError(message)
 
 
-def validate_source(source: str) -> None:
+def validate_runtime_pin_setup(source: str) -> None:
+    helper = mask_non_code(
+        extract_function(source, "void configureRuntimePins(int coinPin,int relayPin,int ledPin)")
+    )
+    required = (
+        "if(runLedPin!=ledPin) writeLogical(runLedPin,false,runLedActiveHigh);",
+        "if(runRelayPin!=relayPin) writeLogical(runRelayPin,false,runRelayActiveHigh);",
+        "runCoinPin=coinPin; runRelayPin=relayPin; runLedPin=ledPin;",
+        "pinMode(runCoinPin,INPUT_PULLUP)",
+        "pinMode(runRelayPin,OUTPUT)",
+        "pinMode(runLedPin,OUTPUT)",
+        "writeLogical(runRelayPin,false,runRelayActiveHigh)",
+        "writeLogical(runLedPin,false,runLedActiveHigh)",
+    )
+    for token in required:
+        require(token in helper, f"runtime pin helper missing safe-order token: {token}")
+    old_led = helper.find("if(runLedPin!=ledPin)")
+    old_relay = helper.find("if(runRelayPin!=relayPin)")
+    assign = helper.find("runCoinPin=coinPin;")
+    input_mode = helper.find("pinMode(runCoinPin,INPUT_PULLUP)")
+    output_off = helper.find("writeLogical(runRelayPin,false,runRelayActiveHigh)")
+    require(0 <= old_led < assign and 0 <= old_relay < assign < input_mode < output_off,
+            "old outputs must be forced OFF before pin reassignment and new output setup")
+
+    setup = mask_non_code(extract_function(source, "void setup()"))
+    pin_call = setup.find("configureRuntimePins(runCoinPin,runRelayPin,runLedPin)")
+    deny_call = setup.find("denyRemoteControl()", pin_call + 1)
+    ap_call = setup.find("startSetupAp()", deny_call + 1)
+    connect_call = setup.find("connectSta()", ap_call + 1)
+    require(0 <= pin_call < deny_call < ap_call < connect_call,
+            "runtime pins and deny must precede setup AP and station/network work")
+    print("RUNTIME_PIN_SETUP_FAIL_CLOSED_PASS")
+
+
+def validate_mbedtls_provider(source: str) -> None:
     masked = mask_non_code(source)
     version_include = masked.find("#include <mbedtls/version.h>")
     psa_branch = masked.find("#if MBEDTLS_VERSION_MAJOR == 4")
@@ -43,8 +77,7 @@ def validate_source(source: str) -> None:
             "unsupported Mbed TLS major versions must fail at compile time")
     print("MBEDTLS_VERSION_SELECTOR_PASS")
 
-    digest = extract_function(source, "String hexDigest(const String &s)")
-    digest_masked = mask_non_code(digest)
+    digest = mask_non_code(extract_function(source, "String hexDigest(const String &s)"))
     for token in (
         "if(psa_crypto_init()!=PSA_SUCCESS) return String();",
         "psa_hash_compute(",
@@ -59,9 +92,9 @@ def validate_source(source: str) -> None:
         "sprintf(buf+i*2,",
         "buf[64]=0; return String(buf);",
     ):
-        require(token in digest_masked, f"hexDigest missing fail-closed/provider token: {token}")
-    init_at = digest_masked.find("if(psa_crypto_init()!=PSA_SUCCESS) return String();")
-    compute_at = digest_masked.find("psa_hash_compute(")
+        require(token in digest, f"hexDigest missing fail-closed/provider token: {token}")
+    init_at = digest.find("if(psa_crypto_init()!=PSA_SUCCESS) return String();")
+    compute_at = digest.find("psa_hash_compute(")
     require(0 <= init_at < compute_at,
             "PSA crypto must initialize successfully before SHA-256 computation")
     print("MBEDTLS_SHA256_PROVIDER_FAIL_CLOSED_PASS")
@@ -77,41 +110,59 @@ def validate_source(source: str) -> None:
         require(token in valid, f"validSha256Hex missing validation: {token}")
     print("SHA256_HEX_OUTPUT_VALIDATION_PASS")
 
-    signed = extract_function(
+    signed = mask_non_code(extract_function(
         source,
         'String signedBody(const String &action,const String &pulses,const String &target,const String &forcedNonce="")',
-    )
-    signed_masked = mask_non_code(signed)
-    digest_at = signed_masked.find("String digest=hexDigest(base);")
-    deny_at = signed_masked.find("if(!validSha256Hex(digest)) return String();")
-    return_at = signed_masked.find("return", deny_at + 1)
+    ))
+    digest_at = signed.find("String digest=hexDigest(base);")
+    deny_at = signed.find("if(!validSha256Hex(digest)) return String();")
+    return_at = signed.find("return", deny_at + 1)
     require(0 <= digest_at < deny_at < return_at,
             "signedBody must validate the digest before constructing a request")
     print("SIGNED_BODY_INVALID_DIGEST_DENY_PASS")
 
-    post = extract_function(
+    post_source = extract_function(
         source,
         'String post(const String &action,const String &pulses="0",const String &target="",const String &forcedNonce="")',
     )
-    post_masked = mask_non_code(post)
-    allowlist = 'if(action!="register" && action!="poll") return "";'
-    require(allowlist in post, "post must allow only register and poll actions")
-    allowlist_at = post_masked.find("if(action==")
-    body_at = post_masked.find("String body=signedBody(")
-    empty_at = post_masked.find("if(!body.length()) return")
-    begin_at = post_masked.find("h.begin(client,url)")
-    send_at = post_masked.find("h.POST(body)")
-    require(0 <= allowlist_at < body_at < empty_at < begin_at < send_at,
+    post = mask_non_code(post_source)
+    action_guard = re.search(
+        r'if\s*\(\s*action\s*!=\s*"register"\s*&&\s*action\s*!=\s*"poll"\s*\)',
+        post_source,
+    )
+    require(action_guard is not None, "post must allow only register and poll actions")
+    allowlist_at = post.find("if(action!=")
+    deny_return_at = post.find("return", allowlist_at)
+    body_at = post.find("String body=signedBody(")
+    empty_at = post.find("if(!body.length()) return")
+    begin_at = post.find("h.begin(client,url)")
+    send_at = post.find("h.POST(body)")
+    require(0 <= allowlist_at < deny_return_at < body_at < empty_at < begin_at < send_at,
             "post must deny unsupported actions and empty signatures before network I/O")
-    require("h.POST(signedBody(" not in post,
+    require("h.POST(signedBody(" not in post_source,
             "post must not construct/send the signed body inside HTTPClient::POST")
     print("POST_ACTION_AND_EMPTY_SIGNATURE_DENY_PASS")
+
+
+def validate_source(source: str) -> None:
+    failures = []
+    for label, check in (
+        ("RUNTIME_PIN_SETUP", validate_runtime_pin_setup),
+        ("MBEDTLS_PROVIDER", validate_mbedtls_provider),
+    ):
+        try:
+            check(source)
+        except AssertionError as exc:
+            failures.append(f"{label}: {exc}")
+            print(f"BASELINE_FAIL {label}: {exc}")
+    if failures:
+        raise AssertionError("; ".join(failures))
 
 
 def expect_rejected(label: str, mutated_source: str) -> None:
     try:
         validate_source(mutated_source)
-    except AssertionError:
+    except (AssertionError, ValueError):
         print(f"MUTATION_REJECTED {label}")
         return
     raise AssertionError(f"unsafe mutation was not rejected: {label}")
@@ -122,8 +173,28 @@ def main() -> None:
         raise SystemExit(f"missing ESP32 sketch: {SKETCH}")
     source = SKETCH.read_text(encoding="utf-8")
     validate_source(source)
-    print("ESP32_MBEDTLS_SHA256_SELECTOR_PASS")
+    print("ESP32_RUNTIME_PIN_AND_MBEDTLS_SOURCE_CONTRACT_PASS")
 
+    runtime_helper = extract_function(
+        source, "void configureRuntimePins(int coinPin,int relayPin,int ledPin)"
+    )
+    expect_rejected("missing-runtime-pin-helper", source.replace(runtime_helper, "", 1))
+    expect_rejected(
+        "setup-pins-after-deny",
+        source.replace(
+            "configureRuntimePins(runCoinPin,runRelayPin,runLedPin);denyRemoteControl();",
+            "denyRemoteControl();configureRuntimePins(runCoinPin,runRelayPin,runLedPin);",
+            1,
+        ),
+    )
+    expect_rejected(
+        "missing-old-relay-off-before-pin-change",
+        source.replace(
+            "if(runRelayPin!=relayPin) writeLogical(runRelayPin,false,runRelayActiveHigh);",
+            "",
+            1,
+        ),
+    )
     expect_rejected(
         "missing-psa-init-failure-deny",
         source.replace(
@@ -145,11 +216,7 @@ def main() -> None:
     expect_rejected("psa-hash-before-crypto-initialization", moved_init)
     expect_rejected(
         "missing-unsupported-major-deny",
-        source.replace(
-            '#error "Unsupported Mbed TLS major version: BlazePwifi ESP32 supports 3.x and 4.x only"',
-            "/* mutation: unsupported major is not rejected */",
-            1,
-        ),
+        re.sub(r"(?m)^\s*#error[^\n]*$", "/* mutation: unsupported major is not rejected */", source, count=1),
     )
     expect_rejected(
         "missing-psa-status-and-length-check",
@@ -185,10 +252,11 @@ def main() -> None:
     )
     expect_rejected(
         "missing-register-poll-action-allowlist",
-        source.replace(
-            'if(action!="register" && action!="poll") return "";',
-            "/* mutation: action is unrestricted */",
-            1,
+        re.sub(
+            r'if\s*\(\s*action\s*!=\s*"register"\s*&&\s*action\s*!=\s*"poll"\s*\)',
+            "if(false)",
+            source,
+            count=1,
         ),
     )
     print("SIMULATED_ONLY=1")
