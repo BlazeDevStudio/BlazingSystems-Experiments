@@ -99,3 +99,16 @@ PR #354 remains OPEN / DRAFT / UNMERGED. PRs #239/#254/#283 remain OPEN / DRAFT 
 - Status: SIMULATED / CI VERIFIED; physical coin/relay/electrical acceptance, LittleFS power-loss durability, 150 power cuts, 30-device/24-hour soak, protected signer/witness, financial migration and independent QA/release signoff remain NOT TESTED or NOT ACCEPTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
 
 **Next exact action:** after this append-only handover commit, re-run/inspect Full CI at the new PR head; QA updates its own sequence contract; CORE publishes the approved response/receipt contract. Keep coin and relay denied until independent acceptance.
+
+
+## PHX-HARDWARE UTC08 follow-up — post-refresh Full CI terminal result
+
+- After the append-only handover/ledger refresh at `6a54ce6f7fcdc584cddb4ac5fe7602311fab5f3f`, exact PR run [#45782867810](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45782867810) proved the mandatory handover freshness gate and its fail-closed regression PASS. Full validation job `139782454950` then failed at step 14, **Controller protocol parity**.
+- The failure is in QA-owned `experiment/openwrt/BlazePwifi/tests/controllers.sh`: it still requires the token `config_revision`. Source revalidation at PR head `6a54ce6f7fcdc584cddb4ac5fe7602311fab5f3f` confirms both ESP8266 and ESP32 sketches intentionally contain no `config_revision` parser/token because remote configuration is denied pending CORE's authenticated contract. The preceding controller grep tokens pass; do not add a dummy token or restore unsigned config parsing.
+- All Full build jobs completed successfully: ESP8266, ESP32, Android and every listed OpenWrt target. The validation failure caused downstream simulation, update, signing, publication and candidate gates to skip. This is not Full PASS.
+- Native synthetic [#45782867712](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45782867712), job `139782315303`, separately fails at QA-owned `tests/v060_vendo_sequence_contract.py:20` because it requires active `clearPending(true/false)` callsites; the deny-only candidate intentionally has none and retains pending evidence.
+- Focused deny-intake [#45782867707](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45782867707), job `139782314563`, PASS. ESP32 provider matrix [#45782867878](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45782867878), source-contract `139782315794`, core 4.0.0 `139782316056`, core 3.3.13 `139782316163`, all PASS.
+- The handover freshness failure from [#45779792293](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45779792293) is fixed; current Full failure is the QA-owned legacy controller parity check.
+- Hardware requests PHX-QA to reconcile both tests against the deny-only contract, PHX-CORE to publish the authenticated register/poll + receipt/disposition contract, and PHX-MASTER to reconcile the stale #354 pin in `INTEGRATION_MATRIX.md`. Hardware did not edit any of those owners' files.
+
+**Status:** focused and target CI VERIFIED; Full validation FAIL; native QA assertion FAIL; physical acceptance NOT TESTED; HARDWARE ACCEPTED NO; PRODUCTION NO-GO.
