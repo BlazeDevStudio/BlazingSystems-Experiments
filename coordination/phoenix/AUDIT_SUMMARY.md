@@ -1,3 +1,35 @@
+## PHX-MASTER UTC08 live audit summary
+
+**Disposition:** Master coordination audit VERIFIED; PR #288 remains OPEN / DRAFT / UNMERGED; COE #26 remains FROZEN; **PRODUCTION NO-GO**. Strict NO CODEX.
+
+### What changed this activation
+- Re-read live CONTROL PLANE #172, cleanup #266, Experiments main/development/Master heads, PR #288 and its current routing manifest, current owner PRs/CI, COE main and draft PR #26, README_FIRST, BLAZE-COMMS/1, repository AGENTS.md, and the AGENTS-linked public Cloud Artifact Policy / Storage Recovery Handover.
+- Updated four existing PHX-MASTER coordination documents only. No new file/folder, subsystem source, COE destination, private Drive record or release artifact was created.
+- Reconciled current HARDWARE #354 HEAD `ec622923` against its stale PR-body pointer `aca9becc`. Current exact-head native QA fails the legacy active-clear assertion; current Full fails the handover-freshness gate, not the older Controller-parity reason in the PR body. The ESP32 core 3/4 matrix and deny-intake focused workflow pass.
+- Kept HARDWARE #353's missing poll-signature failure distinct from the active-v0.6 #354 deny-only branch. CORE must still publish the approved authenticated register/poll and receipt/disposition contract before any eventual consumer admission.
+- Revalidated #353 → COE #26 exact trees, board blob identity, test import identity, product license and root NOTICE. The destination is materially incomplete and remains frozen.
+- Identified COE #44 as a stale ULA child: it is 15 ahead / 365 behind current #35 and diverged; its historical CI cannot clear current #35's 10/10 ULA failure.
+
+### Governance and execution limits
+- Experiments main `6be5d19b`, development `aad3aade`, Master `6274fc31`; COE main `a6513ab4`. Main, development, Master and COE main report `protected=false`; required-check enforcement is off. PR #288 has no exact-head Actions runs or combined statuses.
+- Cleanup #266 is OPEN with 0/7 checked. The Master cleanup inventory is not complete; no checkbox is claimed complete.
+- The private Drive `BLAZE_PROJECT_REGISTRY_v11_20261027.json` and newer corrections were NOT RECOVERED. Library search returned older v3–v7 snapshots only; no Google Drive connector is exposed. No older registry was substituted, no Drive artifact/folder was created, and no private identifiers or contents were published.
+- The Master Python suite and `verify_coordination.py` were NOT RUN: no authenticated local checkout was available and `git ls-remote` could not resolve `github.com` in the execution container. Master Actions at the current starting HEAD: zero runs / zero combined statuses. Owner CI was inspected at exact SHAs, not executed by Master.
+- Physical COM, coin/relay, hardware, 150 power-cut, 30-device/24-hour soak, signer, payment and financial-migration tests were NOT TESTED by Master. No Codex app/CLI/API/agent/workflow was used.
+- The visible automation inventory showed this PHX-MASTER continuation active but did not surface the separate title `Blaze Production Continuation`; CORE nevertheless remained fully owner-reserved and untouched.
+
+### Exact next owner actions
+1. **PHX-HARDWARE:** refresh #354's PR description and canonical handover to actual HEAD `ec622923`; record current Mbed TLS matrix, native assertion and handover-freshness results without carrying forward stale status.
+2. **PHX-QA:** replace the obsolete PAY-0745 active-`clearPending(true/false)` assertion with a deny-only invariant: helper remains defined, no active disposition callsite, pending evidence retained, and no ACK/credit.
+3. **PHX-CORE:** publish the approved authenticated register/poll and receipt/disposition contract, including mandatory key provisioning, canonical serialization, controller/target binding, freshness and replay.
+4. **PHX-RELEASE / PHX-INFRA:** obtain authorized site-scoped ULA /48 authority and a Bubblewrap-capable runner; reconcile ULA child #44 onto the current #35 lineage before treating it as evidence.
+5. **COE integration owner:** keep #26 frozen until exact file/blob/mode, test identity, licence/NOTICE, import completeness, owner authorization and exact-head destination CI are complete.
+6. **Registry custodian:** restore authorized read-only access to Drive v11 and newer corrections. **Repository administrator:** enable protected branches and required-check enforcement.
+
+**Mandatory production gates remain OPEN:** independent protected signing and anti-rollback witness; crash-atomic durable financial state; reversible v1→v2 migration tests; independent QA; native acceptance; 150 real power cuts; 30-device / 24-hour soak; explicit owner-authorized release approval.
+
+---
+
 ## PHX-MASTER UTC07 — live audit summary — 2026-11-26T07:37:35Z
 
 **Disposition:** exact-head coordination audit complete; integration remains blocked; **PRODUCTION NO-GO**.

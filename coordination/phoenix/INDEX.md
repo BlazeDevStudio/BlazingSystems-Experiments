@@ -1,3 +1,13 @@
+## Latest PHX-MASTER checkpoint — UTC08 / 2026-11-26
+
+- [UTC08 live owner / exact-head CI reconciliation](ROLE_ASSIGNMENTS.md)
+- [UTC08 exact #353 → COE #26 source, test and license provenance](INTEGRATION_MATRIX.md)
+- [UTC08 governance, access limits and next owner actions](AUDIT_SUMMARY.md)
+- Starting Master HEAD for this activation: `6274fc31f118904ae891e61d6e6b89a6d3bede2a`; PR #288 was OPEN / DRAFT / UNMERGED at the same HEAD before this documentation-only update.
+- COE #26 remains FROZEN; cleanup #266 remains 0/7; **PRODUCTION NO-GO**.
+
+---
+
 ## Latest PHX-MASTER checkpoint — UTC07 / 2026-11-26
 
 - [UTC07 exact-head role and CI reconciliation](ROLE_ASSIGNMENTS.md#phx-master-utc07--exact-head-owner--ci-reconciliation)

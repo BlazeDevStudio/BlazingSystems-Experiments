@@ -1,3 +1,35 @@
+## PHX-MASTER UTC08 exact source and destination provenance
+
+This is a read-only, complete-tree comparison of the current mapped Hardware source candidate and the existing COE integration draft. Both recursive Git trees were returned with `truncated=false`; no destination files were created or changed.
+
+- Source: HARDWARE #353 at `cb1787ac8f89562f20b6ecdee0c7969fbd12bd01`, 2,572 tree entries.
+- Destination: COE #26 at `b382d233ff06c8791b1028bed3c617cc7b670d12`, 286 tree entries.
+- COE main remains a three-entry structure-only scaffold at `a6513ab4412b4c014eee2863e45cbe32d06cb243`.
+- Active-v0.6 HARDWARE #354 at `ec622923ef6b5dbcc386ecae70cc853725085561` is a separate deny-only candidate, not an approved replacement migration source for #26.
+
+| Route | Source blobs | Destination blobs | Same relative path | Exact blob+mode | Source-only | Destination-only |
+|---|---:|---:|---:|---:|---:|---:|
+| `experiment/openwrt/BlazePwifi/esp32/` → `Hardware/esp32/` | 16 | 1 | 1 | 0 | 15 | 0 |
+| `experiment/openwrt/BlazePwifi/esp8266/` → `Hardware/esp8266/` | 67 | 1 | 1 | 0 | 66 | 0 |
+| `experiment/openwrt/BlazePwifi/tests/` → `Pisowifi/tests/` | 47 | 19 | 4 | 1 | 43 | 15 |
+
+The only common board sketch paths are divergent: ESP32 source blob `1412cf57b70c6ee3061da9831b8d9abf6d58d94e` vs destination `3cc7ec54b476943dc04a8d1af5e2df5fe054e422`; ESP8266 source `b99f1f21d8ad1e6df0e403b2b34507f97bd90c16` vs destination `c8be98f72596681e36a3ad1f8939bf8046c96887`. Test identity is 1/4 exact, 3/4 divergent, 43 source-only and 15 destination-only; path presence alone is not test equivalence.
+
+**Licensing / notice provenance**
+
+- Product license source `experiment/openwrt/BlazePwifi/LICENSE` and destination `Pisowifi/LICENSE` are byte-identical at SHA `1ee55b94183417be977ca287cd7391f9a6f7e721`.
+- Source repository root `NOTICE.md` exists at `f6d92cd21465312be5993631fe26977219be0fb9`; destination root has no `NOTICE.md`.
+- Neither repository has a root `LICENSE` at these exact trees. Vendor qrcode/tailadmin license and notice blobs are present under their mapped paths, but they do not replace the missing source root notice.
+- No claim of complete licensing/import acceptance is made.
+
+**Destination CI / routing**
+
+COE #26 still has five queued workflows and zero jobs, with no combined statuses. The 11-route `OWNERSHIP_ROUTES.json` remains `DRAFT_REVIEW_ONLY`, its source pin remains the historical merge base `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`, and the PHX-MASTER destination remains null. COE RELEASE ULA child #44 is 15 ahead / 365 behind current #35 and diverged from it; it cannot be treated as a current staged solution. The current #35 gate still fails all 10 appliance profiles for missing approved site-scoped ULA /48 authority.
+
+**Decision: COE #26 remains FROZEN.** No copying, staging, moving, overwriting, cherry-picking, target-path assignment, workflow dispatch, merge or destination write was performed. Re-open only after exact source/test/license/NOTICE mapping, owner-approved interface and target, current destination CI at the exact staged SHA, and independent QA.
+
+---
+
 ## PHX-MASTER UTC07 — exact-tree migration and interface reconciliation — 2026-11-26T07:37:35Z
 
 ### COE #26 remains frozen
