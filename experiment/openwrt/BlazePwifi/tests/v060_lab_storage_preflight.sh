@@ -159,6 +159,15 @@ check_parent_bad 8:34 8:1 8:17 31:0 8:33 ext4 'scratch sibling partition shares 
 check_parent_bad 8:0 8:1 8:17 31:0 8:33 ext4 'scratch is the same whole disk as root'
 check_parent_bad 8:48 8:1 8:17 31:0 8:33 ext4 'scratch whole disk is not an explicitly identified partition'
 check_parent_bad 253:0 8:1 8:17 31:0 8:33 ext4 'device-mapper topology is unsupported'
+# A scratch partition or its whole-device parent with active holders is not
+# an independent disposable target; reject it before any destructive trial.
+mkdir -p "$SYSFS/devices/pci/block/sdd/sdd1/holders" "$SYSFS/devices/pci/block/sdd/holders"
+ln -s "$SYSFS/devices/virtual/block/dm-0" "$SYSFS/devices/pci/block/sdd/sdd1/holders/dm-0"
+check_parent_bad 8:49 8:1 8:17 31:0 8:33 ext4 'scratch partition with an active holder'
+rm -f "$SYSFS/devices/pci/block/sdd/sdd1/holders/dm-0"
+ln -s "$SYSFS/devices/virtual/block/dm-0" "$SYSFS/devices/pci/block/sdd/holders/dm-0"
+check_parent_bad 8:49 8:1 8:17 31:0 8:33 ext4 'scratch parent disk with an active holder'
+rm -f "$SYSFS/devices/pci/block/sdd/holders/dm-0"
 check_parent_bad 8:99 8:1 8:17 31:0 8:33 ext4 'scratch sysfs identity is missing'
 check_parent_ok 8:49 0:42 8:17 31:0 8:33 overlay 'overlay root is checked through its upper storage'
 check_parent_bad 8:18 0:42 8:17 31:0 8:33 overlay 'scratch shares overlay upper physical disk'
