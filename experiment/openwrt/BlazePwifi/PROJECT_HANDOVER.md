@@ -1384,3 +1384,16 @@ PR #354 remains OPEN / DRAFT / UNMERGED. PRs #239/#254/#283 remain OPEN / DRAFT 
 - **Evidence limit:** host/source-extracted SIMULATED / CI VERIFIED only. Physical GPIO/relay voltage and contact transient, coin acceptor, LittleFS power-loss, electrical recovery, 150 power cuts, and 30-device/24-hour soak remain NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
 - **Narrow handover:** [2026-11-26-hw-output-enable-active-write-guards-utc10.md](docs/handover/2026-11-26-hw-output-enable-active-write-guards-utc10.md).
 - **Next exact action:** PHX-QA reconciles deny-only/pending-evidence assertions; PHX-CORE publishes the authenticated register/poll and receipt/disposition contract; PHX-MASTER refreshes #354 exact-head pins. No positive coin/relay consumer is authorized.
+
+## PHX-HARDWARE UTC10 — pending-journal recovery promotion guard (2026-11-27)
+
+- **PR:** [#359](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/359), OPEN / DRAFT / UNMERGED; branch `phoenix/hw-pending-recovery-promotion-guard-20261127-utc10`, stacked on #355 at `9f7a8ecb915cf199a82c0b4d37c56c40d722037b`.
+- **Exact source/test SHA:** `bdad70fa77f51421cb7a6f01d89bd2b7ea9bdc3f`.
+- **Firmware correction:** ESP8266 and ESP32 `loadPending()` now preserve an existing canonical journal when a fallback is selected, fail closed on canonical/fallback ambiguity, check fallback rename results, publish RAM state only after successful promotion, and deny on invalid-only journal, empty-journal write failure, or legacy migration failure.
+- **Focused exact-head CI:** [#45986402635](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45986402635), job `140463042542`, PASS. Source-extracted C++ harness: 11 scenarios per board, two rename failures per board, ambiguous-file preservation, and 16 source mutations rejected across ESP8266/ESP32.
+- **Test history:** initial RED [#45985812211](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45985812211) exposed the missing fail-closed invalid-candidate guard. Intermediate matcher failures #45985936904/#45985941053/#45986064897 were harness tooling defects and remain disclosed. Corrected focused run #45986201309 and final exact-head #45986402635 pass.
+- **Full workflow:** [#45986402891](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45986402891) passed CI-0701 but validation stopped at mandatory handover freshness because this canonical record had not yet been synchronized. Exact post-sync Full rerun required; target jobs were still running at last read.
+- **Safety:** no coin/relay admission, pending clear/disposition, authenticated response consumer, finance, migration, signer, witness, or COE source changed. Active v0.6 synchronous poll-before-sample P0 #177 remains unresolved.
+- **Evidence:** SIMULATED / CI VERIFIED only. Physical LittleFS, electrical, 150 power cuts and 30-device/24-hour soak remain NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+- **Narrow handover:** [2026-11-27-hw-pending-recovery-promotion-guard-utc10.md](docs/handover/2026-11-27-hw-pending-recovery-promotion-guard-utc10.md).
+- **Next exact action:** rerun Full on the post-sync documentation HEAD, then request independent QA review. Keep #359 DRAFT and unmerged.
