@@ -1,7 +1,7 @@
 """Source-level contracts for fail-closed startup, register and poll handling in both Vendo sketches."""
 import re
 
-__all__ = ["coin_post_matches", "poll_call_matches", "poll_guard_locations", "register_call_matches", "register_guard_locations"]
+__all__ = ["coin_post_matches", "deny_latch_assignment_contract", "poll_call_matches", "poll_guard_locations", "register_call_matches", "register_guard_locations"]
 
 from firmware_source_extract import extract_braced, extract_function, mask_non_code
 
@@ -309,3 +309,76 @@ def startup_storage_guard_locations(source: str):
 
     return setup
 
+
+
+def deny_latch_assignment_contract(source: str) -> None:
+    """Require deny-only runtime flags to have no post-startup re-enable writes."""
+    masked = mask_non_code(source)
+    deny_fn = extract_function(source, "void denyRemoteControl()")
+    deny_start = source.find(deny_fn)
+    if deny_start < 0:
+        raise AssertionError("deny-only function definition could not be located")
+    deny_end = deny_start + len(deny_fn)
+
+    initial_counts = {
+        "controllerEnabled": 0,
+        "coinEnabled": 0,
+        "relayEnabled": 0,
+        "ledEnabled": 0,
+        "insertMode": 0,
+    }
+    deny_counts = {
+        "controllerEnabled": 0,
+        "coinEnabled": 0,
+        "relayEnabled": 0,
+        "ledEnabled": 0,
+        "insertMode": 0,
+        "activeTarget": 0,
+    }
+    assignments = re.compile(
+        r"\b(?P<name>controllerEnabled|coinEnabled|relayEnabled|ledEnabled|insertMode|activeTarget)"
+        r"\s*(?P<operator>\+\+|--|\+=|-=|\*=|/=|%=|&=|\|=|\^=|(?<![=!<>])=(?!=))"
+    )
+
+    for match in assignments.finditer(masked):
+        name = match.group("name")
+        operator = match.group("operator")
+        depth = masked[:match.start()].count("{") - masked[:match.start()].count("}")
+        semicolon = masked.find(";", match.end())
+        if semicolon < 0:
+            raise AssertionError(f"{name}: assignment has no terminating semicolon")
+
+        rhs = masked[match.end():semicolon].split(",", 1)[0].strip()
+        if depth == 0:
+            if name not in initial_counts or operator != "=":
+                raise AssertionError(f"{name}: unexpected global runtime-state write")
+            if name == "insertMode":
+                if rhs != "false":
+                    raise AssertionError("insertMode must start denied")
+            elif rhs not in ("true", "false"):
+                raise AssertionError(f"{name}: global initializer must be an explicit boolean")
+            initial_counts[name] += 1
+            continue
+
+        if deny_start <= match.start() < deny_end:
+            if depth != 1 or operator != "=":
+                raise AssertionError(f"{name}: deny-latch writes must be unconditional simple assignments")
+            if name == "activeTarget":
+                raw_rhs = source[match.end():source.find(";", match.end())]
+                if re.sub(r"\s+", "", raw_rhs) != '""':
+                    raise AssertionError("activeTarget may only be cleared by the deny latch")
+            elif rhs != "false":
+                raise AssertionError(f"{name}: deny latch must assign false")
+            deny_counts[name] += 1
+            continue
+
+        raise AssertionError(
+            f"{name}: runtime state may only be initialized globally or cleared by denyRemoteControl()"
+        )
+
+    missing_initial = [name for name, count in initial_counts.items() if count != 1]
+    if missing_initial:
+        raise AssertionError("runtime deny flags need exactly one global initializer: " + ", ".join(missing_initial))
+    missing_deny = [name for name, count in deny_counts.items() if count != 1]
+    if missing_deny:
+        raise AssertionError("denyRemoteControl() must clear each runtime field exactly once: " + ", ".join(missing_deny))
