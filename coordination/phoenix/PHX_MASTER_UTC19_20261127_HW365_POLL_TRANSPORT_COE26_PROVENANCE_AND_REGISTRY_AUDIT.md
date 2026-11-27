@@ -25,7 +25,7 @@ The machine ownership manifest remains blob `e4db324315a1b3543fec17a148fbf960170
 
 [PR #365](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/365) is an OPEN / DRAFT / UNMERGED child of #364. Current PR head `e65b0b895af9c3fc5e5632f704cb67b347e69725`; source/test SHA `fcd5d7df210c8521f9c8fcc1019c8db8bdaf7eb0`; evidence docs head `6e5e126199368cbe78f9d46dd6c702c883cfa5cb`.
 
-The owner added a host poll-deny transport matrix with five outcomes × four relay/LED polarity combinations: 20 cases per board / 40 total. Outcomes: immediate begin failure, empty timeout, malformed body, server-error body and untrusted positive `insert=true`. A transient response-consumption/re-enable mutation is rejected on both boards. This is test-harness work; no production sketch, CORE API, finance or COE file changed.
+The owner added a host poll-deny transport matrix with five outcomes × four relay/LED polarity combinations: 20 cases per board / 40 total. Outcomes: immediate begin failure, empty timeout, malformed body, server-error body and untrusted positive `insert=true`. The same harness also models six blocking-poll pulse windows × four relay/LED polarity combinations: 24 cases per board / 48 total; its host output asserts `accepted=0`. A transient response-consumption/re-enable mutation is rejected on both boards. This is test-harness work; no production sketch, CORE API, finance or COE file changed.
 
 Exact current-head CI:
 - Focused [#46056656161](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46056656161): PASS, exact-source/ledger guard and poll/relay/pending-evidence host lab.
