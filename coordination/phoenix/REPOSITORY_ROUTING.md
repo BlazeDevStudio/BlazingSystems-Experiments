@@ -1,3 +1,15 @@
+## PHX-MASTER UTC20 — automation and private-registry routing reconciliation (2026-11-27T20:39Z)
+
+- OWNERSHIP_ROUTES.json remains blob e4db324315a1b3543fec17a148fbf960170fcb29: schema v1, 11 routes, DRAFT_REVIEW_ONLY, PHX-MASTER target null. No route or source owner changed.
+- Its source_ref f4e8a891aed8af86d5fd315d28750a0ac3a7372b is historical; live Experiments main is 6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5.
+- COE #26 remains the only destination candidate: branch integration/ecosystem-nonproprietary-candidate-20261111 at b382d233ff06c8791b1028bed3c617cc7b670d12; COE main is a6513ab4412b4c014eee2863e45cbe32d06cb243. SOURCE_INTAKE/MIGRATION_MAP still pin source 6d4c9b487af4d768c4d7627654d119417fcc6e00 and destination feature/pisowifi-cleanup-stabilization. No route is copy-safe or approved for staging.
+- Root AGENTS.md blob d8777e3b58efc41caa5aa3c969c932aee9103d5f was re-read. Its Cloud Artifact Policy and Storage Recovery Handover links were retrieved from renamed BlazeDevStudio/BlazingSystems: policy blob 5e503925750c4e511314e4b7624579d82f60aae2; handover blob a15f14cb3baf46424b820e1a921462794422f06b.
+- Exact Library title search did not surface canonical BLAZE_PROJECT_REGISTRY_v11_20261027.json or newer corrections. Only older v3–v7/base snapshots and a checkpoint reference were found. Current private artifact manifest/sync ledger authority was not recovered. No dedicated Google Drive connector is exposed. Do not substitute old records, publish private IDs/content, create folders, or modify Drive artifacts.
+- Automation inventory currently shows active Blaze Hourly Production Development explicitly assigned to PHX-HARDWARE; its latest run was in progress. No exact-title Blaze Production Continuation entry surfaced. This does not verify the separately described CORE automation. CORE source/branch work remains untouched; no competing CORE task or automation was created.
+- Master remains coordination-only. Registry custodian must restore authorized v11/newer corrections and current manifest/ledger before any mirror or migration work. Repository administrator must provide a connected Drive surface if authorized registry access is expected in this runtime.
+
+---
+
 ## PHX-MASTER UTC19 — routing and private artifact access hold
 
 - `OWNERSHIP_ROUTES.json` remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`: schema v1, 11 routes, `DRAFT_REVIEW_ONLY`, PHX-MASTER target null. No owner or route changed. Its `source_ref=f4e8a891...` is historical; live Experiments main is `6be5d19b...`.
