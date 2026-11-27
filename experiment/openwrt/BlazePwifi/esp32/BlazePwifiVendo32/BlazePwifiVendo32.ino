@@ -36,6 +36,8 @@ Preferences prefs;
 WebServer web(80);
 bool insertMode=false, lastCoin=false, pendingReady=false, fsReady=false;
 bool controllerEnabled=true, coinEnabled=true, relayEnabled=true, ledEnabled=true, setupApOn=false;
+bool configStoreValid=true;
+bool preferencesReady=false;
 bool runCoinActiveLow=true, runRelayActiveHigh=true, runLedActiveHigh=true;
 uint32_t lastPoll=0, lastEdge=0, lastSend=0, configuredApSince=0;
 uint8_t pendingPulses=0;
@@ -177,8 +179,33 @@ bool clearPending(bool committed){
   return true;
 }
 
+void useSafeConfigDefaults(){
+  cfg=Config();
+  cfg.server="10.0.0.1";
+  cfg.id="vendo-01";
+  cfg.coinPin=27; cfg.insertLedPin=2; cfg.relayPin=26;
+  cfg.coinActiveLow=true; cfg.relayActiveHigh=true; cfg.ledActiveHigh=true;
+  cfg.coinDebounceMs=40; cfg.pulseGroupMs=400;
+  char b[17]; snprintf(b,sizeof(b),"%08lX%08lX",(unsigned long)esp_random(),(unsigned long)esp_random());
+  cfg.apPass=String(b);
+}
+
 void loadConfig(){
-  prefs.begin("blazevendo",false);
+  preferencesReady=prefs.begin("blazevendo",false);
+  if(!preferencesReady){
+    configStoreValid=false;
+    useSafeConfigDefaults();
+    Serial.println("CRITICAL: Preferences unavailable; using deny-only setup defaults.");
+    return;
+  }
+  // Missing marker is a pre-latch legacy store; explicit false means an interrupted multi-key save.
+  if(prefs.isKey("cfgvalid") && !prefs.getBool("cfgvalid",false)){
+    configStoreValid=false;
+    useSafeConfigDefaults();
+    Serial.println("CRITICAL: saved config is incomplete; using deny-only setup defaults.");
+    return;
+  }
+  configStoreValid=true;
   cfg.ssid=prefs.getString("ssid","");
   cfg.pass=prefs.getString("pass","");
   cfg.server=prefs.getString("server","10.0.0.1");
@@ -199,12 +226,34 @@ void loadConfig(){
   }
 }
 
-void saveConfig(){
-  prefs.putString("ssid",cfg.ssid); prefs.putString("pass",cfg.pass);
-  prefs.putString("server",cfg.server); prefs.putString("key",cfg.key); prefs.putString("id",cfg.id);
-  prefs.putInt("coinpin",cfg.coinPin); prefs.putInt("ledpin",cfg.insertLedPin); prefs.putInt("relaypin",cfg.relayPin);
-  prefs.putBool("coinlow",cfg.coinActiveLow); prefs.putBool("relayhi",cfg.relayActiveHigh); prefs.putBool("ledhi",cfg.ledActiveHigh);
-  prefs.putUInt("debounce",cfg.coinDebounceMs); prefs.putUInt("groupms",cfg.pulseGroupMs);
+// Preferences put* return zero on failure. cfgvalid brackets the multi-key write:
+// false is durable before field changes; true is published only after every field succeeds.
+bool saveConfig(){
+  configStoreValid=false;
+  if(!preferencesReady){
+    preferencesReady=prefs.begin("blazevendo",false);
+    if(!preferencesReady) return false;
+  }
+  if(prefs.putBool("cfgvalid",false)==0) return false;
+  bool ok=true;
+  if(prefs.putString("ssid",cfg.ssid)==0) ok=false;
+  if(prefs.putString("pass",cfg.pass)==0) ok=false;
+  if(prefs.putString("server",cfg.server)==0) ok=false;
+  if(prefs.putString("key",cfg.key)==0) ok=false;
+  if(prefs.putString("id",cfg.id)==0) ok=false;
+  if(prefs.putString("appass",cfg.apPass)==0) ok=false;
+  if(prefs.putInt("coinpin",cfg.coinPin)==0) ok=false;
+  if(prefs.putInt("ledpin",cfg.insertLedPin)==0) ok=false;
+  if(prefs.putInt("relaypin",cfg.relayPin)==0) ok=false;
+  if(prefs.putBool("coinlow",cfg.coinActiveLow)==0) ok=false;
+  if(prefs.putBool("relayhi",cfg.relayActiveHigh)==0) ok=false;
+  if(prefs.putBool("ledhi",cfg.ledActiveHigh)==0) ok=false;
+  if(prefs.putUInt("debounce",cfg.coinDebounceMs)==0) ok=false;
+  if(prefs.putUInt("groupms",cfg.pulseGroupMs)==0) ok=false;
+  if(!ok) return false;
+  if(prefs.putBool("cfgvalid",true)==0) return false;
+  configStoreValid=true;
+  return true;
 }
 
 void denyRemoteControl();
@@ -306,13 +355,18 @@ void setupPortal(){
     cfg.coinPin=web.arg("coin").toInt(); cfg.insertLedPin=web.arg("led").toInt(); cfg.relayPin=web.arg("relay").toInt();
     long db=web.arg("db").toInt(), pg=web.arg("pg").toInt(); if(db<1)db=1;if(db>2000)db=2000;if(pg<10)pg=10;if(pg>10000)pg=10000;
     cfg.coinDebounceMs=(uint16_t)db; cfg.pulseGroupMs=(uint16_t)pg; cfg.coinActiveLow=web.arg("cl")!="0"; cfg.relayActiveHigh=web.arg("rh")!="0"; cfg.ledActiveHigh=web.arg("lh")!="0";
-    saveConfig(); web.send(200,"text/plain","Wi-Fi verified and settings saved. Rebooting..."); delay(700); ESP.restart();
+    if(!saveConfig()){
+      denyRemoteControl();
+      web.send(500,"text/plain","Preferences write failed; settings were not confirmed. Setup mode remains active.");
+      return;
+    }
+    web.send(200,"text/plain","Wi-Fi verified and settings saved. Rebooting..."); delay(700); ESP.restart();
   });
   web.begin(); configuredApSince=millis();
 }
 
 void connectSta(){
-  if(cfg.ssid.isEmpty()) return;
+  if(!configStoreValid || cfg.ssid.isEmpty()) return;
   WiFi.begin(cfg.ssid.c_str(),cfg.pass.c_str());
   uint32_t t=millis();
   while(WiFi.status()!=WL_CONNECTED && millis()-t<12000){ delay(250); }
@@ -325,20 +379,25 @@ void connectSta(){
 
 void setup(){
   Serial.begin(115200); loadConfig();
+  runCoinPin=cfg.coinPin; runLedPin=cfg.insertLedPin; runRelayPin=cfg.relayPin;
+  runCoinActiveLow=cfg.coinActiveLow; runRelayActiveHigh=cfg.relayActiveHigh; runLedActiveHigh=cfg.ledActiveHigh;
+  runDebounceMs=cfg.coinDebounceMs; runPulseGroupMs=cfg.pulseGroupMs;
+  configureRuntimePins(runCoinPin,runRelayPin,runLedPin);
+  denyRemoteControl();
+
+  // Keep relay/LED outputs OFF before LittleFS mount and pending-journal recovery.
   fsReady=LittleFS.begin(false);
   if(fsReady && !loadPending()){
     fsReady=false;
     Serial.println("CRITICAL: Vendo sequence journal is corrupt; coin relay will stay disabled.");
   } else if(!fsReady) Serial.println("CRITICAL: LittleFS unavailable; relay remains disabled.");
-  runCoinPin=cfg.coinPin; runLedPin=cfg.insertLedPin; runRelayPin=cfg.relayPin;
-  runCoinActiveLow=cfg.coinActiveLow; runRelayActiveHigh=cfg.relayActiveHigh; runLedActiveHigh=cfg.ledActiveHigh;
-  runDebounceMs=cfg.coinDebounceMs; runPulseGroupMs=cfg.pulseGroupMs;
-  configureRuntimePins(runCoinPin,runRelayPin,runLedPin);denyRemoteControl();
   setupPortal(); connectSta();
 }
 
 void loop(){
   web.handleClient();
+  // Keep the setup portal responsive while invalid storage blocks STA, registration and polling.
+  if(!configStoreValid){ delay(2); return; }
   if(WiFi.status()!=WL_CONNECTED && !cfg.ssid.isEmpty() && millis()-lastPoll>8000){
     WiFi.disconnect(); WiFi.begin(cfg.ssid.c_str(),cfg.pass.c_str()); wifiFailures++; lastPoll=millis();
     if(wifiFailures>=maxWifiRetries) startSetupAp();

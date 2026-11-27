@@ -49,10 +49,12 @@ def validate_runtime_pin_setup(source: str) -> None:
     setup = mask_non_code(extract_function(source, "void setup()"))
     pin_call = setup.find("configureRuntimePins(runCoinPin,runRelayPin,runLedPin)")
     deny_call = setup.find("denyRemoteControl()", pin_call + 1)
-    ap_call = setup.find("setupPortal()", deny_call + 1)
+    fs_call = setup.find("LittleFS.begin(")
+    pending_call = setup.find("loadPending()", fs_call + 1)
+    ap_call = setup.find("setupPortal()", pending_call + 1)
     connect_call = setup.find("connectSta()", ap_call + 1)
-    require(0 <= pin_call < deny_call < ap_call < connect_call,
-            "runtime pins and deny must precede setup AP and station/network work")
+    require(0 <= pin_call < deny_call < fs_call < pending_call < ap_call < connect_call,
+            "runtime pins and deny must precede LittleFS mount/recovery, setup AP and station/network work")
     print("RUNTIME_PIN_SETUP_FAIL_CLOSED_PASS")
 
 
@@ -180,14 +182,23 @@ def main() -> None:
         source, "void configureRuntimePins(int coinPin,int relayPin,int ledPin)"
     )
     expect_rejected("missing-runtime-pin-helper", source.replace(runtime_helper, "", 1))
-    expect_rejected(
-        "setup-pins-after-deny",
-        source.replace(
-            "configureRuntimePins(runCoinPin,runRelayPin,runLedPin);denyRemoteControl();",
-            "denyRemoteControl();configureRuntimePins(runCoinPin,runRelayPin,runLedPin);",
-            1,
-        ),
+    moved_pin_order, pin_order_count = re.subn(
+        r"configureRuntimePins\(runCoinPin,runRelayPin,runLedPin\);\s*denyRemoteControl\(\);",
+        "denyRemoteControl();\n  configureRuntimePins(runCoinPin,runRelayPin,runLedPin);",
+        source,
+        count=1,
     )
+    require(pin_order_count == 1, "could not create setup-pins-after-deny mutation")
+    expect_rejected("setup-pins-after-deny", moved_pin_order)
+
+    moved_fs_early, fs_order_count = re.subn(
+        r"(Serial\.begin\(115200\);\s*loadConfig\(\);)",
+        r"\1\n  fsReady=LittleFS.begin(false);",
+        source,
+        count=1,
+    )
+    require(fs_order_count == 1, "could not create filesystem-before-output-deny mutation")
+    expect_rejected("filesystem-before-output-deny", moved_fs_early)
     expect_rejected(
         "missing-old-relay-off-before-pin-change",
         source.replace(

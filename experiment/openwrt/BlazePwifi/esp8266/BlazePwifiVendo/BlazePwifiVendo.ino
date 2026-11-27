@@ -34,6 +34,7 @@ struct Config {
 };
 
 Config cfg;
+
 ESP8266WebServer web(80);
 const uint32_t MAGIC_V1=0x42505731;
 const uint32_t MAGIC=0x42505732;
@@ -56,6 +57,30 @@ struct LegacyPendingRecord {
   char target[33];
   uint32_t checksum;
 };
+size_t boundedStringLength(const char *value,size_t capacity){
+  if(!value) return capacity;
+  for(size_t i=0;i<capacity;i++){
+    if(value[i]=='\0') return i;
+  }
+  return capacity;
+}
+
+bool configStringsTerminated(const Config &value){
+  return boundedStringLength(value.ssid,sizeof(value.ssid))<sizeof(value.ssid) &&
+         boundedStringLength(value.pass,sizeof(value.pass))<sizeof(value.pass) &&
+         boundedStringLength(value.server,sizeof(value.server))<sizeof(value.server) &&
+         boundedStringLength(value.key,sizeof(value.key))<sizeof(value.key) &&
+         boundedStringLength(value.id,sizeof(value.id))<sizeof(value.id) &&
+         boundedStringLength(value.apPass,sizeof(value.apPass))<sizeof(value.apPass);
+}
+
+bool configV1StringsTerminated(const ConfigV1 &value){
+  return boundedStringLength(value.ssid,sizeof(value.ssid))<sizeof(value.ssid) &&
+         boundedStringLength(value.pass,sizeof(value.pass))<sizeof(value.pass) &&
+         boundedStringLength(value.server,sizeof(value.server))<sizeof(value.server) &&
+         boundedStringLength(value.key,sizeof(value.key))<sizeof(value.key) &&
+         boundedStringLength(value.id,sizeof(value.id))<sizeof(value.id);
+}
 const uint32_t LEGACY_PENDING_MAGIC=0x42504331;
 BpPendingSequence pendingSequenceState;
 
@@ -186,16 +211,18 @@ void defaults(){
   makeSetupPassword();
 }
 
-void saveCfg(){ EEPROM.put(0,cfg); EEPROM.commit(); }
+// EEPROM.commit() is the persistence result; callers must not report success or reboot on false.
+bool saveCfg(){ EEPROM.put(0,cfg); return EEPROM.commit(); }
 
 void loadCfg(){
   EEPROM.begin(sizeof(Config));
   EEPROM.get(0,cfg);
-  if(cfg.magic==MAGIC && strlen(cfg.apPass)>=8) return;
+  if(cfg.magic==MAGIC && configStringsTerminated(cfg) &&
+     boundedStringLength(cfg.apPass,sizeof(cfg.apPass))>=8) return;
 
   ConfigV1 oldCfg;
   EEPROM.get(0,oldCfg);
-  if(oldCfg.magic==MAGIC_V1){
+  if(oldCfg.magic==MAGIC_V1 && configV1StringsTerminated(oldCfg)){
     defaults();
     strlcpy(cfg.ssid,oldCfg.ssid,sizeof(cfg.ssid));
     strlcpy(cfg.pass,oldCfg.pass,sizeof(cfg.pass));
@@ -206,13 +233,13 @@ void loadCfg(){
     cfg.insertLedPin=oldCfg.insertLedPin;
     cfg.relayPin=oldCfg.relayPin;
     cfg.coinActiveLow=oldCfg.coinActiveLow;
-    saveCfg();
-    Serial.println("Migrated BlazePwifi Vendo v1 configuration.");
+    if(!saveCfg()) Serial.println("CRITICAL: EEPROM configuration migration write failed; retrying on next boot.");
+    else Serial.println("Migrated BlazePwifi Vendo v1 configuration.");
     return;
   }
 
   defaults();
-  saveCfg();
+  if(!saveCfg()) Serial.println("CRITICAL: EEPROM defaults write failed; setup remains available.");
 }
 
 void writeLogical(int pin,bool on,bool activeHigh){ digitalWrite(pin,(on==activeHigh)?HIGH:LOW); }
@@ -315,7 +342,12 @@ void setupPortal(){
     strlcpy(cfg.ssid,newSsid.c_str(),sizeof(cfg.ssid));strlcpy(cfg.pass,newPass.c_str(),sizeof(cfg.pass));
     strlcpy(cfg.server,web.arg("server").c_str(),sizeof(cfg.server));if(web.arg("k").length())strlcpy(cfg.key,web.arg("k").c_str(),sizeof(cfg.key));strlcpy(cfg.id,web.arg("id").c_str(),sizeof(cfg.id));
     cfg.coinPin=web.arg("coin").toInt();cfg.insertLedPin=web.arg("led").toInt();cfg.relayPin=web.arg("relay").toInt();
-    saveCfg();web.send(200,"text/plain","Wi-Fi verified and settings saved. Rebooting...");delay(700);ESP.restart();
+    if(!saveCfg()){
+      denyRemoteControl();
+      web.send(500,"text/plain","EEPROM commit failed; settings were not confirmed. Setup mode remains active.");
+      return;
+    }
+    web.send(200,"text/plain","Wi-Fi verified and settings saved. Rebooting...");delay(700);ESP.restart();
   });
   web.begin();
   configuredApSince=millis();
@@ -346,9 +378,13 @@ bool clearPending(bool committed){
 }
 
 void setup(){
-  Serial.begin(115200); loadCfg(); initPendingStore();
+  Serial.begin(115200); loadCfg();
   runCoinPin=cfg.coinPin;runLedPin=cfg.insertLedPin;runRelayPin=cfg.relayPin;runCoinActiveLow=cfg.coinActiveLow;
-  configureRuntimePins(runCoinPin,runRelayPin,runLedPin);denyRemoteControl();setupPortal();connectSta();
+  configureRuntimePins(runCoinPin,runRelayPin,runLedPin);
+  denyRemoteControl();
+  // Keep relay/LED outputs OFF before LittleFS mount and pending-journal recovery.
+  initPendingStore();
+  setupPortal();connectSta();
 }
 
 void loop(){
