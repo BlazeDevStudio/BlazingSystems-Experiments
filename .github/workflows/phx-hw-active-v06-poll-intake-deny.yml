@@ -91,5 +91,5 @@ jobs:
         run: python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/config_storage_integrity_lab.py
       - name: Verify EEPROM and Preferences write results before setup reboot
         run: python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/config_persistence_write_result_lab.py
-      - name: Validate board GPIO assignments before config persistence
+      - name: Validate numeric GPIO roles, collisions and board capabilities before persistence
         run: python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/runtime_pin_config_lab.py
