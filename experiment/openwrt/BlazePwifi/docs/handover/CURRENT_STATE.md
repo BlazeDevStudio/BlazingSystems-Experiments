@@ -1,3 +1,26 @@
+## PHX-HARDWARE UTC12 — exact controller assertion clarification — 2026-11-27T12:16Z
+
+- #359 Full [#45996785121](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45996785121) terminal FAIL: handover freshness passed, then `tests/controllers.sh` job `140498293398` failed. 15 jobs PASS, 1 validation FAIL, 13 skipped; Android and 14/14 firmware targets PASS. Mbed #45996785113 3/3 PASS; Poll #45996785105 PASS; Native #45996785114 FAIL at QA-owned PAY-0745.
+- #360 Full [#45996488771](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45996488771) terminal FAIL at the same controller validation step after handover freshness passed; Android and 14/14 target jobs PASS, production stages skipped. Poll #45996488529 PASS; Mbed #45996488521 3/3 PASS.
+- Exact `controllers.sh` blob `53a7af25fdee9a650e10e870c4204e0fb43239c6` checks generic `sig` then `config_revision`. Both #359 sketch blobs (`25d9494e`, `d031b0b7`) and #360 sketch blobs (`9f0f4829`, `fcf26a50`) contain `sig` but omit `config_revision`; therefore the first failing grep is `config_revision`. This is not a cryptographic poll-signature test.
+- Separately, main CGI register/poll/coin still lacks the approved controller `response_sig` producer. CORE owns the contract; QA owns assertion semantics. Hardware must not add a decoy token or unsigned positive consumer.
+- #359 Native PAY-0745 remains QA-owned; no unsafe clear call was added. Both PRs remain DRAFT/unmerged. Physical acceptance NOT TESTED; HARDWARE ACCEPTED NO; PRODUCTION NO-GO.
+## PHX-HARDWARE UTC12 — sibling #359/#360 handover reconciliation (2026-11-27T12:02:29Z)
+
+**Role:** PHX-HARDWARE · **State:** sibling handover reconciliation, documentation-only.
+
+Master UTC11 assigned reconciliation of #359/#360's two shared handover paths and a post-sync #359 Full rerun. Both branches are siblings on #355 `9f7a8ecb915cf199a82c0b4d37c56c40d722037b`; only `PROJECT_HANDOVER.md` and `docs/handover/CURRENT_STATE.md` overlap. Source/test paths are disjoint.
+
+| PR | Pre-sync head | Source/test SHA | Focused / Poll | Mbed TLS | Full | Native |
+|---|---|---|---|---|---|---|
+| #359 pending-journal promotion guard | `250facfabc96147b779c9998348cd665e7a621b7` | `bdad70fa77f51421cb7a6f01d89bd2b7ea9bdc3f` | #45986402635 PASS / #45986932616 PASS | #45986932989 3/3 PASS | #45986932765 FAIL: stale handover freshness | #45986932774 FAIL: QA-owned PAY-0745 literal corrupt-state assertion |
+| #360 poll response outcome matrix | `73610a977bd91a389acedd5a62412da973562ee9` | `04ac3330c0123e581bf4f195ff5f1a5089b82ffb` | #45989512681 PASS / #45990550066 PASS | #45990550109 3/3 PASS | #45990550104 FAIL: Controller protocol parity / missing poll-signature check | NOT RUN in Master UTC11 matrix |
+
+#359's Full failure was specifically `handover_gate.sh`: source/workflow changes were newer than CHANGE_LEDGER. Its Native failure is a QA semantic assertion; do not add a literal token solely to satisfy the check. #360's Full handover gate passed, then its controller parity assertion failed. All 14 firmware target/platform jobs and Android passed on both Full runs; downstream production/signing/publication/simulation gates were skipped.
+
+This sync changes only these two canonical documentation files on both sibling branches; it does not modify source/test code, CHANGE_LEDGER, shared APIs, finance, migration, signer, witness, or COE. No rebase, retarget, cherry-pick, merge, or combined candidate is created.
+
+**Next:** rerun #359 Full at its post-sync head; review the new exact-head jobs before claiming success. QA reviews PAY-0745 and response-outcome semantics; CORE publishes authenticated poll and event-bound receipt/disposition contract. Active v0.6 P0 #177 remains unresolved. Host evidence is SIMULATED / CI VERIFIED only; physical acceptance NOT TESTED; HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
 ## PHX-HARDWARE UTC05 — #355 exact-head CI reconciliation
 
 **PR:** [#355](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/355) — OPEN / DRAFT / UNMERGED  
@@ -1343,3 +1366,15 @@ PR #354 remains OPEN / DRAFT / UNMERGED. PRs #239/#254/#283 remain OPEN / DRAFT 
 - See [narrow handover](2026-11-26-hw-output-enable-active-write-guards-utc10.md).
 
 Final evidence-sync note (source/test SHA `6b4f7a873dd72663c00c4e08f23131d58e662584`; docs commit `ad46e16741e6f0fd8a81f08a3261480d010537b9`): the post-sync Full run `45887618795` proved the mandatory handover freshness gate passes, then stopped at QA-owned `tests/controllers.sh:21` for the absent `config_revision` token. Its target jobs were still finishing at last read; exact source/test target builds already passed in `45886742357`. This update is the final Hardware documentation sync for this activation; no more branch changes are planned while the new exact-head PR workflows run.
+
+## PHX-HARDWARE UTC10 — pending-journal recovery promotion guard
+
+PR #359 is OPEN / DRAFT / UNMERGED on `phoenix/hw-pending-recovery-promotion-guard-20261127-utc10`, stacked on #355 at `9f7a8ecb915cf199a82c0b4d37c56c40d722037b`. Exact source/test SHA: `bdad70fa77f51421cb7a6f01d89bd2b7ea9bdc3f`.
+
+Both board sketches now fail closed when a fallback pending journal conflicts with an existing canonical file, when fallback promotion fails, when invalid journal files exist without a valid candidate, and when initial or legacy migration persistence fails. Existing journal files are preserved; RAM state is not published before successful promotion.
+
+Focused exact-head [#45986402635](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45986402635), job `140463042542`, PASS. Source-extracted C++ harness ran 11 scenarios per board and rejected 16 mutations across ESP8266/ESP32. This is SIMULATED / CI VERIFIED only.
+
+Full [#45986402891](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45986402891) passed CI-0701 but validation stopped at handover freshness before this sync; exact post-sync Full rerun required. Active v0.6 poll-before-sample P0 #177 remains unresolved. Physical LittleFS/electrical recovery, 150 power cuts and 30-device/24-hour soak remain NOT TESTED. HARDWARE ACCEPTED NO; PRODUCTION NO-GO.
+
+See [narrow handover](2026-11-27-hw-pending-recovery-promotion-guard-utc10.md).

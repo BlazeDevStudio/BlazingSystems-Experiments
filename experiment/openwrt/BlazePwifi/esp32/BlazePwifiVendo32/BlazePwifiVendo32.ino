@@ -148,21 +148,58 @@ bool savePending(){
 }
 
 bool loadPending(){
-  BpPendingSequence r{}; bool legacy=false; const char *chosen=nullptr;
+  if(!fsReady) return false;
+  BpPendingSequence r{}; bool legacy=false;
+  const char *chosen=nullptr;
   bool any=LittleFS.exists("/pending.dat") || LittleFS.exists("/pending.new") || LittleFS.exists("/pending.bak");
   if(readPendingFile("/pending.dat",r,legacy)) chosen="/pending.dat";
   else if(readPendingFile("/pending.new",r,legacy)) chosen="/pending.new";
   else if(readPendingFile("/pending.bak",r,legacy)) chosen="/pending.bak";
+
   if(!chosen){
-    if(any) return false;
+    if(any){
+      fsReady=false;
+      pendingReady=true;
+      Serial.println("CRITICAL: no valid pending journal candidate; preserving files and denying intake.");
+      return false;
+    }
     bp_pending_sequence_init(&pendingSequenceState);
-    return persistPendingSequence(pendingSequenceState);
+    if(!persistPendingSequence(pendingSequenceState)){
+      fsReady=false;
+      pendingReady=true;
+      Serial.println("CRITICAL: initial pending journal write failed; denying intake.");
+      return false;
+    }
+    return true;
   }
+
+  if(strcmp(chosen,"/pending.dat")!=0){
+    // A corrupt canonical file plus a fallback is ambiguous. Preserve both;
+    // automatic deletion could destroy the only evidence of an older event.
+    if(LittleFS.exists("/pending.dat")){
+      fsReady=false;
+      pendingReady=true;
+      Serial.println("CRITICAL: canonical journal conflicts with fallback; preserving all files and denying intake.");
+      return false;
+    }
+    if(!LittleFS.rename(chosen,"/pending.dat")){
+      fsReady=false;
+      pendingReady=true;
+      Serial.println("CRITICAL: pending journal recovery promotion failed; preserving fallback and denying intake.");
+      return false;
+    }
+  }
+
+  // Publish the recovered state only after the canonical file is confirmed.
   pendingSequenceState=r;
   pendingPulses=r.pulses; pendingNonce=String(r.nonce); pendingTarget=String(r.target);
   pendingReady=r.sequence!=0; lastSend=0;
-  if(strcmp(chosen,"/pending.dat")!=0){ LittleFS.remove("/pending.dat"); LittleFS.rename(chosen,"/pending.dat"); }
-  if(legacy && !persistPendingSequence(r)) return false;
+  if(legacy && !persistPendingSequence(r)){
+    fsReady=false;
+    pendingReady=true;
+    Serial.println("CRITICAL: legacy pending journal migration failed; preserving event and denying intake.");
+    return false;
+  }
   Serial.println("Recovered unacknowledged coin event from flash.");
   return true;
 }
