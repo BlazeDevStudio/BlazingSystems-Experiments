@@ -1,3 +1,13 @@
+## PHX-MASTER UTC21 — architecture and fail-closed blockers (2026-11-27T21:42Z)
+
+- P0 #177 remains OPEN. Active v0.6 ESP8266 blob 12c4bb82 polls synchronously at line 354 before the first coin sample at line 357; ESP32 blob 29f1125d polls at line 314 before sampling at line 318. Both use a 3,500 ms timeout.
+- Current main CGI blob 2e3a1430 has no controller response_sig in register|ping or poll. Member endpoint response_sig fields do not authenticate controller poll/disposition. CORE owns the contract; HARDWARE owns firmware; QA owns independent vectors.
+- HARDWARE #367 current head fb8ea5a is not a safe test-only PR: its exact tree has 13 entries versus 2,435 at #366 base, deleting 1,884 blobs. First truncation commit c97f6460. No exact-head CI/status. Keep draft and restore full base tree before any review as a candidate.
+- HARDWARE #357 Full parity and Native PAY-0745 fail; #354 has the same two blockers. Do not add decoy config_revision or weaken default-deny to satisfy stale assertions.
+- COE #26 remains frozen; source/destination routes, tests, licenses and manifest pins remain incomplete. No integration move.
+
+---
+
 ## PHX-MASTER UTC20 — current blockers and exact next actions (2026-11-27T20:39Z)
 
 **Disposition:** PR #288 OPEN / DRAFT / UNMERGED; COE #26 FROZEN; cleanup #266 OPEN / 0-of-7; P0 #177 OPEN; PRODUCTION NO-GO.

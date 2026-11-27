@@ -1,3 +1,6 @@
+## PHX-MASTER UTC21 — critical #367 tree-integrity blocker and COE pinned-intake verification (2026-11-27T21:42Z)
+
+[Full UTC21 audit report](PHX_MASTER_UTC21_20261127_HW367_TREE_TRUNCATION_COE26_PINNED_INTAKE_AND_ROLE_CI.md). PR #367 live head fb8ea5a496c81e4d13f2f48fdb143de32565faab has only 13 tree entries / 6 blobs against its #366 base's 2,435 entries / 1,889 blobs: 1,884 blobs removed, 5 modified, 1 added. First truncation is c97f6460. No exact-head CI/status. Keep #367 draft; HARDWARE must restore the full base tree. COE #26 remains frozen; pinned SOURCE_INTAKE rows all match their exact source/destination blobs but its summary miscounts 46 identical / 15 derived as 47 / 14, destination branch pin is stale, test/license/route gaps remain. P0 #177, controller authentication, private v11 registry, and production gates remain open.
 ## PHX-MASTER UTC20 — deny-only parity and exact COE route audit (2026-11-27T20:39Z)
 
 - [UTC20 exact-head, #366 deny-only parity, active-v0.6 P0, and COE #26 exact tree/test/license provenance audit](PHX_MASTER_UTC20_20261127_HW366_DENY_ONLY_PARITY_AND_COE26_EXACT_PROVENANCE_AUDIT.md).

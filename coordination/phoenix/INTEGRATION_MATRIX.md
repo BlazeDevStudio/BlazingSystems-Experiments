@@ -1,3 +1,11 @@
+## PHX-MASTER UTC21 — pinned source intake and exact destination provenance (2026-11-27T21:42Z)
+
+The COE #26 SOURCE_INTAKE schema-8 blob 1b9018ff944f7f673934d0fc2a97e0a0090d3f5f pins source commit 6d4c9b487af4d768c4d7627654d119417fcc6e00 and destination branch feature/pisowifi-cleanup-stabilization. Against that exact source tree and current #26 head b382d233ff06c8791b1028bed3c617cc7b670d12, all 61 runtime rows have exact source/destination blob and mode matches (zero row mismatches). Actual row statuses are 46 byte-identical / 15 derived, while the summary says 47 / 14. The destination branch label is stale, but the row blobs are present at #26. Current #366 source differs from the pin in one runtime path: common.sh, pinned 4ccb1077 versus current 50fa2d02.
+
+The test intake has four mapped rows (two exact, two derived) and fifteen derived tests; eleven remain NOT_RUN without hardware evidence. Ten source LICENSE/NOTICE artifacts are present in the pinned tree, while only four counterparts exist in COE #26. The complete route table and the manual overlapping RENTAL prefix are in the UTC21 report. No migration or staging is authorized.
+
+---
+
 ## PHX-MASTER UTC20 — exact #366 source tree vs COE #26 route, test and license provenance (2026-11-27T20:39Z)
 
 Exact recursive Git trees were retrieved for source PR #366 and destination PR #26; neither tree was truncated.

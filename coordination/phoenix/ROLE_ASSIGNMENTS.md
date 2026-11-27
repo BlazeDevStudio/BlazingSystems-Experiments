@@ -1,3 +1,25 @@
+## PHX-MASTER UTC21 — exact role heads and CI revalidation (2026-11-27T21:42Z)
+
+No ownership changed. Master owns coordination/phoenix only.
+
+| Role / PR | Exact head | Current exact-head evidence |
+|---|---|---|
+| MASTER #288 | ba7653f45328add655db7a2106034894dfa9acd9 | OPEN / DRAFT / UNMERGED; 260 coordination-only paths; no exact-head Actions/status |
+| CORE #252 | c82705f2de865c89ab733b10efa84f26f56a5cc4 | Build #42698139210 PASS, scoped only |
+| RENTAL #328 / #289 | 10fc200b6dbf470a95e679d3acc58aff4ab2a67f / 68928774d0d7cf65adb26bc6b54199a3159d066c | #328 API/auth/APK focused checks PASS; shared build #45622918468 FAIL at handover freshness and ESP32 compile. #289 build #43653329229 and native auth #43653329235 PASS |
+| PISONET #255 | d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | Windows synthetic #42462978704 PASS; native COM NOT TESTED |
+| HARDWARE #367 | fb8ea5a496c81e4d13f2f48fdb143de32565faab | 13-entry truncated tree; 1,884 blob deletions, 5 modifications, 1 addition; no exact-head CI/status |
+| HARDWARE #357 | 963c37135797e0d570ef910596c098bb9d902779 | Poll-intake #46067421658 PASS; Mbed #46067421664 3/3 PASS; Native #46067421738 FAIL PAY-0745; Full #46067421812 FAIL Controller protocol parity |
+| HARDWARE #354 | fc842342596786e072630179acfbbc4feeb2ba02 | Poll-intake #45864684458 PASS; Mbed #45864684325 3/3 PASS; Full #45864684497 FAIL; Native #45864684295 FAIL PAY-0745 |
+| QA #290 / #292 | 5c29d15994cee1279058f1eca12f2a3180704292 / 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | #290 Windows synthetic #43633486963 PASS; #292 no exact-head run |
+| RELEASE #291 | bf339a76964a1abe2412fac45392fe06a8e66418 | No exact-head runs/status; mergeable=false |
+| COE CORE #45 | 9d76a134c1f6512aa40c20ec4d247306a71a8cce | Shell #44295049727 and case-collision #44295049903 PASS |
+| COE RELEASE #35 | bc57ba8ecc5245ce538c6770a45bb25e2b8b5ef3 | Case-collision #45897198239 PASS; ImageBuilder #45897198204 FAIL (bubblewrap unavailable); Hardware/Shared #45897198326 FAIL (profile staging) |
+
+COE #26 five candidate workflows remain CANCELLED. CI results are not physical acceptance.
+
+---
+
 ## PHX-MASTER UTC20 — exact owner heads and deny-only parity reclassification (2026-11-27T20:39Z)
 
 No ownership changed. PHX-MASTER owns coordination/phoenix only. Audit-start Master branch HEAD was 90292a7a280c21dee29eebca7e76186bd4c02034; current main is 6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5. The live compare is 673 commits ahead / 1 behind, merge base f4e8a891aed8af86d5fd315d28750a0ac3a7372b. PR #288 had 259 changed paths, all under coordination/phoenix; no exact-head Master Actions run or combined status was returned.
