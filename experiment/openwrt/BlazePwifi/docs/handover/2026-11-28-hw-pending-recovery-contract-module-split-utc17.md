@@ -46,3 +46,8 @@ Exact source/test SHA: `f77869c4efdf34416526be67728c81197b00c25e`. Focused push 
 ## Append-only ledger and live-state checkpoint
 
 The exact source/test SHA `f77869c4efdf34416526be67728c81197b00c25e` and all focused/failed-attempt evidence have now been appended to `docs/handover/CHANGE_LEDGER.md` as `PHX-HW-20261128T17Z-RECOVERY-CONTRACT-SPLIT`. The pre-change IN PROGRESS marker was missed and is disclosed in the top CURRENT_STATE block. A fresh Full run is required after this ledger sync.
+
+
+## Terminal exact-head readback
+
+Full PR [#46040708787](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46040708787) validation job `140647655089` FAILS at QA-owned `tests/controllers.sh:21` (`config_revision`) after handover freshness passes. All 13/13 firmware target jobs and Android PASS; downstream production stages skipped. Mbed PR [#46040708847](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46040708847) passes source-contract, core 3.3.13 and 4.0.0 (3/3). The terminal result and exact job IDs are appended to the canonical CHANGE_LEDGER. Physical acceptance remains NOT TESTED; HARDWARE ACCEPTED NO; PRODUCTION NO-GO.
