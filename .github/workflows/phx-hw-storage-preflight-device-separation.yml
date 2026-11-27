@@ -8,6 +8,7 @@ on:
       - 'experiment/openwrt/BlazePwifi/tools/v060_lab_mountinfo_guard.awk'
       - 'experiment/openwrt/BlazePwifi/tools/v060_lab_block_parent_guard.sh'
       - 'experiment/openwrt/BlazePwifi/tools/v060_lab_storage_preflight.sh'
+      - 'experiment/openwrt/BlazePwifi/docs/handover/CHANGE_LEDGER.md'
       - '.github/workflows/phx-hw-storage-preflight-device-separation.yml'
   pull_request:
     paths:
@@ -15,6 +16,7 @@ on:
       - 'experiment/openwrt/BlazePwifi/tools/v060_lab_mountinfo_guard.awk'
       - 'experiment/openwrt/BlazePwifi/tools/v060_lab_block_parent_guard.sh'
       - 'experiment/openwrt/BlazePwifi/tools/v060_lab_storage_preflight.sh'
+      - 'experiment/openwrt/BlazePwifi/docs/handover/CHANGE_LEDGER.md'
       - '.github/workflows/phx-hw-storage-preflight-device-separation.yml'
       - 'experiment/openwrt/BlazePwifi/docs/handover/2026-11-27-hw-storage-preflight-device-separation-utc23.md'
   workflow_dispatch:
@@ -31,6 +33,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
       - name: Verify exact checkout
         shell: bash
         run: |
@@ -39,6 +42,27 @@ jobs:
           actual="$(git rev-parse HEAD)"
           printf 'EXPECTED_SHA=%s\nACTUAL_SHA=%s\n' "$expected" "$actual"
           test "$actual" = "$expected"
+      - name: Verify Hardware change ledger is append-only
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PUSH_BEFORE_SHA: ${{ github.event.before }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="${PR_BASE_SHA:-${PUSH_BEFORE_SHA:-}}"
+          ledger='experiment/openwrt/BlazePwifi/docs/handover/CHANGE_LEDGER.md'
+          if [[ -z "$base" || "$base" =~ ^0+$ ]]; then
+            echo 'CHANGE_LEDGER_BASE_SHA_UNAVAILABLE' >&2
+            exit 1
+          fi
+          git cat-file -e "$base:$ledger"
+          deleted="$(git diff --numstat "$base" HEAD -- "$ledger" | awk '{ total += $2 } END { print total + 0 }')"
+          printf 'CHANGE_LEDGER_DELETED_LINES=%s\\n' "$deleted"
+          if [[ "$deleted" -ne 0 ]]; then
+            echo 'CHANGE_LEDGER_APPEND_ONLY_FAIL' >&2
+            exit 1
+          fi
+          echo 'CHANGE_LEDGER_APPEND_ONLY_PASS'
       - name: Run synthetic read-only mountinfo safety regression
         run: sh experiment/openwrt/BlazePwifi/tests/v060_lab_storage_preflight.sh
       - name: State the evidence boundary
