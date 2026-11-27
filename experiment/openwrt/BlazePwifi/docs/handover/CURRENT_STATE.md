@@ -1,3 +1,23 @@
+# BlazePwifi — CURRENT STATUS (2026-11-28 UTC17)
+
+**Role:** PHX-HARDWARE. **Current work:** [DRAFT PR #364](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/364), child of #362 → #361 → #359 → #355 → #354.  
+**Branch:** `phoenix/hw-pending-recovery-contract-module-split-20261128-utc17`  
+**Exact source/test SHA:** `f77869c4efdf34416526be67728c81197b00c25e`  
+**Docs/tested head:** `cfe4455d1939a3869c2b4ca2f265a91bacf5457b`  
+**Scope:** host-lab modularization only; no ESP8266/ESP32 production sketch or runtime behavior changed.
+
+**Focused CI:** push #46040699007 job 140647387474 PASS; PR #46040709368 job 140647422550 PASS. Both boards: 15 recovery scenarios, six ambiguous-preservation cases, 18/18 unsafe mutations rejected. Append-only ledger guard PASS (base 1,132,798 bytes; 30,879 bytes appended).
+
+**Mbed:** #46040708847 source-contract + Arduino core 3.3.13 + 4.0.0 PASS (3/3).
+
+**Full:** #46040708787 validation job 140647655089 FAIL at QA-owned `tests/controllers.sh:21` (`config_revision`) after handover freshness passed. All 13/13 firmware targets and Android PASS; production import/signing, update bundle, simulations, candidate and publication stages SKIPPED. Current sketches still lack the approved controller `response_sig` contract; CORE/QA own resolution.
+
+**Release state:** physical LittleFS/electrical/relay acceptance, 150 power cuts, 30-device/24-hour soak, protected anti-rollback witness, durable accounting/replay, v1→v2 migration and independent QA/release acceptance remain NOT TESTED / NOT ACCEPTED. HARDWARE ACCEPTED = NO. PRODUCTION READY = NO-GO. No flash, reset, live money, migration, merge, release or deployment.
+
+**Process note:** the required pre-change `IN PROGRESS` marker in `CURRENT_STATE.md` was not created before the first source commit. This sequencing miss is disclosed here; future activations must write the in-progress record before source edits.
+
+---
+
 
 
 ## PHX-HARDWARE UTC13 — post-sync exact-head terminal CI
@@ -1478,3 +1498,43 @@ Both ESP8266 and ESP32 `loadPending()` now count `pending.dat`, `pending.new`, a
 CORE still owns authenticated controller poll, receipt/disposition and durable ledger authority; QA owns independent financial/pending semantics; MASTER owns integration sequencing. PR #362 is a child of #361 and must not be retargeted or rebased without Master. Cleanup #266 remains OPEN / 0-of-7; P0 #177 remains OPEN.
 
 **Evidence classification:** host recovery scenarios SIMULATED / CI VERIFIED only. Physical LittleFS, electrical, relay, power-cut and soak acceptance NOT TESTED. HARDWARE ACCEPTED = NO. PRODUCTION READY = NO-GO. No flash, reset, live coin/money, migration, merge, release or deployment.
+
+
+## PHX-HARDWARE UTC17 — pending-recovery contract lab module split
+
+**PR:** pending creation as a DRAFT child of #362; parent #362 exact head `eeddfc37d24d20ebc14641dfe3ffa247bbbc1ebd`.  
+**Branch:** `phoenix/hw-pending-recovery-contract-module-split-20261128-utc17`  
+**Source/test commit:** `d4f65ab7f72fabc6160cf70609a9258f1f757120`  
+**Scope:** Hardware-owned host-lab cleanup only; no ESP32/ESP8266 sketch, shared API, controller contract, finance, QA assertion, migration, signer/witness, release workflow, or COE destination changed.
+
+The pending-recovery lab now separates source-contract assertions and unsafe-mutation helpers into `pending_recovery_promotion_lab_contract.py`. The runner retains board discovery, mutation-case orchestration, C++ harness assembly, compilation and execution. The existing C++ fixture remains in `pending_recovery_promotion_lab_harness.hpp`. This is a behavior-preserving module boundary intended to make the test contract independently readable and maintainable.
+
+The Hardware workflow now watches the new module and this narrow handover, and includes the new role branch in its push filter. The append-only `CHANGE_LEDGER.md` was intentionally left byte-identical to the #362 parent; its existing guard remains active.
+
+**Tests:** exact-head GitHub Actions are pending for this child; no result is claimed here. Parent #362 evidence is not transferred to this new SHA. Expected command remains `python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/pending_recovery_promotion_lab.py`, which compiles and runs both board-extracted C++ recovery harnesses and rejects unsafe source mutations.
+
+**Acceptance:** SIMULATED / CI VERIFIED only after the child workflow passes. Physical LittleFS, electrical, relay, 150 power-cut and 30-device/24-hour soak tests remain NOT TESTED. HARDWARE ACCEPTED = NO. PRODUCTION READY = NO-GO. No flash, reset, coin/money, migration, merge, release or deployment.
+
+
+## PHX-HARDWARE UTC17 — terminal exact-head module-split evidence
+
+**PR:** [#364](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/364), OPEN / DRAFT / UNMERGED.  
+**Branch:** `phoenix/hw-pending-recovery-contract-module-split-20261128-utc17`  
+**Exact source/test commit:** `f77869c4efdf34416526be67728c81197b00c25e`  
+**Source path:** `experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/pending_recovery_promotion_lab.py`  
+**New contract module:** `experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/pending_recovery_promotion_lab_contract.py`
+
+### Exact focused CI
+
+- Push [#46040057882](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46040057882), job `140645199676`: **PASS** at exact SHA `f77869c4`.
+- PR [#46040095413](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46040095413), job `140645324512`: **PASS** at exact SHA `f77869c4`.
+- Both executions report ESP8266 and ESP32 `PENDING_RECOVERY_PROMOTION_PASS scenarios=15 rename_failures=2 ambiguous_preservation=6`; both reject nine unsafe mutations per board (`mutations_rejected=18`). The append-only ledger guard and the other existing Hardware source-extracted labs also pass in the focused job.
+- Mbed PR run [#46040095422](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46040095422), source-contract job `140645325548`: **PASS**; Arduino core 3.3.13 / 4.0.0 target jobs were still running at this checkpoint.
+
+### Failure transparency and Full gate
+
+The first split commit `d4f65ab7f72fabc6160cf70609a9258f1f757120` omitted the runner's board map; exact push run [#46039904609](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46039904609), job `140644685060`, failed with `NameError: SKETCHES is not defined`. The documentation-only head `1fbde0555b64c04f4f2db94c815f79b48af02c6d` repeated that failure in [#46039986287](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46039986287), job `140644963978`. Commit `f77869c4` restored the board map; both exact-head focused runs above pass.
+
+Full push [#46040057846](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46040057846), validation job `140645440782`, and Full PR [#46040095561](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46040095561), validation job `140645415590`, failed the handover-freshness gate because the `f77869c4` runner correction had not yet been recorded in this live handover. This commit records the exact source/test SHA and evidence; a fresh Full run is required. Do not transfer parent #362's controller-parity result to this child.
+
+**Scope:** host-lab modularization only; no production firmware sketch or runtime behavior changed. `CHANGE_LEDGER.md` remains byte-identical to the parent and its append-only guard remains enabled. Physical acceptance remains NOT TESTED; HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
