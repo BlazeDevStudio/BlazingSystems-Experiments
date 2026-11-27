@@ -1,0 +1,130 @@
+#!/bin/sh
+# BLAZE_R281_RENTAL_HUB app endpoint v0.1.0
+set -u
+BASE="${BLAZE_RENTAL_BASE:-/etc/blazepwifi-rental}"
+STATE="$BASE/state"
+DEVICES="$STATE/devices.tsv"
+ENROLL="$STATE/enroll.tsv"
+POLICY="$STATE/policy.tsv"
+EVENTS="$STATE/events.tsv"
+
+mkdir -p "$STATE" 2>/dev/null || true
+chmod 700 "$BASE" "$STATE" 2>/dev/null || true
+for f in "$DEVICES" "$ENROLL" "$POLICY" "$EVENTS"; do [ -f "$f" ] || : > "$f"; chmod 600 "$f" 2>/dev/null || true; done
+
+json_escape(){ printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g; s/\r//g; s/\n/\\n/g'; }
+json(){ printf 'Content-Type: application/json\r\nCache-Control: no-store\r\nX-Content-Type-Options: nosniff\r\n\r\n%s\n' "$1"; }
+fail(){ json "{\"ok\":false,\"error\":\"$(json_escape "$1")\"}"; exit 0; }
+now(){ date +%s; }
+randhex(){
+  n="${1:-12}"
+  x="$(hexdump -n "$n" -e '1/1 "%02x"' /dev/urandom 2>/dev/null || true)"
+  [ "${#x}" -ge $((n*2)) ] || x="$(od -An -N "$n" -tx1 /dev/urandom 2>/dev/null | tr -d ' \n' || true)"
+  [ "${#x}" -ge $((n*2)) ] || x="$(printf '%s|%s|%s' "$(date +%s)" "$$" "$n" | sha256sum | awk '{print $1}')"
+  printf '%s' "$x" | tr 'A-F' 'a-f' | cut -c1-$((n*2))
+}
+url_decode(){
+  printf '%s' "$1" | awk '
+  function hx(c,p){c=toupper(c);p=index("0123456789ABCDEF",c);return p?p-1:-1}
+  {s=$0;out="";for(i=1;i<=length(s);i++){c=substr(s,i,1);if(c=="%"&&i+2<=length(s)){a=hx(substr(s,i+1,1));b=hx(substr(s,i+2,1));if(a>=0&&b>=0){out=out sprintf("%c",a*16+b);i+=2;continue}}if(c=="+")c=" ";out=out c}printf "%s",out}'
+}
+BODY=""
+[ "${REQUEST_METHOD:-GET}" = POST ] && IFS= read -r BODY || true
+param(){
+  k="$1"; data="${QUERY_STRING:-}"; [ "${REQUEST_METHOD:-GET}" = POST ] && data="$BODY"
+  raw="$(printf '%s' "$data" | tr '&' '\n' | awk -F= -v k="$k" '$1==k {sub(/^[^=]*=/,"");print;exit}')"
+  url_decode "$raw"
+}
+hmac(){
+  key="$1"; data="$2"
+  command -v openssl >/dev/null 2>&1 || return 2
+  printf '%s' "$data" | openssl dgst -sha256 -hmac "$key" 2>/dev/null | awk '{print $NF}' | tr 'A-F' 'a-f'
+}
+atomic_replace(){ src="$1" dst="$2"; chmod 600 "$src" 2>/dev/null || true; mv "$src" "$dst"; sync 2>/dev/null || true; }
+lock(){ mkdir "$STATE/.lock" 2>/dev/null; }
+unlock(){ rmdir "$STATE/.lock" 2>/dev/null || true; }
+with_lock(){
+  i=0
+  while ! lock; do i=$((i+1)); [ "$i" -lt 30 ] || return 1; sleep 1; done
+  return 0
+}
+device_line(){ awk -F '\t' -v d="$1" '$1==d {print;exit}' "$DEVICES"; }
+policy_line(){
+  l="$(awk -F '\t' -v d="$1" '$1==d {print;exit}' "$POLICY")"
+  [ -n "$l" ] && printf '%s\n' "$l" || printf '%s\t*\t-\t-\t4096\n' "$1"
+}
+write_device(){
+  did="$1" secret="$2" lease="$3" label="$4" last="$5"
+  tmp="$STATE/.devices.$$.$(randhex 3)"
+  awk -F '\t' -v d="$did" '$1!=d {print}' "$DEVICES" > "$tmp"
+  clean_label="$(printf '%s' "$label" | tr '\t\r\n' '   ' | cut -c1-80)"
+  printf '%s\t%s\t%s\t%s\t%s\n' "$did" "$secret" "$lease" "$clean_label" "$last" >> "$tmp"
+  atomic_replace "$tmp" "$DEVICES"
+}
+consume_enroll(){
+  id="$1"; tmp="$STATE/.enroll.$$.$(randhex 3)"
+  awk -F '\t' -v i="$id" '$1!=i {print}' "$ENROLL" > "$tmp"
+  atomic_replace "$tmp" "$ENROLL"
+}
+write_policy_default(){
+  did="$1"; grep -q "^$did$(printf '\t')" "$POLICY" 2>/dev/null && return 0
+  printf '%s\t*\t-\t-\t4096\n' "$did" >> "$POLICY"; chmod 600 "$POLICY"; sync 2>/dev/null || true
+}
+
+[ "${REQUEST_METHOD:-GET}" = POST ] || fail "POST required"
+action="$(param action)"; nonce="$(param nonce)"; sig="$(param sig)"; ts="$(now)"
+[ -n "$nonce" ] && [ -n "$sig" ] || fail "missing authentication"
+printf '%s' "$nonce" | grep -Eq '^[A-Za-z0-9]{8,64}$' || fail "invalid nonce"
+
+case "$action" in
+  enroll)
+    eid="$(param enroll_id)"
+    printf '%s' "$eid" | grep -Eq '^[0-9a-f]{12}$' || fail "invalid enrollment id"
+    line="$(awk -F '\t' -v i="$eid" '$1==i {print;exit}' "$ENROLL")"
+    [ -n "$line" ] || fail "enrollment invalid or used"
+    secret="$(printf '%s' "$line" | cut -f2)"; expiry="$(printf '%s' "$line" | cut -f3)"; label="$(printf '%s' "$line" | cut -f4-)"
+    [ "${expiry:-0}" -ge "$ts" ] 2>/dev/null || { consume_enroll "$eid"; fail "enrollment expired"; }
+    token="$eid.$secret"
+    expected="$(hmac "$token" "enroll|$nonce|$token")" || fail "crypto unavailable"
+    [ "$sig" = "$expected" ] || fail "authentication failed"
+    with_lock || fail "server busy"
+    line="$(awk -F '\t' -v i="$eid" '$1==i {print;exit}' "$ENROLL")"
+    [ -n "$line" ] || { unlock; fail "enrollment invalid or used"; }
+    did="$(randhex 12)"; dsecret="$(randhex 24)"
+    write_device "$did" "$dsecret" "$ts" "${label:-Rental phone}" "$ts"
+    write_policy_default "$did"
+    consume_enroll "$eid"
+    printf '%s\t%s\t%s\t%s\n' "$ts" enroll "$did" "${REMOTE_ADDR:-local}" >> "$EVENTS"
+    unlock
+    json "{\"ok\":true,\"device_id\":\"$did\",\"device_secret\":\"$dsecret\",\"server_time_ms\":$((ts*1000)),\"lease_until_ms\":$((ts*1000))}"
+    ;;
+  status)
+    did="$(param device_id)"
+    printf '%s' "$did" | grep -Eq '^[0-9a-f]{24}$' || fail "invalid device id"
+    line="$(device_line "$did")"; [ -n "$line" ] || fail "unknown device"
+    secret="$(printf '%s' "$line" | cut -f2)"; lease="$(printf '%s' "$line" | cut -f3)"; label="$(printf '%s' "$line" | cut -f4)"
+    expected="$(hmac "$secret" "status|$nonce|$secret")" || fail "crypto unavailable"
+    [ "$sig" = "$expected" ] || fail "authentication failed"
+    with_lock || fail "server busy"
+    write_device "$did" "$secret" "${lease:-0}" "$label" "$ts"
+    unlock
+    p="$(policy_line "$did")"; allowed="$(printf '%s' "$p" | cut -f2)"; salt="$(printf '%s' "$p" | cut -f3)"; hash="$(printf '%s' "$p" | cut -f4)"; rounds="$(printf '%s' "$p" | cut -f5)"
+    [ "$salt" = '-' ] && salt=""; [ "$hash" = '-' ] && hash=""
+    report_lease="${lease:-0}"; [ "$report_lease" -ge "$ts" ] 2>/dev/null || report_lease="$ts"
+    per=600; server_ms=$((ts*1000)); lease_ms=$((report_lease*1000))
+    canonical="$did|$nonce|$server_ms|$lease_ms|$allowed|$salt|$hash|${rounds:-4096}||$per"
+    psig="$(hmac "$secret" "$canonical")" || fail "crypto unavailable"
+    json "{\"ok\":true,\"device_id\":\"$did\",\"server_time_ms\":$server_ms,\"lease_until_ms\":$lease_ms,\"allowed_packages\":\"$(json_escape "$allowed")\",\"admin_salt\":\"$(json_escape "$salt")\",\"admin_hash\":\"$(json_escape "$hash")\",\"admin_rounds\":${rounds:-4096},\"preferred_vendo\":\"\",\"rental_seconds_per_pulse\":$per,\"policy_sig\":\"$psig\"}"
+    ;;
+  coin_start)
+    did="$(param device_id)"
+    printf '%s' "$did" | grep -Eq '^[0-9a-f]{24}$' || fail "invalid device id"
+    line="$(device_line "$did")"; [ -n "$line" ] || fail "unknown device"
+    secret="$(printf '%s' "$line" | cut -f2)"
+    expected="$(hmac "$secret" "coin_start|$nonce|$secret")" || fail "crypto unavailable"
+    [ "$sig" = "$expected" ] || fail "authentication failed"
+    printf '%s\t%s\t%s\t%s\n' "$ts" time_request "$did" "${REMOTE_ADDR:-local}" >> "$EVENTS"
+    fail "Manual rental server: add time from /rental on the R281"
+    ;;
+  *) fail "unknown rental action" ;;
+esac

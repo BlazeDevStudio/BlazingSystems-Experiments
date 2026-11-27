@@ -1,0 +1,1 @@
+{"edition":"switch","version":"5.0.0-alpha.1","modules":["network","switch","vlan","diagnostics","hardware"],"capability_gated":true,"non_destructive_detection":true}

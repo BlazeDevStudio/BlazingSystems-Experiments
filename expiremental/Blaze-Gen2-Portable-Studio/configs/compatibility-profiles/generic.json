@@ -1,0 +1,1 @@
+{"name":"Generic Windows application","executablePattern":"*.exe","warnings":["Check licensing, registry dependencies, required system runtimes and writable paths."],"requiredFiles":[]}

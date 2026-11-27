@@ -1,0 +1,132 @@
+name: BlazePwifi v0.4 Launcher3 baseline import
+
+on:
+  push:
+    branches:
+      - blazepwifi-v0.4.0-implementation
+    paths:
+      - '.github/workflows/blazepwifi-v04-launcher-baseline.yml'
+      - 'experiment/openwrt/BlazePwifi/tests/v04_launcher_baseline.sh'
+      - 'experiment/openwrt/BlazePwifi/docs/superpowers/**'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: blazepwifi-v04-launcher-baseline
+  cancel-in-progress: false
+
+jobs:
+  import-build-commit:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 45
+    env:
+      BASE: experiment/openwrt/BlazePwifi
+      TARGET: experiment/openwrt/BlazePwifi/android/BlazeRentalLauncher
+      UPSTREAM_REPO: https://github.com/amirzaidi/Launcher3.git
+      UPSTREAM_COMMIT: 5605dd10845b2ed841cadaf3dddcb0205c057c60
+      GRADLE_VERSION: 4.4.1
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: blazepwifi-v0.4.0-implementation
+          fetch-depth: 0
+
+      - name: Confirm provenance test fails before import
+        shell: bash
+        run: |
+          set -euo pipefail
+          if sh "$BASE/tests/v04_launcher_baseline.sh"; then
+            echo "Baseline already exists; continuing with verification."
+          else
+            echo "Expected pre-import failure confirmed."
+          fi
+
+      - name: Fetch exact Launcher3 baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/Launcher3 "$TARGET"
+          git init /tmp/Launcher3
+          git -C /tmp/Launcher3 remote add origin "$UPSTREAM_REPO"
+          git -C /tmp/Launcher3 fetch --depth=1 origin "$UPSTREAM_COMMIT"
+          git -C /tmp/Launcher3 checkout --detach FETCH_HEAD
+          test "$(git -C /tmp/Launcher3 rev-parse HEAD)" = "$UPSTREAM_COMMIT"
+          mkdir -p "$TARGET"
+          tar -C /tmp/Launcher3 --exclude=.git -cf - . | tar -C "$TARGET" -xf -
+          cat > "$TARGET/BLAZE_UPSTREAM.md" <<EOF
+          # BlazeRentalLauncher upstream provenance
+
+          This directory was imported unchanged from the Launcher3 source baseline before BlazeRental-specific modifications.
+
+          - Upstream repository: https://github.com/amirzaidi/Launcher3
+          - Upstream branch: o-mr1
+          - Exact upstream commit: $UPSTREAM_COMMIT
+          - License: Apache License 2.0
+          - Imported for: BlazePwifi v0.4.0 / BlazeRental Launcher Edition
+
+          The original LICENSE is preserved in this directory. Subsequent BlazeRental changes must retain this provenance file and attribution.
+          EOF
+
+      - name: Verify imported baseline provenance
+        run: sh "$BASE/tests/v04_launcher_baseline.sh"
+
+      - name: Install Android SDK 27 and isolate legacy SDK root
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDKMANAGER="${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager"
+          test -x "$SDKMANAGER"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" "platforms;android-27" "build-tools;27.0.3"
+          rm -rf /tmp/android-sdk-27
+          mkdir -p /tmp/android-sdk-27/platforms /tmp/android-sdk-27/build-tools
+          cp -a "${ANDROID_SDK_ROOT}/platforms/android-27" /tmp/android-sdk-27/platforms/
+          cp -a "${ANDROID_SDK_ROOT}/build-tools/27.0.3" /tmp/android-sdk-27/build-tools/
+          printf 'sdk.dir=/tmp/android-sdk-27\n' > "$TARGET/local.properties"
+
+      - name: Set up JDK 8 for historical AGP
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '8'
+
+      - name: Install Gradle 4.4.1
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSL "https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip" -o /tmp/gradle.zip
+          unzip -q /tmp/gradle.zip -d /opt
+          echo "/opt/gradle-${GRADLE_VERSION}/bin" >> "$GITHUB_PATH"
+
+      - name: Compile untouched Launcher3 AOSP debug baseline
+        shell: bash
+        working-directory: experiment/openwrt/BlazePwifi/android/BlazeRentalLauncher
+        run: |
+          set -euo pipefail
+          ANDROID_HOME=/tmp/android-sdk-27 ANDROID_SDK_ROOT=/tmp/android-sdk-27 gradle --no-daemon --stacktrace assembleAospDebug
+
+      - name: Re-run provenance test after compile
+        run: sh "$BASE/tests/v04_launcher_baseline.sh"
+
+      - name: Commit verified Launcher3 baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "BlazingSystems CI"
+          git config user.email "actions@users.noreply.github.com"
+          git add "$TARGET"
+          if git diff --cached --quiet; then
+            echo "Verified baseline is already committed."
+            exit 0
+          fi
+          git commit -m "chore(blazepwifi): import Launcher3 o-mr1 baseline"
+          git push origin HEAD:blazepwifi-v0.4.0-implementation
+
+      - name: Upload compiled baseline APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Launcher3-o-mr1-baseline-debug
+          path: experiment/openwrt/BlazePwifi/android/BlazeRentalLauncher/build/outputs/apk/aosp/debug/*.apk
+          if-no-files-found: error

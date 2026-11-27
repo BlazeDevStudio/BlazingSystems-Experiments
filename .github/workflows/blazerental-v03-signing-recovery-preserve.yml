@@ -1,0 +1,87 @@
+name: Preserve BlazeRental v0.3 signing recovery
+
+on:
+  push:
+    branches: [blazepwifi-v0.4.0-implementation]
+    paths:
+      - '.github/blazerental-v03-recovery-request.json'
+      - '.github/workflows/blazerental-v03-signing-recovery-preserve.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: blazerental-v03-signing-recovery-preserve
+  cancel-in-progress: true
+
+jobs:
+  preserve:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SOURCE_RUN: '37210720716'
+      SOURCE_ARTIFACT: BlazeRental-production-signing-handoff
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download still-live encrypted v0.3 signing handoff
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p recovery/source recovery/out
+          gh run download "$SOURCE_RUN" --repo "${{ github.repository }}"             --name "$SOURCE_ARTIFACT" --dir recovery/source
+
+          for f in             BlazeRental-signing-backup.enc             BlazeRental-signing-aes-key.enc             BlazeRental-signing-aes-iv.bin             BlazeRental-signing-cert.pem             BlazeRental-signing-fingerprint.txt             BlazeRental-apksigner-verify.txt
+          do
+            test -s "recovery/source/$f"
+          done
+
+          grep -Fq 'F6:8F:A0:41:A8:15:2C:C6:9C:77:C9:7A:D2:95:45:E8:25:9F:D0:DD:27:41:2C:58:F9:12:21:7D:D1:C0:B2:B9'             recovery/source/BlazeRental-signing-fingerprint.txt
+
+      - name: Build durable encrypted recovery package
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp recovery/source/BlazeRental-signing-backup.enc recovery/out/
+          cp recovery/source/BlazeRental-signing-aes-key.enc recovery/out/
+          cp recovery/source/BlazeRental-signing-aes-iv.bin recovery/out/
+          cp recovery/source/BlazeRental-signing-cert.pem recovery/out/
+          cp recovery/source/BlazeRental-signing-fingerprint.txt recovery/out/
+          cp recovery/source/BlazeRental-apksigner-verify.txt recovery/out/
+
+          cat > recovery/out/RECOVERY-README.txt <<'EOF'
+          BlazeRental v0.3 production signing recovery package
+          ===================================================
+
+          This archive contains only encrypted private-key backup material plus
+          public certificate metadata. It does NOT contain the plaintext private
+          keystore.
+
+          Source signing handoff workflow run: 37210720716
+          Production certificate SHA-256:
+          F6:8F:A0:41:A8:15:2C:C6:9C:77:C9:7A:D2:95:45:E8:25:9F:D0:DD:27:41:2C:58:F9:12:21:7D:D1:C0:B2:B9
+
+          Decryption requires the original private key corresponding to the
+          BlazeRental transfer public key. Do not publish that private key.
+          The v0.4 signing workflow can use it through the repository secret:
+          BLAZERENTAL_TRANSFER_PRIVATE_KEY_PEM
+          EOF
+
+          (
+            cd recovery/out
+            sha256sum               BlazeRental-signing-backup.enc               BlazeRental-signing-aes-key.enc               BlazeRental-signing-aes-iv.bin               BlazeRental-signing-cert.pem               BlazeRental-signing-fingerprint.txt               BlazeRental-apksigner-verify.txt               RECOVERY-README.txt > SHA256SUMS
+          )
+          tar -C recovery/out -czf recovery/BlazeRental-v0.3-production-signing-recovery-encrypted.tar.gz .
+          sha256sum recovery/BlazeRental-v0.3-production-signing-recovery-encrypted.tar.gz             > recovery/BlazeRental-v0.3-production-signing-recovery-encrypted.tar.gz.sha256
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BlazeRental-v0.3-production-signing-recovery-encrypted
+          path: |
+            recovery/BlazeRental-v0.3-production-signing-recovery-encrypted.tar.gz
+            recovery/BlazeRental-v0.3-production-signing-recovery-encrypted.tar.gz.sha256
+          retention-days: 90
+          if-no-files-found: error

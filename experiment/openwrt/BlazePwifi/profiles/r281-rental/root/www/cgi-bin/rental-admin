@@ -1,0 +1,246 @@
+#!/bin/sh
+# BlazePwifi R281 Rental profile admin API.
+# Uses the shared BlazePwifi common/auth/config/rental/controller libraries.
+. "${BP_LIB:-/usr/lib/blazepwifi/common.sh}"
+. "${BP_AUTH_LIB:-/usr/lib/blazepwifi/auth.sh}"
+. "${BP_CONFIG_LIB:-/usr/lib/blazepwifi/config.sh}"
+. "${BP_RENTAL_LIB:-/usr/lib/blazepwifi/rental.sh}"
+. "${BP_CONTROLLER_LIB:-/usr/lib/blazepwifi/controller.sh}"
+
+bp_init_dirs
+bp_rental_init
+bp_controller_init
+
+is_https() {
+  [ "${HTTPS:-}" = on ] || [ "${SERVER_PORT:-}" = 443 ]
+}
+is_https || bp_fail "rental administration requires HTTPS"
+
+action="$(bp_param action)"
+now="$(bp_now)"
+
+require_role() {
+  need="$1"
+  bp_auth_require_role "$need"
+  rc=$?
+  [ "$rc" -eq 0 ] && return 0
+  [ "$rc" -eq 2 ] && bp_fail "insufficient role"
+  bp_fail "unauthorized"
+}
+require_ready() {
+  [ "${BP_AUTH_MUST_CHANGE:-0}" != 1 ] || bp_fail "password change required"
+}
+valid_did() {
+  printf '%s' "$1" | grep -Eq '^[0-9a-f]{24}$'
+}
+rental_count() {
+  mode="$1"; n="$2"
+  awk -F '\t' -v mode="$mode" -v n="$n" '
+    NF>=5 {
+      if(mode=="all") c++
+      else if(mode=="active" && $3>n) c++
+      else if(mode=="expired" && $3<=n) c++
+      else if(mode=="recent" && $5>(n-120)) c++
+    }
+    END{print c+0}
+  ' "$BP_RENTAL_DEVICES"
+}
+audit_json() {
+  limit="$1"
+  case "$limit" in ''|*[!0-9]*) limit=80;; esac
+  [ "$limit" -le 200 ] 2>/dev/null || limit=200
+  first=1
+  printf '['
+  tail -n "$limit" "$BP_AUDIT" 2>/dev/null | while IFS="$(printf '\t')" read -r at event user ip detail; do
+    [ -n "$at" ] || continue
+    [ "$first" = 1 ] || printf ','
+    first=0
+    printf '{"time":%s,"event":"%s","user":"%s","ip":"%s","detail":"%s"}'       "${at:-0}" "$(bp_json_escape "$event")" "$(bp_json_escape "$user")" "$(bp_json_escape "$ip")" "$(bp_json_escape "$detail")"
+  done
+  printf ']'
+}
+
+case "$action" in
+  status)
+    require_role viewer
+    total="$(rental_count all "$now")"
+    active="$(rental_count active "$now")"
+    expired="$(rental_count expired "$now")"
+    recent="$(rental_count recent "$now")"
+    vendos="$(awk -F '\t' -v n="$now" '$2>(n-30) {c++} END{print c+0}' "$BP_VENDOS")"
+    free_kb="$(awk '/MemAvailable:/ {print $2; found=1} END{if(!found) print 0}' /proc/meminfo)"
+    uptime="$(cut -d. -f1 /proc/uptime 2>/dev/null || echo 0)"
+    load="$(cut -d' ' -f1 /proc/loadavg 2>/dev/null || echo 0)"
+    board="$(cat /tmp/sysinfo/board_name 2>/dev/null || echo unknown)"
+    release="$(. /etc/openwrt_release 2>/dev/null; printf '%s' "${DISTRIB_RELEASE:-unknown}")"
+    bp_time_sane "$now" && sane=true || sane=false
+    bp_json "$(printf '{"ok":true,"username":"%s","role":"%s","must_change":%s,"devices_total":%s,"devices_active":%s,"devices_expired":%s,"devices_recent":%s,"online_controllers":%s,"mem_available_kb":%s,"uptime_seconds":%s,"load1":"%s","clock_sane":%s,"board":"%s","openwrt":"%s","profile":"0.3.0-r281.1","core":"0.3.0"}'       "$(bp_json_escape "$BP_AUTH_USER")" "$(bp_json_escape "$BP_AUTH_ROLE")" "${BP_AUTH_MUST_CHANGE:-0}" "$total" "$active" "$expired" "$recent" "$vendos" "${free_kb:-0}" "${uptime:-0}" "$(bp_json_escape "$load")" "$sane" "$(bp_json_escape "$board")" "$(bp_json_escape "$release")")"
+    ;;
+
+  rental_enroll_create)
+    require_role operator; require_ready
+    bp_auth_csrf_ok || bp_fail "csrf validation failed"
+    label="$(bp_param label)"; ttl="$(bp_param ttl)"
+    [ -n "$ttl" ] || ttl=600
+    case "$ttl" in ''|*[!0-9]*) bp_fail "invalid enrollment lifetime";; esac
+    [ "$ttl" -ge 60 ] 2>/dev/null && [ "$ttl" -le 3600 ] 2>/dev/null || bp_fail "enrollment lifetime must be 60-3600 seconds"
+    token="$(bp_rental_enroll_create "${label:-Rental phone}" "$ttl")"
+    bp_auth_audit rental_enroll_create "$BP_AUTH_USER" "${REMOTE_ADDR:-unknown}" "$(printf '%s' "$label" | cut -c1-64)"
+    bp_json "$(printf '{"ok":true,"enrollment_token":"%s","expires_seconds":%s}' "$(bp_json_escape "$token")" "$ttl")"
+    ;;
+
+  rental_list)
+    require_role viewer
+    body="$(bp_rental_list_json)"
+    bp_json "$(printf '{"ok":true,"devices":%s,"server_time":%s}' "$body" "$now")"
+    ;;
+
+  rental_policy_set)
+    require_role admin; require_ready
+    bp_auth_csrf_ok || bp_fail "csrf validation failed"
+    did="$(bp_param device_id)"; allowed="$(bp_param allowed_packages)"; preferred="$(bp_param preferred_vendo)"
+    valid_did "$did" || bp_fail "invalid rental device"
+    [ -n "$(bp_rental_device_line "$did")" ] || bp_fail "unknown rental device"
+    bp_rental_policy_set "$did" "${allowed:-*}" "$preferred" || bp_fail "invalid rental policy"
+    bp_rental_event_log policy "$did" "${allowed:-*}"
+    bp_auth_audit rental_policy_set "$BP_AUTH_USER" "${REMOTE_ADDR:-unknown}" "$did"
+    bp_json '{"ok":true}'
+    ;;
+
+  rental_admin_password_set)
+    require_role admin; require_ready
+    bp_auth_csrf_ok || bp_fail "csrf validation failed"
+    did="$(bp_param device_id)"; admin_password="$(bp_param admin_password)"
+    valid_did "$did" || bp_fail "invalid rental device"
+    [ -n "$(bp_rental_device_line "$did")" ] || bp_fail "unknown rental device"
+    bp_rental_admin_password_set "$did" "$admin_password" || bp_fail "device administrator password must be at least 8 characters"
+    bp_rental_event_log device_admin_password "$did" "updated"
+    bp_auth_audit rental_admin_password_set "$BP_AUTH_USER" "${REMOTE_ADDR:-unknown}" "$did"
+    bp_json '{"ok":true}'
+    ;;
+
+  rental_rename)
+    require_role operator; require_ready
+    bp_auth_csrf_ok || bp_fail "csrf validation failed"
+    did="$(bp_param device_id)"; label="$(bp_param label)"
+    valid_did "$did" || bp_fail "invalid rental device"
+    bp_rental_device_rename "$did" "$label" || bp_fail "invalid rental device or label"
+    bp_auth_audit rental_rename "$BP_AUTH_USER" "${REMOTE_ADDR:-unknown}" "$did"
+    bp_json '{"ok":true}'
+    ;;
+
+  rental_lease_add)
+    require_role operator; require_ready
+    bp_auth_csrf_ok || bp_fail "csrf validation failed"
+    did="$(bp_param device_id)"; seconds="$(bp_param seconds)"
+    valid_did "$did" || bp_fail "invalid rental device"
+    lease="$(bp_rental_lease_add "$did" "$seconds")" || bp_fail "invalid rental device or duration"
+    bp_auth_audit rental_lease_add "$BP_AUTH_USER" "${REMOTE_ADDR:-unknown}" "$did:$seconds"
+    bp_json "$(printf '{"ok":true,"device_id":"%s","lease_until":%s}' "$did" "$lease")"
+    ;;
+
+  rental_lease_set)
+    require_role operator; require_ready
+    bp_auth_csrf_ok || bp_fail "csrf validation failed"
+    did="$(bp_param device_id)"; seconds="$(bp_param seconds)"
+    valid_did "$did" || bp_fail "invalid rental device"
+    case "$seconds" in ''|*[!0-9]*) bp_fail "invalid lease duration";; esac
+    [ "$seconds" -le 2592000 ] 2>/dev/null || bp_fail "lease duration too large"
+    line="$(bp_rental_device_line "$did")"; [ -n "$line" ] || bp_fail "unknown rental device"
+    secret="$(printf '%s' "$line" | cut -f2)"; label="$(printf '%s' "$line" | cut -f4)"; last="$(printf '%s' "$line" | cut -f5)"
+    lease=$((now+seconds))
+    bp_rental_device_write "$did" "$secret" "$lease" "$label" "$last"
+    bp_rental_event_log lease_set "$did" "$seconds"
+    bp_auth_audit rental_lease_set "$BP_AUTH_USER" "${REMOTE_ADDR:-unknown}" "$did:$seconds"
+    bp_json "$(printf '{"ok":true,"device_id":"%s","lease_until":%s}' "$did" "$lease")"
+    ;;
+
+  rental_expire)
+    require_role operator; require_ready
+    bp_auth_csrf_ok || bp_fail "csrf validation failed"
+    did="$(bp_param device_id)"
+    valid_did "$did" || bp_fail "invalid rental device"
+    lease="$(bp_rental_lease_expire "$did")" || bp_fail "unknown rental device"
+    bp_auth_audit rental_expire "$BP_AUTH_USER" "${REMOTE_ADDR:-unknown}" "$did"
+    bp_json "$(printf '{"ok":true,"device_id":"%s","lease_until":%s}' "$did" "$lease")"
+    ;;
+
+  rental_revoke)
+    require_role admin; require_ready
+    bp_auth_csrf_ok || bp_fail "csrf validation failed"
+    did="$(bp_param device_id)"
+    valid_did "$did" || bp_fail "invalid rental device"
+    bp_rental_device_revoke "$did" || bp_fail "unknown rental device"
+    bp_auth_audit rental_revoke "$BP_AUTH_USER" "${REMOTE_ADDR:-unknown}" "$did"
+    bp_json '{"ok":true}'
+    ;;
+
+  rental_events)
+    require_role viewer
+    limit="$(bp_param limit)"; [ -n "$limit" ] || limit=100
+    body="$(bp_rental_events_json "$limit")"
+    bp_json "$(printf '{"ok":true,"events":%s}' "$body")"
+    ;;
+
+  controller_list)
+    require_role viewer
+    body="$(bp_controller_list_json)"
+    bp_json "$(printf '{"ok":true,"controllers":%s}' "$body")"
+    ;;
+
+  controller_set)
+    require_role admin; require_ready
+    bp_auth_csrf_ok || bp_fail "csrf validation failed"
+    id="$(bp_param id)"
+    printf '%s' "$id" | grep -Eq '^[A-Za-z0-9._-]{1,48}$' || bp_fail "invalid controller"
+    bp_controller_ensure "$id"
+    bp_controller_set "$id" "$(bp_param enabled)" "$(bp_param coin_enabled)" "$(bp_param relay_enabled)" "$(bp_param led_enabled)" "$(bp_param coin_pin)" "$(bp_param relay_pin)" "$(bp_param led_pin)" "$(bp_param coin_active_low)" "$(bp_param relay_active_high)" "$(bp_param led_active_high)" "$(bp_param coin_debounce_ms)" "$(bp_param pulse_group_ms)" "$(bp_param max_wifi_retries)" || bp_fail "invalid controller configuration"
+    bp_auth_audit controller_set "$BP_AUTH_USER" "${REMOTE_ADDR:-unknown}" "$id"
+    bp_json '{"ok":true}'
+    ;;
+
+  config_get)
+    require_role viewer
+    key="$(bp_param key)"
+    case "$key" in rental_seconds_per_pulse|coin_window) ;; *) bp_fail "rental profile does not expose this setting";; esac
+    value="$(bp_config_get "$key")"
+    bp_json "$(printf '{"ok":true,"key":"%s","value":"%s"}' "$(bp_json_escape "$key")" "$(bp_json_escape "$value")")"
+    ;;
+
+  config_set)
+    require_role admin; require_ready
+    bp_auth_csrf_ok || bp_fail "csrf validation failed"
+    key="$(bp_param key)"; value="$(bp_param value)"
+    case "$key" in rental_seconds_per_pulse|coin_window) ;; *) bp_fail "rental profile does not expose this setting";; esac
+    bp_config_validate "$key" "$value" || bp_fail "invalid config value"
+    bp_config_set "$key" "$value" || bp_fail "config apply failed and was rolled back"
+    bp_json "$(printf '{"ok":true,"key":"%s","value":"%s"}' "$(bp_json_escape "$key")" "$(bp_json_escape "$value")")"
+    ;;
+
+  audit_list)
+    require_role admin
+    limit="$(bp_param limit)"; [ -n "$limit" ] || limit=100
+    body="$(audit_json "$limit")"
+    bp_json "$(printf '{"ok":true,"audit":%s}' "$body")"
+    ;;
+
+  password_change)
+    require_role viewer
+    bp_auth_csrf_ok || bp_fail "csrf validation failed"
+    new_password="$(bp_param new_password)"
+    [ -n "$new_password" ] || bp_fail "missing new password"
+    bp_auth_lock || bp_fail "authentication busy"
+    if bp_auth_set_password "$BP_AUTH_USER" "$BP_AUTH_ROLE" "$new_password" 0; then
+      bp_auth_invalidate_user_sessions "$BP_AUTH_USER"
+      rm -f /etc/blazepwifi/INITIAL_ADMIN_PASSWORD 2>/dev/null || true
+      bp_auth_audit password_changed "$BP_AUTH_USER" "${REMOTE_ADDR:-unknown}" "self"
+      bp_auth_unlock
+      bp_json '{"ok":true,"reauth_required":true}'
+    else
+      rc=$?; bp_auth_unlock
+      [ "$rc" -eq 2 ] && bp_fail "password must be at least 12 characters"
+      bp_fail "password change failed"
+    fi
+    ;;
+  *) bp_fail "unknown rental admin action" ;;
+esac

@@ -1,0 +1,147 @@
+# Installation
+
+BlazePwifi 0.3.0 is built against OpenWrt 25.12.5. Verify the exact device revision and a recovery path before flashing.
+
+## First login
+
+Default account name: admin.
+
+There is no universal production password. A fresh image generates a random bootstrap password at first boot and stores it root-only at:
+
+    /etc/blazepwifi/INITIAL_ADMIN_PASSWORD
+
+Read it locally or over SSH:
+
+    cat /etc/blazepwifi/INITIAL_ADMIN_PASSWORD
+
+Sign in and replace it immediately. The bootstrap file is removed after password replacement.
+
+Default endpoints:
+- Portal: http://LAN_IP:8080/
+- Admin: https://LAN_IP:8443/admin.html
+- Vendo API: http://LAN_IP:4455/cgi-bin/vendo
+- Rental API: http://LAN_IP:8080/cgi-bin/rental
+
+Administration is HTTPS-only and local-management-side by default.
+
+## Existing OpenWrt 25.12.x
+
+1. Back up OpenWrt and confirm recovery access.
+2. Copy the BlazePwifi project directory to the router.
+3. Run installer/install.sh as root.
+4. Save the printed bootstrap admin credential and Vendo key.
+5. Sign in, replace the bootstrap password, then configure network roles, rates and controllers.
+
+## Network roles and VLANs
+
+Everything below is configurable. Example production layout:
+
+| Role | Example VLAN | Purpose |
+| --- | ---: | --- |
+| Management | 10 | Admin and SSH |
+| Hotspot | 13 | Captive-portal clients |
+| Controllers | 20 | ESP/Linux Vendos |
+| Rental devices | 30 | Managed Android phones |
+| WAN | upstream | Internet uplink |
+
+Small Lite deployments can leave all VLAN IDs at 0 and use br-lan.
+
+Relevant settings include management_if, hotspot_if, controller_if, rental_if and their VLAN IDs. Preserve an alternate management/recovery path before changing a remote management VLAN.
+
+## ESP8266 controller
+
+Reference defaults:
+- coin input GPIO4
+- relay GPIO5
+- insert/status LED GPIO14
+- coin active-low
+
+These are editable. A 12 V coin acceptor must never be wired directly to a 3.3 V GPIO. Use proper isolation/level conditioning and validate voltage, polarity and pulse width on the real acceptor.
+
+The controller exposes a temporary generated-password setup AP where Wi-Fi, server address, controller ID/key and GPIO mapping can be changed.
+
+## ESP32 controller
+
+Reference defaults:
+- coin input GPIO27
+- relay GPIO26
+- LED GPIO2
+- coin active-low
+- relay/LED active-high
+- debounce 40 ms
+- pulse group 400 ms
+
+ESP32 uses Preferences/NVS for settings and LittleFS for its unacknowledged coin journal. All listed GPIO/timing/polarity values are configurable.
+
+## Orange Pi
+
+Release-gating images:
+- Orange Pi Zero 3
+- Orange Pi One
+- Orange Pi PC
+
+Successful optional builds can include PC Plus, PC2, Zero, Zero2, Zero2W and One Plus.
+
+Write the matching sdcard.img.gz image to microSD with Raspberry Pi Imager, Etcher, Rufus, or decompressed dd. Never flash an image for another board.
+
+Standard images include the libgpiod controller agent, but it is not auto-enabled because physical header pin numbers are not gpiochip offsets. On the exact board:
+1. run gpioinfo;
+2. identify safe lines;
+3. configure gpiochip + line offsets in BlazePwifi;
+4. verify logic levels without the acceptor attached;
+5. connect isolated hardware and enable the agent.
+
+Orange Pi Zero 3 should use Ethernet or a verified supported external adapter unless the exact upstream build documents onboard wireless support.
+
+## x86_64 PC
+
+The release contains both legacy BIOS and UEFI images, with ext4 and squashfs variants when generated.
+
+- combined.img.gz: legacy BIOS
+- combined-efi.img.gz: UEFI
+
+Write an image using Rufus, Etcher, or:
+
+    gunzip -c IMAGE.img.gz | sudo dd of=/dev/DEVICE bs=4M conv=fsync status=progress
+
+BlazePwifi does not rely on a fixed eth0 name. Assign actual detected interfaces to WAN, management and hotspot roles.
+
+## Ruijie RG-EW1200G Pro v1.1
+
+The release contains an official OpenWrt checksum-verified initramfs bootstrap and a BlazePwifi squashfs sysupgrade. The bootstrap does not contain the persistent BlazePwifi installation. Confirm the exact v1.1 hardware and serial/TFTP recovery before flashing.
+
+## BlazeRental Android
+
+### Strong QR / Device Owner mode
+
+Use only an owned or explicitly authorized rental phone. Factory-reset it and enter Android QR provisioning during Setup Wizard. A real provisioning QR contains:
+- BlazeRental DPC component;
+- APK download URL;
+- SHA-256 APK checksum;
+- BlazePwifi server URL;
+- one-time enrollment token;
+- device label.
+
+On supported Android/OEM builds, this provisions BlazeRental as Device Owner. Managed policy can apply the dedicated launcher, lock-task allowlist and supported restrictions. Rental time is server-authoritative; after reboot cached lease state fails closed until the server is reached.
+
+### Manual APK mode
+
+BlazeRental.apk can also be installed normally. On first launch, enter the BlazePwifi server URL and a one-time rental enrollment token generated by the administrator. The app then exchanges that token for its per-device identity and uses the same server-authoritative lease system.
+
+Manual installation remains intentionally lower-security because normal installation cannot reliably prevent uninstall, settings access or safe-mode bypass.
+
+Neither mode claims resistance to bootloader/recovery reflashing, privileged exploits or OEM service tools.
+
+## Portal previews
+
+Open portal-templates/index.html locally to browse static previews for first-run setup, admin, captive portal, rate selection, insert coin, voucher, active/pause states, Vendo/controller setup and rental enrollment/lock screens.
+
+## Release verification
+
+GitHub Release assets include a release-wide SHA256SUMS and manifest.json. Verify checksums before flashing or installing.
+
+## Before accepting payment
+
+Physically test exact-device boot/recovery, DHCP/DNS/captive behavior, VLAN isolation, controller voltage/polarity/pulse timing, GPIO isolation, brownouts during writes, duplicate/retry events, rental reboot/network-loss behavior, and sustained multi-client load.
+
+CI-green means build-validated; it does not automatically mean field-proven.

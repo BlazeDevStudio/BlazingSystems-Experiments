@@ -1,0 +1,343 @@
+name: BlazePwifi Standalone Rental rc3 release
+
+on:
+  push:
+    branches: [blazepwifi-rental-v0.5.0-rc3]
+    paths:
+      - 'experiment/openwrt/BlazePwifi/profiles/standalone-rental/**'
+      - 'experiment/openwrt/BlazePwifi/releases/0.5.0-rental-rc.3/**'
+      - '.github/workflows/blazepwifi-rental-release.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: blazepwifi-rental-v0.5.0-rc3
+  cancel-in-progress: false
+
+env:
+  PROFILE: experiment/openwrt/BlazePwifi/profiles/standalone-rental
+  VERSION: 0.5.0-rental-rc.3
+  TAG: v0.5.0-rental-rc.3
+
+jobs:
+  validate:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Static and safety validation
+        run: sh "$PROFILE/tests/static.sh"
+      - name: Confirm shared v0.5 rental protocol baseline
+        run: |
+          set -euo pipefail
+          grep -q 'policy_sig_v3' experiment/openwrt/BlazePwifi/openwrt/rootfs/www/blazepwifi/cgi-bin/rental
+          grep -q 'policy_patch' experiment/openwrt/BlazePwifi/openwrt/rootfs/www/blazepwifi/cgi-bin/rental
+          grep -q 'bp_vendo_sig_expected' experiment/openwrt/BlazePwifi/openwrt/rootfs/usr/lib/blazepwifi/common.sh
+      - name: Parse Windows PowerShell installer
+        shell: pwsh
+        run: |
+          $p = Join-Path $env:GITHUB_WORKSPACE "$env:PROFILE/windows/Install-BlazePwifi-Rental.ps1"
+          $tokens = $null
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile($p, [ref]$tokens, [ref]$errors) | Out-Null
+          if ($errors.Count -gt 0) {
+            $errors | Format-List | Out-String | Write-Error
+            exit 1
+          }
+      - name: Guard first-SSH native stderr handling
+        shell: bash
+        run: |
+          set -euo pipefail
+          P="$PROFILE/windows/Install-BlazePwifi-Rental.ps1"
+          grep -q 'function Invoke-NativeCapture' "$P"
+          grep -q 'function Invoke-NativeVisible' "$P"
+          grep -q 'ErrorActionPreference = "Continue"' "$P"
+          grep -q 'Invoke-NativeCapture -FilePath $Plink' "$P"
+          grep -q 'Invoke-NativeCapture -FilePath $Pscp' "$P"
+          ! grep -Eq '&[[:space:]]+\$Plink.*2>&1' "$P"
+          ! grep -Eq '&[[:space:]]+\$Pscp' "$P"
+
+  openwrt_bundle:
+    needs: validate
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Assemble complete OpenWrt Rental bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUT="BlazePwifi-Rental-Standalone-OpenWrt-v$VERSION"
+          mkdir -p "$OUT/rootfs"
+          cp -a "$PROFILE/openwrt/." "$OUT/"
+          cp -a experiment/openwrt/BlazePwifi/openwrt/rootfs/. "$OUT/rootfs/"
+          cp "$PROFILE/README.md" "$OUT/RELEASE-README.md"
+          chmod +x "$OUT/"*.sh "$OUT/rental-profile"
+          tar -czf "$OUT.tar.gz" "$OUT"
+          sha256sum "$OUT.tar.gz" > "$OUT.tar.gz.sha256"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BlazePwifi-Rental-Standalone-OpenWrt-rc3
+          path: |
+            BlazePwifi-Rental-Standalone-OpenWrt-v0.5.0-rental-rc.3.tar.gz
+            BlazePwifi-Rental-Standalone-OpenWrt-v0.5.0-rental-rc.3.tar.gz.sha256
+          if-no-files-found: error
+
+  windows_installer:
+    needs: [validate, openwrt_bundle]
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: BlazePwifi-Rental-Standalone-OpenWrt-rc3
+          path: downloaded
+      - name: Build one-click Windows installer package
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUT="BlazePwifi-Rental-Standalone-Windows-OneClick-v$VERSION"
+          mkdir -p "$OUT"
+          cp "$PROFILE/windows/Install-BlazePwifi-Rental.bat" "$OUT/"
+          cp "$PROFILE/windows/Install-BlazePwifi-Rental.ps1" "$OUT/"
+          cp "$PROFILE/windows/README.txt" "$OUT/"
+          cp downloaded/BlazePwifi-Rental-Standalone-OpenWrt-v0.5.0-rental-rc.3.tar.gz "$OUT/"
+
+          PUTTY_VER=0.83
+          BASE="https://the.earth.li/~sgtatham/putty/$PUTTY_VER"
+          curl --fail --location --proto '=https' --tlsv1.2 "$BASE/w64/plink.exe" -o "$OUT/plink.exe"
+          curl --fail --location --proto '=https' --tlsv1.2 "$BASE/w64/pscp.exe" -o "$OUT/pscp.exe"
+          curl --fail --location --proto '=https' --tlsv1.2 "https://www.chiark.greenend.org.uk/~sgtatham/putty/licence.html" -o "$OUT/PuTTY-LICENCE.html"
+
+          echo "50479953865b30775056441b10fdcb984126ba4f98af4f64756902a807b453e7  $OUT/plink.exe" | sha256sum -c -
+          echo "5aa48b142333bc7d097aed9a75284bd66b325c26558c8b9b6f37c276f3a5173a  $OUT/pscp.exe" | sha256sum -c -
+          test -s "$OUT/PuTTY-LICENCE.html"
+          file "$OUT/plink.exe" | grep -qi 'PE32'
+          file "$OUT/pscp.exe" | grep -qi 'PE32'
+
+          (
+            cd "$OUT"
+            sha256sum * > SHA256SUMS
+          )
+          zip -9 -r "$OUT.zip" "$OUT"
+          sha256sum "$OUT.zip" > "$OUT.zip.sha256"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BlazePwifi-Rental-Standalone-Windows-OneClick-rc3
+          path: |
+            BlazePwifi-Rental-Standalone-Windows-OneClick-v0.5.0-rental-rc.3.zip
+            BlazePwifi-Rental-Standalone-Windows-OneClick-v0.5.0-rental-rc.3.zip.sha256
+          if-no-files-found: error
+
+  esp8266:
+    needs: validate
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: arduino/setup-arduino-cli@v2
+      - name: Install ESP8266 core
+        run: |
+          arduino-cli config init --overwrite
+          arduino-cli config add board_manager.additional_urls https://arduino.esp8266.com/stable/package_esp8266com_index.json
+          arduino-cli core update-index
+          arduino-cli core install esp8266:esp8266
+      - name: Compile ESP8266 Rental Standalone
+        shell: bash
+        run: |
+          set -euo pipefail
+          SKETCH="$PROFILE/esp8266/BlazeRentalStandalone8266"
+          OUT=dist-rental/esp8266
+          mkdir -p "$OUT"
+          arduino-cli compile --fqbn esp8266:esp8266:nodemcuv2 --output-dir "$OUT" "$SKETCH"
+          cp "$SKETCH/BlazeRentalStandalone8266.ino" "$OUT/"
+          cp "$SKETCH/BlazeRentalStandaloneCore.h" "$OUT/"
+          cp "$PROFILE/esp8266/README.md" "$OUT/README.md"
+          BIN="$(find "$OUT" -maxdepth 1 -type f -name '*.bin' -print | head -n1)"
+          test -n "$BIN" -a -s "$BIN"
+          cp "$BIN" "$OUT/BlazePwifi-Rental-Standalone-ESP8266.bin"
+          (cd "$OUT" && sha256sum * | grep -v ' SHA256SUMS$' > SHA256SUMS)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BlazePwifi-Rental-Standalone-ESP8266-rc3
+          path: dist-rental/esp8266/
+          if-no-files-found: error
+
+  esp32:
+    needs: validate
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: arduino/setup-arduino-cli@v2
+      - name: Install ESP32 core
+        run: |
+          arduino-cli config init --overwrite
+          arduino-cli config add board_manager.additional_urls https://espressif.github.io/arduino-esp32/package_esp32_index.json
+          arduino-cli core update-index
+          arduino-cli core install esp32:esp32
+      - name: Compile ESP32 Rental Standalone
+        shell: bash
+        run: |
+          set -euo pipefail
+          SKETCH="$PROFILE/esp32/BlazeRentalStandalone32"
+          OUT=dist-rental/esp32
+          mkdir -p "$OUT"
+          arduino-cli compile --fqbn esp32:esp32:esp32 --output-dir "$OUT" "$SKETCH"
+          cp "$SKETCH/BlazeRentalStandalone32.ino" "$OUT/"
+          cp "$SKETCH/BlazeRentalStandaloneCore.h" "$OUT/"
+          cp "$PROFILE/esp32/README.md" "$OUT/README.md"
+          APP="$(find "$OUT" -maxdepth 1 -type f -name '*.bin' ! -name '*.bootloader.bin' ! -name '*.partitions.bin' ! -name '*.merged.bin' -print | head -n1)"
+          test -n "$APP" -a -s "$APP"
+          cp "$APP" "$OUT/BlazePwifi-Rental-Standalone-ESP32.bin"
+          (cd "$OUT" && sha256sum * | grep -v ' SHA256SUMS$' > SHA256SUMS)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BlazePwifi-Rental-Standalone-ESP32-rc3
+          path: dist-rental/esp32/
+          if-no-files-found: error
+
+  firmware:
+    needs: validate
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [ruijie, x86_64]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install ImageBuilder dependencies
+        run: sudo apt-get update && sudo apt-get install -y zstd
+      - name: Build Rental Standalone OpenWrt image
+        run: sh "$PROFILE/build/build-openwrt-rental-image.sh" "${{ matrix.target }}"
+      - name: Verify image checksums
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "experiment/openwrt/BlazePwifi/dist/rental-${{ matrix.target }}"
+          sha256sum -c SHA256SUMS
+          if [ "${{ matrix.target }}" = ruijie ]; then
+            test -s BlazePwifi-Rental-Standalone-EW1200G-Pro-v1.1-sysupgrade.bin
+          else
+            test -s BlazePwifi-Rental-Standalone-x86_64-BIOS.img.gz
+            test -s BlazePwifi-Rental-Standalone-x86_64-UEFI.img.gz
+            gzip -t *.img.gz
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BlazePwifi-Rental-Standalone-OpenWrt-${{ matrix.target }}-rc3
+          path: experiment/openwrt/BlazePwifi/dist/rental-${{ matrix.target }}/
+          if-no-files-found: error
+
+  publish:
+    if: github.ref == 'refs/heads/blazepwifi-rental-v0.5.0-rc3'
+    needs: [validate, openwrt_bundle, windows_installer, esp8266, esp32, firmware]
+    runs-on: ubuntu-22.04
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: BlazePwifi-Rental-Standalone-*-rc3
+          path: artifacts
+      - name: Assemble immutable rc.3 release set
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p release-out
+
+          cp "$(find artifacts/BlazePwifi-Rental-Standalone-OpenWrt-rc3 -type f -name '*.tar.gz' -print -quit)" release-out/
+          cp "$(find artifacts/BlazePwifi-Rental-Standalone-Windows-OneClick-rc3 -type f -name '*.zip' -print -quit)" release-out/
+
+          E6BIN="$(find artifacts/BlazePwifi-Rental-Standalone-ESP8266-rc3 -type f -name 'BlazePwifi-Rental-Standalone-ESP8266.bin' -print -quit)"
+          E6INO="$(find artifacts/BlazePwifi-Rental-Standalone-ESP8266-rc3 -type f -name '*.ino' -print -quit)"
+          E32BIN="$(find artifacts/BlazePwifi-Rental-Standalone-ESP32-rc3 -type f -name 'BlazePwifi-Rental-Standalone-ESP32.bin' -print -quit)"
+          E32INO="$(find artifacts/BlazePwifi-Rental-Standalone-ESP32-rc3 -type f -name '*.ino' -print -quit)"
+          test -s "$E6BIN" -a -s "$E6INO" -a -s "$E32BIN" -a -s "$E32INO"
+          cp "$E6BIN" release-out/BlazePwifi-Rental-Standalone-ESP8266.bin
+          cp "$E6INO" release-out/BlazePwifi-Rental-Standalone-ESP8266.ino
+          cp "$E32BIN" release-out/BlazePwifi-Rental-Standalone-ESP32.bin
+          cp "$E32INO" release-out/BlazePwifi-Rental-Standalone-ESP32.ino
+
+          R="$(find artifacts/BlazePwifi-Rental-Standalone-OpenWrt-ruijie-rc3 -type f -name 'BlazePwifi-Rental-Standalone-EW1200G-Pro-v1.1-sysupgrade.bin' -print -quit)"
+          test -n "$R" -a -s "$R"
+          cp "$R" release-out/
+          BOOT="$(find artifacts/BlazePwifi-Rental-Standalone-OpenWrt-ruijie-rc3 -type f -name '*recovery-initramfs.bin' -print -quit)"
+          [ -z "$BOOT" ] || cp "$BOOT" release-out/
+
+          BIOS="$(find artifacts/BlazePwifi-Rental-Standalone-OpenWrt-x86_64-rc3 -type f -name '*BIOS.img.gz' -print -quit)"
+          EFI="$(find artifacts/BlazePwifi-Rental-Standalone-OpenWrt-x86_64-rc3 -type f -name '*UEFI.img.gz' -print -quit)"
+          test -n "$BIOS" -a -s "$BIOS" -a -n "$EFI" -a -s "$EFI"
+          cp "$BIOS" "$EFI" release-out/
+
+          gh release download v0.5.0 --repo "${{ github.repository }}" --pattern 'BlazeRental-v0.5.0-TEST.apk' --dir release-out || true
+          cp experiment/openwrt/BlazePwifi/releases/0.5.0-rental-rc.3/README.md release-out/README.md
+
+          jq -n --arg release "$VERSION" --arg commit "$GITHUB_SHA" '{
+            release:$release,
+            commit:$commit,
+            base:"BlazePwifi v0.5 software",
+            edition:"Standalone Rental Server",
+            status:"release-candidate",
+            openwrt:{
+              one_click_windows:true,
+              existing_network_preserved_by_installer:true,
+              rental_path:"/rental/",
+              android_server:"http://LocalIP",
+              full_conversion_supported:true,
+              r281_firmware_image_published:false,
+              r281_note:"Installer-supported; firmware image withheld pending public hardware-validated R281 image path",
+              ew1200g_sysupgrade:true,
+              x86_bios_uefi_images:true
+            },
+            esp:{
+              modes:["Rental Server","Rental Server + Local Coin Slot","Remote Coin Slot Interface"],
+              default_physical_slots_per_esp:1,
+              remote_coin_binding:true,
+              wifi_setup_validated_before_save:true,
+              recovery_after_failed_saved_wifi_attempts:5
+            }
+          }' > release-out/RELEASE-MANIFEST.json
+
+          (
+            cd release-out
+            find . -maxdepth 1 -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS
+          )
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BlazePwifi-Rental-v0.5.0-rc3-release-stage
+          path: release-out/
+          retention-days: 90
+          if-no-files-found: error
+
+      - name: Publish rc.3 prerelease
+        shell: bash
+        run: |
+          set -euo pipefail
+          NOTES=experiment/openwrt/BlazePwifi/releases/0.5.0-rental-rc.3/README.md
+          if gh release view "$TAG" --repo "${{ github.repository }}" >/dev/null 2>&1; then
+            gh release edit "$TAG" --repo "${{ github.repository }}" --target "$GITHUB_SHA" \
+              --title "BlazePwifi Standalone Rental Server v0.5.0-rental-rc.3" --notes-file "$NOTES" --prerelease
+          else
+            gh release create "$TAG" --repo "${{ github.repository }}" --target "$GITHUB_SHA" --prerelease \
+              --title "BlazePwifi Standalone Rental Server v0.5.0-rental-rc.3" --notes-file "$NOTES"
+          fi
+          find release-out -maxdepth 1 -type f -print0 | xargs -0 -r gh release upload "$TAG" --repo "${{ github.repository }}" --clobber
+
+          JSON="$(gh api "repos/${{ github.repository }}/releases/tags/$TAG")"
+          for required in \
+            BlazePwifi-Rental-Standalone-OpenWrt-v0.5.0-rental-rc.3.tar.gz \
+            BlazePwifi-Rental-Standalone-Windows-OneClick-v0.5.0-rental-rc.3.zip \
+            BlazePwifi-Rental-Standalone-ESP8266.bin \
+            BlazePwifi-Rental-Standalone-ESP8266.ino \
+            BlazePwifi-Rental-Standalone-ESP32.bin \
+            BlazePwifi-Rental-Standalone-ESP32.ino \
+            BlazePwifi-Rental-Standalone-EW1200G-Pro-v1.1-sysupgrade.bin \
+            BlazePwifi-Rental-Standalone-x86_64-BIOS.img.gz \
+            BlazePwifi-Rental-Standalone-x86_64-UEFI.img.gz \
+            RELEASE-MANIFEST.json SHA256SUMS
+          do
+            printf '%s' "$JSON" | jq -e --arg n "$required" '.assets[] | select(.name==$n)' >/dev/null \
+              || { echo "published asset missing: $required" >&2; exit 1; }
+          done

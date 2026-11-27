@@ -1,0 +1,11 @@
+import {readfile} from 'fs';
+import {config} from '/usr/share/blaze/common.uc';
+import {overlaps} from '/usr/share/blaze/subnets.uc';
+let j=json(readfile('/dev/stdin')),a=j['ipv4-address']?.[0],u=config();
+if(!a)die('No upstream DHCP address.');
+let dedicated=u.get('blaze','main','wifi_relay_scope')=='ssid',iface=dedicated?'blaze_repeat':'lan';
+let local=u.get('network',iface,'ipaddr'),netmask=u.get('network',iface,'netmask')||'255.255.255.0';
+if(overlaps(a.address,a.mask,local,netmask))die('Upstream subnet overlaps the repeater management subnet.');
+if(dedicated&&overlaps(a.address,a.mask,u.get('network','lan','ipaddr'),u.get('network','lan','netmask')||'255.255.255.0'))die('Upstream subnet overlaps home LAN; choose a different home LAN subnet before repeating this network.');
+if(!dedicated&&u.get('blaze','main','wifi_backup')=='1'&&overlaps(a.address,a.mask,'192.168.254.1',24))die('Upstream subnet overlaps backup Wi-Fi.');
+print('Subnets verified\n');

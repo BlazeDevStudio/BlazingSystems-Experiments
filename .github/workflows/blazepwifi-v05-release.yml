@@ -1,0 +1,169 @@
+name: BlazePwifi v0.5 release
+
+on:
+  push:
+    branches: [blazepwifi-v0.5.0-implementation]
+    paths:
+      - '.github/blazepwifi-v05-release-request.json'
+  workflow_dispatch:
+    inputs:
+      build_run_id:
+        description: "Successful exact-candidate BlazePwifi build run"
+        required: true
+        type: string
+      signing_run_id:
+        description: "Locked production signing run ID, or 0 when unavailable"
+        required: true
+        default: "0"
+        type: string
+      candidate_sha:
+        description: "Exact validated candidate SHA"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: blazepwifi-v05-release
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 45
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve release request
+        id: req
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_BUILD: ${{ inputs.build_run_id }}
+          INPUT_SIGN: ${{ inputs.signing_run_id }}
+          INPUT_SHA: ${{ inputs.candidate_sha }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT_NAME" = workflow_dispatch ]; then
+            BUILD_RUN="$INPUT_BUILD"; SIGN_RUN="$INPUT_SIGN"; SHA="$INPUT_SHA"
+          else
+            BUILD_RUN="$(jq -r '.build_run_id // empty' .github/blazepwifi-v05-release-request.json)"
+            SIGN_RUN="$(jq -r '.signing_run_id // "0"' .github/blazepwifi-v05-release-request.json)"
+            SHA="$(jq -r '.candidate_sha // empty' .github/blazepwifi-v05-release-request.json)"
+          fi
+          printf "%s" "$BUILD_RUN" | grep -Eq "^[0-9]+$"
+          printf "%s" "$SIGN_RUN" | grep -Eq "^[0-9]+$"
+          printf "%s" "$SHA" | grep -Eq "^[0-9a-f]{40}$"
+          B="$(gh api "repos/${{ github.repository }}/actions/runs/$BUILD_RUN")"
+          test "$(printf "%s" "$B" | jq -r .conclusion)" = success
+          test "$(printf "%s" "$B" | jq -r .head_sha)" = "$SHA"
+          if [ "$SIGN_RUN" != 0 ]; then
+            S="$(gh api "repos/${{ github.repository }}/actions/runs/$SIGN_RUN")"
+            test "$(printf "%s" "$S" | jq -r .conclusion)" = success
+          fi
+          echo "build=$BUILD_RUN" >> "$GITHUB_OUTPUT"
+          echo "sign=$SIGN_RUN" >> "$GITHUB_OUTPUT"
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.req.outputs.sha }}
+
+      - name: Download exact build artifacts
+        shell: bash
+        env:
+          BUILD_RUN: ${{ steps.req.outputs.build }}
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/build
+          gh run download "$BUILD_RUN" --repo "${{ github.repository }}" --dir artifacts/build
+          GATE="$(find artifacts/build -type f -name CANDIDATE-GATE.json -print -quit)"
+          test -n "$GATE" -a -s "$GATE"
+          test "$(jq -r .status "$GATE")" = passed
+          test "$(jq -r .commit "$GATE")" = "${{ steps.req.outputs.sha }}"
+
+      - name: Download locked production APK when available
+        if: steps.req.outputs.sign != '0'
+        shell: bash
+        env:
+          SIGN_RUN: ${{ steps.req.outputs.sign }}
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/signed
+          gh run download "$SIGN_RUN" --repo "${{ github.repository }}" --name BlazeRental-v0.5.0-production-signed --dir artifacts/signed
+          test -s artifacts/signed/BlazeRental.apk
+          test "$(jq -r .release artifacts/signed/SIGNING-MANIFEST.json)" = 0.5.0
+          test "$(jq -r .candidate_sha artifacts/signed/SIGNING-MANIFEST.json)" = "${{ steps.req.outputs.sha }}"
+
+      - name: Assemble release assets
+        shell: bash
+        env:
+          BUILD_RUN: ${{ steps.req.outputs.build }}
+          SIGN_RUN: ${{ steps.req.outputs.sign }}
+          SHA: ${{ steps.req.outputs.sha }}
+        run: |
+          set -euo pipefail
+          mkdir -p release-out
+          CI="$(find artifacts/build -type f -name BlazeRental-v0.5.0-ci.apk -print -quit)"
+          UNSIGNED="$(find artifacts/build -type f -name BlazeRental-v0.5.0-release-unsigned.apk -print -quit)"
+          test -n "$CI" -a -s "$CI" -a -n "$UNSIGNED" -a -s "$UNSIGNED"
+          cp "$CI" release-out/BlazeRental-v0.5.0-TEST.apk
+          cp "$UNSIGNED" release-out/BlazeRental-v0.5.0-release-unsigned.apk
+          if [ "$SIGN_RUN" != 0 ]; then
+            cp artifacts/signed/BlazeRental.apk release-out/BlazeRental.apk
+            cp artifacts/signed/SIGNING-MANIFEST.json release-out/BlazeRental-SIGNING-MANIFEST.json
+            cp artifacts/signed/BlazeRental-signing-fingerprint.txt release-out/BlazeRental-signing-fingerprint.txt
+          fi
+
+          # Flatten deployable build outputs while keeping names stable. Duplicate
+          # basenames are prefixed with their artifact directory.
+          find artifacts/build -type f \( -name "*.bin" -o -name "*.img" -o -name "*.img.gz" -o -name "*.tar.gz" -o -name "*.ino" \) -print0 | while IFS= read -r -d "" f; do
+            base="$(basename "$f")"
+            dest="release-out/$base"
+            if [ -e "$dest" ]; then
+              parent="$(basename "$(dirname "$f")" | tr " /" "--")"
+              dest="release-out/${parent}-${base}"
+            fi
+            cp "$f" "$dest"
+          done
+
+          cp experiment/openwrt/BlazePwifi/releases/0.5.0/README.md release-out/README.md
+          GATE="$(find artifacts/build -type f -name CANDIDATE-GATE.json -print -quit)"
+          cp "$GATE" release-out/CANDIDATE-GATE.json
+          jq -n --arg release "0.5.0" --arg sha "$SHA" --arg build "$BUILD_RUN" --arg sign "$SIGN_RUN" \
+            '{release:$release,commit:$sha,build_run_id:$build,signing_run_id:$sign,candidate_gate:"passed",production_signed:($sign!="0"),android_package:"com.blazesystems.blazerental"}' \
+            > release-out/RELEASE-MANIFEST.json
+          (cd release-out && find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS)
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BlazePwifi-v0.5.0-release-stage
+          path: release-out/
+          retention-days: 90
+          if-no-files-found: error
+
+      - name: Publish v0.5.0
+        shell: bash
+        env:
+          SHA: ${{ steps.req.outputs.sha }}
+          SIGN_RUN: ${{ steps.req.outputs.sign }}
+        run: |
+          set -euo pipefail
+          TAG=v0.5.0
+          NOTES=experiment/openwrt/BlazePwifi/releases/0.5.0/README.md
+          EXTRA=()
+          if [ "$SIGN_RUN" = 0 ]; then EXTRA+=(--prerelease); fi
+          if gh release view "$TAG" --repo "${{ github.repository }}" >/dev/null 2>&1; then
+            gh release edit "$TAG" --repo "${{ github.repository }}" --target "$SHA" --title "BlazePwifi v0.5.0 — Management Console & BlazeRental" --notes-file "$NOTES" "${EXTRA[@]}"
+          else
+            gh release create "$TAG" --repo "${{ github.repository }}" --target "$SHA" --title "BlazePwifi v0.5.0 — Management Console & BlazeRental" --notes-file "$NOTES" "${EXTRA[@]}"
+          fi
+          find release-out -maxdepth 1 -type f -print0 | xargs -0 -r gh release upload "$TAG" --repo "${{ github.repository }}" --clobber
+          gh api "repos/${{ github.repository }}/releases/tags/$TAG" > release.json
+          jq -e '.assets[] | select(.name=="BlazeRental-v0.5.0-TEST.apk")' release.json >/dev/null
+          jq -e '.assets[] | select(.name=="RELEASE-MANIFEST.json")' release.json >/dev/null
+          if [ "$SIGN_RUN" != 0 ]; then jq -e '.assets[] | select(.name=="BlazeRental.apk")' release.json >/dev/null; fi

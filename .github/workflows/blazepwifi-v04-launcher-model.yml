@@ -1,0 +1,86 @@
+name: BlazePwifi v0.4 launcher model gate
+
+on:
+  push:
+    branches: [blazepwifi-v0.4.0-implementation]
+    paths:
+      - 'experiment/openwrt/BlazePwifi/android/BlazeRentalLauncher/build.gradle'
+      - 'experiment/openwrt/BlazePwifi/android/BlazeRentalLauncher/src/com/blazesystems/blazerental/**'
+      - 'experiment/openwrt/BlazePwifi/android/BlazeRentalLauncher/src/com/google/android/apps/nexuslauncher/NexusLauncherActivity.java'
+      - 'experiment/openwrt/BlazePwifi/android/BlazeRentalLauncher/tests/unit/**'
+      - 'experiment/openwrt/BlazePwifi/tests/v04_android_source.sh'
+      - '.github/workflows/blazepwifi-v04-launcher-model.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  model:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 35
+    env:
+      TARGET: experiment/openwrt/BlazePwifi/android/BlazeRentalLauncher
+      GRADLE_VERSION: 4.4.1
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: blazepwifi-v0.4.0-implementation
+
+      - name: Install Android SDK 27 and isolate legacy SDK root
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDKMANAGER="${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager"
+          test -x "$SDKMANAGER"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" "platforms;android-27" "build-tools;27.0.3"
+          rm -rf /tmp/android-sdk-27
+          mkdir -p /tmp/android-sdk-27/platforms /tmp/android-sdk-27/build-tools
+          cp -a "${ANDROID_SDK_ROOT}/platforms/android-27" /tmp/android-sdk-27/platforms/
+          cp -a "${ANDROID_SDK_ROOT}/build-tools/27.0.3" /tmp/android-sdk-27/build-tools/
+          printf 'sdk.dir=/tmp/android-sdk-27\n' > "$TARGET/local.properties"
+
+      - name: Set up JDK 8
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '8'
+
+      - name: Install Gradle 4.4.1
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSL "https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip" -o /tmp/gradle.zip
+          unzip -q /tmp/gradle.zip -d /opt
+          echo "/opt/gradle-${GRADLE_VERSION}/bin" >> "$GITHUB_PATH"
+
+      - name: Verify v0.4 Android source contract
+        run: sh experiment/openwrt/BlazePwifi/tests/v04_android_source.sh
+
+      - name: Run rental model unit tests and compile launcher
+        shell: bash
+        working-directory: experiment/openwrt/BlazePwifi/android/BlazeRentalLauncher
+        run: |
+          set -euo pipefail
+          ANDROID_HOME=/tmp/android-sdk-27 ANDROID_SDK_ROOT=/tmp/android-sdk-27 \
+            gradle --no-daemon --stacktrace testAospDebugUnitTest assembleAospDebug
+
+      - name: Verify production identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -Fq "applicationId 'com.blazesystems.blazerental'" "$TARGET/build.gradle"
+          grep -Fq 'versionName "0.4.0"' "$TARGET/build.gradle"
+          grep -Fq '5605dd10845b2ed841cadaf3dddcb0205c057c60' "$TARGET/BLAZE_UPSTREAM.md"
+
+      - name: Upload model-gate APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: BlazeRentalLauncher-v0.4-model-debug
+          path: experiment/openwrt/BlazePwifi/android/BlazeRentalLauncher/build/outputs/apk/aosp/debug/*.apk
+          if-no-files-found: error

@@ -1,0 +1,314 @@
+{
+  "application": "EasyMode",
+  "version": "4.2.6",
+  "kind": "consolidated application source, not firmware",
+  "verified_against_live": "2026-10-10",
+  "files": [
+    {
+      "path": "root/etc/blaze/easymode-version",
+      "mode": "100644",
+      "bytes": 7,
+      "sha256": "c75b18610e111d3d9198a4b6074c1096c6872b40b95e3e492f39f8c7ae1d96cf"
+    },
+    {
+      "path": "root/etc/init.d/blaze-access",
+      "mode": "100755",
+      "bytes": 109,
+      "sha256": "0e2fc14d82240a7175b3e9ff15ea2c0a9509d48841eefff1831109cb924a525e"
+    },
+    {
+      "path": "root/etc/init.d/blaze-health",
+      "mode": "100755",
+      "bytes": 194,
+      "sha256": "a870d5d67c94d85c9ea27702720195abeecfece9f15e05a01987212e4eff6ae2"
+    },
+    {
+      "path": "root/usr/libexec/blaze-access-apply",
+      "mode": "100755",
+      "bytes": 119,
+      "sha256": "bde2b7e97bdf1308570c35661e90122cb2e2ca8a070af2d10c10b26b71a4facf"
+    },
+    {
+      "path": "root/usr/libexec/blaze-antenna",
+      "mode": "100755",
+      "bytes": 1388,
+      "sha256": "e8f90384a016b35204d59ec290a4d9bd8890631ed987014812c1090541a62b3c"
+    },
+    {
+      "path": "root/usr/libexec/blaze-client-sample",
+      "mode": "100755",
+      "bytes": 148,
+      "sha256": "14a5bf19a0e34e26ee3060f035e1b8418f0a0cfb5266b86300a8fdb95acfa083"
+    },
+    {
+      "path": "root/usr/libexec/blaze-gcom",
+      "mode": "100755",
+      "bytes": 331,
+      "sha256": "153b5b0c49c57bced6e498e2b1a155c92fb7b7c569d4b7458817e6e55de6df19"
+    },
+    {
+      "path": "root/usr/libexec/blaze-health",
+      "mode": "100755",
+      "bytes": 11751,
+      "sha256": "7c87e13223fdd79dd3b2c670763f0356a97163bef99581fecc764941e582051e"
+    },
+    {
+      "path": "root/usr/libexec/blaze-init-code",
+      "mode": "100755",
+      "bytes": 592,
+      "sha256": "785ccbc7dc2a46e1926af5d0a1d138c3674d69edfad0e6fcb55e03c06aa06444"
+    },
+    {
+      "path": "root/usr/libexec/blaze-job",
+      "mode": "100755",
+      "bytes": 17353,
+      "sha256": "385ea95754f0a117d4e78d94ca67d9c2507d8a5befb013d3ae8e85baa953a39a"
+    },
+    {
+      "path": "root/usr/libexec/blaze-launch",
+      "mode": "100755",
+      "bytes": 1210,
+      "sha256": "47840a988caeb3231ac68c6cad8a16be74674a4e90b7e2f73e0ea48f3ddc3044"
+    },
+    {
+      "path": "root/usr/libexec/blaze-lock-claim",
+      "mode": "100755",
+      "bytes": 1371,
+      "sha256": "25d24c33cc87684680fe1dc843004d7c2bfaf8b9cb86ed3204bde6ba277a6faf"
+    },
+    {
+      "path": "root/usr/libexec/blaze-message-launch",
+      "mode": "100755",
+      "bytes": 713,
+      "sha256": "22b874ee3aaea701e05fa3c004a14f34fa5a5d95d3dbc0497276ba16fbf42be5"
+    },
+    {
+      "path": "root/usr/libexec/blaze-nettest",
+      "mode": "100755",
+      "bytes": 4480,
+      "sha256": "633c8d12c53ce85b049c351885df0a2cc495bcfb2f7c2fe422ef04f6ba5c22c4"
+    },
+    {
+      "path": "root/usr/libexec/blaze-nettest-launch",
+      "mode": "100755",
+      "bytes": 845,
+      "sha256": "97abff1bc1747d862b4e7219111d7329e0d1bd637dc7357e08653c4edc7d4bcf"
+    },
+    {
+      "path": "root/usr/libexec/blaze-outage-snapshot",
+      "mode": "100755",
+      "bytes": 1338,
+      "sha256": "23463574e04ce2466d424e23fda44fbf0a08c944ba83c59f41a1446f8f945aa3"
+    },
+    {
+      "path": "root/usr/libexec/blaze-probe-route",
+      "mode": "100755",
+      "bytes": 1081,
+      "sha256": "e3e5f00d5075c4f0e2f4aeb96c117c528359a8428581895a9310ecc21942e555"
+    },
+    {
+      "path": "root/usr/libexec/blaze-relay-firewall",
+      "mode": "100755",
+      "bytes": 1999,
+      "sha256": "b6c695cd79b26f7fdfdfc5bc8f55d2b04d6678c13c0d571a22b8d658bbac2b7f"
+    },
+    {
+      "path": "root/usr/libexec/blaze-relay-refresh",
+      "mode": "100755",
+      "bytes": 1690,
+      "sha256": "70ba634a5442791d1a3726c0605335a27b625ce78836c356f782a98f0a93621b"
+    },
+    {
+      "path": "root/usr/libexec/blaze-restore-mode",
+      "mode": "100755",
+      "bytes": 242,
+      "sha256": "48374a647af122a5f239fb0c996e1b919540f8d43d1c4ad98ff7d213afa6795b"
+    },
+    {
+      "path": "root/usr/libexec/blaze-route-refresh",
+      "mode": "100755",
+      "bytes": 172,
+      "sha256": "cd713e2a6cd9f3fa4f2b6390bbefae129e6efa15be69e0f73d368450229aa009"
+    },
+    {
+      "path": "root/usr/libexec/blaze-sms",
+      "mode": "100755",
+      "bytes": 335,
+      "sha256": "505a8393959e79c2005d32ea5af3ae7dcf2cf17f6524b6a50cc863d04e41abce"
+    },
+    {
+      "path": "root/usr/libexec/blaze-wifi-scan",
+      "mode": "100755",
+      "bytes": 396,
+      "sha256": "d7d9930c499294fc393d09fcaed8c8dc12a2369f8c4b3ad1cccdaddf817816ce"
+    },
+    {
+      "path": "root/usr/libexec/blaze-wifi-scan-launch",
+      "mode": "100755",
+      "bytes": 696,
+      "sha256": "062dfcbec2108ec92054da01becf124e9043739aad4746183f388a54d213935c"
+    },
+    {
+      "path": "root/usr/share/blaze/access-apply.uc",
+      "mode": "100644",
+      "bytes": 1025,
+      "sha256": "d95c87dea9927b845235c5de030426847d10e9075a2a0a832af2b550c25217e0"
+    },
+    {
+      "path": "root/usr/share/blaze/access.uc",
+      "mode": "100644",
+      "bytes": 1409,
+      "sha256": "8116c8d59bb503f33826ef1130422790c9b2c7184d8363fe20aa654648a454a0"
+    },
+    {
+      "path": "root/usr/share/blaze/client-sample.uc",
+      "mode": "100644",
+      "bytes": 1987,
+      "sha256": "014acd14b05acec55ff4aec64cff9652dc17379f9be80082f395333237183aa6"
+    },
+    {
+      "path": "root/usr/share/blaze/client-sessions.uc",
+      "mode": "100644",
+      "bytes": 1749,
+      "sha256": "42e186796b30df12f5711387806d8bf79377cb7608c0a78bf44eaaedbb9f2437"
+    },
+    {
+      "path": "root/usr/share/blaze/common.uc",
+      "mode": "100644",
+      "bytes": 4784,
+      "sha256": "8df800dc6b67f469fc1c62f9baf2e387c76377e845c7eb795c251614cd8ce3fe"
+    },
+    {
+      "path": "root/usr/share/blaze/connectivity.sh",
+      "mode": "100644",
+      "bytes": 1036,
+      "sha256": "dbf2d31b516ca6390cacc3ea3c7dbdb958ec3f9add9d51068175173f056bf810"
+    },
+    {
+      "path": "root/usr/share/blaze/cp-led.sh",
+      "mode": "100644",
+      "bytes": 1604,
+      "sha256": "aaa419d75b9fcf750e54bfbb02d7a48d297ed931f91444b6aab7c304f6da671e"
+    },
+    {
+      "path": "root/usr/share/blaze/leds-run.uc",
+      "mode": "100644",
+      "bytes": 539,
+      "sha256": "75b3eaa65ac0c41098bd4d9c71daaded6a03f126f03b05d59669010d10fa46cf"
+    },
+    {
+      "path": "root/usr/share/blaze/leds.uc",
+      "mode": "100644",
+      "bytes": 3571,
+      "sha256": "58d318a99de21cc645ccb9452b960eaefdb56435eb687105d0e2a7b98f04e3b6"
+    },
+    {
+      "path": "root/usr/share/blaze/message.uc",
+      "mode": "100644",
+      "bytes": 2930,
+      "sha256": "ce51cf9735a3281a9339abcd7747d22827b04688a07573760765555abed529d5"
+    },
+    {
+      "path": "root/usr/share/blaze/modes.uc",
+      "mode": "100644",
+      "bytes": 5036,
+      "sha256": "1cd5fcdb545288a521754e291ba6da2bb1415baa2a11e6f2a9534289e16e0d6a"
+    },
+    {
+      "path": "root/usr/share/blaze/poll.uc",
+      "mode": "100644",
+      "bytes": 502,
+      "sha256": "3bffbf1207d29bf98b4fd6a0763d43ffac8013b191e510d62e3e68217cde030d"
+    },
+    {
+      "path": "root/usr/share/blaze/relay-check.uc",
+      "mode": "100644",
+      "bytes": 968,
+      "sha256": "995fc6a405a7fccdace9da0d6c207f5b351fe7a75c3a4c7ab0ff8531a5c91070"
+    },
+    {
+      "path": "root/usr/share/blaze/repeater.uc",
+      "mode": "100644",
+      "bytes": 3027,
+      "sha256": "4919c8c869290bd7da778420c21d70fd82ed065967d8bcb467e05fb91482a460"
+    },
+    {
+      "path": "root/usr/share/blaze/settings.uc",
+      "mode": "100644",
+      "bytes": 1757,
+      "sha256": "d348af3d902149782f3dc2aa76571c22ac7bf9395a47696640e2631a4757b2d6"
+    },
+    {
+      "path": "root/usr/share/blaze/subnets.uc",
+      "mode": "100644",
+      "bytes": 578,
+      "sha256": "eae1b5d4dceb3a048d4b91933ac64148b0c6ae3a739d9d69cd59ad4b908d926e"
+    },
+    {
+      "path": "root/usr/share/blaze/uplink.uc",
+      "mode": "100644",
+      "bytes": 6372,
+      "sha256": "1c81538e30959f92e4301a3923b9a43f2c331dfae92889f36aabc38036b5dedc"
+    },
+    {
+      "path": "root/usr/share/blaze/wifi-scan.uc",
+      "mode": "100644",
+      "bytes": 1339,
+      "sha256": "84bb687266836a3c06a955c783caedbded5d0df7b4375fd4ff6ef48b14778b12"
+    },
+    {
+      "path": "root/usr/share/rpcd/acl.d/blaze.json",
+      "mode": "100644",
+      "bytes": 567,
+      "sha256": "a54855b328d65bb922de93efffeb63e0290870c15887eeb5af2afca8bd7ef4c2"
+    },
+    {
+      "path": "root/usr/share/rpcd/ucode/blaze",
+      "mode": "100644",
+      "bytes": 19113,
+      "sha256": "4a17c24e18800712ef063b26add987a1841072056b68fc7903f4752c803b381f"
+    },
+    {
+      "path": "root/www/admin/index.html",
+      "mode": "100644",
+      "bytes": 192,
+      "sha256": "fb7f43d39823347a197bf13456bbf10af1882ba2b000cf152aaba26067659145"
+    },
+    {
+      "path": "root/www/easy/app.js",
+      "mode": "100644",
+      "bytes": 62228,
+      "sha256": "084b3cae0e07d16be796e646a363dfe1c5ea1d1fe7208c5d5cfad97eb6abaaef"
+    },
+    {
+      "path": "root/www/easy/core.js",
+      "mode": "100644",
+      "bytes": 5461,
+      "sha256": "6b4c62999a012cbf3b17440be92d626046a9b05f6777835b88a6068c35f38061"
+    },
+    {
+      "path": "root/www/easy/refined.css",
+      "mode": "100644",
+      "bytes": 6801,
+      "sha256": "c6ab1e172af476da72f7991e2ebf81de7274255c6d9a9d050e94f2453980f926"
+    },
+    {
+      "path": "root/www/easy/style.css",
+      "mode": "100644",
+      "bytes": 20940,
+      "sha256": "23f423d8d862be42de0dfec13d77abfb454f7937adf5631b8f31e656bc85a8b9"
+    },
+    {
+      "path": "root/www/index.html",
+      "mode": "100644",
+      "bytes": 2283,
+      "sha256": "92c033dff5ea327a3cc127e280ec168d23ea7d5c01021d1c6fad0ce4aa65e1d0"
+    }
+  ],
+  "external_dependencies": [
+    "modemband original helper and modem profiles",
+    "gcom and sms-tool platform binaries",
+    "3ginfo-lite",
+    "OpenWrt runtime packages; see HANDOFF-6.0.md"
+  ]
+}

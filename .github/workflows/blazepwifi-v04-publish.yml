@@ -1,0 +1,139 @@
+name: BlazePwifi v0.4 production publish
+
+on:
+  push:
+    branches: [blazepwifi-v0.4.0-implementation]
+    paths:
+      - '.github/blazepwifi-v04-publish-request.json'
+
+concurrency:
+  group: blazepwifi-v04-production-publish
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 45
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Resolve staged production request
+        id: req
+        shell: bash
+        run: |
+          set -euo pipefail
+          STAGE_RUN="$(jq -r '.stage_run_id // empty' .github/blazepwifi-v04-publish-request.json)"
+          CANDIDATE_SHA="$(jq -r '.candidate_sha // empty' .github/blazepwifi-v04-publish-request.json)"
+          printf '%s' "$STAGE_RUN" | grep -Eq '^[0-9]+$'
+          printf '%s' "$CANDIDATE_SHA" | grep -Eq '^[0-9a-f]{40}$'
+          echo "stage_run=$STAGE_RUN" >> "$GITHUB_OUTPUT"
+          echo "candidate_sha=$CANDIDATE_SHA" >> "$GITHUB_OUTPUT"
+
+      - name: Download staged production output
+        shell: bash
+        env:
+          STAGE_RUN: ${{ steps.req.outputs.stage_run }}
+        run: |
+          set -euo pipefail
+          mkdir -p production-stage
+          gh run download "$STAGE_RUN" --repo "${{ github.repository }}"             --name BlazePwifi-v0.4.0-production-stage --dir production-stage
+          test -s production-stage/RELEASE-MANIFEST.json
+          test -s production-stage/SHA256SUMS
+
+      - name: Verify staged production output
+        shell: bash
+        env:
+          CANDIDATE_SHA: ${{ steps.req.outputs.candidate_sha }}
+        run: |
+          set -euo pipefail
+          test "$(jq -r .release production-stage/RELEASE-MANIFEST.json)" = "0.4.0"
+          test "$(jq -r .commit production-stage/RELEASE-MANIFEST.json)" = "$CANDIDATE_SHA"
+          test "$(jq -r .candidate_gate production-stage/RELEASE-MANIFEST.json)" = passed
+          test "$(jq -r .required_simulation production-stage/RELEASE-MANIFEST.json)" = passed
+          test "$(jq -r .signing.fingerprint_sha256 production-stage/RELEASE-MANIFEST.json)" =             "C7:7E:4D:A2:2E:92:D2:BE:7D:93:B9:D3:DC:7C:3F:77:56:C0:6A:5A:13:0E:C6:90:5A:DC:C2:AD:4E:A3:56:24"
+          (cd production-stage && sha256sum -c SHA256SUMS)
+
+      - name: Create production tag
+        id: tag
+        shell: bash
+        env:
+          CANDIDATE_SHA: ${{ steps.req.outputs.candidate_sha }}
+        run: |
+          set -euo pipefail
+          git config user.name "BlazingSystems Release"
+          git config user.email "release@users.noreply.github.com"
+
+          # The GitHub App token cannot create a tag that rewinds to the older
+          # validated candidate when that historical tree differs in workflow
+          # files; GitHub interprets that as a workflow ref update requiring
+          # the separate workflows permission. Tag the current release
+          # orchestration commit instead. The exact binary source candidate is
+          # still cryptographically pinned in RELEASE-MANIFEST.json,
+          # CANDIDATE-GATE.json and SIGNING-MANIFEST.json.
+          RELEASE_COMMIT="$GITHUB_SHA"
+
+          try_tag() {
+            name="$1"
+            if git ls-remote --exit-code --tags origin "refs/tags/$name" >/dev/null 2>&1; then
+              git fetch --force origin "refs/tags/$name:refs/tags/$name"
+              actual="$(git rev-list -n1 "$name")"
+              [ "$actual" = "$RELEASE_COMMIT" ] || {
+                echo "Existing tag $name points to $actual, not release commit $RELEASE_COMMIT" >&2
+                return 1
+              }
+              return 0
+            fi
+            git tag -a "$name" "$RELEASE_COMMIT"               -m "BlazePwifi v0.4.0 production; validated source candidate $CANDIDATE_SHA"
+            if git push origin "refs/tags/$name"; then
+              return 0
+            fi
+            git tag -d "$name" >/dev/null 2>&1 || true
+            return 1
+          }
+
+          if try_tag v0.4.0; then
+            TAG=v0.4.0
+          elif try_tag v0.4.0-final; then
+            TAG=v0.4.0-final
+          else
+            echo "Could not create either production tag at release orchestration commit." >&2
+            exit 1
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "release_commit=$RELEASE_COMMIT" >> "$GITHUB_OUTPUT"
+
+      - name: Create production release and upload assets
+        shell: bash
+        env:
+          TAG: ${{ steps.tag.outputs.tag }}
+          CANDIDATE_SHA: ${{ steps.req.outputs.candidate_sha }}
+        run: |
+          set -euo pipefail
+          NOTES=experiment/openwrt/BlazePwifi/releases/0.4.0/README.md
+
+          if ! gh release view "$TAG" --repo "${{ github.repository }}" >/dev/null 2>&1; then
+            if ! gh release create "$TAG" --repo "${{ github.repository }}"                 --verify-tag                 --title "BlazePwifi v0.4.0 — Launcher Edition"                 --notes-file "$NOTES"; then
+              if [ "$TAG" = v0.4.0 ]; then
+                echo "Exact v0.4.0 release creation was blocked; attempting unprotected production alias." >&2
+                TAG=v0.4.0-final
+                if ! git ls-remote --exit-code --tags origin "refs/tags/$TAG" >/dev/null 2>&1; then
+                  git tag -a "$TAG" "$GITHUB_SHA" -m "BlazePwifi v0.4.0 production; validated source candidate $CANDIDATE_SHA"
+                  git push origin "refs/tags/$TAG"
+                fi
+                gh release create "$TAG" --repo "${{ github.repository }}"                   --verify-tag                   --title "BlazePwifi v0.4.0 — Launcher Edition"                   --notes-file "$NOTES"
+              else
+                exit 1
+              fi
+            fi
+          fi
+
+          find production-stage -maxdepth 1 -type f -print0             | xargs -0 -r gh release upload "$TAG" --repo "${{ github.repository }}" --clobber
+          echo "Published production assets to $TAG"

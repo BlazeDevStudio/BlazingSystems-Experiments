@@ -1,0 +1,17 @@
+Verifies
+Verified using v1 scheme (JAR signing): false
+Verified using v2 scheme (APK Signature Scheme v2): true
+Verified using v3 scheme (APK Signature Scheme v3): true
+Verified using v3.1 scheme (APK Signature Scheme v3.1): false
+Verified using v4 scheme (APK Signature Scheme v4): false
+Verified for SourceStamp: false
+Number of signers: 1
+Signer #1 certificate DN: CN=BlazeRental, O=BlazingSystems, C=PH
+Signer #1 certificate SHA-256 digest: f68fa041a8152cc69c77c97ad29545e8259fd0dd27412c58f912217dd1c0b2b9
+Signer #1 certificate SHA-1 digest: 7b0fae5b2ce0a5d3d3e1792448d03c46a142794b
+Signer #1 certificate MD5 digest: ecf7a61fba03a4796cbd2650b03ac2c4
+Signer #1 key algorithm: RSA
+Signer #1 key size (bits): 3072
+Signer #1 public key SHA-256 digest: 9966db3be91e59b20cc9b852c6616928b99e260508c086e09c3a4d7dda5dda66
+Signer #1 public key SHA-1 digest: 3c7203ff05cf84cbfaa520ae67e3248a4e68dd5f
+Signer #1 public key MD5 digest: dc023ee864ddfcf9038cad812604441a

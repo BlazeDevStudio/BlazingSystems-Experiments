@@ -1,0 +1,139 @@
+#!/bin/sh
+. "${BP_LIB:-/usr/lib/blazepwifi/common.sh}"
+. "${BP_RENTAL_LIB:-/usr/lib/blazepwifi/rental.sh}"
+. "${BP_CONTROLLER_LIB:-/usr/lib/blazepwifi/controller.sh}"
+bp_init_dirs
+bp_rental_init
+bp_controller_init
+
+vendo_port="$(bp_cfg vendo_port)"
+[ -n "$vendo_port" ] || vendo_port=4455
+[ "${SERVER_PORT:-}" = "$vendo_port" ] || bp_fail "vendo API requires dedicated port"
+
+action="$(bp_param action)"
+id="$(bp_param id)"
+nonce="$(bp_param nonce)"
+pulses="$(bp_param pulses)"
+target="$(bp_param target)"
+sig="$(bp_param sig)"
+
+printf '%s' "$id" | grep -Eq '^[A-Za-z0-9._-]{1,48}$' || bp_fail "invalid vendo id"
+printf '%s' "$nonce" | grep -Eq '^[A-Fa-f0-9]{8,32}$' || bp_fail "invalid nonce"
+[ -n "$pulses" ] || pulses=0
+bp_check_vendo_sig "$action" "$id" "$nonce" "$pulses" "$target" "$sig" || bp_fail "bad signature"
+
+now="$(bp_now)"
+ipaddr="${REMOTE_ADDR:-0.0.0.0}"
+
+heartbeat() {
+  tmp="$BP_RUN/vendos.$$"
+  awk -F '\t' -v OFS='\t' -v id="$id" -v n="$now" -v ip="$ipaddr" '
+    BEGIN{f=0}
+    $1==id {print id,n,ip;f=1;next}
+    {print}
+    END{if(!f) print id,n,ip}
+  ' "$BP_VENDOS" > "$tmp" && mv "$tmp" "$BP_VENDOS"
+  chmod 600 "$BP_VENDOS"
+  bp_controller_ensure "$id"
+}
+
+bp_lock || bp_fail "vendo state busy"
+heartbeat
+bp_unlock
+
+case "$action" in
+  register|ping)
+    controller="$(bp_controller_json "$id")"
+    body="$(printf '{"ok":true,"server_time":%s,"controller":%s}' "$now" "$controller")"
+    bp_json "$body"
+    ;;
+  poll)
+    bp_time_sane "$now" || bp_fail "router clock not synchronized"
+    insert=0
+    target_nonce=""
+    expires=0
+    target_file="$BP_TARGET_DIR/$id.tsv"
+    if [ -f "$target_file" ]; then
+      IFS="$(printf '\t')" read -r device mac target_nonce expires wanted kind < "$target_file"
+      if [ "$expires" -gt "$now" ] 2>/dev/null && [ "$wanted" = "$id" ]; then
+        insert=1
+      else
+        rm -f "$target_file"
+      fi
+    fi
+    controller="$(bp_controller_json "$id")"
+    enabled="$(printf '%s' "$controller" | sed -n 's/.*"enabled":\([01]\).*/\1/p')"
+    coin_enabled="$(printf '%s' "$controller" | sed -n 's/.*"coin_enabled":\([01]\).*/\1/p')"
+    [ "$enabled" = 1 ] && [ "$coin_enabled" = 1 ] || insert=0
+    body="$(printf '{"ok":true,"insert":%s,"target_nonce":"%s","expires":%s,"controller":%s}' "$insert" "$(bp_json_escape "$target_nonce")" "${expires:-0}" "$controller")"
+    bp_json "$body"
+    ;;
+  coin)
+    bp_time_sane "$now" || bp_fail "router clock not synchronized"
+    case "$pulses" in ''|*[!0-9]*) bp_fail "invalid pulse count";; esac
+    [ "$pulses" -ge 1 ] && [ "$pulses" -le 20 ] || bp_fail "pulse count out of range"
+    printf '%s' "$target" | grep -Eq '^[A-Fa-f0-9]{8,32}$' || bp_fail "invalid coin target"
+
+    target_file="$BP_TARGET_DIR/$id.tsv"
+    [ -f "$target_file" ] || bp_fail "no active coin window"
+    IFS="$(printf '\t')" read -r device mac target_nonce expires wanted kind < "$target_file"
+    kind="${kind:-hotspot}"
+    [ "$target" = "$target_nonce" ] || bp_fail "coin target mismatch"
+    [ "$expires" -gt "$now" ] 2>/dev/null || { rm -f "$target_file"; bp_fail "coin window expired"; }
+    [ "$wanted" = "$id" ] || bp_fail "another vendo selected"
+
+    if [ "$kind" = rental ]; then
+      bp_lock || bp_fail "rental accounting busy"
+      result="$(bp_rental_apply_coin "$device" "$id" "$nonce" "$target" "$pulses")"
+      rc=$?
+      bp_unlock
+      [ "$rc" -eq 0 ] || bp_fail "rental target not found"
+      state="$(printf '%s' "$result" | cut -f1)"
+      lease="$(printf '%s' "$result" | cut -f2)"
+      [ "$state" = duplicate ] && duplicate=true || duplicate=false
+      body="$(printf '{"ok":true,"duplicate":%s,"rental":true,"lease_until":%s,"target_nonce":"%s"}' "$duplicate" "$lease" "$(bp_json_escape "$target")")"
+      bp_json "$body"
+      exit 0
+    fi
+
+    event="c:$(bp_event_hash "coin|$id|$nonce|$target")"
+    duplicate_device="$(bp_find_event_device "$event")"
+    if [ -n "$duplicate_device" ]; then
+      credit="$(bp_get_credit "$duplicate_device")"
+      body="$(printf '{"ok":true,"duplicate":true,"credited_cents":0,"credit_cents":%s,"target_nonce":"%s"}' "$credit" "$(bp_json_escape "$target")")"
+      bp_json "$body"
+      exit 0
+    fi
+
+    bp_lock || bp_fail "accounting busy"
+    duplicate_device="$(bp_find_event_device "$event")"
+    if [ -n "$duplicate_device" ]; then
+      credit="$(bp_get_credit "$duplicate_device")"
+      bp_unlock
+      body="$(printf '{"ok":true,"duplicate":true,"credited_cents":0,"credit_cents":%s,"target_nonce":"%s"}' "$credit" "$(bp_json_escape "$target")")"
+      bp_json "$body"
+      exit 0
+    fi
+
+    line="$(bp_account_line "$device")"
+    [ -n "$line" ] || { bp_unlock; bp_fail "target account not found"; }
+    credit="$(printf '%s' "$line" | cut -f2)"
+    expiry="$(printf '%s' "$line" | cut -f3)"
+    remaining="$(printf '%s' "$line" | cut -f4)"
+    paused="$(printf '%s' "$line" | cut -f5)"
+    ps="$(printf '%s' "$line" | cut -f6)"
+    account_mac="$(printf '%s' "$line" | cut -f7)"
+    account_ip="$(printf '%s' "$line" | cut -f8)"
+    events="$(printf '%s' "$line" | cut -f9)"
+    unit="$(bp_cfg pulse_value_centavos)"
+    [ -n "$unit" ] || unit=100
+    add=$((unit*pulses))
+    newcredit=$((credit+add))
+    newevents="$(bp_events_push "$events" "$event")"
+    bp_account_write "$device" "$newcredit" "$expiry" "$remaining" "$paused" "$ps" "$account_mac" "$account_ip" "$newevents"
+    bp_unlock
+    body="$(printf '{"ok":true,"duplicate":false,"credited_cents":%s,"credit_cents":%s,"target_nonce":"%s"}' "$add" "$newcredit" "$(bp_json_escape "$target")")"
+    bp_json "$body"
+    ;;
+  *) bp_fail "unknown vendo action" ;;
+esac

@@ -1,0 +1,1 @@
+{"name":"Synthetic integration-test application","executablePattern":"SyntheticApp.exe","arguments":"--synthetic-argument","requiredFiles":["Resources/test.txt"],"warnings":["Test fixture only; not a real game compatibility claim."]}

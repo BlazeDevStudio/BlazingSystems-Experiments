@@ -1,0 +1,196 @@
+name: BlazePwifi v0.5.3 release stage
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_run_id:
+        description: "Successful exact-candidate BlazePwifi build run"
+        required: true
+        type: string
+      signing_run_id:
+        description: "Successful v0.5.3 Lineage 2 signing run"
+        required: true
+        type: string
+      candidate_sha:
+        description: "Exact validated v0.5.3 candidate SHA"
+        required: true
+        type: string
+      publish:
+        description: "Publish production GitHub Release v0.5.3 after stage validation"
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: blazepwifi-v053-release
+  cancel-in-progress: false
+
+jobs:
+  stage:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 45
+    env:
+      GH_TOKEN: ${{ github.token }}
+      EXPECTED_FP: "1A:18:D5:8E:1F:95:55:96:89:10:20:71:F5:6C:93:E9:B9:D2:EA:6B:E4:0E:6F:20:70:06:C9:89:62:A1:6A:25"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.candidate_sha }}
+
+      - name: Verify exact candidate and signing runs
+        shell: bash
+        env:
+          BUILD_RUN: ${{ inputs.build_run_id }}
+          SIGN_RUN: ${{ inputs.signing_run_id }}
+          SHA: ${{ inputs.candidate_sha }}
+        run: |
+          set -euo pipefail
+          printf '%s' "$BUILD_RUN" | grep -Eq '^[0-9]+$'
+          printf '%s' "$SIGN_RUN" | grep -Eq '^[0-9]+$'
+          printf '%s' "$SHA" | grep -Eq '^[0-9a-f]{40}$'
+          test "$(cat experiment/openwrt/BlazePwifi/VERSION)" = 0.5.3
+          B="$(gh api "repos/${{ github.repository }}/actions/runs/$BUILD_RUN")"
+          S="$(gh api "repos/${{ github.repository }}/actions/runs/$SIGN_RUN")"
+          test "$(printf '%s' "$B" | jq -r .conclusion)" = success
+          test "$(printf '%s' "$B" | jq -r .head_sha)" = "$SHA"
+          test "$(printf '%s' "$S" | jq -r .conclusion)" = success
+
+      - name: Download exact build and signed artifacts
+        shell: bash
+        env:
+          BUILD_RUN: ${{ inputs.build_run_id }}
+          SIGN_RUN: ${{ inputs.signing_run_id }}
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/build artifacts/signed
+          gh run download "$BUILD_RUN" --repo "${{ github.repository }}" --dir artifacts/build
+          gh run download "$SIGN_RUN" --repo "${{ github.repository }}" --name BlazeRental-v0.5.3-production-signed --dir artifacts/signed
+
+      - name: Validate gate and signing manifest
+        shell: bash
+        env:
+          SHA: ${{ inputs.candidate_sha }}
+          BUILD_RUN: ${{ inputs.build_run_id }}
+        run: |
+          set -euo pipefail
+          GATE="$(find artifacts/build -type f -name CANDIDATE-GATE.json -print -quit)"
+          test -n "$GATE" -a -s "$GATE"
+          test "$(jq -r .status "$GATE")" = passed
+          test "$(jq -r .release "$GATE")" = 0.5.3
+          test "$(jq -r .commit "$GATE")" = "$SHA"
+          M=artifacts/signed/SIGNING-MANIFEST.json
+          test -s "$M"
+          test "$(jq -r .release "$M")" = 0.5.3
+          test "$(jq -r .candidate_sha "$M")" = "$SHA"
+          test "$(jq -r .build_run_id "$M")" = "$BUILD_RUN"
+          test "$(jq -r .certificate_lineage "$M")" = BlazeRental-production-lineage2
+          test "$(jq -r .signing_fingerprint "$M")" = "$EXPECTED_FP"
+          test "$(jq -r .version_code "$M")" = 50300
+          test "$(jq -r .rollback_version_code "$M")" = 50301
+          test -s artifacts/signed/BlazeRental.apk
+          test -s artifacts/signed/BlazeRental-v0.5.2-rescue-for-v0.5.3.apk
+          test "$(sha256sum artifacts/signed/BlazeRental.apk | awk '{print $1}')" = "$(jq -r .signed_sha256 "$M")"
+          test "$(sha256sum artifacts/signed/BlazeRental-v0.5.2-rescue-for-v0.5.3.apk | awk '{print $1}')" = "$(jq -r .rollback_rescue_signed_sha256 "$M")"
+
+      - name: Assemble signed release stage
+        shell: bash
+        env:
+          SHA: ${{ inputs.candidate_sha }}
+          BUILD_RUN: ${{ inputs.build_run_id }}
+          SIGN_RUN: ${{ inputs.signing_run_id }}
+        run: |
+          set -euo pipefail
+          OUT=release-out
+          mkdir -p "$OUT"
+          cp artifacts/signed/BlazeRental.apk "$OUT/"
+          cp artifacts/signed/BlazeRental-v0.5.2-rescue-for-v0.5.3.apk "$OUT/"
+          cp artifacts/signed/SIGNING-MANIFEST.json "$OUT/BlazeRental-SIGNING-MANIFEST.json"
+          cp artifacts/signed/BlazeRental-apksigner-verify.txt "$OUT/"
+          cp artifacts/signed/BlazeRental-rescue-apksigner-verify.txt "$OUT/"
+
+          CI="$(find artifacts/build -type f -name 'BlazeRental-0.5.3-ci.apk' -print -quit)"
+          UNSIGNED="$(find artifacts/build -type f -name 'BlazeRental-0.5.3-release-unsigned.apk' -print -quit)"
+          RESCUE_TEST="$(find artifacts/build -type f -name 'BlazeRental-v0.5.2-rescue-for-0.5.3-TEST.apk' -print -quit)"
+          RESCUE_UNSIGNED="$(find artifacts/build -type f -name 'BlazeRental-v0.5.2-rescue-for-0.5.3-release-unsigned.apk' -print -quit)"
+          test -n "$CI" -a -s "$CI" -a -n "$UNSIGNED" -a -s "$UNSIGNED"
+          test -n "$RESCUE_TEST" -a -s "$RESCUE_TEST" -a -n "$RESCUE_UNSIGNED" -a -s "$RESCUE_UNSIGNED"
+          cp "$CI" "$OUT/BlazeRental-v0.5.3-TEST.apk"
+          cp "$UNSIGNED" "$OUT/BlazeRental-v0.5.3-release-unsigned.apk"
+          cp "$RESCUE_TEST" "$OUT/"
+          cp "$RESCUE_UNSIGNED" "$OUT/"
+
+          python3 experiment/openwrt/BlazePwifi/tools/build-binding-qr-tool.py             --template experiment/openwrt/BlazePwifi/tools/BlazeRental-Binding-QR.template.html             --qrcode-js experiment/openwrt/BlazePwifi/ui/vendor/qrcode/qrcode.js             --out "$OUT/BlazeRental-Binding-QR.html"
+          python3 experiment/openwrt/BlazePwifi/tools/build-rental-qr-tool.py             --apk "$OUT/BlazeRental.apk"             --apk-url "https://github.com/BlazingSystems/BlazingSystems-Experiments/releases/download/v0.5.3/BlazeRental.apk"             --template experiment/openwrt/BlazePwifi/tools/BlazeRental-QR-Setup.template.html             --qrcode-js experiment/openwrt/BlazePwifi/ui/vendor/qrcode/qrcode.js             --out "$OUT/BlazeRental-DeviceOwner-Provisioning-QR.html"
+          grep -q 'Standard Binding QR' "$OUT/BlazeRental-Binding-QR.html"
+          ! grep -q 'PROVISIONING_' "$OUT/BlazeRental-Binding-QR.html"
+          grep -q 'Device Owner Provisioning QR' "$OUT/BlazeRental-DeviceOwner-Provisioning-QR.html"
+          grep -q 'PROVISIONING_DEVICE_ADMIN_PACKAGE_CHECKSUM' "$OUT/BlazeRental-DeviceOwner-Provisioning-QR.html"
+          ! grep -q 'PROVISIONING_SKIP_EDUCATION_SCREENS' "$OUT/BlazeRental-DeviceOwner-Provisioning-QR.html"
+
+          python3 experiment/openwrt/BlazePwifi/tools/make-provisioning.py             --apk "$OUT/BlazeRental.apk"             --apk-url "https://github.com/BlazingSystems/BlazingSystems-Experiments/releases/download/v0.5.3/BlazeRental.apk"             --server-url "https://192.168.1.1:8443"             --server-cert-sha256 "0000000000000000000000000000000000000000000000000000000000000000"             --enrollment-token "000000000000.000000000000000000000000000000000000"             --device-name "SAMPLE ONLY - generate a real token and certificate pin in admin"             --out "$OUT/BlazeRental-provisioning-SAMPLE.json"
+
+          EXPECTED_CHECKSUM="$(python3 - "$OUT/BlazeRental.apk" <<'PY'
+          import base64,hashlib,sys
+          print(base64.urlsafe_b64encode(hashlib.sha256(open(sys.argv[1],'rb').read()).digest()).decode().rstrip('='))
+          PY
+          )"
+          ACTUAL_CHECKSUM="$(python3 - "$OUT/BlazeRental-provisioning-SAMPLE.json" <<'PY'
+          import json,sys
+          j=json.load(open(sys.argv[1]))
+          print(j["android.app.extra.PROVISIONING_DEVICE_ADMIN_PACKAGE_CHECKSUM"])
+          PY
+          )"
+          test "$ACTUAL_CHECKSUM" = "$EXPECTED_CHECKSUM"
+          test "$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["android.app.extra.PROVISIONING_ADMIN_EXTRAS_BUNDLE"]["server_url"])' "$OUT/BlazeRental-provisioning-SAMPLE.json")" = "https://192.168.1.1:8443"
+          test "$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["android.app.extra.PROVISIONING_ADMIN_EXTRAS_BUNDLE"]["server_cert_sha256"])' "$OUT/BlazeRental-provisioning-SAMPLE.json")" = "0000000000000000000000000000000000000000000000000000000000000000"
+
+          find artifacts/build -type f \( -name "*.bin" -o -name "*.img" -o -name "*.img.gz" -o -name "*.tar.gz" -o -name "*.ino" \) -print0 | while IFS= read -r -d "" f; do
+            base="$(basename "$f")"
+            dest="$OUT/$base"
+            if [ -e "$dest" ]; then
+              parent="$(basename "$(dirname "$f")" | tr " /" "--")"
+              dest="$OUT/${parent}-${base}"
+            fi
+            cp "$f" "$dest"
+          done
+
+          GATE="$(find artifacts/build -type f -name CANDIDATE-GATE.json -print -quit)"
+          cp "$GATE" "$OUT/CANDIDATE-GATE.json"
+          cp experiment/openwrt/BlazePwifi/releases/0.5.3/README.md "$OUT/README.md"
+          jq -n --arg release "0.5.3" --arg sha "$SHA" --arg build "$BUILD_RUN" --arg sign "$SIGN_RUN" --arg fingerprint "$EXPECTED_FP"             '{release:$release,commit:$sha,build_run_id:$build,signing_run_id:$sign,candidate_gate:"passed",production_signed:true,certificate_lineage:"BlazeRental-production-lineage2",signing_fingerprint:$fingerprint,android_package:"com.blazesystems.blazerental",version_code:50300,rollback_rescue:"0.5.2-rescue-for-0.5.3",rollback_version_code:50301,binding_qr_tool:"BlazeRental-Binding-QR.html",device_owner_qr_tool:"BlazeRental-DeviceOwner-Provisioning-QR.html",provisioning_from_signed_apk:true}'             > "$OUT/RELEASE-MANIFEST.json"
+          (cd "$OUT" && find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS)
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BlazePwifi-v0.5.3-release-stage
+          path: release-out/
+          retention-days: 90
+          if-no-files-found: error
+
+      - name: Publish production v0.5.3
+        if: inputs.publish == true
+        shell: bash
+        env:
+          SHA: ${{ inputs.candidate_sha }}
+        run: |
+          set -euo pipefail
+          TAG=v0.5.3
+          NOTES=experiment/openwrt/BlazePwifi/releases/0.5.3/README.md
+          if gh release view "$TAG" --repo "${{ github.repository }}" >/dev/null 2>&1; then
+            R="$(gh api "repos/${{ github.repository }}/releases/tags/$TAG")"
+            test "$(printf '%s' "$R" | jq -r .target_commitish)" = "$SHA"
+            gh release edit "$TAG" --repo "${{ github.repository }}" --target "$SHA"               --title "BlazePwifi v0.5.3 — Rental Hardening, Remote Operations & Central Members"               --notes-file "$NOTES" --prerelease=false
+          else
+            gh release create "$TAG" --repo "${{ github.repository }}" --target "$SHA"               --title "BlazePwifi v0.5.3 — Rental Hardening, Remote Operations & Central Members"               --notes-file "$NOTES" --latest
+          fi
+          find release-out -maxdepth 1 -type f -print0 | xargs -0 -r gh release upload "$TAG" --repo "${{ github.repository }}" --clobber
+          R="$(gh api "repos/${{ github.repository }}/releases/tags/$TAG")"
+          test "$(printf '%s' "$R" | jq -r .draft)" = false
+          test "$(printf '%s' "$R" | jq -r .prerelease)" = false
+          for asset in BlazeRental.apk BlazeRental-v0.5.2-rescue-for-v0.5.3.apk BlazeRental-Binding-QR.html BlazeRental-DeviceOwner-Provisioning-QR.html BlazeRental-provisioning-SAMPLE.json RELEASE-MANIFEST.json CANDIDATE-GATE.json SHA256SUMS; do
+            printf '%s' "$R" | jq -e --arg a "$asset" '.assets[] | select(.name==$a)' >/dev/null
+          done

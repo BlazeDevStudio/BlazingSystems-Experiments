@@ -1,0 +1,4 @@
+# Implementation architecture
+
+Studio is a native WPF entry point; Analyzer, PackageBuilder and data models are isolated classes in the Shared assembly. The launcher is a separate self-contained WinExe that consumes PortableConfig.json from its own directory, uses relative App/Executables, and starts the selected PE with UseShellExecute=false. Studio copies the already-compiled launcher EXE. The source tree does not require a compiler at conversion time. Version discovery is semantic directory-version sorting with executable existence checks; update atomicity cannot be proved from file existence and concurrent writes are not detected. Transactional staging uses a sibling temporary directory and final Directory.Move on the same filesystem. No archive extraction or remote download of third-party software is performed.
+

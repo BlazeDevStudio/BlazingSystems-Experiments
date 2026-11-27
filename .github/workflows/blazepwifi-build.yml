@@ -1,0 +1,748 @@
+name: BlazePwifi build
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'experiment/openwrt/BlazePwifi/**'
+      - '.github/workflows/blazepwifi-build.yml'
+      - '.github/workflows/blazepwifi-v053-release.yml'
+      - '.github/workflows/blazerental-v053-lineage2-sign.yml'
+  pull_request:
+    paths:
+      - 'experiment/openwrt/BlazePwifi/**'
+      - '.github/workflows/blazepwifi-build.yml'
+      - '.github/workflows/blazepwifi-v053-release.yml'
+      - '.github/workflows/blazerental-v053-lineage2-sign.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Static validation
+        run: sh experiment/openwrt/BlazePwifi/tests/static.sh
+      - name: v0.3 foundation validation
+        run: sh experiment/openwrt/BlazePwifi/tests/v03_foundation.sh
+      - name: Admin security validation
+        run: sh experiment/openwrt/BlazePwifi/tests/security.sh
+      - name: Config API validation
+        run: sh experiment/openwrt/BlazePwifi/tests/config.sh
+      - name: Template gallery validation
+        run: sh experiment/openwrt/BlazePwifi/tests/template_gallery.sh
+      - name: Controller protocol parity
+        run: sh experiment/openwrt/BlazePwifi/tests/controllers.sh
+      - name: BlazePwifi v0.4 controller compatibility
+        run: sh experiment/openwrt/BlazePwifi/tests/v04_controller_compat.sh
+      - name: Linux GPIO agent validation
+        run: sh experiment/openwrt/BlazePwifi/tests/linux_agent.sh
+      - name: BlazeRental source validation
+        run: sh experiment/openwrt/BlazePwifi/tests/android.sh
+      - name: BlazeRental v0.4 compatibility source validation
+        run: sh experiment/openwrt/BlazePwifi/tests/v04_android_source.sh
+      - name: BlazeRental v0.5 launcher source validation
+        run: sh experiment/openwrt/BlazePwifi/tests/v05_android_source.sh
+      - name: BlazeRental PC QR tool validation
+        run: sh experiment/openwrt/BlazePwifi/tests/qr_setup.sh
+      - name: BlazeRental server validation
+        run: sh experiment/openwrt/BlazePwifi/tests/rental.sh
+      - name: BlazeRental v0.4 policy validation
+        run: sh experiment/openwrt/BlazePwifi/tests/v04_rental_policy.sh
+      - name: BlazeRental v0.4 device API validation
+        run: sh experiment/openwrt/BlazePwifi/tests/v04_rental_api.sh
+      - name: BlazeRental v0.4 admin API validation
+        run: sh experiment/openwrt/BlazePwifi/tests/v04_rental_admin.sh
+      - name: BlazePwifi v0.4 admin UI validation
+        run: sh experiment/openwrt/BlazePwifi/tests/v04_admin_ui.sh
+      - name: BlazePwifi v0.5 console and portal validation
+        run: sh experiment/openwrt/BlazePwifi/tests/v05_console.sh
+      - name: BlazePwifi v0.5.1 transactional update compatibility validation
+        run: sh experiment/openwrt/BlazePwifi/tests/v051_update.sh
+      - name: BlazePwifi v0.5.2 transactional update validation
+        run: sh experiment/openwrt/BlazePwifi/tests/v052_update.sh
+      - name: BlazeRental v0.5.1 update compatibility validation
+        run: sh experiment/openwrt/BlazePwifi/tests/v051_android_source.sh
+      - name: BlazeRental v0.5.2 branding and alarm validation
+        run: sh experiment/openwrt/BlazePwifi/tests/v052_android_source.sh
+      - name: Post-v0.5.2 CSRF, QR and coin-window hardening
+        run: sh experiment/openwrt/BlazePwifi/tests/post_v052_hardening.sh
+      - name: BlazePwifi v0.5.3 development identity validation
+        run: sh experiment/openwrt/BlazePwifi/tests/v053_development.sh
+      - name: BlazePwifi v0.5.3 console operations security
+        run: sh experiment/openwrt/BlazePwifi/tests/v053_console_ops.sh
+      - name: BlazePwifi v0.5.3 WireGuard network-survival validation
+        run: sh experiment/openwrt/BlazePwifi/tests/v053_wireguard_apply.sh
+      - name: BlazePwifi v0.5.3-dev.5 ZeroTier network-survival validation
+        run: sh experiment/openwrt/BlazePwifi/tests/v053_zerotier_apply.sh
+      - name: BlazePwifi v0.5.3 centralized SoftTimer members
+        run: sh experiment/openwrt/BlazePwifi/tests/v053_members.sh
+      - name: BlazePwifi v0.5.3-dev.4 member metadata migration
+        run: sh experiment/openwrt/BlazePwifi/tests/v054_member_migration.sh
+      - name: BlazePwifi v0.4 build matrix validation
+        run: sh experiment/openwrt/BlazePwifi/tests/v04_build_matrix.sh
+      - name: Portal validation
+        run: sh experiment/openwrt/BlazePwifi/tests/portal.sh
+      - name: Admin UI validation
+        run: sh experiment/openwrt/BlazePwifi/tests/admin_ui.sh
+      - name: Accounting integration test x3
+        run: |
+          for i in 1 2 3; do
+            echo "Integration pass $i"
+            sh experiment/openwrt/BlazePwifi/tests/integration.sh
+          done
+      - name: Persistence and replay stress test x3
+        run: |
+          for i in 1 2 3; do
+            echo "Stress pass $i"
+            sh experiment/openwrt/BlazePwifi/tests/stress.sh
+          done
+      - name: Build release bundle
+        run: |
+          VERSION=$(cat experiment/openwrt/BlazePwifi/VERSION)
+          tar -czf "BlazePwifi-${VERSION}.tar.gz" experiment/openwrt/BlazePwifi
+          sha256sum "BlazePwifi-${VERSION}.tar.gz" > "BlazePwifi-${VERSION}.tar.gz.sha256"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BlazePwifi-bundle
+          path: |
+            BlazePwifi-*.tar.gz
+            BlazePwifi-*.sha256
+
+  esp8266:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: arduino/setup-arduino-cli@v2
+      - name: Install ESP8266 core
+        run: |
+          arduino-cli config init --overwrite
+          arduino-cli config add board_manager.additional_urls https://arduino.esp8266.com/stable/package_esp8266com_index.json
+          arduino-cli core update-index
+          arduino-cli core install esp8266:esp8266
+      - name: Compile BlazePwifi Vendo
+        run: |
+          mkdir -p experiment/openwrt/BlazePwifi/dist/esp8266
+          arduino-cli compile --fqbn esp8266:esp8266:nodemcuv2 --output-dir experiment/openwrt/BlazePwifi/dist/esp8266 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo
+          cp experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/BlazePwifiVendo.ino experiment/openwrt/BlazePwifi/dist/esp8266/
+          (cd experiment/openwrt/BlazePwifi/dist/esp8266 && sha256sum * > SHA256SUMS)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BlazePwifi-esp8266-firmware
+          path: experiment/openwrt/BlazePwifi/dist/esp8266/
+
+  firmware:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [ruijie, x86_64, orangepi_zero3, orangepi_one, orangepi_pc]
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y zstd
+      - name: Build OpenWrt image
+        run: sh experiment/openwrt/BlazePwifi/build/build-openwrt-image.sh ${{ matrix.target }}
+      - name: Verify firmware checksums
+        run: |
+          cd experiment/openwrt/BlazePwifi/dist/${{ matrix.target }}
+          sha256sum -c SHA256SUMS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BlazePwifi-${{ matrix.target }}-firmware
+          path: experiment/openwrt/BlazePwifi/dist/${{ matrix.target }}/
+
+
+  esp32:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: arduino/setup-arduino-cli@v2
+      - name: Install ESP32 core
+        run: |
+          arduino-cli config init --overwrite
+          arduino-cli config add board_manager.additional_urls https://espressif.github.io/arduino-esp32/package_esp32_index.json
+          arduino-cli core update-index
+          arduino-cli core install esp32:esp32
+      - name: Compile BlazePwifi Vendo ESP32
+        run: |
+          mkdir -p experiment/openwrt/BlazePwifi/dist/esp32
+          arduino-cli compile --fqbn esp32:esp32:esp32 --output-dir experiment/openwrt/BlazePwifi/dist/esp32 experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32
+          cp experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino experiment/openwrt/BlazePwifi/dist/esp32/
+          (cd experiment/openwrt/BlazePwifi/dist/esp32 && sha256sum * > SHA256SUMS)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BlazePwifi-esp32-firmware
+          path: experiment/openwrt/BlazePwifi/dist/esp32/
+
+
+  firmware_optional:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [orangepi_pc_plus, orangepi_pc2, orangepi_zero, orangepi_zero2, orangepi_zero2w, orangepi_one_plus]
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y zstd
+      - name: Build optional OpenWrt image
+        run: sh experiment/openwrt/BlazePwifi/build/build-openwrt-image.sh ${{ matrix.target }}
+      - name: Verify optional firmware checksums
+        run: |
+          cd experiment/openwrt/BlazePwifi/dist/${{ matrix.target }}
+          sha256sum -c SHA256SUMS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BlazePwifi-${{ matrix.target }}-firmware
+          path: experiment/openwrt/BlazePwifi/dist/${{ matrix.target }}/
+
+
+  android:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install Android SDK 27 and isolate legacy SDK root
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDKMANAGER="${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager"
+          [ -x "$SDKMANAGER" ] || SDKMANAGER="$(command -v sdkmanager)"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" "platforms;android-27" "build-tools;27.0.3" "build-tools;36.0.0"
+          rm -rf /tmp/android-sdk-27
+          mkdir -p /tmp/android-sdk-27/platforms /tmp/android-sdk-27/build-tools
+          cp -a "${ANDROID_SDK_ROOT}/platforms/android-27" /tmp/android-sdk-27/platforms/
+          cp -a "${ANDROID_SDK_ROOT}/build-tools/27.0.3" /tmp/android-sdk-27/build-tools/
+          printf 'sdk.dir=/tmp/android-sdk-27\n' > experiment/openwrt/BlazePwifi/android/BlazeRentalLauncher/local.properties
+      - name: Set up JDK 8 for Launcher3
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '8'
+      - name: Install Gradle 4.4.1
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSL https://services.gradle.org/distributions/gradle-4.4.1-bin.zip -o /tmp/gradle.zip
+          unzip -q /tmp/gradle.zip -d /opt
+          echo /opt/gradle-4.4.1/bin >> "$GITHUB_PATH"
+      - name: Build current BlazeRental development APK and frozen v0.5.2 rollback rescue
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT="$GITHUB_WORKSPACE/experiment/openwrt/BlazePwifi"
+          VERSION="$(cat "$ROOT/VERSION")"
+          CUR="$ROOT/android/BlazeRentalLauncher"
+          DIST="$ROOT/dist/android"
+          mkdir -p "$DIST"
+
+          (
+            cd "$CUR"
+            ANDROID_HOME=/tmp/android-sdk-27 ANDROID_SDK_ROOT=/tmp/android-sdk-27 \
+              gradle --no-daemon --stacktrace testAospDebugUnitTest assembleAospDebug assembleAospRelease
+          )
+          DEBUG_APK="$(find "$CUR/build/outputs/apk/aosp/debug" -type f -name '*.apk' | head -n1)"
+          RELEASE_APK="$(find "$CUR/build/outputs/apk/aosp/release" -type f -name '*.apk' | head -n1)"
+          test -n "$DEBUG_APK" -a -s "$DEBUG_APK"
+          test -n "$RELEASE_APK" -a -s "$RELEASE_APK"
+          cp "$DEBUG_APK" "$DIST/BlazeRental-$VERSION-ci.apk"
+          cp "$RELEASE_APK" "$DIST/BlazeRental-$VERSION-release-unsigned.apk"
+          cp "$CUR/BLAZE_UPSTREAM.md" "$DIST/Launcher3-UPSTREAM.txt"
+
+          # Rollback rescue uses the exact frozen v0.5.2 production application
+          # candidate. Only Android version metadata is raised so Android can
+          # accept it as a forward install while behavior returns to v0.5.2.
+          RESCUE_ROOT=/tmp/blazerental-v052-rescue
+          rm -rf "$RESCUE_ROOT"
+          git worktree add --detach "$RESCUE_ROOT" bf2992977fe8504d21b107df02826032c31d3a62
+          RESCUE="$RESCUE_ROOT/experiment/openwrt/BlazePwifi/android/BlazeRentalLauncher"
+          sed -i 's/versionCode 50200/versionCode 50299/' "$RESCUE/build.gradle"
+          sed -i "s/versionName \"0.5.2\"/versionName \"0.5.2-rescue-for-$VERSION\"/" "$RESCUE/build.gradle"
+          printf 'sdk.dir=/tmp/android-sdk-27\n' > "$RESCUE/local.properties"
+          (
+            cd "$RESCUE"
+            ANDROID_HOME=/tmp/android-sdk-27 ANDROID_SDK_ROOT=/tmp/android-sdk-27 \
+              gradle --no-daemon --stacktrace assembleAospDebug assembleAospRelease
+          )
+          RESCUE_DEBUG="$(find "$RESCUE/build/outputs/apk/aosp/debug" -type f -name '*.apk' | head -n1)"
+          RESCUE_RELEASE="$(find "$RESCUE/build/outputs/apk/aosp/release" -type f -name '*.apk' | head -n1)"
+          test -n "$RESCUE_DEBUG" -a -s "$RESCUE_DEBUG"
+          test -n "$RESCUE_RELEASE" -a -s "$RESCUE_RELEASE"
+          cp "$RESCUE_DEBUG" "$DIST/BlazeRental-v0.5.2-rescue-for-$VERSION-TEST.apk"
+          cp "$RESCUE_RELEASE" "$DIST/BlazeRental-v0.5.2-rescue-for-$VERSION-release-unsigned.apk"
+          git worktree remove --force "$RESCUE_ROOT"
+
+          (
+            cd "$DIST"
+            sha256sum \
+              "BlazeRental-$VERSION-ci.apk" \
+              "BlazeRental-$VERSION-release-unsigned.apk" \
+              "BlazeRental-v0.5.2-rescue-for-$VERSION-TEST.apk" \
+              "BlazeRental-v0.5.2-rescue-for-$VERSION-release-unsigned.apk" > SHA256SUMS
+          )
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BlazePwifi-android-current
+          path: experiment/openwrt/BlazePwifi/dist/android/
+
+  update_bundle:
+    needs: [validate]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build current no-reflash update assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT=experiment/openwrt/BlazePwifi
+          sh "$ROOT/tools/build-update-bundle.sh" "$ROOT" "$ROOT/dist/update"
+          cp "$ROOT/tools/BlazePwifi-v0.5.2-update-bootstrap.sh" "$ROOT/dist/update/"
+          (
+            cd "$ROOT/dist/update"
+            sha256sum BlazePwifi-v0.5.2-update-bootstrap.sh > BlazePwifi-v0.5.2-update-bootstrap.sh.sha256
+          )
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BlazePwifi-current-update
+          path: experiment/openwrt/BlazePwifi/dist/update/
+          if-no-files-found: error
+
+  v04_browser_simulation:
+    needs: [validate]
+    runs-on: ubuntu-22.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: |
+          python -m pip install --disable-pip-version-check playwright
+          python -m playwright install --with-deps chromium
+      - run: python experiment/openwrt/BlazePwifi/simulation/browser_v04_audit.py simulation-out/browser
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: BlazePwifi-v0.5-browser-simulation
+          path: simulation-out/browser/
+          if-no-files-found: warn
+
+  v04_android_emulator:
+    needs: [validate, android]
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: BlazePwifi-android-current
+          path: candidate/android
+      - name: Select exact built APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK="$(find candidate/android -type f -name 'BlazeRental-*-ci.apk' -print -quit)"
+          test -n "$APK" -a -s "$APK"
+          echo "APK=$APK" >> "$GITHUB_ENV"
+          mkdir -p simulation-out/android
+          sha256sum "$APK" > simulation-out/android/AUDITED_APK_SHA256
+      - name: Enable Android emulator KVM acceleration
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -e /dev/kvm ]; then
+            sudo chmod 666 /dev/kvm
+            test -r /dev/kvm -a -w /dev/kvm
+          fi
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 27
+          arch: x86
+          target: default
+          profile: pixel_2
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot -no-metrics
+          emulator-boot-timeout: 300
+          script: timeout 180s bash experiment/openwrt/BlazePwifi/simulation/android_v05_audit.sh "$APK" simulation-out/android
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: BlazePwifi-v0.5-android-simulation
+          path: simulation-out/android/
+          if-no-files-found: warn
+
+  v04_esp_simulation:
+    needs: [validate, esp8266, esp32]
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        kind: [esp8266, esp32]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: BlazePwifi-${{ matrix.kind }}-firmware
+          path: candidate/${{ matrix.kind }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --disable-pip-version-check esptool
+      - run: bash experiment/openwrt/BlazePwifi/simulation/esp_v04_audit.sh "candidate/${{ matrix.kind }}" "${{ matrix.kind }}" "simulation-out/${{ matrix.kind }}"
+      - run: sh experiment/openwrt/BlazePwifi/tests/v04_controller_compat.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: BlazePwifi-v0.5-${{ matrix.kind }}-simulation
+          path: simulation-out/${{ matrix.kind }}/
+          if-no-files-found: warn
+
+  v04_ruijie_simulation:
+    needs: [validate, firmware]
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: BlazePwifi-ruijie-firmware
+          path: candidate/ruijie
+      - run: sudo apt-get update && sudo apt-get install -y squashfs-tools
+      - run: bash experiment/openwrt/BlazePwifi/simulation/ruijie_v04_audit.sh candidate/ruijie simulation-out/ruijie
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: BlazePwifi-v0.5-ruijie-simulation
+          path: simulation-out/ruijie/
+          if-no-files-found: warn
+
+  v04_orangepi_simulation:
+    needs: [validate, firmware]
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [orangepi_zero3, orangepi_one, orangepi_pc]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: BlazePwifi-${{ matrix.target }}-firmware
+          path: candidate/${{ matrix.target }}
+      - run: sudo apt-get update && sudo apt-get install -y qemu-user-static util-linux
+      - run: bash experiment/openwrt/BlazePwifi/simulation/orangepi_v04_userspace_audit.sh "candidate/${{ matrix.target }}" "${{ matrix.target }}" "simulation-out/${{ matrix.target }}"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: BlazePwifi-v0.5-${{ matrix.target }}-simulation
+          path: simulation-out/${{ matrix.target }}/
+          if-no-files-found: warn
+
+  v04_x86_simulation:
+    needs: [validate, firmware]
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: BlazePwifi-x86_64-firmware
+          path: candidate/x86
+      - run: sudo apt-get update && sudo apt-get install -y qemu-system-x86 ovmf util-linux
+      - run: bash experiment/openwrt/BlazePwifi/simulation/x86_v04_qemu_audit.sh candidate/x86 simulation-out/x86
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: BlazePwifi-v0.5-x86-simulation
+          path: simulation-out/x86/
+          if-no-files-found: warn
+
+  v04_candidate_gate:
+    needs:
+      - validate
+      - android
+      - esp8266
+      - esp32
+      - firmware
+      - update_bundle
+      - v04_browser_simulation
+      - v04_android_emulator
+      - v04_esp_simulation
+      - v04_ruijie_simulation
+      - v04_orangepi_simulation
+      - v04_x86_simulation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Record passing candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="$(cat experiment/openwrt/BlazePwifi/VERSION)"
+          mkdir -p candidate-gate
+          cat > candidate-gate/CANDIDATE-GATE.json <<JSON
+          {
+            "release": "$VERSION",
+            "commit": "${GITHUB_SHA}",
+            "status": "passed",
+            "required_targets": ["android","esp8266","esp32","ruijie","x86_64","orangepi_zero3","orangepi_one","orangepi_pc"],
+            "simulation": "passed"
+          }
+          JSON
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BlazePwifi-current-candidate-gate
+          path: candidate-gate/CANDIDATE-GATE.json
+          if-no-files-found: error
+
+  production_sign_handoff:
+    if: github.ref == 'refs/heads/blazepwifi-v0.3.0-production' && contains(github.event.head_commit.message, '[sign]')
+    needs: [validate, android]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: BlazePwifi-android-BlazeRental
+          path: android-artifact
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Install Android build tools
+        run: |
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          [ -x "$SDKMANAGER" ] || SDKMANAGER="$(command -v sdkmanager)"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" "build-tools;36.0.0"
+      - name: Create private signing identity and sign release APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUT="$RUNNER_TEMP/blazerental-sign"
+          SECRET="$RUNNER_TEMP/blazerental-secret"
+          mkdir -p "$OUT" "$SECRET"
+          PASS="$(openssl rand -base64 36 | tr -d '\n')"
+          keytool -genkeypair -noprompt \
+            -keystore "$OUT/BlazeRental-production.p12" -storetype PKCS12 \
+            -storepass "$PASS" -keypass "$PASS" -alias blazerental \
+            -keyalg RSA -keysize 3072 -validity 36500 \
+            -dname "CN=BlazeRental,O=BlazingSystems,C=PH"
+          ZIPALIGN="$ANDROID_HOME/build-tools/36.0.0/zipalign"
+          APKSIGNER="$ANDROID_HOME/build-tools/36.0.0/apksigner"
+          "$ZIPALIGN" -p -f 4 android-artifact/BlazeRental-release-unsigned.apk "$OUT/BlazeRental-aligned.apk"
+          "$APKSIGNER" sign \
+            --ks "$OUT/BlazeRental-production.p12" \
+            --ks-key-alias blazerental \
+            --ks-pass "pass:$PASS" --key-pass "pass:$PASS" \
+            --v1-signing-enabled true --v2-signing-enabled true --v3-signing-enabled true \
+            --out "$OUT/BlazeRental.apk" "$OUT/BlazeRental-aligned.apk"
+          "$APKSIGNER" verify --verbose --print-certs "$OUT/BlazeRental.apk" > "$OUT/BlazeRental-apksigner-verify.txt"
+          keytool -exportcert -rfc -alias blazerental -keystore "$OUT/BlazeRental-production.p12" \
+            -storepass "$PASS" -file "$OUT/BlazeRental-signing-cert.pem"
+          keytool -list -v -alias blazerental -keystore "$OUT/BlazeRental-production.p12" \
+            -storepass "$PASS" | sed -n '/SHA256:/p' > "$OUT/BlazeRental-signing-fingerprint.txt"
+          cp "$OUT/BlazeRental-production.p12" "$SECRET/"
+          printf '%s\n' "$PASS" > "$SECRET/keystore-password.txt"
+          printf '%s\n' \
+            'BlazeRental production signing key backup.' \
+            'Keep this archive private and offline. Future APK updates must use this exact signing identity.' \
+            > "$SECRET/README.txt"
+          tar -czf "$RUNNER_TEMP/BlazeRental-signing-backup.tar.gz" -C "$SECRET" .
+          openssl rand 32 > "$RUNNER_TEMP/aes.key"
+          openssl rand 16 > "$RUNNER_TEMP/aes.iv"
+          KEYHEX="$(xxd -p -c 256 "$RUNNER_TEMP/aes.key")"
+          IVHEX="$(xxd -p -c 256 "$RUNNER_TEMP/aes.iv")"
+          openssl enc -aes-256-cbc -K "$KEYHEX" -iv "$IVHEX" \
+            -in "$RUNNER_TEMP/BlazeRental-signing-backup.tar.gz" \
+            -out "$OUT/BlazeRental-signing-backup.enc"
+          openssl pkeyutl -encrypt -pubin -inkey .github/blazerental-transfer-public.pem \
+            -pkeyopt rsa_padding_mode:oaep -pkeyopt rsa_oaep_md:sha256 \
+            -in "$RUNNER_TEMP/aes.key" -out "$OUT/BlazeRental-signing-aes-key.enc"
+          cp "$RUNNER_TEMP/aes.iv" "$OUT/BlazeRental-signing-aes-iv.bin"
+          sha256sum "$OUT/BlazeRental.apk" "$OUT/BlazeRental-signing-cert.pem" > "$OUT/SHA256SUMS"
+          rm -f "$OUT/BlazeRental-production.p12" "$OUT/BlazeRental-aligned.apk"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BlazeRental-production-signing-handoff
+          path: ${{ runner.temp }}/blazerental-sign/
+          retention-days: 1
+          if-no-files-found: error
+
+
+  production_import_signed_apk:
+    if: github.ref == 'refs/heads/blazepwifi-v0.3.0-production' && contains(github.event.head_commit.message, '[import-sign]')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SIGN_RUN: '37210720716'
+      APK_SHA256: '2062c0ad1245b1a5dbfec8fea1cfef4286906f943ba54c6a7005ca7ca872bac0'
+      CERT_SHA256: '49b2f1ad1c8214b35935fa266f6afdd5db12f9739dee0eef0b31c69848dcd09e'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: blazepwifi-v0.3.0-production
+      - name: Download verified production signing handoff
+        run: |
+          set -euo pipefail
+          mkdir -p signed
+          gh run download "$SIGN_RUN" -n BlazeRental-production-signing-handoff -D signed
+          echo "$APK_SHA256  signed/BlazeRental.apk" | sha256sum -c -
+          echo "$CERT_SHA256  signed/BlazeRental-signing-cert.pem" | sha256sum -c -
+          grep -q 'Verified using v2 scheme (APK Signature Scheme v2): true' signed/BlazeRental-apksigner-verify.txt
+          grep -q 'Verified using v3 scheme (APK Signature Scheme v3): true' signed/BlazeRental-apksigner-verify.txt
+      - name: Commit public production APK and certificate metadata
+        run: |
+          set -euo pipefail
+          DEST=experiment/openwrt/BlazePwifi/releases/0.3.0
+          cp signed/BlazeRental.apk "$DEST/BlazeRental.apk"
+          cp signed/BlazeRental-signing-cert.pem "$DEST/BlazeRental-signing-cert.pem"
+          cp signed/BlazeRental-signing-fingerprint.txt "$DEST/BlazeRental-signing-fingerprint.txt"
+          cp signed/BlazeRental-apksigner-verify.txt "$DEST/BlazeRental-apksigner-verify.txt"
+          printf '%s  %s\n' "$APK_SHA256" BlazeRental.apk > "$DEST/BlazeRental.apk.sha256"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$DEST"
+          git commit -m "release(blazepwifi): add signed BlazeRental.apk [skip ci]"
+          git push origin HEAD:blazepwifi-v0.3.0-production
+
+  publish_prerelease:
+    if: github.ref == 'refs/heads/blazepwifi-v0.3.0-design' && contains(github.event.head_commit.message, '[release]')
+    needs: [validate, esp8266, esp32, android, firmware, firmware_optional]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: v0.3.0-rc.1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: BlazePwifi-*
+          path: downloaded
+      - name: Assemble permanent release assets
+        run: |
+          set -eu
+          mkdir -p release-out
+          find downloaded -mindepth 1 -maxdepth 1 -type d | while read d; do
+            n=$(basename "$d")
+            if [ "$n" != "BlazePwifi-android-BlazeRental" ]; then
+              (cd "$d" && zip -qr "../../release-out/${n}.zip" .)
+            fi
+            find "$d" -type f | while read f; do
+              b=$(basename "$f")
+              case "$b" in
+                *.apk|*.bin|*.img.gz|*.ino|*.tar.gz|*.json|*.png)
+                  if [ ! -e "release-out/$b" ]; then cp "$f" "release-out/$b"; fi
+                  ;;
+              esac
+            done
+          done
+          tar -czf release-out/BlazePwifi-portal-templates.tar.gz -C experiment/openwrt/BlazePwifi portal-templates
+          cp experiment/openwrt/BlazePwifi/releases/0.3.0-rc.1/RELEASE_NOTES.md release-out/RELEASE_NOTES.md
+          (
+            cd release-out
+            sha256sum * | grep -v ' SHA256SUMS$' > SHA256SUMS
+            python3 -c 'import hashlib,json,pathlib; r=pathlib.Path("."); a=[{"name":p.name,"size":p.stat().st_size,"sha256":hashlib.sha256(p.read_bytes()).hexdigest()} for p in sorted(r.iterdir()) if p.is_file() and p.name!="manifest.json"]; pathlib.Path("manifest.json").write_text(json.dumps({"version":"0.3.0-rc.1","assets":a},indent=2)+"\\n")'
+          )
+      - name: Create or update GitHub prerelease
+        run: |
+          set -eu
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release edit "$TAG" --prerelease --title "BlazePwifi 0.3.0-rc.1" --notes-file experiment/openwrt/BlazePwifi/releases/0.3.0-rc.1/RELEASE_NOTES.md
+          else
+            gh release create "$TAG" --target "$GITHUB_SHA" --prerelease --title "BlazePwifi 0.3.0-rc.1" --notes-file experiment/openwrt/BlazePwifi/releases/0.3.0-rc.1/RELEASE_NOTES.md
+          fi
+          gh release upload "$TAG" release-out/* --clobber
+
+
+  publish_release:
+    if: github.ref == 'refs/heads/blazepwifi-v0.3.0-production' && contains(github.event.head_commit.message, '[release]')
+    needs: [validate, esp8266, esp32, android, firmware, firmware_optional]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: v0.3.0
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: BlazePwifi-*
+          path: downloaded
+      - name: Assemble production release assets
+        run: |
+          set -eu
+          test -f experiment/openwrt/BlazePwifi/releases/0.3.0/BlazeRental.apk
+          mkdir -p release-out
+          find downloaded -mindepth 1 -maxdepth 1 -type d | while read d; do
+            n=$(basename "$d")
+            (cd "$d" && zip -qr "../../release-out/${n}.zip" .)
+            find "$d" -type f | while read f; do
+              b=$(basename "$f")
+              case "$b" in
+                BlazeRental-ci-debug.apk) ;;
+                *.bin|*.img.gz|*.ino|*.tar.gz|*.json|*.png)
+                  [ -e "release-out/$b" ] || cp "$f" "release-out/$b"
+                  ;;
+              esac
+            done
+          done
+          cp experiment/openwrt/BlazePwifi/releases/0.3.0/BlazeRental.apk release-out/BlazeRental.apk
+          [ ! -f experiment/openwrt/BlazePwifi/releases/0.3.0/BlazeRental-signing-cert.pem ] || cp experiment/openwrt/BlazePwifi/releases/0.3.0/BlazeRental-signing-cert.pem release-out/
+          [ ! -f experiment/openwrt/BlazePwifi/releases/0.3.0/BlazeRental-signing-fingerprint.txt ] || cp experiment/openwrt/BlazePwifi/releases/0.3.0/BlazeRental-signing-fingerprint.txt release-out/
+          python3 experiment/openwrt/BlazePwifi/tools/build-rental-qr-tool.py \
+            --apk release-out/BlazeRental.apk \
+            --apk-url "https://github.com/BlazingSystems/BlazingSystems-Experiments/releases/download/v0.3.0/BlazeRental.apk" \
+            --template experiment/openwrt/BlazePwifi/tools/BlazeRental-QR-Setup.template.html \
+            --qrcode-js experiment/openwrt/BlazePwifi/ui/vendor/qrcode/qrcode.js \
+            --out release-out/BlazeRental-QR-Setup.html
+          python3 -m pip install --quiet "qrcode[pil]"
+          python3 experiment/openwrt/BlazePwifi/tools/make-provisioning.py \
+            --apk release-out/BlazeRental.apk \
+            --apk-url "https://github.com/BlazingSystems/BlazingSystems-Experiments/releases/download/v0.3.0/BlazeRental.apk" \
+            --server-url "http://192.168.1.1:8080" \
+            --enrollment-token "000000000000.000000000000000000000000000000000000" \
+            --device-name "SAMPLE - generate a real token in admin" \
+            --out release-out/BlazeRental-provisioning-SAMPLE.json
+          python3 experiment/openwrt/BlazePwifi/tools/render-qr.py \
+            --json release-out/BlazeRental-provisioning-SAMPLE.json \
+            --out release-out/BlazeRental-provisioning-SAMPLE.png
+          (
+            cd release-out
+            zip -q BlazePwifi-android-BlazeRental.zip \
+              BlazeRental.apk BlazeRental-QR-Setup.html \
+              BlazeRental-provisioning-SAMPLE.json BlazeRental-provisioning-SAMPLE.png \
+              BlazeRental-signing-cert.pem BlazeRental-signing-fingerprint.txt
+          )
+          tar -czf release-out/BlazePwifi-portal-templates.tar.gz -C experiment/openwrt/BlazePwifi portal-templates
+          (
+            cd release-out
+            sha256sum * | grep -v ' SHA256SUMS$' > SHA256SUMS
+            python3 -c 'import hashlib,json,pathlib; r=pathlib.Path("."); a=[{"name":p.name,"size":p.stat().st_size,"sha256":hashlib.sha256(p.read_bytes()).hexdigest()} for p in sorted(r.iterdir()) if p.is_file() and p.name!="manifest.json"]; pathlib.Path("manifest.json").write_text(json.dumps({"version":"0.3.0","type":"production","assets":a},indent=2)+"\\n")'
+          )
+      - name: Create or update GitHub production release
+        run: |
+          set -eu
+          NOTES=experiment/openwrt/BlazePwifi/releases/0.3.0/RELEASE_NOTES.md
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release edit "$TAG" --latest --title "BlazePwifi 0.3.0" --notes-file "$NOTES"
+          else
+            gh release create "$TAG" --target "$GITHUB_SHA" --latest --title "BlazePwifi 0.3.0" --notes-file "$NOTES"
+          fi
+          gh release upload "$TAG" release-out/* --clobber

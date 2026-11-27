@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><TargetFramework>net10.0-windows</TargetFramework><EnableWindowsTargeting>true</EnableWindowsTargeting><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable></PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../Analyzer/Analyzer.cs" Link="Analyzer/Analyzer.cs"/>
+    <Compile Include="../PackageBuilder/PackageBuilder.cs" Link="PackageBuilder/PackageBuilder.cs"/>
+  </ItemGroup>
+</Project>

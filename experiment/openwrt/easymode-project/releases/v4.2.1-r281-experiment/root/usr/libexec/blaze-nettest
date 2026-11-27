@@ -1,0 +1,47 @@
+#!/bin/sh
+set -f
+. /usr/share/libubox/jshn.sh
+LOCK=/tmp/blaze-nettest.lock
+ID=$(cat "$LOCK/id" 2>/dev/null || true)
+REQ=$(cat "$LOCK/request.json" 2>/dev/null || echo '{}')
+KIND=$(printf '%s' "$REQ" | jsonfilter -e '@.kind' 2>/dev/null || true)
+SOURCE=$(printf '%s' "$REQ" | jsonfilter -e '@.source' 2>/dev/null || echo auto)
+TARGET=$(printf '%s' "$REQ" | jsonfilter -e '@.target' 2>/dev/null || true)
+URL=$(printf '%s' "$REQ" | jsonfilter -e '@.url' 2>/dev/null || true)
+DONE=0
+DEV='';IFACE='';IP='';GW=''
+cleanup(){ [ "$DONE" = 1 ] || finish 0 'Network test worker stopped before completion.';rm -rf "$LOCK"; }
+trap cleanup EXIT
+trap 'exit 1' HUP INT TERM
+iface_info(){
+ IFACE="$1";J=$(ubus call network.interface.$IFACE status 2>/dev/null || true);DEV=$(printf '%s' "$J" | jsonfilter -e '@.l3_device' 2>/dev/null | head -1);[ -n "$DEV" ] || DEV=$(printf '%s' "$J" | jsonfilter -e '@.device' 2>/dev/null | head -1);IP=$(printf '%s' "$J" | jsonfilter -e '@["ipv4-address"][0].address' 2>/dev/null | head -1);GW=$(printf '%s' "$J" | jsonfilter -e '@.route[@.target="0.0.0.0"].nexthop' 2>/dev/null | head -1);[ -n "$DEV" ] && [ -n "$IP" ] && [ -e "/sys/class/net/$DEV" ];
+}
+resolve_source(){
+ case "$SOURCE" in
+  auto) DEV='';IFACE='auto';IP='';GW='';return 0;;
+  wired) iface_info wan;;
+  wifi) iface_info wifiwan;;
+  sim) iface_info wwan_4 || iface_info wwan || { [ -e /sys/class/net/eth1 ] && { DEV=eth1;IFACE=wwan;IP=$(ip -4 -o addr show dev eth1 | awk '{print $4}' | cut -d/ -f1 | head -1);[ -n "$IP" ]; }; };;
+  *) return 1;;
+ esac
+}
+finish(){
+ DONE=1
+ OK="$1";MSG="$2";shift 2
+ json_init;json_add_string id "$ID";json_add_boolean pending 0;json_add_boolean ok "$OK";json_add_string kind "$KIND";json_add_string source "$SOURCE";json_add_string device "$DEV";json_add_string interface "$IFACE";json_add_string address "$IP";json_add_string gateway "$GW";json_add_string message "$MSG";json_add_int time "$(date +%s)"
+ while [ "$#" -ge 2 ];do json_add_string "$1" "$2";shift 2;done
+ json_dump >"/tmp/blaze-nettests/$ID.json.new";mv "/tmp/blaze-nettests/$ID.json.new" "/tmp/blaze-nettests/$ID.json"
+}
+resolve_source || { finish 0 'Selected internet source is not currently connected.';exit 0; }
+[ -z "$DEV" ] || /usr/libexec/blaze-probe-route "$DEV" || { finish 0 'Could not prepare the selected source route.';exit 0; }
+IFARG='';[ -n "$DEV" ] && IFARG="-I $DEV"
+case "$ID" in ''|*[!0-9a-f-]*) exit 2;;esac
+case "$KIND" in
+ ping)
+  OUT=$(timeout 15 ping $IFARG -c4 -W2 "$TARGET" 2>&1);RC=$?;LOSS=$(printf '%s\n' "$OUT" | sed -n 's/.* \([0-9][0-9]*\)% packet loss.*/\1/p' | tail -1);AVG=$(printf '%s\n' "$OUT" | awk -F'=' '/min\/avg\/max/{gsub(/ /,"",$2);split($2,a,"/");print a[2]}' | head -1);[ -n "$LOSS" ] || LOSS=100;finish "$([ "$RC" = 0 ] && echo 1 || echo 0)" "Ping $TARGET: ${LOSS}% loss${AVG:+, ${AVG} ms average}." target "$TARGET" packet_loss "$LOSS" avg_ms "${AVG:-}" raw "$OUT";;
+ speed)
+  CURLIF='';[ -n "$DEV" ] && CURLIF="--interface $DEV";OUT=$(curl -4 $CURLIF --noproxy '*' --location --fail --silent --show-error --connect-timeout 6 --max-time 35 -o /dev/null -w '%{speed_download}|%{size_download}|%{time_total}|%{http_code}|%{remote_ip}' "$URL" 2>&1);RC=$?;if [ "$RC" = 0 ];then SPEED=$(echo "$OUT"|cut -d'|' -f1);BYTES=$(echo "$OUT"|cut -d'|' -f2);TOTAL=$(echo "$OUT"|cut -d'|' -f3);CODE=$(echo "$OUT"|cut -d'|' -f4);REMOTE=$(echo "$OUT"|cut -d'|' -f5);MBPS=$(awk -v s="$SPEED" 'BEGIN{printf "%.2f",(s*8)/1000000}');finish 1 "Single-stream download: $MBPS Mbps." url "$URL" mbps "$MBPS" bytes "$BYTES" seconds "$TOTAL" http_code "$CODE" remote_ip "$REMOTE";else finish 0 "Speed test failed: $OUT" url "$URL" raw "$OUT";fi;;
+ diagnose)
+  ROUTE=$(ip -4 route get "$TARGET" 2>&1 | head -1);PING=$(timeout 12 ping $IFARG -c3 -W2 "$TARGET" 2>&1);PRC=$?;DNS=$(timeout 8 nslookup openwrt.org 2>&1 | tail -12);CURLIF='';[ -n "$DEV" ] && CURLIF="--interface $DEV";HTTP=$(curl -4 $CURLIF --noproxy '*' --connect-timeout 4 --max-time 7 --silent -o /dev/null -w '%{http_code} %{remote_ip} %{time_total}' https://www.gstatic.com/generate_204 2>&1);HRC=$?;RAW=$(printf 'Route: %s\n\nPing:\n%s\n\nDNS lookup (router default path):\n%s\n\nHTTPS probe: %s' "$ROUTE" "$PING" "$DNS" "$HTTP");if [ "$PRC" = 0 ] || [ "$HRC" = 0 ];then finish 1 'Diagnostics completed; at least one internet probe succeeded.' target "$TARGET" raw "$RAW";else finish 0 'Diagnostics completed; internet probes failed.' target "$TARGET" raw "$RAW";fi;;
+ *) finish 0 'Unknown network test.';;
+esac

@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BlazeJ2ME Research Preview</title>
+<style>
+body{margin:0;background:#101419;color:#edf3f8;font:14px/1.5 system-ui,sans-serif}.wrap{max-width:900px;margin:auto;padding:28px}.muted{color:#9aa9b9}
+.grid{display:grid;grid-template-columns:300px 1fr;gap:14px}.panel{background:#1a2027;border:1px solid #35414f;border-radius:14px;padding:14px}.phone{max-width:330px;margin:auto;background:#090c10;border:2px solid #485460;border-radius:24px;padding:14px}
+.screen{height:420px;background:#d9e3ec;color:#14202c;border-radius:8px;display:grid;place-items:center;text-align:center;padding:18px}.keys{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px}.keys button,button{padding:10px;border-radius:8px;border:1px solid #43505e;background:#2b3540;color:#fff;cursor:pointer}
+.meta{display:grid;grid-template-columns:90px 1fr;gap:7px;font-size:12px}
+@media(max-width:700px){.grid{grid-template-columns:1fr}}
+</style></head><body><div class="wrap">
+<h1>BlazeJ2ME — Research Preview</h1><p class="muted">Synthetic MIDlet interface demonstration. No commercial JAR/JAD is bundled or executed.</p>
+<div class="grid"><div class="panel"><h3>Sample MIDlet</h3><div class="meta"><b>Name</b><span>Demo Canvas</span><b>Profile</b><span>MIDP-2.0</span><b>Config</b><span>CLDC-1.1</span><b>Classes</b><span>12 synthetic</span></div><p><button id="launch">Launch sample</button></p><pre id="log" class="muted"></pre></div>
+<div class="panel"><div class="phone"><div class="screen"><div><h2 id="title">Demo Canvas</h2><p id="msg">Press Launch, then use the keypad.</p></div></div><div class="keys" id="keys"></div></div></div></div>
+<script>
+const k=['1','2','3','4','5','6','7','8','9','*','0','#'],keys=document.getElementById('keys'),msg=document.getElementById('msg'),log=document.getElementById('log');
+k.forEach(v=>{const b=document.createElement('button');b.textContent=v;b.onclick=()=>{msg.textContent='Key '+v+' pressed';log.textContent+='keyPressed('+v+')\n'};keys.appendChild(b)});
+document.getElementById('launch').onclick=()=>{msg.textContent='Synthetic MIDlet running';log.textContent='startApp()\npaint()\n';};
+</script></div></body></html>

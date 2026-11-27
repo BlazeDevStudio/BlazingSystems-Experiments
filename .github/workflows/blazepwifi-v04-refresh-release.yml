@@ -1,0 +1,89 @@
+name: BlazePwifi v0.4 refresh production release
+
+on:
+  push:
+    branches: [blazepwifi-v0.4.0-implementation]
+    paths:
+      - '.github/blazepwifi-v04-refresh-release-request.json'
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: blazepwifi-v04-refresh-production-release
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 45
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: v0.4.0
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve verified stage
+        id: req
+        shell: bash
+        run: |
+          set -euo pipefail
+          STAGE_RUN="$(jq -r '.stage_run_id // empty' .github/blazepwifi-v04-refresh-release-request.json)"
+          CANDIDATE_SHA="$(jq -r '.candidate_sha // empty' .github/blazepwifi-v04-refresh-release-request.json)"
+          printf '%s' "$STAGE_RUN" | grep -Eq '^[0-9]+$'
+          printf '%s' "$CANDIDATE_SHA" | grep -Eq '^[0-9a-f]{40}$'
+          echo "stage_run=$STAGE_RUN" >> "$GITHUB_OUTPUT"
+          echo "candidate_sha=$CANDIDATE_SHA" >> "$GITHUB_OUTPUT"
+
+      - name: Download staged production output
+        shell: bash
+        env:
+          STAGE_RUN: ${{ steps.req.outputs.stage_run }}
+        run: |
+          set -euo pipefail
+          mkdir -p production-stage
+          gh run download "$STAGE_RUN" --repo "${{ github.repository }}" \
+            --name BlazePwifi-v0.4.0-production-stage --dir production-stage
+          test -s production-stage/RELEASE-MANIFEST.json
+          test -s production-stage/SHA256SUMS
+          test -s production-stage/BlazeRental.apk
+
+      - name: Verify candidate, checksums, and locked signer
+        shell: bash
+        env:
+          CANDIDATE_SHA: ${{ steps.req.outputs.candidate_sha }}
+        run: |
+          set -euo pipefail
+          test "$(jq -r .release production-stage/RELEASE-MANIFEST.json)" = 0.4.0
+          test "$(jq -r .commit production-stage/RELEASE-MANIFEST.json)" = "$CANDIDATE_SHA"
+          test "$(jq -r .candidate_gate production-stage/RELEASE-MANIFEST.json)" = passed
+          test "$(jq -r .required_simulation production-stage/RELEASE-MANIFEST.json)" = passed
+          EXPECTED="$(jq -r .sha256_fingerprint .github/blazerental-v04-production-identity.json)"
+          ACTUAL="$(jq -r .signing.fingerprint_sha256 production-stage/RELEASE-MANIFEST.json)"
+          test -n "$EXPECTED" -a "$ACTUAL" = "$EXPECTED"
+          (cd production-stage && sha256sum -c SHA256SUMS)
+
+      - name: Refresh existing v0.4.0 assets without moving tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release view "$TAG" --repo "${{ github.repository }}" >/dev/null
+          find production-stage -maxdepth 1 -type f -print0 \
+            | xargs -0 -r gh release upload "$TAG" --repo "${{ github.repository }}" --clobber
+          gh release edit "$TAG" --repo "${{ github.repository }}" \
+            --title "BlazePwifi v0.4.0 — Launcher Edition" \
+            --notes-file experiment/openwrt/BlazePwifi/releases/0.4.0/README.md
+
+      - name: Verify refreshed release manifest
+        shell: bash
+        env:
+          CANDIDATE_SHA: ${{ steps.req.outputs.candidate_sha }}
+        run: |
+          set -euo pipefail
+          TMP="$(mktemp -d)"
+          gh release download "$TAG" --repo "${{ github.repository }}" \
+            --pattern RELEASE-MANIFEST.json --pattern BlazeRental.apk --dir "$TMP"
+          test "$(jq -r .commit "$TMP/RELEASE-MANIFEST.json")" = "$CANDIDATE_SHA"
+          test -s "$TMP/BlazeRental.apk"
+          echo "Existing v0.4.0 tag preserved; production assets refreshed from $CANDIDATE_SHA."

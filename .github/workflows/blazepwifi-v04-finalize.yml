@@ -1,0 +1,127 @@
+name: BlazePwifi v0.4 final release publisher
+
+on:
+  push:
+    branches: [blazepwifi-v0.4.0-implementation]
+    paths:
+      - '.github/blazepwifi-v04-finalize-request.json'
+      - '.github/workflows/blazepwifi-v04-finalize.yml'
+
+concurrency:
+  group: blazepwifi-v04-final-release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 45
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Resolve exact staged release
+        id: req
+        shell: bash
+        run: |
+          set -euo pipefail
+          STAGE_RUN="$(jq -r '.stage_run_id // empty' .github/blazepwifi-v04-finalize-request.json)"
+          CANDIDATE_SHA="$(jq -r '.candidate_sha // empty' .github/blazepwifi-v04-finalize-request.json)"
+          TAG="$(jq -r '.tag // "v0.4.0"' .github/blazepwifi-v04-finalize-request.json)"
+          printf '%s' "$STAGE_RUN" | grep -Eq '^[0-9]+$'
+          printf '%s' "$CANDIDATE_SHA" | grep -Eq '^[0-9a-f]{40}$'
+          [ "$TAG" = "v0.4.0" ]
+          echo "stage_run=$STAGE_RUN" >> "$GITHUB_OUTPUT"
+          echo "candidate_sha=$CANDIDATE_SHA" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Download already-verified production stage
+        shell: bash
+        env:
+          STAGE_RUN: ${{ steps.req.outputs.stage_run }}
+        run: |
+          set -euo pipefail
+          mkdir -p release-out
+          gh run download "$STAGE_RUN" --repo "${{ github.repository }}"             --name BlazePwifi-v0.4.0-production-stage --dir release-out
+          test -s release-out/RELEASE-MANIFEST.json
+          test -s release-out/CANDIDATE-GATE.json
+          test -s release-out/SHA256SUMS
+          test -s release-out/BlazeRental.apk
+
+      - name: Verify exact candidate and staged checksums
+        shell: bash
+        env:
+          CANDIDATE_SHA: ${{ steps.req.outputs.candidate_sha }}
+        run: |
+          set -euo pipefail
+          test "$(jq -r .commit release-out/RELEASE-MANIFEST.json)" = "$CANDIDATE_SHA"
+          test "$(jq -r .candidate_gate release-out/RELEASE-MANIFEST.json)" = passed
+          test "$(jq -r .required_simulation release-out/RELEASE-MANIFEST.json)" = passed
+          test "$(jq -r .commit release-out/CANDIDATE-GATE.json)" = "$CANDIDATE_SHA"
+          test "$(jq -r .status release-out/CANDIDATE-GATE.json)" = passed
+          (
+            cd release-out
+            sha256sum -c SHA256SUMS
+          )
+
+      - name: Create immutable candidate tag first
+        shell: bash
+        env:
+          CANDIDATE_SHA: ${{ steps.req.outputs.candidate_sha }}
+          TAG: ${{ steps.req.outputs.tag }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin "$CANDIDATE_SHA" --depth=1
+          EXISTING="$(git ls-remote --tags origin "refs/tags/$TAG" | awk '{print $1}')"
+          if [ -n "$EXISTING" ]; then
+            test "$EXISTING" = "$CANDIDATE_SHA" || {
+              echo "Refusing to move existing $TAG from $EXISTING to $CANDIDATE_SHA" >&2
+              exit 1
+            }
+          else
+            git tag "$TAG" "$CANDIDATE_SHA"
+            git push origin "refs/tags/$TAG"
+          fi
+
+      - name: Create final GitHub Release from existing tag
+        shell: bash
+        env:
+          TAG: ${{ steps.req.outputs.tag }}
+        run: |
+          set -euo pipefail
+          NOTES=release-out/README.md
+          if gh release view "$TAG" --repo "${{ github.repository }}" >/dev/null 2>&1; then
+            echo "Final release already exists; preserving metadata and refreshing assets."
+          else
+            gh release create "$TAG" --repo "${{ github.repository }}"               --verify-tag               --title "BlazePwifi v0.4.0 — Launcher Edition"               --notes-file "$NOTES"
+          fi
+
+      - name: Upload production assets
+        shell: bash
+        env:
+          TAG: ${{ steps.req.outputs.tag }}
+        run: |
+          set -euo pipefail
+          find release-out -maxdepth 1 -type f -print0             | xargs -0 -r gh release upload "$TAG"                 --repo "${{ github.repository }}" --clobber
+
+      - name: Verify published production assets
+        shell: bash
+        env:
+          TAG: ${{ steps.req.outputs.tag }}
+        run: |
+          set -euo pipefail
+          JSON="$(gh api "repos/${{ github.repository }}/releases/tags/$TAG")"
+          printf '%s' "$JSON" | jq -e '.draft == false and .prerelease == false' >/dev/null
+          for required in             BlazeRental.apk             BlazePwifi-EW1200G-Pro-v1.1-sysupgrade.bin             BlazePwifi-Vendo-ESP8266.bin             BlazePwifi-Vendo-ESP32.bin             BlazePwifi-v0.4.0-x86.tar.gz             BlazePwifi-v0.4.0-orangepi-zero3.tar.gz             BlazePwifi-v0.4.0-orangepi-one.tar.gz             BlazePwifi-v0.4.0-orangepi-pc.tar.gz             SHA256SUMS RELEASE-MANIFEST.json
+          do
+            printf '%s' "$JSON" | jq -e --arg n "$required" '.assets[] | select(.name==$n)' >/dev/null               || { echo "published asset missing: $required" >&2; exit 1; }
+          done
+          echo "BlazePwifi v0.4.0 final release published and verified."

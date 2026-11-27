@@ -1,0 +1,142 @@
+#!/bin/sh
+set -eu
+
+ROOT="$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)"
+W="$ROOT/openwrt/rootfs/www/blazepwifi"
+CORE="$W/admin/core.js"
+RENTAL_UI="$W/admin/rental.js"
+ADMIN_HTML="$W/admin.html"
+ADMIN="$W/cgi-bin/admin"
+PORTAL_API="$W/cgi-bin/api"
+RENTAL_API="$W/cgi-bin/rental"
+PORTAL="$W/index.html"
+LEASE="$ROOT/android/BlazeRentalLauncher/src/com/blazesystems/blazerental/LeaseClient.java"
+STORE="$ROOT/android/BlazeRentalLauncher/src/com/blazesystems/blazerental/RentalLeaseStore.java"
+SCANNER="$ROOT/android/BlazeRentalLauncher/src/com/blazesystems/blazerental/QrEnrollmentScannerActivity.java"
+POLICY_CLIENT="$ROOT/android/BlazeRentalLauncher/src/com/blazesystems/blazerental/RentalPolicyClient.java"
+PAGES="$ROOT/android/BlazeRentalLauncher/src/com/blazesystems/blazerental/RentalSystemPages.java"
+QR_TEMPLATE="$ROOT/tools/BlazeRental-QR-Setup.template.html"
+QR_JSON_TOOL="$ROOT/tools/make-provisioning.py"
+
+sh -n "$ADMIN"
+sh -n "$PORTAL_API"
+sh -n "$RENTAL_API"
+
+echo "hardening: full-console CSRF transport"
+# Full-console CSRF must survive CGI stacks that strip custom headers.
+grep -Fq "credentials:'same-origin',cache:'no-store'" "$CORE"
+grep -Fq "Object.assign({action,csrf}" "$CORE"
+grep -Fq "'X-Blaze-CSRF':csrf" "$CORE"
+grep -Fq "refreshSessionToken" "$CORE"
+grep -Fq "return api(action,data,false)" "$CORE"
+
+echo "hardening: split binding and Device Owner QR flows"
+# Binding and Device Owner provisioning are separate API/UI flows.
+grep -Fq 'rental_binding_qr' "$ADMIN"
+grep -Fq 'rental_provisioning_qr' "$ADMIN"
+grep -Fq 'PROVISIONING_DEVICE_ADMIN_COMPONENT_NAME' "$ADMIN"
+grep -Fq 'PROVISIONING_DEVICE_ADMIN_PACKAGE_DOWNLOAD_LOCATION' "$ADMIN"
+grep -Fq 'PROVISIONING_DEVICE_ADMIN_PACKAGE_CHECKSUM' "$ADMIN"
+grep -Fq 'PROVISIONING_ADMIN_EXTRAS_BUNDLE' "$ADMIN"
+grep -Fq 'Device Owner provisioning server URL must use HTTPS' "$ADMIN"
+! grep -Fq 'PROVISIONING_SKIP_EDUCATION_SCREENS' "$ADMIN"
+grep -Fq 'Bind existing BlazeRental' "$ADMIN_HTML"
+grep -Fq 'Provision factory-reset phone' "$ADMIN_HTML"
+grep -Fq "api('rental_binding_qr'" "$RENTAL_UI"
+grep -Fq "api('rental_provisioning_qr'" "$RENTAL_UI"
+
+echo "hardening: Android provisioning checksum encoder"
+# Verify the shell checksum encoder against the frozen v0.5.2 production APK digest.
+eval "$(sed -n '/^bp_admin_sha256_b64url()/,/^}/p' "$ADMIN")"
+ENCODED="$(bp_admin_sha256_b64url d0ad20bed00ea304db9bff45928542fed574070d416ed65b4fbf3d8ba23d7102)"
+[ "$ENCODED" = '0K0gvtAOowTbm_9FkoVC_tV0Bw1BbtZbT789i6I9cQI' ]
+
+echo "hardening: pinned self-signed BlazePwifi TLS enrollment"
+grep -Fq 'server_cert_sha256' "$ADMIN"
+grep -Fq 'bp_admin_cert_sha256()' "$ADMIN"
+grep -Fq 'Device Owner provisioning requires the local pinned admin certificate' "$ADMIN"
+eval "$(sed -n '/^bp_admin_cert_sha256()/,/^}/p' "$ADMIN")"
+TMP_CERT="$(mktemp)"
+trap 'rm -f "$TMP_CERT"' EXIT INT TERM
+cat >"$TMP_CERT" <<'EOF'
+-----BEGIN CERTIFICATE-----
+YWJj
+-----END CERTIFICATE-----
+EOF
+BP_ADMIN_CERT="$TMP_CERT"
+export BP_ADMIN_CERT
+[ "$(bp_admin_cert_sha256)" = 'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad' ]
+
+grep -Fq 'server_cert_sha256' "$STORE"
+grep -Fq 'normalizePin' "$STORE"
+grep -Fq 'server_cert_sha256' "$SCANNER"
+grep -Fq 'HttpsURLConnection' "$LEASE"
+grep -Fq 'X509TrustManager' "$LEASE"
+grep -Fq 'BlazePwifi TLS certificate pin mismatch' "$LEASE"
+grep -Fq 'MessageDigest.getInstance("SHA-256")' "$LEASE"
+grep -Fq 'LeaseClient.post(context, base, body)' "$POLICY_CLIENT"
+grep -Fq 'server_cert_sha256' "$QR_TEMPLATE"
+grep -Fq 'server-cert-sha256' "$QR_JSON_TOOL"
+
+echo "hardening: retry-safe one-time Rental enrollment"
+grep -Fq 'bp_rental_enroll_mark_redeemed' "$RENTAL_API"
+grep -Fq 'bp_rental_enroll_consume_device' "$RENTAL_API"
+grep -Fq 'enrollment already claimed' "$RENTAL_API"
+grep -Fq '"reused":%s' "$RENTAL_API"
+grep -Fq 'enrollment device identity conflict' "$RENTAL_API"
+grep -Fq 'enrollment device verification failed' "$RENTAL_API"
+grep -Fq 'same request nonce' "$RENTAL_API"
+grep -Fq 'enroll_response|' "$RENTAL_API"
+grep -Fq '"enroll_sig":"%s"' "$RENTAL_API"
+grep -Fq 'enrollment_request_nonce' "$STORE"
+grep -Fq '.commit();' "$STORE"
+grep -Fq 'public static boolean setDeviceIdentity' "$STORE"
+grep -Fq 'enrollmentRequestNonce(context)' "$LEASE"
+grep -Fq 'if (nonce.length() == 0) return false' "$LEASE"
+grep -Fq 'if (!RentalLeaseStore.setDeviceIdentity(context, deviceId, newSecret))' "$LEASE"
+grep -Fq 'response.optString("enroll_sig", "")' "$LEASE"
+grep -Fq 'enroll_response|' "$LEASE"
+grep -Fq 'public static synchronized boolean sync(Context context)' "$LEASE"
+grep -Fq 'syncInFlight.compareAndSet(false, true)' "$ROOT/android/BlazeRentalLauncher/src/com/blazesystems/blazerental/BlazeDeviceAdminService.java"
+grep -Fq 'syncInFlight.set(false)' "$ROOT/android/BlazeRentalLauncher/src/com/blazesystems/blazerental/BlazeDeviceAdminService.java"
+SIG_VERIFY_LINE="$(grep -n 'Hmac.sha256Hex(authSecret, enrollCanonical)' "$LEASE" | head -n1 | cut -d: -f1)"
+IDENTITY_LINE="$(grep -n 'RentalLeaseStore.setDeviceIdentity(context, deviceId, newSecret)' "$LEASE" | head -n1 | cut -d: -f1)"
+[ -n "$SIG_VERIFY_LINE" ] && [ -n "$IDENTITY_LINE" ] && [ "$SIG_VERIFY_LINE" -lt "$IDENTITY_LINE" ]
+
+echo "hardening: portal and Rental coin-window contracts"
+# Portal and Rental app must expose the authoritative insert-coin window.
+grep -Fq '\"server_time\":$now' "$PORTAL_API"
+grep -Fq '\"coin_expires\":' "$PORTAL_API"
+grep -Fq 'id="coinCountdown"' "$PORTAL"
+grep -Fq 'syncCoinWindow(x.server_time,x.coin_expires' "$PORTAL"
+grep -Fq 'setInterval(renderCoinWindow,250)' "$PORTAL"
+grep -Fq 'setInterval(renderSessionTimer,250)' "$PORTAL"
+
+grep -Fq '"coin_window_expires_ms":' "$RENTAL_API"
+grep -Fq '"coin_received_pulses":' "$RENTAL_API"
+grep -Fq '"coin_received_cents":' "$RENTAL_API"
+grep -Fq '"coin_window_sig":' "$RENTAL_API"
+grep -Fq '.progress' "$RENTAL_API"
+grep -Fq 'coin_canonical="coin_window|' "$RENTAL_API"
+grep -Fq 'coin_stop)' "$RENTAL_API"
+grep -Fq '"reused":true' "$RENTAL_API"
+grep -Fq 'one live coin reservation' "$RENTAL_API"
+grep -Fq 'SystemClock.elapsedRealtime()' "$LEASE"
+grep -Fq 'response.optLong("expires_ms", 0L)' "$LEASE"
+grep -Fq 'response.optLong("coin_window_expires_ms", 0L)' "$LEASE"
+grep -Fq 'response.optInt("coin_received_pulses", 0)' "$LEASE"
+grep -Fq 'response.optInt("coin_received_cents", 0)' "$LEASE"
+grep -Fq 'response.optString("coin_window_sig", "")' "$LEASE"
+grep -Fq 'Hmac.sha256Hex(secret, coinCanonical)' "$LEASE"
+grep -Fq 'Hmac.sha256Hex(newSecret, coinCanonical)' "$LEASE"
+grep -Fq 'public static String coinStop' "$LEASE"
+grep -Fq 'DONE INSERTING' "$PAGES"
+grep -Fq 'formatCoinDuration' "$PAGES"
+grep -Fq 'coinWindowReceivedPulses' "$PAGES"
+grep -Fq 'coinWindowReceivedCents' "$PAGES"
+grep -Fq 'coinOpening' "$PAGES"
+grep -Fq 'OPENING COIN WINDOW' "$PAGES"
+grep -Fq 'Received • ' "$PAGES"
+grep -Fq 'COIN WINDOW OPEN' "$PAGES"
+
+echo "post-v0.5.2 CSRF, QR, and coin-window hardening contracts passed"

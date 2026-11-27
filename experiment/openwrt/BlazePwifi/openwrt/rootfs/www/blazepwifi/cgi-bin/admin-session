@@ -1,0 +1,8 @@
+#!/bin/sh
+. "${BP_LIB:-/usr/lib/blazepwifi/common.sh}"
+. "${BP_AUTH_LIB:-/usr/lib/blazepwifi/auth.sh}"
+admin_port="$(bp_cfg admin_port)"; [ -n "$admin_port" ] || admin_port=8443
+[ "${SERVER_PORT:-}" = "$admin_port" ] || bp_fail "admin API requires HTTPS"
+if bp_auth_require_role viewer; then :; else bp_fail "unauthorized"; fi
+body="$(printf '{"ok":true,"username":"%s","role":"%s","csrf":"%s","must_change":%s}' "$(bp_json_escape "$BP_AUTH_USER")" "$(bp_json_escape "$BP_AUTH_ROLE")" "$BP_AUTH_CSRF" "${BP_AUTH_MUST_CHANGE:-0}")"
+bp_json "$body"

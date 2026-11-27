@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "displayName": "Portable app",
+  "appDirectory": "App/Executables",
+  "executable": "App.exe",
+  "workingDirectory": ".",
+  "arguments": "",
+  "dataMode": "PerClientWritable",
+  "redirectEnvironmentFolders": false,
+  "isolateExecutablePerClient": true,
+  "versionStrategy": "FixedExecutable",
+  "requiredFiles": [
+    "App.exe"
+  ]
+}

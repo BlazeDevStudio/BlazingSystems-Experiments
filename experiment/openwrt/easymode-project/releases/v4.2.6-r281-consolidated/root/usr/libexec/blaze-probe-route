@@ -1,0 +1,19 @@
+#!/bin/sh
+# Device-bound router probes must bypass the home-network outage/default policy.
+# oif rules match locally generated bound sockets, not forwarded LAN clients.
+set -eu
+D=${1:-}
+case "$D" in eth1) T=29701;NAMES='wwan_4 wwan';;wan) T=29702;NAMES=wan;;*[!a-zA-Z0-9_.-]*|'') exit 1;;*) T=29703;NAMES=wifiwan;;esac
+A='';G=''
+for I in $NAMES;do
+ J=$(ubus call network.interface.$I status 2>/dev/null || true)
+ JD=$(printf '%s' "$J" | jsonfilter -e '@.l3_device' 2>/dev/null || true)
+ JA=$(printf '%s' "$J" | jsonfilter -e '@["ipv4-address"][0].address' 2>/dev/null || true)
+ [ "$JD" = "$D" ] && [ -n "$JA" ] || continue
+ A=$JA;G=$(printf '%s' "$J" | jsonfilter -e '@.route[@.target="0.0.0.0"].nexthop' 2>/dev/null | head -1)
+ break
+done
+[ -n "$A" ] && [ -e "/sys/class/net/$D" ] || exit 1
+case "$A:$G" in *[!0-9.:]*) exit 1;;esac
+if [ -n "$G" ];then ip route replace table "$T" default via "$G" dev "$D" onlink src "$A";else ip route replace table "$T" default dev "$D" src "$A";fi
+ip rule show | grep -F "oif $D lookup $T" >/dev/null || ip rule add pref 0 oif "$D" lookup "$T"

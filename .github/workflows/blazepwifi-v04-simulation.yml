@@ -1,0 +1,89 @@
+name: BlazePwifi v0.4 environment simulation
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: "Successful BlazePwifi build run ID to re-audit"
+        required: true
+        type: string
+      candidate_sha:
+        description: "Exact commit SHA used by that build run"
+        required: true
+        type: string
+
+concurrency:
+  group: blazerental-v04-manual-simulation
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  actions: read
+
+env:
+  GH_TOKEN: ${{ github.token }}
+  RUN_ID: ${{ inputs.run_id }}
+  CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+
+jobs:
+  verify-source-run:
+    runs-on: ubuntu-22.04
+    steps:
+      - shell: bash
+        run: |
+          set -euo pipefail
+          JSON="$(gh api "repos/${{ github.repository }}/actions/runs/$RUN_ID")"
+          test "$(printf '%s' "$JSON" | jq -r .conclusion)" = success
+          test "$(printf '%s' "$JSON" | jq -r .head_sha)" = "$CANDIDATE_SHA"
+
+  android-emulator:
+    needs: verify-source-run
+    runs-on: ubuntu-22.04
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.CANDIDATE_SHA }}
+      - run: |
+          mkdir -p candidate/android
+          gh run download "$RUN_ID" --repo "${{ github.repository }}" --name BlazePwifi-android-BlazeRental-v0.4 --dir candidate/android
+          APK="$(find candidate/android -type f -name 'BlazeRental-v0.4.0-ci.apk' -print -quit)"
+          test -n "$APK" -a -s "$APK"
+          echo "APK=$APK" >> "$GITHUB_ENV"
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 27
+          arch: x86
+          target: default
+          profile: pixel_2
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
+          script: bash experiment/openwrt/BlazePwifi/simulation/android_v04_audit.sh "$APK" simulation-out/android
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: BlazePwifi-v0.4-manual-android-simulation
+          path: simulation-out/android/
+          if-no-files-found: warn
+
+  browser-ui:
+    needs: verify-source-run
+    runs-on: ubuntu-22.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.CANDIDATE_SHA }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: |
+          python -m pip install --disable-pip-version-check playwright
+          python -m playwright install --with-deps chromium
+      - run: python experiment/openwrt/BlazePwifi/simulation/browser_v04_audit.py simulation-out/browser
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: BlazePwifi-v0.4-manual-browser-simulation
+          path: simulation-out/browser/
+          if-no-files-found: warn

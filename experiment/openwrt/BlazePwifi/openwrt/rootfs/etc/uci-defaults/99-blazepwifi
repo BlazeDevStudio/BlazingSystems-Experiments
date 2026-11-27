@@ -1,0 +1,138 @@
+#!/bin/sh
+randhex(){
+	bytes="${1:-18}"
+	out="$(hexdump -n "$bytes" -e '1/1 "%02x"' /dev/urandom 2>/dev/null || true)"
+	[ "${#out}" -ge $((bytes*2)) ] || out="$(od -An -N "$bytes" -tx1 /dev/urandom 2>/dev/null | tr -d ' \n' || true)"
+	[ "${#out}" -ge $((bytes*2)) ] || out="$(printf '%s|%s' "$(date +%s)" "$$" | sha256sum | awk '{print $1}')"
+	printf '%s' "$out" | cut -c1-$((bytes*2))
+}
+ensure_opt(){ key="$1"; value="$2"; uci -q get "blazepwifi.main.$key" >/dev/null 2>&1 || uci set "blazepwifi.main.$key=$value"; }
+
+ensure_opt enabled 1
+ensure_opt lan_if br-lan
+ensure_opt portal_port 8080
+ensure_opt vendo_port 4455
+ensure_opt admin_port 8443
+ensure_opt coin_window 120
+ensure_opt pulse_value_centavos 100
+ensure_opt event_history 64
+ensure_opt pause_max_seconds 0
+ensure_opt walled_refresh_seconds 120
+ensure_opt durable_sync 1
+ensure_opt firewall_zone lan
+ensure_opt capability_tier auto
+ensure_opt management_if br-lan
+ensure_opt hotspot_if br-lan
+ensure_opt controller_if br-lan
+ensure_opt rental_if br-lan
+ensure_opt management_vlan 0
+ensure_opt hotspot_vlan 0
+ensure_opt controller_vlan 0
+ensure_opt rental_vlan 0
+ensure_opt gpio_chip gpiochip0
+ensure_opt coin_line 0
+ensure_opt relay_line 0
+ensure_opt led_line 0
+ensure_opt coin_active_low 1
+ensure_opt relay_active_low 0
+ensure_opt led_active_low 0
+ensure_opt coin_debounce_ms 40
+ensure_opt pulse_group_ms 400
+ensure_opt auth_max_attempts 5
+ensure_opt auth_global_max_attempts 30
+ensure_opt auth_window_seconds 300
+ensure_opt auth_lock_seconds 900
+ensure_opt auth_idle_seconds 900
+ensure_opt auth_absolute_seconds 28800
+ensure_opt auth_kdf_rounds 2048
+ensure_opt auth_bind_ip 1
+ensure_opt update_source_url 'https://github.com/BlazingSystems/BlazingSystems-Experiments/releases/download/'
+ensure_opt update_stability_seconds 600
+ensure_opt update_retention 3
+ensure_opt update_max_mb 64
+
+mkdir -p /etc/blazepwifi/state /tmp/blazepwifi
+chmod 700 /etc/blazepwifi /etc/blazepwifi/state /tmp/blazepwifi
+
+OLD_ADMIN="$(uci -q get blazepwifi.main.admin_key || true)"
+VENDO="$(uci -q get blazepwifi.main.vendo_key || true)"
+[ -n "$VENDO" ] && [ "$VENDO" != CHANGE_ME ] || uci set blazepwifi.main.vendo_key="$(randhex 18)"
+
+if ! grep -q '^admin	' /etc/blazepwifi/state/admin-users.tsv 2>/dev/null; then
+	BOOTSTRAP="$OLD_ADMIN"
+	[ -n "$BOOTSTRAP" ] && [ "$BOOTSTRAP" != CHANGE_ME ] || BOOTSTRAP="$(randhex 12)"
+	BP_LIB=/usr/lib/blazepwifi/common.sh /usr/lib/blazepwifi/auth.sh --set-bootstrap admin admin "$BOOTSTRAP"
+	printf '%s\n' "$BOOTSTRAP" > /etc/blazepwifi/INITIAL_ADMIN_PASSWORD
+	chmod 600 /etc/blazepwifi/INITIAL_ADMIN_PASSWORD
+fi
+uci -q delete blazepwifi.main.admin_key || true
+uci commit blazepwifi
+
+LAN_IP="$(uci -q get network.lan.ipaddr || true)"; [ -n "$LAN_IP" ] || LAN_IP=192.168.1.1
+PORTAL="$(uci -q get blazepwifi.main.portal_port || echo 8080)"
+VENDO_PORT="$(uci -q get blazepwifi.main.vendo_port || echo 4455)"
+ADMIN_PORT="$(uci -q get blazepwifi.main.admin_port || echo 8443)"
+FIREWALL_ZONE="$(uci -q get blazepwifi.main.firewall_zone || echo lan)"
+
+for s in blazepwifi blazepwifi_vendo blazepwifi_admin; do uci -q delete "uhttpd.$s" || true; done
+
+uci set uhttpd.blazepwifi='uhttpd'
+uci add_list uhttpd.blazepwifi.listen_http="$LAN_IP:$PORTAL"
+uci set uhttpd.blazepwifi.home='/www/blazepwifi'
+uci set uhttpd.blazepwifi.cgi_prefix='/cgi-bin'
+uci set uhttpd.blazepwifi.rfc1918_filter='0'
+
+uci set uhttpd.blazepwifi_vendo='uhttpd'
+uci add_list uhttpd.blazepwifi_vendo.listen_http="$LAN_IP:$VENDO_PORT"
+uci set uhttpd.blazepwifi_vendo.home='/www/blazepwifi'
+uci set uhttpd.blazepwifi_vendo.cgi_prefix='/cgi-bin'
+uci set uhttpd.blazepwifi_vendo.rfc1918_filter='0'
+
+uci set uhttpd.blazepwifi_admin='uhttpd'
+uci add_list uhttpd.blazepwifi_admin.listen_https="$LAN_IP:$ADMIN_PORT"
+uci set uhttpd.blazepwifi_admin.home='/www/blazepwifi'
+uci set uhttpd.blazepwifi_admin.cgi_prefix='/cgi-bin'
+uci set uhttpd.blazepwifi_admin.rfc1918_filter='0'
+uci set uhttpd.blazepwifi_admin.cert='/etc/uhttpd.crt'
+uci set uhttpd.blazepwifi_admin.key='/etc/uhttpd.key'
+
+uci -q get uhttpd.defaults >/dev/null 2>&1 || uci set uhttpd.defaults='cert'
+uci set uhttpd.defaults.days='1825'
+uci set uhttpd.defaults.bits='2048'
+uci set uhttpd.defaults.country='PH'
+uci set uhttpd.defaults.commonname="$LAN_IP"
+uci set uhttpd.defaults.organization='BlazePwifi'
+uci commit uhttpd
+
+for r in blazepwifi_portal blazepwifi_vendo blazepwifi_admin; do uci -q delete "firewall.$r" || true; done
+uci set firewall.blazepwifi_portal='rule'
+uci set firewall.blazepwifi_portal.name='Allow-BlazePwifi-Portal'
+uci set firewall.blazepwifi_portal.src="$FIREWALL_ZONE"
+uci set firewall.blazepwifi_portal.proto='tcp'
+uci set firewall.blazepwifi_portal.dest_port="$PORTAL"
+uci set firewall.blazepwifi_portal.target='ACCEPT'
+uci set firewall.blazepwifi_vendo='rule'
+uci set firewall.blazepwifi_vendo.name='Allow-BlazePwifi-Vendo'
+uci set firewall.blazepwifi_vendo.src="$FIREWALL_ZONE"
+uci set firewall.blazepwifi_vendo.proto='tcp'
+uci set firewall.blazepwifi_vendo.dest_port="$VENDO_PORT"
+uci set firewall.blazepwifi_vendo.target='ACCEPT'
+uci set firewall.blazepwifi_admin='rule'
+uci set firewall.blazepwifi_admin.name='Allow-BlazePwifi-Admin'
+uci set firewall.blazepwifi_admin.src="$FIREWALL_ZONE"
+uci set firewall.blazepwifi_admin.proto='tcp'
+uci set firewall.blazepwifi_admin.dest_port="$ADMIN_PORT"
+uci set firewall.blazepwifi_admin.target='ACCEPT'
+uci commit firewall
+
+chmod +x /etc/init.d/blazepwifi* /usr/sbin/blazepwifi-* /usr/sbin/blazepwifi-core /usr/lib/blazepwifi/*.sh /www/blazepwifi/cgi-bin/* 2>/dev/null || true
+mkdir -p /etc/blazepwifi/state /tmp/blazepwifi
+chmod 700 /etc/blazepwifi /etc/blazepwifi/state /tmp/blazepwifi
+/etc/init.d/blazepwifi enable
+/etc/init.d/blazepwifi-update-guard enable 2>/dev/null || true
+/etc/init.d/blazepwifi-remote-guard enable 2>/dev/null || true
+/etc/init.d/blazepwifi-remote-admin enable 2>/dev/null || true
+/etc/init.d/firewall reload 2>/dev/null || true
+/etc/init.d/uhttpd restart 2>/dev/null || true
+/etc/init.d/blazepwifi start 2>/dev/null || true
+exit 0

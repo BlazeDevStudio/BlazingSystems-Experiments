@@ -1,0 +1,42 @@
+#!/bin/sh /etc/rc.common
+START=95
+STOP=10
+USE_PROCD=1
+
+ROOT=/tmp/blazepwifi-remote-admin-root
+
+prepare_root() {
+  rm -rf "$ROOT"
+  mkdir -p "$ROOT/cgi-bin"
+  ln -s /www/blazepwifi/admin.html "$ROOT/admin.html"
+  ln -s /www/blazepwifi/admin "$ROOT/admin"
+  ln -s /www/blazepwifi/vendor "$ROOT/vendor"
+  for f in admin admin-login admin-logout admin-session; do
+    ln -s "/www/blazepwifi/cgi-bin/$f" "$ROOT/cgi-bin/$f"
+  done
+}
+
+start_service() {
+  [ -r /usr/lib/blazepwifi/common.sh ] || return 0
+  [ -r /usr/lib/blazepwifi/console_ops.sh ] || return 0
+  [ -r /usr/lib/blazepwifi/remote_apply.sh ] || return 0
+  . /usr/lib/blazepwifi/common.sh
+  . /usr/lib/blazepwifi/console_ops.sh
+  . /usr/lib/blazepwifi/remote_apply.sh
+  bp_remote_apply_init
+  listener="$(bp_remote_runtime_get wg_listener)"
+  state="$(bp_remote_runtime_get state staged)"
+  case "$state" in active|applying|active_staged_changes) ;; *) return 0;; esac
+  [ -n "$listener" ] || return 0
+  [ -s /etc/uhttpd.crt ] && [ -s /etc/uhttpd.key ] || return 0
+  prepare_root
+  procd_open_instance remote-admin
+  procd_set_param command /usr/sbin/blazepwifi-remote-admin-run
+  procd_set_param respawn 5 5 3
+  procd_set_param stderr 1
+  procd_close_instance
+}
+
+service_triggers() {
+  procd_add_raw_trigger "interface.blazewg.up" 1000 /etc/init.d/blazepwifi-remote-admin restart
+}

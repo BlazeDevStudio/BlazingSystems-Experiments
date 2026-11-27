@@ -1,0 +1,16 @@
+{
+  "project": "BlazeDroid",
+  "target_release": "16.0.0",
+  "android_major": 16,
+  "android_api": 36,
+  "manifest_url": "https://github.com/los-tv-x86/lineage_bass_android.git",
+  "manifest_branch": "lineage-23.2",
+  "manifest_commit": "1cd01b9e0dab099693d262e125cd74dccd58e26d",
+  "android_base_tag": "android-16.0.0_r4",
+  "device_product": "lineage_x86_64_tablet",
+  "installer_repository": "Bliss-Bass/bootable_aaropa",
+  "installer_commit": "8c6a69fd8d7728ceeddefd42470a488d9785339f",
+  "distribution_variant": "aosp-only",
+  "gapps": "not-included",
+  "status": "preview-candidate"
+}

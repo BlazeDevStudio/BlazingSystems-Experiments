@@ -1,0 +1,18 @@
+{
+  "template": "neon-simple",
+  "brand": "BlazePwifi",
+  "tagline": "Fast Wi-Fi. Add time in seconds.",
+  "accent": "#7c5cff",
+  "accent2": "#22d3ee",
+  "background": "#07111f",
+  "text": "#f8fbff",
+  "radius": "24",
+  "show_voucher": "1",
+  "show_details": "1",
+  "show_pause": "1",
+  "coin_label": "Insert Coin",
+  "buy_label": "Buy Time",
+  "voucher_label": "Voucher",
+  "details_title": "Connection details",
+  "footer": "Powered by BlazePwifi"
+}

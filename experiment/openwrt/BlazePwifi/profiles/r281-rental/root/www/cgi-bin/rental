@@ -1,0 +1,108 @@
+#!/bin/sh
+. "${BP_LIB:-/usr/lib/blazepwifi/common.sh}"
+. "${BP_AUTH_LIB:-/usr/lib/blazepwifi/auth.sh}"
+. "${BP_RENTAL_LIB:-/usr/lib/blazepwifi/rental.sh}"
+bp_rental_init
+
+action="$(bp_param action)"
+nonce="$(bp_param nonce)"
+sig="$(bp_param sig)"
+now="$(bp_now)"
+[ -n "$nonce" ] && [ -n "$sig" ] || bp_fail "missing authentication"
+
+case "$action" in
+  enroll)
+    eid="$(bp_param enroll_id)"
+    printf '%s' "$eid" | grep -Eq '^[0-9a-f]{12}$' || bp_fail "invalid enrollment id"
+    line="$(bp_rental_enroll_lookup "$eid")"
+    [ -n "$line" ] || bp_fail "enrollment invalid or used"
+    secret="$(printf '%s' "$line" | cut -f2)"
+    expiry="$(printf '%s' "$line" | cut -f3)"
+    label="$(printf '%s' "$line" | cut -f4-)"
+    [ "$expiry" -ge "$now" ] 2>/dev/null || { bp_rental_enroll_consume "$eid"; bp_fail "enrollment expired"; }
+    token="$eid.$secret"
+    expected="$(bp_rental_hmac "$token" "enroll|$nonce|$token")" || bp_fail "rental crypto unavailable"
+    [ "$sig" = "$expected" ] || bp_fail "authentication failed"
+    did="$(bp_rental_hex 12)"
+    dsecret="$(bp_rental_hex 24)"
+    bp_rental_device_write "$did" "$dsecret" 0 "${label:-Rental phone}" "$now"
+    bp_rental_policy_ensure "$did"
+    bp_rental_enroll_consume "$eid"
+    bp_json "$(printf '{"ok":true,"device_id":"%s","device_secret":"%s","server_time_ms":%s,"lease_until_ms":%s}' "$did" "$dsecret" "$((now*1000))" "$((now*1000))")"
+    ;;
+  status)
+    did="$(bp_param device_id)"
+    printf '%s' "$did" | grep -Eq '^[0-9a-f]{24}$' || bp_fail "invalid device id"
+    line="$(bp_rental_device_line "$did")"
+    [ -n "$line" ] || bp_fail "unknown device"
+    secret="$(printf '%s' "$line" | cut -f2)"
+    lease="$(printf '%s' "$line" | cut -f3)"
+    label="$(printf '%s' "$line" | cut -f4)"
+    expected="$(bp_rental_hmac "$secret" "status|$nonce|$secret")" || bp_fail "rental crypto unavailable"
+    [ "$sig" = "$expected" ] || bp_fail "authentication failed"
+    inventory="$(bp_param inventory)"
+    [ -z "$inventory" ] || bp_rental_inventory_write "$did" "$inventory" || bp_fail "invalid app inventory"
+    bp_rental_device_write "$did" "$secret" "${lease:-0}" "$label" "$now"
+    policy="$(bp_rental_policy_line "$did")"
+    allowed="$(printf '%s' "$policy" | cut -f2)"
+    salt="$(printf '%s' "$policy" | cut -f3)"
+    hash="$(printf '%s' "$policy" | cut -f4)"
+    rounds="$(printf '%s' "$policy" | cut -f5)"
+    preferred="$(printf '%s' "$policy" | cut -f6)"
+    [ "$salt" = "-" ] && salt=""
+    [ "$hash" = "-" ] && hash=""
+    [ "$preferred" = "-" ] && preferred=""
+    per="$(bp_cfg rental_seconds_per_pulse)"
+    [ -n "$per" ] || per=600
+    server_ms=$((now*1000))
+    # Keep expired devices synchronized. The authoritative stored lease remains
+    # expired; only the signed report is clamped to server-now because the
+    # Android client rejects lease_until_ms values older than server_time_ms.
+    report_lease="${lease:-0}"
+    [ "$report_lease" -ge "$now" ] 2>/dev/null || report_lease="$now"
+    lease_ms=$((report_lease*1000))
+    canonical="$did|$nonce|$server_ms|$lease_ms|$allowed|$salt|$hash|$rounds|$preferred|$per"
+    psig="$(bp_rental_hmac "$secret" "$canonical")" || bp_fail "rental crypto unavailable"
+    bp_json "$(printf '{"ok":true,"device_id":"%s","server_time_ms":%s,"lease_until_ms":%s,"allowed_packages":"%s","admin_salt":"%s","admin_hash":"%s","admin_rounds":%s,"preferred_vendo":"%s","rental_seconds_per_pulse":%s,"policy_sig":"%s"}' "$did" "$server_ms" "$lease_ms" "$(bp_json_escape "$allowed")" "$(bp_json_escape "$salt")" "$(bp_json_escape "$hash")" "${rounds:-4096}" "$(bp_json_escape "$preferred")" "$per" "$psig")"
+    ;;
+  coin_start)
+    did="$(bp_param device_id)"
+    printf '%s' "$did" | grep -Eq '^[0-9a-f]{24}$' || bp_fail "invalid device id"
+    line="$(bp_rental_device_line "$did")"
+    [ -n "$line" ] || bp_fail "unknown device"
+    secret="$(printf '%s' "$line" | cut -f2)"
+    expected="$(bp_rental_hmac "$secret" "coin_start|$nonce|$secret")" || bp_fail "rental crypto unavailable"
+    [ "$sig" = "$expected" ] || bp_fail "authentication failed"
+    bp_time_sane "$now" || bp_fail "router clock not synchronized"
+    policy="$(bp_rental_policy_line "$did")"
+    preferred="$(printf '%s' "$policy" | cut -f6)"
+    [ "$preferred" = "-" ] && preferred=""
+    vendo="$(bp_param vendo)"
+    [ -n "$vendo" ] || vendo="$preferred"
+    [ -n "$vendo" ] || vendo="$(bp_choose_vendo 2>/dev/null || true)"
+    [ -n "$vendo" ] || bp_fail "select a controller or wait for one to come online"
+    printf '%s' "$vendo" | grep -Eq '^[A-Za-z0-9._-]{1,48}$' || bp_fail "invalid controller"
+    window="$(bp_cfg coin_window)"
+    [ -n "$window" ] || window=120
+    expires=$((now+window))
+    target_nonce="$(hexdump -n 8 -e '8/1 "%02x"' /dev/urandom 2>/dev/null || printf '%s' "$now")"
+    target_file="$BP_TARGET_DIR/$vendo.tsv"
+    bp_lock || bp_fail "accounting busy"
+    if [ -f "$target_file" ]; then
+      IFS="$(printf '\t')" read -r old_device old_mac old_nonce old_expires old_vendo old_kind < "$target_file"
+      old_kind="${old_kind:-hotspot}"
+      if [ "$old_expires" -gt "$now" ] 2>/dev/null && { [ "$old_device" != "$did" ] || [ "$old_kind" != rental ]; }; then
+        bp_unlock
+        bp_fail "selected controller is busy"
+      fi
+    fi
+    target_tmp="$BP_TARGET_DIR/.$vendo.$(bp_tmp_suffix)"
+    printf '%s\t-\t%s\t%s\t%s\trental\n' "$did" "$target_nonce" "$expires" "$vendo" > "$target_tmp"
+    chmod 600 "$target_tmp"
+    mv "$target_tmp" "$target_file"
+    bp_durable_sync
+    bp_unlock
+    bp_json "$(printf '{"ok":true,"vendo":"%s","target_nonce":"%s","expires":%s}' "$(bp_json_escape "$vendo")" "$target_nonce" "$expires")"
+    ;;
+  *) bp_fail "unknown rental action" ;;
+esac

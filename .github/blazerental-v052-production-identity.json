@@ -1,0 +1,25 @@
+{
+  "release": "0.5.2",
+  "package_id": "com.blazesystems.blazerental",
+  "certificate_lineage": "BlazeRental-production-lineage2",
+  "sha256_fingerprint": "1A:18:D5:8E:1F:95:55:96:89:10:20:71:F5:6C:93:E9:B9:D2:EA:6B:E4:0E:6F:20:70:06:C9:89:62:A1:6A:25",
+  "source_candidate_sha": "bf2992977fe8504d21b107df02826032c31d3a62",
+  "source_build_run_id": 37443570618,
+  "source_signing_run_id": 37448352082,
+  "signing_artifact_id": 11404278200,
+  "release_id": 404545281,
+  "signed_apk_sha256": "d0ad20bed00ea304db9bff45928542fed574070d416ed65b4fbf3d8ba23d7102",
+  "rollback_rescue": "0.5.1-rescue-for-0.5.2",
+  "rollback_rescue_signed_sha256": "a1c8d759405842b85879c77e9525b1a6e9c4f6d62eb8bda9b0abc60fb899d513",
+  "fresh_device_provisioning": true,
+  "upgrade_from_old_v04_lineage": false,
+  "recovery": {
+    "cipher": "AES-256-GCM",
+    "key_wrap": "RSA-OAEP-SHA256",
+    "public_a_sha256": "e6c24a4bc3533170747d99c5debc7522cbf31097a2e08091514f98895ef2159d",
+    "public_b_sha256": "f15466ab3af75e7174dbb0a7bf7bb30c25540be5fb3da9e291d241146437bfac",
+    "private_a_location": "owner-private ChatGPT Library /BlazePwifi Signing Recovery/",
+    "private_b_location": "owner offline recovery copy"
+  },
+  "locked": true
+}

@@ -1,0 +1,149 @@
+import {ledSettings,ledProfile} from '/usr/share/blaze/leds.uc';
+import {repeaterSettings,repeaterProfile} from '/usr/share/blaze/repeater.uc';
+import {readfile,writefile} from 'fs';
+import {connect} from 'ubus';
+import {quote,exec,checked,readjson,config,normalize,hasControl,smsLength} from '/usr/share/blaze/common.uc';
+
+function ubusCall(c,obj,method,args){try{return c.call(obj,method,args)||{};}catch(e){return null;}}
+function interfaceStatus(name){let c=connect();if(!c)return {};let r=ubusCall(c,'network.interface.'+name,'status',{})||{};c.disconnect();return r;}
+function hasAddress(r){return type(r?.['ipv4-address'])=='array'&&length(r['ipv4-address'])>0;}
+function cellularStatus(){let r=interfaceStatus('wwan_4');if(hasAddress(r))return r;r=interfaceStatus('wwan');return r||{};}
+function detectPort(){if(readfile('/sys/class/tty/ttyACM0/dev'))return '/dev/ttyACM0';let r=exec("/usr/bin/timeout -k 1 3 /usr/share/3ginfo-lite/detect.sh 2>/dev/null | head -1"),p=trim(r.out||'');if(match(p,/^\/dev\/[A-Za-z0-9._-]+$/)&&readfile('/sys/class/tty/'+replace(p,'/dev/','')+'/dev'))return p;return '';}
+function detectMyNumber(){
+ let cache=readjson('/tmp/blaze-msisdn.json',{});if(cache.time&&time()-int(cache.time)<600)return cache.number||'';
+ let p=detectPort();if(!p)return '';
+ let r=exec('/usr/bin/timeout -k 1 4 /usr/bin/flock -x /var/lock/blaze-modem.lock /usr/bin/sms_tool -d '+quote(p)+" at 'AT+CNUM' 2>/dev/null");
+ let m=match(r.out||'',/\+CNUM:\s*"[^"]*","([+0-9]+)"/),n=m?.[1]||'';
+ if(!n){m=match(r.out||'',/\+CNUM:[^\r\n]*?([+]?[0-9]{7,15})/);n=m?.[1]||'';}
+ writefile('/tmp/blaze-msisdn.json',sprintf('%J',{number:n,time:time()}));return n;
+}
+function cfg(){
+ let u=config(),w=[],piso=[],sta={};
+ u.foreach('wireless','wifi-iface',s=>{
+  let x={section:s['.name'],device:s.device,ssid:s.ssid||'',disabled:s.disabled=='1',encryption:s.encryption||'none',network:s.network||'',mode:s.mode||'',bssid:s.bssid||''};
+  if(s.mode=='ap'&&s.network=='lan')push(w,x);
+  else if(s.mode=='ap'&&s.network=='piso')push(piso,x);
+  else if(s.mode=='sta'&&s.network=='wifiwan')sta=x;
+ });
+ let settings={...(u.get_all('blaze','main')||{}),sms_storage:u.get('sms_tool_js','@sms_tool_js[0]','storage')||'ME'};
+ return {access:readjson('/etc/blaze/access.json',{mode:'off',scope:'all',macs:[]}),leds:ledSettings(u),wifi:w,piso_wifi:piso,wifi_sta:sta,repeater:repeaterSettings(u),apn:u.get('network','wwan','apn'),hostname:u.get('system','@system[0]','hostname'),settings};
+}
+function clientSessions(clients){
+ let t=readjson('/tmp/blaze-clients.json',{}),up=int(split(readfile('/proc/uptime')||'0',' ')[0]);
+ let age=up-int(t.uptime||0),fresh=t.boot==trim(readfile('/proc/sys/kernel/random/boot_id')||'')&&age>=0&&age<=90;
+ let all={};for(let c in clients)all[lc(c.mac)]=c;
+ for(let mac,d in (t.devices||{}))all[mac]={...(all[mac]||{}),...d,ip:d.ip||all[mac]?.ip||'—',name:d.name||all[mac]?.name||'Unnamed',online:fresh&&d.online,session_seconds:fresh&&d.online?int(d.session_seconds)+age:0,total_seconds:int(d.total_seconds)+(fresh&&d.online?age:0)};
+ let list=values(all);for(let d in list)d.presence=fresh?(d.online?'online':'not_seen'):'unknown';
+ list=sort(list,(a,b)=>int(b.online)-int(a.online)||int(b.last_seen)-int(a.last_seen));
+ return {clients:list,tracking:{fresh,started:t.started||0,checkpoint:t.checkpoint||0,interval_seconds:60,history_limit:8,device_limit:128}};
+}
+function status(){
+ let u=config(),ports=[],labels={wan:'LAN1 / WAN',lan3:'LAN2',lan2:'LAN3',lan1:'LAN4'};
+ for(let p in ['wan','lan3','lan2','lan1'])push(ports,{device:p,label:labels[p],carrier:trim(readfile('/sys/class/net/'+p+'/carrier')||'0')=='1',speed:trim(readfile('/sys/class/net/'+p+'/speed')||''),role:p=='wan'?(u.get('blaze','main','port1')||'wan'):'lan'});
+ let clients=[];for(let line in split(trim(readfile('/tmp/dhcp.leases')||''),'\n')){let a=split(line,' ');if(length(a)>=4)push(clients,{mac:a[1],ip:a[2],name:a[3]=='*'?'Unnamed':a[3]});}
+ let known={};for(let x in clients)known[lc(x.mac)]=true;for(let line in split(exec('ip -4 neigh show').out||'','\n')){let m=match(line,/^([0-9.]+) dev (br-[^ ]+) lladdr ([0-9a-f:]+)/);if(m&&!known[lc(m[3])]){known[lc(m[3])]=true;push(clients,{mac:m[3],ip:m[1],name:'Discovered device'});}}
+ let sessions=clientSessions(clients);clients=sessions.clients;
+ let mem=readfile('/proc/meminfo')||'',mt=match(mem,/MemTotal:\s+(\d+)/),ma=match(mem,/MemAvailable:\s+(\d+)/);
+ return {hostname:u.get('system','@system[0]','hostname'),board:trim(readfile('/tmp/sysinfo/board_name')||''),firmware:trim(readfile('/etc/openwrt_version')||''),easymode_version:trim(readfile('/etc/blaze/easymode-version')||'4.1.0'),rpc_api:'4.1',features:['modem','wifi_scan','wifi_relay','captive_wifi','logs','sms_history','nettest','messages','dynamic_bands','client_sessions'],uptime:int(split(readfile('/proc/uptime')||'0',' ')[0]),memory:{total:int(mt?.[1]),available:int(ma?.[1])},ports,clients,client_tracking:sessions.tracking,radio:readjson('/tmp/blaze-radio.json',{}),led:readjson('/tmp/blaze-led.json',{}),health:readjson('/tmp/blaze-health.json',{}),job:readjson('/tmp/blaze-job.json',{}),trial:readjson('/tmp/blaze-trial.json',{}),sim:cellularStatus(),wired:interfaceStatus('wan'),wifiwan:interfaceStatus('wifiwan'),config:cfg()};
+}
+function modemCaps(){let r=exec('/usr/bin/timeout -k 1 7 /usr/bin/flock -x /var/lock/blaze-modem.lock /usr/libexec/blaze-modemband-original json 2>/dev/null');if(r.rc)return {error:trim(r.out)||'Band helper unavailable or busy.'};try{return json(r.out);}catch(e){return {error:'Could not parse modem band capabilities.'};}}
+function modem(){
+ let caps=modemCaps(),info={};let r=exec('/usr/bin/timeout -k 1 7 /usr/bin/flock -x /var/lock/blaze-modem.lock sh /usr/share/3ginfo-lite/3ginfo.sh 2>/dev/null');if(!r.rc)try{info=json(r.out);}catch(e){info={error:'Could not parse modem information.'};}else info={error:trim(r.out)||'Modem information unavailable or busy.'};
+ info.msisdn=detectMyNumber();return {ok:!(caps.error&&info.error),caps,info,time:time()};
+}
+function launch(kind,a,b,c){let id=trim(checked('/usr/libexec/blaze-launch '+quote(kind)+' '+quote(a||'')+' '+quote(b||'')+' '+quote(c||'')));return {ok:true,job_id:id,message:'Operation started. Progress appears at the top of the page.'};}
+function messageStart(p){let id=trim(checked('/usr/libexec/blaze-message-launch '+quote(sprintf('%J',p))));return {ok:true,pending:true,id};}
+function nettestStart(p){let id=trim(checked('/usr/libexec/blaze-nettest-launch '+quote(sprintf('%J',p))));return {ok:true,pending:true,id};}
+function bandSelection(rat,raw){
+ if(!(rat in ['lte','nsa','sa']))die('Unknown radio family.');if(length(''+raw)>800||!match(''+raw,/^[0-9 ,]+$/)||hasControl(''+raw,true))die('Invalid band list.');
+ let caps=modemCaps();if(caps.error)die(caps.error);let key=rat=='lte'?'supported':rat=='nsa'?'supported5gnsa':'supported5gsa',supported=caps[key]||[],ok={},used={},out=[];
+ for(let item in supported){let b=int(item.band);if(b>0)ok[''+b]=true;}
+ for(let part in split(trim(replace(''+raw,/,/g,' ')),/ +/)){let b=int(part);if(b<1||!ok[''+b])die('Band '+part+' is not reported as supported by the installed modem.');if(!used[''+b]){used[''+b]=true;push(out,''+b);}}
+ if(!length(out))die('Choose at least one supported band.');return join(' ',out);
+}
+function wifiScan(){let id=trim(checked('/usr/libexec/blaze-wifi-scan-launch'));return {ok:true,pending:true,id};}
+function logType(line){if(match(line,/BlazeSystems|blaze-/i))return 'EasyMode';if(match(line,/kernel:|kern\.|\[[ ]*[0-9.]+\]/i))return 'Kernel';if(match(line,/hostapd|wpa_supplicant|wireless|wifi|mt76/i))return 'Wi-Fi';if(match(line,/netifd|dnsmasq|odhcp|firewall|fw4|udhcpc|dhcp/i))return 'Network';if(match(line,/uhttpd|rpcd|luci/i))return 'Web';return 'OpenWrt';}
+function redact(line){line=replace(line,/AT\+CHECKATVALID=[0-9]+/g,'AT+CHECKATVALID=[redacted]');line=replace(line,/(password|passwd|psk|secret|token)=([^ ]+)/g,'$1=[redacted]');return line;}
+function logs(){
+ let r=exec('logread 2>/dev/null | tail -n 650'),lines=[];for(let line in split(r.out||'','\n')){line=trim(line);if(line){if(length(line)>700)line=substr(line,0,700)+'…';push(lines,{type:logType(line),text:redact(line)});}}
+ let outage=readfile('/tmp/blaze-outages/latest.txt')||'';if(outage)for(let line in split(outage,'\n')){line=trim(line);if(line)push(lines,{type:'Watchdog',text:redact('[latest outage] '+line)});}
+ if(length(lines)>800)lines=slice(lines,length(lines)-800);return {ok:true,lines,time:time()};
+}
+function validSource(v){return v in ['auto','sim','wired','wifi'];}
+function validateTarget(v){v=trim(''+v);if(!match(v,/^[A-Za-z0-9._:-]{1,253}$/))die('Target must be a hostname or IP address.');return v;}
+function validateUrl(v){v=trim(''+v);if(length(v)<8||length(v)>320||!match(v,/^https?:\/\/[^[:space:]]+$/)||hasControl(v,true))die('Enter a valid HTTP or HTTPS URL.');return v;}
+function mutate(action,p){
+ let u=config();
+ if(action=='access'){checked('/usr/libexec/blaze-access-apply '+quote(sprintf('%J',p)));return {ok:true,message:'System-wide internet access policy saved. Local router access remains available.'};}
+ if(action=='leds'){let v=ledProfile(p);return launch('leds',sprintf('%J',v));}
+ if(action=='antenna'){if(!(p.mode in ['auto','internal','external']))die('Invalid antenna mode.');return launch('antenna',p.mode);}
+ if(action=='confirm_mode'){let pending=trim(readfile('/tmp/blaze-mode-token')||'');if(!pending||p.token!=pending)die('No matching network transaction.');writefile('/tmp/blaze-mode-confirm',pending);return {ok:true};}
+ if(action=='bands'){let rat=p.rat||'lte',bands=bandSelection(rat,p.bands);if(p.requireCA)p.test=true;return launch('bands',rat,bands,(p.test?'trial'+(p.requireCA?'-ca':''):'apply'));}
+ if(action=='reconnect')return launch('reconnect');
+ if(action=='wifi'){
+  if(type(p.ssid)!='string'||length(p.ssid)<1||length(p.ssid)>32||hasControl(p.ssid,true))die('SSID must be 1–32 characters.');
+  if(p.password&&(length(p.password)<8||length(p.password)>63||hasControl(p.password,true)))die('Wi-Fi password must be 8–63 characters.');
+  return launch('wifi',sprintf('%J',{kind:'wifi',ssid:p.ssid,password:p.password||'',enabled:p.enabled!==false}));
+ }
+ if(action=='piso_wifi'){
+  for(let k in ['ssid2g','ssid5g'])if(type(p[k])!='string'||length(p[k])<1||length(p[k])>32||hasControl(p[k],true))die('PisoWiFi SSIDs must be 1–32 characters.');
+  return launch('piso-wifi',sprintf('%J',{kind:'piso_wifi',ssid2g:p.ssid2g,ssid5g:p.ssid5g,enabled2g:p.enabled2g!==false,enabled5g:p.enabled5g!==false}));
+ }
+ if(action=='repeater_ap'){repeaterProfile(u,p);return launch('repeater-ap',sprintf('%J',{...p,kind:'repeater_ap'}));}
+ if(action=='wifi_sta'){
+  if(p.disconnect)return launch('wifi-sta',sprintf('%J',{kind:'wifi_sta',disconnect:true}));
+  if(!(p.radio in ['radio0','radio1']))die('Choose a scanned Wi-Fi radio.');if(type(p.ssid)!='string'||length(p.ssid)<1||length(p.ssid)>32||hasControl(p.ssid,true))die('Invalid upstream Wi-Fi name.');
+  if(!(p.encryption in ['none','psk','psk2','psk-mixed','sae','sae-mixed']))die('Unsupported Wi-Fi security mode.');if(p.encryption!='none'&&(length(p.password)<8||length(p.password)>63||hasControl(p.password,true)))die('Upstream Wi-Fi password must be 8–63 characters.');
+  let mode=p.mode||'routed',scope=p.scope||'ssid';if(!(scope in ['ssid','lan']))die('Invalid repeater scope.');if(p.repeat_ssid&&(type(p.repeat_ssid)!='string'||length(p.repeat_ssid)>32||hasControl(p.repeat_ssid,true)))die('Repeater Wi-Fi name must be 1–32 characters.');if(!(mode in ['routed','relay']))die('Invalid repeater mode.');if(mode=='relay'&&scope=='lan'&&(u.get('blaze','main','mode')||'standard')!='standard')die('Use standard LAN ports before enabling the upstream-address repeater.');if(mode=='relay'&&!readfile('/etc/init.d/relayd'))die('Install relayd and luci-proto-relay first.');
+  if(p.bssid&&!match(p.bssid,/^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$/))die('Invalid BSSID.');let ch=int(p.channel||0);if(ch<0||ch>196)die('Invalid Wi-Fi channel.');return launch('wifi-sta',sprintf('%J',{kind:'wifi_sta',radio:p.radio,channel:ch,ssid:p.ssid,bssid:p.bssid||'',encryption:p.encryption,password:p.password||'',mode,scope,repeat_ssid:p.repeat_ssid||'',captive:p.captive===true,backup:p.backup!==false}));
+ }
+ if(action=='apn'){if(!match(p.apn||'',/^[A-Za-z0-9.-]{1,100}$/))die('Invalid APN.');return launch('apn',sprintf('%J',{kind:'apn',apn:p.apn}));}
+ if(action=='design'){if(!(p.theme in ['light','dark']))die('Invalid theme.');if(!match(p.accent||'',/^#[0-9a-fA-F]{6}$/))die('Invalid accent color.');u.set('blaze','main','theme',p.theme);u.set('blaze','main','accent',p.accent);u.commit('blaze');return {ok:true,message:'Appearance saved.'};}
+ if(action=='modes'){
+  if(u.get('blaze','main','wifi_uplink_mode')=='relay'&&u.get('blaze','main','wifi_relay_scope')!='ssid')die('Disconnect the repeater or switch to routed Wi-Fi before changing port/VLAN roles.');
+  if(!(p.port1 in ['wan','lan'])||!(p.mode in ['standard','piso']))die('Invalid port mode.');let v=int(p.vlan);if(p.mode=='piso'&&(v!=p.vlan||v<2||v>4094))die('VLAN ID must be 2–4094.');return launch('modes',sprintf('%J',{port1:p.port1,mode:p.mode,vlan:v}));
+ }
+ if(action=='internet_policy'){
+  if(u.get('blaze','main','wifi_uplink_mode')=='relay'&&u.get('blaze','main','wifi_relay_scope')!='ssid'&&p.mode=='balance')die('Upstream-address relay clients use their upstream gateway. Use routed mode for load balancing.');
+  if(p.backup!=null&&type(p.backup)!='bool')die('Invalid backup preference.');
+  if(!(p.mode in ['failover','balance']))die('Invalid internet mode.');let order=split(trim(''+p.order),/ +/),used={};if(length(order)!=3)die('Choose all three internet sources in priority order.');for(let x in order){if(!(x in ['wifi','sim','wired'])||used[x])die('Internet priority contains an invalid or duplicate source.');used[x]=true;}
+  for(let k in ['wifi','sim','wired']){let w=int(p[k+'_weight']);if(w<1||w>10)die('Load-balance weights must be 1–10.');u.set('blaze','main',k+'_weight',''+w);}
+  if(p.backup!=null)u.set('blaze','main','backup_enabled',p.backup?'1':'0');u.set('blaze','main','internet_mode',p.mode);u.set('blaze','main','source_order',join(' ',order));u.set('blaze','main','preferred',order[0]);u.commit('blaze');exec('/usr/libexec/blaze-route-refresh >/dev/null 2>&1 &');return {ok:true,message:p.mode=='balance'?'Concurrent multi-WAN enabled. Separate connections can use multiple healthy uplinks.':'Priority/failover policy saved.'};
+ }
+ if(action=='watchdog'){
+  let enabled=p.enabled!==false,interval=int(p.interval),fails=int(p.failures),targets=trim(''+p.targets),url=validateUrl(p.url||'https://www.gstatic.com/generate_204');if(interval<10||interval>300)die('Watchdog interval must be 10–300 seconds.');if(fails<1||fails>10)die('Failure threshold must be 1–10.');let clean=[];for(let t in split(targets,/[, ]+/)){if(t&&length(clean)<4)push(clean,validateTarget(t));}if(!length(clean))die('Enter at least one watchdog target.');u.set('blaze','main','watchdog_enabled',enabled?'1':'0');u.set('blaze','main','watchdog_interval',''+interval);u.set('blaze','main','watchdog_failures',''+fails);u.set('blaze','main','watchdog_targets',join(' ',clean));u.set('blaze','main','watchdog_url',url);u.commit('blaze');return {ok:true,message:'Network watchdog settings saved.'};
+ }
+ if(action=='session_policy'){
+  let t=int(p.timeout);if(!(t in [0,300,900,1800,3600,7200,14400,28800]))die('Unsupported session timeout.');u.set('blaze','main','session_timeout',''+t);u.set('luci','sauth','sessiontime',''+(t||86400));u.commit('blaze');u.commit('luci');return {ok:true,message:t?'Idle timeout saved and applies immediately in EasyMode; new LuCI sessions use the same duration.':'Automatic EasyMode idle logout disabled; new LuCI sessions use a 24-hour backend limit.'};
+ }
+ if(action=='sms_settings'){if(!(p.storage in ['SM','ME']))die('Choose SIM or modem storage.');u.set('sms_tool_js','@sms_tool_js[0]','storage',p.storage);u.commit('sms_tool_js');u.set('blaze','main','sms_storage',p.storage);u.commit('blaze');return {ok:true,message:'SMS storage preference saved.'};}
+ if(action=='sms_send'){let radio=readjson('/tmp/blaze-radio.json',{}),number=normalize(p.number,radio.operator);smsLength(p.text);return messageStart({kind:'send',number,text:p.text});}
+ if(action=='sms_clear_sent'){checked('mkdir -p /etc/blaze');writefile('/etc/blaze/sms-sent.json.new','{"messages":[]}');checked('mv /etc/blaze/sms-sent.json.new /etc/blaze/sms-sent.json; chmod 600 /etc/blaze/sms-sent.json');return {ok:true,message:'Sent-message history cleared. Incoming modem messages were not deleted.'};}
+ if(action=='ussd'){if(!match(p.code||'',/^[*#0-9]{1,30}#$/))die('Invalid USSD code.');return messageStart({kind:'ussd',code:p.code,raw:u.get('sms_tool_js','@sms_tool_js[0]','ussd')=='1',raw_output:u.get('sms_tool_js','@sms_tool_js[0]','pdu')=='1'});}
+ die('Unknown operation.');
+}
+function nettest(req){
+ let kind=''+(req.kind||''),source=''+(req.source||'auto');if(!(kind in ['ping','speed','diagnose']))die('Unknown network test.');if(!validSource(source))die('Invalid test source.');
+ let p={kind,source};if(kind=='ping'||kind=='diagnose')p.target=validateTarget(req.target||'1.1.1.1');if(kind=='speed')p.url=validateUrl(req.url||'https://speed.cloudflare.com/__down?bytes=25000000');return nettestStart(p);
+}
+return {
+ blaze: {
+  status: {call:()=>status()},
+  modem: {call:()=>modem()},
+  wifi_scan: {call:()=>{try{return wifiScan();}catch(e){return {ok:false,error:""+e};}}},
+  wifi_scan_status: {args:{id:""},call:req=>{if(!match(req.args.id,/^[0-9a-f-]{36}$/))return {ok:false,error:"Invalid scan ID."};return readjson("/tmp/blaze-scans/"+req.args.id+".json",{ok:false,error:"Scan result expired. Scan again."});}},
+  logs: {call:()=>logs()},
+  inbox: {call:()=>{let u=config(),storage=u.get('sms_tool_js','@sms_tool_js[0]','storage')||'ME';try{return messageStart({kind:'inbox',storage});}catch(e){return {ok:false,message:''+e};}}},
+  sms_history: {call:()=>{let h=readjson('/etc/blaze/sms-sent.json',{messages:[]});return {ok:true,data:type(h.messages)=='array'?h:{messages:[]}};}},
+  message_status: {args:{id:''},call:req=>{if(!match(req.args.id,/^[0-9a-f-]{36}$/))return {ok:false,message:'Invalid operation ID.'};let r=readjson('/tmp/blaze-messages/'+req.args.id+'.json',{});return r.id==req.args.id?r:{ok:false,message:'This operation result is no longer available. Do not automatically resend.'};}},
+  nettest_start: {args:{kind:'',source:'',target:'',url:''},call:req=>{try{return nettest(req.args);}catch(e){return {ok:false,error:''+e};}}},
+  nettest_status: {args:{id:''},call:req=>{if(!match(req.args.id,/^[0-9a-f-]{36}$/))return {ok:false,message:'Invalid test ID.'};let r=readjson('/tmp/blaze-nettests/'+req.args.id+'.json',{});return r.id==req.args.id?r:{ok:false,message:'This network test result is no longer available.'};}},
+  action: {
+   args:{action:'',payload:''},
+   call:req=>{
+    try{let p=json(req.args.payload||'{}');return mutate(req.args.action,p);}
+    catch(e){return {ok:false,error:''+e};}
+   }
+  }
+ }
+};

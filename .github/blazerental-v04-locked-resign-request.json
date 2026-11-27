@@ -1,0 +1,7 @@
+{
+  "run_id": "37287301792",
+  "candidate_sha": "d2ee5e0c0493500ce6a0578b9cad5da0775be65e",
+  "requested_at": "2026-10-05T17:08:00+08:00",
+  "mode": "locked-v0.4-production-resign",
+  "note": "Re-sign corrected BlazeRental candidate with the existing locked v0.4 production identity. Refuse certificate rotation."
+}

@@ -1,0 +1,30 @@
+#!/bin/sh
+set -eu
+. "${BP_LIB:-/usr/lib/blazepwifi/common.sh}"
+. "${BP_CONSOLE_OPS_LIB:-/usr/lib/blazepwifi/console_ops.sh}"
+. "${BP_REMOTE_APPLY_LIB:-/usr/lib/blazepwifi/remote_apply.sh}"
+bp_init_dirs
+bp_remote_apply_init
+
+listener="$(bp_remote_runtime_get wg_listener)"
+state="$(bp_remote_runtime_get state staged)"
+case "$state" in active|active_staged_changes|applying) ;; *) exit 0;; esac
+[ -n "$listener" ] || exit 0
+listener_ip="${listener%:*}"
+[ -n "$listener_ip" ] || exit 1
+
+wait_seconds="${BP_REMOTE_ADMIN_WAIT_SECONDS:-60}"
+start="$(bp_now)"
+while :; do
+  if ip -4 addr show 2>/dev/null | grep -Fq "inet $listener_ip/"; then
+    break
+  fi
+  now="$(bp_now)"
+  [ $((now-start)) -lt "$wait_seconds" ] 2>/dev/null || exit 1
+  sleep 1
+done
+
+ROOT=/tmp/blazepwifi-remote-admin-root
+[ -s /etc/uhttpd.crt ] && [ -s /etc/uhttpd.key ] || exit 1
+exec /usr/sbin/uhttpd -f -s "$listener" -h "$ROOT" -x /cgi-bin \
+  -C /etc/uhttpd.crt -K /etc/uhttpd.key -n 8 -N 16

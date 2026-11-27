@@ -1,0 +1,21 @@
+#!/bin/sh
+set -eu
+. "${BP_LIB:-/usr/lib/blazepwifi/common.sh}"
+. "${BP_AUTH_LIB:-/usr/lib/blazepwifi/auth.sh}"
+. "${BP_CONFIG_LIB:-/usr/lib/blazepwifi/config.sh}"
+. "${BP_CONSOLE_OPS_LIB:-/usr/lib/blazepwifi/console_ops.sh}"
+. "${BP_REMOTE_APPLY_LIB:-/usr/lib/blazepwifi/remote_apply.sh}"
+bp_init_dirs
+bp_remote_apply_init
+
+case "${1:-}" in
+  --boot)
+    bp_remote_guard_boot
+    ;;
+  "")
+    exit 2
+    ;;
+  *)
+    bp_remote_guard "$1"
+    ;;
+esac

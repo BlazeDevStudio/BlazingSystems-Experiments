@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BlazeAPK Research Preview</title>
+<style>
+body{margin:0;background:#090d13;color:#edf4fb;font:14px/1.5 system-ui,sans-serif}.wrap{max-width:980px;margin:auto;padding:28px}
+.grid{display:grid;grid-template-columns:300px 1fr;gap:14px}.panel{background:#121a24;border:1px solid #28384c;border-radius:14px;padding:15px}.muted{color:#95a9bd}
+.app{padding:11px;border:1px solid #2e4055;border-radius:10px;margin:8px 0;cursor:pointer}.app.on{background:#173451}.phone{max-width:340px;aspect-ratio:9/16;margin:auto;border:1px solid #35495f;border-radius:22px;background:#05080d;padding:12px}
+.screen{height:100%;border-radius:12px;background:#0c131d;padding:18px;overflow:auto}button{padding:9px 12px;border:1px solid #36506d;border-radius:8px;background:#173451;color:#fff;cursor:pointer}
+.kv{display:grid;grid-template-columns:110px 1fr;gap:8px;font-size:12px}.ok{color:#6bd68a}
+@media(max-width:700px){.grid{grid-template-columns:1fr}}
+</style></head><body><div class="wrap">
+<h1>BlazeAPK — Research Preview</h1><p class="muted">Synthetic interface demonstration. No third-party APK is loaded or executed on this page.</p>
+<div class="grid"><div class="panel"><h3>Sample package</h3>
+<div class="app on"><b>Demo Notes</b><div class="muted">com.example.demonotes</div></div>
+<div class="kv"><b>DEX</b><span>classes.dex</span><b>API</b><span>28</span><b>Layout</b><span>activity_main.xml</span><b>Status</b><span class="ok">Parsed sample metadata</span></div>
+<p><button id="run">Simulate lifecycle</button></p></div>
+<div class="panel"><div class="phone"><div class="screen"><h2>Demo Notes</h2><p id="status">Ready.</p><label>Note</label><p><input style="width:100%;box-sizing:border-box;padding:9px;border-radius:7px;border:1px solid #344a62;background:#08111a;color:#fff" value="Synthetic test content"></p><button id="save">Save sample</button><pre id="log" class="muted"></pre></div></div></div></div>
+<script>
+const log=document.getElementById('log'),status=document.getElementById('status');
+document.getElementById('run').onclick=()=>{status.textContent='Lifecycle simulation complete.';log.textContent='onCreate()\nonStart()\nonResume()'};
+document.getElementById('save').onclick=()=>{log.textContent+='\nSharedPreferences: sample value stored locally';};
+</script></div></body></html>

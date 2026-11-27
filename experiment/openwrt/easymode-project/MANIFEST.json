@@ -1,0 +1,1 @@
+{"project":"EasyMode for OpenWrt","version":"5.0.0-alpha.1","baseline":"4.1.4","status":"Static Tested / Hardware Verification Required","editions":["cellular","ap","router","switch","pc","generic"],"installers":["offline-html","windows-powershell","openwrt-bundle"],"preserve_old_releases":true}

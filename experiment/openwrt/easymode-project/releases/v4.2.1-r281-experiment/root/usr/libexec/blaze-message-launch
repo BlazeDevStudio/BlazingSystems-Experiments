@@ -1,0 +1,18 @@
+#!/bin/sh
+set -eu
+umask 077
+/usr/libexec/blaze-lock-claim message "$$"
+mkdir -p /tmp/blaze-messages
+ID=$(cat /proc/sys/kernel/random/uuid)
+printf '%s' "$1" >/tmp/blaze-message.lock/request.json
+printf '%s' "$ID" >/tmp/blaze-message.lock/id
+printf '{"id":"%s","pending":true,"ok":true}' "$ID" >/tmp/blaze-message.json
+cp /tmp/blaze-message.json /tmp/blaze-messages/"$ID".json
+# Keep a bounded set of results so another browser cannot overwrite a send acknowledgment.
+N=0
+for FILE in $(ls -t /tmp/blaze-messages/*.json);do
+ N=$((N+1));[ "$N" -le 16 ] || rm -f "$FILE"
+done
+/usr/bin/ucode /usr/share/blaze/message.uc </dev/null >/tmp/blaze-message.log 2>&1 &
+echo "$!" >/tmp/blaze-message.lock/pid
+printf '%s' "$ID"

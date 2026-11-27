@@ -1,0 +1,24 @@
+{
+  "version": "0.3.0-rc.1",
+  "tag": "v0.3.0-rc.1",
+  "type": "prerelease",
+  "generated_assets": true,
+  "mandatory_targets": [
+    "ruijie",
+    "x86_64",
+    "orangepi_zero3",
+    "orangepi_one",
+    "orangepi_pc",
+    "esp8266",
+    "esp32",
+    "android"
+  ],
+  "optional_targets": [
+    "orangepi_pc_plus",
+    "orangepi_pc2",
+    "orangepi_zero",
+    "orangepi_zero2",
+    "orangepi_zero2w",
+    "orangepi_one_plus"
+  ]
+}
