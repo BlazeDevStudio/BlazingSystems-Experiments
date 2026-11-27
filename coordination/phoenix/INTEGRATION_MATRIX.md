@@ -1,3 +1,32 @@
+## PHX-MASTER UTC14 — 2026-11-27 exact #361 / current-main source versus COE #26 destination
+
+Complete, non-truncated recursive trees were re-read at immutable commits: Experiments main `6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5` (tree `3c32720a899da535849ac9cebb99d47241b712e2`; 2,341 entries / 1,765 blobs), HARDWARE #361 `8a1999ccdcab02445ef93c153316e519d9476210` (tree `371da983142eaa20a0479858ebc54d6c7a7facf4`; 2,427 / 1,881), and COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12` (tree `8a7d4cf81d7227118b876c1138dd2da12345fefa`; 286 / 207).
+
+These are route-level provenance comparisons, not a selected single migration source. Main is used for non-Hardware routes; #361 is used for the current ESP32/ESP8266 candidate.
+
+| Route | Source / destination | Identical | Divergent | Source-only | Destination-only |
+|---|---:|---:|---:|---:|---:|
+| CORE library (main) | 15 / 20 | 6 | 9 | 0 | 5 |
+| Vendo CGI (main) | 1 / 1 | 0 | 1 | 0 | 0 |
+| Rental Android (main) | 983 / 8 | 0 | 0 | 983 | 8 |
+| Standalone rental profiles (main) | 31 / 19 | 0 | 2 | 29 | 17 |
+| Rental server (main) | 7 / 4 | 0 | 1 | 6 | 3 |
+| Pisonet SoftTimer (main) | 32 / 47 | 13 | 11 | 8 | 23 |
+| ESP32 (#361) | 4 / 1 | 0 | 1 | 3 | 0 |
+| ESP8266 (#361) | 15 / 1 | 0 | 1 | 14 | 0 |
+| PisoWiFi tests (main) | 38 / 19 | 1 | 3 | 34 | 15 |
+| Release workflow (main) | 1 / 1 | 0 | 1 | 0 | 0 |
+
+Board sketch blobs remain divergent: ESP32 source `d031b0b79b2a50b88318992c7c9312a042ca95a9` vs destination `3cc7ec54b476943dc04a8d1af5e2df5fe054e422`; ESP8266 source `25d9494ed5109286c5478605cf5b725fbeab6d9d` vs destination `c8be98f72596681e36a3ad1f8939bf8046c96887`.
+
+- SOURCE_INTAKE blob `1b9018ff944f7f673934d0fc2a97e0a0090d3f5f` pins historical source `6d4c9b48` and destination branch `feature/pisowifi-cleanup-stabilization` / pre-manifest `cf59b41e`; live #26 is `integration/ecosystem-nonproprietary-candidate-20261111@b382d233`.
+- Intake summary says 47 identical / 14 derived runtime files; exact 61 runtime rows count 46 / 15.
+- Intake has 15 derived tests; MIGRATION_MAP blob `b54fc15d83bc2269de03db8aadd0e76259fd13d9` has 14. Missing `tests/voucher_txn_journal.sh`. `run_focus.sh` hashes disagree (`2b7b861e` vs `fa1f4f2c`); `member_txn_journal.sh` hashes disagree (`d04df3c6` vs `01dc9c65`).
+- #361 source has 10 LICENSE/NOTICE paths / 8 unique blobs; destination has 3 license paths. Exact counterpart blobs exist for first-party PisoWiFi LICENSE, QRCode LICENSE and TailAdmin LICENSE. Five unique source artifacts have no counterpart: repository NOTICE, Android Launcher LICENSE, launcher `license.html`, jsQR LICENSE and Tabler LICENSE. Not legal approval.
+- All five exact #26 workflows are CANCELLED; combined status is empty. No destination staging or write is authorized.
+
+---
+
 ## PHX-MASTER UTC13 — exact #358 source versus COE #26 destination revalidation
 
 Complete, non-truncated recursive trees were re-read at immutable commits: source #358 fc8b429b9c73a6fee0b0732f6d82b2c5c550e75c (tree 64ee06a5d2a858b7b2728c1fe44b458d1913a1a6; 2,575 entries / 1,996 blobs) and destination #26 b382d233ff06c8791b1028bed3c617cc7b670d12 (tree 8a7d4cf81d7227118b876c1138dd2da12345fefa; 286 entries / 207 blobs).

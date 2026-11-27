@@ -1,3 +1,32 @@
+## PHX-MASTER UTC14 — current release gate and blockers (2026-11-27T14:57:39Z)
+
+**Disposition:** MASTER coordination audit completed; integration remains BLOCKED; PR #288 OPEN / DRAFT / UNMERGED; COE #26 FROZEN; cleanup #266 OPEN / 0-of-7; P0 #177 OPEN; PRODUCTION NO-GO.
+
+### Verified changes / evidence
+- Live refs and role PR/CI heads reconciled in ROLE_ASSIGNMENTS.md (UTC14).
+- Exact current-main and HARDWARE #361 source trees compared against COE #26; runtime/test/license/NOTICE discrepancies recorded in INTEGRATION_MATRIX.md (UTC14).
+- Current active-v0.6 ESP8266/ESP32 source order re-read; both still call synchronous poll before first coin sample with 3,500 ms timeout. Issue #177's embedded source pin is stale versus live branch HEAD.
+- No subsystem source branch, COE destination, route manifest, or cleanup checkbox changed.
+
+### Blocking items
+1. Canonical private Drive registry v11 and newer corrections are inaccessible; no Google Drive connector is exposed and no v11 Library file is present.
+2. No authenticated local checkout or Master exact-head CI; Master Python suite and `verify_coordination.py` NOT RUN.
+3. QA-owned `tests/controllers.sh:21` fails on literal `config_revision` parity at the current #361 final-head workflow; semantic correction belongs to QA with CORE/HARDWARE coordination.
+4. P0 #177 poll-before-first-sample remains in active v0.6.
+5. COE #26 source/destination branch pins, runtime counts, derived-test list/hashes, board sketches and licensing provenance remain inconsistent; all five candidate workflows CANCELLED.
+6. Financial, witness, migration, native and physical acceptance gates remain unverified.
+
+### Next exact actions
+- QA resolves the stale token-presence assertion against an approved semantic contract and runs exact-source regressions; no decoy token.
+- CORE/HARDWARE/QA resolve authenticated poll receipt/disposition and P0 #177 without relaxing fail-closed behavior.
+- COE integration owner reconciles branch pins, test map and license/NOTICE provenance before any staging proposal.
+- Registry custodian provides authorized v11/corrections access; repository admin provides a non-Codex checkout or Master CI.
+- MASTER remains coordination-only.
+
+No test is marked passed unless the exact workflow or local command actually ran. No physical acceptance, 150 power cuts, 30-device/24-hour soak, protected signer/witness, crash-atomic financial state or owner-authorized release is claimed complete.
+
+---
+
 ## PHX-MASTER UTC13 — live audit summary
 
 **Updated:** 2026-11-27T13:11:40Z  

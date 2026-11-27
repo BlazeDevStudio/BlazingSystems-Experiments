@@ -1,3 +1,13 @@
+## PHX-MASTER UTC14 — migration routing hold (2026-11-27T14:57:39Z)
+
+- `OWNERSHIP_ROUTES.json` remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`, schema v1, 11 routes, `DRAFT_REVIEW_ONLY`; PHX-MASTER target remains null. No owner or route changed.
+- Live COE #26 branch/head is `integration/ecosystem-nonproprietary-candidate-20261111@b382d233`; SOURCE_INTAKE/MIGRATION_MAP still describe `feature/pisowifi-cleanup-stabilization` and historical source `6d4c9b48`. This is destination/source pin drift, not a copy plan.
+- Exact route blob comparisons, test identity gaps and license/NOTICE gaps are in INTEGRATION_MATRIX.md (UTC14 section). Five candidate workflows remain CANCELLED and the destination commit has no combined statuses.
+- Canonical private Drive registry v11 and newer corrections remain NOT_RECOVERED; the Library only surfaced v3–v7. Do not substitute older snapshots or expose private Drive IDs/content.
+- COE #26 remains FROZEN. No staging, copy, move, overwrite, cherry-pick, rebase, or retarget.
+
+---
+
 ## PHX-MASTER UTC12 — migration routing and provenance hold
 
 - OWNERSHIP_ROUTES.json remains blob e4db324315a1b3543fec17a148fbf960170fcb29, schema v1, 11 routes, DRAFT_REVIEW_ONLY; PHX-MASTER target remains null. No owner or route was changed.

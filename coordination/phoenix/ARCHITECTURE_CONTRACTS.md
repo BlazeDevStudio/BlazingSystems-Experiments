@@ -1,3 +1,16 @@
+## PHX-MASTER UTC14 — active v0.6 poll-order and P0 source-pin reconciliation
+
+Live branch `blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859` was re-read. Issue #177 remains OPEN, but its body still pins `9df0a7e7cae31fc06d098d5a0ea7ae27f56a75ed`; treat that embedded source pin as stale until the issue owner refreshes it.
+
+- ESP8266 source blob `12c4bb82b6fddafe813674a0b5f692c1d3634073`: synchronous `post("poll")` precedes first `digitalRead(runCoinPin)`; 3,500 ms timeout remains.
+- ESP32 source blob `29f1125d52ff474a0d028ad41f7af201be1f0f9d`: synchronous `post("poll")` precedes first `digitalRead(runCoinPin)`; 3,500 ms timeout remains.
+
+Preserve the existing interface boundary: untrusted/missing poll authentication cannot enable coin admission; pending evidence is not cleared on ambiguous response or failed durable commit; positive disposition requires CORE-owned authenticated receipt/sequence authority and durable readback. HARDWARE owns firmware intake/relay behavior, CORE owns receipt/authentication and financial state, QA owns independent semantic regression, and MASTER owns only the cross-role contract. The #361 `config_revision` literal failure is QA-owned test semantics; do not add a decoy firmware token or weaken default-deny.
+
+No interface schema or ownership route changed. Physical GPIO/relay/coin acceptance, independent witness and crash-atomic financial migration remain NOT TESTED / NOT VERIFIED. Production remains NO-GO.
+
+---
+
 ## PHX-MASTER UTC12 — active v0.6 poll ordering and interface boundary
 
 Read the exact active development branch blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859:

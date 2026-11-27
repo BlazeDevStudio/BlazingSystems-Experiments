@@ -1,3 +1,24 @@
+## PHX-MASTER UTC14 — 2026-11-27 live role PR and exact-head CI reconciliation
+
+No ownership changed. CORE, RENTAL, PISONET, HARDWARE, QA and RELEASE source branches remain with their assigned owners. MASTER changed only coordination/phoenix/. The separate active Blaze hourly automation is explicitly PHX-HARDWARE; no competing CORE work was started.
+
+| Role / PR | Exact current head | Exact-head CI | Owner action / boundary |
+|---|---|---|---|
+| PHX-MASTER #288 | `47834257ab409b205a80e21eaabee63bb5bd55f4` at audit start | No workflow runs or combined statuses; 663 ahead / 1 behind current main; pre-update 253 paths all coordination-only. | Coordination/architecture/provenance only; no rebase or merge. |
+| PHX-CORE #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | [Build #42698139210 PASS](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42698139210), scoped only. | CORE remains owner-reserved; no MASTER source work. |
+| PHX-RENTAL #328 | `10fc200b6dbf470a95e679d3acc58aff4ab2a67f` | [API #45622918364 PASS](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45622918364), [auth/installer #45622918551 PASS](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45622918551), [APK #45622918340 PASS](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45622918340), [shared build #45622918468 FAIL](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45622918468). | RENTAL owns shared build/handover correction. |
+| PHX-PISONET #255 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | [Windows synthetic #42462978704 PASS](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42462978704). | Native COM/device acceptance NOT TESTED. |
+| PHX-HARDWARE #358 | `fc8b429b9c73a6fee0b0732f6d82b2c5c550e75c` | Relay #46001496577 PASS; Quarantine #46001496578 PASS; Full #46001496571 FAIL. | HARDWARE owns firmware/fixture; physical GPIO/strap acceptance NOT TESTED. |
+| PHX-HARDWARE #359 | `47357aab2ff7910b38ca538a46dfa01bdbca01e8` | Poll #45997708842 PASS; Mbed #45997708753 PASS; Full #45997708895 FAIL; Native #45997708911 FAIL. | HARDWARE owns recovery source; QA/CORE own semantic disposition. |
+| PHX-HARDWARE #360 | `b1a709c2281f958ed295139523a52817af4459fd` | Poll #45997731187 PASS; Mbed #45997731166 PASS; Full #45997731177 FAIL. | No P0 resolution; no positive admission. |
+| PHX-HARDWARE #361 | `8a1999ccdcab02445ef93c153316e519d9476210` | Source/test `4a85070a1f6a1caa417570a91dcdf355ff072fcc`; focused #46016953274 PASS; final-head Poll #46018576706 PASS; Mbed #46018576254 3/3 PASS; final-head build #46018576372 FAIL at QA-owned `tests/controllers.sh:21` (`config_revision`). All firmware target jobs and Android pass; downstream production/signing/release jobs skipped. | HARDWARE owns harness/firmware; QA owns assertion semantics. PR body/handover must reconcile the final-head workflow result. |
+| PHX-QA #290 / #292 | `5c29d15994cee1279058f1eca12f2a3180704292` / `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | #290 Windows synthetic #43633486963 PASS but no native COM lab; #292 has zero PR-triggered runs and stale base `b1ca02e2`. | QA owns independent semantic verification and any restack. |
+| PHX-RELEASE #291 / #242 | `bf339a76964a1abe2412fac45392fe06a8e66418` / `36c0d0bb3e58786359555b307bb784f720f023ce` | No exact-head PR-triggered runs for either. | RELEASE owns signing/publisher evidence. |
+
+All listed role PRs remain OPEN / DRAFT / UNMERGED. Owner CI is not Master test execution or hardware acceptance.
+
+---
+
 ## PHX-MASTER UTC13 — 2026-11-27 live role PR and exact-head CI reconciliation
 
 No ownership changed. CORE, RENTAL, PISONET, HARDWARE, QA and RELEASE source branches remain with their assigned owners. CORE remains reserved to the separate active continuation. PHX-MASTER changed only coordination/phoenix/.
