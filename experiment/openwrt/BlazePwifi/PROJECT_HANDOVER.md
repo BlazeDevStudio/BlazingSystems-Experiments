@@ -1,3 +1,15 @@
+## PHX-HARDWARE UTC19 — poll transport outcome matrix (IN PROGRESS)
+
+**PR:** [#365](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/365) — OPEN / DRAFT / UNMERGED  
+**Branch:** `phoenix/hw-poll-boundary-pulse-matrix-20261128-utc18`  
+**Base/source head before this task:** `7c4ca74838be3d4469bef6acc2c2209849f30869`  
+**Scope:** extend the source-extracted blocking-poll host harness with immediate transport-begin failure, timeout/empty response, malformed response, server-error body and untrusted positive response outcomes across four relay/LED polarity combinations. Add a deliberate response-consumption/transient-re-enable mutation that must fail.  
+**Ownership:** PHX-HARDWARE test harness only. No production sketch, CORE API, QA assertion, finance, receipt/disposition or COE source change is authorized.
+
+This is the required documentation-first IN-PROGRESS record. No source/test result is claimed yet. The candidate remains deny-only; the active v0.6 branch remains unchanged. Physical acceptor/relay behavior and pulse retention remain NOT TESTED.
+
+---
+
 # BlazePwifi — CURRENT STATUS (2026-11-28 UTC18)
 
 **Role:** PHX-HARDWARE. **Current work:** [DRAFT PR #365](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/365), child of #364 → #362 → #361 → #359 → #355 → #354.  

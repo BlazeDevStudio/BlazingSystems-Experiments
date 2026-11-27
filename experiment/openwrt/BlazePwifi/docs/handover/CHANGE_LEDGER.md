@@ -3847,3 +3847,21 @@ PR #354 remains OPEN / DRAFT / UNMERGED. PRs #239/#254/#283 remain OPEN / DRAFT 
 - **Full:** run #46052478996 CI-0701 PASS; validation job `140687123327` FAIL at QA-owned `tests/controllers.sh:21` (`config_revision` parity); ESP8266, ESP32, Android and 13/13 firmware target jobs PASS; downstream update/simulation/signing/candidate/publication skipped. Native PAY-0745 NOT RUN on #365.
 - **Scope correction:** active v0.6 branch `2fbd2475e9f54878c316fa7cea2f228386b0e859` remains unchanged; #365 is a test-only child of the unmerged deny-only candidate stack and does not resolve P0 #177. Physical pulse retention remains NOT TESTED. Production NO-GO.
 
+
+## PHX-HARDWARE UTC19 — poll transport outcome matrix (IN PROGRESS)
+
+**PR:** [#365](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/365) — OPEN / DRAFT / UNMERGED  
+**Branch:** `phoenix/hw-poll-boundary-pulse-matrix-20261128-utc18`  
+**Base/source head before this task:** `7c4ca74838be3d4469bef6acc2c2209849f30869`  
+**Scope:** extend the source-extracted blocking-poll host harness with immediate transport-begin failure, timeout/empty response, malformed response, server-error body and untrusted positive response outcomes across four relay/LED polarity combinations. Add a deliberate response-consumption/transient-re-enable mutation that must fail.  
+**Ownership:** PHX-HARDWARE test harness only. No production sketch, CORE API, QA assertion, finance, receipt/disposition or COE source change is authorized.
+
+This is the required documentation-first IN-PROGRESS record. No source/test result is claimed yet. The candidate remains deny-only; the active v0.6 branch remains unchanged. Physical acceptor/relay behavior and pulse retention remain NOT TESTED.
+
+---
+
+
+## 2026-11-28 UTC19 — PHX-HARDWARE IN-PROGRESS: poll transport outcome matrix
+- PR #365 remains OPEN / DRAFT / UNMERGED on `phoenix/hw-poll-boundary-pulse-matrix-20261128-utc18`, current pre-task head `7c4ca74838be3d4469bef6acc2c2209849f30869`, stacked on #364.
+- Documentation-first handover staged before source changes. Planned host-only outcomes: immediate begin failure, empty timeout response, malformed body, server-error body, and untrusted positive `insert=true`; four independent relay/LED polarity combinations; injected transient response-consumption/re-enable mutation.
+- No source/test result claimed yet. No production sketch, CORE, QA, finance, COE, or active-v0.6 source changed. Physical behavior NOT TESTED; production NO-GO.
