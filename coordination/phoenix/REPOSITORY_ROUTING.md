@@ -1,4 +1,13 @@
-undefined## PHX-MASTER UTC20 — automation and private-registry routing reconciliation (2026-11-27T20:39Z)
+## PHX-MASTER UTC22 — routing, registry and automation reconciliation
+
+- `OWNERSHIP_ROUTES.json` blob `e4db324315a1b3543fec17a148fbf960170fcb29`: schema v1, 11 routes, PHX-MASTER target null / coordination-only; historical source_ref `f4e8a891`. No ownership changed.
+- COE #26 live destination branch is `integration/ecosystem-nonproprietary-candidate-20261111` at `b382d233`; intake/map still name `feature/pisowifi-cleanup-stabilization`. Do not stage until corrected and reviewed.
+- Canonical private registry v11/newer corrections remain NOT RECOVERED; no Google Drive connector is available. Do not substitute old snapshots or publish private contents.
+- Automation inventory: active `Blaze Hourly Production Development` is PHX-HARDWARE; exact-title `Blaze Production Continuation` was not present. CORE #252 was left untouched; no competing CORE task was created.
+
+---
+
+## PHX-MASTER UTC20 — automation and private-registry routing reconciliation (2026-11-27T20:39Z)
 
 - OWNERSHIP_ROUTES.json remains blob e4db324315a1b3543fec17a148fbf960170fcb29: schema v1, 11 routes, DRAFT_REVIEW_ONLY, PHX-MASTER target null. No route or source owner changed.
 - Its source_ref f4e8a891aed8af86d5fd315d28750a0ac3a7372b is historical; live Experiments main is 6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5.
