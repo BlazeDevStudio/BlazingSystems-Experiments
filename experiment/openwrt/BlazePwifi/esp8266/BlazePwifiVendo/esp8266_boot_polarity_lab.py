@@ -112,7 +112,7 @@ def verify_boot_output_before_littlefs(source: str) -> None:
 
 
 def verify_bootstrap_gpio_guard(source: str) -> None:
-    """Compile the production GPIO tuple validator and reject ROM strap pins."""
+    """Compile the production GPIO tuple validator and reject unsafe ESP8266 roles."""
     input_functions = extract_functions(source, "validInputPullupPin")
     output_functions = extract_functions(source, "validOutputPin")
     runtime_functions = extract_functions(source, "runtimePinsSafe")
@@ -120,7 +120,7 @@ def verify_bootstrap_gpio_guard(source: str) -> None:
     require(len(output_functions) == 1, "expected one validOutputPin implementation")
     require(len(runtime_functions) == 1, "expected one runtimePinsSafe implementation")
 
-    probe_main = r"""
+    strap_probe_main = r"""
 int main() {
   if(!runtimePinsSafe(4,5,14)) return 1;
   if(runtimePinsSafe(0,5,14)) return 10;
@@ -135,17 +135,36 @@ int main() {
   return 0;
 }
 """
+    uart_probe_main = r"""
+int main() {
+  if(!runtimePinsSafe(4,5,14)) return 1;
+  if(runtimePinsSafe(1,5,14)) return 19;
+  if(runtimePinsSafe(3,5,14)) return 20;
+  if(runtimePinsSafe(4,1,14)) return 21;
+  if(runtimePinsSafe(4,3,14)) return 22;
+  if(runtimePinsSafe(4,5,1)) return 23;
+  if(runtimePinsSafe(4,5,3)) return 24;
+  return 0;
+}
+"""
 
-    def run_probe(runtime_function: str, expect_success: bool, label: str) -> None:
+    def run_probe(
+        runtime_function: str,
+        expect_success: bool,
+        label: str,
+        input_function: str | None = None,
+        output_function: str | None = None,
+        main_source: str = strap_probe_main,
+    ) -> None:
         code = "\n".join((
-            input_functions[0],
-            output_functions[0],
+            input_function or input_functions[0],
+            output_function or output_functions[0],
             runtime_function,
-            probe_main,
+            main_source,
         ))
-        with tempfile.TemporaryDirectory(prefix="phx-esp8266-strap-gpio-") as folder:
-            cpp_path = Path(folder) / "strap_gpio.cpp"
-            exe_path = Path(folder) / "strap_gpio"
+        with tempfile.TemporaryDirectory(prefix="phx-esp8266-board-gpio-") as folder:
+            cpp_path = Path(folder) / "board_gpio.cpp"
+            exe_path = Path(folder) / "board_gpio"
             cpp_path.write_text(code, encoding="utf-8")
             built = subprocess.run(
                 ["g++", "-std=c++11", "-Wall", "-Wextra", "-Werror",
@@ -159,15 +178,14 @@ int main() {
             )
             if expect_success:
                 require(result.returncode == 0,
-                        label + " accepted an ESP8266 boot-strap GPIO role; exit=" +
+                        label + " accepted an unsafe ESP8266 GPIO role; exit=" +
                         str(result.returncode))
             else:
                 require(result.returncode != 0,
-                        label + " mutation unexpectedly survived the nine-role matrix")
+                        label + " mutation unexpectedly survived the GPIO role matrix")
 
     runtime_function = runtime_functions[0]
     run_probe(runtime_function, True, "ESP8266 boot-strap GPIO policy")
-
     strap_guard = (
         "if(coinPin==0||coinPin==2||coinPin==15||"
         "relayPin==0||relayPin==2||relayPin==15||"
@@ -181,6 +199,32 @@ int main() {
     run_probe(mutated_runtime, False, "ESP8266 boot-strap guard removal")
     print("ESP8266_BOOTSTRAP_GPIO_POLICY_PASS 10/10")
     print("ESP8266_BOOTSTRAP_GPIO_GUARD_MUTATION_REJECTED")
+
+    # This sketch calls Serial.begin(115200) and does not remap UART0. GPIO1/TX
+    # and GPIO3/RX must therefore remain reserved from coin, relay and LED roles.
+    require("Serial.begin(115200)" in source,
+            "UART0 reservation assumes the current Serial.begin(115200) setup")
+    require("Serial.swap()" not in source,
+            "UART0 pin reservation must be reviewed if Serial.swap() is introduced")
+    uart_guard = " && pin!=1 && pin!=3"
+    require(uart_guard in input_functions[0],
+            "coin input validator must reserve UART0 GPIO1/TX and GPIO3/RX")
+    require(uart_guard in output_functions[0],
+            "output validator must reserve UART0 GPIO1/TX and GPIO3/RX")
+    run_probe(runtime_function, True, "ESP8266 UART0 pin reservation",
+              main_source=uart_probe_main)
+    mutated_input = input_functions[0].replace(uart_guard, "", 1)
+    mutated_output = output_functions[0].replace(uart_guard, "", 1)
+    require(mutated_input != input_functions[0] and
+            mutated_output != output_functions[0],
+            "UART0 input/output guard mutation anchors were not unique")
+    run_probe(runtime_function, False, "ESP8266 UART0 input guard removal",
+              input_function=mutated_input, main_source=uart_probe_main)
+    run_probe(runtime_function, False, "ESP8266 UART0 output guard removal",
+              output_function=mutated_output, main_source=uart_probe_main)
+    print("ESP8266_UART0_RESERVED_PIN_POLICY_PASS 6/6")
+    print("ESP8266_UART0_INPUT_GUARD_MUTATION_REJECTED")
+    print("ESP8266_UART0_OUTPUT_GUARD_MUTATION_REJECTED")
 
 def main() -> None:
     source = SOURCE.read_text(encoding="utf-8")
