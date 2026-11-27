@@ -81,8 +81,10 @@ int main() {
 }
 """
 
-def make_blocking_poll_harness(apply_fn: str, deny_fn: str, poll_block: str) -> str:
-    """Execute the actual extracted poll block with a deterministic host HTTP wait."""
+def make_blocking_poll_harness(
+    apply_fn: str, deny_fn: str, poll_block: str, response_body: str = ""
+) -> str:
+    """Execute the extracted poll block against a deterministic HTTP wait/result."""
     return r"""
 #include <iostream>
 #include <string>
@@ -124,11 +126,19 @@ int acceptedPulseTicks = 0;
 bool unsafeRelayDuringWait = false;
 bool unsafeAdmissionDuringWait = false;
 bool pendingEvidenceChangedDuringWait = false;
+bool unsafeOutputWrite = false;
+std::string pollResponse = "";
 
 void writeLogical(int pin, bool on, bool activeHigh) {
     const bool levelHigh = (on == activeHigh);
-    if (pin == runRelayPin) relayLevelHigh = levelHigh;
-    if (pin == runLedPin) ledLevelHigh = levelHigh;
+    if (pin == runRelayPin) {
+        relayLevelHigh = levelHigh;
+        if (on) unsafeOutputWrite = true;
+    }
+    if (pin == runLedPin) {
+        ledLevelHigh = levelHigh;
+        if (on) unsafeOutputWrite = true;
+    }
 }
 
 unsigned long millis() { return nowMs; }
@@ -180,7 +190,7 @@ String post(const String &action) {
     }
     coinLineActive = false;
     inPollWait = false;
-    return "";
+    return pollResponse;
 }
 """ + apply_fn + chr(10) + deny_fn + r"""
 int main() {
@@ -217,6 +227,9 @@ int main() {
             applyOutputs();
             if (relayLevelHigh != runRelayActiveHigh ||
                 ledLevelHigh != runLedActiveHigh) return 10;
+            // The initial state is intentionally energized to prove that the
+            // extracted pre-poll deny removes it. Only later writes are unsafe.
+            unsafeOutputWrite = false;
 
             const unsigned long started = millis();
 """ + poll_block + r"""
@@ -241,22 +254,24 @@ int main() {
                 ledEnabled || insertMode || !activeTarget.empty()) return 21;
             if (relayLevelHigh == runRelayActiveHigh ||
                 ledLevelHigh == runLedActiveHigh) return 22;
+            if (unsafeOutputWrite) return 23;
         }
     }
     std::cout << "BLOCKING_POLL_WAIT_PASS 3500ms pulse_ticks=80 samples_during_wait=0 accepted=0 polarity_combinations=4" << std::endl;
+    std::cout << "POLL_RESPONSE_OUTCOME_PASS body_bytes=" << pollResponse.size() << " outputs_never_reenabled=1" << std::endl;
     return 0;
 }
 """
 
 def compile_blocking_poll_and_run(
     apply_fn: str, deny_fn: str, poll_block: str,
-    expect_success: bool, label: str,
+    expect_success: bool, label: str, response_body: str = "",
 ):
     with tempfile.TemporaryDirectory(prefix="phx-blocking-poll-") as temp:
         source = Path(temp) / "blocking_poll.cpp"
         binary = Path(temp) / "blocking_poll"
         source.write_text(
-            make_blocking_poll_harness(apply_fn, deny_fn, poll_block),
+            make_blocking_poll_harness(apply_fn, deny_fn, poll_block, response_body),
             encoding="utf-8",
         )
         compile_result = subprocess.run(
