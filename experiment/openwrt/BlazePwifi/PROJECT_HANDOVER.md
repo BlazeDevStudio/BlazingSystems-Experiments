@@ -1612,3 +1612,28 @@ Test-first baseline [#46036796001](https://github.com/BlazeDevStudio/BlazingSyst
 Native synthetic [#46037240701](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46037240701), job \`140635630197\`, remains FAILED at QA-owned PAY-0745 literal \`if(any) return false;\` assertion; Hardware did not edit QA source. Full pre-sync [#46037240708](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46037240708), validation job \`140635887241\`, failed only the mandatory handover-freshness gate before product validation; rerun after this documentation sync.
 
 See [narrow UTC16 handover](docs/handover/2026-11-27-hw-pending-persist-io-failure-guard-utc16.md). Host fake-LittleFS tests are SIMULATED / CI VERIFIED only; physical LittleFS, electrical, 150 power cuts and 30-device/24-hour soak remain NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+
+
+
+## UTC16 terminal CI / provenance reconciliation — 2026-11-27
+
+At docs HEAD \`af8530560a37000330cecf06b26cbce507cd45a7\`:
+
+- Focused Hardware [#46037755988](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46037755988), job \`140637379711\`: PASS. The new pending-persist lab passed 13 scenarios per board and rejected 12 unsafe mutations; the existing recovery lab passed 15 scenarios per board and rejected 18 mutations. The append-only ledger prefix and failure-injection guards passed.
+- ESP32 Mbed TLS [#46037755964](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46037755964): 3/3 PASS — source contract \`140637380677\`, Arduino core 3.3.13 \`140637380652\`, core 4.0.0 \`140637380259\`.
+- Full [#46037755975](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46037755975): validation job \`140637596747\` FAIL at \`tests/controllers.sh:21\` (\`config_revision\` missing from both sketches). All 13 firmware target jobs and Android PASS; update bundle, simulations, signing, candidate and publication jobs SKIPPED. This is the inherited CORE/QA controller contract mismatch; Hardware did not add a decoy field.
+- Native synthetic [#46037756244](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46037756244), job \`140637381087\`: FAIL at QA-owned \`tests/v060_vendo_sequence_contract.py:18\`, literal \`if(any) return false;\` assertion. No QA source changed.
+- Test-first RED [#46036796001](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46036796001), job \`140634121963\`: expected failure on the old writer because backup cleanup results were ignored. Corrected source/test commit is \`aa49e7fce2739e33171d53ec61149685cf9b0c7a\`.
+
+## Repository policy / private registry recheck
+
+The current owner path \`BlazeDevStudio/BlazingSystems\` was used to read the AGENTS-linked documents that Master UTC16 had marked NOT READ:
+
+- \`BLAZE_CLOUD_ARTIFACT_POLICY.md\`, blob \`5e503925750c4e511314e4b7624579d82f60aae2\`.
+- \`BLAZE_CLOUD_STORAGE_HANDOVER.md\`, blob \`a15f14cb3baf46424b820e1a921462794422f06b\`.
+
+The policy confirms GitHub is the source-code authority, Drive is a restricted large-artifact mirror, exact source SHA/size/SHA-256/readback are required, and unavailable Drive access must be recorded BLOCKED. The requested private \`BLAZE_PROJECT_REGISTRY_v11_20261027.json\` is still NOT RECOVERED. The Library has an older v7 registry, which was deliberately not substituted. No Drive upload, folder, sharing, overwrite or private-ID operation was attempted; no Drive connector was exposed.
+
+Master PR #288 current head is \`0662a64e1fe450cf1517a910e058491bb7de7a58\`; its \`ROLE_ASSIGNMENTS.md\` and \`INTEGRATION_MATRIX.md\` do not yet list #363. Master owns that update. Cleanup #266 remains OPEN / 0-of-7. Active v0.6 P0 #177 remains unchanged: synchronous poll precedes the first coin sample (ESP8266 354→357; ESP32 314→318 at active branch \`2fbd2475e9f54878c316fa7cea2f228386b0e859\`). #363 does not resolve pulse loss or authorize positive admission.
+
+**Acceptance remains:** physical LittleFS/electrical tests NOT TESTED; 150 power cuts NOT TESTED; 30-device/24-hour soak NOT TESTED; HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.

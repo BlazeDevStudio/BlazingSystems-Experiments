@@ -78,3 +78,17 @@ No flash, reset, customer-money test, migration, merge, release, or deployment w
 - PHX-QA reviews the new source-extracted persistence scenarios and reconciles the inherited PAY-0745 literal assertion semantically.
 - PHX-CORE retains ownership of authenticated register/poll and receipt/disposition contracts.
 - PHX-HARDWARE keeps coin/relay admission denied and proceeds only with reversible firmware-owned work.
+
+
+## Terminal exact-head reconciliation
+
+The final docs-head evidence is now terminal:
+- Focused #46037755988 / job 140637379711 PASS (13 persistence scenarios per board; 12 unsafe mutations rejected; recovery lab 15 scenarios per board; 18 mutations rejected; append-only ledger guard PASS).
+- Mbed #46037755964 PASS 3/3 (source contract, Arduino cores 3.3.13 and 4.0.0).
+- Full #46037755975 validation job 140637596747 FAIL at \`tests/controllers.sh:21\`: both sketches lack \`config_revision\`; all 13 firmware target jobs and Android PASS; downstream update/simulation/signing/candidate/publication jobs SKIPPED.
+- Native #46037756244 job 140637381087 FAIL at QA-owned PAY-0745 literal \`if(any) return false;\` assertion.
+- Test-first RED #46036796001 job 140634121963 failed the old source contract as intended.
+
+Master's UTC16 report is now superseded on the AGENTS policy read: the cloud policy and storage handover were successfully fetched from \`BlazeDevStudio/BlazingSystems\` at blobs \`5e503925750c4e511314e4b7624579d82f60aae2\` and \`a15f14cb3baf46424b820e1a921462794422f06b\`. The private Drive registry v11 remains NOT RECOVERED; the older Library v7 was not substituted.
+
+PR #363 remains DRAFT / UNMERGED. This task does not resolve P0 #177, change CORE/QA contracts, or establish hardware acceptance. Physical tests and all release gates remain NOT TESTED / NOT ACCEPTED.

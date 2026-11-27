@@ -3812,3 +3812,17 @@ PR #354 remains OPEN / DRAFT / UNMERGED. PRs #239/#254/#283 remain OPEN / DRAFT 
 - Full pre-sync [#46037240708](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46037240708), validation job \`140635887241\`, failed mandatory handover freshness before product validation. Fresh Full required after this docs commit.
 - Host fake-LittleFS evidence is SIMULATED / CI VERIFIED only. Physical LittleFS, electrical, 150 power cuts, 30-device/24-hour soak NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
 - No shared API, finance, COE, signer/witness, migration, coin admission, relay enable, flash, reset, merge, release or deployment changed.
+
+
+
+## 2026-11-27 UTC16 terminal CI and provenance reconciliation — PHX-HARDWARE PR #363
+
+- Docs HEAD \`af8530560a37000330cecf06b26cbce507cd45a7\`; source/test \`aa49e7fce2739e33171d53ec61149685cf9b0c7a\`; PR #363 OPEN / DRAFT / UNMERGED, child of #362.
+- Focused #46037755988 job 140637379711 PASS: pending persistence 13 scenarios per board, 12 unsafe mutations rejected; recovery 15 scenarios per board, 18 unsafe mutations rejected; append-only ledger guard PASS.
+- Mbed #46037755964 3/3 PASS: source contract 140637380677; core 3.3.13 job 140637380652; core 4.0.0 job 140637380259.
+- Full #46037755975 validation job 140637596747 FAIL at tests/controllers.sh:21 because config_revision is absent from both sketches. All 13 firmware target jobs and Android PASS; update bundle/simulations/signing/candidate/publication SKIPPED.
+- Native #46037756244 job 140637381087 FAIL at QA-owned tests/v060_vendo_sequence_contract.py:18 literal if(any) return false; assertion. No QA source changed.
+- Test-first RED #46036796001 job 140634121963 failed the new source-contract assertion on the old writer as expected; corrected source/test SHA is aa49e7fce2739e33171d53ec61149685cf9b0c7a.
+- AGENTS-linked cloud policy and storage handover were read at current owner path BlazeDevStudio/BlazingSystems (blobs 5e503925750c4e511314e4b7624579d82f60aae2 and a15f14cb3baf46424b820e1a921462794422f06b). Private registry v11 remains NOT RECOVERED; Library v7 not substituted; no Drive connector or upload.
+- Master #288 head 0662a64e1fe450cf1517a910e058491bb7de7a58 has not yet listed #363 in role/integration matrices. Master owns the update. Cleanup #266 remains 0/7. Active #177 poll-before-first-sample remains unresolved; this PR does not enable coin/relay.
+- Physical LittleFS/electrical acceptance, 150 power cuts and 30-device/24-hour soak NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
