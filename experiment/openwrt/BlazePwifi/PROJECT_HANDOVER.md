@@ -1,3 +1,15 @@
+## PHX-HARDWARE UTC19 — startup GPIO sequence lab modularization (DRAFT; CI PENDING)
+
+Branch: phoenix/hw-output-enable-lab-modules-20261128-utc19
+Source/test SHA: ff73702adf6fb958c9f21ebe9a68c908ee829ea4
+Parent: DRAFT PR #365 at e65b0b895af9c3fc5e5632f704cb67b347e69725.
+Scope: host-lab modularization only; no production sketch or shared interface changed.
+
+The output-enable sequence lab is split into a source-contract/mutation module and a C++ host-harness module. The entry-point command and existing 8/8 polarity scenarios plus 14/14 failure-injection cases are preserved.
+
+Physical GPIO/relay behavior remains NOT TESTED. HARDWARE ACCEPTED = NO. PRODUCTION READY = NO-GO.
+
+---
 ## PHX-HARDWARE UTC19 — poll transport outcome matrix (FINAL DOCS-HEAD CI VERIFIED; FULL INTEGRATION BLOCKED)
 
 **PR:** [#365](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/365) — OPEN / DRAFT / UNMERGED  
