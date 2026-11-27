@@ -1,3 +1,10 @@
+## PHX-HARDWARE UTC12 — exact controller assertion clarification — 2026-11-27T12:16Z
+
+- #359 Full [#45996785121](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45996785121) terminal FAIL: handover freshness passed, then `tests/controllers.sh` job `140498293398` failed. 15 jobs PASS, 1 validation FAIL, 13 skipped; Android and 14/14 firmware targets PASS. Mbed #45996785113 3/3 PASS; Poll #45996785105 PASS; Native #45996785114 FAIL at QA-owned PAY-0745.
+- #360 Full [#45996488771](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45996488771) terminal FAIL at the same controller validation step after handover freshness passed; Android and 14/14 target jobs PASS, production stages skipped. Poll #45996488529 PASS; Mbed #45996488521 3/3 PASS.
+- Exact `controllers.sh` blob `53a7af25fdee9a650e10e870c4204e0fb43239c6` checks generic `sig` then `config_revision`. Both #359 sketch blobs (`25d9494e`, `d031b0b7`) and #360 sketch blobs (`9f0f4829`, `fcf26a50`) contain `sig` but omit `config_revision`; therefore the first failing grep is `config_revision`. This is not a cryptographic poll-signature test.
+- Separately, main CGI register/poll/coin still lacks the approved controller `response_sig` producer. CORE owns the contract; QA owns assertion semantics. Hardware must not add a decoy token or unsigned positive consumer.
+- #359 Native PAY-0745 remains QA-owned; no unsafe clear call was added. Both PRs remain DRAFT/unmerged. Physical acceptance NOT TESTED; HARDWARE ACCEPTED NO; PRODUCTION NO-GO.
 ## PHX-HARDWARE UTC12 — sibling #359/#360 handover reconciliation (2026-11-27T12:02:29Z)
 
 **Role:** PHX-HARDWARE · **State:** sibling handover reconciliation, documentation-only.
