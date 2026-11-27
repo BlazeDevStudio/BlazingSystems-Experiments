@@ -1,3 +1,40 @@
+## PHX-HARDWARE UTC12 — exact controller assertion clarification — 2026-11-27T12:16Z
+
+- #359 Full [#45996785121](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45996785121) terminal FAIL: handover freshness passed, then `tests/controllers.sh` job `140498293398` failed. 15 jobs PASS, 1 validation FAIL, 13 skipped; Android and 14/14 firmware targets PASS. Mbed #45996785113 3/3 PASS; Poll #45996785105 PASS; Native #45996785114 FAIL at QA-owned PAY-0745.
+- #360 Full [#45996488771](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45996488771) terminal FAIL at the same controller validation step after handover freshness passed; Android and 14/14 target jobs PASS, production stages skipped. Poll #45996488529 PASS; Mbed #45996488521 3/3 PASS.
+- Exact `controllers.sh` blob `53a7af25fdee9a650e10e870c4204e0fb43239c6` checks generic `sig` then `config_revision`. Both #359 sketch blobs (`25d9494e`, `d031b0b7`) and #360 sketch blobs (`9f0f4829`, `fcf26a50`) contain `sig` but omit `config_revision`; therefore the first failing grep is `config_revision`. This is not a cryptographic poll-signature test.
+- Separately, main CGI register/poll/coin still lacks the approved controller `response_sig` producer. CORE owns the contract; QA owns assertion semantics. Hardware must not add a decoy token or unsigned positive consumer.
+- #359 Native PAY-0745 remains QA-owned; no unsafe clear call was added. Both PRs remain DRAFT/unmerged. Physical acceptance NOT TESTED; HARDWARE ACCEPTED NO; PRODUCTION NO-GO.
+## PHX-HARDWARE UTC12 — sibling #359/#360 handover reconciliation (2026-11-27T12:02:29Z)
+
+**Role:** PHX-HARDWARE · **State:** sibling handover reconciliation, documentation-only.
+
+Master UTC11 assigned reconciliation of #359/#360's two shared handover paths and a post-sync #359 Full rerun. Both branches are siblings on #355 `9f7a8ecb915cf199a82c0b4d37c56c40d722037b`; only `PROJECT_HANDOVER.md` and `docs/handover/CURRENT_STATE.md` overlap. Source/test paths are disjoint.
+
+| PR | Pre-sync head | Source/test SHA | Focused / Poll | Mbed TLS | Full | Native |
+|---|---|---|---|---|---|---|
+| #359 pending-journal promotion guard | `250facfabc96147b779c9998348cd665e7a621b7` | `bdad70fa77f51421cb7a6f01d89bd2b7ea9bdc3f` | #45986402635 PASS / #45986932616 PASS | #45986932989 3/3 PASS | #45986932765 FAIL: stale handover freshness | #45986932774 FAIL: QA-owned PAY-0745 literal corrupt-state assertion |
+| #360 poll response outcome matrix | `73610a977bd91a389acedd5a62412da973562ee9` | `04ac3330c0123e581bf4f195ff5f1a5089b82ffb` | #45989512681 PASS / #45990550066 PASS | #45990550109 3/3 PASS | #45990550104 FAIL: Controller protocol parity / missing poll-signature check | NOT RUN in Master UTC11 matrix |
+
+#359's Full failure was specifically `handover_gate.sh`: source/workflow changes were newer than CHANGE_LEDGER. Its Native failure is a QA semantic assertion; do not add a literal token solely to satisfy the check. #360's Full handover gate passed, then its controller parity assertion failed. All 14 firmware target/platform jobs and Android passed on both Full runs; downstream production/signing/publication/simulation gates were skipped.
+
+This sync changes only these two canonical documentation files on both sibling branches; it does not modify source/test code, CHANGE_LEDGER, shared APIs, finance, migration, signer, witness, or COE. No rebase, retarget, cherry-pick, merge, or combined candidate is created.
+
+**Next:** rerun #359 Full at its post-sync head; review the new exact-head jobs before claiming success. QA reviews PAY-0745 and response-outcome semantics; CORE publishes authenticated poll and event-bound receipt/disposition contract. Active v0.6 P0 #177 remains unresolved. Host evidence is SIMULATED / CI VERIFIED only; physical acceptance NOT TESTED; HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+## PHX-HARDWARE UTC11 — poll response outcome regression
+
+**PR #360:** OPEN / DRAFT / UNMERGED · **Branch:** `phoenix/hw-poll-response-outcome-matrix-20261127-utc11`  
+**Parent #355:** `9f7a8ecb915cf199a82c0b4d37c56c40d722037b` · **Parent base #354:** `fc842342596786e072630179acfbbc4feeb2ba02`  
+**Exact source/test head:** `04ac3330c0123e581bf4f195ff5f1a5089b82ffb`
+
+The Hardware-owned poll host harness now injects both an empty response and an untrusted positive poll body. It records transient relay/LED ON writes after the initial energized precondition. A deliberately unsafe response consumer that enables outputs before the post-poll deny is rejected on both ESP8266 and ESP32.
+
+- Focused exact-source [#45989512681](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45989512681), job `140473488721`: **PASS**.
+- First focused attempt [#45989302533](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45989302533): **FAIL** from literal newline escaping in the injected C++ mutation; corrected at `04ac3330`.
+- Full [#45989512778](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45989512778), validation job `140473712696`: **FAIL at handover freshness** because this canonical record had not yet been synchronized. Rerun exact docs-head Full after this update; no semantic integration result is claimed from that run.
+
+No firmware sketch or API changed. No positive coin admission or pending clear was introduced. Host evidence is SIMULATED / CI VERIFIED only; physical coin/relay, electrical, power-cut and soak tests remain NOT TESTED. **HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.**
+
 ## PHX-HARDWARE UTC05 — #355 exact-head CI reconciliation
 
 **PR:** [#355](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/355) — OPEN / DRAFT / UNMERGED  
