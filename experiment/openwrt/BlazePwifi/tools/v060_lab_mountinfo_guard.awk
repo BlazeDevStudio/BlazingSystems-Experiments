@@ -16,6 +16,23 @@ BEGIN {
   separator=0
   for (i=7; i<=NF; i++) if ($i=="-") { separator=i; break }
   if (!separator || separator+3>NF) next
+  if ($5=="/") {
+    root_count++
+    root_device=$3
+    root_fs=$(separator+1)
+  }
+  if ($5=="/overlay") {
+    overlay_count++
+    overlay_device=$3
+  }
+  if ($5=="/rom") {
+    rom_count++
+    rom_device=$3
+  }
+  if ($5=="/boot") {
+    boot_count++
+    boot_device=$3
+  }
   if ($5==want) {
     target_count++
     target_device=$3; target_root=$4; target_opts=$6
@@ -28,8 +45,15 @@ BEGIN {
   }
 }
 END {
-  if (invalid_input || target_count!=1 || scratch_count!=1 ||
+  if (invalid_input || root_count!=1 ||
+      overlay_count>1 || rom_count>1 || boot_count>1 ||
+      (root_fs=="overlay" && overlay_count!=1) ||
+      target_count!=1 || scratch_count!=1 ||
       target_device!=scratch_device ||
+      scratch_device==root_device ||
+      (overlay_count==1 && scratch_device==overlay_device) ||
+      (rom_count==1 && scratch_device==rom_device) ||
+      (boot_count==1 && scratch_device==boot_device) ||
       target_root=="/" || target_root !~ /^\// ||
       index(target_root, "\\") || index(scratch_root, "\\") ||
       scratch_root!="/" || target_source!=source || scratch_source!=source ||
@@ -44,6 +68,13 @@ END {
   print "filesystem=" target_fs
   print "scratch_mount=" scratch
   print "actual_fixture_mount=" want
+  print "protected_mount_identities_checked=root,overlay,rom,boot"
+  print "root_device=" root_device
+  print "root_fs=" root_fs
+  print "overlay_device=" overlay_device
+  print "rom_device=" rom_device
+  print "boot_device=" boot_device
+  print "scratch_device=" scratch_device
   print "physical_powercut_verified=0"
   print "customer_install_authorized=0"
 }

@@ -3,7 +3,14 @@
 #include <HTTPClient.h>
 #include <Preferences.h>
 #include <LittleFS.h>
+#include <mbedtls/version.h>
+#if MBEDTLS_VERSION_MAJOR == 4
+#include <psa/crypto.h>
+#elif MBEDTLS_VERSION_MAJOR == 3
 #include <mbedtls/sha256.h>
+#else
+#error "Unsupported Mbed TLS major version: BlazePwifi ESP32 supports 3.x and 4.x only"
+#endif
 #include <esp_system.h>
 #include <v060_pending_sequence.h>
 
@@ -38,14 +45,39 @@ String activeTarget, pendingTarget, pendingNonce, setupApName;
 
 String hexDigest(const String &s){
   unsigned char out[32]; char buf[65];
+#if MBEDTLS_VERSION_MAJOR == 4
+  // Mbed TLS 4 removes the legacy SHA module API; use the supported PSA one-shot provider.
+  if(psa_crypto_init()!=PSA_SUCCESS) return String();
+  size_t digestLength=0;
+  psa_status_t status=psa_hash_compute(
+    PSA_ALG_SHA_256,
+    (const uint8_t*)s.c_str(),
+    s.length(),
+    out,
+    sizeof(out),
+    &digestLength
+  );
+  if(status!=PSA_SUCCESS || digestLength!=sizeof(out)) return String();
+#elif MBEDTLS_VERSION_MAJOR == 3
   mbedtls_sha256_context c;
   mbedtls_sha256_init(&c);
-  mbedtls_sha256_starts(&c,0);
-  mbedtls_sha256_update(&c,(const unsigned char*)s.c_str(),s.length());
-  mbedtls_sha256_finish(&c,out);
+  int status=mbedtls_sha256_starts(&c,0);
+  if(status==0) status=mbedtls_sha256_update(&c,(const unsigned char*)s.c_str(),s.length());
+  if(status==0) status=mbedtls_sha256_finish(&c,out);
   mbedtls_sha256_free(&c);
+  if(status!=0) return String();
+#endif
   for(int i=0;i<32;i++) sprintf(buf+i*2,"%02x",out[i]);
   buf[64]=0; return String(buf);
+}
+
+bool validSha256Hex(const String &digest){
+  if(digest.length()!=64) return false;
+  for(size_t i=0;i<64;i++){
+    char c=digest[i];
+    if(!((c>='0'&&c<='9')||(c>='a'&&c<='f')||(c>='A'&&c<='F'))) return false;
+  }
+  return true;
 }
 
 String freshNonce(){
@@ -219,16 +251,20 @@ void applyRemoteConfig(const String &r){
 String signedBody(const String &action,const String &pulses,const String &target,const String &forcedNonce=""){
   String n=forcedNonce.length()?forcedNonce:freshNonce();
   String base=cfg.key+"|"+action+"|"+cfg.id+"|"+n+"|"+pulses+"|"+target+"|"+cfg.key;
-  return "action="+action+"&id="+esc(cfg.id)+"&nonce="+n+"&pulses="+pulses+"&target="+esc(target)+"&sig="+hexDigest(base);
+  String digest=hexDigest(base);
+  if(!validSha256Hex(digest)) return String();
+  return "action="+action+"&id="+esc(cfg.id)+"&nonce="+n+"&pulses="+pulses+"&target="+esc(target)+"&sig="+digest;
 }
 
 String post(const String &action,const String &pulses="0",const String &target="",const String &forcedNonce=""){
   if(WiFi.status()!=WL_CONNECTED) return "";
+  String body=signedBody(action,pulses,target,forcedNonce);
+  if(!body.length()) return "";
   WiFiClient client; HTTPClient h;
   String url="http://"+cfg.server+":4455/cgi-bin/vendo";
   if(!h.begin(client,url)) return "";
   h.setTimeout(3500); h.addHeader("Content-Type","application/x-www-form-urlencoded");
-  int code=h.POST(signedBody(action,pulses,target,forcedNonce));
+  int code=h.POST(body);
   String r=code>0?h.getString():""; h.end(); return r;
 }
 

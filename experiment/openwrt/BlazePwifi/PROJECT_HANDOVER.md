@@ -1,3 +1,132 @@
+## PHX-HARDWARE UTC04 — #356 exact-head Full CI and handover refresh
+
+**Updated:** 2026-11-27T04:30:51Z  
+**Role:** PHX-HARDWARE  
+**Repository:** BlazeDevStudio/BlazingSystems-Experiments  
+**Branch:** `phoenix/hardware-storage-preflight-device-separation-20261126-utc23`  
+**DRAFT PR:** [#356](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/356) — OPEN / DRAFT / UNMERGED  
+**Base:** `blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859`  
+**Source/test SHA:** `414048cdc390c7ade2207661ca7e5009c413389e`  
+**Previous docs HEAD:** `e53296447acfe84a002187c148e73bbe613dbbdc`
+
+### Exact-head CI terminal readback
+
+The docs-head Full workflow [#45937188987](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45937188987) checked out the exact previous docs HEAD `e53296447acfe84a002187c148e73bbe613dbbdc` and completed **SUCCESS: 26 jobs passed, 0 failed, 4 expected production jobs skipped**.
+
+- CI-0701 / mandatory validation: PASS, job `140303054901`.
+- Firmware/platform builds: 14/14 PASS, including ESP8266, ESP32, x86_64, Ruijie and supported Orange Pi targets.
+- v0.4 synthetic simulations: 9/9 PASS.
+- Update bundle: PASS, job `140304152013`.
+- Android: PASS, job `140303054900`.
+- Production APK import, prerelease, production signing handoff and release publication: SKIPPED.
+
+Focused exact-head runs:
+- Storage preflight [#45937189029](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45937189029), job `140303002887`: PASS. Exact checkout SHA matched. `CHANGE_LEDGER_DELETED_LINES=0`, `CHANGE_LEDGER_APPEND_ONLY_PASS`, STORCHK-0674 physical-parent matrix PASS.
+- Native synthetic journal [#45937189069](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45937189069), job `140303003067`: PASS. Synthetic PAY-0718 and related contract checks only; log explicitly says no production authority or physical durability.
+- ESP32 Mbed TLS matrix [#45937188993](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45937188993): all 3 jobs PASS — source contract `140303003137`, ESP32 core 3.3.13 `140303002937`, core 4.0.0 `140303003111`. Eight unsafe source mutations were rejected. `COIN_ADMISSION_ENABLED=0`.
+
+### Scope and safety boundary
+
+This is a **documentation/provenance refresh only**. No firmware source, test source, controller API, financial logic, migration, signer, witness, or COE destination changed. The source/test SHA remains `414048cdc390c7ade2207661ca7e5009c413389e`.
+
+Storage and native evidence are **CI VERIFIED / SIMULATED ONLY**. The storage job printed `SIMULATED_ONLY=1`, `PHYSICAL_POWER_CUT_VERIFIED=0`, and `CUSTOMER_INSTALL_AUTHORIZED=0`. No real scratch-media mount/write, device reset, flash, power cut, coin pulse, or live-money operation occurred.
+
+### Remaining blockers
+
+- P0 #177 remains OPEN: active v0.6 foundation `2fbd2475e9f54878c316fa7cea2f228386b0e859` still has synchronous poll-before-coin-sample ordering. The deny-only #354/#355 candidate does not authorize positive admission; CORE's authenticated poll/receipt/disposition contract and QA's independent verification remain required.
+- #355 remains OPEN / DRAFT; its Full and Native gates still require QA/CORE reconciliation of the pending-disposition assertion. Do not add unsafe clear callsites.
+- #34 physical storage/power acceptance, 150 power cuts, 30-device 24-hour soak, electrical pulse/recovery, #31/#32 durable accounting/replay, #43 protected witness, v1-to-v2 migration and independent QA/RELEASE signoff remain NOT TESTED / NOT ACCEPTED.
+- COE #26 remains FROZEN; no destination changes.
+- Private Drive `BLAZE_PROJECT_REGISTRY_v11_20261027.json` remains NOT RECOVERED through the available connector/Library surface; no older registry substitute used.
+
+### Next exact action
+
+PHX-QA independently reviews the #356 Mbed TLS/storage evidence; PHX-MASTER refreshes #288's exact role pins; PHX-CORE publishes the authenticated poll/receipt/disposition contract for #177. PHX-HARDWARE keeps #356 DRAFT and resumes the next owned source task only after revalidating the stack and ownership boundaries.
+
+**HARDWARE ACCEPTED: NO. PRODUCTION READY: NO-GO.**
+
+
+## PHX-HARDWARE UTC00 — exact-docs-head Full validation update
+
+- Exact docs/source workflow run: [#45918825520](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45918825520), checked out docs head 11f406a89ef4c5ae56c97b89678df6d737f1edbd and source/test SHA cb07904ccbedaeeb93e7eb763dc3c795e7e90c9f.
+- CI-0701 docs synchronization: PASS.
+- HND-0700 docs-only classifier: PASS.
+- Full validation job 140244506231: PASS. The log includes STORCHK-0674 physical-parent matrix PASS and the existing synthetic safety/rental/financial contract tests.
+- Target/platform jobs: 13/14 PASS; ESP32 FAIL job 140244506219 with fatal error mbedtls/sha256.h not found on the active v0.6 branch. This is an inherited target build blocker; this PR changes no ESP32 firmware source.
+- The v0.4 Android emulator and x86 simulation jobs remain IN PROGRESS at this checkpoint. No aggregate Full workflow PASS is claimed.
+- Signed production import remained SKIPPED. No deployment, device flash, reset, mount, block write, power cut or customer operation occurred.
+- Status: CI VERIFIED for the synthetic preflight gate; physical issue #34 remains NOT TESTED; production NO-GO.
+
+## PHX-HARDWARE UTC00 — STORCHK-0674 physical-parent isolation exact-head checkpoint
+
+**Source/test commit:** cb07904ccbedaeeb93e7eb763dc3c795e7e90c9f  
+**Branch:** phoenix/hardware-storage-preflight-device-separation-20261126-utc23  
+**DRAFT PR #356:** OPEN / UNMERGED.  
+**Focused push:** [#45918491229](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45918491229), job 140243305697 — PASS.  
+**Focused PR:** [#45918494920](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45918494920), job 140243318268 — PASS.
+
+The test-only regression at 660660aebc164fdc1958547d0d5e8f82656fd47e produced expected RED in push run [#45918235002](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45918235002), job 140242498187: a scratch sibling partition on the root disk was accepted because major:minor values differed. This is the reproduced defect.
+
+The correction resolves /sys/dev/block/<major:minor> to a direct block partition and its parent whole-device identity. The on-device wrapper now compares scratch parent identity against root, overlay upper storage, ROM and boot mounts; requires scratch to be a partition; and fails closed when sysfs identity is missing or topology is virtual, device-mapper, RAID/slave-backed or otherwise unsupported. The overlay-root case uses its separately identified /overlay upper storage. The wrapper hardcodes the live /sys and /proc/self/mountinfo sources; synthetic overrides are confined to the host test invoking the helper directly.
+
+The synthetic matrix passes: separate scratch disk accepted; sibling partitions sharing root, overlay and boot parents rejected; whole-disk scratch rejected; device-mapper and missing-sysfs layouts rejected; overlay-root upper-storage comparison passes. Exact checkout SHA matched in both focused workflows. Logs state SIMULATED_ONLY=1, PHYSICAL_POWER_CUT_VERIFIED=0, CUSTOMER_INSTALL_AUTHORIZED=0.
+
+Full run [#45918491238](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45918491238) push validation job 140243453805 failed the handover-freshness gate because this checkpoint had not yet been committed. PR Full run [#45918494903](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45918494903) was still running at this readback. No aggregate Full PASS is claimed.
+
+**Limitations:** sysfs ancestry is a kernel block-topology check, not proof of separate enclosure, controller, physical disposability, or power-loss durability. Unsupported NVMe/virtual/device-mapper/RAID layouts may block until separately audited. The CI fixture uses synthetic mountinfo and fake sysfs only. No real mount, block write, power cut, coin, payment, migration or customer operation occurred.
+
+**Next exact action:** obtain exact-docs-head focused/Full results, request PHX-QA review and PHX-MASTER role-matrix update, and keep PR #356 DRAFT. Issue #34 physical acceptance remains NOT TESTED; production remains NO-GO.
+
+## PHX-HARDWARE UTC23 — latest exact-head readback
+
+**DRAFT PR #356 · docs head b453272130e2839f404db4adb42eacd7a76f5fcb.**
+
+Focused run 45913560571 job 140227322280 PASS at exact docs head b453; checkout SHA matched and STORCHK-0674 PASS. The log explicitly states simulated-only, physical-power-cut verification zero and customer-install authorization zero.
+
+Full run 45913088776 remains in progress at docs head 3295381: 121 validation steps passed, Android and ESP8266 passed, 13/14 target/platform jobs passed, ESP32 failed missing mbedtls/sha256.h, and validation job 140225968163 was not terminal. New Full run 45913560627 at docs head b453 is in progress; no terminal result yet. No Full PASS is claimed.
+
+Next exact action: inspect both Full runs when terminal, request Master assignment of #356 and independent QA review. No physical acceptance, merge, release or production cutover.
+
+## PHX-HARDWARE UTC23 — STORCHK-0674 Full-integration readback
+
+**Docs head:** 3295381dc3a6f9051ccef40d938130b33ab7afd4 · **PR #356:** OPEN / DRAFT / UNMERGED.
+
+Focused exact-head run 45913088792 job 140225825590 PASS at docs head 3295381. Source/test SHA cd767cdf06ce3984c7e134c7d980b22b73f58844 remains GREEN on push run 45912851366 job 140225058949 and PR run 45912857510 job 140225078166.
+
+Full PR run 45913088776 is IN_PROGRESS. Handover freshness and the first 121 validation steps passed; validation job 140225968163 is at step 122 and not terminal. ESP8266 PASS, Android PASS, thirteen of fourteen target/platform builds PASS. ESP32 job 140225968098 FAILS with missing mbedtls/sha256.h in BlazePwifiVendo32. The PR changes no sketch, so this is inherited from the active v0.6 base and remains a separate Hardware build blocker.
+
+No Full PASS is claimed. The focused guard is CI VERIFIED only in synthetic host scope. No physical media, mount, power, coin, payment or customer operation was used. Physical acceptance remains NOT TESTED; production remains NO-GO.
+
+NEXT EXACT ACTION: inspect terminal Full run 45913088776 and request Master/QA review of #356; do not merge or authorize physical trial.
+
+## PHX-HARDWARE UTC23 — STORCHK-0674 FINAL FOCUSED-CI CHECKPOINT
+
+**2026-11-26T23:47Z · Issue #34 · DRAFT PR #356 · no merge, flash or power cut.**
+
+Source/test SHA cd767cdf06ce3984c7e134c7d980b22b73f58844 adds root, overlay, ROM and boot mount identity comparisons to the read-only pretrial parser. It requires one root record, rejects duplicate protected mounts and requires a separate overlay mount when root is overlayfs.
+
+Test-first RED: run 45912530609 job 140224038590 and run 45912560098 job 140224138127 failed as expected because scratch reused the root device.
+Focused GREEN: push run 45912851366 job 140225058949 PASS; PR run 45912857510 job 140225078166 PASS at the exact source/test SHA. Logs explicitly state simulated-only and physical/customer authorization zero.
+
+Full run 45912851358 validation job 140225122247 failed the handover freshness gate because the source commit preceded this canonical synchronization; other target jobs were still running at last read. PR Full run 45912857560 was queued. This is not a product regression or full validation pass.
+
+The guard proves distinct mounted major:minor identities only. It does not prove separate physical media, disposability or power-loss durability. No physical operation or customer action occurred. Issue #34 remains physically NOT TESTED and production remains NO-GO.
+
+NEXT EXACT ACTION: request PHX-MASTER/PHX-QA review of PR #356 and inspect Full validation on the post-documentation head.
+
+## PHX-HARDWARE UTC23 — STORCHK-0674 root/overlay device isolation (IN PROGRESS)
+
+**2026-11-26T23:45Z · Issue #34 · DRAFT PR #356 · No merge / no flash / no power cut.**
+
+The read-only pretrial mountinfo guard compared the synthetic fixture and scratch mounts with each other, but did not compare their major:minor identity with the live mount identities for /, /overlay, /rom and /boot. A plausible device path could therefore identify the same mounted system partition while avoiding the string deny-list.
+
+Test-only commit 68907bfa993c1b6b635e41e0935193c80126b7ac adds synthetic root, overlay, ROM and boot records. Expected RED was observed on push run 45912530609 job 140224038590 and PR run 45912560098 job 140224138127: scratch reuses root filesystem block device.
+
+The bounded correction will compare mountinfo major:minor values, require one root record, reject duplicate protected mounts, and require a separate /overlay identity for an overlay root. Scope is limited to Hardware-owned acceptance tooling. No product firmware, payment/API/ledger, COE, physical storage or customer data is touched.
+
+Full validation attempt 45912530717 job 140224091948 stopped at the handover freshness gate because the test-only commit was not yet followed by canonical synchronization; this checkpoint records that sequence.
+
+**NEXT EXACT ACTION:** implement the mount-identity guard, obtain exact-head focused CI, then refresh CURRENT_STATE, CHANGE_LEDGER and this top status block. A CI pass remains SIMULATED / CI VERIFIED only; owner-confirmed disposable media, real power telemetry and physical acceptance remain NOT TESTED.
 <!-- FULL-QR-TERMINAL-20261113:START -->
 > **Full offline QR merged-head CI / 2026-11-13 Asia/Manila / VALIDATED** — The Full push for the PR 278 merge, `d4c06e2c5ca223cc95ff04bd60a9f6cf0a69e1bb`, completed successfully on attempt 1 on `blazepwifi-v0.6.0-audit-foundation`. All 27 jobs that ran succeeded, including the required and optional firmware matrices. The complete 32-job REST inventory shows five expected skips for signed APK import, signing handoff, prerelease, release and lab-preview publication. [Full run 42475439223](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42475439223)
 >
@@ -662,3 +791,86 @@ Member and rental code now fail closed on corrupt, noncanonical, overflowing pai
 From live development HEAD, create an isolated #31 work branch. Inspect the **existing** `tests/v060_member_receipt_failure_repro.sh`, `member.sh` paid mutation/transfer, and `tools/v060_journal_authority_native.c`; do not repeat established RED fixtures. Implement a bounded, crash-recoverable single authoritative paid-member balance+receipt journal with durable event deduplication and failure-injection for ACK-lost/partial writes. Keep #43/#34 and v0.6 migration blocked. Append verified evidence to the ledger and update the short CURRENT_STATE, not another megabyte-long root document.
 
 **Copy to new chat:** @GitHub CONTINUE `BlazingSystems/BlazingSystems-Experiments` Full BlazePwifi draft PR #30. Read `experiment/openwrt/BlazePwifi/docs/handover/CURRENT_STATE.md`; check live HEAD. P0-0710 source `e0229927` Full #38076579117 PASS. P0 #31/#32/#34/#43 open; VERSION=0.5.3, no production v0.6.0. Next #31 integrated member money+receipt durability. No Codex, no Standalone Rental edits.
+
+
+## PHX-HARDWARE UTC01 — STORCHK-0674 ledger preservation checkpoint
+
+- Current source/workflow/ledger head: `76026ef72abe31d66ec5c81ebfe4851da63547ca` on `phoenix/hardware-storage-preflight-device-separation-20261126-utc23`; DRAFT PR #356 remains unmerged.
+- The append-only guard was test-first: guard-only commit `e9e1b751b98e4e6ed5228abea64c705d02e98b9c` failed as expected on PR run [#45924871309](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45924871309), job `140263739909`, reporting 3,388 deleted historical lines.
+- The complete 1,080,830-character base ledger was restored byte-for-byte from base blob `f16d5774366cf3a4c358dd2a0c2e7ee5e945f668`; the three pre-existing STORCHK-0674 sections and a new checkpoint were appended. No history was intentionally rewritten.
+- Exact-head focused push [#45925047254](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45925047254), job `140264299951`, and focused PR [#45925051984](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45925051984), job `140264314588`: PASS. Checkout SHA matched; `CHANGE_LEDGER_DELETED_LINES=0`; `CHANGE_LEDGER_APPEND_ONLY_PASS`; STORCHK-0674 mountinfo and physical-parent synthetic matrices PASS.
+- Full run [#45925051986](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45925051986) validation job `140264448626` failed at the expected stale-handover freshness gate because PROJECT_HANDOVER/CURRENT_STATE predated the workflow change. Target jobs were still running; no aggregate Full result is claimed. This checkpoint updates both canonical documents before the next Full run.
+- Evidence remains synthetic only: `SIMULATED_ONLY=1`, `PHYSICAL_POWER_CUT_VERIFIED=0`, `CUSTOMER_INSTALL_AUTHORIZED=0`. No firmware, physical storage, block write, coin admission, financial state, shared API, COE or production behavior changed.
+
+## NEXT EXACT ACTION
+
+Verify the post-sync Full run on the new docs head; obtain independent PHX-QA review of STORCHK-0674 and PHX-MASTER refresh of the #356 assignment matrix. Keep all hardware PRs DRAFT/unmerged. Physical acceptance remains NOT TESTED; production remains NO-GO.
+
+
+## PHX-HARDWARE UTC01 — dangling sysfs holder regression
+
+- Role/task: PHX-HARDWARE / STORCHK-0674 / issue #34 / DRAFT PR #356.
+- Added a negative fixture with a dangling symlink under the scratch parent disk's sysfs `holders` directory. The resolver must treat the symlink itself as an active/ambiguous relationship and block, even when its target no longer exists.
+- This exercises the existing `[ -e ] || [ -L ]` fail-closed rule; no production firmware or storage behavior changes.
+- The test and canonical handovers are committed together so the mandatory handover freshness gate remains valid. Exact-head focused and Full CI are pending.
+- Physical storage, power-cut, customer, coin, finance and migration tests remain NOT TESTED; production NO-GO.
+
+
+## PHX-HARDWARE UTC02 — final Full run reconciliation
+
+- Exact source/test/firmware-preflight head: `46e93bb113a10eed3d26f3a4c240175dde4681a0` on `phoenix/hardware-storage-preflight-device-separation-20261126-utc23`; PR #356 remains OPEN / DRAFT / UNMERGED.
+- Exact-head focused push [#45925391274](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45925391274), job `140265388786`, and focused PR [#45925396944](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45925396944), job `140265408068`: PASS. Both assert exact SHA, zero ledger deletions, append-only PASS, mountinfo and physical-parent matrices PASS including dangling-holder failure injection.
+- Full push [#45925391298](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45925391298) and Full PR [#45925397000](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45925397000): both terminal FAILURE solely at the ESP32 compile job in this run set. Exact error: `BlazePwifiVendo32.ino:6:10: fatal error: mbedtls/sha256.h: No such file or directory`.
+- Full validation job `140265440632`: PASS, 135/135 steps, including mandatory handover freshness, storage preflight and all synthetic payment/replay/witness checks.
+- ESP8266 PASS; Android APK PASS; all 11 OpenWrt targets PASS; v0.4 Ruijie/Orange Pi/x86/browser/Android-emulator simulations PASS; update bundle PASS. ESP simulation SKIPPED. Production import, signing handoff, preview and release jobs SKIPPED.
+- This is CI evidence only. ESP32 build remains a blocker; Full aggregate is not green. No release or deployment was performed.
+- Physical power cuts, 30-device/24-hour soak, electrical pulse/recovery and actual scratch-media independence remain NOT TESTED. Production NO-GO.
+
+
+## PHX-HARDWARE UTC03 — ESP32 Mbed TLS 3/4 compatibility
+
+- Exact source/test head: `050f0f0ca53533e8609ff0cb63e414538a50d132` on `phoenix/hardware-storage-preflight-device-separation-20261126-utc23`; PR #356 remains OPEN / DRAFT / UNMERGED, base `blazepwifi-v0.6.0-audit-foundation` at `2fbd2475e9f54878c316fa7cea2f228386b0e859`.
+- Source change: `experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino`. Mbed TLS 3 selects the checked legacy SHA-256 API; Mbed TLS 4 selects PSA SHA-256. Provider initialization/status/output length and digest format fail closed. `signedBody` refuses missing key/ID or invalid digest; `post` refuses an empty body before opening HTTP. Existing request action semantics are unchanged.
+- New source-contract lab: `experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/mbedtls_sha256_compat_lab.py`; seven injected unsafe mutations are rejected.
+- New workflow: `.github/workflows/phx-hw-active-v06-esp32-core-compat.yml`; exact-SHA checkout, pinned Espressif package index, Arduino CLI 1.6.0, ESP32 cores 3.3.13 and 4.0.0, clean canonical staging twice, byte-identical staged source and application image checks.
+- Test-first RED commit `f0bc8001d3fbbbfe852129b8566d8465165dd86d`: source-contract failed as expected on the missing provider selector. Its push/PR matrix runs #45935375367 and #45935381260 were expected failures.
+- GREEN source-contract: push run [#45935603861](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45935603861), job `140297982426`, PASS; PR run [#45935608508](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45935608508), job `140297996882`, PASS. All seven mutations rejected.
+- At this checkpoint, the exact-SHA target-build jobs were still IN_PROGRESS: push jobs `140297982713` (core 4.0.0) and `140297982791` (core 3.3.13); PR jobs `140297996749` (4.0.0) and `140297996953` (3.3.13). Do not call either target CI VERIFIED until terminal results.
+- Full runs on this code head: push [#45935603830](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45935603830), PR [#45935608564](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45935608564). The first run's validation job `140298123820` stopped at the mandatory handover freshness gate because this entry had not yet been committed; subsequent exact-head Full must be checked.
+- Prior failure on the old source head `8ce12c96a602c5856222aea8884451ac3841b376`: Full run [#45926090166](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45926090166) failed at ESP32 compile with missing `mbedtls/sha256.h`.
+- Evidence boundary: `SIMULATED_ONLY=1`, `COIN_ADMISSION_ENABLED=0`. No physical firmware flash, coin, finance, signer, migration or production operation was performed. Hardware acceptance and production readiness remain NO.
+
+## NEXT EXACT ACTION
+
+Read terminal results for the four Mbed TLS matrix jobs and the refreshed Full run on the handover-updated SHA. Request independent PHX-QA review of the provider selection and failure guards; keep #356 DRAFT and unmerged.
+
+
+
+## PHX-HARDWARE UTC03 correction — preserve first-boot registration semantics
+
+- Current source/test commit: `414048cdc390c7ade2207661ca7e5009c413389e` on `phoenix/hardware-storage-preflight-device-separation-20261126-utc23`. The earlier provisional empty-key/empty-ID guard was removed after source-path inspection: `setup()` calls `post("register")`, and the existing first-boot flow may intentionally use registration to bootstrap identity/configuration. This compatibility fix does not impose a new provisioning contract or change register/poll/coin action semantics.
+- Fail-closed behavior remains for Mbed TLS provider initialization/status/output-length errors, malformed SHA-256 output, and empty signed body before HTTP. The compatibility lab now includes a negative mutation that rejects introducing an empty-key/empty-ID guard in this patch.
+- The earlier source/test head `050f0f0c` had passed both ESP32 core matrices, but it contained that provisional guard and is superseded by `414048cdc390c7ade2207661ca7e5009c413389e`. Do not treat the earlier pass as final evidence for this corrected source.
+- New exact-source Mbed TLS matrix runs on `414048cdc390c7ade2207661ca7e5009c413389e`: push [#45936317966](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45936317966) and PR [#45936322663](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45936322663) are IN PROGRESS at this handover checkpoint.
+- Prior docs-head Full [#45935932101](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45935932101) passed mandatory validation and all 14 target/platform build jobs, including ESP32, but was cancelled before synthetic simulation/release jobs completed when the corrected source commit arrived. It is not a Full integration PASS.
+- No physical acceptance, coin operation, flash, migration, signing or deployment occurred. Production remains NO-GO.
+
+## NEXT EXACT ACTION
+
+Read terminal exact-head matrix and Full results for the corrected source and updated handover; refresh the PR body and UTC03 BLAZE-COMMS checkpoint; request QA review.
+
+
+
+## PHX-HARDWARE UTC03 final verification — ESP32 Mbed TLS and Full CI
+
+- Corrected source/test commit: `414048cdc390c7ade2207661ca7e5009c413389e`. Current PR/docs head at final Full: `0cf729e3708f719b87b5006b1712b39a52a17eef`.
+- Mbed TLS source-head matrices: push [#45936317966](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45936317966) and PR [#45936322663](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45936322663), all source-contract / core 3.3.13 / core 4.0.0 jobs PASS. Eight unsafe source mutations are rejected. Corrected first-boot registration behavior is preserved; no empty-key/empty-ID guard was introduced.
+- Mbed TLS docs-head matrices: push [#45936438399](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45936438399) and PR [#45936443708](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45936443708), all source-contract / core 3.3.13 / core 4.0.0 jobs PASS. Core 3.3.13 clean A/B application SHA-256: `308f0f1f97038c1346b2a6737432c068cfbda20a15b1f6d3c44fdd68ef27f9c0`; core 4.0.0: `742d6729355ef365757d70db3e978c28a7be1be8e0f4e1d77f09fd5a47fc3944`. Both versions used staged source tree SHA-256 `d62d786c00f1845f857fafc1d1dce9d7a90e16ca3c130751a12fd388fd09a6df`; A/B images were byte-identical.
+- Full PR [#45936443886](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45936443886) completed SUCCESS on docs head `0cf729e`: mandatory validation job `140300788918` PASS; 14/14 target/platform build jobs PASS; 9/9 v0.4 synthetic simulation jobs PASS; update bundle `140301744469` PASS. Production import/signing, sign handoff, prerelease and release jobs were SKIPPED.
+- Storage preflight [#45936443677](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45936443677) job `140300635005` PASS: `CHANGE_LEDGER_DELETED_LINES=0`, `CHANGE_LEDGER_APPEND_ONLY_PASS`, STORCHK-0674 physical-parent matrix PASS, `SIMULATED_ONLY=1`. Native synthetic journal gate [#45936443771](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45936443771) PASS.
+- Evidence boundary: CI VERIFIED / SIMULATED ONLY. No real hardware acceptance, electrical pulse/recovery, 150 power cuts, 30-device/24-hour soak, protected signer/witness, financial migration, durable accounting/replay, or independent QA/release acceptance is claimed. Production remains NO-GO.
+
+## NEXT EXACT ACTION
+
+Request PHX-QA independent review of the Mbed TLS provider and ledger guard; PHX-MASTER refreshes stale #356 pins in PR #288; PHX-HARDWARE next resumes the unblocked hardware-owned target or waits for CORE's authenticated #177 contract before changing intake/poll behavior. Keep PR #356 DRAFT and unmerged.
+
