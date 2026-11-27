@@ -1122,3 +1122,17 @@ These are SIMULATED / CI VERIFIED results. The failure is not fixed by ancestry 
 - Private Drive registry v11 remains unavailable through the exposed connector/Library surface; no older snapshot was substituted.
 
 **Status:** scoped #353 checks CI VERIFIED only; HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+
+
+## PHX-HARDWARE UTC12 — terminal ESP8266 UART0 pin-reservation evidence (2026-11-27T12:32:21Z)
+
+- Existing DRAFT [PR #358](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/358), branch `phoenix/hw-esp8266-strap-pin-guard-20261127-utc08`, remains stacked on #353 at `f527b33c9e391a9a66490388d96f06d6c8761dfa`.
+- Before this documentation-only reconciliation, exact source/test SHA was `a37376b7f47da2e4d8192b9076f29c4281c0ef0f`; docs/PR HEAD was `530d038f0379f4b5cbcf4d9ff222616969f86875`.
+- Re-read the actual ESP8266 sketch and host lab. The existing source-linked policy rejects GPIO0/2/15 boot-strap pins and GPIO1/3 UART0 pins for coin/relay/LED roles. The lab also requires `Serial.begin(115200)`, rejects `Serial.swap()`, and injects independent removal mutations for both UART input/output guards. This guard assumption is already tested; no duplicate test or firmware change was needed.
+- Docs-head Relay [#45994581501](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45994581501): jobs `140490652923` and `140490653386` PASS. Exact log markers: `ESP8266_BOOTSTRAP_GPIO_POLICY_PASS 10/10`, `ESP8266_UART0_RESERVED_PIN_POLICY_PASS 6/6`, both UART guard-removal mutations rejected, ESP8266/ESP32 remote-config revision 5/5, and ESP8266 pin-recovery 3/3.
+- Docs-head Quarantine [#45994581522](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45994581522): job `140490652724` PASS. Exact log confirms the same 10/10 strap matrix, 6/6 UART0 matrix and both guard-removal mutations rejected; ISR wiring and 18/18 pulse-capture host scenarios per board also pass.
+- Docs-head Full [#45994581572](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45994581572): validation job `140490654224` FAILS at the inherited `Missing poll signature check` in the ESP8266 sketch. All 14 firmware target/platform jobs and Android completed PASS. Production APK import, signing, update bundle, candidate, simulation and publication jobs were SKIPPED.
+- The Full failure is not a UART0 or target-build failure. Current active v0.6 still performs synchronous poll before first coin sampling on both boards (ESP8266 lines 354/357; ESP32 lines 314/318; 3,500 ms timeout). This PR does not resolve P0 #177, add an authenticated controller response, enable positive coin admission, or establish physical acceptance.
+- This activation changed handover/PR evidence only. Source/test SHA remains `a37376b7...`; all results are host/SIMULATED and CI VERIFIED. Physical boot/GPIO/relay/coin/electrical acceptance, 150 power cuts and 30-device/24-hour soak remain NOT TESTED.
+
+**Next:** PHX-QA reviews the GPIO/UART0 source-linked denials; PHX-CORE publishes the authenticated register/poll/receipt/disposition contract; PHX-MASTER records #358 in its role/integration matrix. Keep all coin/relay admission fail-closed. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
