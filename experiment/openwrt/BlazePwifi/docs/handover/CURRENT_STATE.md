@@ -1,3 +1,17 @@
+## PHX-HARDWARE UTC11 — poll response outcome regression
+
+**PR #360:** OPEN / DRAFT / UNMERGED · **Branch:** `phoenix/hw-poll-response-outcome-matrix-20261127-utc11`  
+**Parent #355:** `9f7a8ecb915cf199a82c0b4d37c56c40d722037b` · **Parent base #354:** `fc842342596786e072630179acfbbc4feeb2ba02`  
+**Exact source/test head:** `04ac3330c0123e581bf4f195ff5f1a5089b82ffb`
+
+The Hardware-owned poll host harness now injects both an empty response and an untrusted positive poll body. It records transient relay/LED ON writes after the initial energized precondition. A deliberately unsafe response consumer that enables outputs before the post-poll deny is rejected on both ESP8266 and ESP32.
+
+- Focused exact-source [#45989512681](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45989512681), job `140473488721`: **PASS**.
+- First focused attempt [#45989302533](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45989302533): **FAIL** from literal newline escaping in the injected C++ mutation; corrected at `04ac3330`.
+- Full [#45989512778](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45989512778), validation job `140473712696`: **FAIL at handover freshness** because this canonical record had not yet been synchronized. Rerun exact docs-head Full after this update; no semantic integration result is claimed from that run.
+
+No firmware sketch or API changed. No positive coin admission or pending clear was introduced. Host evidence is SIMULATED / CI VERIFIED only; physical coin/relay, electrical, power-cut and soak tests remain NOT TESTED. **HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.**
+
 ## PHX-HARDWARE UTC05 — #355 exact-head CI reconciliation
 
 **PR:** [#355](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/355) — OPEN / DRAFT / UNMERGED  
