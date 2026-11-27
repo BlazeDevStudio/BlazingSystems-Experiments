@@ -1,0 +1,16 @@
+#!/bin/sh
+set -e
+umask 077
+. /usr/share/libubox/jshn.sh
+case "${1:-}" in repeater-ap|restore-wifi|bands|restore-bands|restore-mode|radio-reconnect|reconnect|reconnect-wifi|reconnect-wired|apn|wifi|piso-wifi|wifi-sta|modes|antenna) ;; *) echo 'Unsupported operation'; exit 2;; esac
+/usr/libexec/blaze-lock-claim job "$$"
+RECOVERY=0
+if [ -s /etc/blaze/mode-pending ] && [ "$1" != restore-mode ];then set -- restore-mode;RECOVERY=1
+elif [ -f /etc/blaze/wifi-pending ] && [ "$1" != restore-wifi ];then set -- restore-wifi;RECOVERY=1
+elif [ -s /etc/blaze/band-pending ] && [ "$1" != restore-bands ];then set -- restore-bands;RECOVERY=1;fi
+ID=$(cat /proc/sys/kernel/random/uuid);echo "$ID" >/tmp/blaze-job.lock/id
+json_init;json_add_string phase queued;json_add_string id "$ID";json_add_string operation "$1";json_add_string message 'Operation queued.';json_add_int time "$(date +%s)";json_dump >/tmp/blaze-job.json.new;mv /tmp/blaze-job.json.new /tmp/blaze-job.json
+/usr/libexec/blaze-job "$@" </dev/null >/tmp/blaze-job.log 2>&1 &
+echo "$!" >/tmp/blaze-job.lock/pid
+if [ "$RECOVERY" = 1 ];then echo 'Recovering an interrupted network operation first. Requested changes were not applied.';exit 3;fi
+echo "$ID"

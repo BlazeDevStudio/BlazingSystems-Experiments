@@ -1,0 +1,18 @@
+#!/bin/sh
+LIB=${BP_UPDATE_LIB:-/usr/lib/blazepwifi/update.sh}
+[ -r "$LIB" ] || { echo "BlazePwifi update library missing" >&2; exit 1; }
+. "$LIB"
+cmd="${1:-status}"; shift 2>/dev/null || true
+case "$cmd" in
+  status) bp_update_init; bp_update_status_json; echo ;;
+  verify) bundle="$1"; sha="${2:-}"; work="$BP_UPDATE_RUN/verify.$$"; bp_update_extract_verify "$bundle" "$work" "$sha"; rc=$?; rm -rf "$work"; exit "$rc" ;;
+  apply) bp_update_apply "$1" "${2:-}" ;;
+  fetch-apply)
+    url="$1"; sha="$2"; bp_update_init; tmp="$BP_UPDATE_RUN/download.$$";
+    trap 'rm -f "$tmp"' EXIT INT TERM
+    bp_update_fetch "$url" "$tmp" && bp_update_apply "$tmp" "$sha"
+    ;;
+  rollback) bp_update_manual_rollback ;;
+  guard) bp_update_guard ;;
+  *) echo "usage: blazepwifi-update {status|verify BUNDLE [SHA256]|apply BUNDLE [SHA256]|fetch-apply URL SHA256|rollback|guard}" >&2; exit 2 ;;
+esac

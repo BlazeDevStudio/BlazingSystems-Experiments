@@ -1,0 +1,8 @@
+# BlazePwifi essential durable state and local identity for OpenWrt sysupgrade.
+# OpenWrt only restores declared files/config. Do NOT add the entire
+# /etc/blazepwifi directory: update/snapshots can exceed small flash/RAM.
+/etc/config/blazepwifi
+/etc/blazepwifi/state
+/etc/blazepwifi/portal
+/etc/uhttpd.crt
+/etc/uhttpd.key

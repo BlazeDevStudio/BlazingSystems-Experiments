@@ -1,0 +1,12 @@
+{
+  "stage_run_id": 37283029072,
+  "candidate_sha": "1373eaa8ee8e95abbc2d0cbf5565d8ed28d2a750",
+  "release_tag": "v0.4.0",
+  "requested_assets": [
+    "x86 ext4 BIOS .img",
+    "x86 ext4 UEFI .img",
+    "Orange Pi One ext4 sdcard .img",
+    "Orange Pi PC ext4 sdcard .img",
+    "Orange Pi Zero 3 ext4 sdcard .img"
+  ]
+}

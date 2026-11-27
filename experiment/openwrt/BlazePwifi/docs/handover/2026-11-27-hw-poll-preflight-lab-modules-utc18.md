@@ -1,0 +1,56 @@
+# PHX-HARDWARE UTC18 — poll preflight lab modularization
+
+**Role:** PHX-HARDWARE  
+**Task:** cleanup-first #266 / hardware #177 / stacked draft #355  
+**Branch:** `phoenix/hw-poll-preflight-lab-modules-20261127-utc18`  
+**Parent:** `phoenix/hw-active-v06-poll-intake-deny-20261126-utc05@fc842342596786e072630179acfbbc4feeb2ba02`  
+**Source/test SHA:** `e21f5e70695f3fdd6ee349e385fda69210034826`  
+**Status:** FOCUSED CI VERIFIED · Full docs-sync rerun pending · SIMULATED ONLY · HARDWARE NOT TESTED · PRODUCTION NO-GO.
+
+## Scope
+
+The Hardware-owned 776-line `poll_preflight_inhibit_lab.py` was separated into three single-responsibility modules:
+- `poll_preflight_inhibit_lab_contract.py`: source extraction and poll-guard contract.
+- `poll_preflight_inhibit_lab_harness.py`: deterministic C++ harness construction, compilation and mutation execution.
+- `poll_preflight_inhibit_lab_cases.py`: ESP8266/ESP32 cases and failure injection.
+- `poll_preflight_inhibit_lab.py`: stable command entry point.
+
+The original function bodies and test vectors were moved without changing behavior. The focused workflow path filters now include all three modules for both push and pull-request events. No production sketch, GPIO, relay, coin-admission, shared API, QA, CORE, financial or COE source changed.
+
+## Exact test history
+
+1. Refactor commit `8d893f6c913ff0b90a0ebe13af902718a0bfb653`: [run #45878977604](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45878977604), job `140113163508`, FAILED at Python syntax because the extracted `SKETCHES` mapping lacked its closing brace. This was an implementation error, not a test RED.
+2. Correction `68a3281c1405bfe51434f7d9b9b9a142ce5ca3e9`: [run #45879096653](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45879096653), job `140113559453`, FAILED with `NameError: _poll_call_matches` in the case module. This was an import-boundary error, not a test RED.
+3. Final source/test `e21f5e70695f3fdd6ee349e385fda69210034826`: [focused exact-source run #45879218178](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45879218178), job `140113978484`, PASS. Both board suites ran. Both logs show `BLOCKING_POLL_WAIT_PASS 3500ms pulse_ticks=80 samples_during_wait=0 accepted=0 polarity_combinations=4`; output-enable tests report 8/8 scenarios and 14/14 injected regressions rejected. Remote-config deny and request-auth guards also pass.
+
+## Full workflow and cross-role boundary
+
+Full PR [#45879218268](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45879218268) and push [#45879211901](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45879211901) failed the mandatory handover freshness gate because canonical handover docs predated `e21f5e70695f3fdd6ee349e385fda69210034826`. This checkpoint updates the canonical records; a new exact-docs-head Full run is required. Earlier #354 exact-head Full/Native failures at QA-owned `config_revision` and active `clearPending(true/false)` assertions remain separate blockers. PHX-QA owns those assertions; PHX-CORE owns the authenticated register/poll and receipt/disposition contract; PHX-MASTER owns global assignments and branch pins. Hardware will not edit those files or enable positive coin admission.
+
+## Status
+
+Host/source-extracted tests: **SIMULATED / CI VERIFIED**. Physical GPIO/relay, real coin acceptor, electrical pulse/recovery, LittleFS power loss, 150 controlled power cuts and 30-device/24-hour soak: **NOT TESTED**. Signer/witness, durable accounting/replay and v1→v2 migration: **NOT ACCEPTED**. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+
+Private Google Drive registry `BLAZE_PROJECT_REGISTRY_v11_20261027.json` was not accessible through this runtime. No registry-derived promotion or migration occurred.
+
+## Process deviation
+
+The required IN-PROGRESS handover was not staged before the first source commit. The two failed attempts are preserved above. Future source edits must stage the IN-PROGRESS handover before changing code.
+
+## NEXT EXACT ACTION
+
+Recheck the docs-head Full workflow after this sync. If it reaches the inherited QA assertion, request QA's deny-only reconciliation and CORE's approved authenticated poll/receipt contract. Keep PR #355 DRAFT and unmerged.
+
+
+## Final exact docs-head CI readback — 2026-11-26T18:58Z
+
+The canonical sync at `8e1785a2e9fe73704798c89f861cc2c94fae444f` cleared the mandatory handover freshness gate. Focused poll-deny [#45879740136](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45879740136) job `140115755212` PASS. Mbed TLS matrix [#45879740079](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45879740079) has all three jobs PASS (source contract, ESP32 core 3.3.13 and 4.0.0). Full [#45879740152](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45879740152) reports CI-0701 PASS and 14/14 target/platform jobs PASS, but validation job `140115835125` FAILS at `tests/controllers.sh:20` because the QA-owned script still requires `applyRemoteConfig`; line 21 also requires `config_revision`. Production import, update bundle, simulations, candidate, signing and publishing remain skipped. No hardware acceptance.
+
+Adjacent stack recheck: #239 OPEN/DRAFT at `d83b715b`; #254 OPEN/DRAFT at `84c442a4` (the supplied `3692ddf889470da8a0029e16bf0ac2f37f1a9d0` was not found in this repository); #283 OPEN/DRAFT at `4dd0b01b`. The original #283 unconditional-clear finding is no longer present in the current source, but `quarantinePending()` has no active callsite on either board. Current main CGI emits no `response_sig` for register, poll or coin; no approved response contract exists. These remain blocked, not fixed by this lab refactor.
+
+Process deviation: the IN-PROGRESS handover was not staged before the first source commit. The initial missing-brace and missing-import failures are preserved in the preceding section. No Codex, production sketch edit, merge, flash, reset, live money, migration, signing or deployment occurred.
+
+
+## UTC19 docs-head terminal results — 2026-11-26T19:01Z
+
+The docs-only head `91010365df8c59cbbd1cb0b67b9463d99149a9cc` is terminal for the focused and Mbed TLS workflows and for the Full target matrix. Focused poll-deny [#45880191752](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45880191752), job `140117311476`, PASS. Mbed TLS matrix [#45880191747](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45880191747): source-contract `140117311864`, core 3.3.13 `140117311638`, and core 4.0.0 `140117311924` all PASS. Full [#45880191748](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45880191748): CI-0701 `140117312099` PASS; 14/14 target/platform jobs PASS; validation `140117397355` FAIL at QA-owned `tests/controllers.sh:20` requiring `applyRemoteConfig`; line 21 also requires `config_revision`. Production import, update, simulations, candidate, signing and publication stages skipped. The source/test SHA `e21f5e70695f3fdd6ee349e385fda69210034826` is unchanged; only docs were updated after this readback.

@@ -1,0 +1,155 @@
+#!/bin/sh
+set -e
+. /usr/share/libubox/jshn.sh
+. /usr/share/blaze/connectivity.sh
+ROLLBACK_REQUIRED=0
+MODE_PENDING=0
+WIFI_PENDING=0
+RADIO_PAUSED=0
+STARTED=$(date +%s)
+OPERATION=$1
+JOB_ID=$(cat /tmp/blaze-job.lock/id 2>/dev/null || true)
+MB=/usr/libexec/blaze-modemband-original
+restore_mode() { /usr/libexec/blaze-restore-mode; }
+cell_dev() {
+ for I in wwan_4 wwan; do
+  J=$(ubus call network.interface.$I status 2>/dev/null || true)
+  D=$(printf '%s' "$J" | jsonfilter -e '@.l3_device' 2>/dev/null | head -1)
+  A=$(printf '%s' "$J" | jsonfilter -e '@["ipv4-address"][0].address' 2>/dev/null | head -1)
+  if [ -n "$D" ] && [ -n "$A" ] && [ -e "/sys/class/net/$D" ];then echo "$D";return 0;fi
+ done
+ if ip -4 addr show dev eth1 2>/dev/null | grep -q 'inet ';then echo eth1;return 0;fi
+ return 1
+}
+online() { D=$(cell_dev 2>/dev/null || true);[ -n "$D" ] && probe_link "$D"; }
+wait_online() { deadline=$(($(cut -d. -f1 /proc/uptime)+75));while [ "$(cut -d. -f1 /proc/uptime)" -lt "$deadline" ];do if online;then return 0;fi;sleep 2;done;return 1; }
+detect_port() { P=$(/usr/share/3ginfo-lite/detect.sh 2>/dev/null | head -1);[ -n "$P" ] && [ -e "$P" ] || P=/dev/ttyACM0;echo "$P"; }
+at() { P=$(detect_port);flock -x /var/lock/blaze-modem.lock /usr/bin/sms_tool -d "$P" at "$1"; }
+mb_action() { RAT=$1;ACT=$2;case "$RAT:$ACT" in lte:get) C=getbands;;lte:set) C=setbands;;lte:supported) C=getsupportedbands;;nsa:get) C=getbands5gnsa;;nsa:set) C=setbands5gnsa;;nsa:supported) C=getsupportedbands5gnsa;;sa:get) C=getbands5gsa;;sa:set) C=setbands5gsa;;sa:supported) C=getsupportedbands5gsa;;*) return 2;;esac;shift 2;flock -x /var/lock/blaze-modem.lock "$MB" "$C" "$@"; }
+norm_bands() { for B in $1;do case "$B" in ''|*[!0-9]*) continue;;esac;echo "$B";done | sort -n -u | xargs; }
+read_bands() { T=$(mb_action "$1" get 2>/dev/null | xargs);[ "$T" = Unsupported ] && return 1;printf '%s' "$T"; }
+supported_bands() { T=$(mb_action "$1" supported 2>/dev/null | xargs);[ "$T" = Unsupported ] && return 1;printf '%s' "$T"; }
+validate_bands() { RAT=$1;WANT=$(norm_bands "$2");[ -n "$WANT" ] || return 1;SUP=$(supported_bands "$RAT") || return 1;for B in $WANT;do case " $SUP " in *" $B "*) ;;*) return 1;;esac;done;printf '%s' "$WANT"; }
+set_bands() { RAT=$1;WANT=$(validate_bands "$RAT" "$2") || return 1;mb_action "$RAT" set "$WANT" >/tmp/blaze-band-set 2>&1 || return 1;sleep 1;GOT=$(norm_bands "$(read_bands "$RAT" 2>/dev/null || true)");[ -n "$GOT" ] && [ "$GOT" = "$WANT" ]; }
+reconnect() { ifdown wwan;sleep 2;ifup wwan;wait_online; }
+iface_online() {
+ I="$1";deadline=$(($(cut -d. -f1 /proc/uptime)+60));while [ "$(cut -d. -f1 /proc/uptime)" -lt "$deadline" ];do J=$(ubus call network.interface.$I status 2>/dev/null || true);D=$(printf '%s' "$J" | jsonfilter -e '@.l3_device' 2>/dev/null | head -1);[ -n "$D" ] || D=$(printf '%s' "$J" | jsonfilter -e '@.device' 2>/dev/null | head -1);if [ -n "$D" ] && [ -e "/sys/class/net/$D" ] && probe_link "$D";then return 0;fi;sleep 2;done;return 1
+}
+restore_wifi_sta() {
+ RESTORE_RC=0;for f in network wireless firewall dhcp blaze; do [ -f /etc/blaze/$f-wifi-sta-before ] && cp /etc/blaze/$f-wifi-sta-before /etc/config/$f || RESTORE_RC=1;done
+ /etc/init.d/network reload >/dev/null 2>&1 || RESTORE_RC=1
+ /etc/init.d/firewall reload >/dev/null 2>&1 || RESTORE_RC=1
+ /etc/init.d/dnsmasq restart >/dev/null 2>&1 || RESTORE_RC=1
+ /etc/init.d/odhcpd reload >/dev/null 2>&1 || true
+ /etc/init.d/relayd restart >/dev/null 2>&1 || true
+ /usr/libexec/blaze-relay-refresh >/dev/null 2>&1 || true
+ wifi reload >/dev/null 2>&1 || RESTORE_RC=1
+ [ "$RESTORE_RC" = 0 ] && rm -f /etc/blaze/wifi-pending
+ return "$RESTORE_RC"
+}
+wifi_link_ready() {
+ J=$(ubus call network.interface.wifiwan status 2>/dev/null || true)
+ [ "$(printf '%s' "$J" | jsonfilter -e '@.up')" = true ] || return 1
+ A=$(printf '%s' "$J" | jsonfilter -e '@["ipv4-address"][0].address')
+ D=$(printf '%s' "$J" | jsonfilter -e '@.l3_device')
+ [ -n "$A" ] && [ -n "$D" ] && iw dev "$D" link | grep -q '^Connected to'
+}
+wait_wifi_link() { END=$(($(cut -d. -f1 /proc/uptime)+60));while [ "$(cut -d. -f1 /proc/uptime)" -lt "$END" ];do wifi_link_ready && return 0;sleep 2;done;return 1; }
+
+check_ca() {
+ if grep -q 'Vendor=1286 ProdID=4e28' /sys/kernel/debug/usb/devices 2>/dev/null;then
+  CA=$(at 'AT+ZCAINFO?' 2>/dev/null || true);echo "$CA" | awk -F'[;,]' '/^\+ZCAINFO:/ {if($7+0==2 && $8+0>0)found=1} END {exit !found}' && CA_SEEN=1 || true
+ else
+  J=$(flock -x /var/lock/blaze-modem.lock sh /usr/share/3ginfo-lite/3ginfo.sh 2>/dev/null || true);S=$(printf '%s' "$J" | jsonfilter -e '@.s1band' 2>/dev/null || true);case "$S" in ''|-) ;;*) CA_SEEN=1;;esac
+ fi
+}
+speed() {
+ D=$(cell_dev 2>/dev/null || true);[ -n "$D" ] || { echo 0;return; }
+ curl --interface "$D" --fail --silent --show-error --connect-timeout 8 --max-time 18 -o /dev/null -w '%{speed_download} %{size_download} %{http_code} %{time_total}' 'https://speed.cloudflare.com/__down?bytes=10000000' >/tmp/blaze-speed 2>/tmp/blaze-speed-error &
+ CURLPID=$!;sleep 1;check_ca
+ while kill -0 "$CURLPID" 2>/dev/null;do sleep 2;check_ca;done
+ RC=0;wait "$CURLPID" || RC=$?
+ if [ "$RC" = 0 ] || [ "$RC" = 28 ];then awk '{if($3==200 && $2>=262144)printf "%.0f",$1;else print 0}' /tmp/blaze-speed;else echo 0;fi
+}
+state() {
+ STATE_PHASE=$1
+ json_init;json_add_string phase "$1";json_add_string id "$JOB_ID";json_add_string message "$2";json_add_int time "$(date +%s)";json_add_string before_bps "${BEFORE:-}";json_add_string after_bps "${AFTER:-}";json_add_string token "${MODE_TOKEN:-}";json_add_int started "$STARTED";json_add_string operation "$OPERATION";json_add_string reason "${REASON:-}";json_add_string selected_mask "${NEW:-}";json_add_string rat "${RAT:-}";json_add_boolean ca "${CA_SEEN:-0}";json_dump >/tmp/blaze-job.json.new;mv /tmp/blaze-job.json.new /tmp/blaze-job.json
+ [ "$OPERATION" = bands ] && cp /tmp/blaze-job.json /tmp/blaze-trial.json
+ logger -t BlazeSystems "$2"
+}
+rollback() {
+ ROLLBACK_REQUIRED=0;state rollback 'Restoring the previous modem band selection and reconnecting.'
+ ifdown wwan;sleep 2;RESTORED=0;CONNECTED=0
+ set_bands "$RAT" "$OLD" && RESTORED=1
+ ifup wwan || true;wait_online && CONNECTED=1
+ if [ "$RESTORED" = 1 ] && [ "$CONNECTED" = 1 ];then rm -f /etc/blaze/band-pending;state reverted "Previous bands restored; cellular internet verified. ${REASON:-}";return 0;fi
+ if [ "$RESTORED" = 0 ];then state failed 'Could not confirm previous band restoration. Data reconnection attempted; recovery checkpoint retained.';else state failed 'Previous bands restored, but internet is not verified. Recovery checkpoint retained.';fi
+ return 1
+}
+on_exit() {
+ rc=$?;trap - EXIT
+ if [ "$RADIO_PAUSED" = 1 ];then at 'AT+CFUN=1' >/dev/null 2>&1 || true;ifup wwan || true;state failed 'Radio operation interrupted; active radio and data startup requested. Check connectivity.';fi
+ if [ "$MODE_PENDING" = 1 ];then if restore_mode;then rm -f /etc/blaze/mode-pending;state reverted 'Network transaction interrupted; previous settings restored.';else state failed 'Network restoration failed. Recovery checkpoint retained; inspect the saved configuration.';fi;fi
+ if [ "$WIFI_PENDING" = 1 ];then if restore_wifi_sta;then state reverted "Wi-Fi transaction interrupted; previous settings restored.";else state failed "Wi-Fi restoration failed; checkpoint retained.";fi;fi
+ if [ "$ROLLBACK_REQUIRED" = 1 ];then rollback || true;fi
+ if [ "$rc" != 0 ];then case "${STATE_PHASE:-}" in failed|reverted) ;;*) state failed 'Operation stopped before verification. Check operation details; no reboot was triggered.';;esac;fi
+ rm -rf /tmp/blaze-job.lock;exit "$rc"
+}
+trap on_exit EXIT
+case "$1" in
+ radio-reconnect)
+  RAT=lte;OLD_RADIO=$(read_bands lte 2>/dev/null || true);state reconnecting 'Re-registering the cellular radio; the router remains running.';ifdown wwan;sleep 2;RADIO_PAUSED=1;trap 'exit 1' HUP INT TERM;RESPONSE=$(at 'AT+CFUN=0');case "$RESPONSE" in *ERROR*) exit 1;;esac;sleep 2;RESPONSE=$(at 'AT+CFUN=1');case "$RESPONSE" in *ERROR*) exit 1;;esac;RADIO_PAUSED=0;if [ -n "$OLD_RADIO" ];then NOW=$(read_bands lte 2>/dev/null || true);[ "$(norm_bands "$NOW")" = "$(norm_bands "$OLD_RADIO")" ] || set_bands lte "$OLD_RADIO" || { ifup wwan;state failed 'Radio resumed but LTE band preservation was not confirmed.';exit 1; };fi;ifup wwan;if wait_online;then state complete 'Radio re-registered; band selection preserved and cellular internet verified.';else state failed 'Radio is active but internet remains unverified. No router reboot was triggered.';fi
+  ;;
+ antenna)
+  state applying 'Applying R281 antenna selection.';OLD_ANT=$(uci -q get blaze.main.antenna || echo auto);if ! /usr/libexec/blaze-antenna "$2";then state failed 'Antenna change rejected. Check external antenna detection.';exit 1;fi;sleep 5;if wait_online;then uci set blaze.main.antenna="$2";uci commit blaze;state complete 'Antenna selection applied; cellular internet verified.';else /usr/libexec/blaze-antenna "$OLD_ANT";state reverted 'Antenna selection reverted after the connectivity check failed.';fi
+  ;;
+ wifi) state applying 'Applying home Wi-Fi settings.';printf '%s' "$2" >/tmp/blaze-settings-request.json;ucode /usr/share/blaze/settings.uc;wifi reload;state complete 'Home Wi-Fi updated.';;
+ piso-wifi) state applying 'Applying PisoWiFi names and radio status.';printf '%s' "$2" >/tmp/blaze-settings-request.json;ucode /usr/share/blaze/settings.uc;wifi reload;state complete 'PisoWiFi wireless settings updated.';;
+ restore-wifi) state applying 'Restoring an interrupted Wi-Fi change.';if restore_wifi_sta;then state complete 'Previous Wi-Fi and DHCP settings restored.';else state failed 'Wi-Fi restoration failed; checkpoint retained.';exit 1;fi;;
+ wifi-sta)
+  mkdir -p /etc/blaze;for f in network wireless firewall dhcp blaze;do cp /etc/config/$f /etc/blaze/$f-wifi-sta-before || exit 1;done
+  touch /etc/blaze/wifi-pending;WIFI_PENDING=1
+  state applying 'Applying upstream Wi-Fi client settings.';printf '%s' "$2" >/tmp/blaze-settings-request.json;ucode /usr/share/blaze/settings.uc
+  fw4 check >/tmp/blaze-firewall-check 2>&1 || exit 1
+  /etc/init.d/network reload >/dev/null 2>&1;/etc/init.d/firewall reload >/dev/null 2>&1
+  /etc/init.d/dnsmasq restart >/dev/null 2>&1;/etc/init.d/odhcpd reload >/dev/null 2>&1 || true
+  wifi reload >/dev/null 2>&1
+  DISCONNECT=$(printf '%s' "$2" | jsonfilter -e '@.disconnect' 2>/dev/null || true)
+  if [ "$DISCONNECT" = true ];then
+   /etc/init.d/relayd restart >/dev/null 2>&1 || true
+   /usr/libexec/blaze-relay-refresh >/dev/null 2>&1 || true
+   WIFI_PENDING=0;rm -f /etc/blaze/wifi-pending;state complete 'Upstream Wi-Fi disconnected; previous LAN DHCP restored.'
+  elif wait_wifi_link;then
+   MODE=$(uci -q get blaze.main.wifi_uplink_mode || echo routed)
+   if [ "$MODE" = relay ];then
+    /usr/libexec/blaze-relay-refresh || exit 1
+    WIFI_PENDING=0;rm -f /etc/blaze/wifi-pending;if [ "$(uci -q get blaze.main.wifi_relay_scope)" = ssid ];then state complete 'Dedicated repeater configured. Its clients use upstream DHCP; home Wi-Fi and LAN keep their existing routing. Internet login may still be required.';else state complete 'Whole-network IPv4 repeater configured. Clients use upstream DHCP; separate backup Wi-Fi is available when enabled.';fi
+   elif [ "$(uci -q get blaze.main.wifi_captive)" = 1 ];then
+    WIFI_PENDING=0;rm -f /etc/blaze/wifi-pending;state complete 'Wi-Fi associated and received an address. Captive mode preserves this link without testing internet access.'
+   elif iface_online wifiwan;then
+    WIFI_PENDING=0;rm -f /etc/blaze/wifi-pending;state complete 'Upstream Wi-Fi connected and internet verified.'
+   else exit 1;fi
+  else exit 1;fi
+  ;;
+
+ reconnect-wifi) state reconnecting 'Reconnecting the upstream Wi-Fi client.';ifdown wifiwan >/dev/null 2>&1 || true;sleep 2;ifup wifiwan >/dev/null 2>&1 || true;if iface_online wifiwan;then state complete 'Upstream Wi-Fi internet restored.';else state failed 'Upstream Wi-Fi remains unreachable; other healthy uplinks stay available.';fi;;
+ reconnect-wired) state reconnecting 'Renewing the Ethernet WAN connection.';ifdown wan >/dev/null 2>&1 || true;sleep 2;ifup wan >/dev/null 2>&1 || true;if iface_online wan;then state complete 'Ethernet WAN internet restored.';else state failed 'Ethernet WAN remains unreachable; other healthy uplinks stay available.';fi;;
+ apn) printf '%s' "$2" >/tmp/blaze-settings-request.json;ucode /usr/share/blaze/settings.uc;state reconnecting 'Applying APN and reconnecting.';if reconnect;then state complete 'APN applied; cellular internet verified.';else cp /etc/blaze/network-apn-before /etc/config/network;reconnect || true;state reverted 'APN reverted after failed connectivity check.';fi;;
+ restore-mode) state applying 'Recovering an interrupted network transaction.';if restore_mode;then rm -f /etc/blaze/mode-pending;state complete 'Previous network configuration restored.';else state failed 'Network restoration failed; checkpoint retained.';exit 1;fi;;
+ restore-bands)
+  RAT=$(sed -n '1p' /etc/blaze/band-pending 2>/dev/null);OLD=$(sed -n '2p' /etc/blaze/band-pending 2>/dev/null);case "$RAT" in lte|nsa|sa) ;;*) state failed 'Invalid band recovery checkpoint';exit 1;;esac;[ -n "$OLD" ] || { state failed 'Invalid band recovery checkpoint';exit 1; };REASON='Recovered an interrupted band operation.';rollback
+  ;;
+ reconnect) state reconnecting 'Reconnecting the cellular data session.';if reconnect;then state complete 'Cellular internet verified.';else state failed 'Cellular reconnection did not pass the internet check.';fi;;
+ bands)
+  RAT=${2:-lte};NEW=$(validate_bands "$RAT" "${3:-}") || { state failed 'Invalid, empty, or unsupported band selection.';exit 2; };KIND=${4:-apply};case "$KIND" in apply|trial|trial-ca) ;;*) exit 2;;esac
+  OLD=$(read_bands "$RAT" 2>/dev/null || true);[ -n "$OLD" ] || { state failed 'Could not read the current modem band selection. No change made.';exit 1; }
+  BEFORE=0;AFTER=0;CA_SEEN=0
+  if [ "$KIND" != apply ];then command -v curl >/dev/null || { state failed 'Throughput testing tool is unavailable.';exit 1; };state baseline 'Measuring current cellular download speed (up to 20 MB).';S1=$(speed);S2=$(speed);BEFORE=$(((S1+S2)/2));[ "$S1" -gt 0 ] && [ "$S2" -gt 0 ] || { state failed 'Baseline measurement failed. No bands changed.';exit 1; };fi
+  mkdir -p /etc/blaze;umask 077;printf '%s\n%s\n' "$RAT" "$OLD" >/etc/blaze/band-pending;ROLLBACK_REQUIRED=1;trap 'exit 1' HUP INT TERM;state applying 'Applying the selected modem bands, then reconnecting the data session.';ifdown wwan;sleep 2;if ! set_bands "$RAT" "$NEW";then REASON='Modem did not confirm the selected bands.';rollback;exit 1;fi;ifup wwan;if ! wait_online;then REASON='Selected bands failed the internet check.';rollback;exit 1;fi
+  if [ "$KIND" != apply ];then state stabilizing 'Internet is back. Allowing 15 seconds to stabilize before testing.';sleep 15;state measuring 'Measuring new download speed and checking aggregation under traffic.';speed >/tmp/blaze-sample1;S1=$(cat /tmp/blaze-sample1);speed >/tmp/blaze-sample2;S2=$(cat /tmp/blaze-sample2);AFTER=$(((S1+S2)/2));if [ "$KIND" = trial-ca ] && [ "$CA_SEEN" -ne 1 ];then sleep 8;check_ca;fi;if [ "$S1" -le 0 ] || [ "$S2" -le 0 ] || [ "$AFTER" -lt "$BEFORE" ] || { [ "$KIND" = trial-ca ] && [ "$CA_SEEN" -ne 1 ]; };then if [ "$S1" -le 0 ] || [ "$S2" -le 0 ];then REASON='Throughput measurement failed.';elif [ "$KIND" = trial-ca ] && [ "$CA_SEEN" -ne 1 ];then REASON='No aggregation was observed under test traffic.';else REASON='The selected bands were slower than the baseline.';fi;rollback;exit 0;fi;fi
+  rm -f /etc/blaze/band-pending;ROLLBACK_REQUIRED=0;uci set blaze.main.bands="$NEW";uci commit blaze;state complete 'Selected bands kept; cellular internet verified.'
+  ;;
+ modes)
+  echo "$2" >/tmp/blaze-mode-request.json;rm -f /tmp/blaze-mode-confirm;MODE_TOKEN=$(cat /proc/sys/kernel/random/uuid);echo "$MODE_TOKEN" >/tmp/blaze-mode-token;state applying 'Applying Ethernet and VLAN settings with management recovery.';MODE_PENDING=1;/usr/bin/ucode /usr/share/blaze/modes.uc;state checking 'Verifying this browser can still reach management. Automatic rollback is armed.';N=0;while [ "$N" -lt 30 ];do [ "$(cat /tmp/blaze-mode-confirm 2>/dev/null)" = "$MODE_TOKEN" ] && break;sleep 2;N=$((N+1));done;if [ "$N" -ge 30 ];then restore_mode;state reverted 'No management confirmation received; previous Ethernet/VLAN settings restored.';else state complete 'Ethernet/VLAN settings applied and management access verified.';fi;MODE_PENDING=0;rm -f /etc/blaze/mode-pending;rm -f /tmp/blaze-mode-token /tmp/blaze-mode-confirm
+  ;;
+esac

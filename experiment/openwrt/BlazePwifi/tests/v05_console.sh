@@ -1,0 +1,116 @@
+#!/bin/sh
+set -eu
+ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
+W="$ROOT/openwrt/rootfs/www/blazepwifi"
+ADMIN="$W/admin.html"
+CGI="$W/cgi-bin/admin"
+PORTAL="$W/index.html"
+
+case "$(cat "$ROOT/VERSION")" in 0.5.0|0.5.1|0.5.2|0.5.3-dev.1|0.5.3-dev.2|0.5.3-dev.3|0.5.3-dev.4|0.5.3-dev.5|0.5.3) ;; *) exit 1;; esac
+test -f "$W/admin/console-v05.js"
+test -f "$W/media.html"
+test -f "$W/games.html"
+
+for label in   "Clients & Sessions" "Sales & Reports" "WAN & Internet" "LAN · VLAN · Wi-Fi"   "Worldwide Remote Access" "Vouchers & Rates" "Rental Devices" "Coin Controllers"   "Portal Designer" "Multimedia Manager" "BlazeGames Manager" "Storage" "Backups"   "Tools & Terminal" "Alerts & Logs" "System & Security"
+do
+  grep -Fq "$label" "$ADMIN"
+done
+
+grep -Fq 'WireGuard · Recommended' "$ADMIN"
+grep -Fq 'ZeroTier · Easy mesh' "$ADMIN"
+grep -Fq 'Advanced Terminal' "$ADMIN"
+grep -Fq 'tool_run)' "$CGI"
+grep -Fq 'system_info)' "$CGI"
+grep -Fq 'storage_list)' "$CGI"
+grep -Fq 'remote_status)' "$CGI"
+grep -Fq 'remote_config_get)' "$CGI"
+grep -Fq 'remote_config_set)' "$CGI"
+grep -Fq 'remote_wireguard_key)' "$CGI"
+grep -Fq 'remote_wireguard_apply)' "$CGI"
+grep -Fq 'remote_wireguard_disable)' "$CGI"
+grep -Fq 'remote_zerotier_identity)' "$CGI"
+grep -Fq 'remote_zerotier_apply)' "$CGI"
+grep -Fq 'remote_zerotier_disable)' "$CGI"
+grep -Fq 'Remote Terminal permission is disabled' "$CGI"
+grep -Fq 'terminal_status)' "$CGI"
+grep -Fq 'terminal_set_enabled)' "$CGI"
+grep -Fq 'terminal_open)' "$CGI"
+grep -Fq 'terminal_exec)' "$CGI"
+grep -Fq 'terminal_close)' "$CGI"
+grep -Fq 'unsupported safe command' "$CGI"
+grep -Fq 'invalid diagnostic target' "$CGI"
+grep -Fq 'Validate & save profile' "$ADMIN"
+grep -Fq 'Test & Apply WireGuard' "$ADMIN"
+grep -Fq 'Disable live WireGuard' "$ADMIN"
+grep -Fq 'Generate / show key' "$ADMIN"
+grep -Fq 'Prepare / show node ID' "$ADMIN"
+grep -Fq 'Test & Apply ZeroTier' "$ADMIN"
+grep -Fq 'Disable live ZeroTier' "$ADMIN"
+grep -Fq 'Run bounded command' "$ADMIN"
+grep -Fq 'Session tokens are held only in this page memory' "$ADMIN"
+grep -Fq 'Remote-access safety model' "$ADMIN"
+grep -Fq 'real handshake' "$ADMIN"
+grep -Fq 'node ONLINE/TUNNELED' "$ADMIN"
+grep -Fq "let terminalToken='',remoteLoadGeneration=0" "$W/admin/console-v05.js"
+grep -Fq 'generation!==remoteLoadGeneration' "$W/admin/console-v05.js"
+grep -Fq '++remoteLoadGeneration' "$W/admin/console-v05.js"
+grep -Fq 'renderRemoteStatus(x.remote||{})' "$W/admin/console-v05.js"
+! grep -Fq 'loadSystem();loadRemote();' "$W/admin/console-v05.js"
+grep -Fq 'setTimeout(()=>{loadSystem();},300);' "$W/admin/console-v05.js"
+! grep -Fq 'localStorage' "$W/admin/console-v05.js"
+! grep -Fq 'sessionStorage' "$W/admin/console-v05.js"
+
+grep -Fq '>Movies<' "$PORTAL"
+grep -Fq '>Games<' "$PORTAL"
+grep -Fq 'detailVlan' "$PORTAL"
+grep -Fq 'detailSpeed' "$PORTAL"
+grep -Fq 'detailLoad' "$PORTAL"
+grep -Fq 'detailRam' "$PORTAL"
+grep -Fq 'detailUptime' "$PORTAL"
+grep -Fq 'active, unpaused paid time' "$W/media.html"
+grep -Fq 'active, unpaused paid time' "$W/games.html"
+
+! grep -Eq 'https?://[^" ]+\.(css|js)' "$ADMIN"
+! grep -Eq 'bootstrap(\.min)?\.(css|js)' "$ADMIN"
+
+echo "BlazePwifi v0.5 console and portal contract passed"
+
+REMOTE_APPLY="$ROOT/openwrt/rootfs/usr/lib/blazepwifi/remote_apply.sh"
+REMOTE_ADMIN="$ROOT/openwrt/rootfs/etc/init.d/blazepwifi-remote-admin"
+BUILD="$ROOT/build/build-openwrt-image.sh"
+INSTALL="$ROOT/installer/install.sh"
+grep -Fq 'BP_REMOTE_WG_IF=${BP_REMOTE_WG_IF:-blazewg}' "$REMOTE_APPLY"
+grep -Fq 'route_allowed_ips=1' "$REMOTE_APPLY"
+grep -Fq 'watchdog-timeout' "$REMOTE_APPLY"
+grep -Fq 'reboot-during-apply' "$REMOTE_APPLY"
+grep -Fq 'bp_remote_admin_sync' "$REMOTE_APPLY"
+grep -Fq 'bp_remote_wg_link_precreate' "$REMOTE_APPLY"
+[ "$(grep -Fc 'bp_remote_runtime_status_json()' "$REMOTE_APPLY")" -eq 1 ]
+[ "$(grep -Fc 'bp_remote_wg_live_validate()' "$REMOTE_APPLY")" -eq 1 ]
+[ "$(grep -Fc 'bp_remote_snapshot_create()' "$REMOTE_APPLY")" -eq 1 ]
+[ "$(grep -Fc 'bp_remote_wireguard_apply()' "$REMOTE_APPLY")" -eq 1 ]
+[ "$(grep -Fc 'bp_remote_wireguard_disable()' "$REMOTE_APPLY")" -eq 1 ]
+[ "$(grep -Fc 'bp_remote_zerotier_apply()' "$REMOTE_APPLY")" -eq 1 ]
+[ "$(grep -Fc 'bp_remote_zerotier_disable()' "$REMOTE_APPLY")" -eq 1 ]
+[ "$(grep -Fc 'bp_remote_zt_identity_prepare()' "$REMOTE_APPLY")" -eq 1 ]
+[ "$(grep -Fc '# End of BlazePwifi remote apply engine.' "$REMOTE_APPLY")" -eq 1 ]
+[ "$(tail -n 1 "$REMOTE_APPLY")" = '# End of BlazePwifi remote apply engine.' ]
+! grep -Fq 'BP_REMOTE_UHTTPD_CONFIG' "$REMOTE_APPLY"
+! grep -Fq 'uhttpd.blazepwifi_admin' "$REMOTE_APPLY"
+grep -Fq 'START=60' "$ROOT/openwrt/rootfs/etc/init.d/blazepwifi-remote-guard"
+grep -Fq 'START=95' "$REMOTE_ADMIN"
+grep -Fq 'for f in admin admin-login admin-logout admin-session; do' "$REMOTE_ADMIN"
+grep -Fq 'ln -s "/www/blazepwifi/cgi-bin/$f" "$ROOT/cgi-bin/$f"' "$REMOTE_ADMIN"
+! grep -Fq '/www/blazepwifi/cgi-bin/api' "$REMOTE_ADMIN"
+! grep -Fq '/www/blazepwifi/cgi-bin/rental' "$REMOTE_ADMIN"
+! grep -Fq '/www/blazepwifi/cgi-bin/vendo' "$REMOTE_ADMIN"
+grep -Fq 'ip-full kmod-wireguard wireguard-tools' "$BUILD"
+grep -Fq 'ip-full kmod-wireguard wireguard-tools' "$INSTALL"
+grep -Fq 'openssl-util zerotier' "$BUILD"
+grep -Fq 'apk -U add zerotier' "$INSTALL"
+grep -Fq 'blazepwifi-remote-admin-run' "$REMOTE_ADMIN"
+grep -Fq 'BP_REMOTE_ADMIN_WAIT_SECONDS' "$ROOT/openwrt/rootfs/usr/sbin/blazepwifi-remote-admin-run"
+grep -Fq '8056c2e21c000001' "$REMOTE_APPLY"
+grep -Fq 'allow_default=0' "$REMOTE_APPLY"
+grep -Fq 'allow_global=0' "$REMOTE_APPLY"
+grep -Fq 'allow_dns=0' "$REMOTE_APPLY"

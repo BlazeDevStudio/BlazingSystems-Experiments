@@ -1,0 +1,1139 @@
+#!/bin/sh
+. "${BP_LIB:-/usr/lib/blazepwifi/common.sh}"
+. "${BP_AUTH_LIB:-/usr/lib/blazepwifi/auth.sh}"
+. "${BP_CONFIG_LIB:-/usr/lib/blazepwifi/config.sh}"
+. "${BP_RENTAL_LIB:-/usr/lib/blazepwifi/rental.sh}"
+. "${BP_RENTAL_POLICY_LIB:-/usr/lib/blazepwifi/rental_policy.sh}"
+[ ! -r "${BP_RENTAL_UPDATE_LIB:-/usr/lib/blazepwifi/rental_update.sh}" ] || . "${BP_RENTAL_UPDATE_LIB:-/usr/lib/blazepwifi/rental_update.sh}"
+. "${BP_CONTROLLER_LIB:-/usr/lib/blazepwifi/controller.sh}"
+. "${BP_MEMBER_LIB:-/usr/lib/blazepwifi/member.sh}"
+. "${BP_MEMBER_MIGRATION_LIB:-/usr/lib/blazepwifi/member_migration.sh}"
+[ ! -r "${BP_UPDATE_LIB:-/usr/lib/blazepwifi/update.sh}" ] || . "${BP_UPDATE_LIB:-/usr/lib/blazepwifi/update.sh}"
+. "${BP_CONSOLE_OPS_LIB:-/usr/lib/blazepwifi/console_ops.sh}"
+. "${BP_REMOTE_APPLY_LIB:-/usr/lib/blazepwifi/remote_apply.sh}"
+bp_init_dirs
+admin_port="$(bp_cfg admin_port)"; [ -n "$admin_port" ] || admin_port=8443
+[ "${SERVER_PORT:-}" = "$admin_port" ] || bp_fail "admin API requires HTTPS"
+action="$(bp_param action)"; now="$(bp_now)"
+bp_rental_init
+bp_rental_policy_v2_init
+bp_member_init
+
+bp_admin_server_url() {
+  supplied="$(bp_param server_url)"
+  if [ -n "$supplied" ]; then
+    case "$supplied" in
+      http://*|https://*) ;;
+      *) return 1 ;;
+    esac
+    printf '%s' "$supplied" | grep -q '[[:space:][:cntrl:]]' && return 1
+    [ "$(printf '%s' "$supplied" | wc -c)" -le 256 ] || return 1
+    printf '%s' "$supplied" | sed 's:/*$::'
+    return 0
+  fi
+  host="${HTTP_HOST:-}"
+  [ -n "$host" ] || host="${SERVER_NAME:-blazepwifi.local}:$admin_port"
+  printf 'https://%s' "$host"
+}
+
+bp_admin_cert_sha256() {
+  cert="${BP_ADMIN_CERT:-/etc/uhttpd.crt}"
+  [ -r "$cert" ] || return 1
+  command -v base64 >/dev/null 2>&1 || return 1
+  command -v sha256sum >/dev/null 2>&1 || return 1
+  digest="$(awk '/-----BEGIN CERTIFICATE-----/{on=1;next}/-----END CERTIFICATE-----/{exit}on{gsub(/[[:space:]]/,"");printf "%s",$0}' "$cert" | base64 -d 2>/dev/null | sha256sum 2>/dev/null | awk '{print $1}')"
+  [ "$(printf '%s' "$digest" | wc -c)" -eq 64 ] || return 1
+  case "$digest" in *[!0-9a-fA-F]*) return 1;; esac
+  printf '%s' "$digest" | tr A-F a-f
+}
+
+bp_admin_local_cert_pin() {
+  server="$1"
+  host="${HTTP_HOST:-}"
+  [ -n "$host" ] || host="${SERVER_NAME:-blazepwifi.local}:$admin_port"
+  [ "$server" = "https://$host" ] || { printf ''; return 0; }
+  bp_admin_cert_sha256
+}
+bp_admin_binding_payload() {
+  server="$1"; token="$2"; label="$3"; cert_pin="$4"
+  printf '{"server_url":"%s","enrollment_token":"%s","device_name":"%s","server_cert_sha256":"%s"}' \
+    "$(bp_json_escape "$server")" "$(bp_json_escape "$token")" "$(bp_json_escape "$label")" "$(bp_json_escape "$cert_pin")"
+}
+
+bp_admin_sha256_b64url() {
+  hex="$(printf '%s' "$1" | tr A-F a-f)"
+  [ "$(printf '%s' "$hex" | wc -c)" -eq 64 ] || return 1
+  case "$hex" in *[!0-9a-f]*) return 1;; esac
+  awk -v h="$hex" '
+    function nib(c) { return index("0123456789abcdef",c)-1 }
+    function byte_at(pos) { return nib(substr(h,pos,1))*16+nib(substr(h,pos+1,1)) }
+    BEGIN {
+      alphabet="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
+      n=length(h)
+      for(pos=1;pos<=n;pos+=6){
+        b1=byte_at(pos)
+        have2=(pos+2<=n)
+        have3=(pos+4<=n)
+        b2=have2?byte_at(pos+2):0
+        b3=have3?byte_at(pos+4):0
+        c1=int(b1/4)
+        c2=(b1%4)*16+int(b2/16)
+        printf "%s%s",substr(alphabet,c1+1,1),substr(alphabet,c2+1,1)
+        if(have2){
+          c3=(b2%16)*4+int(b3/64)
+          printf "%s",substr(alphabet,c3+1,1)
+        }
+        if(have3){
+          c4=b3%64
+          printf "%s",substr(alphabet,c4+1,1)
+        }
+      }
+    }
+  '
+}
+
+bp_admin_provisioning_payload() {
+  server="$1"; token="$2"; label="$3"; apk_url="$4"; checksum="$5"; version_code="$6"; cert_pin="$7"
+  printf '{"android.app.extra.PROVISIONING_DEVICE_ADMIN_COMPONENT_NAME":"com.blazesystems.blazerental/.BlazeDeviceAdminReceiver","android.app.extra.PROVISIONING_DEVICE_ADMIN_PACKAGE_DOWNLOAD_LOCATION":"%s","android.app.extra.PROVISIONING_DEVICE_ADMIN_PACKAGE_CHECKSUM":"%s","android.app.extra.PROVISIONING_DEVICE_ADMIN_MINIMUM_VERSION_CODE":%s,"android.app.extra.PROVISIONING_ADMIN_EXTRAS_BUNDLE":{"server_url":"%s","enrollment_token":"%s","device_name":"%s","server_cert_sha256":"%s"}}' \
+    "$(bp_json_escape "$apk_url")" "$(bp_json_escape "$checksum")" "${version_code:-0}" \
+    "$(bp_json_escape "$server")" "$(bp_json_escape "$token")" "$(bp_json_escape "$label")" "$(bp_json_escape "$cert_pin")"
+}
+require_role() {
+	need="$1"
+	bp_auth_require_role "$need"
+	rc=$?
+	[ "$rc" -eq 0 ] && return 0
+	[ "$rc" -eq 2 ] && bp_fail "insufficient role"
+	bp_fail "unauthorized"
+}
+
+bp_admin_is_remote_listener() {
+  remote_listener="$(bp_remote_runtime_get wg_listener 2>/dev/null || true)"
+  remote_ip="${remote_listener%:*}"
+  [ -n "$remote_listener" ] && [ -n "$remote_ip" ] || return 1
+  [ "${SERVER_ADDR:-}" = "$remote_ip" ]
+}
+
+require_remote_terminal_permission() {
+  if bp_admin_is_remote_listener; then
+    [ "$(bp_remote_get terminal 0)" = 1 ] || bp_fail "Remote Terminal permission is disabled"
+  fi
+}
+
+case "$action" in
+  rental_enroll_create|rental_device_add|rental_device_qr|rental_binding_qr)
+    require_role operator
+    bp_auth_csrf_ok || bp_fail "csrf validation failed"
+    bp_rental_init
+    label="$(bp_param label)"; [ -n "$label" ] || label="Rental phone"
+    bp_lock || bp_fail "enrollment registry busy"
+    token="$(bp_rental_enroll_create "$label" 600)" || {
+      bp_unlock
+      bp_fail "enrollment token storage failed; QR not issued"
+    }
+    bp_unlock
+    printf '%s' "$token" | LC_ALL=C grep -Eq '^[a-f0-9]{12}\.[a-f0-9]{36}$' ||
+      bp_fail "invalid generated enrollment token; QR not issued"
+    server="$(bp_admin_server_url)" || bp_fail "invalid server url"
+    cert_pin="$(bp_admin_local_cert_pin "$server")" || bp_fail "unable to fingerprint local admin certificate"
+    qr_payload="$(bp_admin_binding_payload "$server" "$token" "$label" "$cert_pin")"
+    bp_auth_audit rental_binding_qr "$BP_AUTH_USER" "${REMOTE_ADDR:-unknown}" "$(printf '%s' "$label" | cut -c1-64)"
+    bp_json "$(printf '{"ok":true,"qr_type":"binding","enrollment_token":"%s","expires_seconds":600,"server_url":"%s","device_name":"%s","qr_payload":"%s"}' \
+      "$(bp_json_escape "$token")" "$(bp_json_escape "$server")" "$(bp_json_escape "$label")" "$(bp_json_escape "$qr_payload")")"
+    ;;
+  rental_provisioning_qr)
+    require_role operator
+    bp_auth_csrf_ok || bp_fail "csrf validation failed"
+    command -v bp_rental_update_line >/dev/null 2>&1 || bp_fail "rental update subsystem unavailable"
+    bp_rental_init
+    label="$(bp_param label)"; [ -n "$label" ] || label="Rental phone"
+    server="$(bp_admin_server_url)" || bp_fail "invalid server url"
+    case "$server" in https://*) ;; *) bp_fail "Device Owner provisioning server URL must use HTTPS";; esac
+    update_line="$(bp_rental_update_line)"
+    [ -n "$update_line" ] || bp_fail "publish the signed BlazeRental update channel before provisioning"
+    IFS="$(printf '\t')" read -r apk_version apk_code apk_url apk_sha rollback_version rollback_code rollback_url rollback_sha <<EOF
+$update_line
+EOF
+    case "$apk_code" in ''|*[!0-9]*) bp_fail "invalid published BlazeRental version code";; esac
+    [ "$apk_code" -gt 0 ] 2>/dev/null || bp_fail "invalid published BlazeRental version code"
+    case "$apk_url" in https://*) ;; *) bp_fail "provisioning APK URL must use HTTPS";; esac
+    checksum="$(bp_admin_sha256_b64url "$apk_sha")" || bp_fail "unable to encode provisioning APK checksum"
+    cert_pin="$(bp_admin_local_cert_pin "$server")" || bp_fail "unable to fingerprint local admin certificate"
+    [ -n "$cert_pin" ] || bp_fail "Device Owner provisioning requires the local pinned admin certificate"
+    bp_lock || bp_fail "enrollment registry busy"
+    token="$(bp_rental_enroll_create "$label" 600)" || {
+      bp_unlock
+      bp_fail "enrollment token storage failed; QR not issued"
+    }
+    bp_unlock
+    printf '%s' "$token" | LC_ALL=C grep -Eq '^[a-f0-9]{12}\.[a-f0-9]{36}$' ||
+      bp_fail "invalid generated enrollment token; QR not issued"
+    qr_payload="$(bp_admin_provisioning_payload "$server" "$token" "$label" "$apk_url" "$checksum" "$apk_code" "$cert_pin")"
+    bp_auth_audit rental_provisioning_qr "$BP_AUTH_USER" "${REMOTE_ADDR:-unknown}" "$(printf '%s' "$label:$apk_version" | cut -c1-96)"
+    bp_json "$(printf '{"ok":true,"qr_type":"device_owner","enrollment_token":"%s","expires_seconds":600,"server_url":"%s","device_name":"%s","apk_version":"%s","apk_version_code":%s,"apk_url":"%s","apk_checksum":"%s","qr_payload":"%s"}' \
+      "$(bp_json_escape "$token")" "$(bp_json_escape "$server")" "$(bp_json_escape "$label")" \
+      "$(bp_json_escape "$apk_version")" "$apk_code" "$(bp_json_escape "$apk_url")" "$(bp_json_escape "$checksum")" "$(bp_json_escape "$qr_payload")")"
+    ;;
+  rental_list|rental_device_list)
+    require_role viewer
+    bp_rental_init
+    body="$(bp_rental_list_json)"
+    bp_json "$(printf '{"ok":true,"devices":%s}' "$body")"
+    ;;
+  rental_device_get)
+    require_role viewer
+    did="$(bp_param device_id)"
+    [ -n "$(bp_rental_device_line "$did")" ] || bp_fail "unknown rental device"
+    devices="$(bp_rental_list_json)"
+    one="$(printf '%s' "$devices" | tr '{' '\n{' | grep -F "\"device_id\":\"$did\"" | head -n1)"
+    [ -n "$one" ] || bp_fail "unknown rental device"
+    one="{${one#*\{}"; one="${one%%\}*}}"
+    policy="$(bp_rental_policy_v2_json "$did")" || bp_fail "policy unavailable"
+    bp_json "$(printf '{"ok":true,"device":%s,"policy":%s}' "$one" "$policy")"
+    ;;
+  rental_policy_set)
+    require_role admin
+    bp_auth_csrf_ok || bp_fail "csrf validation failed"
+    did="$(bp_param device_id)"
+    [ -n "$(bp_rental_device_line "$did")" ] || bp_fail "unknown rental device"
+    expected="$(bp_param expected_revision)"
+    if [ -z "$expected" ]; then
+      # Compatibility path for v0.3 admin clients.
+      allowed="$(bp_param allowed_packages)"
+      preferred="$(bp_param preferred_vendo)"
+      bp_rental_policy_set "$did" "${allowed:-*}" "$preferred" || bp_fail "invalid rental policy"
+      bp_rental_policy_migrate "$did" || bp_fail "policy migration failed"
+      bp_auth_audit rental_policy_set "$BP_AUTH_USER" "${REMOTE_ADDR:-unknown}" "$did:legacy"
+      bp_json '{"ok":true,"compatibility_mode":true}'
+      exit 0
+    fi
+    mode="$(bp_param launcher_mode)"; [ -n "$mode" ] || mode="@keep"
+    allowed="$(bp_param allowed_packages)"; [ -n "$allowed" ] || allowed="@keep"
+    hidden="$(bp_param hidden_packages)"; [ -n "$hidden" ] || hidden="@keep"
+    preferred="$(bp_param preferred_vendo)"; [ -n "$preferred" ] || preferred="@keep"
+    timer_mode="$(bp_param timer_mode)"; [ -n "$timer_mode" ] || timer_mode="@keep"
+    timer="$(bp_param timer_user_toggle)"; [ -n "$timer" ] || timer="@keep"
+    notifications="$(bp_param notifications_enabled)"; [ -n "$notifications" ] || notifications="@keep"
+    quick="$(bp_param quick_controls)"; [ -n "$quick" ] || quick="@keep"
+    gesture="$(bp_param admin_gesture_value)"; [ -n "$gesture" ] || gesture="@keep"
+    admin_password="$(bp_param admin_password)"; [ -n "$admin_password" ] || admin_password="@keep"
+    actor="admin:$BP_AUTH_USER"
+    if newrev="$(bp_rental_policy_v2_patch "$did" "$expected" "$actor" "$mode" "$allowed" "$hidden" "$preferred" "$timer" "$notifications" "$quick" "$gesture" "$admin_password" "$timer_mode")"; then
+      body="$(bp_rental_policy_v2_json "$did")" || bp_fail "policy unavailable"
+      bp_auth_audit rental_policy_set "$BP_AUTH_USER" "${REMOTE_ADDR:-unknown}" "$did:$newrev"
+      bp_json "$(printf '{"ok":true,"policy_revision":%s,"policy":%s}' "$newrev" "$body")"
+    else
+      rc=$?
+      [ "$rc" -eq 4 ] && {
+        current="$(bp_rental_policy_v2_get "$did" | cut -f2)"
+        bp_json "$(printf '{"ok":false,"error":"stale policy revision","current_revision":%s}' "${current:-0}")"
+        exit 0
+      }
+      [ "$rc" -eq 2 ] && bp_fail "invalid rental policy"
+      bp_fail "rental policy update failed"
+    fi
+    ;;
+  rental_admin_password_set)
+    require_role admin
+    bp_auth_csrf_ok || bp_fail "csrf validation failed"
+    did="$(bp_param device_id)"
+    admin_password="$(bp_param admin_password)"
+    [ -n "$(bp_rental_device_line "$did")" ] || bp_fail "unknown rental device"
+    bp_rental_policy_migrate "$did" || bp_fail "policy migration failed"
+    rev="$(bp_rental_policy_v2_get "$did" | cut -f2)"
+    newrev="$(bp_rental_policy_v2_patch "$did" "$rev" "admin:$BP_AUTH_USER" @keep @keep @keep @keep @keep @keep @keep @keep "$admin_password")" || bp_fail "admin password must be at least 8 characters"
+    bp_auth_audit rental_admin_password_set "$BP_AUTH_USER" "${REMOTE_ADDR:-unknown}" "$did:$newrev"
+    bp_json "$(printf '{"ok":true,"policy_revision":%s}' "$newrev")"
+    ;;
+  rental_update_get)
+    require_role viewer
+    command -v bp_rental_update_init >/dev/null 2>&1 || bp_fail "rental update subsystem unavailable"
+    bp_rental_update_init
+    body="$(bp_rental_update_json)"
+    bp_json "$(printf '{"ok":true,"update":%s}' "$body")"
+    ;;
+  rental_update_set)
+    require_role admin
+    bp_auth_csrf_ok || bp_fail "csrf validation failed"
+    command -v bp_rental_update_set >/dev/null 2>&1 || bp_fail "rental update subsystem unavailable"
+    [ "${BP_AUTH_MUST_CHANGE:-0}" != 1 ] || bp_fail "password change required"
+    version="$(bp_param version)"; code="$(bp_param version_code)"
+    url="$(bp_param apk_url)"; sha="$(bp_param apk_sha256)"
+    rollback_version="$(bp_param rollback_version)"; rollback_code="$(bp_param rollback_version_code)"
+    rollback_url="$(bp_param rollback_url)"; rollback_sha="$(bp_param rollback_sha256)"
+    bp_rental_update_set "$version" "$code" "$url" "$sha" "$rollback_version" "$rollback_code" "$rollback_url" "$rollback_sha" || bp_fail "invalid rental update metadata"
+    bp_auth_audit rental_update_set "$BP_AUTH_USER" "${REMOTE_ADDR:-unknown}" "$version:$code"
+    body="$(bp_rental_update_json)"
+    bp_json "$(printf '{"ok":true,"update":%s}' "$body")"
+    ;;
+  member_export)
+    require_role viewer
+    command -v base64 >/dev/null 2>&1 || bp_fail "base64 utility unavailable"
+    export_payload="$(bp_member_migration_export | base64 | tr -d '\r\n')"
+    bp_json "$(printf '{"ok":true,"format":"BLAZE_MEMBER_METADATA_V1","filename":"BlazePwifi-members-%s.blazemembers","revision":%s,"payload_b64":"%s"}' \
+      "$(date +%Y%m%d-%H%M%S)" "$(bp_member_global_revision)" "$(bp_json_escape "$export_payload")")"
+    ;;
+  member_import_preview)
+    require_role admin
+    bp_auth_csrf_ok || bp_fail "csrf validation failed"
+    [ "${BP_AUTH_MUST_CHANGE:-0}" != 1 ] || bp_fail "password change required"
+    payload_b64="$(bp_param payload_b64)"
+    token="$(bp_member_migration_preview_create "$payload_b64")"
+    rc=$?
+    case "$rc" in
+      0) ;;
+      3) bp_fail "admin session unavailable" ;;
+      4) bp_fail "member metadata file is invalid or too large" ;;
+      10) bp_fail "member metadata file format is invalid" ;;
+      11) bp_fail "member metadata contains an invalid field" ;;
+      12) bp_fail "member metadata contains duplicate usernames" ;;
+      13) bp_fail "member metadata contains too many members" ;;
+      *) bp_fail "unable to prepare member import preview" ;;
+    esac
+    items="$(bp_member_migration_preview_json "$token")" || bp_fail "unable to render import preview"
+    count="$(bp_member_migration_preview_meta "$token" count)"
+    creates="$(bp_member_migration_preview_meta "$token" creates)"
+    collisions="$(bp_member_migration_preview_meta "$token" collisions)"
+    requested_enabled="$(bp_member_migration_preview_meta "$token" requested_enabled)"
+    export_revision="$(bp_member_migration_preview_meta "$token" export_revision)"
+    expires="$(bp_member_migration_preview_meta "$token" expires)"
+    bp_auth_audit member_import_preview "$BP_AUTH_USER" "${REMOTE_ADDR:-unknown}" "count=$count collisions=$collisions"
+    bp_json "$(printf '{"ok":true,"preview_token":"%s","count":%s,"creates":%s,"collisions":%s,"requested_enabled":%s,"export_revision":%s,"expires":%s,"items":%s}' \
+      "$(bp_json_escape "$token")" "${count:-0}" "${creates:-0}" "${collisions:-0}" "${requested_enabled:-0}" "${export_revision:-0}" "${expires:-0}" "$items")"
+    ;;
+  member_import_apply)
+    require_role admin
+    bp_auth_csrf_ok || bp_fail "csrf validation failed"
+    [ "${BP_AUTH_MUST_CHANGE:-0}" != 1 ] || bp_fail "password change required"
+    token="$(bp_param preview_token)"; policy="$(bp_param collision_policy)"
+    password="$(bp_param password)"
+    bp_console_reauth "$password"
+    rc=$?
+    case "$rc" in
+      0) ;;
+      2) bp_fail "account temporarily locked" ;;
+      *) bp_fail "re-authentication failed" ;;
+    esac
+    result="$(bp_member_migration_apply "$token" "$policy" "admin:$BP_AUTH_USER")"
+    rc=$?
+    case "$rc" in
+      0) ;;
+      1|2|3) bp_fail "import preview token expired or does not belong to this admin session" ;;
+      6) bp_fail "member state changed after preview; preview the file again" ;;
+      7) bp_fail "member import has username collisions; choose skip or metadata-only update" ;;
+      8) bp_fail "invalid collision policy" ;;
+      9|15) bp_fail "member state is busy or rollback failed" ;;
+      14) bp_fail "member import failed; all member state was rolled back" ;;
+      16) bp_fail "unsigned metadata cannot restore paid member time; use a verified financial migration" ;;
+      *) bp_fail "member import could not be applied" ;;
+    esac
+    created="$(printf '%s' "$result" | cut -f1)"
+    updated_count="$(printf '%s' "$result" | cut -f2)"
+    skipped="$(printf '%s' "$result" | cut -f3)"
+    revision="$(printf '%s' "$result" | cut -f4)"
+    bp_auth_audit member_import_apply "$BP_AUTH_USER" "${REMOTE_ADDR:-unknown}" "policy=$policy created=$created updated=$updated_count skipped=$skipped revision=$revision"
+    bp_json "$(printf '{"ok":true,"created":%s,"updated":%s,"skipped":%s,"revision":%s,"new_members_require_password_reset":true}' \
+      "${created:-0}" "${updated_count:-0}" "${skipped:-0}" "${revision:-0}")"
+    ;;
+  member_list)
+    require_role viewer
+    body="$(bp_member_public_list_json)"
+    revision="$(bp_member_global_revision)"
+    bp_json "$(printf '{"ok":true,"revision":%s,"members":%s}' "$revision" "$body")"
+    ;;
+  member_events)
+    require_role viewer
+    user="$(bp_param username)"
+    if [ -n "$user" ]; then user="$(bp_member_norm "$user")" || bp_fail "invalid member"; fi
+    limit="$(bp_param limit)"; [ -n "$limit" ] || limit=64
+    body="$(bp_member_events_json "$limit" "$user")"
+    bp_json "$(printf '{"ok":true,"events":%s}' "$body")"
+    ;;
+  member_create)
+    require_role operator
+    bp_auth_csrf_ok || bp_fail "csrf validation failed"
+    [ "${BP_AUTH_MUST_CHANGE:-0}" != 1 ] || bp_fail "password change required"
+    user="$(bp_param username)"; label="$(bp_param label)"; password="$(bp_param password)"
+    bp_member_lock || bp_fail "member state busy"
+    revision="$(bp_member_create "$user" "$label" "$password" "admin:$BP_AUTH_USER")"
+    rc=$?
+    bp_member_unlock
+    case "$rc" in
+      0) ;;
+      2) bp_fail "invalid member username or password; username must be 2-32 safe characters and password at least 8 characters" ;;
+      3) bp_fail "member already exists" ;;
+      *) bp_fail "member creation failed" ;;
+    esac
+    bp_auth_audit member_create "$BP_AUTH_USER" "${REMOTE_ADDR:-unknown}" "$user:$revision"
+    bp_json "$(printf '{"ok":true,"username":"%s","revision":%s}' "$(bp_json_escape "$user")" "$revision")"
+    ;;
+  member_update)
+    require_role operator
+    bp_auth_csrf_ok || bp_fail "csrf validation failed"
+    user="$(bp_param username)"; label="$(bp_param label)"; enabled="$(bp_param enabled)"
+    [ -n "$label" ] || label="@keep"
+    [ -n "$enabled" ] || enabled="@keep"
+    bp_member_lock || bp_fail "member state busy"
+    revision="$(bp_member_patch "$user" "$label" "$enabled" "admin:$BP_AUTH_USER")"
+    rc=$?
+    bp_member_unlock
+    case "$rc" in
+      0) ;;
+      2) bp_fail "invalid member update" ;;
+      3) bp_fail "unknown member" ;;
+      *) bp_fail "member update failed" ;;
+    esac
+    bp_auth_audit member_update "$BP_AUTH_USER" "${REMOTE_ADDR:-unknown}" "$user:$revision"
+    bp_json "$(printf '{"ok":true,"username":"%s","revision":%s}' "$(bp_json_escape "$user")" "$revision")"
+    ;;
+  member_balance)
+    require_role operator
+    bp_auth_csrf_ok || bp_fail "csrf validation failed"
+    user="$(bp_param username)"; mode="$(bp_param mode)"; seconds="$(bp_param seconds)"
+    case "$mode" in add|subtract|set) ;; *) bp_fail "invalid balance mode";; esac
+    bp_member_lock || bp_fail "member state busy"
+    result="$(bp_member_balance_change "$user" "$mode" "$seconds" "admin:$BP_AUTH_USER" "")"
+    rc=$?
+    bp_member_unlock
+    case "$rc" in
+      0) ;;
+      2) bp_fail "invalid balance value" ;;
+      3) bp_fail "unknown member" ;;
+      4) bp_fail "insufficient banked time" ;;
+      *) bp_fail "member balance update failed" ;;
+    esac
+    applied="$(printf '%s' "$result" | cut -f1)"; revision="$(printf '%s' "$result" | cut -f2)"
+    bp_auth_audit member_balance "$BP_AUTH_USER" "${REMOTE_ADDR:-unknown}" "$user:$mode:$seconds:$revision"
+    bp_json "$(printf '{"ok":true,"username":"%s","applied_seconds":%s,"revision":%s}' "$(bp_json_escape "$user")" "${applied:-0}" "${revision:-0}")"
+    ;;
+  member_transfer)
+    require_role operator
+    bp_auth_csrf_ok || bp_fail "csrf validation failed"
+    from="$(bp_param from_username)"; to="$(bp_param to_username)"; seconds="$(bp_param seconds)"
+    bp_member_lock || bp_fail "member state busy"
+    result="$(bp_member_transfer "$from" "$to" "$seconds" "admin:$BP_AUTH_USER" "")"
+    rc=$?
+    bp_member_unlock
+    case "$rc" in
+      0) ;;
+      2) bp_fail "invalid transfer" ;;
+      3) bp_fail "unknown member" ;;
+      4) bp_fail "insufficient banked time" ;;
+      *) bp_fail "member transfer failed" ;;
+    esac
+    applied="$(printf '%s' "$result" | cut -f1)"; revision="$(printf '%s' "$result" | cut -f2)"
+    bp_auth_audit member_transfer "$BP_AUTH_USER" "${REMOTE_ADDR:-unknown}" "$from>$to:$seconds:$revision"
+    bp_json "$(printf '{"ok":true,"seconds":%s,"revision":%s}' "${applied:-0}" "${revision:-0}")"
+    ;;
+  member_password)
+    require_role admin
+    bp_auth_csrf_ok || bp_fail "csrf validation failed"
+    [ "${BP_AUTH_MUST_CHANGE:-0}" != 1 ] || bp_fail "password change required"
+    user="$(bp_param username)"; password="$(bp_param password)"
+    bp_member_lock || bp_fail "member state busy"
+    revision="$(bp_member_set_password "$user" "$password" "admin:$BP_AUTH_USER")"
+    rc=$?
+    bp_member_unlock
+    case "$rc" in
+      0) ;;
+      2) bp_fail "member password must be at least 8 characters" ;;
+      3) bp_fail "unknown member" ;;
+      *) bp_fail "member password reset failed" ;;
+    esac
+    bp_auth_audit member_password "$BP_AUTH_USER" "${REMOTE_ADDR:-unknown}" "$user:$revision"
+    bp_json "$(printf '{"ok":true,"username":"%s","revision":%s}' "$(bp_json_escape "$user")" "$revision")"
+    ;;
+  member_delete)
+    require_role admin
+    bp_auth_csrf_ok || bp_fail "csrf validation failed"
+    [ "${BP_AUTH_MUST_CHANGE:-0}" != 1 ] || bp_fail "password change required"
+    user="$(bp_param username)"
+    bp_member_lock || bp_fail "member state busy"
+    revision="$(bp_member_delete "$user" "admin:$BP_AUTH_USER")"
+    rc=$?
+    bp_member_unlock
+    case "$rc" in
+      0) ;;
+      2) bp_fail "invalid member" ;;
+      3) bp_fail "unknown member" ;;
+      6) bp_fail "member has paid time remaining; bank or transfer it before deleting" ;;
+      7) bp_fail "invalid member balance; operator reconciliation required" ;;
+      9) bp_fail "paid state uncertain; operator reconciliation required" ;;
+      *) bp_fail "member deletion storage failed; reconcile the account before retrying" ;;
+    esac
+    bp_auth_audit member_delete "$BP_AUTH_USER" "${REMOTE_ADDR:-unknown}" "$user:$revision"
+    bp_json "$(printf '{"ok":true,"username":"%s","revision":%s}' "$(bp_json_escape "$user")" "$revision")"
+    ;;
+  controller_list)
+    require_role viewer
+    bp_controller_init
+    body="$(bp_controller_list_json)"
+    bp_json "$(printf '{"ok":true,"controllers":%s}' "$body")"
+    ;;
+  controller_set)
+    require_role admin
+    bp_auth_csrf_ok || bp_fail "csrf validation failed"
+    id="$(bp_param id)"
+    printf '%s' "$id" | grep -Eq '^[A-Za-z0-9._-]{1,48}$' || bp_fail "invalid controller"
+    bp_controller_ensure "$id"
+    bp_controller_set "$id" "$(bp_param enabled)" "$(bp_param coin_enabled)" "$(bp_param relay_enabled)" "$(bp_param led_enabled)" "$(bp_param coin_pin)" "$(bp_param relay_pin)" "$(bp_param led_pin)" "$(bp_param coin_active_low)" "$(bp_param relay_active_high)" "$(bp_param led_active_high)" "$(bp_param coin_debounce_ms)" "$(bp_param pulse_group_ms)" "$(bp_param max_wifi_retries)" || bp_fail "invalid controller configuration"
+    bp_auth_audit controller_set "$BP_AUTH_USER" "${REMOTE_ADDR:-unknown}" "$id"
+    bp_json '{"ok":true}'
+    ;;
+  rental_rename|rental_device_rename)
+    require_role operator
+    bp_auth_csrf_ok || bp_fail "csrf validation failed"
+    bp_rental_init
+    did="$(bp_param device_id)"; label="$(bp_param label)"
+    bp_rental_device_rename "$did" "$label" || bp_fail "invalid rental device or label"
+    bp_auth_audit rental_rename "$BP_AUTH_USER" "${REMOTE_ADDR:-unknown}" "$did"
+    bp_json '{"ok":true}'
+    ;;
+  rental_lease_add)
+    require_role operator
+    bp_auth_csrf_ok || bp_fail "csrf validation failed"
+    bp_rental_init
+    did="$(bp_param device_id)"; seconds="$(bp_param seconds)"
+    rc=0
+    lease="$(bp_rental_lease_add "$did" "$seconds")" || rc=$?
+    case "$rc" in
+      0) ;;
+      1|2) bp_fail "invalid rental device or duration" ;;
+      9) bp_fail "paid state uncertain; operator reconciliation required" ;;
+      *) bp_fail "rental time addition storage failed; operator reconciliation required" ;;
+    esac
+    bp_auth_audit rental_lease_add "$BP_AUTH_USER" "${REMOTE_ADDR:-unknown}" "$did:$seconds"
+    bp_json "$(printf '{"ok":true,"device_id":"%s","lease_until":%s}' "$did" "$lease")"
+    ;;
+  rental_expire|rental_lease_expire)
+    require_role operator
+    bp_auth_csrf_ok || bp_fail "csrf validation failed"
+    bp_rental_init
+    did="$(bp_param device_id)"
+    confirm_forfeit="$(bp_param confirm_forfeit)"
+    rc=0
+    lease="$(bp_rental_lease_expire "$did" "$confirm_forfeit")" || rc=$?
+    case "$rc" in
+      0) ;;
+      1) bp_fail "unknown rental device" ;;
+      6) bp_fail "paid rental time remains; explicit CONFIRM_FORFEIT authorization required" ;;
+      9) bp_fail "paid state uncertain; operator reconciliation required" ;;
+      *) bp_fail "rental expiry storage failed; operator reconciliation required" ;;
+    esac
+    bp_auth_audit rental_expire "$BP_AUTH_USER" "${REMOTE_ADDR:-unknown}" "$did"
+    bp_json "$(printf '{"ok":true,"device_id":"%s","lease_until":%s}' "$did" "$lease")"
+    ;;
+  rental_revoke|rental_device_revoke)
+    require_role admin
+    bp_auth_csrf_ok || bp_fail "csrf validation failed"
+    bp_rental_init
+    did="$(bp_param device_id)"
+    rc=0
+    bp_rental_device_revoke "$did" || rc=$?
+    case "$rc" in
+      0) ;;
+      1) bp_fail "unknown rental device" ;;
+      6) bp_fail "rental has active paid time; settle or transfer it before revoking" ;;
+      9) bp_fail "paid state uncertain; operator reconciliation required" ;;
+      *) bp_fail "rental revocation storage failed; operator reconciliation required" ;;
+    esac
+    bp_auth_audit rental_revoke "$BP_AUTH_USER" "${REMOTE_ADDR:-unknown}" "$did"
+    bp_json '{"ok":true}'
+    ;;
+  rental_events)
+    require_role viewer
+    bp_rental_init
+    limit="$(bp_param limit)"; [ -n "$limit" ] || limit=64
+    body="$(bp_rental_events_json "$limit")"
+    bp_json "$(printf '{"ok":true,"events":%s}' "$body")"
+    ;;
+  rental_lease_set)
+    require_role operator
+    bp_auth_csrf_ok || bp_fail "csrf validation failed"
+    bp_rental_init
+    did="$(bp_param device_id)"; seconds="$(bp_param seconds)"
+    confirm_forfeit="$(bp_param confirm_forfeit)"
+    case "$seconds" in ''|*[!0-9]*) bp_fail "invalid lease duration";; esac
+    [ "$seconds" -le 2592000 ] 2>/dev/null || bp_fail "lease duration too large"
+    # Avoid an implicit octal conversion of leading-zero decimal form values.
+    seconds="$(printf '%s' "$seconds" | sed 's/^0*//')"
+    [ -n "$seconds" ] || seconds=0
+    # Global account lock serializes this overwrite with signed coin events,
+    # then paid lock covers the mutation and its distinct audit record.
+    bp_lock || bp_fail "accounting busy"
+    [ ! -e "$BP_PAID_UNCERTAIN" ] && [ ! -L "$BP_PAID_UNCERTAIN" ] || {
+      bp_unlock; bp_fail "paid state uncertain; operator reconciliation required"
+    }
+    line="$(bp_rental_device_line "$did")"
+    [ -n "$line" ] || { bp_unlock; bp_fail "unknown rental device"; }
+    secret="$(printf '%s' "$line" | cut -f2)"
+    label="$(printf '%s' "$line" | cut -f4)"
+    last="$(printf '%s' "$line" | cut -f5)"
+    oldlease="$(printf '%s' "$line" | cut -f3)"
+    case "$oldlease" in
+      ''|*[!0-9]*) bp_unlock; bp_fail "invalid persisted rental lease; operator reconciliation required" ;;
+    esac
+    lease=$((now+seconds))
+    forfeit=0
+    if [ "$oldlease" -gt "$lease" ] 2>/dev/null; then
+      [ "$confirm_forfeit" = CONFIRM_FORFEIT ] || {
+        bp_unlock
+        bp_fail "shortening paid rental time requires explicit CONFIRM_FORFEIT authorization"
+      }
+      forfeit=$((oldlease-lease))
+    fi
+    bp_paid_begin || {
+      bp_unlock; bp_fail "paid state uncertain; operator reconciliation required"
+    }
+    if ! bp_rental_device_write "$did" "$secret" "$lease" "$label" "$last" ||
+       ! bp_rental_event_log lease_set "$did" "from:$oldlease:to:$lease:forfeit_seconds:$forfeit"; then
+      bp_paid_abort
+      bp_unlock
+      bp_fail "rental lease storage or audit failed; operator reconciliation required"
+    fi
+    if ! bp_paid_commit; then
+      bp_unlock
+      bp_fail "rental lease sync uncertain; operator reconciliation required"
+    fi
+    bp_unlock
+    bp_auth_audit rental_lease_set "$BP_AUTH_USER" "${REMOTE_ADDR:-unknown}" "$did:$seconds:forfeit_seconds:$forfeit"
+    bp_json "$(printf '{"ok":true,"device_id":"%s","lease_until":%s}' "$did" "$lease")"
+    ;;
+
+  portal_get)
+    require_role viewer
+    . "${BP_PORTAL_LIB:-/usr/lib/blazepwifi/portal.sh}"
+    key="$(bp_param key)"
+    bp_portal_key_allowed "$key" || bp_fail "invalid portal key"
+    value="$(bp_portal_get "$key")"
+    body="$(printf '{\"ok\":true,\"key\":\"%s\",\"value\":\"%s\"}' "$(bp_json_escape "$key")" "$(bp_json_escape "$value")")"
+    bp_json "$body"
+    ;;
+  portal_set)
+    require_role admin
+    bp_auth_csrf_ok || bp_fail "csrf validation failed"
+    [ "${BP_AUTH_MUST_CHANGE:-0}" != 1 ] || bp_fail "password change required"
+    . "${BP_PORTAL_LIB:-/usr/lib/blazepwifi/portal.sh}"
+    key="$(bp_param key)"; value="$(bp_param value)"
+    bp_portal_key_allowed "$key" || bp_fail "invalid portal key"
+    bp_portal_validate "$key" "$value" || bp_fail "invalid portal value"
+    bp_portal_set "$key" "$value" || bp_fail "portal update failed"
+    bp_auth_audit portal_change "$BP_AUTH_USER" "${REMOTE_ADDR:-unknown}" "$key"
+    body="$(printf '{\"ok\":true,\"key\":\"%s\",\"value\":\"%s\"}' "$(bp_json_escape "$key")" "$(bp_json_escape "$value")")"
+    bp_json "$body"
+    ;;
+  config_get)
+    require_role viewer
+    key="$(bp_param key)"
+    bp_config_key_allowed "$key" || bp_fail "invalid config key"
+    value="$(bp_config_get "$key")"
+    body="$(printf '{"ok":true,"key":"%s","value":"%s"}' "$(bp_json_escape "$key")" "$(bp_json_escape "$value")")"
+    bp_json "$body"
+    ;;
+  config_set)
+    require_role admin
+    bp_auth_csrf_ok || bp_fail "csrf validation failed"
+    [ "${BP_AUTH_MUST_CHANGE:-0}" != 1 ] || bp_fail "password change required"
+    key="$(bp_param key)"; value="$(bp_param value)"
+    bp_config_key_allowed "$key" || bp_fail "invalid config key"
+    bp_config_validate "$key" "$value" || bp_fail "invalid config value"
+    bp_config_set "$key" "$value" || bp_fail "config apply failed and was rolled back"
+    body="$(printf '{"ok":true,"key":"%s","value":"%s"}' "$(bp_json_escape "$key")" "$(bp_json_escape "$value")")"
+    bp_json "$body"
+    ;;
+  update_status)
+    require_role viewer
+    command -v bp_update_status_json >/dev/null 2>&1 || bp_fail "update subsystem unavailable"
+    bp_update_init
+    state="$(bp_update_status_json)"
+    source_url="$(bp_cfg update_source_url)"
+    bp_json "$(printf '{"ok":true,"state":%s,"source_url":"%s"}' "$state" "$(bp_json_escape "$source_url")")"
+    ;;
+  update_apply_url)
+    require_role admin
+    bp_auth_csrf_ok || bp_fail "csrf validation failed"
+    [ "${BP_AUTH_MUST_CHANGE:-0}" != 1 ] || bp_fail "password change required"
+    command -v bp_update_apply >/dev/null 2>&1 || bp_fail "update subsystem unavailable"
+    url="$(bp_param url)"; sha="$(bp_param sha256)"
+    printf '%s' "$sha" | grep -Eq '^[0-9a-fA-F]{64}$' || bp_fail "valid SHA-256 required"
+    maxmb="$(bp_cfg update_max_mb)"; [ -n "$maxmb" ] || maxmb=64
+    BP_UPDATE_MAX_BYTES=$((maxmb*1024*1024)); export BP_UPDATE_MAX_BYTES
+    bp_update_init
+    tmp="$BP_UPDATE_RUN/admin-download.$$"
+    trap 'rm -f "$tmp"' EXIT INT TERM
+    bp_update_fetch "$url" "$tmp" || bp_fail "update download rejected or failed"
+    bp_update_apply "$tmp" "$sha" || bp_fail "update failed; previous stable version was restored when possible"
+    bp_auth_audit system_update "$BP_AUTH_USER" "${REMOTE_ADDR:-unknown}" "$(bp_update_current_version)"
+    state="$(bp_update_status_json)"
+    bp_json "$(printf '{"ok":true,"state":%s}' "$state")"
+    ;;
+  update_rollback)
+    require_role admin
+    bp_auth_csrf_ok || bp_fail "csrf validation failed"
+    [ "${BP_AUTH_MUST_CHANGE:-0}" != 1 ] || bp_fail "password change required"
+    command -v bp_update_manual_rollback >/dev/null 2>&1 || bp_fail "update subsystem unavailable"
+    bp_update_manual_rollback || bp_fail "rollback failed or no last-known-good snapshot exists"
+    bp_auth_audit system_rollback "$BP_AUTH_USER" "${REMOTE_ADDR:-unknown}" "$(bp_update_current_version)"
+    state="$(bp_update_status_json)"
+    bp_json "$(printf '{"ok":true,"state":%s}' "$state")"
+    ;;
+  system_info)
+    require_role viewer
+    model="$(cat /tmp/sysinfo/model 2>/dev/null || cat /proc/device-tree/model 2>/dev/null | tr -d '\000' || echo Unknown)"
+    kernel="$(uname -srmo 2>/dev/null || uname -a 2>/dev/null || echo Unknown)"
+    cpu="$(awk -F: '/model name|system type|Processor/ {gsub(/^[ \t]+/,"",$2); print $2; exit}' /proc/cpuinfo 2>/dev/null)"
+    [ -n "$cpu" ] || cpu="Unknown"
+    rootfs="$(df -Pk / 2>/dev/null | awk 'NR==2 {printf "%s/%s KB",$3,$2}')"
+    temp=""; for z in /sys/class/thermal/thermal_zone*/temp; do [ -r "$z" ] || continue; temp="$(cat "$z" 2>/dev/null)"; break; done
+    wifi=false; command -v iw >/dev/null 2>&1 && iw dev 2>/dev/null | grep -q 'Interface' && wifi=true
+    wireguard=false; command -v wg >/dev/null 2>&1 && wireguard=true
+    zerotier=false; command -v zerotier-cli >/dev/null 2>&1 && zerotier=true
+    usb=false; [ -d /sys/bus/usb/devices ] && find /sys/bus/usb/devices -mindepth 1 -maxdepth 1 -type l 2>/dev/null | grep -q . && usb=true
+    bp_json "$(printf '{"ok":true,"model":"%s","kernel":"%s","cpu":"%s","rootfs":"%s","temperature_milli_c":"%s","wifi":%s,"usb":%s,"wireguard":%s,"zerotier":%s}' \
+      "$(bp_json_escape "$model")" "$(bp_json_escape "$kernel")" "$(bp_json_escape "$cpu")" "$(bp_json_escape "${rootfs:-Unknown}")" "$(bp_json_escape "${temp:-}")" "$wifi" "$usb" "$wireguard" "$zerotier")"
+    ;;
+  storage_list)
+    require_role viewer
+    mounts="$(df -Pk 2>/dev/null | awk 'NR>1 {printf "%s|%s|%s|%s;",$1,$2,$3,$6}' | head -c 12000)"
+    bp_json "$(printf '{"ok":true,"mounts":"%s"}' "$(bp_json_escape "$mounts")")"
+    ;;
+  remote_status)
+    require_role viewer
+    remote="$(bp_remote_status_json)"
+    bp_json "$(printf '{"ok":true,"recommended":"wireguard","remote":%s}' "$remote")"
+    ;;
+  remote_config_get)
+    require_role admin
+    config="$(bp_remote_config_json)"
+    bp_json "$(printf '{"ok":true,"config":%s}' "$config")"
+    ;;
+  remote_config_set)
+    require_role admin
+    bp_auth_csrf_ok || bp_fail "csrf validation failed"
+    [ "${BP_AUTH_MUST_CHANGE:-0}" != 1 ] || bp_fail "password change required"
+    password="$(bp_param password)"
+    bp_console_reauth "$password"
+    rc=$?
+    case "$rc" in
+      0) ;;
+      2) bp_fail "account temporarily locked" ;;
+      *) bp_fail "re-authentication failed" ;;
+    esac
+    bp_remote_save \
+      "$(bp_param mode)" "$(bp_param monitoring)" "$(bp_param management)" "$(bp_param terminal)" \
+      "$(bp_param node_name)" "$(bp_param site_label)" "$(bp_param source_allowlist)" \
+      "$(bp_param heartbeat_seconds)" "$(bp_param offline_seconds)" "$(bp_param wg_endpoint)" \
+      "$(bp_param wg_port)" "$(bp_param wg_address)" "$(bp_param wg_peer_public_key)" \
+      "$(bp_param wg_allowed_ips)" "$(bp_param wg_keepalive)" "$(bp_param wg_dns)" \
+      "$(bp_param wg_mtu)" "$(bp_param zt_network_id)"
+    rc=$?
+    case "$rc" in
+      0) ;;
+      3) bp_fail "selected remote mode is incomplete" ;;
+      *) bp_fail "invalid remote access configuration" ;;
+    esac
+    bp_auth_audit remote_config_set "$BP_AUTH_USER" "${REMOTE_ADDR:-unknown}" "$(bp_remote_get mode disabled)"
+    remote="$(bp_remote_status_json)"
+    bp_json "$(printf '{"ok":true,"remote":%s}' "$remote")"
+    ;;
+  remote_wireguard_key)
+    require_role admin
+    bp_auth_csrf_ok || bp_fail "csrf validation failed"
+    [ "${BP_AUTH_MUST_CHANGE:-0}" != 1 ] || bp_fail "password change required"
+    password="$(bp_param password)"
+    bp_console_reauth "$password"
+    rc=$?
+    case "$rc" in
+      0) ;;
+      2) bp_fail "account temporarily locked" ;;
+      *) bp_fail "re-authentication failed" ;;
+    esac
+    public="$(bp_remote_wg_public_key)"
+    rc=$?
+    case "$rc" in
+      0) ;;
+      127) bp_fail "WireGuard tools are not installed on this target" ;;
+      2) bp_fail "existing WireGuard private key is invalid" ;;
+      *) bp_fail "unable to generate local WireGuard key" ;;
+    esac
+    bp_remote_runtime_set_public_key "$public"
+    bp_auth_audit remote_wireguard_key "$BP_AUTH_USER" "${REMOTE_ADDR:-unknown}" "generated_or_loaded"
+    bp_json "$(printf '{"ok":true,"public_key":"%s"}' "$(bp_json_escape "$public")")"
+    ;;
+  remote_wireguard_apply)
+    require_role admin
+    bp_auth_csrf_ok || bp_fail "csrf validation failed"
+    [ "${BP_AUTH_MUST_CHANGE:-0}" != 1 ] || bp_fail "password change required"
+    password="$(bp_param password)"
+    bp_console_reauth "$password"
+    rc=$?
+    case "$rc" in
+      0) ;;
+      2) bp_fail "account temporarily locked" ;;
+      *) bp_fail "re-authentication failed" ;;
+    esac
+    bp_remote_wireguard_apply "${REMOTE_ADDR:-}"
+    rc=$?
+    case "$rc" in
+      0) ;;
+      10) bp_fail "WireGuard mode is not selected" ;;
+      11) bp_fail "WireGuard live apply is unavailable on this target" ;;
+      12) bp_fail "dev.3 live apply supports validated IPv4 WireGuard addresses/routes only" ;;
+      13) bp_fail "unsafe WireGuard route: default or overly broad routes are blocked" ;;
+      14) bp_fail "WireGuard Allowed IPs overlap an existing directly connected network" ;;
+      15) bp_fail "WireGuard Allowed IPs would capture the current admin source path" ;;
+      16) bp_fail "apply must be started from a non-WireGuard management path" ;;
+      17) bp_fail "remote management requires valid source CIDRs contained inside WireGuard Allowed IPs" ;;
+      18) bp_fail "WireGuard Allowed IPs would route the tunnel endpoint into the tunnel itself" ;;
+      20) bp_fail "another remote-access transaction is already pending" ;;
+      21) bp_fail "WireGuard key setup failed" ;;
+      22) bp_fail "default route unavailable; refusing remote apply" ;;
+      23) bp_fail "unable to create remote-access rollback snapshot" ;;
+      24) bp_fail "unable to write WireGuard configuration; previous network restored" ;;
+      25) bp_fail "WireGuard interface failed to start; previous network restored" ;;
+      26) bp_fail "firewall reload failed; previous network restored" ;;
+      27) bp_fail "WireGuard handshake timed out; previous network restored" ;;
+      28) bp_fail "remote admin listener failed; previous network restored" ;;
+      29) bp_fail "management/default route changed unexpectedly; previous network restored" ;;
+      *) bp_fail "WireGuard apply did not finalize safely; previous network restored" ;;
+    esac
+    bp_auth_audit remote_wireguard_apply "$BP_AUTH_USER" "${REMOTE_ADDR:-unknown}" "active"
+    remote="$(bp_remote_status_json)"
+    bp_json "$(printf '{"ok":true,"remote":%s}' "$remote")"
+    ;;
+  remote_wireguard_disable)
+    require_role admin
+    bp_auth_csrf_ok || bp_fail "csrf validation failed"
+    [ "${BP_AUTH_MUST_CHANGE:-0}" != 1 ] || bp_fail "password change required"
+    password="$(bp_param password)"
+    bp_console_reauth "$password"
+    rc=$?
+    case "$rc" in
+      0) ;;
+      2) bp_fail "account temporarily locked" ;;
+      *) bp_fail "re-authentication failed" ;;
+    esac
+    bp_remote_wireguard_disable "${REMOTE_ADDR:-}"
+    rc=$?
+    case "$rc" in
+      0) ;;
+      20) bp_fail "another remote-access transaction is already pending" ;;
+      22) bp_fail "default route unavailable; refusing remote disable" ;;
+      23) bp_fail "unable to create remote-access rollback snapshot" ;;
+      24|25|26|28|29|30) bp_fail "WireGuard disable could not be completed safely; previous network restored" ;;
+      31) bp_fail "disable WireGuard from a local/non-WireGuard management path" ;;
+      *) bp_fail "WireGuard disable failed safely" ;;
+    esac
+    bp_auth_audit remote_wireguard_disable "$BP_AUTH_USER" "${REMOTE_ADDR:-unknown}" "staged"
+    remote="$(bp_remote_status_json)"
+    bp_json "$(printf '{"ok":true,"remote":%s}' "$remote")"
+    ;;
+  remote_zerotier_identity)
+    require_role admin
+    bp_auth_csrf_ok || bp_fail "csrf validation failed"
+    [ "${BP_AUTH_MUST_CHANGE:-0}" != 1 ] || bp_fail "password change required"
+    password="$(bp_param password)"
+    bp_console_reauth "$password"
+    rc=$?
+    case "$rc" in
+      0) ;;
+      2) bp_fail "account temporarily locked" ;;
+      *) bp_fail "re-authentication failed" ;;
+    esac
+    node_id="$(bp_remote_zt_identity_prepare)"
+    rc=$?
+    case "$rc" in
+      0) ;;
+      11) bp_fail "ZeroTier tools are not installed on this target" ;;
+      40) bp_fail "existing ZeroTier configuration is not Blaze-owned modern UCI; refusing to modify it" ;;
+      2) bp_fail "existing ZeroTier identity secret is invalid" ;;
+      *) bp_fail "unable to prepare local ZeroTier identity" ;;
+    esac
+    bp_auth_audit remote_zerotier_identity "$BP_AUTH_USER" "${REMOTE_ADDR:-unknown}" "$node_id"
+    remote="$(bp_remote_status_json)"
+    bp_json "$(printf '{"ok":true,"node_id":"%s","remote":%s}' "$(bp_json_escape "$node_id")" "$remote")"
+    ;;
+  remote_zerotier_apply)
+    require_role admin
+    bp_auth_csrf_ok || bp_fail "csrf validation failed"
+    [ "${BP_AUTH_MUST_CHANGE:-0}" != 1 ] || bp_fail "password change required"
+    password="$(bp_param password)"
+    bp_console_reauth "$password"
+    rc=$?
+    case "$rc" in
+      0) ;;
+      2) bp_fail "account temporarily locked" ;;
+      *) bp_fail "re-authentication failed" ;;
+    esac
+    bp_remote_zerotier_apply "${REMOTE_ADDR:-}"
+    rc=$?
+    case "$rc" in
+      0) ;;
+      10) bp_fail "ZeroTier mode is not selected" ;;
+      11) bp_fail "ZeroTier live apply is unavailable on this target" ;;
+      12) bp_fail "invalid ZeroTier network configuration" ;;
+      17) bp_fail "remote management requires valid IPv4 source CIDRs" ;;
+      20) bp_fail "another remote-access transaction is already pending" ;;
+      22) bp_fail "default route unavailable; refusing ZeroTier apply" ;;
+      23) bp_fail "unable to create remote-access rollback snapshot" ;;
+      29) bp_fail "management/default route changed unexpectedly; previous network restored" ;;
+      30) bp_fail "ZeroTier transaction ownership was lost; rollback guard won" ;;
+      31) bp_fail "apply must be started from a local/non-ZeroTier management path" ;;
+      40) bp_fail "existing ZeroTier configuration is not Blaze-owned modern UCI; refusing to modify it" ;;
+      41) bp_fail "unable to prepare the local ZeroTier identity" ;;
+      43) bp_fail "disable the active WireGuard tunnel before activating ZeroTier" ;;
+      44) bp_fail "unable to write ZeroTier configuration; previous network restored" ;;
+      45) bp_fail "ZeroTier service failed to restart; previous network restored" ;;
+      46) bp_fail "ZeroTier did not reach authorized OK state with an assigned IPv4 address; previous network restored" ;;
+      47) bp_fail "ZeroTier installed unsafe/overlapping routes or the management allowlist is outside the mesh route; previous network restored" ;;
+      48) bp_fail "ZeroTier firewall activation failed; previous network restored" ;;
+      49) bp_fail "ZeroTier remote admin listener failed; previous network restored" ;;
+      *) bp_fail "ZeroTier apply failed safely; previous network restored" ;;
+    esac
+    bp_auth_audit remote_zerotier_apply "$BP_AUTH_USER" "${REMOTE_ADDR:-unknown}" "active"
+    remote="$(bp_remote_status_json)"
+    bp_json "$(printf '{"ok":true,"remote":%s}' "$remote")"
+    ;;
+  remote_zerotier_disable)
+    require_role admin
+    bp_auth_csrf_ok || bp_fail "csrf validation failed"
+    [ "${BP_AUTH_MUST_CHANGE:-0}" != 1 ] || bp_fail "password change required"
+    password="$(bp_param password)"
+    bp_console_reauth "$password"
+    rc=$?
+    case "$rc" in
+      0) ;;
+      2) bp_fail "account temporarily locked" ;;
+      *) bp_fail "re-authentication failed" ;;
+    esac
+    bp_remote_zerotier_disable "${REMOTE_ADDR:-}"
+    rc=$?
+    case "$rc" in
+      0) ;;
+      20) bp_fail "another remote-access transaction is already pending" ;;
+      22) bp_fail "default route unavailable; refusing ZeroTier disable" ;;
+      23) bp_fail "unable to create remote-access rollback snapshot" ;;
+      29|30|44|45|48|49) bp_fail "ZeroTier disable could not be completed safely; previous network restored" ;;
+      31) bp_fail "disable ZeroTier from a local/non-ZeroTier management path" ;;
+      42) bp_fail "ZeroTier is not currently active" ;;
+      *) bp_fail "ZeroTier disable failed safely" ;;
+    esac
+    bp_auth_audit remote_zerotier_disable "$BP_AUTH_USER" "${REMOTE_ADDR:-unknown}" "staged"
+    remote="$(bp_remote_status_json)"
+    bp_json "$(printf '{"ok":true,"remote":%s}' "$remote")"
+    ;;
+  terminal_status)
+    require_role admin
+    require_remote_terminal_permission
+    if bp_terminal_enabled; then enabled=true; else enabled=false; fi
+    active="$(bp_terminal_active_count)"
+    ttl="$(bp_terminal_cfg_uint terminal_ttl_seconds 300 60 1800)"
+    idle="$(bp_terminal_cfg_uint terminal_idle_seconds 60 15 900)"
+    timeout_seconds="$(bp_terminal_cfg_uint terminal_command_timeout_seconds 12 2 60)"
+    output_max="$(bp_terminal_cfg_uint terminal_output_max_bytes 16000 1024 65536)"
+    bp_json "$(printf '{"ok":true,"enabled":%s,"active_sessions":%s,"ttl_seconds":%s,"idle_seconds":%s,"command_timeout_seconds":%s,"output_max_bytes":%s}' "$enabled" "$active" "$ttl" "$idle" "$timeout_seconds" "$output_max")"
+    ;;
+  terminal_set_enabled)
+    require_role admin
+    require_remote_terminal_permission
+    bp_auth_csrf_ok || bp_fail "csrf validation failed"
+    [ "${BP_AUTH_MUST_CHANGE:-0}" != 1 ] || bp_fail "password change required"
+    enabled="$(bp_param enabled)"
+    case "$enabled" in 0|1) ;; *) bp_fail "invalid terminal state";; esac
+    password="$(bp_param password)"
+    bp_console_reauth "$password"
+    rc=$?
+    case "$rc" in
+      0) ;;
+      2) bp_fail "account temporarily locked" ;;
+      *) bp_fail "re-authentication failed" ;;
+    esac
+    bp_config_set advanced_terminal_enabled "$enabled" || bp_fail "unable to update terminal state"
+    [ "$enabled" = 1 ] || bp_terminal_close_all
+    bp_auth_audit terminal_enabled "$BP_AUTH_USER" "${REMOTE_ADDR:-unknown}" "$enabled"
+    bp_json "$(printf '{"ok":true,"enabled":%s}' "$([ "$enabled" = 1 ] && printf true || printf false)")"
+    ;;
+  terminal_open)
+    require_role admin
+    require_remote_terminal_permission
+    bp_auth_csrf_ok || bp_fail "csrf validation failed"
+    password="$(bp_param password)"
+    token="$(bp_terminal_open "$password")"
+    rc=$?
+    case "$rc" in
+      0) ;;
+      10) bp_fail "Advanced Terminal is disabled" ;;
+      11) bp_fail "admin role required" ;;
+      12) bp_fail "password change required" ;;
+      2) bp_fail "account temporarily locked" ;;
+      *) bp_fail "terminal re-authentication failed" ;;
+    esac
+    ttl="$(bp_terminal_cfg_uint terminal_ttl_seconds 300 60 1800)"
+    idle="$(bp_terminal_cfg_uint terminal_idle_seconds 60 15 900)"
+    bp_json "$(printf '{"ok":true,"terminal_token":"%s","ttl_seconds":%s,"idle_seconds":%s}' "$(bp_json_escape "$token")" "$ttl" "$idle")"
+    ;;
+  terminal_exec)
+    require_role admin
+    require_remote_terminal_permission
+    bp_auth_csrf_ok || bp_fail "csrf validation failed"
+    token="$(bp_param terminal_token)"; command_text="$(bp_param command)"
+    bp_terminal_exec "$token" "$command_text"
+    rc=$?
+    case "$rc" in
+      0) ;;
+      2) bp_fail "command blocked; use a dedicated guarded control for this operation" ;;
+      4) bp_fail "terminal session expired or invalid" ;;
+      5) bp_fail "another terminal command is already running" ;;
+      127) bp_fail "bounded timeout utility unavailable on this target" ;;
+      *) bp_fail "invalid terminal command" ;;
+    esac
+    bp_json "$(printf '{"ok":true,"exit_code":%s,"output":"%s"}' "${BP_TERMINAL_RC:-1}" "$(bp_json_escape "${BP_TERMINAL_OUTPUT:-}")")"
+    ;;
+  terminal_close)
+    require_role admin
+    require_remote_terminal_permission
+    bp_auth_csrf_ok || bp_fail "csrf validation failed"
+    token="$(bp_param terminal_token)"
+    bp_terminal_close "$token" || bp_fail "unable to close terminal session"
+    bp_json '{"ok":true}'
+    ;;
+  tool_run)
+    require_role operator
+    bp_auth_csrf_ok || bp_fail "csrf validation failed"
+    tool="$(bp_param tool)"; target="$(bp_param target)"
+    case "$target" in
+      *[!A-Za-z0-9._:-]* ) bp_fail "invalid diagnostic target" ;;
+    esac
+    [ "$(printf '%s' "$target" | wc -c)" -le 253 ] || bp_fail "diagnostic target too long"
+    output=""; rc=0
+    case "$tool" in
+      ping)
+        [ -n "$target" ] || target="1.1.1.1"
+        output="$(ping -c 4 -W 2 "$target" 2>&1 | head -c 12000)" || rc=$?
+        ;;
+      traceroute)
+        [ -n "$target" ] || target="1.1.1.1"
+        if command -v traceroute >/dev/null 2>&1; then output="$(traceroute -m 12 "$target" 2>&1 | head -c 12000)" || rc=$?; else output="traceroute is not installed on this target"; rc=127; fi
+        ;;
+      dns)
+        [ -n "$target" ] || target="openai.com"
+        if command -v nslookup >/dev/null 2>&1; then output="$(nslookup "$target" 2>&1 | head -c 12000)" || rc=$?; else output="nslookup is not installed on this target"; rc=127; fi
+        ;;
+      routes) output="$(ip route 2>&1 | head -c 12000)" || rc=$? ;;
+      interfaces) output="$(ip addr 2>&1 | head -c 12000)" || rc=$? ;;
+      wifi)
+        if command -v iw >/dev/null 2>&1; then output="$(iw dev 2>&1 | head -c 12000)" || rc=$?; else output="iw is not installed / no Wi-Fi capability"; rc=127; fi
+        ;;
+      storage) output="$(df -h 2>&1 | head -c 12000)" || rc=$? ;;
+      uptime) output="$(uptime 2>&1 | head -c 12000)" || rc=$? ;;
+      wan)
+        output="$({ ip route show default 2>/dev/null; if command -v ubus >/dev/null 2>&1; then ubus call network.interface.wan status 2>/dev/null || true; fi; } | head -c 12000)" || rc=$?
+        ;;
+      ntp)
+        output="$({ date -u 2>/dev/null; if command -v ubus >/dev/null 2>&1; then ubus call system info 2>/dev/null || true; fi; if command -v logread >/dev/null 2>&1; then logread 2>/dev/null | grep -iE 'ntp|timesync|clock' | tail -n 30; fi; } | head -c 12000)" || rc=$?
+        ;;
+      jitter)
+        [ -n "$target" ] || target="1.1.1.1"
+        output="$(ping -c 10 -W 2 "$target" 2>&1 | head -c 12000)" || rc=$?
+        ;;
+      port)
+        [ -n "$target" ] || bp_fail "port check target must be host:port"
+        host="${target%:*}"; port="${target##*:}"
+        [ "$host" != "$target" ] && [ -n "$host" ] || bp_fail "port check target must be host:port"
+        case "$port" in ''|*[!0-9]*) bp_fail "invalid port";; esac
+        [ "$port" -ge 1 ] 2>/dev/null && [ "$port" -le 65535 ] 2>/dev/null || bp_fail "invalid port"
+        if command -v nc >/dev/null 2>&1; then
+          port_tmp="$BP_RUN/.port-check.$(bp_tmp_suffix)"
+          nc -z -w 3 "$host" "$port" >"$port_tmp" 2>&1
+          rc=$?
+          output="$(cat "$port_tmp" 2>/dev/null; printf 'Port check completed for %s:%s\n' "$host" "$port")"
+          rm -f "$port_tmp"
+        else output="nc is not installed on this target"; rc=127; fi
+        output="$(printf '%s' "$output" | head -c 12000)"
+        ;;
+      neighbors) output="$(ip neigh show 2>&1 | head -c 12000)" || rc=$? ;;
+      logs)
+        if command -v logread >/dev/null 2>&1; then output="$(logread 2>&1 | tail -n 120 | head -c 12000)" || rc=$?; else output="logread is unavailable"; rc=127; fi
+        ;;
+      services)
+        if command -v ubus >/dev/null 2>&1; then output="$(ubus call service list 2>&1 | head -c 12000)" || rc=$?; else output="$(ps 2>&1 | head -c 12000)" || rc=$?; fi
+        ;;
+      controllers)
+        output="$(awk -F '\t' -v n="$now" 'NF>=2 {age=n-$2; printf "%s  age=%ss  ip=%s\n",$1,age,$3}' "$BP_VENDOS" 2>/dev/null | head -c 12000)" || rc=$?
+        ;;
+      speedtest)
+        if command -v speedtest >/dev/null 2>&1; then output="$(timeout 45 speedtest 2>&1 | head -c 12000)" || rc=$?;
+        elif command -v librespeed-cli >/dev/null 2>&1; then output="$(timeout 45 librespeed-cli 2>&1 | head -c 12000)" || rc=$?;
+        else output="No local speed-test helper is installed. Use Ping/latency now or install a supported speed-test package on this target."; rc=127; fi
+        ;;
+      *) bp_fail "unsupported safe command" ;;
+    esac
+    bp_auth_audit tool_run "$BP_AUTH_USER" "${REMOTE_ADDR:-unknown}" "$tool"
+    bp_json "$(printf '{"ok":true,"tool":"%s","exit_code":%s,"output":"%s"}' "$(bp_json_escape "$tool")" "${rc:-0}" "$(bp_json_escape "$output")")"
+    ;;
+  status)
+    require_role viewer
+    sessions="$(awk -F '\t' -v n="$now" '$5!=1 && $3>n {c++} END{print c+0}' "$BP_ACCOUNTS")"
+    paused="$(awk -F '\t' '$5==1 && $4>0 {c++} END{print c+0}' "$BP_ACCOUNTS")"
+    vendos="$(awk -F '\t' -v n="$now" '$2>(n-30) {c++} END{print c+0}' "$BP_VENDOS")"
+    free_kb="$(awk '/MemAvailable:/ {print $2; found=1} END{if(!found) print 0}' /proc/meminfo)"
+    load="$(cut -d' ' -f1 /proc/loadavg 2>/dev/null)"; uptime="$(cut -d. -f1 /proc/uptime 2>/dev/null)"
+    body="$(printf '{"ok":true,"username":"%s","role":"%s","must_change":%s,"active_sessions":%s,"paused_sessions":%s,"online_vendos":%s,"mem_available_kb":%s,"load1":"%s","uptime_seconds":%s}' "$(bp_json_escape "$BP_AUTH_USER")" "$(bp_json_escape "$BP_AUTH_ROLE")" "${BP_AUTH_MUST_CHANGE:-0}" "$sessions" "$paused" "$vendos" "${free_kb:-0}" "${load:-0}" "${uptime:-0}")"
+    bp_json "$body"
+    ;;
+  voucher_create)
+    require_role operator
+    bp_auth_csrf_ok || bp_fail "csrf validation failed"
+    [ "${BP_AUTH_MUST_CHANGE:-0}" != 1 ] || bp_fail "password change required"
+    cents="$(bp_param cents)"; case "$cents" in ''|*[!0-9]*) bp_fail "invalid amount";; esac
+    [ "$cents" -gt 0 ] 2>/dev/null || bp_fail "invalid amount"
+    bp_lock || bp_fail "accounting busy"
+    i=0
+    while :; do
+      code="$(hexdump -n 5 -e '5/1 "%02X"' /dev/urandom 2>/dev/null || od -An -N5 -tx1 /dev/urandom 2>/dev/null | tr -d ' \n' | tr 'a-f' 'A-F')"
+      [ -n "$code" ] || code="$(date +%s)"
+      grep -q "^$code\t" "$BP_VOUCHERS" 2>/dev/null || break
+      i=$((i+1)); [ "$i" -lt 10 ] || { bp_unlock; bp_fail "voucher generator unavailable"; }
+    done
+    tmp="$BP_STATE/.vouchers.$(bp_tmp_suffix)"
+    cat "$BP_VOUCHERS" > "$tmp"
+    printf '%s\t%s\n' "$code" "$cents" >> "$tmp"
+    chmod 600 "$tmp"
+    mv "$tmp" "$BP_VOUCHERS"
+    bp_durable_sync
+    bp_auth_audit voucher_create "$BP_AUTH_USER" "${REMOTE_ADDR:-unknown}" "$cents"
+    bp_unlock
+    body="$(printf '{"ok":true,"code":"%s","cents":%s}' "$(bp_json_escape "$code")" "$cents")"
+    bp_json "$body"
+    ;;
+  password_change)
+    require_role viewer
+    bp_auth_csrf_ok || bp_fail "csrf validation failed"
+    new_password="$(bp_param new_password)"
+    [ -n "$new_password" ] || bp_fail "missing new password"
+    [ "${#new_password}" -ge 12 ] || bp_fail "password must be at least 12 characters"
+    bp_auth_lock || bp_fail "authentication busy"
+    # The credential and old-session store are not one durable transaction.
+    # Revoke first under the auth lock: if storage fails, the old password
+    # remains unchanged and no pre-change session is silently trusted.
+    if ! bp_auth_invalidate_user_sessions "$BP_AUTH_USER"; then
+      bp_auth_audit session_revoke_failure "$BP_AUTH_USER" "${REMOTE_ADDR:-unknown}" "password_not_changed" || true
+      bp_auth_unlock
+      bp_fail "could not revoke existing sessions; password was not changed"
+    fi
+    if bp_auth_set_password "$BP_AUTH_USER" "$BP_AUTH_ROLE" "$new_password" 0; then
+      if ! rm -f /etc/blazepwifi/INITIAL_ADMIN_PASSWORD 2>/dev/null ||
+         ! bp_auth_audit password_changed "$BP_AUTH_USER" "${REMOTE_ADDR:-unknown}" "self"; then
+        bp_auth_unlock
+        bp_fail "password changed but admin cleanup/audit failed; operator reconciliation required"
+      fi
+      bp_auth_unlock
+      bp_json '{"ok":true,"reauth_required":true}'
+    else
+      rc=$?; bp_auth_unlock
+      [ "$rc" -eq 2 ] && bp_fail "password must be at least 12 characters"
+      bp_fail "password change failed"
+    fi
+    ;;
+  *) bp_fail "unknown admin action" ;;
+esac

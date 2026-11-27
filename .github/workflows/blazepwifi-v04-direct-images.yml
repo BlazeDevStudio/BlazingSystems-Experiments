@@ -1,0 +1,220 @@
+name: BlazePwifi v0.4 direct image assets
+
+on:
+  push:
+    branches: [blazepwifi-v0.4.0-implementation]
+    paths:
+      - '.github/blazepwifi-v04-direct-images-request.json'
+      - '.github/workflows/blazepwifi-v04-direct-images.yml'
+
+concurrency:
+  group: blazepwifi-v04-direct-images
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 45
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RELEASE_TAG: v0.4.0
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve production stage
+        id: req
+        shell: bash
+        run: |
+          set -euo pipefail
+          STAGE_RUN="$(jq -r '.stage_run_id // empty' .github/blazepwifi-v04-direct-images-request.json)"
+          CANDIDATE_SHA="$(jq -r '.candidate_sha // empty' .github/blazepwifi-v04-direct-images-request.json)"
+          RELEASE_TAG="$(jq -r '.release_tag // "v0.4.0"' .github/blazepwifi-v04-direct-images-request.json)"
+          printf '%s' "$STAGE_RUN" | grep -Eq '^[0-9]+
+
+      - name: Download verified production stage
+        shell: bash
+        env:
+          STAGE_RUN: ${{ steps.req.outputs.stage_run }}
+          CANDIDATE_SHA: ${{ steps.req.outputs.candidate_sha }}
+        run: |
+          set -euo pipefail
+          mkdir -p production-stage
+          gh run download "$STAGE_RUN" --repo "${{ github.repository }}"             --name BlazePwifi-v0.4.0-production-stage --dir production-stage
+          test "$(jq -r .commit production-stage/RELEASE-MANIFEST.json)" = "$CANDIDATE_SHA"
+          test "$(jq -r .candidate_gate production-stage/RELEASE-MANIFEST.json)" = passed
+          (
+            cd production-stage
+            sha256sum -c SHA256SUMS
+          )
+
+      - name: Select direct flashable IMG files
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p direct-images
+
+          X86_BIOS="$(find production-stage/x86 -maxdepth 1 -type f -name '*ext4-combined.img' ! -name '*efi*' -print -quit)"
+          X86_UEFI="$(find production-stage/x86 -maxdepth 1 -type f -name '*ext4-combined-efi.img' -print -quit)"
+          OPI_ONE="$(find production-stage/orangepi-one -maxdepth 1 -type f -name '*ext4-sdcard.img' -print -quit)"
+          OPI_PC="$(find production-stage/orangepi-pc -maxdepth 1 -type f -name '*ext4-sdcard.img' -print -quit)"
+          OPI_ZERO3="$(find production-stage/orangepi-zero3 -maxdepth 1 -type f -name '*ext4-sdcard.img' -print -quit)"
+
+          for f in "$X86_BIOS" "$X86_UEFI" "$OPI_ONE" "$OPI_PC" "$OPI_ZERO3"; do
+            test -n "$f" -a -s "$f"
+            cp "$f" direct-images/
+          done
+
+          test "$(find direct-images -type f -name '*.img' | wc -l)" -eq 5
+          (
+            cd direct-images
+            sha256sum *.img > DIRECT-IMAGES-SHA256SUMS
+          )
+
+      - name: Upload direct IMG assets to production release
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release view "$RELEASE_TAG" --repo "${{ github.repository }}" >/dev/null
+          find direct-images -maxdepth 1 -type f -print0             | xargs -0 -r gh release upload "$RELEASE_TAG"                 --repo "${{ github.repository }}" --clobber
+
+      - name: Verify direct IMG assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          JSON="$(gh api "repos/${{ github.repository }}/releases/tags/$RELEASE_TAG")"
+          COUNT="$(printf '%s' "$JSON" | jq '[.assets[] | select(.name|endswith(".img"))] | length')"
+          test "$COUNT" -ge 5
+          printf '%s' "$JSON" | jq -e '.assets[] | select(.name=="DIRECT-IMAGES-SHA256SUMS")' >/dev/null
+          for pattern in             'x86-64-generic-ext4-combined.img'             'x86-64-generic-ext4-combined-efi.img'             'xunlong_orangepi-one-ext4-sdcard.img'             'xunlong_orangepi-pc-ext4-sdcard.img'             'xunlong_orangepi-zero3-ext4-sdcard.img'
+          do
+            printf '%s' "$JSON" | jq -e --arg p "$pattern"               '.assets[] | select(.name|contains($p))' >/dev/null               || { echo "direct image missing: $pattern" >&2; exit 1; }
+          done
+          echo "Direct production IMG assets verified."
+
+          printf '%s' "$CANDIDATE_SHA" | grep -Eq '^[0-9a-f]{40}
+
+      - name: Download verified production stage
+        shell: bash
+        env:
+          STAGE_RUN: ${{ steps.req.outputs.stage_run }}
+        run: |
+          set -euo pipefail
+          mkdir -p production-stage
+          gh run download "$STAGE_RUN" --repo "${{ github.repository }}"             --name BlazePwifi-v0.4.0-production-stage --dir production-stage
+          test "$(jq -r .commit production-stage/RELEASE-MANIFEST.json)" = "$CANDIDATE_SHA"
+          test "$(jq -r .candidate_gate production-stage/RELEASE-MANIFEST.json)" = passed
+          (
+            cd production-stage
+            sha256sum -c SHA256SUMS
+          )
+
+      - name: Select direct flashable IMG files
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p direct-images
+
+          X86_BIOS="$(find production-stage/x86 -maxdepth 1 -type f -name '*ext4-combined.img' ! -name '*efi*' -print -quit)"
+          X86_UEFI="$(find production-stage/x86 -maxdepth 1 -type f -name '*ext4-combined-efi.img' -print -quit)"
+          OPI_ONE="$(find production-stage/orangepi-one -maxdepth 1 -type f -name '*ext4-sdcard.img' -print -quit)"
+          OPI_PC="$(find production-stage/orangepi-pc -maxdepth 1 -type f -name '*ext4-sdcard.img' -print -quit)"
+          OPI_ZERO3="$(find production-stage/orangepi-zero3 -maxdepth 1 -type f -name '*ext4-sdcard.img' -print -quit)"
+
+          for f in "$X86_BIOS" "$X86_UEFI" "$OPI_ONE" "$OPI_PC" "$OPI_ZERO3"; do
+            test -n "$f" -a -s "$f"
+            cp "$f" direct-images/
+          done
+
+          test "$(find direct-images -type f -name '*.img' | wc -l)" -eq 5
+          (
+            cd direct-images
+            sha256sum *.img > DIRECT-IMAGES-SHA256SUMS
+          )
+
+      - name: Upload direct IMG assets to production release
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release view "$RELEASE_TAG" --repo "${{ github.repository }}" >/dev/null
+          find direct-images -maxdepth 1 -type f -print0             | xargs -0 -r gh release upload "$RELEASE_TAG"                 --repo "${{ github.repository }}" --clobber
+
+      - name: Verify direct IMG assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          JSON="$(gh api "repos/${{ github.repository }}/releases/tags/$RELEASE_TAG")"
+          COUNT="$(printf '%s' "$JSON" | jq '[.assets[] | select(.name|endswith(".img"))] | length')"
+          test "$COUNT" -ge 5
+          printf '%s' "$JSON" | jq -e '.assets[] | select(.name=="DIRECT-IMAGES-SHA256SUMS")' >/dev/null
+          for pattern in             'x86-64-generic-ext4-combined.img'             'x86-64-generic-ext4-combined-efi.img'             'xunlong_orangepi-one-ext4-sdcard.img'             'xunlong_orangepi-pc-ext4-sdcard.img'             'xunlong_orangepi-zero3-ext4-sdcard.img'
+          do
+            printf '%s' "$JSON" | jq -e --arg p "$pattern"               '.assets[] | select(.name|contains($p))' >/dev/null               || { echo "direct image missing: $pattern" >&2; exit 1; }
+          done
+          echo "Direct production IMG assets verified."
+
+          [ "$RELEASE_TAG" = v0.4.0 ]
+          echo "stage_run=$STAGE_RUN" >> "$GITHUB_OUTPUT"
+          echo "candidate_sha=$CANDIDATE_SHA" >> "$GITHUB_OUTPUT"
+
+      - name: Download verified production stage
+        shell: bash
+        env:
+          STAGE_RUN: ${{ steps.req.outputs.stage_run }}
+        run: |
+          set -euo pipefail
+          mkdir -p production-stage
+          gh run download "$STAGE_RUN" --repo "${{ github.repository }}"             --name BlazePwifi-v0.4.0-production-stage --dir production-stage
+          test "$(jq -r .commit production-stage/RELEASE-MANIFEST.json)" = "$CANDIDATE_SHA"
+          test "$(jq -r .candidate_gate production-stage/RELEASE-MANIFEST.json)" = passed
+          (
+            cd production-stage
+            sha256sum -c SHA256SUMS
+          )
+
+      - name: Select direct flashable IMG files
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p direct-images
+
+          X86_BIOS="$(find production-stage/x86 -maxdepth 1 -type f -name '*ext4-combined.img' ! -name '*efi*' -print -quit)"
+          X86_UEFI="$(find production-stage/x86 -maxdepth 1 -type f -name '*ext4-combined-efi.img' -print -quit)"
+          OPI_ONE="$(find production-stage/orangepi-one -maxdepth 1 -type f -name '*ext4-sdcard.img' -print -quit)"
+          OPI_PC="$(find production-stage/orangepi-pc -maxdepth 1 -type f -name '*ext4-sdcard.img' -print -quit)"
+          OPI_ZERO3="$(find production-stage/orangepi-zero3 -maxdepth 1 -type f -name '*ext4-sdcard.img' -print -quit)"
+
+          for f in "$X86_BIOS" "$X86_UEFI" "$OPI_ONE" "$OPI_PC" "$OPI_ZERO3"; do
+            test -n "$f" -a -s "$f"
+            cp "$f" direct-images/
+          done
+
+          test "$(find direct-images -type f -name '*.img' | wc -l)" -eq 5
+          (
+            cd direct-images
+            sha256sum *.img > DIRECT-IMAGES-SHA256SUMS
+          )
+
+      - name: Upload direct IMG assets to production release
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release view "$RELEASE_TAG" --repo "${{ github.repository }}" >/dev/null
+          find direct-images -maxdepth 1 -type f -print0             | xargs -0 -r gh release upload "$RELEASE_TAG"                 --repo "${{ github.repository }}" --clobber
+
+      - name: Verify direct IMG assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          JSON="$(gh api "repos/${{ github.repository }}/releases/tags/$RELEASE_TAG")"
+          COUNT="$(printf '%s' "$JSON" | jq '[.assets[] | select(.name|endswith(".img"))] | length')"
+          test "$COUNT" -ge 5
+          printf '%s' "$JSON" | jq -e '.assets[] | select(.name=="DIRECT-IMAGES-SHA256SUMS")' >/dev/null
+          for pattern in             'x86-64-generic-ext4-combined.img'             'x86-64-generic-ext4-combined-efi.img'             'xunlong_orangepi-one-ext4-sdcard.img'             'xunlong_orangepi-pc-ext4-sdcard.img'             'xunlong_orangepi-zero3-ext4-sdcard.img'
+          do
+            printf '%s' "$JSON" | jq -e --arg p "$pattern"               '.assets[] | select(.name|contains($p))' >/dev/null               || { echo "direct image missing: $pattern" >&2; exit 1; }
+          done
+          echo "Direct production IMG assets verified."

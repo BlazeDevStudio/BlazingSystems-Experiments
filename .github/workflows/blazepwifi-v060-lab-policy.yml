@@ -1,0 +1,31 @@
+name: BlazePwifi lab publishing security contract
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - blazepwifi-v0.6.0-audit-foundation
+    paths:
+      - '.github/workflows/blazepwifi-v060-lab-policy.yml'
+      - '.github/workflows/blazepwifi-build.yml'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_lab_publisher_policy.py'
+
+permissions:
+  contents: read
+jobs:
+  draft-policy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Test original embedded draft verification with adversarial fixtures
+        run: python3 experiment/openwrt/BlazePwifi/tests/v060_lab_publisher_policy.py
+      - name: Confirm release tag remains alpha2 lab-only and source migration disabled
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -Fq 'LAB_TAG: v0.6.0-alpha.4' .github/workflows/blazepwifi-build.yml
+          grep -Fq 'production_signed=False,hardware_powercut_verified=False' .github/workflows/blazepwifi-build.yml
+          grep -Fq 'customer_install_authorized=False' .github/workflows/blazepwifi-build.yml
+          sh experiment/openwrt/BlazePwifi/tests/v060_migration_guard.sh

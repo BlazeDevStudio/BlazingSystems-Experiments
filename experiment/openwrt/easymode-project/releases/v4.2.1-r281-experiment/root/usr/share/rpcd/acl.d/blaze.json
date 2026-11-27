@@ -1,0 +1,31 @@
+{
+  "blaze": {
+    "description": "BlazeSystems Easy Mode administration",
+    "read": {
+      "ubus": {
+        "blaze": [
+          "status",
+          "modem",
+          "wifi_scan",
+          "logs",
+          "inbox",
+          "sms_history",
+          "message_status",
+          "nettest_start",
+          "nettest_status",
+          "wifi_scan_status"
+        ]
+      }
+    },
+    "write": {
+      "ubus": {
+        "blaze": [
+          "action"
+        ],
+        "session": [
+          "destroy"
+        ]
+      }
+    }
+  }
+}

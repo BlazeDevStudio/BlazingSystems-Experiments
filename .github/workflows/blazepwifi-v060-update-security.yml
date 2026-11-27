@@ -1,0 +1,36 @@
+name: BlazePwifi v0.6 updater security and rollback
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - blazepwifi-v0.6.0-audit-foundation
+    paths:
+      - '.github/workflows/blazepwifi-v060-update-security.yml'
+      - 'experiment/openwrt/BlazePwifi/openwrt/rootfs/usr/lib/blazepwifi/update.sh'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_update_archive_security.sh'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_migration_guard.sh'
+      - 'experiment/openwrt/BlazePwifi/tests/v051_update.sh'
+      - 'experiment/openwrt/BlazePwifi/tests/v052_update.sh'
+
+permissions:
+  contents: read
+
+jobs:
+  updater-safe-extraction:
+    name: Malicious archive and rollback regressions
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out exact audited source
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Validate archive member types, duplicate manifests and path canonicalization
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_update_archive_security.sh
+      - name: Preserve v0.5.1 updater compatibility and rollback
+        run: sh experiment/openwrt/BlazePwifi/tests/v051_update.sh
+      - name: Preserve v0.5.2 updater compatibility and rollback
+        run: sh experiment/openwrt/BlazePwifi/tests/v052_update.sh
+      - name: Reject unsafe v0.6 migration before customer state changes
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_migration_guard.sh

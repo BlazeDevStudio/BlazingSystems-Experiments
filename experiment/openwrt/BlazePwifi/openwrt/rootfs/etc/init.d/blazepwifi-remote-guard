@@ -1,0 +1,12 @@
+#!/bin/sh /etc/rc.common
+START=60
+STOP=05
+
+start() {
+  [ -x /usr/sbin/blazepwifi-remote-guard ] || return 0
+  /usr/sbin/blazepwifi-remote-guard --boot >/tmp/blazepwifi/remote-boot-guard.log 2>&1 || true
+}
+
+stop() {
+  :
+}

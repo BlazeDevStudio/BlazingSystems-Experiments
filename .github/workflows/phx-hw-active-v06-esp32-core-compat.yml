@@ -1,0 +1,178 @@
+name: PHX-HARDWARE active-v0.6 ESP32 Mbed TLS 3/4 clean-build matrix
+
+on:
+  push:
+    branches:
+      - phoenix/hw-active-v06-poll-intake-deny-20261126-utc05
+      - phoenix/hw-pending-candidate-collision-guard-20261127-utc15
+    paths:
+      - 'experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino'
+      - 'experiment/openwrt/BlazePwifi/tools/package-vendo-source.py'
+      - 'experiment/openwrt/BlazePwifi/docs/handover/CURRENT_STATE.md'
+      - 'experiment/openwrt/BlazePwifi/docs/handover/CHANGE_LEDGER.md'
+      - 'experiment/openwrt/BlazePwifi/PROJECT_HANDOVER.md'
+      - 'experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/mbedtls_sha256_compat_lab.py'
+      - 'experiment/openwrt/BlazePwifi/docs/handover/2026-11-26-hw-active-v06-poll-intake-deny-utc05.md'
+      - '.github/workflows/phx-hw-active-v06-esp32-core-compat.yml'
+  pull_request:
+    paths:
+      - 'experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino'
+      - 'experiment/openwrt/BlazePwifi/tools/package-vendo-source.py'
+      - 'experiment/openwrt/BlazePwifi/docs/handover/CURRENT_STATE.md'
+      - 'experiment/openwrt/BlazePwifi/docs/handover/CHANGE_LEDGER.md'
+      - 'experiment/openwrt/BlazePwifi/PROJECT_HANDOVER.md'
+      - 'experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/mbedtls_sha256_compat_lab.py'
+      - 'experiment/openwrt/BlazePwifi/docs/handover/2026-11-26-hw-active-v06-poll-intake-deny-utc05.md'
+      - '.github/workflows/phx-hw-active-v06-esp32-core-compat.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: phx-hw-active-v06-esp32-core-compat-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  source-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Verify exact source checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected="${{ github.event.pull_request.head.sha || github.sha }}"
+          actual="$(git rev-parse HEAD)"
+          printf 'EXPECTED_SHA=%s\nACTUAL_SHA=%s\n' "$expected" "$actual"
+          test "$actual" = "$expected"
+      - name: Run Mbed TLS 3/4 selector and fail-closed mutation guard
+        run: python3 experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/mbedtls_sha256_compat_lab.py
+
+  target-build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        core: ["3.3.13", "4.0.0"]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Verify exact source checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected="${{ github.event.pull_request.head.sha || github.sha }}"
+          actual="$(git rev-parse HEAD)"
+          printf 'EXPECTED_SHA=%s\nACTUAL_SHA=%s\n' "$expected" "$actual"
+          test "$actual" = "$expected"
+      - uses: arduino/setup-arduino-cli@v2
+        with:
+          version: "1.6.0"
+      - name: Pin and verify the Espressif package index
+        shell: bash
+        run: |
+          set -euo pipefail
+          index_url="https://raw.githubusercontent.com/espressif/arduino-esp32/8f6bee9761f7b15cce27b79cbd1ae199d0df2adf/package_esp32_index.json"
+          expected_blob="b3325781b813ec0b4dbc7cccc1913f53aa685004"
+          curl -fsSL "$index_url" -o "$RUNNER_TEMP/package_esp32_index.json"
+          actual_blob="$(git hash-object "$RUNNER_TEMP/package_esp32_index.json")"
+          printf 'ESPRESSIF_INDEX_URL=%s\nEXPECTED_GIT_BLOB=%s\nACTUAL_GIT_BLOB=%s\n' \
+            "$index_url" "$expected_blob" "$actual_blob"
+          test "$actual_blob" = "$expected_blob"
+          arduino-cli config init --overwrite
+          arduino-cli config add board_manager.additional_urls "$index_url"
+          arduino-cli core update-index
+          arduino-cli version
+          arduino-cli core install "esp32:esp32@${{ matrix.core }}"
+          arduino-cli core list | tee "$RUNNER_TEMP/arduino-cores.txt"
+          grep -E '^esp32:esp32[[:space:]]+${{ matrix.core }}([[:space:]]|$)' \
+            "$RUNNER_TEMP/arduino-cores.txt"
+      - name: Build twice from clean source staging at canonical paths and compare application images
+        shell: bash
+        run: |
+          set -euo pipefail
+          evidence="$RUNNER_TEMP/phx-hw-esp32-core-${{ matrix.core }}"
+          mkdir -p "$evidence"
+          expected="${{ github.event.pull_request.head.sha || github.sha }}"
+          source_date_epoch="$(git show -s --format=%ct "$expected")"
+          test "$source_date_epoch" -gt 0
+          export SOURCE_DATE_EPOCH="$source_date_epoch"
+          export TZ=UTC
+          export LC_ALL=C
+          {
+            printf 'SOURCE_SHA=%s\n' "$expected"
+            printf 'SOURCE_DATE_EPOCH=%s\n' "$SOURCE_DATE_EPOCH"
+            printf 'BUILD_TIMESTAMP_POLICY=SOURCE_DATE_EPOCH_UTC\n'
+            printf 'ESP32_CORE=%s\n' "${{ matrix.core }}"
+            printf 'ARDUINO_CLI_VERSION=1.6.0\n'
+            printf 'ESPRESSIF_INDEX_COMMIT=8f6bee9761f7b15cce27b79cbd1ae199d0df2adf\n'
+            printf 'ESPRESSIF_INDEX_GIT_BLOB_SHA1=b3325781b813ec0b4dbc7cccc1913f53aa685004\n'
+            printf 'PACKAGE_SCRIPT_BLOB_SHA=%s\n' "$(git rev-parse HEAD:experiment/openwrt/BlazePwifi/tools/package-vendo-source.py)"
+            printf 'SIMULATED_ONLY=1\nPHYSICAL_ACCEPTANCE=0\nCOIN_ADMISSION_ENABLED=0\n'
+          } | tee "$evidence/build-metadata.txt"
+          stage_dir="$evidence/stage"
+          build_dir="$evidence/build"
+          output_dir="$evidence/output"
+          stage_sha_a=""
+          stage_sha_b=""
+          staged_tree_sha() {
+            (cd "$stage_dir" && find . -type f -print0 | LC_ALL=C sort -z | xargs -0 sha256sum | sha256sum | cut -d' ' -f1)
+          }
+          printf 'BUILD_PATH_POLICY=CANONICAL_PATH_RESTAGED_AND_CLEANED_BETWEEN_RUNS\n' | tee -a "$evidence/build-metadata.txt"
+          build_once() {
+            label="$1"
+            rm -rf "$stage_dir" "$build_dir" "$output_dir"
+            mkdir -p "$build_dir" "$output_dir"
+            python3 experiment/openwrt/BlazePwifi/tools/package-vendo-source.py esp32 "$stage_dir"
+            stage_sha="$(staged_tree_sha)"
+            printf 'STAGED_SOURCE_TREE_%s_SHA256=%s\n' "$label" "$stage_sha" | tee -a "$evidence/build-metadata.txt"
+            case "$label" in
+              clean-a) stage_sha_a="$stage_sha" ;;
+              clean-b) stage_sha_b="$stage_sha" ;;
+              *) echo "unexpected build label: $label" >&2; exit 2 ;;
+            esac
+            arduino-cli compile --clean --warnings all \
+              --fqbn esp32:esp32:esp32 \
+              --libraries "$stage_dir/source/libraries" \
+              --build-path "$build_dir" \
+              --output-dir "$output_dir" \
+              "$stage_dir/source/BlazePwifiVendo32"
+            binary="$(find "$output_dir" -type f -name 'BlazePwifiVendo32.ino.bin' -print -quit)"
+            if [ -z "$binary" ]; then
+              binary="$(find "$output_dir" -type f -name '*.bin' \
+                ! -name '*.bootloader.bin' \
+                ! -name '*.partitions.bin' \
+                ! -name '*.merged.bin' -print -quit)"
+            fi
+            test -n "$binary"
+            test -s "$binary"
+            cp "$binary" "$evidence/BlazePwifiVendo32-$label.ino.bin"
+            sha256sum "$evidence/BlazePwifiVendo32-$label.ino.bin" \
+              | tee "$evidence/$label.sha256"
+          }
+          build_once clean-a
+          build_once clean-b
+          test -n "$stage_sha_a"
+          test "$stage_sha_a" = "$stage_sha_b"
+          sha_a="$(cut -d' ' -f1 "$evidence/clean-a.sha256")"
+          sha_b="$(cut -d' ' -f1 "$evidence/clean-b.sha256")"
+          printf 'CLEAN_BUILD_A_SHA256=%s\nCLEAN_BUILD_B_SHA256=%s\n' "$sha_a" "$sha_b" \
+            | tee -a "$evidence/build-metadata.txt"
+          test "$sha_a" = "$sha_b"
+          printf 'BYTE_IDENTICAL_CLEAN_BUILDS=1\n' | tee -a "$evidence/build-metadata.txt"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: phx-hw-active-v06-esp32-core-${{ matrix.core }}-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/phx-hw-esp32-core-${{ matrix.core }}/build-metadata.txt
+            ${{ runner.temp }}/phx-hw-esp32-core-${{ matrix.core }}/BlazePwifiVendo32-*.ino.bin
+            ${{ runner.temp }}/phx-hw-esp32-core-${{ matrix.core }}/*.sha256
+          if-no-files-found: warn
+          retention-days: 30

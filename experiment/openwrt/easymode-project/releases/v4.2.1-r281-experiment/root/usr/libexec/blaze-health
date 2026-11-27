@@ -1,0 +1,160 @@
+#!/bin/sh
+. /usr/share/libubox/jshn.sh
+. /usr/share/blaze/connectivity.sh
+
+SIM_FAIL=0; WIRED_FAIL=0; WIFI_FAIL=0
+SIM_LAST_REC=-1200; WIRED_LAST_REC=-1200; WIFI_LAST_REC=-1200
+SIM_ATTEMPTS=0; WIRED_ATTEMPTS=0; WIFI_ATTEMPTS=0
+SIM_SINCE=0; WIRED_SINCE=0; WIFI_SINCE=0; ACTIVE_SINCE=0; LAST_ACTIVE=''
+
+iface_info() {
+ SRC_IF="$1"; SRC_DEV=''; SRC_GW=''; SRC_IP=''; SRC_UP=0
+ J="$(ubus call network.interface.$SRC_IF status 2>/dev/null || true)"
+ [ -n "$J" ] || return 1
+ UP="$(printf '%s' "$J" | jsonfilter -e '@.up' 2>/dev/null || true)"
+ case "$UP" in true|1) ;; *) return 1;; esac
+ SRC_DEV="$(printf '%s' "$J" | jsonfilter -e '@.l3_device' 2>/dev/null | head -1)"
+ [ -n "$SRC_DEV" ] || SRC_DEV="$(printf '%s' "$J" | jsonfilter -e '@.device' 2>/dev/null | head -1)"
+ SRC_IP="$(printf '%s' "$J" | jsonfilter -e '@["ipv4-address"][0].address' 2>/dev/null | head -1)"
+ SRC_GW="$(printf '%s' "$J" | jsonfilter -e '@.route[@.target="0.0.0.0"].nexthop' 2>/dev/null | head -1)"
+ [ -n "$SRC_DEV" ] && [ -e "/sys/class/net/$SRC_DEV" ] && [ -n "$SRC_IP" ] || return 1
+ SRC_UP=1; return 0
+}
+source_info() {
+ case "$1" in
+  sim)
+   iface_info wwan_4 && return 0
+   iface_info wwan && return 0
+   if [ -e /sys/class/net/eth1 ] && ip -4 addr show dev eth1 2>/dev/null | grep -q 'inet '; then SRC_IF=wwan;SRC_DEV=eth1;SRC_GW='';SRC_IP="$(ip -4 -o addr show dev eth1 | awk '{print $4}' | cut -d/ -f1 | head -1)";SRC_UP=1;return 0;fi
+   ;;
+  wired) [ "$(uci -q get blaze.main.port1)" = wan ] && iface_info wan && return 0;;
+  wifi) iface_info wifiwan && return 0;;
+ esac
+ SRC_IF='';SRC_DEV='';SRC_GW='';SRC_IP='';SRC_UP=0;return 1
+}
+source_expected() {
+ case "$1" in
+  sim) uci -q get network.wwan >/dev/null 2>&1;;
+  wired) [ "$(uci -q get blaze.main.port1)" = wan ] && [ "$(cat /sys/class/net/wan/carrier 2>/dev/null || echo 0)" = 1 ];;
+  wifi) uci -q get wireless.blaze_sta >/dev/null 2>&1;;
+  *) return 1;;
+ esac
+}
+probe_source() {
+ source_info "$1" || { PROBE=no-link; return 1; }
+ if [ "$1" = wifi ] && { [ "$(uci -q get blaze.main.wifi_captive || true)" = 1 ] || [ "$(uci -q get blaze.main.wifi_uplink_mode || true)" = relay ]; };then
+  iw dev "$SRC_DEV" link 2>/dev/null | grep -q '^Connected to' || { PROBE=no-association;return 1; }
+  PROBE=local-link-internet-unchecked;return 0
+ fi
+ probe_link "$SRC_DEV" && { PROBE="$BLAZE_PROBE"; return 0; }
+ PROBE="$BLAZE_PROBE";return 1
+}
+route_one() {
+ source_info "$1" || return 1
+ case "$SRC_GW" in ''|*[!0-9.]*) ip route replace default dev "$SRC_DEV" proto 99 metric 5 2>/dev/null;; *) ip route replace default via "$SRC_GW" dev "$SRC_DEV" proto 99 metric 5 2>/dev/null;; esac
+}
+append_nexthop() {
+ S="$1";W="$2";source_info "$S" || return 1
+ case "$SRC_GW" in ''|*[!0-9.]*) ROUTE="$ROUTE nexthop dev $SRC_DEV weight $W";; *) ROUTE="$ROUTE nexthop via $SRC_GW dev $SRC_DEV weight $W";; esac
+}
+set_routes() {
+ MODE="$(uci -q get blaze.main.internet_mode || echo failover)"; ORDER="$(uci -q get blaze.main.source_order || echo 'sim wired wifi')"
+ HEALTHY=''; COUNT=0
+ if [ "$(uci -q get blaze.main.wifi_uplink_mode || true)" = relay ] && [ "$(uci -q get blaze.main.wifi_relay_scope || true)" = ssid ];then
+  ORDER="$(printf '%s' "$ORDER" | sed 's/wifi//g' | xargs)"
+ fi
+ if [ "$(uci -q get blaze.main.backup_enabled || echo 1)" = 0 ];then ORDER="${ORDER%% *}";fi
+ for S in $ORDER; do
+  if [ "$MODE" = balance ] && [ "$S" = wifi ] && [ "$WIFI_PROBE" = local-link-internet-unchecked ];then continue;fi
+  case "$S" in sim) OK=$SIM_OK;; wired) OK=$WIRED_OK;; wifi) OK=$WIFI_OK;; *) OK=0;; esac; [ "$OK" = 1 ] && { HEALTHY="$HEALTHY $S";COUNT=$((COUNT+1)); }; done
+ HEALTHY="$(echo "$HEALTHY" | xargs)"
+ [ "$COUNT" -gt 0 ] || { ip route replace unreachable default proto 99 metric 5 2>/dev/null || true; ACTIVE=none; EFFECTIVE=none; ROUTE_ERROR=''; return; }
+ FIRST="${HEALTHY%% *}";[ -n "$FIRST" ] || FIRST="$HEALTHY"
+ if [ "$MODE" = balance ] && [ "$COUNT" -ge 2 ]; then
+  echo 1 >/proc/sys/net/ipv4/fib_multipath_hash_policy
+  ROUTE='ip route replace default proto 99 metric 5'; for S in $HEALTHY; do W="$(uci -q get blaze.main.${S}_weight || echo 1)";case "$W" in ''|*[!0-9]*) W=1;;esac;[ "$W" -lt 1 ] && W=1;[ "$W" -gt 10 ] && W=10;append_nexthop "$S" "$W" || true;done
+  if sh -c "$ROUTE" 2>/tmp/blaze-route-error; then ACTIVE=balanced;EFFECTIVE=balance;ROUTE_ERROR=''; else route_one "$FIRST" || true;ACTIVE="$FIRST";EFFECTIVE=failover;ROUTE_ERROR='Multipath route was not accepted; using priority failover.';fi
+ else
+  if route_one "$FIRST";then ACTIVE="$FIRST";EFFECTIVE=failover;ROUTE_ERROR='';else ACTIVE=none;EFFECTIVE=error;ROUTE_ERROR='Selected route could not be applied.';fi
+ fi
+}
+recover_source() {
+ S="$1"; NOW="$2"; ENABLED="$(uci -q get blaze.main.watchdog_enabled || echo 1)";[ "$ENABLED" = 1 ] || return 0
+ THRESH="$(uci -q get blaze.main.watchdog_failures || echo 3)";case "$THRESH" in ''|*[!0-9]*) THRESH=3;;esac
+ case "$S" in
+  sim) FAIL=$SIM_FAIL;LAST=$SIM_LAST_REC;ATT=$SIM_ATTEMPTS;;
+  wired) FAIL=$WIRED_FAIL;LAST=$WIRED_LAST_REC;ATT=$WIRED_ATTEMPTS;;
+  wifi) FAIL=$WIFI_FAIL;LAST=$WIFI_LAST_REC;ATT=$WIFI_ATTEMPTS;;
+  *) return 0;;
+ esac
+ [ "$FAIL" -ge "$THRESH" ] || return 0; [ $((NOW-LAST)) -ge 300 ] || return 0
+ /usr/libexec/blaze-outage-snapshot >/dev/null 2>&1 || true
+ case "$S" in
+  sim) KIND=reconnect;[ "$ATT" -gt 0 ] && KIND=radio-reconnect;;
+  wifi) KIND=reconnect-wifi;;
+  wired) KIND=reconnect-wired;;
+ esac
+ logger -t BlazeSystems "Watchdog recovery for $S after $FAIL failed checks (attempt $((ATT+1)))."
+ if /usr/libexec/blaze-launch "$KIND" >/dev/null 2>&1; then
+  case "$S" in sim) SIM_LAST_REC=$NOW;SIM_FAIL=0;SIM_ATTEMPTS=$((ATT+1));; wired) WIRED_LAST_REC=$NOW;WIRED_FAIL=0;WIRED_ATTEMPTS=$((ATT+1));; wifi) WIFI_LAST_REC=$NOW;WIFI_FAIL=0;WIFI_ATTEMPTS=$((ATT+1));; esac
+ fi
+}
+backup_route() {
+ # Relay clients follow upstream DHCP. Only the separate backup SSID uses table 299.
+ if [ "$(uci -q get blaze.main.wifi_uplink_mode || true)" = relay ] && [ "$(uci -q get blaze.main.wifi_backup || true)" = 1 ];then
+  ip rule show | grep -q '^15900:.*lookup 299' || ip rule add pref 15900 from 192.168.254.0/24 lookup 299
+  B='';for S in $(uci -q get blaze.main.source_order || echo 'sim wired wifi');do
+   case "$S" in sim) [ "$SIM_OK" = 1 ] && B=sim;;wired) [ "$WIRED_OK" = 1 ] && B=wired;;esac
+   [ -n "$B" ] && break
+  done
+  if [ -n "$B" ] && source_info "$B";then
+   if [ -n "$SRC_GW" ];then ip route replace table 299 default via "$SRC_GW" dev "$SRC_DEV" onlink;else ip route replace table 299 default dev "$SRC_DEV";fi
+  else ip route replace table 299 unreachable default;fi
+ else
+  ip rule del pref 15900 from 192.168.254.0/24 lookup 299 2>/dev/null || true
+  ip route flush table 299 2>/dev/null || true
+ fi
+}
+while :; do
+ if /usr/libexec/blaze-lock-claim job --reap >/dev/null 2>&1; then
+  if [ -s /etc/blaze/mode-pending ]; then /usr/libexec/blaze-launch restore-mode >/dev/null 2>&1
+  elif [ -f /etc/blaze/wifi-pending ];then /usr/libexec/blaze-launch restore-wifi >/dev/null 2>&1
+  elif [ -s /etc/blaze/band-pending ]; then /usr/libexec/blaze-launch restore-bands >/dev/null 2>&1
+  else
+   [ "$(uci -q get blaze.main.antenna)" = auto ] && /usr/libexec/blaze-antenna auto >/dev/null 2>&1
+   /usr/bin/ucode /usr/share/blaze/poll.uc 2>/dev/null
+   NOW="$(cut -d. -f1 /proc/uptime)"; EPOCH="$(date +%s)"
+   SIM_OK=0;WIRED_OK=0;WIFI_OK=0;SIM_PROBE=no-link;WIRED_PROBE=no-link;WIFI_PROBE=no-link
+   if source_expected sim;then if probe_source sim;then SIM_OK=1;SIM_PROBE="$PROBE";SIM_FAIL=0;[ "$SIM_SINCE" -gt 0 ] || SIM_SINCE=$EPOCH;else SIM_PROBE="$PROBE";SIM_FAIL=$((SIM_FAIL+1));SIM_SINCE=0;fi;else SIM_FAIL=0;SIM_SINCE=0;SIM_PROBE=not-configured;fi
+   if source_expected wired;then if probe_source wired;then WIRED_OK=1;WIRED_PROBE="$PROBE";WIRED_FAIL=0;[ "$WIRED_SINCE" -gt 0 ] || WIRED_SINCE=$EPOCH;else WIRED_PROBE="$PROBE";WIRED_FAIL=$((WIRED_FAIL+1));WIRED_SINCE=0;fi;else WIRED_FAIL=0;WIRED_SINCE=0;WIRED_PROBE=no-cable;fi
+   if source_expected wifi;then if probe_source wifi;then WIFI_OK=1;WIFI_PROBE="$PROBE";WIFI_FAIL=0;[ "$WIFI_SINCE" -gt 0 ] || WIFI_SINCE=$EPOCH;else WIFI_PROBE="$PROBE";WIFI_FAIL=$((WIFI_FAIL+1));WIFI_SINCE=0;fi;else WIFI_FAIL=0;WIFI_SINCE=0;WIFI_PROBE=not-configured;fi
+   # After 30 minutes of continuous health, forget previous recovery escalation.
+   [ "$SIM_OK" = 1 ] && [ "$SIM_SINCE" -gt 0 ] && [ $((EPOCH-SIM_SINCE)) -ge 1800 ] && SIM_ATTEMPTS=0
+   [ "$WIRED_OK" = 1 ] && [ "$WIRED_SINCE" -gt 0 ] && [ $((EPOCH-WIRED_SINCE)) -ge 1800 ] && WIRED_ATTEMPTS=0
+   [ "$WIFI_OK" = 1 ] && [ "$WIFI_SINCE" -gt 0 ] && [ $((EPOCH-WIFI_SINCE)) -ge 1800 ] && WIFI_ATTEMPTS=0
+   # A single failed probe must not remove a previously working route.
+   LIMIT="$(uci -q get blaze.main.watchdog_failures || echo 3)";case "$LIMIT" in ''|*[!0-9]*) LIMIT=3;;esac
+   PREV=$(cat /tmp/blaze-health.json 2>/dev/null || echo '{}')
+   for S in sim wired wifi;do
+    case "$S" in sim) OK=$SIM_OK;FAIL=$SIM_FAIL;;wired) OK=$WIRED_OK;FAIL=$WIRED_FAIL;;wifi) OK=$WIFI_OK;FAIL=$WIFI_FAIL;;esac
+    if [ "$OK" = 0 ] && [ "$FAIL" -gt 0 ] && [ "$FAIL" -lt "$LIMIT" ] && [ "$(printf '%s' "$PREV" | jsonfilter -e "@.$S")" = true ] && source_info "$S";then
+     case "$S" in sim) SIM_OK=1;;wired) WIRED_OK=1;;wifi) WIFI_OK=1;;esac
+    fi
+   done
+   set_routes
+   backup_route
+   if [ "$WIFI_OK" = 1 ] && [ "$(uci -q get blaze.main.wifi_uplink_mode || true)" = relay ];then /usr/libexec/blaze-relay-refresh >/dev/null 2>&1 || ROUTE_ERROR='Repeater setup needs attention: address overlap or relay service not running.';fi
+   if [ "$ACTIVE" != "$LAST_ACTIVE" ];then ACTIVE_SINCE=$EPOCH;LAST_ACTIVE="$ACTIVE";fi
+   recover_source sim "$NOW";recover_source wired "$NOW";recover_source wifi "$NOW"
+   json_init
+   json_add_string active "$ACTIVE";json_add_string routed_sources "$HEALTHY";json_add_string requested_mode "$(uci -q get blaze.main.internet_mode || echo failover)";json_add_string effective_mode "$EFFECTIVE";json_add_string source_order "$(uci -q get blaze.main.source_order || echo 'sim wired wifi')";json_add_string route_error "$ROUTE_ERROR"
+   json_add_boolean sim "$SIM_OK";json_add_boolean wired "$WIRED_OK";json_add_boolean wifi "$WIFI_OK"
+   json_add_string sim_probe "$SIM_PROBE";json_add_string wired_probe "$WIRED_PROBE";json_add_string wifi_probe "$WIFI_PROBE"
+   json_add_int sim_since "$SIM_SINCE";json_add_int wired_since "$WIRED_SINCE";json_add_int wifi_since "$WIFI_SINCE";json_add_int active_since "$ACTIVE_SINCE"
+   json_add_int sim_failures "$SIM_FAIL";json_add_int wired_failures "$WIRED_FAIL";json_add_int wifi_failures "$WIFI_FAIL"
+   json_add_int sim_recoveries "$SIM_ATTEMPTS";json_add_int wired_recoveries "$WIRED_ATTEMPTS";json_add_int wifi_recoveries "$WIFI_ATTEMPTS";json_add_int time "$EPOCH"
+   json_dump >/tmp/blaze-health.json.new;mv /tmp/blaze-health.json.new /tmp/blaze-health.json
+  fi
+ fi
+ INTERVAL="$(uci -q get blaze.main.watchdog_interval || echo 20)";case "$INTERVAL" in ''|*[!0-9]*) INTERVAL=20;;esac;[ "$INTERVAL" -lt 10 ] && INTERVAL=10;[ "$INTERVAL" -gt 300 ] && INTERVAL=300;sleep "$INTERVAL"
+done

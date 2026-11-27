@@ -1,0 +1,147 @@
+name: BlazePwifi v0.6 alpha2 verified draft finalizer
+
+on:
+  push:
+    branches:
+      - blazepwifi-v0.6.0-audit-foundation
+    paths:
+      - '.github/workflows/blazepwifi-v060-finalize-alpha2.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: blaze-v060-alpha2-finalizer
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  publish-verified-alpha2-draft:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      GH_TOKEN: ${{ github.token }}
+      LAB_TAG: v0.6.0-alpha.2
+      RELEASE_ID: '407234610'
+      SOURCE_SHA: 38937a46f007e8a379a2bb8ab6de68543d87795e
+      SOURCE_FULL_RUN: '37838373420'
+      SOURCE_WINDOWS_RUN: '37838379623'
+    steps:
+      - name: Checkout verification code without persisting authentication
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Require the existing private draft and original exact-SHA green build evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF_NAME" = "blazepwifi-v0.6.0-audit-foundation"
+          gh api "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" > release-draft.json
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$SOURCE_FULL_RUN" > run-full.json
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$SOURCE_WINDOWS_RUN" > run-windows.json
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$SOURCE_FULL_RUN/jobs?per_page=100" > jobs-full.json
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$SOURCE_WINDOWS_RUN/jobs?per_page=100" > jobs-windows.json
+          python3 - <<'PY'
+          import json,os,pathlib
+          env=os.environ
+          load=lambda f:json.loads(pathlib.Path(f).read_text())
+          r=load("release-draft.json"); fw=load("run-full.json"); win=load("run-windows.json")
+          assert r["id"]==int(env["RELEASE_ID"]),"Release ID mismatch"
+          assert r["tag_name"]==env["LAB_TAG"] and r["target_commitish"]==env["SOURCE_SHA"],"Draft tag/commit mismatch"
+          assert r["draft"] is True and r["prerelease"] is True,"Not expected private draft"
+          for x in (fw,win):
+              assert x["head_sha"]==env["SOURCE_SHA"] and x["status"]=="completed","Source-run SHA/status mismatch"
+          assert fw["id"]==int(env["SOURCE_FULL_RUN"]) and fw["event"]=="push","Wrong Full build run"
+          assert win["id"]==int(env["SOURCE_WINDOWS_RUN"]) and win["conclusion"]=="success","Windows installer not green"
+          jobs=load("jobs-full.json")["jobs"]
+          required=("validate","android","esp8266","esp32","firmware (ruijie)",
+                    "firmware (orangepi_zero3)","firmware (x86_64)","v04_candidate_gate",
+                    "v04_android_emulator","update_bundle")
+          results={j["name"]:j["conclusion"] for j in jobs}
+          for name in required: assert results.get(name)=="success",f"Full gate incomplete: {name}"
+          assert results.get("publish_v060_lab_preview")=="failure","Unexpected original publication outcome"
+          assert not [n for n,s in results.items() if s=="failure" and n!="publish_v060_lab_preview"],"Non-publisher build failed"
+          wjobs={j["name"]:j["conclusion"] for j in load("jobs-windows.json")["jobs"]}
+          assert wjobs.get("handover")=="success" and wjobs.get("build-windows")=="success","Windows package incomplete"
+          expected={f"{name}-LAB-ONLY.zip" for name in (
+            "BlazePwifi-bundle","BlazePwifi-android-current","BlazePwifi-esp8266-firmware",
+            "BlazePwifi-esp32-firmware","BlazePwifi-ruijie-firmware",
+            "BlazePwifi-x86_64-firmware","BlazePwifi-orangepi_zero3-firmware",
+            "BlazePwifi-current-update","BlazePisonet-SoftTimer-v0.4.0-win-x64")}
+          expected|={"MANIFEST.json","SHA256SUMS","RELEASE_NOTES.md"}
+          assets={a["name"]:a for a in r["assets"]}
+          assert len(assets)==12 and set(assets)==expected,"Wrong uploaded lab asset set"
+          for name,a in assets.items():
+              assert a["state"]=="uploaded" and a["size"]>0 and a.get("digest","").startswith("sha256:"),name
+          with open(env["GITHUB_OUTPUT"],"a") as out:
+              print(f"manifest_id={assets['MANIFEST.json']['id']}",file=out)
+              print(f"sums_id={assets['SHA256SUMS']['id']}",file=out)
+          print("All 12 private draft uploads + source/win CI evidence verified; not yet public")
+          PY
+        id: gate
+
+      - name: Download and verify manifest and checksums for every archived binary
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p audit
+          for pair in "MANIFEST.json:${{ steps.gate.outputs.manifest_id }}" "SHA256SUMS:${{ steps.gate.outputs.sums_id }}"; do
+            name="${pair%%:*}"; aid="${pair#*:}"
+            curl --fail --location --silent --show-error \
+              -H "Authorization: Bearer $GH_TOKEN" \
+              -H "Accept: application/octet-stream" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              "https://api.github.com/repos/$GITHUB_REPOSITORY/releases/assets/$aid" -o "audit/$name"
+          done
+          python3 - <<'PY'
+          import hashlib,json,os,pathlib,re
+          assets={a["name"]:a for a in json.load(open("release-draft.json"))["assets"]}
+          for name in ("MANIFEST.json","SHA256SUMS"):
+              p=pathlib.Path("audit")/name
+              assert p.is_file() and p.stat().st_size==assets[name]["size"],"Asset download incorrect: "+name
+              assert hashlib.sha256(p.read_bytes()).hexdigest()==assets[name]["digest"].removeprefix("sha256:"),name
+          m=json.load(open("audit/MANIFEST.json"))
+          assert m["tag"]==os.environ["LAB_TAG"] and m["commit"]==os.environ["SOURCE_SHA"]
+          assert str(m["build_run_id"])==os.environ["SOURCE_FULL_RUN"]
+          assert str(m["windows_run_id"])==os.environ["SOURCE_WINDOWS_RUN"]
+          for gate in ("production_signed","hardware_powercut_verified","migration_verified","customer_install_authorized"):
+              assert m[gate] is False,gate
+          assert m["source_version"]=="0.5.3","False internal release version"
+          expected={a["name"]:a for a in m["assets"]}
+          archive={n:a for n,a in assets.items() if n.endswith("-LAB-ONLY.zip")}
+          assert len(archive)==len(expected)==9 and set(archive)==set(expected)
+          for n,a in archive.items():
+              assert a["size"]==expected[n]["bytes"] and a["digest"]=="sha256:"+expected[n]["sha256"],n
+          sums={}
+          for line in pathlib.Path("audit/SHA256SUMS").read_text().splitlines():
+              assert re.fullmatch(r"[a-f0-9]{64}  \S+",line),"Malformed checksum manifest"
+              digest,name=line.split("  ",1)
+              assert name not in sums,"Duplicate checksum"
+              sums[name]=digest
+          assert set(sums)==set(archive),"SHA256SUMS missing archive"
+          for name,a in archive.items(): assert sums[name]==a["digest"].removeprefix("sha256:"),name
+          print("Verified GitHub asset digests, embedded 9 archive manifest SHAs and checksum list.")
+          PY
+
+      - name: Publish only verified private draft without changing binaries or source
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh api --method PATCH "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" \
+            -F draft=false -F prerelease=true > published.json
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$LAB_TAG" > published-public.json
+          python3 - <<'PY'
+          import json,os
+          r=json.load(open("published-public.json")); expect=json.load(open("release-draft.json"))
+          assert r["id"]==int(os.environ["RELEASE_ID"]) and r["tag_name"]==os.environ["LAB_TAG"]
+          assert r["target_commitish"]==os.environ["SOURCE_SHA"]
+          assert r["draft"] is False and r["prerelease"] is True
+          a={x["name"]:(x["size"],x["digest"],x["state"]) for x in r["assets"]}
+          b={x["name"]:(x["size"],x["digest"],x["state"]) for x in expect["assets"]}
+          assert len(a)==12 and a==b,"Published release assets changed"
+          assert r["html_url"].endswith("/releases/tag/"+os.environ["LAB_TAG"]),"Public release URL incorrect"
+          print("ACTUAL PUBLISHED AND API VERIFIED lab-only release:",r["html_url"])
+          print("SHA",r["target_commitish"],"assets",len(a))
+          PY

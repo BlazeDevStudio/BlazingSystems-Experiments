@@ -1,0 +1,45 @@
+(function(){
+'use strict';
+const q=s=>document.querySelector(s), qa=s=>Array.from(document.querySelectorAll(s));
+let csrf='', sessionData=null, statusData=null, statusBusy=false;
+const liveSamples=[];
+function recordSessionTrend(value){
+  const n=Number(value);if(!Number.isFinite(n)||n<0)return;
+  liveSamples.push(Math.floor(n));if(liveSamples.length>30)liveSamples.shift();
+  const latest=liveSamples[liveSamples.length-1],highest=Math.max(1,...liveSamples);
+  const points=liveSamples.map((v,i)=>{
+    const x=liveSamples.length===1?0:i*460/(liveSamples.length-1);
+    return x.toFixed(1)+','+(93-v/highest*83).toFixed(1);
+  }).join(' ');
+  const line=q('#sessionTrendLine'),area=q('#sessionTrendArea');
+  if(line)line.setAttribute('points',points);
+  if(area)area.setAttribute('d','M0 98 L'+points.replaceAll(' ', ' L')+' L460 98 Z');
+  const caption=q('#sessionTrendCaption'),last=q('#sessionLastUpdated');
+  if(caption)caption.textContent=latest+' active Wi-Fi session'+(latest===1?'':'s')+' · '+liveSamples.length+' recorded reading'+(liveSamples.length===1?'':'s')+' · last 30 readings';
+  if(last)last.textContent='Updated '+new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+}
+async function jf(url,opt){try{const r=await fetch(url,Object.assign({credentials:'same-origin',cache:'no-store'},opt||{}));return await r.json()}catch(e){return {ok:false,error:'Connection failed'}}}
+function csrfFailed(x){return !!(x&&!x.ok&&/csrf/i.test(String(x.error||'')))}
+async function refreshSessionToken(){const x=await jf('/cgi-bin/admin-session');if(!x.ok){authView(true);return false}applySession(x);return !!csrf}
+async function api(action,data,retry){const body=new URLSearchParams(Object.assign({action,csrf},data||{}));const x=await jf('/cgi-bin/admin',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded','X-Blaze-CSRF':csrf},body});if(retry!==false&&csrfFailed(x)&&await refreshSessionToken())return api(action,data,false);return x}
+function toast(msg,bad){const h=q('#toastHost'),n=document.createElement('div');n.className='toast'+(bad?' danger':'');n.textContent=msg;h.appendChild(n);setTimeout(()=>n.remove(),3200)}
+function authView(on){q('#loginView').classList.toggle('hidden',!on);q('#appView').classList.toggle('hidden',on)}
+function applySession(x){sessionData=x;csrf=x.csrf||csrf;q('#sideUser').textContent=x.username||'';q('#topUser').textContent=x.username||'';q('#sideRole').textContent=x.role||'';q('#topRole').textContent=x.role||'';q('#systemRole').textContent=x.role||'';q('#passwordChange').classList.toggle('hidden',!(+x.must_change));authView(false)}
+async function login(){q('#loginButton').disabled=true;const body=new URLSearchParams({username:q('#loginUser').value,password:q('#loginPass').value});const x=await jf('/cgi-bin/admin-login',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body});q('#loginButton').disabled=false;if(!x.ok){q('#loginMessage').textContent=x.error||'Sign in failed';q('#loginMessage').classList.remove('hidden');return}q('#loginPass').value='';applySession(x);await refreshAll()}
+async function session(){const x=await jf('/cgi-bin/admin-session');if(!x.ok){authView(true);return}applySession(x);await refreshAll()}
+async function logout(){const body=new URLSearchParams({csrf});await jf('/cgi-bin/admin-logout',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded','X-Blaze-CSRF':csrf},body});location.reload()}
+function setApplianceState(ok){const chip=q('#blazeConnection'),stamp=q('#blazeLastRefresh');if(chip){chip.dataset.live=ok?'yes':'no';chip.textContent=ok?'Appliance connected':'Connection unavailable'}if(stamp&&ok)stamp.textContent='Verified '+new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});}
+async function status(){if(statusBusy)return;statusBusy=true;let x;try{x=await api('status')}finally{statusBusy=false}setApplianceState(!!x.ok);if(!x.ok){if(x.error==='unauthorized'){authView(true);return}toast(x.error||'Status failed',true);return}statusData=x;recordSessionTrend(x.active_sessions);q('#metricSessions').textContent=x.active_sessions;q('#metricControllers').textContent=x.online_vendos;q('#metricMemory').textContent=Math.round((+x.mem_available_kb||0)/1024)+' MB';q('#metricLoad').textContent='Load '+(x.load1||'—');q('#systemUptime').textContent=formatDuration((+x.uptime_seconds||0)*1000);const sa=q('#sessionActive'),sp=q('#sessionPaused');if(sa)sa.textContent=x.active_sessions;if(sp)sp.textContent=x.paused_sessions;q('#passwordChange').classList.toggle('hidden',!(+x.must_change))}
+async function refreshAll(){await status();if(window.BlazeRental)await BlazeRental.load(false);if(window.BlazeControllers)await BlazeControllers.load(false);if(window.BlazeMembers)await BlazeMembers.load(false)}
+function openPage(name){qa('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.page===name));qa('.section').forEach(s=>s.classList.remove('active'));const p=q('#page-'+name);if(p)p.classList.add('active');q('#crumb').textContent=({dashboard:'Dashboard',sessions:'Clients & Sessions',sales:'Sales & Reports',wan:'WAN & Internet',lan:'LAN · VLAN · Wi-Fi',remote:'Worldwide Remote Access',vouchers:'Vouchers & Rates',members:'Pisonet Members',rentals:'Rental Devices',controllers:'Coin Controllers',portal:'Portal Designer',multimedia:'Multimedia Manager',games:'BlazeGames Manager',storage:'Storage',backups:'Backups',tools:'Tools & Terminal',alerts:'Alerts & Logs',system:'System & Security'})[name]||name;q('#sidebar').classList.remove('open');if(name==='members'&&window.BlazeMembers){BlazeMembers.load();BlazeMembers.loadEvents('')}if(name==='rentals'&&window.BlazeRental)BlazeRental.load();if(name==='controllers'&&window.BlazeControllers)BlazeControllers.load();if(window.BlazeConsole)BlazeConsole.onPage(name)}
+function formatDuration(ms){let s=Math.max(0,Math.floor(ms/1000)),d=Math.floor(s/86400);s%=86400;let h=Math.floor(s/3600),m=Math.floor((s%3600)/60);return d?d+'d '+h+'h':h?h+'h '+m+'m':m+'m'}
+function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+async function voucher(){const x=await api('voucher_create',{cents:q('#voucherCents').value});q('#voucherResult').textContent=x.ok?('Voucher '+x.code+' • '+x.cents+' centavos'):(x.error||'Failed');if(!x.ok)toast(x.error||'Voucher failed',true)}
+async function changePassword(){const v=q('#newPassword').value;if(v.length<12){toast('Use at least 12 characters',true);return}const x=await api('password_change',{new_password:v});if(!x.ok){toast(x.error||'Password change failed',true);return}toast('Password changed. Sign in again.');setTimeout(()=>location.reload(),500)}
+q('#loginButton').addEventListener('click',login);q('#loginPass').addEventListener('keydown',e=>{if(e.key==='Enter')login()});q('#logoutBtn').addEventListener('click',logout);q('#menuBtn').addEventListener('click',()=>q('#sidebar').classList.toggle('open'));q('#voucherBtn').addEventListener('click',voucher);q('#changePasswordBtn').addEventListener('click',changePassword);qa('.nav-btn').forEach(b=>b.addEventListener('click',()=>openPage(b.dataset.page)));
+window.BlazeCore={api,toast,openPage,refreshAll,esc,formatDuration,get csrf(){return csrf},get session(){return sessionData},get status(){return statusData}};
+// Only poll this protected local status API while an authenticated console is
+// visible. A lightweight 30-second cadence keeps small OpenWrt routers usable.
+setInterval(()=>{if(sessionData&&!document.hidden&&!q('#appView').classList.contains('hidden'))status()},30000);
+session();
+})();

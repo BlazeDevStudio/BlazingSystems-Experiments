@@ -1,0 +1,6 @@
+const assert=require('assert/strict');const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
+(async()=>{const b=await chromium.launch({executablePath:process.env.CHROME_PATH||undefined,headless:true});const p=await b.newPage();try{
+ await p.goto('http://192.168.1.1');await p.locator('#password').fill(process.env.ROUTER_PASSWORD);await p.locator('#login-form button').click();await p.locator('#app').waitFor({state:'visible'});
+ let delayed=false;await p.route('**/ubus',async route=>{const q=route.request().postDataJSON();if(q.params?.[1]==='blaze'&&q.params?.[2]==='modem'){const r=await route.fetch();await new Promise(r=>setTimeout(r,1500));await route.fulfill({response:r});delayed=true;}else await route.continue();});
+ await p.locator('[data-tab=network]').click();await p.locator('[data-tab=wifi]').click();await p.locator('#save-wifi').waitFor({timeout:15000});for(let i=0;i<25&&!delayed;i++)await p.waitForTimeout(1000);assert(delayed);await p.waitForTimeout(1000);assert(await p.locator('#save-wifi').isVisible(),'Late modem response replaced the Wi-Fi page');assert.equal(await p.locator('#page-title').textContent(),'Wi-Fi');console.log('PASS: late modem result cannot overwrite a newer page');
+ }finally{await b.close();}})().catch(e=>{console.error(e);process.exit(1)});

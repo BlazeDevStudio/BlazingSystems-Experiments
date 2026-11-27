@@ -1,0 +1,4 @@
+#!/bin/sh
+# Route policy is owned by blaze-health; restart is cheap and avoids a second
+# competing route manager.
+/etc/init.d/blaze-health restart >/dev/null 2>&1 || true

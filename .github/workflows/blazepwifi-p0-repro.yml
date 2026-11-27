@@ -1,0 +1,222 @@
+name: BlazePwifi P0 staged accounting regression
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - blazepwifi-v0.6.0-audit-foundation
+    paths:
+      - 'experiment/openwrt/BlazePwifi/tests/v060_member_*_repro.sh'
+      - '.github/workflows/blazepwifi-p0-repro.yml'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_ledger_model.py'
+      - 'experiment/openwrt/BlazePwifi/tools/v060_v1_inventory_fixture.py'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_v1_inventory_fixture.py'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_journal_native_fixture.sh'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_v2_shadow_readonly.sh'
+      - 'experiment/openwrt/BlazePwifi/openwrt/rootfs/usr/lib/blazepwifi/v2_shadow.sh'
+      - 'experiment/openwrt/BlazePwifi/openwrt/rootfs/etc/config/blazepwifi'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_durable_replace_native.sh'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_journal_native_auth_endtoend.sh'
+      - 'experiment/openwrt/BlazePwifi/tools/v060_durable_replace.c'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_journal_auth_fixture.sh'
+      - 'experiment/openwrt/BlazePwifi/tools/v060_journal_auth_fixture.sh'
+      - 'experiment/openwrt/BlazePwifi/tools/v060_journal_fixture.sh'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_rental_receipt_failure_repro.sh'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_member_receipt_quota.sh'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_rental_paid_lock_race.sh'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_rental_admin_paid_race.sh'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_rental_v2_atomic_bridge.py'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_rental_native_ack_contract.py'
+      - 'experiment/openwrt/BlazePwifi/tests/fixtures/rental_v2_atomic.py'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_rental_receipt_midwrite.sh'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_coin_false_ack.sh'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_account_write_integrity.sh'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_rental_db_integrity.sh'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_rental_revoke_safety.sh'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_rental_lease_mutation_safety.sh'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_admin_rental_lease_set.sh'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_rental_status_heartbeat.sh'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_standalone_rental_heartbeat.sh'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_standalone_rental_coin_ack.sh'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_standalone_rental_coin_start.sh'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_standalone_rental_enroll_safety.sh'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_enrollment_qr_issuance.sh'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_r281_random_hex.sh'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_auth_rng_failclosed.sh'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_admin_password_write_integrity.sh'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_auth_session_revocation.sh'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_auth_password_rotation_order.sh'
+      - 'experiment/openwrt/BlazePwifi/openwrt/rootfs/www/blazepwifi/cgi-bin/admin-logout'
+      - 'experiment/openwrt/BlazePwifi/profiles/r281-rental/root/www/cgi-bin/rental-logout'
+      - 'experiment/openwrt/BlazePwifi/profiles/r281-rental/root/usr/lib/blazepwifi/auth.sh'
+      - 'experiment/openwrt/BlazePwifi/openwrt/rootfs/usr/lib/blazepwifi/auth.sh'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_standalone_hotspot_coin_safety.sh'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_legacy_bind_zero_loss.sh'
+      - 'experiment/openwrt/BlazePwifi/tests/stress.sh'
+      - 'experiment/openwrt/BlazePwifi/profiles/r281-rental/root/www/cgi-bin/rental'
+      - 'experiment/openwrt/BlazePwifi/profiles/r281-rental/root/www/cgi-bin/vendo'
+      - 'experiment/openwrt/BlazePwifi/profiles/r281-rental/root/usr/lib/blazepwifi/common.sh'
+      - 'experiment/openwrt/BlazePwifi/profiles/r281-rental/root/www/cgi-bin/rental'
+      - 'experiment/openwrt/BlazePwifi/profiles/r281-rental/root/usr/lib/blazepwifi/rental.sh'
+      - 'experiment/openwrt/BlazePwifi/openwrt/rootfs/www/blazepwifi/cgi-bin/rental'
+      - 'experiment/openwrt/BlazePwifi/tests/rental.sh'
+      - 'experiment/openwrt/BlazePwifi/openwrt/rootfs/usr/lib/blazepwifi/rental.sh'
+      - 'experiment/openwrt/BlazePwifi/openwrt/rootfs/www/blazepwifi/cgi-bin/rental'
+      - 'experiment/openwrt/BlazePwifi/openwrt/rootfs/usr/lib/blazepwifi/common.sh'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_coin_replay_window.sh'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_member_quarantine_replay.sh'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_member_delete_safety.sh'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_member_write_fault.sh'
+      - 'experiment/openwrt/BlazePwifi/tests/v054_member_migration.sh'
+      - 'experiment/openwrt/BlazePwifi/tests/v053_members.sh'
+      - 'experiment/openwrt/BlazePwifi/openwrt/rootfs/usr/lib/blazepwifi/member_migration.sh'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_member_ui_delete.sh'
+      - 'experiment/openwrt/BlazePwifi/openwrt/rootfs/www/blazepwifi/admin/members.js'
+      - 'experiment/openwrt/BlazePwifi/openwrt/rootfs/usr/lib/blazepwifi/member.sh'
+      - 'experiment/openwrt/BlazePwifi/openwrt/rootfs/www/blazepwifi/cgi-bin/admin'
+      - 'experiment/openwrt/BlazePwifi/openwrt/rootfs/usr/lib/blazepwifi/common.sh'
+      - 'experiment/openwrt/BlazePwifi/openwrt/rootfs/www/blazepwifi/cgi-bin/vendo'
+      - 'experiment/openwrt/BlazePwifi/openwrt/rootfs/www/blazepwifi/cgi-bin/api'
+      - 'experiment/openwrt/BlazePwifi/tests/integration.sh'
+permissions:
+  contents: read
+jobs:
+  reproduce:
+    name: Verify member replay fix, transfer and remaining receipt defects
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Validate POSIX fixture syntax before functional checks
+        run: |
+          sh -n experiment/openwrt/BlazePwifi/tools/v060_journal_fixture.sh
+          sh -n experiment/openwrt/BlazePwifi/tests/v060_journal_native_fixture.sh
+          sh -n experiment/openwrt/BlazePwifi/tools/v060_journal_auth_fixture.sh
+          sh -n experiment/openwrt/BlazePwifi/tests/v060_journal_auth_fixture.sh
+          sh -n experiment/openwrt/BlazePwifi/openwrt/rootfs/usr/lib/blazepwifi/auth.sh
+          sh -n experiment/openwrt/BlazePwifi/profiles/r281-rental/root/usr/lib/blazepwifi/auth.sh
+          sh -n experiment/openwrt/BlazePwifi/openwrt/rootfs/www/blazepwifi/cgi-bin/admin
+          sh -n experiment/openwrt/BlazePwifi/profiles/r281-rental/root/www/cgi-bin/rental-admin
+          sh -n experiment/openwrt/BlazePwifi/openwrt/rootfs/www/blazepwifi/cgi-bin/admin-logout
+          sh -n experiment/openwrt/BlazePwifi/profiles/r281-rental/root/www/cgi-bin/rental-logout
+      - name: Refuse ordinary signed-coin false ACK when account storage fails
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_coin_false_ack.sh
+      - name: Refuse duplicate paid Wi-Fi account rows and truncated source copy
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_account_write_integrity.sh
+      - name: RENT-0723 protect signed rental replay ACKs and writer lock handoffs
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_rental_paid_lock_race.sh
+      - name: RENT-0724 prevent stale admin rental add and unauthorized forfeit across writer lock
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_rental_admin_paid_race.sh
+      - name: RENT-0725 synthetic rental lease and coin receipt single-authority bridge (not production)
+        run: python3 experiment/openwrt/BlazePwifi/tests/v060_rental_v2_atomic_bridge.py
+      - name: RENT-0726 reject signed rental-v2 protocol downgrade before heartbeat or credit
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_rental_v2_no_downgrade.sh
+      - name: RENT-0727 synthetic rental controller HMAC journal and independent ACKV2 contract (not production)
+        run: python3 experiment/openwrt/BlazePwifi/tests/v060_rental_native_ack_contract.py
+      - name: Refuse corrupt or incomplete prepaid rental leases
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_rental_db_integrity.sh
+      - name: Refuse revoking active paid rental time or false ACK after failed removal
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_rental_revoke_safety.sh
+      - name: Require checked rental paid time addition and confirmed forfeiture
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_rental_lease_mutation_safety.sh
+      - name: Guard actual authenticated rental set-duration from silent credit loss
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_admin_rental_lease_set.sh
+      - name: Preserve paid lease against signed Android heartbeat and stale updates
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_rental_status_heartbeat.sh
+      - name: Verify standalone R281 HMAC heartbeat cannot overwrite paid rental lease
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_standalone_rental_heartbeat.sh
+      - name: Refuse standalone R281 signed rental coin false ACK on paid storage errors
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_standalone_rental_coin_ack.sh
+      - name: Preserve R281 active signed coin-start nonce and refuse failed target writes
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_standalone_rental_coin_start.sh
+      - name: Validate full and standalone auth shell syntax before signed payment tests
+        run: |
+          sh -n experiment/openwrt/BlazePwifi/openwrt/rootfs/usr/lib/blazepwifi/auth.sh
+          sh -n experiment/openwrt/BlazePwifi/profiles/r281-rental/root/usr/lib/blazepwifi/auth.sh
+      - name: Verify both R281 and full OpenWrt secure tokens fail closed
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_r281_random_hex.sh
+      - name: Forbid empty admin password salts, sessions and CSRF on RNG failure
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_auth_rng_failclosed.sh
+      - name: Refuse failed or truncated full/R281 admin password database updates
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_admin_password_write_integrity.sh
+      - name: Refuse false logout or post-password session revoke acknowledgments
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_auth_session_revocation.sh
+      - name: Revoke old admin tokens before persistent password commits in both portals
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_auth_password_rotation_order.sh
+      - name: Refuse false-success R281 signed one-time Android enrollment and token reuse
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_standalone_rental_enroll_safety.sh
+      - name: Refuse full and R281 one-time QR issued before registry durability
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_enrollment_qr_issuance.sh
+      - name: Refuse R281 hotspot cash false credit and active receipt rollover
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_standalone_hotspot_coin_safety.sh
+      - name: Protect full and R281 legacy MAC paid credit through account bind and cleanup
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_legacy_bind_zero_loss.sh
+      - name: Refuse second paid MAC identity and preserve original funds in full replay stress
+        run: sh experiment/openwrt/BlazePwifi/tests/stress.sh
+      - name: Preserve real signed rental portal and operator lease compatibility
+        run: sh experiment/openwrt/BlazePwifi/tests/rental.sh
+      - name: Exercise live portal-to-vendo window reuse, write failures and closure
+        run: sh experiment/openwrt/BlazePwifi/tests/integration.sh
+      - name: Preserve signed-coin replay receipts throughout the live target window
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_coin_replay_window.sh
+      - name: Refuse member replay ACK under financial quarantine
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_member_quarantine_replay.sh
+      - name: PAY-0713 synthetic member atomic authority bridge (not production)
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_member_v2_atomic_bridge.sh
+      - name: Reject deletion of remaining member credit and quarantine interrupted admin writes
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_member_delete_safety.sh
+      - name: Reject partial member database copies and false admin success
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_member_write_fault.sh
+      - name: Guard stale paid balance in actual member management UI
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_member_ui_delete.sh
+      - name: Refuse unsigned imported credits and preserve paid bank across metadata update
+        run: sh experiment/openwrt/BlazePwifi/tests/v054_member_migration.sh
+      - name: Keep original member banking, transfer and password flows compatible
+        run: sh experiment/openwrt/BlazePwifi/tests/v053_members.sh
+      - name: Verify native POSIX transaction journal fixture (synthetic only)
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_journal_native_fixture.sh
+      - name: Verify installed read-only shadow v2 probes cannot write financial state
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_v2_shadow_readonly.sh
+      - name: Test native file and parent-directory fsync/rename durability boundaries
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_durable_replace_native.sh
+      - name: Test signed native member and rental journal atomic receipt replay
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_journal_native_auth_endtoend.sh
+      - name: Redact and reject corrupt v1 financial inventory before migration
+        run: python3 experiment/openwrt/BlazePwifi/tests/v060_v1_inventory_fixture.py
+      - name: Refuse unauthenticated v2 controller monetary envelopes (synthetic only)
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_journal_auth_fixture.sh
+      - name: Verify offline synthetic transactional journal oracle (model only)
+        run: python3 experiment/openwrt/BlazePwifi/tests/v060_ledger_model.py
+      - name: Verify synthetic expected-RED replay and interrupted transfer
+        shell: bash
+        run: |
+          set -euo pipefail
+          checks=(
+            'experiment/openwrt/BlazePwifi/tests/v060_member_replay_repro.sh|PASS: acknowledged paid member ID retained and replay did not change banked time|0'
+            'experiment/openwrt/BlazePwifi/tests/v060_member_receipt_quota.sh|PASS: paid member quota rejects credit and transfer before mutation, never deletes old receipts|0'
+            'experiment/openwrt/BlazePwifi/tests/v060_member_transfer_crash_repro.sh|PASS: transfer outcome atomic at tested interruption boundary|0'
+            'experiment/openwrt/BlazePwifi/tests/v060_member_receipt_failure_repro.sh|PASS: member receipt EIO rejects ACK and quarantines all further paid changes|0'
+            'experiment/openwrt/BlazePwifi/tests/v060_rental_receipt_failure_repro.sh|PASS: rejected rental receipt failure without changing lease|0'
+            'experiment/openwrt/BlazePwifi/tests/v060_rental_receipt_midwrite.sh|PASS: rental late receipt EIO rejects ACK and quarantines further paid mutations|0'
+          )
+          for item in "${checks[@]}"; do
+            file="${item%%|*}"
+            rest="${item#*|}"
+            signature="${rest%%|*}"
+            expected_rc="${rest##*|}"
+            log="$(mktemp)"
+            set +e
+            sh "$file" >"$log" 2>&1
+            rc=$?
+            set -e
+            cat "$log"
+            if [[ "$rc" -ne "$expected_rc" ]] || ! grep -Fq "$signature" "$log"; then
+              echo "::error::Unexpected result for $file (rc=$rc). Inspect setup and source."
+              rm -f "$log"
+              exit 1
+            fi
+            echo "CONFIRMED STAGED RESULT: $file, expected rc=$expected_rc (synthetic only)"
+            rm -f "$log"
+          done
+          echo 'Legacy replay and receipt-EIO fail-closed containment pass; balance+receipt remain non-atomic and production blocked.'

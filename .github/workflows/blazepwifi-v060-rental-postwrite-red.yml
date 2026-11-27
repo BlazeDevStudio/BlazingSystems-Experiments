@@ -1,0 +1,39 @@
+name: RENT-20261022 P0 rental receipt process-death RED evidence
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - fix/rent-20261022-atomic-postwrite-proof
+    paths:
+      - 'experiment/openwrt/BlazePwifi/tests/v060_rental_postwrite_process_crash_red.sh'
+      - '.github/workflows/blazepwifi-v060-rental-postwrite-red.yml'
+      - 'experiment/openwrt/BlazePwifi/openwrt/rootfs/usr/lib/blazepwifi/rental.sh'
+permissions:
+  contents: read
+jobs:
+  reproduce:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Validate syntax and require explicit fixture-only P0 RED evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          test_script=experiment/openwrt/BlazePwifi/tests/v060_rental_postwrite_process_crash_red.sh
+          sh -n "$test_script"
+          set +e
+          sh "$test_script" > /tmp/blaze-rent-postwrite-evidence.log 2>&1
+          rc=$?
+          set -e
+          cat /tmp/blaze-rent-postwrite-evidence.log
+          if [ "$rc" -eq 1 ] && grep -Fq 'RENT-20261022-ATOMIC RED: process died after rental lease rename; lease=124056, receipt absent, no ACK, quarantine persists' /tmp/blaze-rent-postwrite-evidence.log; then
+            echo 'EXPECTED RED REPRODUCED: v1 is non-atomic; this is not a release approval.'
+          elif [ "$rc" -eq 0 ]; then
+            echo 'Regression changed: financial atomicity may be fixed; update the safety contract and verify both files.'
+            exit 1
+          else
+            echo "Invalid fixture result rc=$rc, no valid P0 evidence"; exit 1
+          fi

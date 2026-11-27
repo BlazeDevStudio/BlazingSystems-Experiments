@@ -1,0 +1,22 @@
+#!/bin/sh
+set -eu
+ROOT="$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)"
+L="$ROOT/android/BlazeRentalLauncher"
+GRADLE="$L/build.gradle"
+MANIFEST="$L/AndroidManifest.xml"
+SRC="$L/src/com/blazesystems/blazerental"
+ACT="$L/src/com/google/android/apps/nexuslauncher/NexusLauncherActivity.java"
+
+grep -Fq 'android.permission.REQUEST_INSTALL_PACKAGES' "$MANIFEST"
+grep -Fq 'BlazeRentalUpdateReceiver' "$MANIFEST"
+test -s "$SRC/BlazeRentalUpdateManager.java"
+test -s "$SRC/BlazeRentalPackageUpdater.java"
+grep -Fq 'sameSignatures' "$SRC/BlazeRentalPackageUpdater.java"
+grep -Fq 'APK signing certificate does not match installed BlazeRental' "$SRC/BlazeRentalPackageUpdater.java"
+grep -Fq 'installRollbackRescue' "$SRC/BlazeRentalPackageUpdater.java"
+grep -Fq 'noteBootAndShouldAutoRollback' "$SRC/BlazeRentalUpdateManager.java"
+grep -Fq 'scheduleUpdateHealthPromotion' "$ACT"
+grep -Fq '30000L' "$ACT"
+grep -Fq 'INSTALL AVAILABLE UPDATE' "$SRC/BlazeAdminActivity.java"
+grep -Fq 'ROLL BACK TO LAST STABLE RESCUE' "$SRC/BlazeAdminActivity.java"
+echo "v0.5.1 BlazeRental update compatibility contracts passed"

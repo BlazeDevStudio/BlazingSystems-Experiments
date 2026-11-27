@@ -1,0 +1,1 @@
+{"edition":"pc","version":"5.0.0-alpha.1","modules":["network","wifi","cellular","switch","vlan","messages","diagnostics","hardware"],"capability_gated":true,"non_destructive_detection":true}

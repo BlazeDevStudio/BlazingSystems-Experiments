@@ -1,0 +1,148 @@
+name: BlazeRental v0.5.3 production Lineage 2 sign
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_run_id:
+        description: "Successful exact-candidate BlazePwifi v0.5.3 build run"
+        required: true
+        type: string
+      candidate_sha:
+        description: "Exact validated v0.5.3 candidate SHA"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: blazerental-v053-production-lineage2
+  cancel-in-progress: false
+
+jobs:
+  sign:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    env:
+      GH_TOKEN: ${{ github.token }}
+      EXPECTED_FP: "1A:18:D5:8E:1F:95:55:96:89:10:20:71:F5:6C:93:E9:B9:D2:EA:6B:E4:0E:6F:20:70:06:C9:89:62:A1:6A:25"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.candidate_sha }}
+
+      - name: Verify exact green v0.5.3 candidate
+        shell: bash
+        env:
+          RUN_ID: ${{ inputs.build_run_id }}
+          SHA: ${{ inputs.candidate_sha }}
+        run: |
+          set -euo pipefail
+          printf '%s' "$RUN_ID" | grep -Eq '^[0-9]+$'
+          printf '%s' "$SHA" | grep -Eq '^[0-9a-f]{40}$'
+          test "$(cat experiment/openwrt/BlazePwifi/VERSION)" = 0.5.3
+          B="$(gh api "repos/${{ github.repository }}/actions/runs/$RUN_ID")"
+          test "$(printf '%s' "$B" | jq -r .conclusion)" = success
+          test "$(printf '%s' "$B" | jq -r .head_sha)" = "$SHA"
+          mkdir -p candidate/gate candidate/android
+          gh run download "$RUN_ID" --repo "${{ github.repository }}" --name BlazePwifi-current-candidate-gate --dir candidate/gate
+          gh run download "$RUN_ID" --repo "${{ github.repository }}" --name BlazePwifi-android-current --dir candidate/android
+          GATE="$(find candidate/gate -type f -name CANDIDATE-GATE.json -print -quit)"
+          test -n "$GATE" -a -s "$GATE"
+          test "$(jq -r .status "$GATE")" = passed
+          test "$(jq -r .release "$GATE")" = 0.5.3
+          test "$(jq -r .commit "$GATE")" = "$SHA"
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install Android signing tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDKMANAGER="${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager"
+          [ -x "$SDKMANAGER" ] || SDKMANAGER="$(command -v sdkmanager)"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" "build-tools;36.0.0"
+          echo "APKSIGNER=${ANDROID_SDK_ROOT}/build-tools/36.0.0/apksigner" >> "$GITHUB_ENV"
+          echo "ZIPALIGN=${ANDROID_SDK_ROOT}/build-tools/36.0.0/zipalign" >> "$GITHUB_ENV"
+          echo "AAPT=${ANDROID_SDK_ROOT}/build-tools/36.0.0/aapt" >> "$GITHUB_ENV"
+
+      - name: Restore and verify permanent Lineage 2 signer
+        shell: bash
+        env:
+          KEYSTORE_B64: ${{ secrets.BLAZERENTAL_LINEAGE2_KEYSTORE_B64 }}
+          STOREPASS: ${{ secrets.BLAZERENTAL_LINEAGE2_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.BLAZERENTAL_LINEAGE2_KEY_ALIAS }}
+        run: |
+          set -euo pipefail
+          test -n "$KEYSTORE_B64" -a -n "$STOREPASS"
+          ALIAS="${KEY_ALIAS:-blazerental}"
+          mkdir -p "$RUNNER_TEMP/v053-sign"
+          printf '%s' "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/v053-sign/lineage2.p12"
+          chmod 600 "$RUNNER_TEMP/v053-sign/lineage2.p12"
+          FP="$(keytool -list -v -alias "$ALIAS" -keystore "$RUNNER_TEMP/v053-sign/lineage2.p12" -storetype PKCS12 -storepass "$STOREPASS" | sed -n 's/^[[:space:]]*SHA256: //p' | head -n1)"
+          test "$FP" = "$EXPECTED_FP"
+          echo "KEY_ALIAS=$ALIAS" >> "$GITHUB_ENV"
+          echo "LINEAGE2_P12=$RUNNER_TEMP/v053-sign/lineage2.p12" >> "$GITHUB_ENV"
+
+      - name: Verify v0.5.2 release uses the same signer
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/v052-prod"
+          gh release download v0.5.2 --repo "${{ github.repository }}" --pattern BlazeRental.apk --dir "$RUNNER_TEMP/v052-prod"
+          test -s "$RUNNER_TEMP/v052-prod/BlazeRental.apk"
+          "$APKSIGNER" verify --verbose --print-certs "$RUNNER_TEMP/v052-prod/BlazeRental.apk" > "$RUNNER_TEMP/v052-prod/verify.txt"
+          OLD_FP="$(sed -n 's/^Signer #1 certificate SHA-256 digest: //p' "$RUNNER_TEMP/v052-prod/verify.txt" | head -n1 | tr '[:lower:]' '[:upper:]' | sed 's/../&:/g;s/:$//')"
+          test "$OLD_FP" = "$EXPECTED_FP"
+          "$AAPT" dump badging "$RUNNER_TEMP/v052-prod/BlazeRental.apk" | grep -q "package: name='com.blazesystems.blazerental' versionCode='50200'"
+
+      - name: Sign exact v0.5.3 and rollback rescue APKs
+        shell: bash
+        env:
+          STOREPASS: ${{ secrets.BLAZERENTAL_LINEAGE2_KEYSTORE_PASSWORD }}
+          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+          BUILD_RUN_ID: ${{ inputs.build_run_id }}
+        run: |
+          set -euo pipefail
+          OUT="$RUNNER_TEMP/v053-signed"
+          mkdir -p "$OUT"
+          UNSIGNED="$(find candidate/android -type f -name 'BlazeRental-0.5.3-release-unsigned.apk' -print -quit)"
+          RESCUE_UNSIGNED="$(find candidate/android -type f -name 'BlazeRental-v0.5.2-rescue-for-0.5.3-release-unsigned.apk' -print -quit)"
+          test -n "$UNSIGNED" -a -s "$UNSIGNED"
+          test -n "$RESCUE_UNSIGNED" -a -s "$RESCUE_UNSIGNED"
+
+          "$ZIPALIGN" -p -f 4 "$UNSIGNED" "$OUT/current-aligned.apk"
+          "$APKSIGNER" sign --ks "$LINEAGE2_P12" --ks-type PKCS12 --ks-key-alias "$KEY_ALIAS"             --ks-pass "pass:$STOREPASS" --key-pass "pass:$STOREPASS"             --v1-signing-enabled true --v2-signing-enabled true --v3-signing-enabled true             --out "$OUT/BlazeRental.apk" "$OUT/current-aligned.apk"
+
+          "$ZIPALIGN" -p -f 4 "$RESCUE_UNSIGNED" "$OUT/rescue-aligned.apk"
+          "$APKSIGNER" sign --ks "$LINEAGE2_P12" --ks-type PKCS12 --ks-key-alias "$KEY_ALIAS"             --ks-pass "pass:$STOREPASS" --key-pass "pass:$STOREPASS"             --v1-signing-enabled true --v2-signing-enabled true --v3-signing-enabled true             --out "$OUT/BlazeRental-v0.5.2-rescue-for-v0.5.3.apk" "$OUT/rescue-aligned.apk"
+
+          "$APKSIGNER" verify --verbose --print-certs "$OUT/BlazeRental.apk" > "$OUT/BlazeRental-apksigner-verify.txt"
+          "$APKSIGNER" verify --verbose --print-certs "$OUT/BlazeRental-v0.5.2-rescue-for-v0.5.3.apk" > "$OUT/BlazeRental-rescue-apksigner-verify.txt"
+          grep -q 'Verified using v2 scheme (APK Signature Scheme v2): true' "$OUT/BlazeRental-apksigner-verify.txt"
+          grep -q 'Verified using v3 scheme (APK Signature Scheme v3): true' "$OUT/BlazeRental-apksigner-verify.txt"
+
+          "$AAPT" dump badging "$OUT/BlazeRental.apk" | grep -q "package: name='com.blazesystems.blazerental' versionCode='50300' versionName='0.5.3'"
+          "$AAPT" dump badging "$OUT/BlazeRental-v0.5.2-rescue-for-v0.5.3.apk" | grep -q "package: name='com.blazesystems.blazerental' versionCode='50301'"
+
+          CUR_FP="$(sed -n 's/^Signer #1 certificate SHA-256 digest: //p' "$OUT/BlazeRental-apksigner-verify.txt" | head -n1 | tr '[:lower:]' '[:upper:]' | sed 's/../&:/g;s/:$//')"
+          RES_FP="$(sed -n 's/^Signer #1 certificate SHA-256 digest: //p' "$OUT/BlazeRental-rescue-apksigner-verify.txt" | head -n1 | tr '[:lower:]' '[:upper:]' | sed 's/../&:/g;s/:$//')"
+          test "$CUR_FP" = "$EXPECTED_FP"
+          test "$RES_FP" = "$EXPECTED_FP"
+
+          cp experiment/openwrt/BlazePwifi/releases/0.5.2/README.md "$OUT/V052-PRODUCTION-REFERENCE.txt"
+          jq -n             --arg release "0.5.3"             --arg candidate_sha "$CANDIDATE_SHA"             --arg build_run_id "$BUILD_RUN_ID"             --arg signed_sha256 "$(sha256sum "$OUT/BlazeRental.apk" | awk '{print $1}')"             --arg rescue_sha256 "$(sha256sum "$OUT/BlazeRental-v0.5.2-rescue-for-v0.5.3.apk" | awk '{print $1}')"             --arg signing_fingerprint "$EXPECTED_FP"             '{release:$release,candidate_sha:$candidate_sha,build_run_id:$build_run_id,certificate_lineage:"BlazeRental-production-lineage2",signing_fingerprint:$signing_fingerprint,android_package:"com.blazesystems.blazerental",version_code:50300,rollback_rescue:"0.5.2-rescue-for-0.5.3",rollback_version_code:50301,signed_sha256:$signed_sha256,rollback_rescue_signed_sha256:$rescue_sha256}'             > "$OUT/SIGNING-MANIFEST.json"
+          rm -f "$OUT/current-aligned.apk" "$OUT/rescue-aligned.apk"
+          (cd "$OUT" && sha256sum * > SHA256SUMS)
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BlazeRental-v0.5.3-production-signed
+          path: ${{ runner.temp }}/v053-signed/
+          retention-days: 90
+          if-no-files-found: error

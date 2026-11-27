@@ -1,0 +1,7 @@
+{
+  "stage_run_id": "37283029072",
+  "candidate_sha": "1373eaa8ee8e95abbc2d0cbf5565d8ed28d2a750",
+  "requested_at": "2026-10-05T16:36:00+08:00",
+  "purpose": "Publish verified production-stage artifact without restaging.",
+  "retry_reason": "Tag release orchestration head while preserving exact validated source candidate in manifests."
+}

@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BlazePwifi Management Console</title>
+<link rel="stylesheet" href="/vendor/tailadmin/blaze-tailadmin.css">
+<link rel="stylesheet" href="/vendor/blazefusion/blaze-fusion.css">
+</head><body>
+<div id="loginView" class="login-wrap"><div class="login-card">
+  <div class="logo"><span class="logo-mark">B</span><span>BlazePwifi</span></div>
+  <h1>Management Console</h1><p>Secure control for network, hotspot, rentals, content and coin systems.</p>
+  <label class="field-label">Username</label><input id="loginUser" class="field" value="admin" autocomplete="username">
+  <label class="field-label" style="margin-top:12px">Password</label><input id="loginPass" class="field" type="password" autocomplete="current-password">
+  <button id="loginButton" class="btn primary" style="width:100%;margin-top:16px">Sign in</button>
+  <div id="loginMessage" class="notice hidden"></div>
+</div></div>
+
+<div id="appView" class="app hidden">
+<aside id="sidebar" class="sidebar">
+  <div class="logo"><span class="logo-mark">B</span><span>BlazePwifi <small class="muted">v0.6.0 preview</small></span></div>
+  <div class="blaze-nav-search">
+    <label for="blazeNavSearch">QUICK NAVIGATION <kbd>Ctrl K</kbd></label>
+    <input id="blazeNavSearch" type="search" placeholder="Search pages…" autocomplete="off" spellcheck="false" aria-label="Search console sections" aria-keyshortcuts="Control+K Meta+K">
+    <div class="blaze-nav-hint" id="blazeNavCount" aria-live="polite">Navigate without leaving the console</div>
+  </div>
+  <div class="nav-label">OVERVIEW</div>
+  <button class="nav-btn active" data-page="dashboard"><span class="nav-dot"></span>Dashboard</button>
+  <button class="nav-btn" data-page="sessions"><span class="nav-dot"></span>Clients & Sessions</button>
+  <button class="nav-btn" data-page="sales"><span class="nav-dot"></span>Sales & Reports</button>
+
+  <div class="nav-label">NETWORK</div>
+  <button class="nav-btn" data-page="wan"><span class="nav-dot"></span>WAN & Internet</button>
+  <button class="nav-btn" data-page="lan"><span class="nav-dot"></span>LAN · VLAN · Wi-Fi</button>
+  <button class="nav-btn" data-page="remote"><span class="nav-dot"></span>Remote Access</button>
+
+  <div class="nav-label">SERVICES</div>
+  <button class="nav-btn" data-page="vouchers"><span class="nav-dot"></span>Vouchers & Rates</button>
+  <button class="nav-btn" data-page="members"><span class="nav-dot"></span>Pisonet Members</button>
+  <button class="nav-btn" data-page="rentals"><span class="nav-dot"></span>Rental Devices</button>
+  <button class="nav-btn" data-page="controllers"><span class="nav-dot"></span>Coin Controllers</button>
+  <button class="nav-btn" data-page="portal"><span class="nav-dot"></span>Portal Designer</button>
+  <button class="nav-btn" data-page="multimedia"><span class="nav-dot"></span>Multimedia</button>
+  <button class="nav-btn" data-page="games"><span class="nav-dot"></span>BlazeGames</button>
+
+  <div class="nav-label">DEVICE</div>
+  <button class="nav-btn" data-page="storage"><span class="nav-dot"></span>Storage</button>
+  <button class="nav-btn" data-page="backups"><span class="nav-dot"></span>Backups</button>
+  <button class="nav-btn" data-page="updates"><span class="nav-dot"></span>Updates & Recovery</button>
+  <button class="nav-btn" data-page="tools"><span class="nav-dot"></span>Tools & Terminal</button>
+  <button class="nav-btn" data-page="alerts"><span class="nav-dot"></span>Alerts & Logs</button>
+  <button class="nav-btn" data-page="system"><span class="nav-dot"></span>System & Security</button>
+  <p id="blazeNavEmpty" class="blaze-nav-empty" hidden>No matching sections. Try another keyword.</p>
+  <div class="sidebar-foot"><div id="sideUser">—</div><div id="sideRole" class="small">—</div></div>
+</aside>
+
+<main class="main"><header class="topbar">
+  <div class="toolbar"><button id="menuBtn" class="btn ghost mobile-menu">☰</button><span id="crumb" class="crumb">Dashboard</span></div>
+  <div class="user-chip"><label class="blaze-style-label" for="blazeStyleSelect">Appearance <select id="blazeStyleSelect" class="field" aria-label="Console appearance"><option value="fusion">BlazeFusion</option><option value="compact">Compact</option><option value="comfort">Comfort</option></select></label><span class="status-pulse" aria-label="Local management console">LOCAL CONTROL</span><div><div id="topUser">—</div><div id="topRole" class="small muted">—</div></div><span class="avatar">A</span><button id="logoutBtn" class="btn ghost sm">Sign out</button></div>
+</header><div class="content">
+  <div id="passwordChange" class="notice warn hidden"><b>Bootstrap password must be replaced.</b><div class="toolbar" style="margin-top:8px"><input id="newPassword" class="field" type="password" placeholder="New password (12+ characters)" style="max-width:360px"><button id="changePasswordBtn" class="btn primary">Change password</button></div></div>
+
+  <section id="page-dashboard" class="section active">
+    <div class="blaze-ops-hero">
+      <div class="blaze-ops-copy">
+        <div class="blaze-ops-kicker"><span class="blaze-ops-beacon" aria-hidden="true"></span> LOCAL-FIRST COMMAND CENTER <span class="blaze-ops-separator">/</span> NETWORK + RENTAL + PISONET</div>
+        <h1>One console.<br><em>Every paid minute.</em></h1>
+        <p>Keep Wi-Fi sessions, coin controllers, PCs and rental phones in view. All figures below come from this appliance, not a demonstration feed.</p>
+        <div class="blaze-ops-actions">
+          <button type="button" class="btn primary" onclick="BlazeCore.openPage('sessions')">Manage sessions <span aria-hidden="true">↗</span></button>
+          <button type="button" class="btn" onclick="BlazeCore.openPage('rentals')">Rental fleet <span aria-hidden="true">↗</span></button>
+          <button type="button" class="btn ghost" onclick="BlazeCore.openPage('controllers')">Controllers <span aria-hidden="true">→</span></button>
+        </div>
+      </div>
+      <div class="blaze-ops-status">
+        <span class="blaze-ops-status-title">APPLIANCE LINK</span>
+        <span id="blazeConnection" data-live="pending" role="status" aria-live="polite">Checking appliance…</span>
+        <small id="blazeLastRefresh">Waiting for authenticated server status</small>
+        <div class="blaze-ops-status-foot">Secure session required · No cloud dependency</div>
+      </div>
+    </div>
+    <div class="page-head"><div><h2>Operations overview</h2><p>Wi-Fi sessions, rental devices, controllers and network health in one command center. Data is from this appliance.</p></div><button class="btn" onclick="BlazeCore.refreshAll()">Refresh</button></div>
+    <div class="grid metrics">
+      <div class="card"><div class="card-body"><div class="metric-label">Active sessions</div><div id="metricSessions" class="metric-value">—</div><div class="metric-sub">Hotspot users online</div></div></div>
+      <div class="card"><div class="card-body"><div class="metric-label">Rental phones</div><div id="metricRentals" class="metric-value">—</div><div id="metricPaidRentals" class="metric-sub">—</div></div></div>
+      <div class="card"><div class="card-body"><div class="metric-label">Controllers online</div><div id="metricControllers" class="metric-value">—</div><div class="metric-sub">Last 30 seconds</div></div></div>
+      <div class="card"><div class="card-body"><div class="metric-label">Memory available</div><div id="metricMemory" class="metric-value">—</div><div id="metricLoad" class="metric-sub">Load —</div></div></div>
+    </div>
+    <div class="card activity-trend" style="margin-top:16px">
+      <div class="card-body">
+        <div class="device-top"><div><div class="card-title">Live Wi-Fi session activity</div><p id="sessionTrendCaption" class="small muted">Collecting router readings in this browser. No sample or fabricated data.</p></div><span id="sessionLastUpdated" class="badge">Not refreshed</span></div>
+        <svg id="sessionTrendGraph" role="img" aria-label="Recent active Wi-Fi session counts" viewBox="0 0 460 98" preserveAspectRatio="none" style="width:100%;height:100px;display:block;margin-top:12px">
+          <defs><linearGradient id="trendFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#27d7c5" stop-opacity=".35"/><stop offset="100%" stop-color="#27d7c5" stop-opacity="0"/></linearGradient></defs>
+          <path id="sessionTrendArea" fill="url(#trendFill)" d="M0 98 L460 98 Z"></path>
+          <polyline id="sessionTrendLine" fill="none" stroke="#43e5d4" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"></polyline>
+        </svg>
+      </div>
+    </div>
+    <div class="grid two" style="margin-top:16px">
+      <div class="card"><div class="card-body"><div class="card-title">Quick actions</div><p class="muted">Common operator tasks.</p><div class="toolbar"><button class="btn primary" onclick="BlazeCore.openPage('rentals');BlazeRental.openAdd()">Add rental phone</button><button class="btn" onclick="BlazeCore.openPage('tools')">Diagnostics</button><a class="btn" href="/portal-editor.html">Portal editor</a></div></div></div>
+      <div class="card"><div class="card-body"><div class="card-title">Hardware</div><div id="systemSummary" class="muted">Detecting device capabilities…</div></div></div>
+    </div>
+  </section>
+
+  <section id="page-sessions" class="section"><div class="page-head"><div><h2>Clients & Sessions</h2><p>Session visibility and customer controls.</p></div></div>
+    <div class="grid two"><div class="card"><div class="card-body"><div class="card-title">Live sessions</div><p class="muted">Active/paused session totals are read from the accounting engine. Detailed per-client table is hardware/runtime populated.</p><div class="switch-row"><span>Active</span><span id="sessionActive" class="badge good">—</span></div><div class="switch-row"><span>Paused</span><span id="sessionPaused" class="badge">—</span></div></div></div>
+    <div class="card"><div class="card-body"><div class="card-title">Session policy</div><p class="muted">Per-client speed, VLAN, pause/resume, add time, disconnect and block controls use the same server-authoritative session state.</p></div></div></div>
+  </section>
+
+  <section id="page-sales" class="section"><div class="page-head"><div><h2>Sales & Reports</h2><p>Coins, vouchers, rentals and transaction history.</p></div></div>
+    <div class="grid two"><div class="card"><div class="card-body"><div class="card-title">Accounting</div><p class="muted">Sales aggregation uses durable coin/voucher/rental events. Lite targets use compact summaries; Standard/Full targets may render charts.</p></div></div>
+    <div class="card"><div class="card-body"><div class="card-title">Exports</div><p class="muted">CSV, printable HTML, JSON and report exports are organized here.</p></div></div></div>
+  </section>
+
+  <section id="page-wan" class="section"><div class="page-head"><div><h2>WAN & Internet</h2><p>Single WAN, WISP and dual-WAN capability-aware management.</p></div></div>
+    <div class="grid two"><div class="card"><div class="card-body"><div class="card-title">Detected capability</div><div id="wanCapability" class="muted">Loading…</div></div></div>
+    <div class="card"><div class="card-body"><div class="card-title">WAN modes</div><div class="switch-row"><span>Ethernet WAN</span><span class="badge good">Supported when interface exists</span></div><div class="switch-row"><span>WISP</span><span id="wispBadge" class="badge">Detecting Wi-Fi…</span></div><div class="switch-row"><span>Dual WAN</span><span class="badge">Load balance / failover</span></div></div></div></div>
+  </section>
+
+  <section id="page-lan" class="section"><div class="page-head"><div><h2>LAN · VLAN · Wi-Fi</h2><p>PisoWiFi AP networks, Ethernet/USB interfaces, VLANs and captive zones.</p></div></div>
+    <div class="grid two"><div class="card"><div class="card-body"><div class="card-title">Current assignment</div><div id="lanConfig" class="muted">Loading config…</div></div></div>
+    <div class="card"><div class="card-body"><div class="card-title">Modes</div><p class="muted">VLAN, second Ethernet and USB-Ethernet are shown only when the target reports the required capability. Tagged, untagged and hybrid assignments remain operator controlled.</p></div></div></div>
+  </section>
+
+  <section id="page-remote" class="section"><div class="page-head"><div><h2>Worldwide Remote Access</h2><p>Owner-controlled remote management without exposing the admin page directly to public WAN.</p></div><button class="btn" onclick="BlazeConsole.loadRemote()">Refresh</button></div>
+    <div class="grid metrics">
+      <div class="card"><div class="card-body"><div class="metric-label">Configured mode</div><div id="remoteModeState" class="metric-value">—</div><div id="remoteReadyState" class="metric-sub">—</div></div></div>
+      <div class="card"><div class="card-body"><div class="metric-label">WireGuard</div><div id="wgState" class="metric-value small">—</div><div class="metric-sub">Recommended</div></div></div>
+      <div class="card"><div class="card-body"><div class="metric-label">ZeroTier</div><div id="ztState" class="metric-value small">—</div><div class="metric-sub">Easy mesh</div></div></div>
+      <div class="card"><div class="card-body"><div class="metric-label">Node</div><div id="remoteNodeState" class="metric-value small">—</div><div id="remoteSiteState" class="metric-sub">—</div></div></div>
+      <div class="card"><div class="card-body"><div class="metric-label">Live activation</div><div id="wgActivationState" class="metric-value small">—</div><div id="wgHandshakeState" class="metric-sub">—</div></div></div>
+    </div>
+
+    <div class="card" style="margin-top:16px"><div class="card-body"><div class="card-title">Remote access profile</div>
+      <p class="muted">Monitoring, management and terminal permissions are independent. No private WireGuard key is accepted or displayed by this form.</p>
+      <div class="form-grid">
+        <label><span class="field-label">Mode</span><select id="remoteMode" class="field"><option value="disabled">Disabled</option><option value="wireguard">WireGuard · Recommended</option><option value="zerotier">ZeroTier · Easy mesh</option></select></label>
+        <label><span class="field-label">Node name</span><input id="remoteNodeName" class="field" value="BlazePwifi" maxlength="64"></label>
+        <label><span class="field-label">Site label</span><input id="remoteSiteLabel" class="field" maxlength="96" placeholder="Shop / branch / location label"></label>
+        <label class="span2"><span class="field-label">Allowed remote source CIDRs</span><input id="remoteAllowlist" class="field mono" placeholder="10.20.0.0/24, fd00:1234::/64"></label>
+        <label><span class="field-label">Heartbeat seconds</span><input id="remoteHeartbeat" class="field" type="number" min="10" max="3600" value="30"></label>
+        <label><span class="field-label">Offline threshold seconds</span><input id="remoteOffline" class="field" type="number" min="30" max="86400" value="120"></label>
+      </div>
+      <div class="toolbar" style="margin-top:12px">
+        <label><input id="remoteMonitoring" type="checkbox" checked> Monitoring</label>
+        <label><input id="remoteManagement" type="checkbox"> Management</label>
+        <label><input id="remoteTerminal" type="checkbox"> Remote Terminal</label>
+      </div>
+    </div></div>
+
+    <div class="grid two" style="margin-top:16px">
+      <div class="card"><div class="card-body"><div class="card-title">WireGuard profile</div>
+        <div class="form-grid">
+          <label><span class="field-label">Hub endpoint / FQDN</span><input id="wgEndpoint" class="field" placeholder="vpn.example.com"></label>
+          <label><span class="field-label">UDP port</span><input id="wgPort" class="field" type="number" min="1" max="65535" value="51820"></label>
+          <label><span class="field-label">Tunnel address</span><input id="wgAddress" class="field mono" placeholder="10.20.0.2/32"></label>
+          <label><span class="field-label">Persistent keepalive</span><input id="wgKeepalive" class="field" type="number" min="0" max="3600" value="25"></label>
+          <label class="span2"><span class="field-label">This BlazePwifi public key</span><div class="toolbar"><input id="wgLocalPublicKey" class="field mono" readonly placeholder="Generate after installing WireGuard support"><button id="wgKeyButton" class="btn" type="button" onclick="BlazeConsole.generateWireGuardKey()">Generate / show key</button></div></label>
+          <label class="span2"><span class="field-label">Hub public key</span><input id="wgPeerKey" class="field mono" placeholder="WireGuard peer public key"></label>
+          <label class="span2"><span class="field-label">Allowed IPs / management routes</span><input id="wgAllowedIps" class="field mono" placeholder="10.20.0.0/24"></label>
+          <label><span class="field-label">DNS</span><input id="wgDns" class="field" placeholder="Optional"></label>
+          <label><span class="field-label">MTU</span><input id="wgMtu" class="field" type="number" min="576" max="9000" value="1420"></label>
+        </div>
+      </div></div>
+      <div class="card"><div class="card-body"><div class="card-title">ZeroTier profile</div>
+        <label><span class="field-label">Network ID</span><input id="ztNetworkId" class="field mono" maxlength="16" placeholder="16 hexadecimal characters"></label>
+        <label style="margin-top:10px"><span class="field-label">This BlazePwifi ZeroTier node ID</span><div class="toolbar"><input id="ztNodeId" class="field mono" readonly placeholder="Prepare the node identity first"><button id="ztIdentityButton" class="btn" type="button" onclick="BlazeConsole.prepareZeroTierIdentity()">Prepare / show node ID</button></div></label>
+        <div id="ztLiveState" class="small muted" style="margin-top:10px">Not active.</div>
+        <div class="toolbar" style="margin-top:10px"><button id="ztApplyButton" class="btn primary" type="button" onclick="BlazeConsole.applyZeroTier()">Test & Apply ZeroTier</button><button id="ztDisableButton" class="btn danger" type="button" onclick="BlazeConsole.disableZeroTier()">Disable live ZeroTier</button></div>
+        <p class="muted" style="margin-top:10px">Prepare the node ID, authorize that member in your private ZeroTier network, then apply. BlazePwifi accepts only the current modern OpenWrt ZeroTier UCI layout and will not overwrite an existing non-Blaze ZeroTier network.</p>
+      </div></div>
+    </div>
+
+    <div class="card" style="margin-top:16px"><div class="card-body">
+      <div class="form-grid"><label><span class="field-label">Admin password</span><input id="remotePassword" class="field" type="password" autocomplete="current-password" placeholder="Required for save, key, apply and disable"></label><div style="align-self:end" class="toolbar"><button class="btn" onclick="BlazeConsole.saveRemote()">Validate & save profile</button><button id="wgApplyButton" class="btn primary" onclick="BlazeConsole.applyWireGuard()">Test & Apply WireGuard</button><button id="wgDisableButton" class="btn danger" onclick="BlazeConsole.disableWireGuard()">Disable live WireGuard</button></div></div>
+      <div id="remoteConfigState" class="small muted" style="margin-top:10px">Admin role is required to edit the profile.</div>
+    </div></div>
+    <div class="notice warn"><b>Remote-access safety model:</b> WireGuard and ZeroTier apply transactionally with a watchdog and boot-time recovery. Apply/disable must start from a local/non-mesh management path. WireGuard requires a real handshake. ZeroTier requires node ONLINE/TUNNELED, network status OK, a real interface and assigned IPv4. Default/overly broad/overlapping mesh routes are rejected. The normal LAN admin, captive portal, Rental and Vendo endpoints are never exposed on the restricted mesh listener.</div>
+  </section>
+
+  <section id="page-vouchers" class="section"><div class="page-head"><div><h2>Vouchers & Rates</h2><p>Create vouchers and manage rate packages.</p></div></div>
+    <div class="grid two"><div class="card"><div class="card-body"><div class="card-title">Quick voucher</div><div class="toolbar"><input id="voucherCents" class="field" type="number" min="1" value="100"><button id="voucherBtn" class="btn primary">Create voucher</button></div><div id="voucherResult" class="small mono muted" style="margin-top:9px"></div></div></div>
+    <div class="card"><div class="card-body"><div class="card-title">Voucher designer</div><p class="muted">Batch generation, printable layouts, QR/barcode, logo, expiry, speed profile and CSV/PDF/HTML/XLSX-oriented export belong here.</p></div></div></div>
+  </section>
+
+  <section id="page-members" class="section"><div class="page-head"><div><h2>Pisonet Members</h2><p>Central member accounts and authoritative banked time for BlazePisonet SoftTimer stations.</p></div><div class="toolbar"><span id="memberRevision" class="badge">Central revision —</span><button class="btn" onclick="BlazeMembers.load()">Refresh</button></div></div>
+    <div class="notice"><b>Authority model:</b> when SoftTimer is integrated with BlazePwifi, member account state and banked time are owned here. SoftTimer keeps only a revisioned local cache and fails closed on offline balance mutations.</div>
+    <div class="card" style="margin-top:16px"><div class="card-body"><div class="card-title">Member metadata migration</div>
+      <p class="muted">Export/import account metadata and banked time without exporting password salts, hashes or verifiers. New imported members are created disabled and require an administrator password reset before they can be enabled.</p>
+      <div class="toolbar">
+        <button class="btn" onclick="BlazeMembers.exportMetadata()">Export metadata</button>
+        <input id="memberImportFile" class="field" type="file" accept=".blazemembers,text/plain" style="max-width:340px">
+        <button class="btn" onclick="BlazeMembers.previewImport()">Preview import</button>
+      </div>
+      <div class="form-grid" style="margin-top:12px">
+        <label><span class="field-label">Collision policy</span><select id="memberImportPolicy" class="field"><option value="abort">Abort on any collision</option><option value="skip">Create new only; skip collisions</option><option value="update">Metadata-only update existing members</option></select></label>
+        <label><span class="field-label">Admin password to apply</span><input id="memberImportPassword" class="field" type="password" autocomplete="current-password" placeholder="Fresh re-authentication required"></label>
+      </div>
+      <div class="toolbar" style="margin-top:12px"><button id="memberImportApply" class="btn primary" onclick="BlazeMembers.applyImport()" disabled>Apply reviewed import</button></div>
+      <div id="memberImportSummary" class="small muted" style="margin-top:10px">Choose a Blaze Member Metadata v1 file and preview it before applying.</div>
+      <pre id="memberImportPreview" class="console-output" style="max-height:260px">No import preview loaded.</pre>
+      <div class="notice warn" style="margin-top:12px"><b>Collision safety:</b> imports never replace password verifier material. “Metadata-only update” changes only label, enabled state and banked balance on existing central members. New members remain disabled until a new password is set here.</div>
+    </div></div>
+    <div class="grid two" style="margin-top:16px">
+      <div class="card"><div class="card-body"><div class="card-title">Create member</div>
+        <div class="form-grid">
+          <label><span class="field-label">Username</span><input id="memberCreateUser" class="field" maxlength="32" placeholder="member01"></label>
+          <label><span class="field-label">Display name / label</span><input id="memberCreateLabel" class="field" maxlength="96" placeholder="Optional"></label>
+          <label class="span2"><span class="field-label">Initial password</span><input id="memberCreatePassword" class="field" type="password" autocomplete="new-password" placeholder="At least 8 characters"></label>
+        </div>
+        <button class="btn primary" style="margin-top:12px" onclick="BlazeMembers.create()">Create member</button>
+      </div></div>
+      <div class="card"><div class="card-body"><div class="card-title">Transfer banked time</div>
+        <div class="form-grid">
+          <label><span class="field-label">From member</span><input id="memberTransferFrom" class="field"></label>
+          <label><span class="field-label">To member</span><input id="memberTransferTo" class="field"></label>
+          <label><span class="field-label">Minutes</span><input id="memberTransferMinutes" class="field" type="number" min="1" max="525600" value="30"></label>
+        </div>
+        <button class="btn" style="margin-top:12px" onclick="BlazeMembers.transfer()">Transfer time</button>
+      </div></div>
+    </div>
+    <div id="memberCards" class="grid two" style="margin-top:16px"><div class="card empty">Loading Pisonet members…</div></div>
+    <div class="card" style="margin-top:16px"><div class="card-body"><div class="device-top"><div><div class="card-title">Recent member events</div><div class="small muted">Password contents are never logged or returned.</div></div><button class="btn sm" onclick="BlazeMembers.loadEvents('')">All events</button></div><pre id="memberEvents" class="console-output">Loading…</pre></div></div>
+  </section>
+
+  <section id="page-rentals" class="section"><div class="page-head"><div><h2>Rental Devices</h2><p>Enroll phones, control apps, launcher mode, time and security.</p></div><div class="toolbar"><button class="btn" onclick="BlazeRental.load()">Refresh</button><button class="btn primary" onclick="BlazeRental.openAdd()">+ Add device</button></div></div>
+    <div class="card"><div class="card-body"><div class="form-grid"><label><span class="field-label">Seconds per coin pulse</span><input id="pulseSeconds" class="field" type="number" min="1" max="86400" value="600"></label><div style="align-self:end"><button class="btn" onclick="BlazeRental.savePulse()">Save coin rate</button></div></div></div></div>
+    <div class="card" style="margin-top:16px"><div class="card-body"><div class="card-title">BlazeRental Update Manager</div><p class="muted">Publish the exact same-signer APK and an optional higher-version rescue APK. Phones still verify package identity, signing certificate and SHA-256 before installation.</p>
+      <div class="form-grid">
+        <label><span class="field-label">Update version</span><input id="rentalUpdateVersion" class="field" placeholder="e.g. 0.6.0 — enter after signing"></label>
+        <label><span class="field-label">Version code</span><input id="rentalUpdateCode" class="field" type="number" placeholder="signed APK version code"></label>
+        <label class="span2"><span class="field-label">APK HTTPS URL</span><input id="rentalUpdateUrl" class="field" placeholder="https://.../BlazeRental-v0.5.1.apk"></label>
+        <label class="span2"><span class="field-label">APK SHA-256</span><input id="rentalUpdateSha" class="field mono" maxlength="64"></label>
+        <label><span class="field-label">Rollback rescue version</span><input id="rentalRollbackVersion" class="field" value="0.5.0-rescue"></label>
+        <label><span class="field-label">Rescue version code</span><input id="rentalRollbackCode" class="field" type="number" value="50101"></label>
+        <label class="span2"><span class="field-label">Rollback rescue APK HTTPS URL</span><input id="rentalRollbackUrl" class="field" placeholder="https://.../BlazeRental-v0.5.0-rescue-for-v0.5.1.apk"></label>
+        <label class="span2"><span class="field-label">Rollback rescue SHA-256</span><input id="rentalRollbackSha" class="field mono" maxlength="64"></label>
+      </div>
+      <div class="toolbar" style="margin-top:12px"><button class="btn primary" onclick="BlazeRental.saveUpdateChannel()">Publish Rental update</button><button class="btn" onclick="BlazeRental.loadUpdateChannel()">Refresh</button></div>
+      <div id="rentalUpdateState" class="small muted" style="margin-top:8px">No update metadata loaded.</div>
+    </div></div>
+    <div id="rentalCards" class="grid two" style="margin-top:16px"><div class="card empty">Loading rental devices…</div></div>
+  </section>
+
+  <section id="page-controllers" class="section"><div class="page-head"><div><h2>Coin Controllers</h2><p>ESP8266/ESP32 runtime policy and connection state.</p></div><button class="btn" onclick="BlazeControllers.load()">Refresh</button></div><div id="controllerCards" class="grid two"><div class="card empty">Loading controllers…</div></div></section>
+
+  <section id="page-portal" class="section"><div class="page-head"><div><h2>Portal Designer</h2><p>Default undeletable portal plus operator-created HTML/CSS/JS/media themes.</p></div><a class="btn primary" href="/portal-editor.html">Open visual editor</a></div>
+    <div class="grid two"><div class="card"><div class="card-body"><div class="card-title">Factory Blaze portal</div><p class="muted">Permanent fallback. Child-friendly Insert Coin first glance with rich safe status below.</p><a class="btn" href="/">Open portal</a></div></div>
+    <div class="card"><div class="card-body"><div class="card-title">Template library</div><p class="muted">Add Portal Template, import HTML/CSS/JS, images, GIFs, fonts and sounds. Broken custom themes must fall back safely to factory Blaze.</p><a class="btn primary" href="/portal-editor.html">Manage templates</a></div></div></div>
+  </section>
+
+  <section id="page-multimedia" class="section"><div class="page-head"><div><h2>Multimedia Manager</h2><p>Movies and local media served by the Wi-Fi portal.</p></div></div>
+    <div class="grid two"><div class="card"><div class="card-body"><div class="card-title">Media library</div><p class="muted">Admin-controlled media can be free or require an active, unpaused paid session.</p><a class="btn" href="/media.html">Open customer Movies page</a></div></div>
+    <div class="card"><div class="card-body"><div class="card-title">Storage</div><p class="muted">Use detected USB storage on Lite systems or internal/SSD/SD storage on larger builds. See Storage for actual mounts.</p></div></div></div>
+  </section>
+
+  <section id="page-games" class="section"><div class="page-head"><div><h2>BlazeGames Manager</h2><p>Manage the local offline arcade/emulator library exposed on the Wi-Fi portal.</p></div></div>
+    <div class="grid two"><div class="card"><div class="card-body"><div class="card-title">Game library</div><p class="muted">Enable/disable operator-supplied ROMs, categories, cover art, metadata and free/active-session policy.</p><a class="btn" href="/games.html">Open customer Games page</a></div></div>
+    <div class="card"><div class="card-body"><div class="card-title">Content policy</div><p class="muted">BlazePwifi ships no copyrighted third-party ROMs by default. Administrator-supplied/licensed content remains under operator control.</p></div></div></div>
+  </section>
+
+  <section id="page-storage" class="section"><div class="page-head"><div><h2>Storage</h2><p>Internal, SD, SSD and USB mount visibility.</p></div><button class="btn" onclick="BlazeConsole.loadStorage()">Refresh</button></div><div class="card"><div class="card-body"><pre id="storageOutput" class="console-output">Loading…</pre></div></div></section>
+
+  <section id="page-backups" class="section"><div class="page-head"><div><h2>Backups</h2><p>Manual and scheduled configuration/state backups with bounded retention.</p></div></div>
+    <div class="grid two"><div class="card"><div class="card-body"><div class="card-title">Automatic backup</div><p class="muted">Configurable schedule and retention (for example keep the latest 5, deleting older snapshots automatically).</p></div></div>
+    <div class="card"><div class="card-body"><div class="card-title">Restore</div><p class="muted">Upload/import, inspect compatibility, then selectively or fully restore supported state.</p></div></div></div>
+  </section>
+
+  <section id="page-updates" class="section"><div class="page-head"><div><h2>Updates & Recovery</h2><p>Install feature/revision updates without reflashing, keep the previous stable version, and roll back safely.</p></div><button class="btn" onclick="BlazeConsole.loadUpdate()">Refresh</button></div>
+    <div class="grid two">
+      <div class="card"><div class="card-body"><div class="card-title">Version state</div>
+        <div class="switch-row"><span>Current</span><span id="updateCurrent" class="badge">—</span></div>
+        <div class="switch-row"><span>Stable</span><span id="updateStable" class="badge good">—</span></div>
+        <div class="switch-row"><span>Pending candidate</span><span id="updatePending" class="badge">—</span></div>
+        <div class="switch-row"><span>Rollback target</span><span id="updateRollback" class="badge">—</span></div>
+        <p id="updateSource" class="small muted"></p>
+      </div></div>
+      <div class="card"><div class="card-body"><div class="card-title">Install update bundle</div>
+        <p class="muted">Normal feature updates are applied transactionally to the writable overlay. Exact SHA-256 verification is required before activation.</p>
+        <label><span class="field-label">Bundle HTTPS URL</span><input id="updateUrl" class="field" placeholder="https://.../BlazePwifi-v0.5.1-update.tar.gz"></label>
+        <label><span class="field-label">SHA-256</span><input id="updateSha" class="field mono" maxlength="64" placeholder="64 hexadecimal characters"></label>
+        <div class="toolbar" style="margin-top:12px"><button class="btn primary" onclick="BlazeConsole.installUpdate()">Stage & install</button><button class="btn" onclick="BlazeConsole.rollbackUpdate()">Rollback stable</button></div>
+      </div></div>
+    </div>
+    <div class="notice warn"><b>Safety model:</b> the previous stable files remain available while the new candidate proves healthy. Failed immediate health checks roll back automatically; boot health failures also trigger rollback. Full firmware flashing remains available only for base-OS/kernel/partition changes that cannot be delivered safely as an overlay update.</div>
+  </section>
+
+  <section id="page-tools" class="section"><div class="page-head"><div><h2>Tools & Terminal</h2><p>Allowlisted diagnostics by default; bounded Advanced Terminal for re-authenticated administrators only.</p></div><button class="btn" onclick="BlazeConsole.loadTerminal()">Refresh terminal</button></div>
+    <div class="card"><div class="card-body"><div class="card-title">Safe Commands</div><div class="form-grid"><label><span class="field-label">Target</span><input id="toolTarget" class="field" value="1.1.1.1" placeholder="Host, IP, or host:port"></label><label><span class="field-label">Safe command</span><select id="toolName" class="field"><option value="ping">Ping</option><option value="jitter">Latency / jitter sample</option><option value="traceroute">Traceroute</option><option value="dns">DNS lookup</option><option value="port">TCP port check (host:port)</option><option value="wan">WAN status</option><option value="ntp">Clock / NTP status</option><option value="routes">Routes</option><option value="interfaces">Interfaces</option><option value="neighbors">Local neighbor table</option><option value="wifi">Wi-Fi status</option><option value="controllers">Coin controllers</option><option value="storage">Storage</option><option value="services">Services</option><option value="logs">Recent system logs</option><option value="uptime">Uptime</option><option value="speedtest">Speed test</option></select></label></div><div class="toolbar" style="margin-top:12px"><button class="btn primary" onclick="BlazeConsole.runTool()">Run safe command</button></div><pre id="toolOutput" class="console-output">Select a tool.</pre></div></div>
+
+    <div class="card" style="margin-top:16px"><div class="card-body"><div class="card-title">Advanced Terminal</div>
+      <div class="switch-row"><span>State</span><span id="terminalState" class="badge">Loading…</span></div>
+      <div id="terminalLimits" class="small muted" style="margin-top:8px">—</div>
+      <div class="form-grid" style="margin-top:12px"><label><span class="field-label">Admin password</span><input id="terminalPassword" class="field" type="password" autocomplete="current-password" placeholder="Required to enable/open"></label><div style="align-self:end" class="toolbar"><button class="btn" onclick="BlazeConsole.setTerminalEnabled(true)">Enable</button><button class="btn danger" onclick="BlazeConsole.setTerminalEnabled(false)">Disable</button><button class="btn primary" onclick="BlazeConsole.openTerminal()">Open session</button></div></div>
+      <div class="form-grid" style="margin-top:12px"><label class="span2"><span class="field-label">Command</span><input id="terminalCommand" class="field mono" maxlength="512" placeholder="Example: logread | tail -n 40"></label></div>
+      <div class="toolbar" style="margin-top:10px"><button class="btn primary" onclick="BlazeConsole.runTerminal()">Run bounded command</button><button class="btn" onclick="BlazeConsole.closeTerminal()">Close session</button></div>
+      <pre id="terminalOutput" class="console-output">Advanced Terminal is disabled by default. Session tokens are held only in this page memory.</pre>
+    </div></div>
+    <div class="notice warn"><b>Guardrails:</b> admin role, fresh password re-authentication, CSRF/session/IP binding, one active session per admin, short TTL/idle timeout, bounded command runtime/output, no background jobs, audit logging, and blocked appliance lifecycle commands. Captive-portal users have no route to this CGI.</div>
+  </section>
+
+  <section id="page-alerts" class="section"><div class="page-head"><div><h2>Alerts & Logs</h2><p>WAN, controller, rental, backup, storage, security and system events.</p></div></div><div class="card"><div class="card-body"><p class="muted">Alert severity, retention and notifications are capability-aware and bounded so logs cannot exhaust small targets.</p></div></div></section>
+
+  <section id="page-system" class="section"><div class="page-head"><div><h2>System & Security</h2><p>Hardware, runtime, account security, recovery and maintenance.</p></div><button class="btn" onclick="BlazeConsole.loadSystem()">Detect hardware</button></div>
+    <div class="grid two"><div class="card"><div class="card-body"><div class="card-title">Runtime</div><div class="switch-row"><span>Admin transport</span><span class="badge good">HTTPS</span></div><div class="switch-row"><span>Current role</span><span id="systemRole" class="badge">—</span></div><div class="switch-row"><span>Uptime</span><span id="systemUptime">—</span></div><div id="systemDetails" class="muted" style="margin-top:12px">Loading…</div></div></div>
+    <div class="card"><div class="card-body"><div class="card-title">Security posture</div><p class="muted">CSRF-protected state changes, role checks, login lockout/rate limits, bounded diagnostic output and no public-WAN admin binding by default.</p><a class="btn" href="/vendor/tailadmin/LICENSE" target="_blank">UI license attribution</a></div></div></div>
+  </section>
+</div></main></div>
+
+<div id="addRentalModal" class="modal-backdrop hidden"><div class="modal"><div class="modal-head"><b>Add Rental Device</b><button class="btn ghost sm" onclick="BlazeRental.closeAdd()">✕</button></div><div class="modal-body"><label class="field-label">Phone label</label><input id="addRentalLabel" class="field" value="Rental phone"><label class="field-label" style="margin-top:12px">BlazePwifi server URL</label><input id="addRentalServer" class="field" placeholder="https://192.168.1.1:8443"><div class="grid two qr-choices" style="margin-top:14px">
+  <div class="qr-method"><span class="badge warn">STANDARD · LOWER SECURITY</span><h3>Already-installed phone</h3><p>Open BlazeRental's on-device Binding scanner. This QR carries binding data only; it cannot grant Device Owner permissions.</p><button class="btn" onclick="BlazeRental.generateBindingQr()">Generate binding QR</button></div>
+  <div class="qr-method preferred"><span class="badge good">MANAGED · RECOMMENDED</span><h3>New or factory-reset phone</h3><p>Scan from Android Setup Wizard. Android verifies the published APK checksum during provisioning. Independently verify the APK signer before enrollment.</p><button class="btn primary" onclick="BlazeRental.generateProvisioningQr()">Generate Device Owner QR</button></div>
+</div><div class="notice" style="margin-top:12px"><b>Before scanning:</b> confirm the server HTTPS certificate pin and APK signer. Each generated token is temporary and must not be shared publicly. Factory-reset provisioning is supported only where the Android device/OEM allows it.</div><div id="qrResult" class="hidden"><div id="qrBox" class="qr-box"></div><div id="qrNotice" class="notice"></div><div id="qrMeta" class="code-box mono small"></div><div id="qrToken" class="code-box mono small"></div><button id="qrReveal" class="btn ghost sm" type="button" hidden>Reveal one-time token (15 seconds)</button></div></div></div></div>
+<div id="toastHost"></div>
+<script src="/vendor/qrcode/qrcode.js"></script>
+<script src="/admin/core.js"></script><script src="/vendor/blazefusion/blaze-fusion.js"></script><script src="/admin/members.js"></script><script src="/admin/rental.js"></script><script src="/admin/controllers.js"></script><script src="/admin/console-v05.js"></script>
+</body></html>

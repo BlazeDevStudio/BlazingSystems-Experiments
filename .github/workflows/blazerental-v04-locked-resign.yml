@@ -1,0 +1,233 @@
+name: BlazeRental v0.4 locked production re-sign
+
+on:
+  push:
+    branches: [blazepwifi-v0.4.0-implementation]
+    paths:
+      - '.github/blazerental-v04-locked-resign-request.json'
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: "Successful validated BlazePwifi build run"
+        required: true
+        type: string
+      candidate_sha:
+        description: "Exact validated candidate commit SHA"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: blazerental-v04-locked-production-resign
+  cancel-in-progress: false
+
+jobs:
+  sign:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 25
+    env:
+      GH_TOKEN: ${{ github.token }}
+      STORE_B64: ${{ secrets.BLAZERENTAL_KEYSTORE_B64 }}
+      STORE_PASS: ${{ secrets.BLAZERENTAL_KEYSTORE_PASSWORD }}
+      KEY_ALIAS_SECRET: ${{ secrets.BLAZERENTAL_KEY_ALIAS }}
+      TRANSFER_PRIVATE: ${{ secrets.BLAZERENTAL_TRANSFER_PRIVATE_KEY_PEM }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve exact validated candidate
+        id: request
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_RUN_ID: ${{ inputs.run_id }}
+          INPUT_CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT_NAME" = workflow_dispatch ]; then
+            RUN_ID="$INPUT_RUN_ID"
+            CANDIDATE_SHA="$INPUT_CANDIDATE_SHA"
+          else
+            RUN_ID="$(jq -r '.run_id // empty' .github/blazerental-v04-locked-resign-request.json)"
+            CANDIDATE_SHA="$(jq -r '.candidate_sha // empty' .github/blazerental-v04-locked-resign-request.json)"
+          fi
+          printf '%s' "$RUN_ID" | grep -Eq '^[0-9]+$'
+          printf '%s' "$CANDIDATE_SHA" | grep -Eq '^[0-9a-f]{40}$'
+          BUILD="$(gh api "repos/${{ github.repository }}/actions/runs/$RUN_ID")"
+          test "$(printf '%s' "$BUILD" | jq -r .conclusion)" = success
+          test "$(printf '%s' "$BUILD" | jq -r .head_sha)" = "$CANDIDATE_SHA"
+          echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
+          echo "candidate_sha=$CANDIDATE_SHA" >> "$GITHUB_OUTPUT"
+
+      - name: Preserve locked identity and signing gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp experiment/openwrt/BlazePwifi/tests/v04_signing_gate.sh "$RUNNER_TEMP/v04_signing_gate.sh"
+          cp .github/blazerental-v04-production-identity.json "$RUNNER_TEMP/production-identity.json"
+          test "$(jq -r .locked "$RUNNER_TEMP/production-identity.json")" = true
+          test "$(jq -r .certificate_lineage "$RUNNER_TEMP/production-identity.json")" = v0.4-fresh-production
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.request.outputs.candidate_sha }}
+
+      - name: Download exact unsigned candidate
+        shell: bash
+        env:
+          RUN_ID: ${{ steps.request.outputs.run_id }}
+        run: |
+          set -euo pipefail
+          mkdir -p candidate
+          gh run download "$RUN_ID" --repo "${{ github.repository }}" \
+            --name BlazePwifi-android-BlazeRental-v0.4 --dir candidate
+          UNSIGNED="$(find candidate -type f -name 'BlazeRental-v0.4.0-release-unsigned.apk' -print -quit)"
+          test -n "$UNSIGNED" -a -s "$UNSIGNED"
+          echo "UNSIGNED=$UNSIGNED" >> "$GITHUB_ENV"
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install Android signing tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDKMANAGER="${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager"
+          [ -x "$SDKMANAGER" ] || SDKMANAGER="$(command -v sdkmanager)"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" "build-tools;36.0.0"
+          echo "APKSIGNER=${ANDROID_SDK_ROOT}/build-tools/36.0.0/apksigner" >> "$GITHUB_ENV"
+          echo "AAPT=${ANDROID_SDK_ROOT}/build-tools/36.0.0/aapt" >> "$GITHUB_ENV"
+          echo "ZIPALIGN=${ANDROID_SDK_ROOT}/build-tools/36.0.0/zipalign" >> "$GITHUB_ENV"
+
+      - name: Restore exact locked v0.4 production identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          EXPECTED="$(jq -r .sha256_fingerprint "$RUNNER_TEMP/production-identity.json" | tr -d ':' | tr 'A-F' 'a-f')"
+          test -n "$EXPECTED"
+
+          verify_store() {
+            local p12="$1" pass="$2" alias="${KEY_ALIAS_SECRET:-blazerental}" actual
+            actual="$(keytool -list -v -keystore "$p12" -storetype PKCS12 -storepass "$pass" -alias "$alias" \
+              | sed -n 's/^[[:space:]]*SHA256: //p' | head -n1 | tr -d ':' | tr 'A-F' 'a-f')"
+            [ -n "$actual" ] && [ "$actual" = "$EXPECTED" ]
+          }
+
+          if [ -n "$STORE_B64" ] && [ -n "$STORE_PASS" ]; then
+            printf '%s' "$STORE_B64" | base64 -d > "$RUNNER_TEMP/BlazeRental-v0.4-production.p12"
+            if verify_store "$RUNNER_TEMP/BlazeRental-v0.4-production.p12" "$STORE_PASS"; then
+              echo "Using repository secret containing the locked v0.4 signer."
+              exit 0
+            fi
+            rm -f "$RUNNER_TEMP/BlazeRental-v0.4-production.p12"
+            echo "Configured keystore is not the locked v0.4 identity; trying encrypted recovery handoff."
+          fi
+
+          if [ -z "$TRANSFER_PRIVATE" ]; then
+            echo "Locked v0.4 signer recovery requires BLAZERENTAL_TRANSFER_PRIVATE_KEY_PEM." >&2
+            echo "Refusing to rotate the production certificate." >&2
+            exit 1
+          fi
+
+          REC="$RUNNER_TEMP/v04-recovery"
+          mkdir -p "$REC/assets" "$REC/plain"
+          gh release download v0.4.0 --repo "${{ github.repository }}" \
+            --pattern 'BlazeRental-v0.4-signing-backup.enc' \
+            --pattern 'BlazeRental-v0.4-signing-aes-key.enc' \
+            --pattern 'BlazeRental-v0.4-signing-aes-iv.bin' \
+            --dir "$REC/assets"
+          test -s "$REC/assets/BlazeRental-v0.4-signing-backup.enc"
+          test -s "$REC/assets/BlazeRental-v0.4-signing-aes-key.enc"
+          test -s "$REC/assets/BlazeRental-v0.4-signing-aes-iv.bin"
+
+          printf '%s' "$TRANSFER_PRIVATE" > "$REC/transfer-private.pem"
+          chmod 600 "$REC/transfer-private.pem"
+          openssl pkey -in "$REC/transfer-private.pem" -noout
+          openssl pkeyutl -decrypt -inkey "$REC/transfer-private.pem" \
+            -pkeyopt rsa_padding_mode:oaep -pkeyopt rsa_oaep_md:sha256 \
+            -in "$REC/assets/BlazeRental-v0.4-signing-aes-key.enc" -out "$REC/aes.key"
+
+          KEYHEX="$(xxd -p -c 256 "$REC/aes.key")"
+          IVHEX="$(xxd -p -c 256 "$REC/assets/BlazeRental-v0.4-signing-aes-iv.bin")"
+          openssl enc -d -aes-256-cbc -K "$KEYHEX" -iv "$IVHEX" \
+            -in "$REC/assets/BlazeRental-v0.4-signing-backup.enc" -out "$REC/backup.tar.gz"
+          tar -xzf "$REC/backup.tar.gz" -C "$REC/plain"
+
+          P12="$(find "$REC/plain" -type f -name 'BlazeRental-v0.4-production.p12' -print -quit)"
+          PASSFILE="$(find "$REC/plain" -type f -name 'keystore-password.txt' -print -quit)"
+          test -n "$P12" -a -s "$P12" -a -n "$PASSFILE" -a -s "$PASSFILE"
+          RECOVERED_PASS="$(tr -d '\r\n' < "$PASSFILE")"
+          verify_store "$P12" "$RECOVERED_PASS" || {
+            echo "Recovered keystore does not match locked production identity." >&2
+            exit 1
+          }
+
+          cp "$P12" "$RUNNER_TEMP/BlazeRental-v0.4-production.p12"
+          printf 'STORE_PASS=%s\n' "$RECOVERED_PASS" >> "$GITHUB_ENV"
+
+          # Preserve the encrypted handoff for the refreshed release stage.
+          cp "$REC/assets"/BlazeRental-v0.4-signing-* "$RUNNER_TEMP/"
+          rm -f "$REC/transfer-private.pem" "$REC/aes.key" "$REC/backup.tar.gz"
+          rm -rf "$REC/plain"
+
+      - name: Sign candidate with locked v0.4 identity
+        shell: bash
+        env:
+          CANDIDATE_SHA: ${{ steps.request.outputs.candidate_sha }}
+          BUILD_RUN_ID: ${{ steps.request.outputs.run_id }}
+        run: |
+          set -euo pipefail
+          OUT="$RUNNER_TEMP/blazerental-v04-locked"
+          mkdir -p "$OUT"
+          ALIAS="${KEY_ALIAS_SECRET:-blazerental}"
+          EXPECTED_FP="$(jq -r .sha256_fingerprint "$RUNNER_TEMP/production-identity.json")"
+          printf 'SHA256: %s\n' "$EXPECTED_FP" > "$RUNNER_TEMP/locked-fingerprint.txt"
+
+          "$ZIPALIGN" -p -f 4 "$UNSIGNED" "$OUT/BlazeRental-aligned.apk"
+          "$APKSIGNER" sign \
+            --ks "$RUNNER_TEMP/BlazeRental-v0.4-production.p12" --ks-type PKCS12 \
+            --ks-key-alias "$ALIAS" --ks-pass "pass:$STORE_PASS" --key-pass "pass:$STORE_PASS" \
+            --v1-signing-enabled true --v2-signing-enabled true --v3-signing-enabled true \
+            --out "$OUT/BlazeRental.apk" "$OUT/BlazeRental-aligned.apk"
+
+          "$APKSIGNER" verify --verbose --print-certs "$OUT/BlazeRental.apk" > "$OUT/BlazeRental-apksigner-verify.txt"
+          keytool -exportcert -rfc -alias "$ALIAS" \
+            -keystore "$RUNNER_TEMP/BlazeRental-v0.4-production.p12" -storetype PKCS12 \
+            -storepass "$STORE_PASS" -file "$OUT/BlazeRental-signing-cert.pem"
+          keytool -list -v -alias "$ALIAS" \
+            -keystore "$RUNNER_TEMP/BlazeRental-v0.4-production.p12" -storetype PKCS12 \
+            -storepass "$STORE_PASS" | sed -n '/SHA256:/p' > "$OUT/BlazeRental-signing-fingerprint.txt"
+
+          APKSIGNER="$APKSIGNER" AAPT="$AAPT" bash "$RUNNER_TEMP/v04_signing_gate.sh" \
+            "$OUT/BlazeRental.apk" "$RUNNER_TEMP/locked-fingerprint.txt"
+
+          UNSIGNED_SHA="$(sha256sum "$UNSIGNED" | awk '{print $1}')"
+          SIGNED_SHA="$(sha256sum "$OUT/BlazeRental.apk" | awk '{print $1}')"
+          jq -n \
+            --arg release "0.4.0" \
+            --arg candidate_sha "$CANDIDATE_SHA" \
+            --arg build_run_id "$BUILD_RUN_ID" \
+            --arg unsigned_sha256 "$UNSIGNED_SHA" \
+            --arg signed_sha256 "$SIGNED_SHA" \
+            --arg signing_fingerprint "$EXPECTED_FP" \
+            '{release:$release,candidate_sha:$candidate_sha,build_run_id:$build_run_id,unsigned_sha256:$unsigned_sha256,signed_sha256:$signed_sha256,certificate_lineage:"v0.4-fresh-production",upgrade_from_v0_3:false,fresh_device_provisioning:true,signing_fingerprint:$signing_fingerprint}' \
+            > "$OUT/SIGNING-MANIFEST.json"
+
+          for f in BlazeRental-v0.4-signing-backup.enc BlazeRental-v0.4-signing-aes-key.enc BlazeRental-v0.4-signing-aes-iv.bin; do
+            [ ! -s "$RUNNER_TEMP/$f" ] || cp "$RUNNER_TEMP/$f" "$OUT/$f"
+          done
+          sha256sum "$OUT/BlazeRental.apk" "$OUT/BlazeRental-signing-cert.pem" \
+            "$OUT/BlazeRental-signing-fingerprint.txt" "$OUT/SIGNING-MANIFEST.json" > "$OUT/SHA256SUMS"
+          rm -f "$OUT/BlazeRental-aligned.apk" "$RUNNER_TEMP/BlazeRental-v0.4-production.p12"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BlazeRental-v0.4.0-production-fresh-signed
+          path: ${{ runner.temp }}/blazerental-v04-locked/
+          retention-days: 90
+          if-no-files-found: error

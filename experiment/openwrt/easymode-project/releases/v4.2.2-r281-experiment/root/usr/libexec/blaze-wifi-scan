@@ -1,0 +1,11 @@
+#!/bin/sh
+set -eu
+umask 077
+case "${1:-}" in ''|*[!0-9a-f-]*) exit 2;;esac
+OUT=/tmp/blaze-scans/$1.json
+if /usr/bin/timeout -k 2 45 /usr/bin/ucode /usr/share/blaze/wifi-scan.uc "$1" >"$OUT.new";then
+ mv "$OUT.new" "$OUT"
+else
+ printf '{"id":"%s","ok":false,"pending":false,"error":"Wi-Fi scan worker failed or timed out. Retry when the radio is idle."}' "$1" >"$OUT.new"
+ mv "$OUT.new" "$OUT"
+fi

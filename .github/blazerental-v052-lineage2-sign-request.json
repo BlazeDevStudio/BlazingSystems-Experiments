@@ -1,0 +1,7 @@
+{
+  "run_id": 37443570618,
+  "candidate_sha": "bf2992977fe8504d21b107df02826032c31d3a62",
+  "mode": "create-permanent-production-lineage2",
+  "retry": 2,
+  "workflow_fix": "bce91e118f4729932b2c39af5192b97aaeebcb65"
+}

@@ -1,0 +1,22 @@
+#!/bin/sh
+# relayd is routed IPv4: a captive portal reply with TTL=1 otherwise expires.
+# Scope the extra hop to upstream-subnet clients, never the router or cellular.
+set -eu
+clear_rule() { nft delete table ip blaze_relay_compat 2>/dev/null || true; rm -f /tmp/blaze-relay-firewall.key; }
+if [ "$(uci -q get blaze.main.wifi_uplink_mode || true)" != relay ] || [ "$(uci -q get blaze.main.wifi_captive || true)" != 1 ];then clear_rule;exit 0;fi
+J=$(ubus call network.interface.wifiwan status 2>/dev/null || true)
+D=$(printf '%s' "$J" | jsonfilter -e '@.l3_device' || true)
+A=$(printf '%s' "$J" | jsonfilter -e '@["ipv4-address"][0].address' || true)
+M=$(printf '%s' "$J" | jsonfilter -e '@["ipv4-address"][0].mask' || true)
+case "$D" in ''|*[!a-zA-Z0-9_.-]*) clear_rule;exit 0;;esac
+case "$A:$M" in :|*[!0-9.:]*) clear_rule;exit 0;;esac
+[ -n "$A" ] && [ -n "$M" ] && [ "$M" -ge 1 ] && [ "$M" -le 32 ] || { clear_rule;exit 0; }
+KEY="$D:$A/$M"
+if [ "$(cat /tmp/blaze-relay-firewall.key 2>/dev/null || true)" = "$KEY" ] && nft list chain ip blaze_relay_compat ingress >/dev/null 2>&1;then exit 0;fi
+nft -f - <<EOF
+add table ip blaze_relay_compat
+flush table ip blaze_relay_compat
+add chain ip blaze_relay_compat ingress { type filter hook prerouting priority -151; policy accept; }
+add rule ip blaze_relay_compat ingress iifname "$D" ip daddr $A/$M ip daddr != $A ip ttl 1 counter ip ttl set 2 comment "Blaze captive IPv4 relay hop"
+EOF
+printf '%s' "$KEY" >/tmp/blaze-relay-firewall.key

@@ -1,0 +1,8 @@
+{
+  "stage_run_id": 37283029072,
+  "candidate_sha": "1373eaa8ee8e95abbc2d0cbf5565d8ed28d2a750",
+  "build_run_id": 37268063117,
+  "signing_run_id": 37279036434,
+  "tag": "v0.4.0",
+  "note": "Finalize from the already-verified production stage. The previous publisher failed only at GitHub Release creation."
+}

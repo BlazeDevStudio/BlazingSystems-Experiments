@@ -1,0 +1,10 @@
+{
+  "build_run_id": "37268063117",
+  "signing_run_id": "37279036434",
+  "candidate_sha": "1373eaa8ee8e95abbc2d0cbf5565d8ed28d2a750",
+  "publish": true,
+  "requested_at": "2026-10-05T16:21:00+08:00",
+  "mode": "final-production",
+  "signing_lineage": "v0.4-fresh-production",
+  "retry_reason": "Use privileged Ruijie rootfs extraction in final staging."
+}

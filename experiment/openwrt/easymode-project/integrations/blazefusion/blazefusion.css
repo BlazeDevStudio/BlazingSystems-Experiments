@@ -1,0 +1,29 @@
+/* Offline BlazeFusion appearance preview for EasyMode; original CSS. */
+html[data-blaze-style] :focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.blazefusion-appearance{display:inline-flex;gap:7px;align-items:center;margin-inline:4px;color:var(--muted);font-size:12px;white-space:nowrap}
+.blazefusion-appearance select{display:block;min-width:116px;width:auto;max-width:148px;margin:0;padding:8px 9px;background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:10px;font-size:12px}
+html[data-blaze-style="fusion"] .card,html[data-blaze-style="fusion"] .login-card{border-color:color-mix(in srgb,var(--accent) 35%,var(--line));background:linear-gradient(145deg,var(--panel),color-mix(in srgb,var(--panel) 90%,var(--accent)))}
+html[data-blaze-style="fusion"] nav .active{box-shadow:inset 0 -2px var(--accent)}
+html[data-blaze-style="fusion"] .card{border-top:2px solid color-mix(in srgb,var(--accent) 30%,var(--line))}
+html[data-blaze-style="compact"] header{padding-block:11px;gap:15px}
+html[data-blaze-style="compact"] main{padding-block:23px}
+html[data-blaze-style="compact"] .grid{gap:11px}
+html[data-blaze-style="compact"] .card{padding:15px;border-radius:10px;box-shadow:none}
+html[data-blaze-style="compact"] .metric{font-size:28px}
+html[data-blaze-style="compact"] nav button,html[data-blaze-style="compact"] nav a{padding:7px 9px}
+html[data-blaze-style="comfort"] .card{padding:27px;border-radius:21px;box-shadow:var(--shadow)}
+html[data-blaze-style="comfort"] .login-card{border-radius:25px}
+html[data-blaze-style="comfort"] .grid{gap:22px}
+html[data-blaze-style="comfort"] nav button,html[data-blaze-style="comfort"] nav a{padding:12px 15px}
+html[data-blaze-style="comfort"] .form button{min-height:44px;border-radius:13px}
+@media(max-width:1050px){.blazefusion-appearance{order:2;margin-left:auto}header nav{order:4;flex-basis:100%;min-width:0}}
+@media(max-width:640px){
+ .blazefusion-appearance{font-size:0}
+ .blazefusion-appearance select{min-width:100px;max-width:110px}
+ header{gap:8px;min-width:0}
+ header .brand{min-width:0;white-space:normal}
+ header .brand small{word-break:break-word}
+ html[data-blaze-style="compact"] .grid{grid-template-columns:minmax(0,1fr)}
+ .grid>.card,.page-heading,main{min-width:0}
+}
+@media(prefers-reduced-motion:reduce){html[data-blaze-style] *{animation:none!important;transition:none!important}}

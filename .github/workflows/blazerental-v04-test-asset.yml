@@ -1,0 +1,92 @@
+name: BlazeRental v0.4 tagged test asset
+
+on:
+  push:
+    branches: [blazepwifi-v0.4.0-implementation]
+    paths:
+      - '.github/blazerental-v04-test-asset-request.json'
+      - '.github/workflows/blazerental-v04-test-asset.yml'
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: blazerental-v04-test-asset
+  cancel-in-progress: false
+
+jobs:
+  upload:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve tagged test asset request
+        id: req
+        shell: bash
+        run: |
+          set -euo pipefail
+          RUN_ID="$(jq -r '.build_run_id // empty' .github/blazerental-v04-test-asset-request.json)"
+          SHA="$(jq -r '.candidate_sha // empty' .github/blazerental-v04-test-asset-request.json)"
+          TAG="$(jq -r '.release_tag // "v0.4.0"' .github/blazerental-v04-test-asset-request.json)"
+          NAME="$(jq -r '.asset_name // empty' .github/blazerental-v04-test-asset-request.json)"
+          printf '%s' "$RUN_ID" | grep -Eq '^[0-9]+$'
+          printf '%s' "$SHA" | grep -Eq '^[0-9a-f]{40}$'
+          [ "$TAG" = "v0.4.0" ]
+          [ "$NAME" = "BlazeRental-v0.4.0-d2ee-TEST.apk" ]
+          echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "asset_name=$NAME" >> "$GITHUB_OUTPUT"
+
+      - name: Verify exact green build
+        shell: bash
+        env:
+          RUN_ID: ${{ steps.req.outputs.run_id }}
+          SHA: ${{ steps.req.outputs.sha }}
+        run: |
+          set -euo pipefail
+          R="$(gh api "repos/${{ github.repository }}/actions/runs/$RUN_ID")"
+          test "$(printf '%s' "$R" | jq -r .conclusion)" = success
+          test "$(printf '%s' "$R" | jq -r .head_sha)" = "$SHA"
+
+      - name: Download exact Android artifact
+        shell: bash
+        env:
+          RUN_ID: ${{ steps.req.outputs.run_id }}
+          ASSET_NAME: ${{ steps.req.outputs.asset_name }}
+        run: |
+          set -euo pipefail
+          mkdir -p candidate out
+          gh run download "$RUN_ID" --repo "${{ github.repository }}" \
+            --name BlazePwifi-android-BlazeRental-v0.4 --dir candidate
+          SRC="$(find candidate -type f -name 'BlazeRental-v0.4.0-ci.apk' -print -quit)"
+          test -n "$SRC" -a -s "$SRC"
+          cp "$SRC" "out/$ASSET_NAME"
+          (cd out && sha256sum "$ASSET_NAME" > "$ASSET_NAME.sha256")
+
+      - name: Upload tagged test asset without touching production APK
+        shell: bash
+        env:
+          TAG: ${{ steps.req.outputs.tag }}
+          ASSET_NAME: ${{ steps.req.outputs.asset_name }}
+        run: |
+          set -euo pipefail
+          gh release view "$TAG" --repo "${{ github.repository }}" >/dev/null
+          gh release upload "$TAG" "out/$ASSET_NAME" "out/$ASSET_NAME.sha256" \
+            --repo "${{ github.repository }}" --clobber
+
+      - name: Verify asset on release
+        shell: bash
+        env:
+          TAG: ${{ steps.req.outputs.tag }}
+          ASSET_NAME: ${{ steps.req.outputs.asset_name }}
+        run: |
+          set -euo pipefail
+          JSON="$(gh api "repos/${{ github.repository }}/releases/tags/$TAG")"
+          printf '%s' "$JSON" | jq -e --arg n "$ASSET_NAME" '.assets[] | select(.name==$n)' >/dev/null
+          printf '%s' "$JSON" | jq -e --arg n "$ASSET_NAME.sha256" '.assets[] | select(.name==$n)' >/dev/null
+          echo "Tagged BlazeRental test asset is present on $TAG."

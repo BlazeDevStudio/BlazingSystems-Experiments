@@ -1,0 +1,370 @@
+name: BlazePwifi v0.4 production release
+
+on:
+  push:
+    branches: [blazepwifi-v0.4.0-implementation]
+    paths:
+      - '.github/blazepwifi-v04-release-request.json'
+  workflow_dispatch:
+    inputs:
+      build_run_id:
+        description: "Successful BlazePwifi build run with candidate-gate artifact"
+        required: true
+        type: string
+      signing_run_id:
+        description: "Successful BlazeRental v0.4 production signing run"
+        required: true
+        type: string
+      candidate_sha:
+        description: "Exact validated release candidate commit SHA"
+        required: true
+        type: string
+      publish:
+        description: "Create/update GitHub Release v0.4.0"
+        required: true
+        default: false
+        type: boolean
+
+concurrency:
+  group: blazepwifi-v04-release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  stage:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve release request
+        id: request
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_BUILD_RUN: ${{ inputs.build_run_id }}
+          INPUT_SIGN_RUN: ${{ inputs.signing_run_id }}
+          INPUT_CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+          INPUT_PUBLISH: ${{ inputs.publish }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT_NAME" = workflow_dispatch ]; then
+            BUILD_RUN="$INPUT_BUILD_RUN"
+            SIGN_RUN="$INPUT_SIGN_RUN"
+            CANDIDATE_SHA="$INPUT_CANDIDATE_SHA"
+            PUBLISH="$INPUT_PUBLISH"
+          else
+            BUILD_RUN="$(jq -r '.build_run_id // empty' .github/blazepwifi-v04-release-request.json)"
+            SIGN_RUN="$(jq -r '.signing_run_id // empty' .github/blazepwifi-v04-release-request.json)"
+            CANDIDATE_SHA="$(jq -r '.candidate_sha // empty' .github/blazepwifi-v04-release-request.json)"
+            PUBLISH="$(jq -r '.publish // false' .github/blazepwifi-v04-release-request.json)"
+          fi
+          printf '%s' "$BUILD_RUN" | grep -Eq '^[0-9]+$'
+          printf '%s' "$SIGN_RUN" | grep -Eq '^[0-9]+$'
+          printf '%s' "$CANDIDATE_SHA" | grep -Eq '^[0-9a-f]{40}$'
+          [ "$PUBLISH" = true ] || [ "$PUBLISH" = false ]
+          echo "build_run=$BUILD_RUN" >> "$GITHUB_OUTPUT"
+          echo "sign_run=$SIGN_RUN" >> "$GITHUB_OUTPUT"
+          echo "candidate_sha=$CANDIDATE_SHA" >> "$GITHUB_OUTPUT"
+          echo "publish=$PUBLISH" >> "$GITHUB_OUTPUT"
+
+      - name: Verify successful build and signing runs
+        shell: bash
+        env:
+          BUILD_RUN: ${{ steps.request.outputs.build_run }}
+          SIGN_RUN: ${{ steps.request.outputs.sign_run }}
+          CANDIDATE_SHA: ${{ steps.request.outputs.candidate_sha }}
+        run: |
+          set -euo pipefail
+          B="$(gh api "repos/${{ github.repository }}/actions/runs/$BUILD_RUN")"
+          S="$(gh api "repos/${{ github.repository }}/actions/runs/$SIGN_RUN")"
+          test "$(printf '%s' "$B" | jq -r .conclusion)" = success
+          test "$(printf '%s' "$B" | jq -r .head_sha)" = "$CANDIDATE_SHA"
+          test "$(printf '%s' "$S" | jq -r .conclusion)" = success
+
+      - name: Preserve current release policy before candidate checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/release-docs"
+          cp experiment/openwrt/BlazePwifi/tests/v04_signing_gate.sh "$RUNNER_TEMP/v04_signing_gate.sh"
+          for f in README.md ASSETS.md SIGNING.md RELEASE_CHECKLIST.md FRESH_PRODUCTION_SIGNING.md manifest.json; do
+            cp "experiment/openwrt/BlazePwifi/releases/0.4.0/$f" "$RUNNER_TEMP/release-docs/$f"
+          done
+          cp .github/blazerental-v04-production-identity.json "$RUNNER_TEMP/release-docs/blazerental-v04-production-identity.json"
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.request.outputs.candidate_sha }}
+
+      - name: Download exact validated build artifacts
+        shell: bash
+        env:
+          BUILD_RUN: ${{ steps.request.outputs.build_run }}
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          for name in             BlazePwifi-v0.4-candidate-gate             BlazePwifi-android-BlazeRental-v0.4             BlazePwifi-esp8266-firmware             BlazePwifi-esp32-firmware             BlazePwifi-ruijie-firmware             BlazePwifi-x86_64-firmware             BlazePwifi-orangepi_zero3-firmware             BlazePwifi-orangepi_one-firmware             BlazePwifi-orangepi_pc-firmware             BlazePwifi-orangepi_zero-firmware             BlazePwifi-orangepi_zero2-firmware             BlazePwifi-orangepi_zero2w-firmware             BlazePwifi-orangepi_pc2-firmware             BlazePwifi-orangepi_pc_plus-firmware             BlazePwifi-orangepi_one_plus-firmware             BlazePwifi-v0.4-browser-simulation             BlazePwifi-v0.4-android-simulation             BlazePwifi-v0.4-esp8266-simulation             BlazePwifi-v0.4-esp32-simulation             BlazePwifi-v0.4-ruijie-simulation             BlazePwifi-v0.4-orangepi_zero3-simulation             BlazePwifi-v0.4-orangepi_one-simulation             BlazePwifi-v0.4-orangepi_pc-simulation             BlazePwifi-v0.4-x86-simulation
+          do
+            mkdir -p "artifacts/$name"
+            gh run download "$BUILD_RUN" --repo "${{ github.repository }}"               --name "$name" --dir "artifacts/$name"
+          done
+
+      - name: Download and identify exact production-signed APK
+        id: signed
+        shell: bash
+        env:
+          SIGN_RUN: ${{ steps.request.outputs.sign_run }}
+          BUILD_RUN: ${{ steps.request.outputs.build_run }}
+          CANDIDATE_SHA: ${{ steps.request.outputs.candidate_sha }}
+        run: |
+          set -euo pipefail
+          rm -rf artifacts/signed
+          mkdir -p artifacts/signed
+
+          if gh run download "$SIGN_RUN" --repo "${{ github.repository }}"               --name BlazeRental-v0.4.0-production-signed --dir artifacts/signed 2>/dev/null; then
+            ARTIFACT_NAME=BlazeRental-v0.4.0-production-signed
+          else
+            rm -rf artifacts/signed
+            mkdir -p artifacts/signed
+            gh run download "$SIGN_RUN" --repo "${{ github.repository }}"               --name BlazeRental-v0.4.0-production-fresh-signed --dir artifacts/signed
+            ARTIFACT_NAME=BlazeRental-v0.4.0-production-fresh-signed
+          fi
+
+          test -s artifacts/signed/SIGNING-MANIFEST.json
+          test "$(jq -r .candidate_sha artifacts/signed/SIGNING-MANIFEST.json)" = "$CANDIDATE_SHA"
+          test "$(jq -r .build_run_id artifacts/signed/SIGNING-MANIFEST.json)" = "$BUILD_RUN"
+
+          LINEAGE="$(jq -r '.certificate_lineage // empty' artifacts/signed/SIGNING-MANIFEST.json)"
+          case "$LINEAGE" in
+            v0.3|v0.4-fresh-production) ;;
+            *) echo "unsupported BlazeRental certificate lineage: $LINEAGE" >&2; exit 1 ;;
+          esac
+
+          GATE="$(find artifacts/BlazePwifi-v0.4-candidate-gate -type f -name CANDIDATE-GATE.json -print -quit)"
+          test -n "$GATE" -a -s "$GATE"
+          test "$(jq -r .status "$GATE")" = passed
+          test "$(jq -r .commit "$GATE")" = "$CANDIDATE_SHA"
+
+          echo "artifact_name=$ARTIFACT_NAME" >> "$GITHUB_OUTPUT"
+          echo "lineage=$LINEAGE" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install release verification tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDKMANAGER="${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager"
+          [ -x "$SDKMANAGER" ] || SDKMANAGER="$(command -v sdkmanager)"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" "build-tools;36.0.0"
+          echo "APKSIGNER=${ANDROID_SDK_ROOT}/build-tools/36.0.0/apksigner" >> "$GITHUB_ENV"
+          echo "AAPT=${ANDROID_SDK_ROOT}/build-tools/36.0.0/aapt" >> "$GITHUB_ENV"
+          sudo apt-get update
+          sudo apt-get install -y squashfs-tools qemu-user-static util-linux
+
+      - name: Re-verify production APK signature
+        shell: bash
+        env:
+          LINEAGE: ${{ steps.signed.outputs.lineage }}
+        run: |
+          set -euo pipefail
+          APK="$(find artifacts/signed -type f -name BlazeRental.apk -print -quit)"
+          test -n "$APK" -a -s "$APK"
+          if [ "$LINEAGE" = v0.3 ]; then
+            EXPECTED="experiment/openwrt/BlazePwifi/releases/0.3.0/BlazeRental-signing-fingerprint.txt"
+          else
+            EXPECTED="artifacts/signed/BlazeRental-signing-fingerprint.txt"
+          fi
+          test -s "$EXPECTED"
+          APKSIGNER="$APKSIGNER" AAPT="$AAPT"             bash "$RUNNER_TEMP/v04_signing_gate.sh" "$APK" "$EXPECTED"
+
+          if [ "$LINEAGE" = v0.4-fresh-production ]; then
+            LOCKED="$(jq -r .sha256_fingerprint "$RUNNER_TEMP/release-docs/blazerental-v04-production-identity.json" | tr -d ':[:space:]' | tr 'A-F' 'a-f')"
+            ACTUAL="$(sed -n 's/^[[:space:]]*SHA256: //p' artifacts/signed/BlazeRental-signing-fingerprint.txt | head -n1 | tr -d ':' | tr 'A-F' 'a-f')"
+            test -n "$LOCKED" -a "$ACTUAL" = "$LOCKED"
+          fi
+
+      - name: Audit optional Orange Pi family images
+        shell: bash
+        run: |
+          set -euo pipefail
+          for target in orangepi_zero orangepi_zero2 orangepi_zero2w orangepi_pc2 orangepi_pc_plus orangepi_one_plus; do
+            out="artifacts/BlazePwifi-v0.4-$target-simulation"
+            mkdir -p "$out"
+            bash experiment/openwrt/BlazePwifi/simulation/orangepi_v04_userspace_audit.sh               "artifacts/BlazePwifi-$target-firmware" "$target" "$out"
+          done
+
+      - name: Stage production release assets
+        shell: bash
+        env:
+          BUILD_RUN: ${{ steps.request.outputs.build_run }}
+          SIGN_RUN: ${{ steps.request.outputs.sign_run }}
+          CANDIDATE_SHA: ${{ steps.request.outputs.candidate_sha }}
+          LINEAGE: ${{ steps.signed.outputs.lineage }}
+        run: |
+          set -euo pipefail
+          OUT=release-out
+          mkdir -p "$OUT" "$OUT/evidence"
+
+          cp "$(find artifacts/signed -type f -name BlazeRental.apk -print -quit)" "$OUT/BlazeRental.apk"
+          cp artifacts/signed/BlazeRental-signing-cert.pem "$OUT/"
+          cp artifacts/signed/BlazeRental-signing-fingerprint.txt "$OUT/"
+          cp artifacts/signed/BlazeRental-apksigner-verify.txt "$OUT/"
+          cp artifacts/signed/SIGNING-MANIFEST.json "$OUT/"
+
+          for f in BlazeRental-v0.4-signing-backup.enc BlazeRental-v0.4-signing-aes-key.enc BlazeRental-v0.4-signing-aes-iv.bin; do
+            [ ! -f "artifacts/signed/$f" ] || cp "artifacts/signed/$f" "$OUT/$f"
+          done
+
+          E6="$(find artifacts/BlazePwifi-esp8266-firmware -type f -name '*.bin' -print | head -n1)"
+          E32="$(find artifacts/BlazePwifi-esp32-firmware -type f -name '*BlazePwifiVendo32*.bin' ! -name '*bootloader*' ! -name '*partitions*' -print | head -n1)"
+          test -n "$E6" -a -n "$E32"
+          cp "$E6" "$OUT/BlazePwifi-Vendo-ESP8266.bin"
+          cp "$E32" "$OUT/BlazePwifi-Vendo-ESP32.bin"
+          cp "$(find artifacts/BlazePwifi-esp8266-firmware -type f -name '*.ino' -print -quit)" "$OUT/BlazePwifi-Vendo-ESP8266.ino"
+          cp "$(find artifacts/BlazePwifi-esp32-firmware -type f -name '*.ino' -print -quit)" "$OUT/BlazePwifi-Vendo-ESP32.ino"
+
+          R="$(find artifacts/BlazePwifi-ruijie-firmware -type f -name '*squashfs-sysupgrade.bin' -print -quit)"
+          test -n "$R" -a -s "$R"
+          cp "$R" "$OUT/BlazePwifi-EW1200G-Pro-v1.1-sysupgrade.bin"
+          BOOT="$(find artifacts/BlazePwifi-ruijie-firmware -type f -name '*initramfs-kernel.bin' -print -quit)"
+          [ -z "$BOOT" ] || cp "$BOOT" "$OUT/OpenWrt-EW1200G-Pro-v1.1-recovery-initramfs.bin"
+          NOTES="$(find artifacts/BlazePwifi-ruijie-firmware -type f -name RUIJIE-FLASH-NOTES.txt -print -quit)"
+          [ -z "$NOTES" ] || cp "$NOTES" "$OUT/EW1200G-Pro-FLASH-NOTES.txt"
+
+          python3 - "$R" "$RUNNER_TEMP/ruijie-root.squashfs" <<'PY'
+          import struct,sys
+          src,out=sys.argv[1:]
+          data=open(src,'rb').read()
+          if len(data)<64 or data[:4] != bytes.fromhex('27051956'):
+              raise SystemExit('unexpected Ruijie uImage header')
+          kernel_size=struct.unpack('>I',data[12:16])[0]
+          off=data.find(b'hsqs',64+kernel_size)
+          if off<0:
+              raise SystemExit('Ruijie squashfs rootfs not found')
+          open(out,'wb').write(data[off:])
+          PY
+          rm -rf "$RUNNER_TEMP/ruijie-root"
+          sudo unsquashfs -f -d "$RUNNER_TEMP/ruijie-root" "$RUNNER_TEMP/ruijie-root.squashfs" >/dev/null
+          sudo chmod -R a+rX "$RUNNER_TEMP/ruijie-root"
+          test -d "$RUNNER_TEMP/ruijie-root/etc/config"
+          tar -C "$RUNNER_TEMP/ruijie-root" -czf             "$OUT/BlazePwifi-EW1200G-Pro-v1.1-default-config-backup.tar.gz" etc/config
+
+          copy_images() {
+            artifact="$1"
+            folder="$2"
+            mkdir -p "$OUT/$folder"
+            find "artifacts/$artifact" -type f -name '*.img.gz' -exec cp {} "$OUT/$folder/" \;
+            test -n "$(find "$OUT/$folder" -type f -name '*.img.gz' -print -quit)"
+            for gz in "$OUT/$folder"/*.img.gz; do
+              gzip -t "$gz"
+              gzip -dc "$gz" > "${gz%.gz}"
+            done
+          }
+
+          copy_images BlazePwifi-x86_64-firmware x86
+          copy_images BlazePwifi-orangepi_zero3-firmware orangepi-zero3
+          copy_images BlazePwifi-orangepi_one-firmware orangepi-one
+          copy_images BlazePwifi-orangepi_pc-firmware orangepi-pc
+          copy_images BlazePwifi-orangepi_zero-firmware orangepi-zero
+          copy_images BlazePwifi-orangepi_zero2-firmware orangepi-zero2
+          copy_images BlazePwifi-orangepi_zero2w-firmware orangepi-zero2w
+          copy_images BlazePwifi-orangepi_pc2-firmware orangepi-pc2
+          copy_images BlazePwifi-orangepi_pc_plus-firmware orangepi-pc-plus
+          copy_images BlazePwifi-orangepi_one_plus-firmware orangepi-one-plus
+
+          tar -czf "$OUT/evidence/BlazePwifi-v0.4.0-simulation-evidence.tar.gz"             artifacts/BlazePwifi-v0.4-*-simulation
+          cp "$(find artifacts/BlazePwifi-v0.4-candidate-gate -type f -name CANDIDATE-GATE.json -print -quit)"             "$OUT/CANDIDATE-GATE.json"
+
+          cp "$RUNNER_TEMP/release-docs/README.md" "$OUT/README.md"
+          cp "$RUNNER_TEMP/release-docs/ASSETS.md" "$OUT/ASSETS.md"
+          cp "$RUNNER_TEMP/release-docs/SIGNING.md" "$OUT/SIGNING.md"
+          cp "$RUNNER_TEMP/release-docs/RELEASE_CHECKLIST.md" "$OUT/RELEASE_CHECKLIST.md"
+          cp "$RUNNER_TEMP/release-docs/FRESH_PRODUCTION_SIGNING.md" "$OUT/FRESH_PRODUCTION_SIGNING.md"
+          cp "$RUNNER_TEMP/release-docs/blazerental-v04-production-identity.json" "$OUT/BlazeRental-production-identity.json"
+
+          python3 experiment/openwrt/BlazePwifi/tools/build-rental-qr-tool.py             --apk "$OUT/BlazeRental.apk"             --apk-url "https://github.com/BlazingSystems/BlazingSystems-Experiments/releases/download/v0.4.0/BlazeRental.apk"             --template experiment/openwrt/BlazePwifi/tools/BlazeRental-QR-Setup.template.html             --qrcode-js experiment/openwrt/BlazePwifi/ui/vendor/qrcode/qrcode.js             --out "$OUT/BlazeRental-QR-Setup.html"
+          python3 -m pip install --quiet "qrcode[pil]"
+          python3 experiment/openwrt/BlazePwifi/tools/make-provisioning.py             --apk "$OUT/BlazeRental.apk"             --apk-url "https://github.com/BlazingSystems/BlazingSystems-Experiments/releases/download/v0.4.0/BlazeRental.apk"             --server-url "http://192.168.1.1:8080"             --enrollment-token "000000000000.000000000000000000000000000000000000"             --device-name "SAMPLE - generate a fresh QR in BlazePwifi admin"             --out "$OUT/BlazeRental-provisioning-SAMPLE.json"
+          python3 experiment/openwrt/BlazePwifi/tools/render-qr.py             --json "$OUT/BlazeRental-provisioning-SAMPLE.json"             --out "$OUT/BlazeRental-provisioning-SAMPLE.png"
+
+          (
+            cd "$OUT"
+            zip -q BlazePwifi-android-BlazeRental-v0.4.0.zip               BlazeRental.apk BlazeRental-QR-Setup.html               BlazeRental-provisioning-SAMPLE.json BlazeRental-provisioning-SAMPLE.png               BlazeRental-signing-cert.pem BlazeRental-signing-fingerprint.txt               BlazeRental-apksigner-verify.txt SIGNING-MANIFEST.json
+            for d in x86 orangepi-zero3 orangepi-one orangepi-pc orangepi-zero orangepi-zero2 orangepi-zero2w orangepi-pc2 orangepi-pc-plus orangepi-one-plus; do
+              tar -czf "BlazePwifi-v0.4.0-$d.tar.gz" "$d"
+            done
+            tar -czf BlazePwifi-v0.4.0-evidence.tar.gz evidence
+          )
+
+          FP="$(sed -n 's/^[[:space:]]*SHA256: //p' "$OUT/BlazeRental-signing-fingerprint.txt" | head -n1)"
+          python3 - "$OUT/RELEASE-MANIFEST.json" "$CANDIDATE_SHA" "$BUILD_RUN" "$SIGN_RUN" "$LINEAGE" "$FP" <<'PY'
+          import json,sys
+          out,sha,build,sign,lineage,fp=sys.argv[1:]
+          json.dump({
+            "release":"0.4.0",
+            "edition":"Launcher Edition",
+            "commit":sha,
+            "build_run_id":build,
+            "signing_run_id":sign,
+            "candidate_gate":"passed",
+            "required_simulation":"passed",
+            "optional_orangepi_structural_qemu_user_audit":"passed",
+            "signing":{
+              "lineage":lineage,
+              "fingerprint_sha256":fp,
+              "upgrade_from_v0_3": lineage=="v0.3",
+              "fresh_device_provisioning": True
+            },
+            "targets":[
+              "android","esp8266","esp32","ruijie_rg-ew1200g-pro-v1.1",
+              "x86_64_bios","x86_64_uefi",
+              "orangepi_zero3","orangepi_one","orangepi_pc",
+              "orangepi_zero","orangepi_zero2","orangepi_zero2w",
+              "orangepi_pc2","orangepi_pc_plus","orangepi_one_plus"
+            ],
+            "notes":{
+              "ruijie_config_backup":"default config extracted from exact validated image; not a live-device backup",
+              "physical_hardware_validation":"not claimed by simulation-only gates"
+            }
+          },open(out,"w"),indent=2)
+          PY
+
+          (
+            cd "$OUT"
+            find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS
+          )
+
+      - name: Upload staged v0.4 production files
+        uses: actions/upload-artifact@v4
+        with:
+          name: BlazePwifi-v0.4.0-production-stage
+          path: release-out/
+          retention-days: 30
+          if-no-files-found: error
+
+      - name: Publish GitHub Release v0.4.0
+        if: steps.request.outputs.publish == 'true'
+        shell: bash
+        env:
+          CANDIDATE_SHA: ${{ steps.request.outputs.candidate_sha }}
+        run: |
+          set -euo pipefail
+          TAG=v0.4.0
+          NOTES="$RUNNER_TEMP/release-docs/README.md"
+          if gh release view "$TAG" --repo "${{ github.repository }}" >/dev/null 2>&1; then
+            gh release edit "$TAG" --repo "${{ github.repository }}"               --target "$CANDIDATE_SHA"               --title "BlazePwifi v0.4.0 — Launcher Edition"               --notes-file "$NOTES"
+          else
+            gh release create "$TAG" --repo "${{ github.repository }}"               --target "$CANDIDATE_SHA"               --title "BlazePwifi v0.4.0 — Launcher Edition"               --notes-file "$NOTES"
+          fi
+          find release-out -maxdepth 1 -type f -print0             | xargs -0 -r gh release upload "$TAG" --repo "${{ github.repository }}" --clobber

@@ -1,0 +1,17 @@
+{
+  "release": "0.4.0",
+  "package_id": "com.blazesystems.blazerental",
+  "certificate_lineage": "v0.4-fresh-production",
+  "sha256_fingerprint": "C7:7E:4D:A2:2E:92:D2:BE:7D:93:B9:D3:DC:7C:3F:77:56:C0:6A:5A:13:0E:C6:90:5A:DC:C2:AD:4E:A3:56:24",
+  "signer_subject": "CN=BlazeRental v0.4, O=BlazingSystems, C=PH",
+  "key_algorithm": "RSA",
+  "key_size_bits": 3072,
+  "source_candidate_sha": "1373eaa8ee8e95abbc2d0cbf5565d8ed28d2a750",
+  "source_build_run_id": "37268063117",
+  "source_signing_run_id": "37279036434",
+  "signed_apk_sha256": "944d0da425fbcd591fa37801ed549db6d5707690d4e6417961eaca392b240fb0",
+  "upgrade_from_v0_3": false,
+  "fresh_device_provisioning": true,
+  "recovery": "encrypted-backup-sealed-to-offline-transfer-key",
+  "locked": true
+}

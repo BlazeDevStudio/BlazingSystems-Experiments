@@ -1,0 +1,9 @@
+#!/bin/sh /etc/rc.common
+START=96
+STOP=9
+USE_PROCD=0
+
+start() {
+    [ -x /usr/sbin/blazepwifi-update ] || return 0
+    /usr/sbin/blazepwifi-update guard >/tmp/blazepwifi-update-guard.log 2>&1 &
+}

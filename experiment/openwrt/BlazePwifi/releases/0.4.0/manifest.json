@@ -1,0 +1,36 @@
+{
+  "release": "0.4.0",
+  "edition": "Launcher Edition",
+  "state": "release-ready",
+  "required_targets": [
+    "android",
+    "esp8266",
+    "esp32",
+    "ruijie",
+    "x86_64",
+    "orangepi_zero3",
+    "orangepi_one",
+    "orangepi_pc"
+  ],
+  "optional_targets": [
+    "orangepi_zero",
+    "orangepi_zero2",
+    "orangepi_zero2w",
+    "orangepi_pc2",
+    "orangepi_pc_plus",
+    "orangepi_one_plus"
+  ],
+  "signing": {
+    "certificate_lineage": "v0.4-fresh-production",
+    "fingerprint_sha256": "C7:7E:4D:A2:2E:92:D2:BE:7D:93:B9:D3:DC:7C:3F:77:56:C0:6A:5A:13:0E:C6:90:5A:DC:C2:AD:4E:A3:56:24",
+    "upgrade_from_v0_3": false,
+    "recovery": "encrypted-offline-transfer-key"
+  },
+  "simulation": {
+    "android": "required-device-owner-emulator",
+    "x86_64": "required-bios-and-uefi-qemu",
+    "orangepi": "disk-structure-rootfs-and-qemu-user",
+    "esp": "compiled-binary-and-protocol",
+    "ruijie": "firmware-structure-rootfs-and-target-identity"
+  }
+}

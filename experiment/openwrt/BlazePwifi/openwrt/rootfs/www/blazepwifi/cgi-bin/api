@@ -1,0 +1,305 @@
+#!/bin/sh
+. "${BP_LIB:-/usr/lib/blazepwifi/common.sh}"
+bp_init_dirs
+
+action="$(bp_param action)"
+ipaddr="${REMOTE_ADDR:-0.0.0.0}"
+# Public captive requests must be bound to the router-observed neighbor.
+# A browser-supplied MAC is not proof of network identity and can rebind paid
+# credit to another station if ARP resolution temporarily fails.
+mac="$(bp_mac_norm "$(bp_mac_for_ip "$ipaddr")" 2>/dev/null || true)"
+
+case "$action" in
+  portal_config)
+    . "${BP_PORTAL_LIB:-/usr/lib/blazepwifi/portal.sh}"
+    bp_json "{\"ok\":true,\"portal\":$(bp_portal_json)}"; exit 0
+    ;;
+  rates)
+    bp_json "{\"ok\":true,\"rates\":$(bp_rates_json)}"; exit 0
+    ;;
+  vendos)
+    bp_json "{\"ok\":true,\"vendos\":$(bp_online_vendos_json)}"; exit 0
+    ;;
+  config)
+    admin_port="$(bp_cfg admin_port)"; [ -n "$admin_port" ] || admin_port=8443
+    bp_json "{\"ok\":true,\"admin_port\":$admin_port}"; exit 0
+    ;;
+esac
+
+device="$(bp_device_norm "$(bp_param device)" 2>/dev/null || true)"
+[ -n "$device" ] || bp_fail "missing or invalid device token"
+[ -n "$mac" ] || bp_fail "client network identity unavailable; reconnect to Wi-Fi and retry"
+
+create_account=0
+case "$action" in
+  coin_start|redeem) create_account=1 ;;
+esac
+
+# Reject financial actions before even a potentially mutating device binding
+# when prior paid state requires an operator-controlled reconciliation.
+case "$action" in
+  coin_start|connect|pause|resume|disconnect|redeem)
+    [ ! -e "$BP_PAID_UNCERTAIN" ] && [ ! -L "$BP_PAID_UNCERTAIN" ] ||
+      bp_fail "paid state uncertain; operator reconciliation required"
+    ;;
+esac
+
+bp_lock || bp_fail "accounting busy"
+if ! bp_bind_device "$device" "$mac" "$ipaddr" "$create_account"; then
+  bp_unlock
+  bp_fail "account binding storage failed; no payment accepted"
+fi
+bp_unlock
+
+# The caller holds bp_lock; all prepaid account changes share a global
+# financial uncertainty marker with the physical coin/member/rental paths.
+# A failed write must never be followed by a success ACK or network unlock.
+bp_account_paid_write_or_fail() {
+  if ! bp_paid_begin; then
+    bp_unlock
+    bp_fail "paid state uncertain or accounting busy"
+  fi
+  if ! bp_account_write "$@"; then
+    bp_paid_abort
+    bp_unlock
+    bp_fail "paid account write failed; operator reconciliation required"
+  fi
+  if ! bp_paid_commit; then
+    bp_unlock
+    bp_fail "paid account durability failed; operator reconciliation required"
+  fi
+}
+
+case "$action" in
+  pause|resume|disconnect)
+    bp_time_sane "$(bp_now)" || bp_fail "router clock not synchronized"
+    [ -n "$(bp_account_line "$device")" ] || bp_fail "no active account/session"
+    ;;
+esac
+
+case "$action" in
+  me)
+    credit="$(bp_get_credit "$device")"
+    paused="$(bp_account_field "$device" 5)"; [ -n "$paused" ] || paused=0
+    now="$(bp_now)"
+    if bp_time_sane "$now"; then
+      remaining="$(bp_remaining "$device")"; time_sync=true
+    else
+      remaining=0; time_sync=false
+    fi
+    coin_expires=0; coin_vendo=""
+    for target_file in "$BP_TARGET_DIR"/*.tsv; do
+      [ -f "$target_file" ] || continue
+      IFS="$(printf '\t')" read -r target_device target_mac target_nonce target_expires target_vendo target_kind < "$target_file"
+      [ "$target_device" = "$device" ] || continue
+      [ "${target_kind:-hotspot}" = hotspot ] || continue
+      if [ "${target_expires:-0}" -gt "$now" ] 2>/dev/null; then
+        coin_expires="$target_expires"; coin_vendo="$target_vendo"
+      fi
+      break
+    done
+    vlan="$(bp_cfg hotspot_vlan)"; [ -n "$vlan" ] || vlan=0
+    speed="$(bp_cfg default_speed_limit_kbps)"; [ -n "$speed" ] || speed=0
+    free_kb="$(awk '/MemAvailable:/ {print $2; found=1} END{if(!found) print 0}' /proc/meminfo 2>/dev/null)"
+    load1="$(cut -d' ' -f1 /proc/loadavg 2>/dev/null || echo 0)"
+    uptime="$(cut -d. -f1 /proc/uptime 2>/dev/null || echo 0)"
+    bp_json "{\"ok\":true,\"device\":\"$device\",\"mac\":\"$mac\",\"ip\":\"$(bp_json_escape "$ipaddr")\",\"credit_cents\":$credit,\"remaining_seconds\":$remaining,\"paused\":$paused,\"time_synchronized\":$time_sync,\"server_time\":$now,\"coin_expires\":${coin_expires:-0},\"coin_vendo\":\"$(bp_json_escape "$coin_vendo")\",\"hotspot_vlan\":$vlan,\"speed_limit_kbps\":$speed,\"mem_available_kb\":${free_kb:-0},\"load1\":\"$(bp_json_escape "${load1:-0}")\",\"uptime_seconds\":${uptime:-0}}"
+    ;;
+
+  coin_start)
+    bp_time_sane "$(bp_now)" || bp_fail "router clock not synchronized"
+    vendo="$(bp_param vendo)"
+    if [ -z "$vendo" ]; then
+      vendo="$(bp_choose_vendo 2>/dev/null || true)"
+      [ -n "$vendo" ] || bp_fail "select a vendo or wait for one to come online"
+    fi
+    printf '%s' "$vendo" | grep -Eq '^[A-Za-z0-9._-]{1,48}$' || bp_fail "invalid vendo"
+    now="$(bp_now)"; window="$(bp_cfg coin_window)"; [ -n "$window" ] || window=120
+    expires=$((now+window))
+    target_file="$BP_TARGET_DIR/$vendo.tsv"
+    [ ! -e "$BP_STATE/paid-state-uncertain" ] && [ ! -L "$BP_STATE/paid-state-uncertain" ] ||
+      bp_fail "paid state uncertain; coin window unavailable"
+    bp_lock || bp_fail "accounting busy"
+    if [ -L "$target_file" ]; then
+      bp_unlock
+      bp_fail "unsafe coin window file"
+    fi
+    if [ -f "$target_file" ]; then
+      IFS="$(printf '\t')" read -r old_device old_mac old_nonce old_expires old_vendo old_kind < "$target_file"
+      if [ "$old_expires" -gt "$now" ] 2>/dev/null; then
+        if [ "$old_device" != "$device" ] || [ "${old_kind:-hotspot}" != hotspot ] || [ "$old_vendo" != "$vendo" ]; then
+          bp_unlock
+          bp_fail "selected vendo is busy"
+        fi
+        # A second HTTP start or page reload must NOT rotate a controller's
+        # live target nonce while already-inserted money may still be pending.
+        if ! printf '%s' "$old_nonce" | grep -Eq '^[A-Fa-f0-9]{8,32}$'; then
+          bp_unlock
+          bp_fail "invalid persisted coin window"
+        fi
+        bp_unlock
+        bp_json "$(printf '{"ok":true,"vendo":"%s","target_nonce":"%s","server_time":%s,"expires":%s}' "$(bp_json_escape "$vendo")" "$old_nonce" "$now" "$old_expires")"
+        exit 0
+      fi
+    fi
+    target_nonce="$(hexdump -n 8 -e '8/1 "%02x"' /dev/urandom 2>/dev/null || printf '%s' "$now")"
+    target_tmp="$BP_TARGET_DIR/.$vendo.$(bp_tmp_suffix)"
+    if ! printf '%s\t%s\t%s\t%s\t%s\thotspot\n' "$device" "$mac" "$target_nonce" "$expires" "$vendo" > "$target_tmp" ||
+       ! chmod 600 "$target_tmp" ||
+       ! mv "$target_tmp" "$target_file"; then
+      rm -f "$target_tmp" 2>/dev/null || true
+      bp_unlock
+      bp_fail "could not persist coin window; no payment accepted"
+    fi
+    if ! bp_durable_sync; then
+      rm -f "$target_file" 2>/dev/null || true
+      bp_unlock
+      bp_fail "coin window sync failed; no payment accepted"
+    fi
+    bp_unlock
+    bp_json "$(printf '{"ok":true,"vendo":"%s","target_nonce":"%s","server_time":%s,"expires":%s}' "$(bp_json_escape "$vendo")" "$target_nonce" "$now" "$expires")"
+    ;;
+
+  coin_stop)
+    bp_lock || bp_fail "accounting busy"
+    removed=0
+    for target_file in "$BP_TARGET_DIR"/*.tsv; do
+      [ -f "$target_file" ] || continue
+      if [ -L "$target_file" ]; then
+        bp_unlock
+        bp_fail "unsafe coin window file"
+      fi
+      if [ "$(cut -f1 "$target_file")" = "$device" ]; then
+        if ! rm -f "$target_file"; then
+          bp_unlock
+          bp_fail "could not close coin window"
+        fi
+        removed=1
+      fi
+    done
+    if [ "$removed" = 1 ] && ! bp_durable_sync; then
+      bp_unlock
+      bp_fail "coin window close sync failed"
+    fi
+    bp_unlock
+    bp_json "$(printf '{"ok":true,"server_time":%s}' "$(bp_now)")"
+    ;;
+
+  connect)
+    cents="$(bp_param cents)"; case "$cents" in ''|*[!0-9]*) bp_fail "invalid rate";; esac
+    sec="$(bp_rate_seconds "$cents" 2>/dev/null || true)"; [ -n "$sec" ] || bp_fail "rate not configured"
+
+    bp_lock || bp_fail "accounting busy"
+    line="$(bp_account_line "$device")"
+    credit="$(printf '%s' "$line" | cut -f2)"
+    [ "$credit" -ge "$cents" ] 2>/dev/null || { bp_unlock; bp_fail "insufficient credit"; }
+    expiry="$(printf '%s' "$line" | cut -f3)"
+    remaining="$(printf '%s' "$line" | cut -f4)"
+    paused="$(printf '%s' "$line" | cut -f5)"
+    ps="$(printf '%s' "$line" | cut -f6)"
+    events="$(printf '%s' "$line" | cut -f9)"
+    newcredit=$((credit-cents))
+    now="$(bp_now)"
+
+    if [ "$paused" = 1 ]; then
+      [ -n "$remaining" ] || remaining=0
+      remaining=$((remaining+sec))
+      bp_account_paid_write_or_fail "$device" "$newcredit" 0 "$remaining" 1 "$ps" "$mac" "$ipaddr" "$events"
+      newexpiry=0
+    else
+      [ -n "$expiry" ] || expiry=0
+      [ "$expiry" -gt "$now" ] 2>/dev/null || expiry="$now"
+      newexpiry=$((expiry+sec))
+      bp_account_paid_write_or_fail "$device" "$newcredit" "$newexpiry" 0 0 0 "$mac" "$ipaddr" "$events"
+    fi
+    bp_unlock
+
+    [ "$paused" = 1 ] || bp_authorize_mac "$mac"
+    bp_json "{\"ok\":true,\"credit_cents\":$newcredit,\"expiry\":$newexpiry,\"paused\":$([ "$paused" = 1 ] && echo 1 || echo 0)}"
+    ;;
+
+  pause)
+    bp_time_sane "$(bp_now)" || bp_fail "router clock not synchronized"
+    bp_lock || bp_fail "accounting busy"
+    line="$(bp_account_line "$device")"
+    credit="$(printf '%s' "$line" | cut -f2)"
+    expiry="$(printf '%s' "$line" | cut -f3)"
+    remaining="$(printf '%s' "$line" | cut -f4)"
+    paused="$(printf '%s' "$line" | cut -f5)"
+    events="$(printf '%s' "$line" | cut -f9)"
+    now="$(bp_now)"
+    if [ "$paused" = 1 ]; then
+      bp_unlock
+      bp_json "{\"ok\":true,\"paused\":1,\"remaining_seconds\":${remaining:-0}}"
+      exit 0
+    fi
+    if [ -n "$expiry" ] && [ "$expiry" -gt "$now" ] 2>/dev/null; then remaining=$((expiry-now)); else remaining=0; fi
+    bp_account_paid_write_or_fail "$device" "$credit" 0 "$remaining" 1 "$now" "$mac" "$ipaddr" "$events"
+    bp_unlock
+    bp_deauthorize_mac "$mac"
+    bp_json "{\"ok\":true,\"paused\":1,\"remaining_seconds\":$remaining}"
+    ;;
+
+  resume)
+    bp_time_sane "$(bp_now)" || bp_fail "router clock not synchronized"
+    bp_lock || bp_fail "accounting busy"
+    line="$(bp_account_line "$device")"
+    credit="$(printf '%s' "$line" | cut -f2)"
+    remaining="$(printf '%s' "$line" | cut -f4)"
+    paused="$(printf '%s' "$line" | cut -f5)"
+    events="$(printf '%s' "$line" | cut -f9)"
+    [ -n "$remaining" ] || remaining=0
+    if [ "$paused" != 1 ]; then
+      bp_unlock
+      bp_json "{\"ok\":true,\"paused\":0,\"remaining_seconds\":$(bp_remaining "$device")}"
+      exit 0
+    fi
+    [ "$remaining" -gt 0 ] 2>/dev/null || { bp_account_paid_write_or_fail "$device" "$credit" 0 0 0 0 "$mac" "$ipaddr" "$events"; bp_unlock; bp_fail "no paused time remaining"; }
+    now="$(bp_now)"; expiry=$((now+remaining))
+    bp_account_paid_write_or_fail "$device" "$credit" "$expiry" 0 0 0 "$mac" "$ipaddr" "$events"
+    bp_unlock
+    bp_authorize_mac "$mac"
+    bp_json "{\"ok\":true,\"paused\":0,\"expiry\":$expiry,\"remaining_seconds\":$remaining}"
+    ;;
+
+  disconnect)
+    bp_lock || bp_fail "accounting busy"
+    line="$(bp_account_line "$device")"
+    credit="$(printf '%s' "$line" | cut -f2)"
+    events="$(printf '%s' "$line" | cut -f9)"
+    bp_account_paid_write_or_fail "$device" "$credit" 0 0 0 0 "$mac" "$ipaddr" "$events"
+    bp_unlock
+    bp_deauthorize_mac "$mac"
+    bp_json '{"ok":true}'
+    ;;
+
+  redeem)
+    code="$(printf '%s' "$(bp_param code)" | tr 'a-z' 'A-Z')"
+    printf '%s' "$code" | grep -Eq '^[A-Z0-9-]{4,32}$' || bp_fail "invalid voucher"
+    event="v:$(bp_event_hash "voucher|$code")"
+
+    bp_lock || bp_fail "accounting busy"
+    used="$(bp_find_event_device "$event")"
+    [ -z "$used" ] || { bp_unlock; bp_fail "voucher invalid or used"; }
+    cents="$(awk -F '\t' -v c="$code" '$1==c && (NF<3 || $3=="") {print $2; exit}' "$BP_VOUCHERS")"
+    [ -n "$cents" ] || { bp_unlock; bp_fail "voucher invalid or used"; }
+
+    line="$(bp_account_line "$device")"
+    credit="$(printf '%s' "$line" | cut -f2)"
+    expiry="$(printf '%s' "$line" | cut -f3)"
+    remaining="$(printf '%s' "$line" | cut -f4)"
+    paused="$(printf '%s' "$line" | cut -f5)"
+    ps="$(printf '%s' "$line" | cut -f6)"
+    events="$(printf '%s' "$line" | cut -f9)"
+    if ! newevents="$(bp_events_push "$events" "$event")"; then
+      bp_unlock
+      bp_fail "paid receipt history unavailable; voucher not applied"
+    fi
+    newcredit=$((credit+cents))
+    bp_account_paid_write_or_fail "$device" "$newcredit" "$expiry" "$remaining" "$paused" "$ps" "$mac" "$ipaddr" "$newevents"
+    bp_unlock
+    bp_json "{\"ok\":true,\"credit_cents\":$newcredit}"
+    ;;
+
+  *) bp_fail "unknown action" ;;
+esac

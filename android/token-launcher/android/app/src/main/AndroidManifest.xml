@@ -1,0 +1,15 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+ <uses-permission android:name="android.permission.INTERNET"/>
+ <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+ <application android:theme="@style/Theme.TokenLauncher" android:label="@string/app_name" android:allowBackup="false" android:supportsRtl="true" android:usesCleartextTraffic="true">
+  <activity android:name=".MainActivity" android:exported="true" android:launchMode="singleTask">
+   <intent-filter>
+    <action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/><category android:name="android.intent.category.HOME"/><category android:name="android.intent.category.DEFAULT"/>
+   </intent-filter>
+  </activity>
+  <receiver android:name=".TokenDeviceAdminReceiver" android:permission="android.permission.BIND_DEVICE_ADMIN" android:exported="true">
+   <meta-data android:name="android.app.device_admin" android:resource="@xml/device_admin"/>
+   <intent-filter><action android:name="android.app.action.DEVICE_ADMIN_ENABLED"/></intent-filter>
+  </receiver>
+ </application>
+</manifest>

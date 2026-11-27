@@ -1,0 +1,73 @@
+# Rental Server Standalone
+
+Standalone BlazeRental-compatible manual-time testing server for the Notion R281.
+
+Version: **0.1.3-preview.1** (review candidate; R281/Android validation pending)
+
+## Purpose
+
+This project adds only a rental management/test layer to an existing R281 EasyMode installation. A coin slot is not required: the operator can create one-time enrollment tokens and manually add, set, expire, rename, or revoke rental-device time.
+
+Expected local routes after installation:
+
+- `http://ROUTER_IP/` — existing EasyMode, unchanged
+- `http://ROUTER_IP/admin` — existing LuCI/admin, unchanged
+- `http://ROUTER_IP/rental/` — Rental Server Standalone operator dashboard
+- `http://ROUTER_IP/cgi-bin/rental` — BlazeRental Android API
+
+## Safety boundary
+
+The installer is pinned to `notion,r281` and OpenWrt `24.10.x` by default. It verifies the existing uHTTPd document root and CGI prefix, then reuses them without editing uHTTPd.
+
+It does not change `/etc/config/network`, `/etc/config/firewall`, `/etc/config/wireless`, `/etc/config/uhttpd`, `/etc/config/blaze`, EasyMode, LuCI, modem/APN/band settings, relay/repeater settings, Piso networking, or WAN/failover policy.
+
+The only optional package action is installing `openssl-util` when the OpenSSL CLI required for BlazeRental HMAC-SHA256 authentication is missing.
+
+## Install
+
+Copy or download `install.sh` onto the R281 and run as root:
+
+```sh
+chmod +x install.sh
+./install.sh
+```
+
+If the `root/` payload is beside the installer, it is copied locally. If only `install.sh` is downloaded, it fetches the three checksum-pinned payload files from this repository.
+
+After installation the script prints the Rental admin token. Open `/rental/`, enter the token, create an enrollment token, and use the router base URL in BlazeRental manual setup.
+
+## Uninstall
+
+```sh
+./install.sh --uninstall
+```
+
+State under `/etc/blazepwifi-rental` is preserved by default. To remove it too:
+
+```sh
+./install.sh --uninstall --purge
+```
+
+## v0.1.1 checksum fix
+
+v0.1.0 accidentally embedded the pre-GitHub SHA-256 values for the two CGI payloads. The files themselves were correct; the installer correctly aborted rather than installing unverified content. v0.1.1 updates those two pinned hashes and keeps payload verification enabled.
+
+## v0.1.2 R281 dashboard authentication fix
+
+Some R281/uHTTPd CGI environments do not reliably pass the custom `X-Blaze-Rental-Admin` request header through to CGI. The dashboard now submits the same admin token in the POST body as `admin_token` as well as the header. The server already validates this field against the local token file, so authentication remains exact-token based.
+
+## v0.1.3 preview entropy refusal
+
+The preview also re-reads a device under the shared writer lock before admin time changes and phone status replies. A phone status request refuses a device revoked or rebound while it waited for the lock. Phone activity is stored in a separate advisory `seen-<device_id>` file, so status polls leave the authoritative lease file untouched; the admin list still shows last seen. The synthetic lock-edge regression covers newer lease preservation, revoke refusal, and status file separation; physical crash durability remains unproved.
+
+Enrollment IDs, enrollment secrets, device IDs, device secrets, and a new installer admin token require complete secure random bytes. The already required OpenSSL CLI (`openssl rand -hex`) is preferred, with `/dev/urandom` through `hexdump` or `od` as fallbacks. When all sources fail, issuance fails; the timestamp/process fallback has been removed. This is a test-server preview and does not establish crash-atomic leases or physical R281/Android acceptance. A remote-only installer still fetches from `main` and will refuse a checksum mismatch until matching payloads are published there; use the local verified payload for review.
+
+Lease-file replacement now checks a software flush before and after rename. A reported flush failure denies success; after rename the outcome may already be visible, so the operator must inspect the lease before retrying. Software flushes do not prove persistence through power loss. Physical R281 storage and Android recovery tests remain required.
+
+Manual add, set and expire operations now require a 128-bit request ID. The lease row and its request receipt are written in the same replacement of `devices.tsv`, so retrying the same ID and parameters returns the recorded result without granting time again. Reusing an ID for another action or value is refused. The dashboard generates the ID with browser cryptographic randomness and keeps only the pending nonsecret action and ID in local browser storage through a lost response; the admin token is not stored there. Operators can retry the same request or inspect the lease before clearing an uncertain request. This remains a preview: receipts can grow with use, the router has no independent rollback witness, and a successful software sync is not proof of physical durability.
+
+## Validation boundary
+
+Host-side protocol and syntax tests passed. Physical R281 installation, actual Android enrollment, Device Owner/manual APK behavior, and lease refresh still require device testing.
+
+This is deliberately a rental test server, not the full BlazePwifi hotspot/coinslot deployment.

@@ -1,0 +1,6 @@
+{
+  "run_id": "37268063117",
+  "candidate_sha": "1373eaa8ee8e95abbc2d0cbf5565d8ed28d2a750",
+  "requested_at": "2026-10-05T06:58:00Z",
+  "note": "Validated v0.4 candidate. Prefer preserved v0.3 production identity; recover it from encrypted handoff if transfer private key secret is configured."
+}

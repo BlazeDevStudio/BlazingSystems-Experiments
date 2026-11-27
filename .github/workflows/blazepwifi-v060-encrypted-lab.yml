@@ -1,0 +1,47 @@
+name: BlazePwifi V1 Sealed Synthetic Recovery LAB
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - blazepwifi-v0.6.0-audit-foundation
+    paths:
+      - 'experiment/openwrt/BlazePwifi/tools/v060_v1_sealed_fixture.py'
+      - 'experiment/openwrt/BlazePwifi/tools/v060_v1_inventory_fixture.py'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_v1_sealed_fixture.py'
+      - '.github/workflows/blazepwifi-v060-encrypted-lab.yml'
+  pull_request:
+    paths:
+      - 'experiment/openwrt/BlazePwifi/tools/v060_v1_sealed_fixture.py'
+      - 'experiment/openwrt/BlazePwifi/tools/v060_v1_inventory_fixture.py'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_v1_sealed_fixture.py'
+      - '.github/workflows/blazepwifi-v060-encrypted-lab.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: v1-sealed-lab-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  sealed-fixture:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pinned AES-GCM test-only dependency (never firmware)
+        # Literal block avoids YAML interpreting ': ' in '--only-binary=:all: cryptography' as a mapping.
+        run: |
+          python -m pip install --disable-pip-version-check --only-binary=:all: 'cryptography==50.0.2'
+      - name: Negative-test private sealed backup and non-overwriting recovery
+        run: python experiment/openwrt/BlazePwifi/tests/v060_v1_sealed_fixture.py
+      - name: Prove this fixture is never packaged or installed into production rootfs
+        run: |
+          test ! -e experiment/openwrt/BlazePwifi/openwrt/rootfs/usr/lib/blazepwifi/v060_v1_sealed_fixture.py
+          test ! -e experiment/openwrt/BlazePwifi/openwrt/rootfs/usr/bin/v060_v1_sealed_fixture.py
+          test ! -e experiment/openwrt/BlazePwifi/openwrt/rootfs/usr/lib/blazepwifi/cryptography
+          echo 'EBACK-0677 LAB ONLY: no live backup, financial authority or customer migration'

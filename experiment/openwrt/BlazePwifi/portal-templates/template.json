@@ -1,0 +1,35 @@
+{
+  "schema": 1,
+  "name": "Blaze Future Simple",
+  "layout": "future-simple",
+  "first_view": {
+    "show_brand": true,
+    "show_time": true,
+    "primary_action": "coin",
+    "secondary_action": "voucher",
+    "show_rates": true
+  },
+  "details": {
+    "collapsed": true,
+    "fields": [
+      "device_ip",
+      "gateway",
+      "connection",
+      "session",
+      "dns"
+    ]
+  },
+  "style": {
+    "radius": 22,
+    "font_scale": 1,
+    "accent": "#52e4ff",
+    "success": "#7cffb2",
+    "background": "#07111f"
+  },
+  "sections": [
+    "status",
+    "actions",
+    "rates",
+    "details"
+  ]
+}

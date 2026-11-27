@@ -1,0 +1,11 @@
+{
+  "format": "R281KIT1 + 12-byte nonce + AES-256-GCM ciphertext/tag; AAD R281KIT1",
+  "file": "R281-OneClick-4.2.3-private.zip.aesgcm",
+  "encrypted_sha256": "e5fee1af8de2ac9794811489c1b26c813dc7cedf7ccb966ed14b5f058a411c77",
+  "plaintext_zip_sha256": "e8abbfc753758668c5831285561791839376fc9e9224b1929f64383e1ce6beb3",
+  "encrypted_bytes": 38153127,
+  "key_published": false,
+  "firmware_installed": false,
+  "reset_tested": false,
+  "release_status": "experimental candidate; not yet flashed; pinned Ethernet was disconnected"
+}

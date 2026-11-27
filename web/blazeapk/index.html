@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BlazeAPK — Browser Android Runtime Research</title>
+<style>
+:root{color-scheme:dark;--bg:#090e14;--card:#131b25;--line:#293b50;--text:#edf4fb;--muted:#99adc1;--accent:#73a8ff}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(180deg,#07101a,#090e14 45%);color:var(--text);font:15px/1.55 system-ui,-apple-system,Segoe UI,sans-serif}
+main{max-width:940px;margin:auto;padding:54px 20px 72px}.eyebrow{color:var(--accent);font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.13em}
+h1{font-size:clamp(34px,6vw,58px);line-height:1.05;margin:.28em 0}.lead{max-width:770px;color:var(--muted);font-size:17px}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin:24px 0}.btn{display:inline-block;padding:11px 15px;border-radius:10px;border:1px solid #43658a;text-decoration:none;color:#fff;background:#173653;font-weight:700}.btn.secondary{background:#121a24;border-color:var(--line)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:17px}.card h2{font-size:18px;margin:0 0 8px}.card p{color:var(--muted)}.note{margin-top:20px;padding:13px 15px;border-left:3px solid #5b8ec8;background:#111923;color:var(--muted)}
+</style></head><body><main>
+<div class="eyebrow">BlazingSystems · Experimental</div>
+<h1>BlazeAPK</h1>
+<p class="lead">A browser-based APK/DEX parsing and Android compatibility-layer experiment. The project explores how selected Java-side Android application behavior can be interpreted inside an offline HTML sandbox.</p>
+<div class="actions"><a class="btn" href="app.html">Launch Research Build</a><a class="btn secondary" href="preview.html">Open Safe UI Preview</a><a class="btn secondary" href="README.md">Technical Notes</a></div>
+<section class="grid">
+<div class="card"><h2>Current runnable build</h2><p><strong>Beta 0.6</strong><br>Recovered single-file artifact; JavaScript parser validation passed. Beta 0.7 currently exists as design/implementation documentation, not as a verified runnable release.</p></div>
+<div class="card"><h2>Implemented areas</h2><p>APK/ZIP parsing, multi-DEX discovery, selected Dalvik interpretation, resource/layout handling, high-level Android API stubs, lifecycle/input experiments and browser-local persistence.</p></div>
+<div class="card"><h2>Compatibility boundary</h2><p>This is not ART/AOSP. Native JNI libraries, Binder, complete OpenGL/SurfaceFlinger behavior, Play Services, DRM and many framework APIs remain outside the implemented runtime.</p></div>
+<div class="card"><h2>Publication boundary</h2><p>No third-party commercial APK is bundled. Testing fixtures should be original, redistributable or user-supplied.</p></div>
+</section>
+<div class="note">Experimental compatibility research only. A successful package scan does not mean an application will run correctly.</div>
+</main></body></html>

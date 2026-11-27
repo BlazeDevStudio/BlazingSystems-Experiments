@@ -1,0 +1,64 @@
+name: BlazePwifi v0.6 product UI and Rental security
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - blazepwifi-v0.6.0-audit-foundation
+    paths:
+      - 'experiment/openwrt/BlazePwifi/openwrt/rootfs/www/blazepwifi/admin.html'
+      - 'experiment/openwrt/BlazePwifi/openwrt/rootfs/www/blazepwifi/admin/**'
+      - 'experiment/openwrt/BlazePwifi/openwrt/rootfs/www/blazepwifi/vendor/blazefusion/**'
+      - 'experiment/openwrt/BlazePwifi/android/BlazeRentalLauncher/src/com/blazesystems/blazerental/LeaseClient.java'
+      - 'experiment/openwrt/BlazePwifi/android/BlazeRentalLauncher/src/com/blazesystems/blazerental/BlazeAdminActivity.java'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_android_trust_panel.sh'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_ui_fusion.sh'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_managed_tls_pin.sh'
+      - 'experiment/openwrt/BlazePwifi/tests/v060_rental_qr_browser.cjs'
+      - 'experiment/openwrt/BlazePwifi/tests/post_v052_hardening.sh'
+      - 'experiment/openwrt/BlazePwifi/simulation/browser_v04_audit.py'
+      - '.github/workflows/blazepwifi-v060-product-audit.yml'
+permissions:
+  contents: read
+jobs:
+  product-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Validate lightweight console and accessible offline navigation
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_ui_fusion.sh
+      - name: Validate managed Android TLS pin requirement
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_managed_tls_pin.sh
+      - name: Check native rental trust panel and absence of secret disclosure
+        run: sh experiment/openwrt/BlazePwifi/tests/v060_android_trust_panel.sh
+      - name: Simulate actual rental QR browser request lifecycle
+        run: node experiment/openwrt/BlazePwifi/tests/v060_rental_qr_browser.cjs
+      - name: Validate lower-security binding versus verified managed provisioning QR
+        run: sh experiment/openwrt/BlazePwifi/tests/qr_setup.sh
+      - name: Validate inherited v0.5.2 QR/CSRF/coin-window security contracts
+        run: sh experiment/openwrt/BlazePwifi/tests/post_v052_hardening.sh
+
+  operator-browser:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install headless Chrome for real admin DOM simulation
+        run: |
+          python -m pip install --disable-pip-version-check playwright
+          python -m playwright install --with-deps chromium
+      - name: Exercise console browser and enrollment QR visibility
+        run: python experiment/openwrt/BlazePwifi/simulation/browser_v04_audit.py simulation-out/browser
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: BlazePwifi-v060-operator-browser
+          path: simulation-out/browser/
+          if-no-files-found: warn

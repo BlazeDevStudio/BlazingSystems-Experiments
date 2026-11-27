@@ -1,0 +1,470 @@
+#!/bin/sh
+. "${BP_LIB:-/usr/lib/blazepwifi/common.sh}"
+. "${BP_RENTAL_LIB:-/usr/lib/blazepwifi/rental.sh}"
+. "${BP_CONTROLLER_LIB:-/usr/lib/blazepwifi/controller.sh}"
+. "${BP_MEMBER_LIB:-/usr/lib/blazepwifi/member.sh}"
+bp_init_dirs
+bp_rental_init
+bp_controller_init
+bp_member_init
+
+vendo_port="$(bp_cfg vendo_port)"
+[ -n "$vendo_port" ] || vendo_port=4455
+[ "${SERVER_PORT:-}" = "$vendo_port" ] || bp_fail "vendo API requires dedicated port"
+
+action="$(bp_param action)"
+id="$(bp_param id)"
+nonce="$(bp_param nonce)"
+pulses="$(bp_param pulses)"
+target="$(bp_param target)"
+sig="$(bp_param sig)"
+
+printf '%s' "$id" | grep -Eq '^[A-Za-z0-9._-]{1,48}$' || bp_fail "invalid vendo id"
+printf '%s' "$nonce" | grep -Eq '^[A-Fa-f0-9]{8,32}$' || bp_fail "invalid nonce"
+[ -n "$pulses" ] || pulses=0
+bp_check_vendo_sig "$action" "$id" "$nonce" "$pulses" "$target" "$sig" || bp_fail "bad signature"
+
+# PAY-0751: pass the complete second-domain envelope through the installed
+# native verifier. This is authentication only: neither a verified envelope
+# nor a missing/failed binary authorizes a paid write, replay ACK or heartbeat.
+# The v2 request fields are separately HMAC-bound by the native authority.
+case "$action" in
+  member_v2_add) v2_op=AM ;;
+  member_v2_spend) v2_op=SM ;;
+  member_v2_transfer) v2_op=TM ;;
+  rental_v2_lease) v2_op=LR ;;
+  *) v2_op= ;;
+esac
+if [ -n "$v2_op" ]; then
+  v2_seq="$(bp_param v2_seq)"
+  v2_subject="$(bp_param v2_subject)"
+  v2_destination="$(bp_param v2_destination)"
+  v2_units="$(bp_param v2_units)"
+  v2_time="$(bp_param v2_time)"
+  v2_hmac="$(bp_param v2_hmac)"
+  bp_v2_verify_envelope "$id" "$v2_seq" "$id:$v2_seq" "$v2_op" \
+    "$v2_subject" "$v2_destination" "$v2_units" "$v2_time" "$v2_hmac" || true
+fi
+# PAY-0719: v2 financial transactions have no admitted witness, protected
+# response signer or migration. Verify the normal controller signature first,
+# then fail closed BEFORE heartbeat or ANY financial mutation. Never downgrade.
+case "$action" in
+  member_v2_*) bp_fail "member v2 authority unavailable; no v1 fallback" ;;
+  rental_v2_*) bp_fail "rental v2 authority unavailable; no v1 fallback" ;;
+esac
+
+now="$(bp_now)"
+ipaddr="${REMOTE_ADDR:-0.0.0.0}"
+
+heartbeat() {
+  tmp="$BP_RUN/vendos.$$"
+  awk -F '\t' -v OFS='\t' -v id="$id" -v n="$now" -v ip="$ipaddr" '
+    BEGIN{f=0}
+    $1==id {print id,n,ip;f=1;next}
+    {print}
+    END{if(!f) print id,n,ip}
+  ' "$BP_VENDOS" > "$tmp" && mv "$tmp" "$BP_VENDOS"
+  chmod 600 "$BP_VENDOS"
+  bp_controller_ensure "$id"
+}
+
+bp_lock || bp_fail "vendo state busy"
+heartbeat
+bp_unlock
+
+
+member_snapshot_sig() {
+  revision="$1"; payload_hash="$2"; secret="$(bp_cfg vendo_key)"
+  printf '%s|member_snapshot|%s|%s|%s|%s|%s' "$secret" "$id" "$nonce" "$revision" "$payload_hash" "$secret" | bp_sha256
+}
+
+member_auth_sig() {
+  user="$1"; revision="$2"; banked="$3"; secret="$(bp_cfg vendo_key)"
+  printf '%s|member_auth|%s|%s|%s|%s|%s|%s' "$secret" "$id" "$nonce" "$user" "$revision" "$banked" "$secret" | bp_sha256
+}
+
+member_mutation_sig() {
+  action_name="$1"; event_id="$2"; member_token="$3"; result_seconds="$4"; balance_seconds="$5"; revision="$6"; secret="$(bp_cfg vendo_key)"
+  printf '%s|%s|%s|%s|%s|%s|%s|%s|%s|%s' "$secret" "$action_name" "$id" "$nonce" "$event_id" "$member_token" "$result_seconds" "$balance_seconds" "$revision" "$secret" | bp_sha256
+}
+
+# PAY-0711: a replay response must keep the paid writer lock until
+# response emission or process exit; do not acquire this around a new write.
+member_replay_lock_or_fail() {
+  bp_paid_replay_read_lock
+  replay_lock_rc=$?
+  case "$replay_lock_rc" in
+    0) return 0 ;;
+    9) bp_fail "paid state uncertain; operator reconciliation required" ;;
+    *) bp_fail "paid financial operation busy; retry safely" ;;
+  esac
+}
+
+# No money-related replay ACK may bypass the paid-state-uncertain
+# quarantine, even if an old receipt exists. Read-only member lookup is
+# permitted, but disputed financial results require operator reconciliation.
+case "$action" in
+  member_bank|member_restore|member_transfer)
+    [ ! -e "$BP_PAID_UNCERTAIN" ] && [ ! -L "$BP_PAID_UNCERTAIN" ] ||
+      bp_fail "paid state uncertain; operator reconciliation required"
+    ;;
+esac
+
+case "$action" in
+  register|ping)
+    controller="$(bp_controller_json "$id")"
+    body="$(printf '{"ok":true,"server_time":%s,"controller":%s}' "$now" "$controller")"
+    bp_json "$body"
+    ;;
+  poll)
+    bp_time_sane "$now" || bp_fail "router clock not synchronized"
+    insert=0
+    target_nonce=""
+    expires=0
+    target_file="$BP_TARGET_DIR/$id.tsv"
+    if [ -f "$target_file" ]; then
+      IFS="$(printf '\t')" read -r device mac target_nonce expires wanted kind < "$target_file"
+      if [ "$expires" -gt "$now" ] 2>/dev/null && [ "$wanted" = "$id" ]; then
+        insert=1
+      else
+        rm -f "$target_file" "$BP_TARGET_DIR/$id.progress"
+      fi
+    fi
+    controller="$(bp_controller_json "$id")"
+    enabled="$(printf '%s' "$controller" | sed -n 's/.*"enabled":\([01]\).*/\1/p')"
+    coin_enabled="$(printf '%s' "$controller" | sed -n 's/.*"coin_enabled":\([01]\).*/\1/p')"
+    [ "$enabled" = 1 ] && [ "$coin_enabled" = 1 ] || insert=0
+    body="$(printf '{"ok":true,"insert":%s,"target_nonce":"%s","expires":%s,"controller":%s}' "$insert" "$(bp_json_escape "$target_nonce")" "${expires:-0}" "$controller")"
+    bp_json "$body"
+    ;;
+  member_snapshot)
+    bp_time_sane "$now" || bp_fail "router clock not synchronized"
+    # PAY-0737: protect both signed content and signed global revision under
+    # the SAME global paid writer lock. Never sign invented zero on EIO.
+    member_replay_lock_or_fail
+    bp_member_signed_read_integrity ||
+      bp_fail "member financial snapshot inconsistent; operator reconciliation required"
+    revision="$(bp_member_revision_strict)" ||
+      bp_fail "member global revision invalid; operator reconciliation required"
+    members="$(bp_member_snapshot_json)"
+    payload_hash="$(printf '%s' "$members" | bp_sha256)"
+    response_sig="$(member_snapshot_sig "$revision" "$payload_hash")"
+    body="$(printf '{"ok":true,"member_revision":%s,"payload_sha256":"%s","members":%s,"response_sig":"%s"}' "$revision" "$payload_hash" "$members" "$response_sig")"
+    bp_json "$body"
+    ;;
+  member_auth)
+    bp_time_sane "$now" || bp_fail "router clock not synchronized"
+    # PAY-0737: member login returns signed paid seconds and must never
+    # succeed while a writer/quarantine/cutover or broken revision is visible.
+    member_replay_lock_or_fail
+    bp_member_signed_read_integrity ||
+      bp_fail "member financial snapshot inconsistent; operator reconciliation required"
+    user="$(printf '%s' "$target" | cut -d: -f1)"
+    proof="$(printf '%s' "$target" | cut -d: -f2)"
+    user="$(bp_member_norm "$user")" || bp_fail "invalid member"
+    printf '%s' "$proof" | grep -Eq '^[A-Fa-f0-9]{64}$' || bp_fail "invalid member proof"
+    bp_member_auth_proof_ok "$user" "$nonce" "$id" "$proof" || bp_fail "member authentication failed"
+    line="$(bp_member_line "$user")"
+    [ -n "$line" ] || bp_fail "member account unavailable"
+    banked="$(printf '%s' "$line" | cut -f8)"
+    revision="$(printf '%s' "$line" | cut -f9)"
+    bp_member_safe_seconds "$banked" 2147483647 &&
+      bp_member_safe_seconds "$revision" 2147483646 ||
+      bp_fail "member paid result corrupt; operator reconciliation required"
+    response_sig="$(member_auth_sig "$user" "$revision" "$banked")"
+    bp_json "$(printf '{"ok":true,"username":"%s","banked_seconds":%s,"member_revision":%s,"response_sig":"%s"}' "$(bp_json_escape "$user")" "$banked" "$revision" "$response_sig")"
+    ;;
+  member_bank)
+    bp_time_sane "$now" || bp_fail "router clock not synchronized"
+    case "$pulses" in ''|*[!0-9]*) bp_fail "invalid bank seconds";; esac
+    [ "$pulses" -gt 0 ] 2>/dev/null && [ "$pulses" -le 31536000 ] 2>/dev/null || bp_fail "bank seconds out of range"
+    user="$(printf '%s' "$target" | cut -d: -f1)"
+    event_id="$(printf '%s' "$target" | cut -d: -f2)"
+    proof="$(printf '%s' "$target" | cut -d: -f3)"
+    user="$(bp_member_norm "$user")" || bp_fail "invalid member"
+    printf '%s' "$event_id" | grep -Eq '^[A-Fa-f0-9]{16,64}$' || bp_fail "invalid member event id"
+
+    member_replay_lock_or_fail
+    prior="$(bp_member_replay_line "$event_id" "$id" "$user" add)"
+    if [ -n "$prior" ]; then
+      result_seconds="$(printf '%s' "$prior" | cut -f6)"
+      [ "$result_seconds" -eq "$pulses" ] 2>/dev/null ||
+        bp_fail "member event payload collision"
+      bp_member_replay_snapshot_ok "$event_id" "$user" add "softtimer:$id" "$pulses" "" ||
+        bp_fail "member paid receipt or snapshot inconsistent; operator reconciliation required"
+      revision="$(bp_member_global_revision)"
+      balance="$(printf '%s' "$(bp_member_line "$user")" | cut -f8)"
+      [ -n "$result_seconds" ] || result_seconds=0
+      [ -n "$balance" ] || balance=0
+      response_sig="$(member_mutation_sig member_bank "$event_id" "$user" "$result_seconds" "$balance" "$revision")"
+      bp_json "$(printf '{"ok":true,"replayed":true,"event_id":"%s","username":"%s","result_seconds":%s,"banked_seconds":%s,"member_revision":%s,"response_sig":"%s"}' "$event_id" "$(bp_json_escape "$user")" "$result_seconds" "$balance" "$revision" "$response_sig")"
+      exit 0
+    fi
+    bp_paid_replay_read_unlock
+
+    printf '%s' "$proof" | grep -Eq '^[A-Fa-f0-9]{64}$' || bp_fail "invalid member proof"
+    bp_member_auth_proof_ok "$user" "$nonce" "$id" "$proof" || bp_fail "member authentication failed"
+    bp_member_lock || bp_fail "member state busy"
+    result="$(bp_member_balance_change "$user" add "$pulses" "softtimer:$id" "$event_id")"
+    rc=$?
+    bp_member_unlock
+    [ "$rc" -eq 0 ] || bp_fail "member bank failed"
+    result_seconds="$(printf '%s' "$result" | cut -f1)"
+    revision="$(printf '%s' "$result" | cut -f2)"
+    balance="$(printf '%s' "$(bp_member_line "$user")" | cut -f8)"
+    [ -n "$result_seconds" ] || result_seconds=0
+    [ -n "$revision" ] || revision=0
+    [ -n "$balance" ] || balance=0
+    response_sig="$(member_mutation_sig member_bank "$event_id" "$user" "$result_seconds" "$balance" "$revision")"
+    bp_json "$(printf '{"ok":true,"event_id":"%s","username":"%s","result_seconds":%s,"banked_seconds":%s,"member_revision":%s,"response_sig":"%s"}' "$event_id" "$(bp_json_escape "$user")" "$result_seconds" "$balance" "$revision" "$response_sig")"
+    ;;
+  member_restore)
+    bp_time_sane "$now" || bp_fail "router clock not synchronized"
+    user="$(printf '%s' "$target" | cut -d: -f1)"
+    event_id="$(printf '%s' "$target" | cut -d: -f2)"
+    proof="$(printf '%s' "$target" | cut -d: -f3)"
+    user="$(bp_member_norm "$user")" || bp_fail "invalid member"
+    printf '%s' "$event_id" | grep -Eq '^[A-Fa-f0-9]{16,64}$' || bp_fail "invalid member event id"
+
+    member_replay_lock_or_fail
+    prior="$(bp_member_replay_line "$event_id" "$id" "$user" restore_all)"
+    if [ -n "$prior" ]; then
+      bp_member_replay_snapshot_ok "$event_id" "$user" restore_all "softtimer:$id" 0 "" ||
+        bp_fail "member paid receipt or snapshot inconsistent; operator reconciliation required"
+      result_seconds="$(printf '%s' "$prior" | cut -f6)"
+      revision="$(bp_member_global_revision)"
+      balance="$(printf '%s' "$(bp_member_line "$user")" | cut -f8)"
+      [ -n "$result_seconds" ] || result_seconds=0
+      [ -n "$balance" ] || balance=0
+      response_sig="$(member_mutation_sig member_restore "$event_id" "$user" "$result_seconds" "$balance" "$revision")"
+      bp_json "$(printf '{"ok":true,"replayed":true,"event_id":"%s","username":"%s","result_seconds":%s,"banked_seconds":%s,"member_revision":%s,"response_sig":"%s"}' "$event_id" "$(bp_json_escape "$user")" "$result_seconds" "$balance" "$revision" "$response_sig")"
+      exit 0
+    fi
+    bp_paid_replay_read_unlock
+
+    printf '%s' "$proof" | grep -Eq '^[A-Fa-f0-9]{64}$' || bp_fail "invalid member proof"
+    bp_member_auth_proof_ok "$user" "$nonce" "$id" "$proof" || bp_fail "member authentication failed"
+    bp_member_lock || bp_fail "member state busy"
+    result="$(bp_member_balance_change "$user" restore_all 0 "softtimer:$id" "$event_id")"
+    rc=$?
+    bp_member_unlock
+    [ "$rc" -eq 0 ] || bp_fail "member restore failed"
+    result_seconds="$(printf '%s' "$result" | cut -f1)"
+    revision="$(printf '%s' "$result" | cut -f2)"
+    balance="$(printf '%s' "$(bp_member_line "$user")" | cut -f8)"
+    [ -n "$result_seconds" ] || result_seconds=0
+    [ -n "$revision" ] || revision=0
+    [ -n "$balance" ] || balance=0
+    response_sig="$(member_mutation_sig member_restore "$event_id" "$user" "$result_seconds" "$balance" "$revision")"
+    bp_json "$(printf '{"ok":true,"event_id":"%s","username":"%s","result_seconds":%s,"banked_seconds":%s,"member_revision":%s,"response_sig":"%s"}' "$event_id" "$(bp_json_escape "$user")" "$result_seconds" "$balance" "$revision" "$response_sig")"
+    ;;
+  member_transfer)
+    bp_time_sane "$now" || bp_fail "router clock not synchronized"
+    case "$pulses" in ''|*[!0-9]*) bp_fail "invalid transfer seconds";; esac
+    [ "$pulses" -gt 0 ] 2>/dev/null && [ "$pulses" -le 31536000 ] 2>/dev/null || bp_fail "transfer seconds out of range"
+    pair="$(printf '%s' "$target" | cut -d: -f1)"
+    event_id="$(printf '%s' "$target" | cut -d: -f2)"
+    proof="$(printf '%s' "$target" | cut -d: -f3)"
+    printf '%s' "$pair" | grep -q '>' || bp_fail "invalid transfer members"
+    from="$(printf '%s' "$pair" | cut -d'>' -f1)"
+    to="$(printf '%s' "$pair" | cut -d'>' -f2)"
+    from="$(bp_member_norm "$from")" || bp_fail "invalid source member"
+    to="$(bp_member_norm "$to")" || bp_fail "invalid destination member"
+    printf '%s' "$event_id" | grep -Eq '^[A-Fa-f0-9]{16,64}$' || bp_fail "invalid member event id"
+
+    member_replay_lock_or_fail
+    prior="$(bp_member_replay_line "$event_id" "$id" "$from" transfer)"
+    if [ -n "$prior" ]; then
+      result_seconds="$(printf '%s' "$prior" | cut -f6)"
+      receipt_detail="$(printf '%s' "$prior" | cut -f8)"
+      receipt_to="$(printf '%s' "$receipt_detail" | awk -F: 'NF==3 {print $2}')"
+      [ "$result_seconds" -eq "$pulses" ] 2>/dev/null &&
+        [ "$receipt_to" = "$to" ] ||
+        bp_fail "member event payload collision"
+      bp_member_replay_snapshot_ok "$event_id" "$from" transfer "softtimer:$id" "$pulses" "$to" ||
+        bp_fail "member paid receipt or snapshot inconsistent; operator reconciliation required"
+      revision="$(bp_member_global_revision)"
+      from_balance="$(printf '%s' "$(bp_member_line "$from")" | cut -f8)"
+      [ -n "$result_seconds" ] || result_seconds=0
+      [ -n "$from_balance" ] || from_balance=0
+      token="$from>$to"
+      response_sig="$(member_mutation_sig member_transfer "$event_id" "$token" "$result_seconds" "$from_balance" "$revision")"
+      bp_json "$(printf '{"ok":true,"replayed":true,"event_id":"%s","from_username":"%s","to_username":"%s","result_seconds":%s,"source_banked_seconds":%s,"member_revision":%s,"response_sig":"%s"}' "$event_id" "$(bp_json_escape "$from")" "$(bp_json_escape "$to")" "$result_seconds" "$from_balance" "$revision" "$response_sig")"
+      exit 0
+    fi
+    bp_paid_replay_read_unlock
+
+    printf '%s' "$proof" | grep -Eq '^[A-Fa-f0-9]{64}$' || bp_fail "invalid member proof"
+    bp_member_auth_proof_ok "$from" "$nonce" "$id" "$proof" || bp_fail "member authentication failed"
+    [ "$(printf '%s' "$(bp_member_line "$to")" | cut -f3)" = 1 ] || bp_fail "destination member disabled or missing"
+    bp_member_lock || bp_fail "member state busy"
+    result="$(bp_member_transfer "$from" "$to" "$pulses" "softtimer:$id" "$event_id")"
+    rc=$?
+    bp_member_unlock
+    case "$rc" in
+      0) ;;
+      4) bp_fail "insufficient banked time" ;;
+      *) bp_fail "member transfer failed" ;;
+    esac
+    result_seconds="$(printf '%s' "$result" | cut -f1)"
+    revision="$(printf '%s' "$result" | cut -f2)"
+    from_balance="$(printf '%s' "$(bp_member_line "$from")" | cut -f8)"
+    [ -n "$result_seconds" ] || result_seconds=0
+    [ -n "$revision" ] || revision=0
+    [ -n "$from_balance" ] || from_balance=0
+    token="$from>$to"
+    response_sig="$(member_mutation_sig member_transfer "$event_id" "$token" "$result_seconds" "$from_balance" "$revision")"
+    bp_json "$(printf '{"ok":true,"event_id":"%s","from_username":"%s","to_username":"%s","result_seconds":%s,"source_banked_seconds":%s,"member_revision":%s,"response_sig":"%s"}' "$event_id" "$(bp_json_escape "$from")" "$(bp_json_escape "$to")" "$result_seconds" "$from_balance" "$revision" "$response_sig")"
+    ;;
+  coin)
+    bp_time_sane "$now" || bp_fail "router clock not synchronized"
+    case "$pulses" in ''|*[!0-9]*) bp_fail "invalid pulse count";; esac
+    [ "$pulses" -ge 1 ] && [ "$pulses" -le 20 ] || bp_fail "pulse count out of range"
+    printf '%s' "$target" | grep -Eq '^[A-Fa-f0-9]{8,32}$' || bp_fail "invalid coin target"
+
+    target_file="$BP_TARGET_DIR/$id.tsv"
+    [ -f "$target_file" ] || bp_fail "no active coin window"
+    IFS="$(printf '\t')" read -r device mac target_nonce expires wanted kind < "$target_file"
+    kind="${kind:-hotspot}"
+    [ "$target" = "$target_nonce" ] || bp_fail "coin target mismatch"
+    [ "$expires" -gt "$now" ] 2>/dev/null || { rm -f "$target_file" "$BP_TARGET_DIR/$id.progress"; bp_fail "coin window expired"; }
+    [ "$wanted" = "$id" ] || bp_fail "another vendo selected"
+    # Never ACK even a retried receipt while any paid operation is
+    # uncertain; the operator must reconcile before vending resumes.
+    [ ! -e "$BP_PAID_UNCERTAIN" ] && [ ! -L "$BP_PAID_UNCERTAIN" ] ||
+      bp_fail "paid state uncertain; operator reconciliation required"
+
+    if [ "$kind" = rental ]; then
+      bp_lock || bp_fail "rental accounting busy"
+      progress_file="$BP_TARGET_DIR/$id.progress"
+      # Never credit a rental coin if its window progress cannot be read,
+      # or points outside the dedicated target directory via a symlink.
+      if [ ! -f "$progress_file" ] || [ -L "$progress_file" ]; then
+        bp_unlock
+        bp_fail "rental progress unavailable; no coin credited"
+      fi
+      received_pulses="$(cat "$progress_file" 2>/dev/null)" || {
+        bp_unlock
+        bp_fail "rental progress unreadable; no coin credited"
+      }
+      case "$received_pulses" in
+        ''|*[!0-9]*)
+          bp_unlock
+          bp_fail "rental progress invalid; no coin credited" ;;
+      esac
+      [ "$received_pulses" -le 1000000 ] 2>/dev/null || {
+        bp_unlock
+        bp_fail "rental progress out of range; no coin credited"
+      }
+      result="$(bp_rental_apply_coin "$device" "$id" "$nonce" "$target" "$pulses")"
+      rc=$?
+      [ "$rc" -eq 0 ] || { bp_unlock; bp_fail "rental target not found"; }
+      state="$(printf '%s' "$result" | cut -f1)"
+      lease="$(printf '%s' "$result" | cut -f2)"
+      if [ "$state" != duplicate ]; then
+        received_pulses=$((received_pulses+pulses))
+        # On post-credit progress EIO, paid state is uncertain; do not
+        # emit a success ACK or silently leave status counters stale.
+        progress_tmp="$BP_TARGET_DIR/.$id.progress.$(bp_tmp_suffix)"
+        umask 077
+        if ! printf '%s\n' "$received_pulses" > "$progress_tmp" ||
+           ! chmod 600 "$progress_tmp" ||
+           ! mv "$progress_tmp" "$progress_file" ||
+           ! bp_durable_sync; then
+          rm -f "$progress_tmp" 2>/dev/null || true
+          # This marker is an operator reconciliation halt, NOT an
+          # atomic rollback of the already-committed paid receipt.
+          if bp_paid_begin; then bp_paid_abort; fi
+          bp_unlock
+          bp_fail "rental progress commit failed; paid state uncertain"
+        fi
+      fi
+      bp_unlock
+      unit="$(bp_cfg pulse_value_centavos)"; [ -n "$unit" ] || unit=100
+      case "$unit" in ''|*[!0-9]*) unit=100;; esac
+      received_cents=$((unit*received_pulses))
+      [ "$state" = duplicate ] && duplicate=true || duplicate=false
+      body="$(printf '{"ok":true,"duplicate":%s,"rental":true,"lease_until":%s,"received_pulses":%s,"received_cents":%s,"target_nonce":"%s"}' "$duplicate" "$lease" "$received_pulses" "$received_cents" "$(bp_json_escape "$target")")"
+      bp_json "$body"
+      exit 0
+    fi
+
+    # Scope v0.6 receipts to the live coin window; expired targets may
+    # be history-trimmed, but valid ACK retries may never be evicted.
+    event="c:$target.$(bp_event_hash "coin|$id|$nonce|$target")"
+    # Stable controller nonce identity; pulse count is immutable metadata in
+    # the SAME atomically replaced account row (never a side receipt file).
+    receipt_event="$event!$pulses"
+    # PAY-0731: the first ordinary-coin duplicate shortcut used to bypass
+    # the global financial writer lock. A signed old receipt does not prove
+    # it is safe to ACK while another payment is being committed, before its
+    # pending quarantine marker is written, or during a v2 cutover.
+    member_replay_lock_or_fail
+    duplicate_device="$(bp_find_event_device "$event")"
+    if [ -n "$duplicate_device" ]; then
+      original_pulses="$(bp_coin_receipt_original_pulses "$event" "$device")" ||
+        bp_fail "coin original receipt ambiguous; operator reconciliation required"
+      [ -n "$original_pulses" ] && [ "$original_pulses" = "$pulses" ] ||
+        bp_fail "coin pulse payload collision; original credit unchanged"
+      credit="$(bp_get_credit "$duplicate_device")"
+      body="$(printf '{"ok":true,"duplicate":true,"credited_cents":0,"credit_cents":%s,"target_nonce":"%s"}' "$credit" "$(bp_json_escape "$target")")"
+      # Keep paid-financial.lock held through the duplicate response/exit.
+      bp_json "$body"
+      exit 0
+    fi
+    bp_paid_replay_read_unlock
+
+    bp_lock || bp_fail "accounting busy"
+    # Another writer may commit the same event after our first lock handoff.
+    # Re-read the duplicate under BOTH the account and paid financial lock;
+    # release paid read lock only before attempting a fresh money writer.
+    member_replay_lock_or_fail
+    duplicate_device="$(bp_find_event_device "$event")"
+    if [ -n "$duplicate_device" ]; then
+      original_pulses="$(bp_coin_receipt_original_pulses "$event" "$device")" ||
+        bp_fail "coin original receipt ambiguous; operator reconciliation required"
+      [ -n "$original_pulses" ] && [ "$original_pulses" = "$pulses" ] ||
+        bp_fail "coin pulse payload collision; original credit unchanged"
+      credit="$(bp_get_credit "$duplicate_device")"
+      body="$(printf '{"ok":true,"duplicate":true,"credited_cents":0,"credit_cents":%s,"target_nonce":"%s"}' "$credit" "$(bp_json_escape "$target")")"
+      bp_json "$body"
+      exit 0
+    fi
+    bp_paid_replay_read_unlock
+
+    line="$(bp_account_line "$device")"
+    [ -n "$line" ] || { bp_unlock; bp_fail "target account not found"; }
+    credit="$(printf '%s' "$line" | cut -f2)"
+    expiry="$(printf '%s' "$line" | cut -f3)"
+    remaining="$(printf '%s' "$line" | cut -f4)"
+    paused="$(printf '%s' "$line" | cut -f5)"
+    ps="$(printf '%s' "$line" | cut -f6)"
+    account_mac="$(printf '%s' "$line" | cut -f7)"
+    account_ip="$(printf '%s' "$line" | cut -f8)"
+    events="$(printf '%s' "$line" | cut -f9)"
+    unit="$(bp_cfg pulse_value_centavos)"
+    [ -n "$unit" ] || unit=100
+    add=$((unit*pulses))
+    newcredit=$((credit+add))
+    if ! newevents="$(bp_events_push "$events" "$receipt_event")"; then
+      bp_unlock
+      bp_fail "coin receipt retention full; operator reconciliation required"
+    fi
+    # Legacy one-row balance+receipt rename stays contained behind the
+    # global paid-state halt. This is not a replacement for v2 fsync WAL.
+    bp_paid_begin || { bp_unlock; bp_fail "paid state uncertain or accounting busy"; }
+    if ! bp_account_write "$device" "$newcredit" "$expiry" "$remaining" "$paused" "$ps" "$account_mac" "$account_ip" "$newevents"; then
+      bp_paid_abort
+      bp_unlock
+      bp_fail "coin credit storage failed; operator reconciliation required"
+    fi
+    if ! bp_paid_commit; then
+      bp_unlock
+      bp_fail "coin credit durability failed; operator reconciliation required"
+    fi
+    bp_unlock
+    body="$(printf '{"ok":true,"duplicate":false,"credited_cents":%s,"credit_cents":%s,"target_nonce":"%s"}' "$add" "$newcredit" "$(bp_json_escape "$target")")"
+    bp_json "$body"
+    ;;
+  *) bp_fail "unknown vendo action" ;;
+esac
