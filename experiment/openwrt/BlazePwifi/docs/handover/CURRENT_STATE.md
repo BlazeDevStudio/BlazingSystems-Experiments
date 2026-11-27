@@ -1419,3 +1419,12 @@ See [narrow handover](2026-11-27-hw-pending-recovery-promotion-guard-utc10.md).
 - Existing 11 recovery scenarios now assert nonce/target persistence after successful canonical/fallback recovery, empty identity after ambiguous/failed promotion, and retained identity with fail-closed state after legacy migration persistence failure.
 - Focused run #46016953274 job 140566402392 PASS. Mbed run #46016953049: source contract and core 3.3.13 PASS; core 4.0.0 pending at checkpoint. Pre-sync Full #46016953164 validation failed only at handover freshness; CI-0701 passed and target jobs were not yet terminal. Post-sync exact-head rerun required.
 - Host simulation/CI only; no production sketch, shared API, QA test, finance, signer, witness, migration, or COE file changed. Physical acceptance NOT TESTED; HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+
+
+## PHX-HARDWARE UTC14 — append-only ledger restoration correction
+
+The first docs-sync commit `f1a4e36010572b59ce5576724dd18af480087e60` did not preserve the large `CHANGE_LEDGER.md`: the repository file-content response was empty for that oversized blob, and the commit temporarily replaced it with a 1,375-character append. The focused workflow caught this before merge at [#46017446457](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46017446457), job `140568087908` (`CHANGE_LEDGER_APPEND_ONLY_FAIL`, base 1,132,798 bytes vs candidate 1,377 bytes).
+
+The complete ledger was recovered by exact blob SHA `19778170a05b3a71194ee29b23176ac398f28a29` from parent source/test commit `4a85070a1f6a1caa417570a91dcdf355ff072fcc`. Its text starts with the full base ledger from #354 at fc842342596786e072630179acfbbc4feeb2ba02 (blob `b950f7be47f79d71e6cb8b721801c1bae128df45`); prior #359 and #361 entries remain intact. A correction entry is appended to the recovered ledger. Exact byte-prefix verification is pending the new focused run.
+
+The actual host-fixture correction at `4a85070a1f6a1caa417570a91dcdf355ff072fcc` remains unchanged. Focused source run #46016953274 PASS; Mbed run #46016953049 3/3 PASS. Pre-sync Full #46016953164 terminally failed at handover freshness (13 succeeded, 6 skipped, 9 cancelled, 1 validation failure); no Full PASS is claimed. Physical acceptance NOT TESTED; HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.

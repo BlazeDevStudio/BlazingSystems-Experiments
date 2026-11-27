@@ -1541,3 +1541,12 @@ The fixture now owns a `std::string` copy and exposes `c_str()` / `length()` for
 No ESP8266/ESP32 sketch, shared API, QA-owned assertion, financial state, signer/witness, migration, COE destination, or release workflow changed. Parent #359's deny-only recovery behavior is unchanged. CORE retains authenticated register/poll and receipt/disposition contract ownership; QA retains independent semantic assertion ownership; MASTER retains global stack and release authority.
 
 **Classification:** SIMULATED / CI VERIFIED only. Physical LittleFS, electrical/coin/relay acceptance, 150 power cuts, and 30-device/24-hour soak remain NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+
+
+## PHX-HARDWARE UTC14 — append-only ledger restoration correction
+
+The first docs-sync commit `f1a4e36010572b59ce5576724dd18af480087e60` did not preserve the large `CHANGE_LEDGER.md`: the repository file-content response was empty for that oversized blob, and the commit temporarily replaced it with a 1,375-character append. The focused workflow caught this before merge at [#46017446457](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46017446457), job `140568087908` (`CHANGE_LEDGER_APPEND_ONLY_FAIL`, base 1,132,798 bytes vs candidate 1,377 bytes).
+
+The complete ledger was recovered by exact blob SHA `19778170a05b3a71194ee29b23176ac398f28a29` from parent source/test commit `4a85070a1f6a1caa417570a91dcdf355ff072fcc`. Its text starts with the full base ledger from #354 at fc842342596786e072630179acfbbc4feeb2ba02 (blob `b950f7be47f79d71e6cb8b721801c1bae128df45`); prior #359 and #361 entries remain intact. A correction entry is appended to the recovered ledger. Exact byte-prefix verification is pending the new focused run.
+
+The actual host-fixture correction at `4a85070a1f6a1caa417570a91dcdf355ff072fcc` remains unchanged. Focused source run #46016953274 PASS; Mbed run #46016953049 3/3 PASS. Pre-sync Full #46016953164 terminally failed at handover freshness (13 succeeded, 6 skipped, 9 cancelled, 1 validation failure); no Full PASS is claimed. Physical acceptance NOT TESTED; HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
