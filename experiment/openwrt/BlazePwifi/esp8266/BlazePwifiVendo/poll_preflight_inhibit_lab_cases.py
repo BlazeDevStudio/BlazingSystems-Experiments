@@ -17,6 +17,7 @@ from poll_preflight_inhibit_lab_contract import (
 from poll_preflight_inhibit_lab_harness import (
     compile_and_run,
     compile_blocking_poll_and_run,
+    compile_poll_transport_outcome_matrix,
     expect_poll_guard_mutation_rejected,
     remove_first_code_token,
 )
@@ -242,6 +243,34 @@ def verify_board(name: str, path: Path):
     compile_and_run(apply_fn, deny_fn, True, f"{name} safe pre-poll state")
     compile_blocking_poll_and_run(
         apply_fn, deny_fn, poll_block, True, f"{name} actual blocking poll wait"
+    )
+
+    compile_poll_transport_outcome_matrix(
+        apply_fn, deny_fn, poll_block, True,
+        f"{name} poll transport outcome matrix",
+    )
+
+    # Failure injection: consume an untrusted positive poll body, briefly
+    # re-enable relay/LED outputs, then rely on the final deny. The harness
+    # must catch the transient active write even though the final state is OFF.
+    response_mutation = poll_block.replace(
+        '(void)post("poll");',
+        'String response = post("poll");\n'
+        '        if (response.find("\\\"insert\\\":true") != std::string::npos) {\n'
+        '            controllerEnabled = true;\n'
+        '            coinEnabled = true;\n'
+        '            relayEnabled = true;\n'
+        '            ledEnabled = true;\n'
+        '            insertMode = true;\n'
+        '            applyOutputs();\n'
+        '        }',
+        1,
+    )
+    if response_mutation == poll_block:
+        raise AssertionError(f"{name}: untrusted-response actuation mutation anchor missing")
+    compile_poll_transport_outcome_matrix(
+        apply_fn, deny_fn, response_mutation, False,
+        f"{name} transient untrusted-response actuation mutation",
     )
 
     # Failure injection: removing the pre-poll deny must leave an energized

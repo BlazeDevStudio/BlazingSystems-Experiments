@@ -3827,3 +3827,65 @@ PR #354 remains OPEN / DRAFT / UNMERGED. PRs #239/#254/#283 remain OPEN / DRAFT 
 - **Rollback:** revert/close only child #364 if module separation is not accepted; parent #362/#361/#359 untouched. `CHANGE_LEDGER.md` remains append-only; this entry is appended without rewriting prior bytes.
 - **Blockers:** authenticated controller contract; QA review; physical LittleFS/electrical/relay acceptance; 150 power cuts; 30-device/24-hour soak; protected anti-rollback witness; durable accounting/replay; v1→v2 migration; private Drive registry unavailable through this runtime.
 - **NEXT ACTION:** request QA review of the new contract module and CORE response contract; keep #364 DRAFT. Do not merge, enable coin/relay, flash, migrate or release.
+
+## 2026-11-27 UTC18 — PHX-HARDWARE poll-boundary pulse matrix (PR #365)
+
+- **Repo/branch:** `BlazeDevStudio/BlazingSystems-Experiments` / `phoenix/hw-poll-boundary-pulse-matrix-20261128-utc18`
+- **Parent/base:** #364 at `ea765fb822e1c517db4e61c103b86d8eb2c66c92`
+- **Source/test SHA:** `f38e86b683bbf1e77cdb63e3071630a5b3aedb2c`
+- **Change:** source-extracted blocking-poll host harness now covers six 80 ms pulse windows (-40..40, 0..80, 1600..1680, 3420..3500, 3460..3540, 3500..3580 ms) across four independent relay/LED polarity combinations; 24 cases per board, 48 total. A non-empty untrusted `insert=true` poll response is returned by the stub and remains discarded.
+- **Focused evidence:** PR run [#46052209034](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46052209034), job `140686051553`, PASS at exact source/test SHA. Both boards report `accepted=0`, no GPIO samples during the 3,500 ms wait, preserved pending evidence, and boundary pulse state retained for the post-poll sample.
+- **Status:** SIMULATED / CI VERIFIED only. No production sketch, API, finance or release source changed. Physical acceptor/relay pulse retention remains NOT TESTED; pre-poll in-flight denial does not prove coin retention. P0 #177 remains OPEN and production NO-GO.
+- **Next:** independent QA review of the exact boundary vectors; CORE contract and physical electrical acceptance remain prerequisites. PR #365 stays DRAFT / UNMERGED.
+
+
+## 2026-11-27 UTC18 — PHX-HARDWARE terminal poll-boundary CI reconciliation (PR #365)
+
+- **Tested docs/PR head:** `b94f16a08d85baf980eb471222b8479f491299a2`; **source/test SHA:** `f38e86b683bbf1e77cdb63e3071630a5b3aedb2c`; **branch:** `phoenix/hw-poll-boundary-pulse-matrix-20261128-utc18`.
+- **Focused:** run #46052478993 job `140686930242` PASS; six pulse windows x four independent relay/LED polarity combinations per board; both boards report zero accepted pulses, no samples during the blocking wait, and untrusted poll response ignored.
+- **Mbed TLS:** run #46052478997 source contract `140686931241`, core 3.3.13 `140686930962`, core 4.0.0 `140686931234`: 3/3 PASS.
+- **Full:** run #46052478996 CI-0701 PASS; validation job `140687123327` FAIL at QA-owned `tests/controllers.sh:21` (`config_revision` parity); ESP8266, ESP32, Android and 13/13 firmware target jobs PASS; downstream update/simulation/signing/candidate/publication skipped. Native PAY-0745 NOT RUN on #365.
+- **Scope correction:** active v0.6 branch `2fbd2475e9f54878c316fa7cea2f228386b0e859` remains unchanged; #365 is a test-only child of the unmerged deny-only candidate stack and does not resolve P0 #177. Physical pulse retention remains NOT TESTED. Production NO-GO.
+
+
+## PHX-HARDWARE UTC19 — poll transport outcome matrix (IN PROGRESS)
+
+**PR:** [#365](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/365) — OPEN / DRAFT / UNMERGED  
+**Branch:** `phoenix/hw-poll-boundary-pulse-matrix-20261128-utc18`  
+**Base/source head before this task:** `7c4ca74838be3d4469bef6acc2c2209849f30869`  
+**Scope:** extend the source-extracted blocking-poll host harness with immediate transport-begin failure, timeout/empty response, malformed response, server-error body and untrusted positive response outcomes across four relay/LED polarity combinations. Add a deliberate response-consumption/transient-re-enable mutation that must fail.  
+**Ownership:** PHX-HARDWARE test harness only. No production sketch, CORE API, QA assertion, finance, receipt/disposition or COE source change is authorized.
+
+This is the required documentation-first IN-PROGRESS record. No source/test result is claimed yet. The candidate remains deny-only; the active v0.6 branch remains unchanged. Physical acceptor/relay behavior and pulse retention remain NOT TESTED.
+
+---
+
+
+## 2026-11-28 UTC19 — PHX-HARDWARE IN-PROGRESS: poll transport outcome matrix
+- PR #365 remains OPEN / DRAFT / UNMERGED on `phoenix/hw-poll-boundary-pulse-matrix-20261128-utc18`, current pre-task head `7c4ca74838be3d4469bef6acc2c2209849f30869`, stacked on #364.
+- Documentation-first handover staged before source changes. Planned host-only outcomes: immediate begin failure, empty timeout response, malformed body, server-error body, and untrusted positive `insert=true`; four independent relay/LED polarity combinations; injected transient response-consumption/re-enable mutation.
+- No source/test result claimed yet. No production sketch, CORE, QA, finance, COE, or active-v0.6 source changed. Physical behavior NOT TESTED; production NO-GO.
+
+
+## 2026-11-28 UTC19 — PHX-HARDWARE terminal poll transport outcome matrix (PR #365)
+- **Source/test SHA:** `fcd5d7df210c8521f9c8fcc1019c8db8bdaf7eb0`; **docs-first commit:** `71ea4c332227b58b6bc51a58908bc855bfadc0a8`; **branch:** `phoenix/hw-poll-boundary-pulse-matrix-20261128-utc18`.
+- **Focused:** run #46055268572 job `140696113739` PASS. Five transport outcomes × four relay/LED polarity combinations = 20 cases per board; transient untrusted-response actuation mutation rejected on both boards. Existing six pulse windows × four polarity combinations and pending recovery (15 scenarios per board; 18 mutations rejected) also PASS.
+- **Mbed:** run #46055268521 PENDING at handover time; no result claimed.
+- **Full:** #46055268629 (PR) and #46055260220 (push) failed the mandatory handover-freshness gate because this source/test SHA was not yet recorded; rerun after docs synchronization. Previous terminal Full #46052478996 failed controller parity at `tests/controllers.sh:21` (`config_revision`), with 13/13 firmware targets and Android PASS; downstream signing/publication skipped.
+- **Scope:** test harness only. Active v0.6 branch `2fbd2475e9f54878c316fa7cea2f228386b0e859` unchanged; P0 #177 remains OPEN. Physical pulse retention and relay polarity NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+
+
+## 2026-11-28 UTC19 — PHX-HARDWARE terminal poll transport outcome matrix
+- PR #365 remains OPEN / DRAFT / UNMERGED on `phoenix/hw-poll-boundary-pulse-matrix-20261128-utc18`; source/test SHA `fcd5d7df210c8521f9c8fcc1019c8db8bdaf7eb0`; final docs/CI head `0e5b838cfc7db86c2ce9aaf25b1cabe9e5b2ad73`.
+- Focused source run #46055268572 job `140696113739` PASS; docs-head run #46055555335 job `140697053907` PASS. Five transport outcomes × four polarity combinations = 20 cases per board; transient response-actuation mutation rejected on both. Existing pulse-window and pending-recovery labs also PASS.
+- Mbed exact source/test run #46055268521: 3/3 PASS (source contract, ESP32 core 3.3.13 and 4.0.0). Docs-head Mbed #46055555322 still running at finalization.
+- Full docs-head #46055555331: controller protocol parity FAIL job `140697234100`; handover freshness/CI-0701 PASS; all 13 firmware targets and Android PASS; downstream simulation/update/signing/publication skipped. Previous stale-handover runs #46055268629/#46055260220 superseded.
+- Test-harness-only scope. Active v0.6 branch `2fbd2475e9f54878c316fa7cea2f228386b0e859` unchanged; P0 #177 remains OPEN. Physical relay polarity, pulse retention, electrical acceptance, 150 power cuts and 30-device/24-hour soak NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+
+
+## 2026-11-28 UTC19 — final docs-head reruns for PHX-HARDWARE PR #365
+- Source/test SHA `fcd5d7df210c8521f9c8fcc1019c8db8bdaf7eb0`; evidence docs head `6e5e126199368cbe78f9d46dd6c702c883cfa5cb`; branch `phoenix/hw-poll-boundary-pulse-matrix-20261128-utc18`.
+- Focused #46056036171 job `140698629886` PASS; five transport outcomes × four relay/LED polarity combinations = 20 cases per board; transient response-actuation mutation rejected on both.
+- Mbed #46056036039 3/3 PASS: source contract `140698947089`, core 3.3.13 `140698947145`, core 4.0.0 `140698946770`.
+- Full #46056036335 controller parity job `140698695827` FAIL; handover freshness/CI-0701 PASS; all 13 firmware targets and Android PASS; downstream simulation/update/signing/publication skipped.
+- Active v0.6 branch unchanged; P0 #177 unresolved. Physical relay polarity, pulse retention, electrical recovery, 150 power cuts and 30-device/24-hour soak NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
