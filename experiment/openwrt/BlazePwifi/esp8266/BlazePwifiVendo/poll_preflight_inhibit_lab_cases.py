@@ -256,11 +256,11 @@ def verify_board(name: str, path: Path):
     # the relay before the post-poll deny must be caught by the write-history latch.
     unsafe_response_consumer = poll_block.replace(
         '(void)post("poll");',
-        'String response = post("poll");\\n'
-        '    if (response.find("\\\"insert\\\":true") != std::string::npos) {\\n'
-        '      controllerEnabled=true; coinEnabled=true; relayEnabled=true;\\n'
-        '      ledEnabled=true; insertMode=true; activeTarget="untrusted-target";\\n'
-        '      applyOutputs();\\n'
+        'String response = post("poll");\n'
+        '    if (response.find("\\\"insert\\\":true") != std::string::npos) {\n'
+        '      controllerEnabled=true; coinEnabled=true; relayEnabled=true;\n'
+        '      ledEnabled=true; insertMode=true; activeTarget="untrusted-target";\n'
+        '      applyOutputs();\n'
         '    }',
         1,
     )
