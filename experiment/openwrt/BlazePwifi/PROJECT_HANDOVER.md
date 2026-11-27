@@ -1,3 +1,38 @@
+## PHX-HARDWARE UTC11 — poll response outcome regression
+
+**PR:** [#360](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/360) — OPEN / DRAFT / UNMERGED  
+**Branch:** `phoenix/hw-poll-response-outcome-matrix-20261127-utc11`  
+**Parent:** #355 `9f7a8ecb915cf199a82c0b4d37c56c40d722037b` → #354 `fc842342596786e072630179acfbbc4feeb2ba02`  
+**Exact source/test head before this documentation sync:** `04ac3330c0123e581bf4f195ff5f1a5089b82ffb`
+
+### Change
+
+The Hardware-owned source-extracted poll harness now runs both an empty transport-failure response and an untrusted positive response body. It records every relay/LED logical ON write after the initial energized precondition. A failure-injection mutation consumes a positive body, briefly enables outputs, then reaches the ordinary post-poll deny; the write-history latch rejects that transient enable.
+
+Changed only:
+- `poll_preflight_inhibit_lab_harness.py`
+- `poll_preflight_inhibit_lab_cases.py`
+- Narrow UTC11 handover
+
+No production sketch, shared API, CORE/QA/Master file, financial behavior, pending disposition, or COE destination changed.
+
+### Exact-head evidence
+
+- Initial PR-head focused run [#45989302533](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45989302533), job `140472769635`: **FAIL** because the newly injected mutation emitted literal `\\n` sequences into C++; compiler reported stray backslashes. This was a test-fixture implementation error, not a firmware failure.
+- Correction commit `04ac3330c0123e581bf4f195ff5f1a5089b82ffb` fixed the Python replacement newline escaping.
+- Exact source/test focused run [#45989512681](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45989512681), job `140473488721`: **PASS**. Both ESP8266 and ESP32 passed empty-body and 52-byte untrusted-positive-body cases; positive-response transient-actuation mutation rejected with exit 23 on both boards. Existing poll, output polarity, register, request-auth, EEPROM/NVS validity and ledger-preservation labs passed. Ledger prefix check: `base_bytes=1132798 appended_bytes=16341`; 7/7 append-only unit tests passed.
+- Full run [#45989512778](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45989512778), validation job `140473712696`: **FAIL before semantic integration checks** at `tests/handover_gate.sh`, because canonical `PROJECT_HANDOVER.md` had not yet been synchronized after the two source/test changes. This section and `CURRENT_STATE.md` now record the change; rerun Full at the resulting docs head. Target jobs were still running at last observation, so no aggregate target result is claimed.
+
+The focused harness explicitly prints `POLL_INTAKE_GUARD_SIMULATED_ONLY=1`, `PHYSICAL_COIN_RELAY_ACCEPTANCE=0`, and `PHYSICAL_POWER_CUT_ACCEPTANCE=0`.
+
+### Acceptance status
+
+Host failure injection = **SIMULATED**; focused exact-SHA Actions = **CI VERIFIED**; Full integration = **NOT YET VERIFIED** (prior run stopped at handover freshness); physical GPIO/relay/coin pulse and electrical recovery = **NOT TESTED**; 150 power cuts and 30-device/24-hour soak = **NOT TESTED**. **HARDWARE ACCEPTED = NO. PRODUCTION READY = NO-GO.**
+
+Keep coin/relay admission and pending disposition denied. No flash, reset, merge, signer/witness operation, migration, release tag, deployment, or customer cutover.
+
+---
+
 ## PHX-HARDWARE UTC05 — #355 exact-head CI reconciliation
 
 **PR:** [#355](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/355) — OPEN / DRAFT / UNMERGED  
