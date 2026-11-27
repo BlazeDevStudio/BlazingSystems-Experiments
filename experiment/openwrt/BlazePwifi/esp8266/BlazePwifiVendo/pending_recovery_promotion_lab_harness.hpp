@@ -208,6 +208,42 @@ int main() {
         pendingSequenceState.sequence != 9 || !LittleFS.dat ||
         persistCalls != 1 || !pendingIdentityMatches()) return 11;
 
-    std::cout << "PENDING_RECOVERY_PROMOTION_PASS scenarios=11 rename_failures=2 ambiguous_preservation=2\n";
+    // A valid canonical file plus any fallback is ambiguous: the fallback may
+    // contain a newer reservation written before the old canonical was renamed.
+    resetState();
+    LittleFS.dat = true;
+    LittleFS.fresh = true;
+    selectedPath = "/pending.dat";
+    if (loadPending() || fsReady || !pendingReady ||
+        !LittleFS.dat || !LittleFS.fresh || LittleFS.renameCalls != 0 ||
+        pendingSequenceState.sequence != 0 || !pendingIdentityEmpty()) return 12;
+
+    resetState();
+    LittleFS.dat = true;
+    LittleFS.backup = true;
+    selectedPath = "/pending.dat";
+    if (loadPending() || fsReady || !pendingReady ||
+        !LittleFS.dat || !LittleFS.backup || LittleFS.renameCalls != 0 ||
+        pendingSequenceState.sequence != 0 || !pendingIdentityEmpty()) return 13;
+
+    resetState();
+    LittleFS.fresh = true;
+    LittleFS.backup = true;
+    selectedPath = "/pending.new";
+    if (loadPending() || fsReady || !pendingReady ||
+        !LittleFS.fresh || !LittleFS.backup || LittleFS.renameCalls != 0 ||
+        pendingSequenceState.sequence != 0 || !pendingIdentityEmpty()) return 14;
+
+    resetState();
+    LittleFS.dat = true;
+    LittleFS.fresh = true;
+    LittleFS.backup = true;
+    selectedPath = "/pending.dat";
+    if (loadPending() || fsReady || !pendingReady ||
+        !LittleFS.dat || !LittleFS.fresh || !LittleFS.backup ||
+        LittleFS.renameCalls != 0 || pendingSequenceState.sequence != 0 ||
+        !pendingIdentityEmpty()) return 15;
+
+    std::cout << "PENDING_RECOVERY_PROMOTION_PASS scenarios=15 rename_failures=2 ambiguous_preservation=6\n";
     return 0;
 }

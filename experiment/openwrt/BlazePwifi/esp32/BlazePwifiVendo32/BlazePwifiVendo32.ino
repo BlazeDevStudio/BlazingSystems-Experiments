@@ -151,7 +151,19 @@ bool loadPending(){
   if(!fsReady) return false;
   BpPendingSequence r{}; bool legacy=false;
   const char *chosen=nullptr;
-  bool any=LittleFS.exists("/pending.dat") || LittleFS.exists("/pending.new") || LittleFS.exists("/pending.bak");
+  const bool hasCanonical=LittleFS.exists("/pending.dat");
+  const bool hasFresh=LittleFS.exists("/pending.new");
+  const bool hasBackup=LittleFS.exists("/pending.bak");
+  const uint8_t candidateCount=(hasCanonical?1:0)+(hasFresh?1:0)+(hasBackup?1:0);
+  const bool any=candidateCount!=0;
+  // Any coexisting candidates may represent different crash commit points.
+  // Do not prefer canonical/new/backup by filename: preserve every file and hold intake.
+  if(candidateCount > 1){
+    fsReady=false;
+    pendingReady=true;
+    Serial.println("CRITICAL: multiple pending journal candidates; preserving all files and denying intake.");
+    return false;
+  }
   if(readPendingFile("/pending.dat",r,legacy)) chosen="/pending.dat";
   else if(readPendingFile("/pending.new",r,legacy)) chosen="/pending.new";
   else if(readPendingFile("/pending.bak",r,legacy)) chosen="/pending.bak";
