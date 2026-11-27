@@ -29,3 +29,12 @@ The PR branch's `docs/handover/CHANGE_LEDGER.md` had been replaced by a 33-line 
 No ESP firmware, coin admission, storage mount, block write, power cut, finance, migration, signer, witness, COE, shared API or customer system was changed. The ledger gate verifies repository history preservation; it does not establish physical hardware acceptance.
 
 **Status:** CI regression expected RED; restored-head focused/Full validation pending. Physical acceptance NOT TESTED. HARDWARE ACCEPTED NO. PRODUCTION NO-GO.
+
+
+## Exact-head results and handover freshness follow-up
+
+- Source/workflow/ledger commit: `76026ef72abe31d66ec5c81ebfe4851da63547ca`.
+- Focused push run [#45925047254](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45925047254), job `140264299951`: PASS.
+- Focused PR run [#45925051984](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45925051984), job `140264314588`: PASS; `CHANGE_LEDGER_DELETED_LINES=0`, append-only guard PASS, mountinfo and physical-parent synthetic matrices PASS.
+- Full [#45925051986](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45925051986) validation job `140264448626` failed only at handover freshness because the canonical handover/current-state documents had not yet been updated after the workflow change. This docs-only synchronization updates those canonical checkpoints; a new Full run is required.
+- The append-only gate now prevents recurrence of the 3,388-line truncation. Physical power-cut, storage independence and hardware acceptance remain NOT TESTED.

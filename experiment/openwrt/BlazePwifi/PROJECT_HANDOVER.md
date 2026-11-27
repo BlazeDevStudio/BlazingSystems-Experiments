@@ -743,3 +743,17 @@ Member and rental code now fail closed on corrupt, noncanonical, overflowing pai
 From live development HEAD, create an isolated #31 work branch. Inspect the **existing** `tests/v060_member_receipt_failure_repro.sh`, `member.sh` paid mutation/transfer, and `tools/v060_journal_authority_native.c`; do not repeat established RED fixtures. Implement a bounded, crash-recoverable single authoritative paid-member balance+receipt journal with durable event deduplication and failure-injection for ACK-lost/partial writes. Keep #43/#34 and v0.6 migration blocked. Append verified evidence to the ledger and update the short CURRENT_STATE, not another megabyte-long root document.
 
 **Copy to new chat:** @GitHub CONTINUE `BlazingSystems/BlazingSystems-Experiments` Full BlazePwifi draft PR #30. Read `experiment/openwrt/BlazePwifi/docs/handover/CURRENT_STATE.md`; check live HEAD. P0-0710 source `e0229927` Full #38076579117 PASS. P0 #31/#32/#34/#43 open; VERSION=0.5.3, no production v0.6.0. Next #31 integrated member money+receipt durability. No Codex, no Standalone Rental edits.
+
+
+## PHX-HARDWARE UTC01 — STORCHK-0674 ledger preservation checkpoint
+
+- Current source/workflow/ledger head: `76026ef72abe31d66ec5c81ebfe4851da63547ca` on `phoenix/hardware-storage-preflight-device-separation-20261126-utc23`; DRAFT PR #356 remains unmerged.
+- The append-only guard was test-first: guard-only commit `e9e1b751b98e4e6ed5228abea64c705d02e98b9c` failed as expected on PR run [#45924871309](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45924871309), job `140263739909`, reporting 3,388 deleted historical lines.
+- The complete 1,080,830-character base ledger was restored byte-for-byte from base blob `f16d5774366cf3a4c358dd2a0c2e7ee5e945f668`; the three pre-existing STORCHK-0674 sections and a new checkpoint were appended. No history was intentionally rewritten.
+- Exact-head focused push [#45925047254](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45925047254), job `140264299951`, and focused PR [#45925051984](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45925051984), job `140264314588`: PASS. Checkout SHA matched; `CHANGE_LEDGER_DELETED_LINES=0`; `CHANGE_LEDGER_APPEND_ONLY_PASS`; STORCHK-0674 mountinfo and physical-parent synthetic matrices PASS.
+- Full run [#45925051986](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45925051986) validation job `140264448626` failed at the expected stale-handover freshness gate because PROJECT_HANDOVER/CURRENT_STATE predated the workflow change. Target jobs were still running; no aggregate Full result is claimed. This checkpoint updates both canonical documents before the next Full run.
+- Evidence remains synthetic only: `SIMULATED_ONLY=1`, `PHYSICAL_POWER_CUT_VERIFIED=0`, `CUSTOMER_INSTALL_AUTHORIZED=0`. No firmware, physical storage, block write, coin admission, financial state, shared API, COE or production behavior changed.
+
+## NEXT EXACT ACTION
+
+Verify the post-sync Full run on the new docs head; obtain independent PHX-QA review of STORCHK-0674 and PHX-MASTER refresh of the #356 assignment matrix. Keep all hardware PRs DRAFT/unmerged. Physical acceptance remains NOT TESTED; production remains NO-GO.
