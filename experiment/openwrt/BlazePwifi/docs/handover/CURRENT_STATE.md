@@ -1,3 +1,11 @@
+## PHX-HARDWARE UTC20 — GPIO16 coin-input capability guard (SCOPED CI VERIFIED; FULL BLOCKED)
+
+PR #357 remains OPEN / DRAFT / UNMERGED on `phoenix/hw-runtime-pin-config-guard-20261127-utc04`. Source/test SHA `750af995e28d7977dcac8ea4cc800f71c71d27d8` rejects ESP8266 GPIO16 as the coin-input role because the sketch calls `INPUT_PULLUP`, which the ESP8266 Arduino Core does not document for GPIO16. GPIO16 remains allowed for relay/LED output roles; default tuple 4/14/5 is unchanged. The host lab checks both role outcomes and injects removal of the guard.
+
+Focused PR run #46065708272 and docs-head run #46065796271 PASS. Mbed TLS 3.3.13/4.0.0 matrix #46065708312 PASS 3/3. Native #46065708271 FAILS at QA-owned PAY-0745 literal `clearPending(true/false)` assertion after the pending sequence test passes; no unsafe call was added. Full build #46065702850 FAILS at handover freshness because it ran on source SHA 750af995 before docs sync; 14 firmware target/platform jobs and Android PASS, downstream bundles/simulations/sign/publish skipped. Physical GPIO/electrical acceptance NOT TESTED.
+
+**NEXT EXACT ACTION:** verify focused and Full CI on the new source+handover co-commit; Master refreshes #357 in the integration matrix; QA reconciles PAY-0745. Keep coin/relay admission denied.
+
 ## PHX-HARDWARE UTC09 — final integration readback (SCOPED CI VERIFIED; FULL/QA BLOCKED)
 
 **Repository:** `BlazeDevStudio/BlazingSystems-Experiments`  

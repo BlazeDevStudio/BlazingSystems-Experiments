@@ -276,7 +276,7 @@ void configureRuntimePins(int coinPin,int relayPin,int ledPin){
   // Preload logical OFF before enabling output drivers; LOW can energize active-low relays.
   writeLogical(runRelayPin,false,runRelayActiveHigh);
   writeLogical(runLedPin,false,runLedActiveHigh);
-  // GPIO16 is rejected by validRuntimePins: ESP8266 GPIO16 has no INPUT_PULLUP mode.
+  // Keep this INPUT_PULLUP mode paired with validRuntimePins(): GPIO16 has no INPUT_PULLUP on ESP8266.
   pinMode(runCoinPin,INPUT_PULLUP); pinMode(runRelayPin,OUTPUT); pinMode(runLedPin,OUTPUT);
   writeLogical(runRelayPin,false,runRelayActiveHigh); writeLogical(runLedPin,false,runLedActiveHigh);
 }

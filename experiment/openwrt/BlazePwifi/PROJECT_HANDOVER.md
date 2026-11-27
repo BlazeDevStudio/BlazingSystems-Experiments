@@ -1,3 +1,34 @@
+## PHX-HARDWARE UTC20 — GPIO16 coin-input capability guard (SCOPED CI VERIFIED; FULL INTEGRATION BLOCKED)
+
+**Role:** PHX-HARDWARE · **Repository:** `BlazeDevStudio/BlazingSystems-Experiments` · **PR:** [#357](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/357) OPEN / DRAFT / UNMERGED  
+**Branch:** `phoenix/hw-runtime-pin-config-guard-20261127-utc04` · **Base:** #355 at `9f7a8ecb915cf199a82c0b4d37c56c40d722037b`  
+**Source/test commit:** `750af995e28d7977dcac8ea4cc800f71c71d27d8` · **Prior docs head:** `022c3100a3b04acc02960ac00b7ac2933494da75`  
+**Current source-comment + handover checkpoint:** committed together after `5025a318feaba2449c669710d06cac99cc823e5b`; exact resulting HEAD is the current PR branch ref.
+
+### Actual change
+- ESP8266 `validRuntimePins()` rejects GPIO16 only for the coin-input role because `configureRuntimePins()` uses `INPUT_PULLUP`; the ESP8266 Arduino Core documents GPIO16 as INPUT/OUTPUT/INPUT_PULLDOWN_16, not INPUT_PULLUP.
+- GPIO16 remains permitted for relay and LED output roles; default coin/LED/relay tuple 4/14/5 remains unchanged.
+- `runtime_pin_config_lab.py` asserts the source pull-up assumption, denies coin GPIO16, permits relay/LED GPIO16, and rejects a mutation removing the guard.
+- Source comment now explicitly ties the `INPUT_PULLUP` call to `validRuntimePins()` for future maintainers.
+- Official reference: https://arduino-esp8266.readthedocs.io/en/latest/reference.html
+
+### Exact evidence
+- Focused source PR run [#46065708272](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46065708272): PASS, exact-source job `140730384339`, HEAD `750af995...`.
+- Focused docs-head run [#46065796271](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46065796271): PASS, exact-source job `140730661656`, HEAD `022c3100...`.
+- ESP32 Mbed TLS matrix [#46065708312](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46065708312): PASS 3/3 — source contract `140730385175`, core 3.3.13 `140730384776`, core 4.0.0 `140730385291`; HEAD `750af995...`.
+- The focused log reports `RUNTIME_GPIO_CAPABILITY_PASS ESP8266 coin16=DENY relay16=ALLOW led16=ALLOW` and `RUNTIME_GPIO_MUTATION_REJECTED ESP8266 GPIO16-INPUT_PULLUP-guard-removed`.
+- Native synthetic run [#46065708271](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46065708271) FAILS at QA-owned `tests/v060_vendo_sequence_contract.py:20`, which requires literal `clearPending(true/false)` callsites. The pending sequence contract passed before that assertion. No unsafe clear call was added.
+- Full build [#46065702850](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46065702850) FAILS at the handover freshness gate because that run checked out source HEAD `750af995...` before the later docs sync. The log explicitly lists the two source paths newer than the then-current checkpoint `a37a55...`. All 14 firmware target/platform jobs and Android completed PASS; update-bundle and simulation/sign/publish/candidate jobs were skipped. This run did not validate the later docs head.
+
+### Status and limitations
+- GPIO capability regression: SIMULATED / CI VERIFIED.
+- Physical GPIO electrical behavior, external pull-up, coin pulse, relay polarity, brownout and power-cut acceptance: NOT TESTED.
+- P0 blocking-poll pulse-loss remains a separate unresolved release blocker; the v0.6 deny-only stack remains DRAFT and coin/relay admission stays denied.
+- No production signing, release, migration, deployment, flashing or device reset.
+- Private `BLAZE_PROJECT_REGISTRY_v11_20261027.json` remains NOT RECOVERED; no Google Drive connector is exposed in this runtime.
+
+**Next exact action:** verify the new co-committed source+handover head through focused and Full CI; Master must refresh the #357 exact-head pin in the integration matrix, and QA must reconcile PAY-0745 without adding unsafe pending-clear callsites.
+
 ## PHX-HARDWARE UTC09 — final integration readback (SCOPED CI VERIFIED; FULL/QA BLOCKED)
 
 **Repository:** `BlazeDevStudio/BlazingSystems-Experiments`  

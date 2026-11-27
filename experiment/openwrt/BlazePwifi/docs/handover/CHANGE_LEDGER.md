@@ -3868,3 +3868,16 @@ Complete the post-handover exact-head Full and Native reads. PHX-QA/PHX-CORE sti
 - **REGRESSION:** coin16 deny, relay16/LED16 allow, source pull-up assumption check, and mutation removing the guard.
 - **EVIDENCE:** official ESP8266 Arduino Core reference https://arduino-esp8266.readthedocs.io/en/latest/reference.html. Exact-head Actions pending.
 - **LIMITS:** host simulation only; physical GPIO, external pull-up, relay, coin pulse and power-cut acceptance NOT TESTED. No production admission enabled.
+
+
+## 2026-11-27 — PHX-HARDWARE GPIO16 INPUT_PULLUP capability guard — evidence update
+
+- **ID / PRIORITY:** PR-357 / P1.
+- **BRANCH:** `phoenix/hw-runtime-pin-config-guard-20261127-utc04`; parent PR #357, base #355 at `9f7a8ecb915cf199a82c0b4d37c56c40d722037b`.
+- **SOURCE/TEST SHA:** `750af995e28d7977dcac8ea4cc800f71c71d27d8`; subsequent source-comment + documentation checkpoint follows `5025a318feaba2449c669710d06cac99cc823e5b`.
+- **FILES:** ESP8266 `BlazePwifiVendo.ino`, `runtime_pin_config_lab.py`, canonical handovers, this append-only ledger and narrow handover.
+- **STATUS:** validated (scoped CI); full validation blocked by handover freshness on the earlier source SHA; Native QA assertion mismatch remains.
+- **EXACT EVIDENCE:** focused PR #46065708272 PASS / job 140730384339; docs-head #46065796271 PASS / job 140730661656; Mbed #46065708312 PASS 3/3 (140730384776, 140730385175, 140730385291); Native #46065708271 FAIL at `tests/v060_vendo_sequence_contract.py:20`; Full #46065702850 FAIL at handover freshness on SHA 750af995, with all 14 firmware target/platform jobs and Android PASS.
+- **WHY:** ESP8266 GPIO16 lacks `INPUT_PULLUP`, while the coin-input setup requires it. Only the coin role is denied; GPIO16 output roles remain accepted.
+- **LIMITS:** host/source-contract simulation only; physical GPIO/electrical acceptance NOT TESTED. P0 blocking-poll pulse loss, authenticated CORE poll/receipt contract, signer/witness, durable accounting/replay, v1→v2 migration and release acceptance remain unresolved.
+- **NEXT ACTION:** exact-head focused/Full CI on source+handover co-commit; Master refreshes #357 integration pin; QA owns PAY-0745 semantics. No production admission.
