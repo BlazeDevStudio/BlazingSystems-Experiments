@@ -1,6 +1,7 @@
 """Deterministic C++ host harness builders and mutation runners for poll denial."""
 from pathlib import Path
 import re
+import json
 import subprocess
 import tempfile
 
@@ -85,7 +86,7 @@ def make_blocking_poll_harness(
     apply_fn: str, deny_fn: str, poll_block: str, response_body: str = ""
 ) -> str:
     """Execute the extracted poll block against a deterministic HTTP wait/result."""
-    return r"""
+    template = r"""
 #include <iostream>
 #include <string>
 using String = std::string;
@@ -127,7 +128,7 @@ bool unsafeRelayDuringWait = false;
 bool unsafeAdmissionDuringWait = false;
 bool pendingEvidenceChangedDuringWait = false;
 bool unsafeOutputWrite = false;
-std::string pollResponse = "";
+std::string pollResponse = __PHX_RESPONSE_LITERAL__;
 
 void writeLogical(int pin, bool on, bool activeHigh) {
     const bool levelHigh = (on == activeHigh);
@@ -192,7 +193,9 @@ String post(const String &action) {
     inPollWait = false;
     return pollResponse;
 }
-""" + apply_fn + chr(10) + deny_fn + r"""
+"""
+    template = template.replace("__PHX_RESPONSE_LITERAL__", json.dumps(response_body))
+    return template + apply_fn + chr(10) + deny_fn + r"""
 int main() {
     for (int relayPolarity = 0; relayPolarity < 2; ++relayPolarity) {
         for (int ledPolarity = 0; ledPolarity < 2; ++ledPolarity) {
