@@ -1343,3 +1343,15 @@ PR #354 remains OPEN / DRAFT / UNMERGED. PRs #239/#254/#283 remain OPEN / DRAFT 
 - See [narrow handover](2026-11-26-hw-output-enable-active-write-guards-utc10.md).
 
 Final evidence-sync note (source/test SHA `6b4f7a873dd72663c00c4e08f23131d58e662584`; docs commit `ad46e16741e6f0fd8a81f08a3261480d010537b9`): the post-sync Full run `45887618795` proved the mandatory handover freshness gate passes, then stopped at QA-owned `tests/controllers.sh:21` for the absent `config_revision` token. Its target jobs were still finishing at last read; exact source/test target builds already passed in `45886742357`. This update is the final Hardware documentation sync for this activation; no more branch changes are planned while the new exact-head PR workflows run.
+
+## PHX-HARDWARE UTC10 — pending-journal recovery promotion guard
+
+PR #359 is OPEN / DRAFT / UNMERGED on `phoenix/hw-pending-recovery-promotion-guard-20261127-utc10`, stacked on #355 at `9f7a8ecb915cf199a82c0b4d37c56c40d722037b`. Exact source/test SHA: `bdad70fa77f51421cb7a6f01d89bd2b7ea9bdc3f`.
+
+Both board sketches now fail closed when a fallback pending journal conflicts with an existing canonical file, when fallback promotion fails, when invalid journal files exist without a valid candidate, and when initial or legacy migration persistence fails. Existing journal files are preserved; RAM state is not published before successful promotion.
+
+Focused exact-head [#45986402635](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45986402635), job `140463042542`, PASS. Source-extracted C++ harness ran 11 scenarios per board and rejected 16 mutations across ESP8266/ESP32. This is SIMULATED / CI VERIFIED only.
+
+Full [#45986402891](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45986402891) passed CI-0701 but validation stopped at handover freshness before this sync; exact post-sync Full rerun required. Active v0.6 poll-before-sample P0 #177 remains unresolved. Physical LittleFS/electrical recovery, 150 power cuts and 30-device/24-hour soak remain NOT TESTED. HARDWARE ACCEPTED NO; PRODUCTION NO-GO.
+
+See [narrow handover](2026-11-27-hw-pending-recovery-promotion-guard-utc10.md).
