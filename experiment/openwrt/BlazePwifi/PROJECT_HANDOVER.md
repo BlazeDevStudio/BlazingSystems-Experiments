@@ -1,3 +1,39 @@
+## PHX-HARDWARE UTC13 — pending-recovery C++ harness module split
+
+**PR:** [#361](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/361), OPEN / DRAFT / UNMERGED; child of [#359](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/359).  
+**Branch:** `phoenix/hw-pending-recovery-harness-module-split-20261127-utc13`  
+**Parent #359 head:** `47357aab2ff7910b38ca538a46dfa01bdbca01e8`  
+**Source/test SHA:** `13ef08db75acb5bfa609b6f0c445f35d2584a024`
+
+### Cleanup performed
+
+The 382-line `pending_recovery_promotion_lab.py` mixed Python source extraction/contract checks, mutation probes, compile orchestration, and an embedded C++17 fake-LittleFS fixture.
+
+- Extracted the C++17 fixture into adjacent `pending_recovery_promotion_lab_harness.hpp`.
+- The Python runner now loads that template and substitutes exactly one `/*__LOAD_PENDING_FUNCTION__*/` marker with the actual source-extracted `loadPending()` function.
+- Added the new header to both push and pull-request path filters in `.github/workflows/phx-hw-active-v06-poll-intake-deny.yml`.
+- The template split was checked for exact prefix/placeholder/suffix reconstruction before commit. No C++ statements, scenario bodies, expected outcomes, or firmware behavior were changed.
+
+### Exact-source verification
+
+Focused [PHX-HARDWARE Active v0.6 Poll Intake Deny run #46010669158](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46010669158), job `140545038497`: **PASS** at exact source/test SHA `13ef08db75acb5bfa609b6f0c445f35d2584a024`.
+
+Log evidence:
+- `CHANGE_LEDGER_APPEND_ONLY_PASS base_bytes=1132798 appended_bytes=18747`
+- `PENDING_RECOVERY_PROMOTION_PASS scenarios=11 rename_failures=2 ambiguous_preservation=2` on ESP8266 and ESP32.
+- `PENDING_RECOVERY_PROMOTION_LAB_PASS boards=ESP8266,ESP32 mutations_rejected=16`.
+- The workflow's other poll, remote-config, request-auth, output-polarity, EEPROM and Preferences checks also passed.
+
+Full [BlazePwifi build run #46010669130](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46010669130) started on this source SHA. Its validation job `140545112859` failed at the mandatory handover-freshness gate because the canonical handover was not yet updated after this source/workflow change. This is a pre-sync documentation failure, not a source-test failure; a post-sync Full rerun is required. Target jobs were still running when this entry was prepared; no terminal target count is claimed.
+
+### Ownership and safety
+
+No production sketch, runtime firmware, shared API, QA-owned assertion, financial state, signer/witness, migration, or COE source changed. The parent #359 recovery behavior remains deny-only. CORE owns authenticated register/poll and receipt/disposition semantics; QA owns independent semantic assertions; MASTER owns stack integration and assignment records.
+
+Physical LittleFS recovery, GPIO/relay, electrical pulse/recovery, 150 power cuts, and 30-device/24-hour soak remain **NOT TESTED**. **HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.**
+
+No rebase, retarget, merge, force-push, flash, reset, live money, production migration, signing, release tag, or deployment.
+
 ## PHX-HARDWARE UTC12 — exact controller assertion clarification — 2026-11-27T12:16Z
 
 ### Exact Full-workflow failure, distinguished from cryptographic contract

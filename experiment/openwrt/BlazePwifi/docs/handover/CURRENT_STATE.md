@@ -1,3 +1,14 @@
+## PHX-HARDWARE UTC13 — pending-recovery harness module split
+
+- PR #361 OPEN / DRAFT / UNMERGED; child of #359 at parent head `47357aab2ff7910b38ca538a46dfa01bdbca01e8`.
+- Source/test SHA `13ef08db75acb5bfa609b6f0c445f35d2584a024`: extracted the embedded C++17 fake-LittleFS harness from the 382-line Python runner into adjacent `pending_recovery_promotion_lab_harness.hpp`; the runner substitutes exactly one marker with the source-extracted `loadPending()`.
+- Workflow path filters now include the new template on push and pull-request events. No firmware behavior, shared API, QA assertion, finance, signer/witness, migration, or COE code changed.
+- Focused run [#46010669158](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46010669158), job `140545038497`: PASS; 11 scenarios per board, 16 mutations rejected, append-only ledger guard PASS.
+- Pre-sync Full [#46010669130](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46010669130), validation job `140545112859`: FAIL at handover freshness; post-sync Full required. No target count claimed yet.
+- Physical acceptance NOT TESTED; HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+
+See [narrow handover](2026-11-27-hw-pending-recovery-harness-module-split-utc13.md).
+
 ## PHX-HARDWARE UTC12 — exact controller assertion clarification — 2026-11-27T12:16Z
 
 - #359 Full [#45996785121](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45996785121) terminal FAIL: handover freshness passed, then `tests/controllers.sh` job `140498293398` failed. 15 jobs PASS, 1 validation FAIL, 13 skipped; Android and 14/14 firmware targets PASS. Mbed #45996785113 3/3 PASS; Poll #45996785105 PASS; Native #45996785114 FAIL at QA-owned PAY-0745.

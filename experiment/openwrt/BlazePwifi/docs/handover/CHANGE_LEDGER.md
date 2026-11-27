@@ -3746,3 +3746,14 @@ PR #354 remains OPEN / DRAFT / UNMERGED. PRs #239/#254/#283 remain OPEN / DRAFT 
 - **Pre-sync Full:** [#45986932765](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45986932765), validation job `140464952158`, FAIL at mandatory handover freshness because source/workflow changes were newer than this ledger. A new exact-head Full is required after this append.
 - **Native synthetic:** [#45986932774](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45986932774), job `140464842407`, FAIL at QA-owned PAY-0745 corrupt-state assertion (`v060_vendo_sequence_contract.py:18` literal `if(any) return false;` expectation). The pending-sequence shell contract passed. Do not add an unsafe or merely literal call to satisfy the assertion; request QA semantic review.
 - **Evidence classification:** SIMULATED / CI VERIFIED only. Physical LittleFS, coin pulse, relay/electrical recovery, 150 power cuts and 30-device/24-hour soak NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+
+
+## 2026-11-27 — PHX-HARDWARE UTC13 pending-recovery harness module split
+
+- PR #361 OPEN / DRAFT / UNMERGED; child of PR #359; parent head `47357aab2ff7910b38ca538a46dfa01bdbca01e8`.
+- Source/test commit: `13ef08db75acb5bfa609b6f0c445f35d2584a024`.
+- Cleanup: extracted the embedded C++17 fake-LittleFS harness from `pending_recovery_promotion_lab.py` into adjacent `pending_recovery_promotion_lab_harness.hpp`; Python runner replaces exactly one source-insertion marker. Added the header to push and pull-request path filters. C++ fixture body and scenarios unchanged.
+- Focused [#46010669158](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46010669158), job `140545038497`: PASS. Both boards: 11 recovery scenarios each; 16 unsafe mutations rejected; append-only ledger guard PASS.
+- Pre-sync Full [#46010669130](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46010669130), validation job `140545112859`: FAIL at handover freshness because this record was not yet synchronized. Post-sync Full rerun required; no terminal target count claimed here.
+- SIMULATED / CI VERIFIED only. Physical LittleFS, coin/relay/electrical, 150 power cuts and 30-device/24-hour soak NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+- No production sketch, shared API, QA assertion, finance, signer/witness, migration, COE source, flash, reset, live money, release tag, or deployment changed.
