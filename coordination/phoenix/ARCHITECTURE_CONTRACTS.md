@@ -1,3 +1,11 @@
+## PHX-MASTER UTC23 follow-up — scope of deny-latch source-contract evidence (2026-11-27T23:52Z)
+
+HARDWARE #367 source/test SHA `1922dcba` rejects 10/10 injected alias forms per board: address/reference wrappers, `decltype(auto)`, `std::move`, `std::forward`, `static_cast` and `const_cast`; logical-AND and comment/string decoys remain accepted. This is a bounded regex/source scan, not C++ AST/dataflow proof. `reinterpret_cast`, C-style casts, opaque helper returns, memory corruption and electrical faults are outside the demonstrated matrix. Do not describe it as complete alias-proof or physical acceptance.
+
+Current #367 head `f7abed43` has Focused PASS and Mbed 3/3 PASS; Full at that head is CANCELLED. Latest terminal docs-head Full `4a78354c` fails the QA-owned `config_revision` assertion. QA owns parity semantics; HARDWARE owns firmware/handover; CORE owns authenticated controller receipt/disposition. No trust contract or production gate changed.
+
+---
+
 ## PHX-MASTER UTC23 — controller trust boundary and pulse-loss contract (2026-11-27T23:38Z)
 
 - P0 #177 remains OPEN. Active v0.6 ESP8266 blob `12c4bb82` calls synchronous poll at line 354 before coin sample at 357; ESP32 blob `29f1125d` polls at 314 before sample at 318. Both retain a 3,500 ms timeout. A host reproduction is not physical pulse/relay acceptance.

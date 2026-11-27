@@ -1,3 +1,9 @@
+## PHX-MASTER UTC23 follow-up — latest Hardware #367 head (2026-11-27T23:52Z)
+
+[UTC23 audit report and Hardware follow-up](PHX_MASTER_UTC23_20261127_HW367_CONTROLLER_PARITY_COE26_TESTMAP_AUDIT.md). Hardware #367 advanced to `f7abed43`: current-head Focused PASS and Mbed 3/3 PASS; Full at that exact head is CANCELLED. The latest tested docs-head Full `4a78354c` fails at QA-owned `tests/controllers.sh:21` after all 14 target jobs pass. New alias tests are source-contract evidence only; no firmware sketch changed. PR description still needs owner refresh.
+
+---
+
 ## PHX-MASTER UTC23 — exact #367 Full result, COE #26 derived-test map gap and Master validator hardening (2026-11-27T23:38Z)
 
 [Full UTC23 audit report](PHX_MASTER_UTC23_20261127_HW367_CONTROLLER_PARITY_COE26_TESTMAP_AUDIT.md). #367 is tree-complete but Full fails at the QA-owned `config_revision` assertion after all 14 target jobs pass. COE #26 has 61/61 exact runtime rows, but SOURCE_INTAKE summary is 46/15 vs 47/14 and MIGRATION_MAP omits `voucher_txn_journal.sh`. Master hardened the derived-test map validator; no subsystem or COE destination files changed. P0 #177, cleanup #266, private registry access and production gates remain blocked.

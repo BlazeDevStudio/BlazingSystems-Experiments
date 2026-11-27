@@ -1,3 +1,12 @@
+## PHX-MASTER UTC23 follow-up — #367 current head supersedes earlier tree snapshot (2026-11-27T23:52Z)
+
+- Current #367 head `f7abed43a46f9e85976d5c2897f927609cd2f446`: 2,439 entries / 1,893 blobs / 546 trees, non-truncated; 9 changed paths, no production `.ino` changes.
+- Current-head Focused #46084613154 PASS; Mbed #46084613147 3/3 PASS; Full #46084613152 CANCELLED. The latest terminal Full is docs head `4a78354c`, run #46084256341, FAILURE at QA-owned `tests/controllers.sh:21`; CI-0701 and all 14 firmware/Android targets pass.
+- New source/test SHA `1922dcba` rejects 10/10 pointer/reference/decltype/move/forward/static/const-cast alias mutations per board. Logical-AND and comment/string decoys remain accepted. This is source-level regex coverage only; no arbitrary C++ alias analysis or physical proof.
+- PR #367 description still references `183650be` / `3f1f7424`; Hardware must update it to `1922dcba` / `4a78354c` and rerun Full on exact current head.
+
+---
+
 ## PHX-MASTER UTC23 — exact #367, COE #26 test-map and license reconciliation (2026-11-27T23:38Z)
 
 - #367 exact head `84eea3356474aeedf1f3fd6fc24dccd15984b5a9`: 2,438 entries / 1,892 blobs / 546 trees, non-truncated; 8 changed paths, zero deletions from #366 base. Focused #46079595997 and Mbed #46079596002 PASS; Full #46079596036 FAILS at `tests/controllers.sh:21` because the deny-only candidate omits `config_revision` while the QA-owned assertion still requires it. CI-0701 and all 14 target jobs pass.

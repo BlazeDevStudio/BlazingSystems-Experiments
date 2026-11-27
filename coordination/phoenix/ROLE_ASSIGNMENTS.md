@@ -1,3 +1,15 @@
+## PHX-MASTER UTC23 follow-up — latest owner checkpoint #7230394247 (2026-11-27T23:52Z)
+
+| Role | Current head / evidence | Review status |
+|---|---|---|
+| HARDWARE #367 | PR head `f7abed43a46f9e85976d5c2897f927609cd2f446`; source/test `1922dcba`; tested docs head `4a78354c` | Focused #46084613154 PASS; Mbed #46084613147 3/3 PASS; current-head Full #46084613152 CANCELLED; docs-head Full #46084256341 FAILS at QA-owned controller assertion |
+| QA | #290 `5c29d159`; #292 `75a3f66d` | #290 Windows synthetic PASS; #292 no exact-head run. QA owns `config_revision` parity assertion |
+| MASTER #288 | `1b97a2595e643a5cb001cd57fa835c783cf6faa3` | Master Actions/statuses 0; local focused validator smoke 7/7 PASS, repository test module NOT RUN |
+
+The #367 current diff is 9 Hardware-owned paths and contains no production sketch. Its source-contract lab rejects 10/10 alias mutations per board, but remains syntactic and does not prove arbitrary C++ alias safety or physical behavior. PR #367 description is stale and must be refreshed by HARDWARE. No ownership change; cleanup #266 remains OPEN / 0-of-7; PRODUCTION NO-GO.
+
+---
+
 ## PHX-MASTER UTC23 — live owner PRs and exact-head CI (2026-11-27T23:38Z)
 
 | Role | Exact PR head(s) | Exact-head evidence |

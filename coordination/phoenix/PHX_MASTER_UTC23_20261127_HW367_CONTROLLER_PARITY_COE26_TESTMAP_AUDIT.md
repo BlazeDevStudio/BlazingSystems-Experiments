@@ -98,3 +98,20 @@ Next owner actions:
 5. Registry custodian and repository administrator: restore authorized canonical v11/newer corrections and provide a non-Codex Master checkout/test path plus authorized Drive access.
 
 **PRODUCTION NO-GO.** Independent protected signing/anti-rollback witness, crash-atomic durable financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized release gates remain unverified. No merge, release, signer operation, secret provisioning, hardware flash, physical test, payment operation or financial migration occurred.
+
+
+---
+
+## PHX-MASTER UTC23 follow-up — Hardware owner checkpoint #7230394247 and current #367 review (2026-11-27T23:52Z)
+
+The prior UTC23 snapshot at #367 head `84eea335` is superseded by the new Hardware checkpoint. Current PR #367 head is `f7abed43a46f9e85976d5c2897f927609cd2f446`; source/test SHA `1922dcba792aad40e576583db43de0d066522bf6`; latest tested docs head `4a78354c985abe26e02ac9574d70b45b6cf3f113`. The current PR head adds handover/ledger documentation only; its 9 changed paths contain no production `.ino` sketch.
+
+- Current PR-head focused #46084613154: PASS. Current PR-head Mbed #46084613147: 3/3 PASS. Current PR-head Full #46084613152: CANCELLED, therefore no Full result at `f7abed43`.
+- Tested docs-head focused #46084256327: PASS; Mbed #46084256398: 3/3 PASS; Full #46084256341: FAILURE in validation job `140790134787` at `tests/controllers.sh`. CI-0701 passes and all 14 firmware/Android target jobs finish SUCCESS; downstream simulation, update-bundle, signing and publication are skipped.
+- Current recursive tree: 2,439 entries / 1,893 blobs / 546 trees; `truncated=false`.
+- Source-contract and mutation modules at blobs `08b4a4a4` and `a019bb5b` add 10/10 alias-escape rejections per board (decltype(auto), move/forward, static/const casts, ref/addressof) while accepting logical-AND and comment/string decoys. This is bounded regex/source-contract coverage, not full C++ alias analysis. `reinterpret_cast`, C-style casts and arbitrary alias mechanisms are not proven absent; the Hardware handover must keep that limitation explicit.
+- The Full failure remains QA-owned: `tests/controllers.sh:21` expects `config_revision`, while the deny-only candidate intentionally omits it. Do not restore an unauthenticated field or weaken default-deny. QA must correct assertion semantics; HARDWARE owns firmware and PR handover.
+- PR #367 description still contains older source/test and docs heads (`183650be` / `3f1f7424`) rather than the latest `1922dcba` / `4a78354c` evidence and current PR head `f7abed43`. Hardware owner should refresh the PR description and then obtain a terminal Full result at the exact current head.
+
+This follow-up supersedes only the earlier #367 head/CI snapshot in this UTC23 report. It does not change ownership, approve the PR, or authorize hardware/production acceptance.
+
