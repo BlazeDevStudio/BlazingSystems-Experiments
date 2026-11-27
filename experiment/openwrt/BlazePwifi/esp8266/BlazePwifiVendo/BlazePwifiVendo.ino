@@ -833,11 +833,14 @@ int jsonInt(const String&r,const String&k,int def){
 void writeLogical(int pin,bool on,bool activeHigh){ digitalWrite(pin,(on==activeHigh)?HIGH:LOW); }
 
 bool validInputPullupPin(int pin){
-  return (pin>=0 && pin<=5) || (pin>=12 && pin<=15);
+  // Serial.begin(115200) keeps UART0 on GPIO1/TX and GPIO3/RX. Reserve both
+  // pins for boot/programming and diagnostics; neither may be coin input.
+  return ((pin>=0 && pin<=5) || (pin>=12 && pin<=15)) && pin!=1 && pin!=3;
 }
 
 bool validOutputPin(int pin){
-  return (pin>=0 && pin<=5) || (pin>=12 && pin<=16);
+  // UART0 TX/RX remain reserved while this sketch uses the default Serial mapping.
+  return ((pin>=0 && pin<=5) || (pin>=12 && pin<=16)) && pin!=1 && pin!=3;
 }
 
 bool runtimePinsSafe(int coinPin,int relayPin,int ledPin){
