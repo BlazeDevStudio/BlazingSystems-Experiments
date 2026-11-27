@@ -12,6 +12,7 @@ import tempfile
 __all__ = [
     "compile_and_run",
     "compile_blocking_poll_and_run",
+    "compile_poll_transport_outcome_matrix",
     "expect_poll_guard_mutation_rejected",
     "remove_first_code_token",
 ]
@@ -387,3 +388,185 @@ def expect_poll_guard_mutation_rejected(
     else:
         raise AssertionError(f"{name}: {label} mutation was not rejected")
     print(f"POLL_GUARD_CONTROL_FLOW_MUTATION_REJECTED {name} {label}")
+
+
+def make_poll_transport_outcome_harness(apply_fn: str, deny_fn: str, poll_block: str) -> str:
+    """Run the extracted poll block against transport return and untrusted-body outcomes."""
+    return r"""
+#include <iostream>
+#include <string>
+using String = std::string;
+
+bool controllerEnabled = true;
+bool coinEnabled = true;
+bool relayEnabled = true;
+bool ledEnabled = true;
+bool insertMode = true;
+bool fsReady = true;
+bool pendingReady = false;
+bool runRelayActiveHigh = true;
+bool runLedActiveHigh = true;
+int runRelayPin = 4;
+int runLedPin = 5;
+bool relayLevelHigh = false;
+bool ledLevelHigh = false;
+std::string activeTarget = "target-12345678";
+int pendingPulses = 3;
+std::string pendingNonce = "pending-nonce";
+std::string pendingTarget = "pending-target";
+
+unsigned long nowMs = 2000;
+unsigned long lastPoll = 0;
+int wifiFailures = 0;
+int pollCalls = 0;
+int outcomeMode = 0;
+bool pollStarted = false;
+bool invalidPollAction = false;
+bool unsafeBeforePost = false;
+bool unsafeDuringWait = false;
+bool unsafeActiveWriteAfterPoll = false;
+bool pendingEvidenceChanged = false;
+
+void writeLogical(int pin, bool on, bool activeHigh) {
+    const bool levelHigh = (on == activeHigh);
+    if (pollStarted && on) unsafeActiveWriteAfterPoll = true;
+    if (pin == runRelayPin) relayLevelHigh = levelHigh;
+    if (pin == runLedPin) ledLevelHigh = levelHigh;
+}
+
+unsigned long millis() { return nowMs; }
+
+String post(const String &action) {
+    ++pollCalls;
+    if (action != "poll") {
+        invalidPollAction = true;
+        return "";
+    }
+
+    pollStarted = true;
+    if (relayLevelHigh == runRelayActiveHigh ||
+        ledLevelHigh == runLedActiveHigh ||
+        controllerEnabled || coinEnabled || relayEnabled ||
+        ledEnabled || insertMode) {
+        unsafeBeforePost = true;
+    }
+
+    // Mode 1 models HTTPClient.begin/connect failure before any wait.
+    if (outcomeMode != 1) {
+        const unsigned long waitStarted = nowMs;
+        for (int elapsed = 0; elapsed < 3500; ++elapsed) {
+            nowMs = waitStarted + static_cast<unsigned long>(elapsed + 1);
+            if (relayLevelHigh == runRelayActiveHigh ||
+                ledLevelHigh == runLedActiveHigh ||
+                controllerEnabled || coinEnabled || relayEnabled ||
+                ledEnabled || insertMode) {
+                unsafeDuringWait = true;
+            }
+            if (pendingPulses != 3 || pendingNonce != "pending-nonce" ||
+                pendingTarget != "pending-target") {
+                pendingEvidenceChanged = true;
+            }
+        }
+    }
+
+    switch (outcomeMode) {
+        case 0: return "{\"ok\":true,\"insert\":true,\"target_nonce\":\"untrusted\"}";
+        case 1: return "";
+        case 2: return "";
+        case 3: return "{malformed";
+        case 4: return "{\"ok\":false,\"error\":\"upstream\"}";
+        default: return "";
+    }
+}
+""" + apply_fn + "\n" + deny_fn + r"""
+int main() {
+    for (int outcome = 0; outcome < 5; ++outcome) {
+        for (int relayPolarity = 0; relayPolarity < 2; ++relayPolarity) {
+            for (int ledPolarity = 0; ledPolarity < 2; ++ledPolarity) {
+                controllerEnabled = true;
+                coinEnabled = true;
+                relayEnabled = true;
+                ledEnabled = true;
+                insertMode = true;
+                fsReady = true;
+                pendingReady = false;
+                runRelayActiveHigh = (relayPolarity != 0);
+                runLedActiveHigh = (ledPolarity != 0);
+                activeTarget = "target-12345678";
+                pendingPulses = 3;
+                pendingNonce = "pending-nonce";
+                pendingTarget = "pending-target";
+                nowMs = 2000;
+                lastPoll = 0;
+                wifiFailures = 0;
+                pollCalls = 0;
+                outcomeMode = outcome;
+                pollStarted = false;
+                invalidPollAction = false;
+                unsafeBeforePost = false;
+                unsafeDuringWait = false;
+                unsafeActiveWriteAfterPoll = false;
+                pendingEvidenceChanged = false;
+
+                applyOutputs();
+                if (relayLevelHigh != runRelayActiveHigh ||
+                    ledLevelHigh != runLedActiveHigh) return 10;
+                const unsigned long started = millis();
+""" + poll_block + r"""
+                const unsigned long expectedWait = (outcome == 1) ? 0UL : 3500UL;
+                if (pollCalls != 1 || invalidPollAction) return 13;
+                if (millis() - started != expectedWait || lastPoll != millis()) return 14;
+                if (unsafeBeforePost || unsafeDuringWait || unsafeActiveWriteAfterPoll) return 20;
+                if (pendingEvidenceChanged || pendingPulses != 3 ||
+                    pendingNonce != "pending-nonce" ||
+                    pendingTarget != "pending-target") return 21;
+                if (controllerEnabled || coinEnabled || relayEnabled ||
+                    ledEnabled || insertMode || !activeTarget.empty()) return 22;
+                if (relayLevelHigh == runRelayActiveHigh ||
+                    ledLevelHigh == runLedActiveHigh) return 23;
+            }
+        }
+    }
+    std::cout << "POLL_TRANSPORT_OUTCOME_PASS outcomes=5 polarity_combinations=4 cases=20 immediate_begin_failure=1 timeout_empty=1 malformed=1 server_error=1 untrusted_insert=1" << std::endl;
+    return 0;
+}
+"""
+
+
+def compile_poll_transport_outcome_matrix(
+    apply_fn: str,
+    deny_fn: str,
+    poll_block: str,
+    expect_success: bool,
+    label: str,
+):
+    with tempfile.TemporaryDirectory(prefix="phx-poll-outcomes-") as temp:
+        source = Path(temp) / "poll_outcomes.cpp"
+        binary = Path(temp) / "poll_outcomes"
+        source.write_text(
+            make_poll_transport_outcome_harness(apply_fn, deny_fn, poll_block),
+            encoding="utf-8",
+        )
+        compile_result = subprocess.run(
+            [ "g++", "-std=c++17", "-Wall", "-Wextra", "-Werror",
+              str(source), "-o", str(binary) ],
+            text=True, capture_output=True,
+        )
+        if compile_result.returncode != 0:
+            raise AssertionError(
+                f"{label}: C++ harness compile failed:\n"
+                f"{compile_result.stdout}\n{compile_result.stderr}"
+            )
+        run_result = subprocess.run([str(binary)], text=True, capture_output=True)
+        if expect_success and run_result.returncode != 0:
+            raise AssertionError(
+                f"{label}: outcome harness failed ({run_result.returncode}): "
+                f"{run_result.stdout}{run_result.stderr}"
+            )
+        if not expect_success and run_result.returncode == 0:
+            raise AssertionError(f"{label}: transient response-actuation mutation survived")
+        if run_result.stdout.strip():
+            print(run_result.stdout.strip())
+        if not expect_success:
+            print(f"{label}: mutation rejected (exit {run_result.returncode})")
+        return run_result
