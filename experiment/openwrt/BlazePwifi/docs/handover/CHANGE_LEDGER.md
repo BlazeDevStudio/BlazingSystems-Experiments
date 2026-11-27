@@ -3720,3 +3720,10 @@ PR #354 remains OPEN / DRAFT / UNMERGED. PRs #239/#254/#283 remain OPEN / DRAFT 
 - Test-first RED: [focused run #45930205543](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45930205543), job `140280823970`. The intentionally unsafe stub failed five negative tests: empty base, middle edit, prepended record, truncation and unseparated append. The exact-base fetch/checkout checks passed.
 - Fix: byte-prefix append-only validation is implemented in `tools/handover_ledger_append_only_guard.py`; the same seven-case synthetic failure-injection suite remains required by the #355 focused workflow. Exact-source GREEN is triggered by this commit and will be recorded in the next handover update.
 - Scope is preservation/tooling only; no firmware, payment authority, shared API, QA/CORE-owned source or COE destination changed. Physical acceptance NOT TESTED; HARDWARE ACCEPTED NO; PRODUCTION NO-GO.
+
+## 2026-11-27 UTC02 — exact-source GREEN and handover-freshness follow-up
+
+- Source/test commit `444c9a68a0da5a1e2c89839afee9705bf37219f2`; test-first RED `47eeb04cde42ac72b5e68ab1dc4c23cc91aadc6d`.
+- Focused [#45930312768](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45930312768), job `140281160286`: PASS. Exact checkout SHA matched; append-only guard reported `base_bytes=1132798 appended_bytes=13736`; seven tests PASS; all existing Hardware focused labs PASS.
+- Full [#45930312762](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45930312762): CI-0701 PASS; validation failed only at the mandatory handover freshness gate because the newly added guard/test paths were not yet recorded in PROJECT_HANDOVER. This UTC02 synchronization records them; rerun Full at the resulting docs head.
+- No firmware, financial state, shared API, QA/CORE source or COE destination changed. Physical acceptance NOT TESTED; HARDWARE ACCEPTED NO; PRODUCTION NO-GO.

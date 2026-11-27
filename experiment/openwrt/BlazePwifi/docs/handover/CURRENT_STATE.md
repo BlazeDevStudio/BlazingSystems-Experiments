@@ -1,3 +1,15 @@
+## PHX-HARDWARE UTC02 — current exact state: #355 ledger preservation
+
+- PR #355 remains OPEN / DRAFT / UNMERGED on `phoenix/hw-poll-preflight-lab-modules-20261127-utc18`, stacked on #354 at `fc842342596786e072630179acfbbc4feeb2ba02`.
+- Current source/test HEAD: `444c9a68a0da5a1e2c89839afee9705bf37219f2`. The preceding test-only RED commit was `47eeb04cde42ac72b5e68ab1dc4c23cc91aadc6d`.
+- Restored `docs/handover/CHANGE_LEDGER.md` from the exact #354 base blob `b950f7be47f79d71e6cb8b721801c1bae128df45`, then appended the complete former #355 ledger (94 lines / 59 nonblank) and this task's evidence. The focused CI byte-prefix guard confirms the full base is preserved.
+- Added `tools/handover_ledger_append_only_guard.py` and seven synthetic failure-injection tests. The focused workflow now fetches the exact #354 base branch, asserts its expected SHA, compares the base ledger byte-for-byte as a prefix, and tests truncation, middle edits, prepends, empty base and malformed append boundaries.
+- Expected RED #45930205543/job 140280823970: five negative tests failed against the unsafe stub. Exact-source GREEN #45930312768/job 140281160286: PASS at `444c9a68a0da5a1e2c89839afee9705bf37219f2`; append-only byte guard, all seven unit tests and all six existing Hardware focused labs passed.
+- Full #45930312762: CI-0701 PASS; validation failed only at mandatory handover freshness because this helper/test change had not yet been added to PROJECT_HANDOVER at that checkout. Fresh Full is required after this documentation synchronization.
+- No firmware or payment behavior changed in this task. #177 remains unresolved; #266 remains OPEN / 0-of-7; #31/#32/#34/#43 remain OPEN. Physical power cuts, 30-device soak, electrical recovery and actual scratch-media acceptance remain NOT TESTED. HARDWARE ACCEPTED NO; PRODUCTION NO-GO.
+
+---
+
 ## PHX-HARDWARE UTC22 — current exact state
 
 - PR #355 remains OPEN / DRAFT / UNMERGED on phoenix/hw-poll-preflight-lab-modules-20261127-utc18.

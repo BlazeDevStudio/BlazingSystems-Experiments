@@ -1,3 +1,27 @@
+## PHX-HARDWARE UTC02 — #355 historical ledger preservation repair
+
+**PR #355:** OPEN / DRAFT / UNMERGED · **Branch:** `phoenix/hw-poll-preflight-lab-modules-20261127-utc18` · **Base #354:** `fc842342596786e072630179acfbbc4feeb2ba02`  
+**Source/test commit:** `444c9a68a0da5a1e2c89839afee9705bf37219f2`
+
+A read-only exact-base comparison found that the #355 branch had replaced the 3,621-record base change ledger with a 94-line excerpt. The former #355 entries were not discarded: the exact base ledger was restored byte-for-byte, and all 94 lines from the former #355 head were appended after it. A byte-prefix guard now prevents a later cleanup from silently deleting or editing inherited history.
+
+### Test-first and exact evidence
+
+- Expected RED: [#45930205543](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45930205543), job `140280823970`, test-only head `47eeb04cde42ac72b5e68ab1dc4c23cc91aadc6d`. Five of seven negative tests failed against the intentionally unsafe stub.
+- Correction: `444c9a68a0da5a1e2c89839afee9705bf37219f2`. The base ledger blob `b950f7be47f79d71e6cb8b721801c1bae128df45` is preserved as the exact prefix; the former #355 ledger's 94 lines / 59 nonblank entries are retained.
+- Focused exact-source [#45930312768](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45930312768), job `140281160286`: **PASS**. Exact checkout SHA verified; `CHANGE_LEDGER_APPEND_ONLY_PASS base_bytes=1132798 appended_bytes=13736`; seven guard tests PASS; existing poll, remote-config deny, request-auth, output-latch, EEPROM integrity and config-persistence labs PASS.
+- Full [#45930312762](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45930312762): CI-0701 PASS, but validation failed at the mandatory handover freshness gate because this helper/test had not yet been recorded in PROJECT_HANDOVER. Rerun Full after this sync; do not claim aggregate integration success.
+
+### Scope and limits
+
+This task changes only Hardware-owned ledger-preservation tooling, the Hardware branch's historical ledger and handover records. It does not change ESP sketches, coin/relay admission, payment authority, CORE/QA-owned code, shared APIs or COE destination files. The existing #355 firmware work remains deny-only where required. No device was flashed/reset, no physical block device was mounted or written, and no live money or customer data was used.
+
+**Classification:** synthetic failure injection = SIMULATED; focused hosted checks = CI VERIFIED; physical acceptance = NOT TESTED; HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+
+See [narrow UTC02 handover](docs/handover/2026-11-27-hw-ledger-preservation-append-only-utc02.md).
+
+---
+
 ## PHX-HARDWARE UTC22 — ESP32 NVS interrupted-save validity latch
 
 **Observed UTC:** 2026-11-26T22:50Z · **PR #355:** OPEN / DRAFT / UNMERGED · **Role:** PHX-HARDWARE  
