@@ -1,3 +1,60 @@
+
+
+## PHX-HARDWARE UTC13 — post-sync exact-head terminal CI
+
+**PR #361 documentation head at this verification:** `98b23b749fd8cc1c11b82c526543947aed2b6d21`  
+**Source/test SHA:** `13ef08db75acb5bfa609b6f0c445f35d2584a024`  
+**State:** OPEN / DRAFT / UNMERGED; child of #359.
+
+### Exact-head focused and target matrix
+
+- Focused [#46011260202](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46011260202), job `140547052760`: **PASS**. `CHANGE_LEDGER_APPEND_ONLY_PASS base_bytes=1132798 appended_bytes=20192`; source extractor PASS; both ESP8266 and ESP32 report 11 recovery scenarios, two rename-failure cases, ambiguity preservation; 16/16 unsafe source mutations rejected.
+- ESP32 Mbed TLS [#46011260194](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46011260194): **3/3 PASS** — source contract job `140547053507`, Arduino core 3.3.13 job `140547053897`, Arduino core 4.0.0 job `140547054123`.
+- Full [#46011260334](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46011260334): **FAIL** at validation job `140547173691`, after the handover gate and CI-0701 passed. The failing step is `tests/controllers.sh` line 21, `grep -q 'config_revision'`. This is a legacy token-presence parity assertion, not a cryptographic response-signature verification. Both current #359 sketch blobs lack `config_revision`; they retain the generic `sig` token. The main CGI still lacks the approved controller `response_sig` producer for register/poll/coin. Hardware did not add a decoy token or weaken deny-default.
+- All 13 firmware target jobs passed (ESP8266, ESP32, x86_64, Ruijie, and the nine listed Orange Pi target variants); Android passed. Production import/signing, update bundle, simulation, candidate and publication jobs were skipped after validation failed.
+
+### Inherited parent blocker
+
+Parent #359 exact-head Full [#45997708895](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45997708895) fails at the same controller parity gate. Parent Native [#45997708911](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45997708911) fails at QA-owned PAY-0745 corrupt-state assertion. PR #361 did not change the firmware sketches or Native assertions; no Native run was triggered for this test-only module split.
+
+The post-sync Full result is not a Full PASS. CORE owns the authenticated controller contract; QA owns semantic assertion changes.
+
+**Scope:** test harness organization only; no production sketch/runtime, shared API, QA-owned test, finance, signer/witness, migration, or COE source changed. Physical LittleFS, coin/relay/electrical, 150 power cuts and 30-device/24-hour soak remain NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.## PHX-HARDWARE UTC13 — pending-recovery C++ harness module split
+
+**PR:** [#361](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/361), OPEN / DRAFT / UNMERGED; child of [#359](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/359).  
+**Branch:** `phoenix/hw-pending-recovery-harness-module-split-20261127-utc13`  
+**Parent #359 head:** `47357aab2ff7910b38ca538a46dfa01bdbca01e8`  
+**Source/test SHA:** `13ef08db75acb5bfa609b6f0c445f35d2584a024`
+
+### Cleanup performed
+
+The 382-line `pending_recovery_promotion_lab.py` mixed Python source extraction/contract checks, mutation probes, compile orchestration, and an embedded C++17 fake-LittleFS fixture.
+
+- Extracted the C++17 fixture into adjacent `pending_recovery_promotion_lab_harness.hpp`.
+- The Python runner now loads that template and substitutes exactly one `/*__LOAD_PENDING_FUNCTION__*/` marker with the actual source-extracted `loadPending()` function.
+- Added the new header to both push and pull-request path filters in `.github/workflows/phx-hw-active-v06-poll-intake-deny.yml`.
+- The template split was checked for exact prefix/placeholder/suffix reconstruction before commit. No C++ statements, scenario bodies, expected outcomes, or firmware behavior were changed.
+
+### Exact-source verification
+
+Focused [PHX-HARDWARE Active v0.6 Poll Intake Deny run #46010669158](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46010669158), job `140545038497`: **PASS** at exact source/test SHA `13ef08db75acb5bfa609b6f0c445f35d2584a024`.
+
+Log evidence:
+- `CHANGE_LEDGER_APPEND_ONLY_PASS base_bytes=1132798 appended_bytes=18747`
+- `PENDING_RECOVERY_PROMOTION_PASS scenarios=11 rename_failures=2 ambiguous_preservation=2` on ESP8266 and ESP32.
+- `PENDING_RECOVERY_PROMOTION_LAB_PASS boards=ESP8266,ESP32 mutations_rejected=16`.
+- The workflow's other poll, remote-config, request-auth, output-polarity, EEPROM and Preferences checks also passed.
+
+Full [BlazePwifi build run #46010669130](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46010669130) started on this source SHA. Its validation job `140545112859` failed at the mandatory handover-freshness gate because the canonical handover was not yet updated after this source/workflow change. This is a pre-sync documentation failure, not a source-test failure; a post-sync Full rerun is required. Target jobs were still running when this entry was prepared; no terminal target count is claimed.
+
+### Ownership and safety
+
+No production sketch, runtime firmware, shared API, QA-owned assertion, financial state, signer/witness, migration, or COE source changed. The parent #359 recovery behavior remains deny-only. CORE owns authenticated register/poll and receipt/disposition semantics; QA owns independent semantic assertions; MASTER owns stack integration and assignment records.
+
+Physical LittleFS recovery, GPIO/relay, electrical pulse/recovery, 150 power cuts, and 30-device/24-hour soak remain **NOT TESTED**. **HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.**
+
+No rebase, retarget, merge, force-push, flash, reset, live money, production migration, signing, release tag, or deployment.
+
 ## PHX-HARDWARE UTC12 — exact controller assertion clarification — 2026-11-27T12:16Z
 
 ### Exact Full-workflow failure, distinguished from cryptographic contract
@@ -1456,3 +1513,55 @@ PR #354 remains OPEN / DRAFT / UNMERGED. PRs #239/#254/#283 remain OPEN / DRAFT 
 - **Evidence:** SIMULATED / CI VERIFIED only. Physical LittleFS, electrical, 150 power cuts and 30-device/24-hour soak remain NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
 - **Narrow handover:** [2026-11-27-hw-pending-recovery-promotion-guard-utc10.md](docs/handover/2026-11-27-hw-pending-recovery-promotion-guard-utc10.md).
 - **Next exact action:** rerun Full on the post-sync documentation HEAD, then request independent QA review. Keep #359 DRAFT and unmerged.
+
+
+---
+
+## PHX-HARDWARE UTC14 — pending-recovery host String ownership regression
+
+**PR:** [#361](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/361), OPEN / DRAFT / UNMERGED; child of #359 at `47357aab2ff7910b38ca538a46dfa01bdbca01e8`.  
+**Branch:** `phoenix/hw-pending-recovery-harness-module-split-20261127-utc13`  
+**Source/test SHA:** `4a85070a1f6a1caa417570a91dcdf355ff072fcc`  
+**Scope:** Hardware-owned host-only C++ fake-LittleFS harness; no production firmware or shared interface changed.
+
+### Defect and correction
+
+The source-extracted `loadPending()` creates a stack-local `BpPendingSequence r{}` and then assigns `pendingNonce=String(r.nonce)` and `pendingTarget=String(r.target)`. The host fixture's fake Arduino `String` previously stored the incoming `const char *` without copying it. That borrowed pointer outlived the stack-local `r`, so the host harness did not model Arduino `String` ownership and could read dangling storage after `loadPending()` returned.
+
+The fixture now owns a `std::string` copy and exposes `c_str()` / `length()` for assertions. The existing 11 scenarios now verify that the recovered nonce/target survive return for canonical, `pending.new`, and `pending.bak` success paths; ambiguous candidates, rename failures, invalid-only journals, and empty-journal paths leave identity empty; legacy-migration failure retains the recovered identity while the journal remains fail-closed. No scenario count or production behavior changed.
+
+### Exact source/test evidence at `4a85070a1f6a1caa417570a91dcdf355ff072fcc`
+
+- Focused [run #46016953274](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46016953274), job `140566402392`: **PASS**.
+- ESP32 Mbed TLS [run #46016953049](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46016953049): source-contract job `140566402516` PASS; Arduino core 3.3.13 job `140566402198` PASS; core 4.0.0 job `140566402334` was still in progress at this checkpoint.
+- Pre-sync Full [run #46016953164](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46016953164): validation job `140566586511` failed at the mandatory handover freshness gate because this source commit had not yet been documented. CI-0701 job `140566403456` passed; target jobs were still running at this checkpoint, so no terminal target count is claimed. A post-sync exact-head Full rerun is required.
+
+### Boundaries
+
+No ESP8266/ESP32 sketch, shared API, QA-owned assertion, financial state, signer/witness, migration, COE destination, or release workflow changed. Parent #359's deny-only recovery behavior is unchanged. CORE retains authenticated register/poll and receipt/disposition contract ownership; QA retains independent semantic assertion ownership; MASTER retains global stack and release authority.
+
+**Classification:** SIMULATED / CI VERIFIED only. Physical LittleFS, electrical/coin/relay acceptance, 150 power cuts, and 30-device/24-hour soak remain NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+
+
+## PHX-HARDWARE UTC14 — append-only ledger restoration correction
+
+The first docs-sync commit `f1a4e36010572b59ce5576724dd18af480087e60` did not preserve the large `CHANGE_LEDGER.md`: the repository file-content response was empty for that oversized blob, and the commit temporarily replaced it with a 1,375-character append. The focused workflow caught this before merge at [#46017446457](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46017446457), job `140568087908` (`CHANGE_LEDGER_APPEND_ONLY_FAIL`, base 1,132,798 bytes vs candidate 1,377 bytes).
+
+The complete ledger was recovered by exact blob SHA `19778170a05b3a71194ee29b23176ac398f28a29` from parent source/test commit `4a85070a1f6a1caa417570a91dcdf355ff072fcc`. Its text starts with the full base ledger from #354 at fc842342596786e072630179acfbbc4feeb2ba02 (blob `b950f7be47f79d71e6cb8b721801c1bae128df45`); prior #359 and #361 entries remain intact. A correction entry is appended to the recovered ledger. Exact byte-prefix verification is pending the new focused run.
+
+The actual host-fixture correction at `4a85070a1f6a1caa417570a91dcdf355ff072fcc` remains unchanged. Focused source run #46016953274 PASS; Mbed run #46016953049 3/3 PASS. Pre-sync Full #46016953164 terminally failed at handover freshness (13 succeeded, 6 skipped, 9 cancelled, 1 validation failure); no Full PASS is claimed. Physical acceptance NOT TESTED; HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+
+
+## PHX-HARDWARE UTC14 — terminal docs-head CI and append-only restoration proof
+
+**Docs/evidence head tested:** `8b687a0407d8b53e8ae7213c7db05c7d89778501`  
+**Source/test SHA:** `4a85070a1f6a1caa417570a91dcdf355ff072fcc`  
+**PR #361:** OPEN / DRAFT / UNMERGED; child of #359 at `47357aab2ff7910b38ca538a46dfa01bdbca01e8`.
+
+- Focused [#46017755525](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46017755525), job `140569149552`: **PASS**. Exact append-only proof: `CHANGE_LEDGER_APPEND_ONLY_PASS base_bytes=1132798 appended_bytes=24007`. Both ESP8266 and ESP32 source-extracted pending recovery harnesses report 11 scenarios, two rename-failure cases and ambiguous-candidate preservation. The host fake `String` now owns the nonce/target copy; identity assertions run after `loadPending()` returns. All emitted guard/source-mutation probes in the focused job passed.
+- ESP32 Mbed TLS [#46017755424](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46017755424): **3/3 PASS** — source contract job `140569702266`, Arduino core 3.3.13 job `140569702224`, Arduino core 4.0.0 job `140569702049`.
+- Full [#46017755412](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46017755412): **FAIL** at QA-owned Controller protocol parity, validation job `140569371672`, `tests/controllers.sh:21`, which requires the literal `config_revision` token in both sketches. CI-0701 job `140569287228` PASS; all 13 firmware target jobs and Android PASS; 13 downstream production/import/update/simulation/publication jobs SKIPPED. This is the existing token-presence assertion, not cryptographic response verification. No decoy token was added.
+- The earlier docs sync `f1a4e36010572b59ce5576724dd18af480087e60` was rejected by the append-only guard because the oversized ledger file-content response was empty. The full original ledger was restored by exact blob read and the focused run above now proves the complete 1,132,798-byte base prefix is preserved with 24,007 appended bytes. The intermediate failure [#46017446457](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46017446457) remains transparently recorded; no merge occurred.
+- Parent #359 Native [#45997708911](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45997708911) remains failed at QA-owned PAY-0745. No Native run was triggered for this test-harness-only increment.
+
+**Scope:** host-test fixture only; no production sketch, shared API, QA-owned test, finance, signer/witness, migration, COE source, flash, reset, release or deployment changed. Physical LittleFS/electrical acceptance, 150 power cuts and 30-device/24-hour soak remain NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.

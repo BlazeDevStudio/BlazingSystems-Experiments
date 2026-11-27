@@ -3746,3 +3746,44 @@ PR #354 remains OPEN / DRAFT / UNMERGED. PRs #239/#254/#283 remain OPEN / DRAFT 
 - **Pre-sync Full:** [#45986932765](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45986932765), validation job `140464952158`, FAIL at mandatory handover freshness because source/workflow changes were newer than this ledger. A new exact-head Full is required after this append.
 - **Native synthetic:** [#45986932774](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45986932774), job `140464842407`, FAIL at QA-owned PAY-0745 corrupt-state assertion (`v060_vendo_sequence_contract.py:18` literal `if(any) return false;` expectation). The pending-sequence shell contract passed. Do not add an unsafe or merely literal call to satisfy the assertion; request QA semantic review.
 - **Evidence classification:** SIMULATED / CI VERIFIED only. Physical LittleFS, coin pulse, relay/electrical recovery, 150 power cuts and 30-device/24-hour soak NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+
+
+## 2026-11-27 — PHX-HARDWARE UTC13 pending-recovery harness module split
+
+- PR #361 OPEN / DRAFT / UNMERGED; child of PR #359; parent head `47357aab2ff7910b38ca538a46dfa01bdbca01e8`.
+- Source/test commit: `13ef08db75acb5bfa609b6f0c445f35d2584a024`.
+- Cleanup: extracted the embedded C++17 fake-LittleFS harness from `pending_recovery_promotion_lab.py` into adjacent `pending_recovery_promotion_lab_harness.hpp`; Python runner replaces exactly one source-insertion marker. Added the header to push and pull-request path filters. C++ fixture body and scenarios unchanged.
+- Focused [#46010669158](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46010669158), job `140545038497`: PASS. Both boards: 11 recovery scenarios each; 16 unsafe mutations rejected; append-only ledger guard PASS.
+- Pre-sync Full [#46010669130](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46010669130), validation job `140545112859`: FAIL at handover freshness because this record was not yet synchronized. Post-sync Full rerun required; no terminal target count claimed here.
+- SIMULATED / CI VERIFIED only. Physical LittleFS, coin/relay/electrical, 150 power cuts and 30-device/24-hour soak NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+- No production sketch, shared API, QA assertion, finance, signer/witness, migration, COE source, flash, reset, live money, release tag, or deployment changed.
+
+## 2026-11-27 — PHX-HARDWARE UTC13 post-sync terminal evidence for PR #361
+
+- Documentation head: `98b23b749fd8cc1c11b82c526543947aed2b6d21`; source/test SHA: `13ef08db75acb5bfa609b6f0c445f35d2584a024`.
+- Focused [#46011260202](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46011260202), job `140547052760`: PASS; append-only guard PASS; 11 recovery scenarios per board; 16 unsafe mutations rejected.
+- Mbed [#46011260194](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46011260194): 3/3 PASS (source contract, Arduino core 3.3.13 and 4.0.0).
+- Post-sync Full [#46011260334](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46011260334): FAIL at validation job `140547173691`, `tests/controllers.sh:21`, missing `config_revision` token. Handover freshness and CI-0701 pass; all 13 firmware target jobs and Android pass; downstream production/signing/simulation/publication jobs skipped.
+- The failing assertion is token presence, not cryptographic signature verification. Current main CGI still lacks the approved controller `response_sig` producer for register/poll/coin. No decoy token or positive response consumer was added.
+- Parent #359 Native [#45997708911](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45997708911) remains FAIL at QA-owned PAY-0745; no Native run was triggered on #361.
+- SIMULATED / CI VERIFIED only. Physical LittleFS, GPIO/relay/electrical, 150 power cuts and 30-device/24-hour soak NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+
+## 2026-11-27 — PHX-HARDWARE UTC14 ledger restoration and CI correction
+
+- The first documentation-sync commit `f1a4e36010572b59ce5576724dd18af480087e60` accidentally replaced this large ledger with a 1,375-character partial response because the file-content endpoint returned an empty body for the oversized file. The exact-head focused workflow caught this before merge: [#46017446457](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46017446457), job `140568087908`, **FAIL** — `CHANGE_LEDGER_APPEND_ONLY_FAIL`, base 1,132,798 bytes, candidate 1,377 bytes.
+- Recovered the complete parent ledger from blob `19778170a05b3a71194ee29b23176ac398f28a29` at source/test commit `4a85070a1f6a1caa417570a91dcdf355ff072fcc`. The recovered text begins with the exact base ledger blob `b950f7be47f79d71e6cb8b721801c1bae128df45` from #354 at fc842342596786e072630179acfbbc4feeb2ba02; all prior #359/#361 history is retained. The new candidate appends this correction after the recovered content; the next exact-head focused run must confirm the byte-level guard.
+- The source/test change remains `4a85070a1f6a1caa417570a91dcdf355ff072fcc`: the host fake Arduino `String` now owns a `std::string` copy of the stack-local nonce/target fields; existing 11 scenarios assert identity retention on successful recovery and no identity publication on ambiguous/failed paths.
+- Source/test focused [#46016953274](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46016953274), job `140566402392`: PASS. Mbed [#46016953049](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46016953049): 3/3 PASS (source contract, Arduino core 3.3.13 and 4.0.0).
+- Pre-sync Full [#46016953164](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46016953164): terminal FAILURE at the mandatory handover freshness gate; 13 jobs succeeded, 6 skipped, 9 cancelled, and 1 validation job failed. No Full PASS or complete target matrix is claimed.
+- No firmware sketch, shared API, QA-owned test, financial state, signer/witness, migration, COE destination, or release operation changed. Physical acceptance NOT TESTED; HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+
+
+## 2026-11-27 — PHX-HARDWARE UTC14 terminal docs-head CI and ledger restoration proof
+
+- PR #361 docs/evidence head tested: `8b687a0407d8b53e8ae7213c7db05c7d89778501`; source/test SHA: `4a85070a1f6a1caa417570a91dcdf355ff072fcc`; parent #359 `47357aab2ff7910b38ca538a46dfa01bdbca01e8`.
+- Exact focused [#46017755525](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46017755525), job 140569149552: PASS; append-only guard `base_bytes=1132798 appended_bytes=24007`; 11 pending-recovery scenarios per board; rename-failure and ambiguous-preservation cases passed; emitted mutation probes passed.
+- Exact Mbed [#46017755424](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46017755424): 3/3 PASS (source contract, core 3.3.13 and core 4.0.0).
+- Exact Full [#46017755412](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46017755412): FAIL at `tests/controllers.sh:21` (`config_revision` token parity) in validation job 140569371672; CI-0701 PASS; 13/13 firmware target jobs and Android PASS; 13 downstream jobs SKIPPED.
+- The first docs sync commit `f1a4e360` was caught by focused guard #46017446457 after the oversized ledger read returned empty content. The full ledger was restored from original blob `19778170a05b3a71194ee29b23176ac398f28a29`; it begins with the complete #354 base blob `b950f7be47f79d71e6cb8b721801c1bae128df45`. The terminal focused run now confirms byte-level prefix preservation and append-only growth.
+- Parent #359 Native #45997708911 remains FAIL at QA-owned PAY-0745. This test-only increment did not alter that contract.
+- SIMULATED / CI VERIFIED only; physical acceptance NOT TESTED; HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
