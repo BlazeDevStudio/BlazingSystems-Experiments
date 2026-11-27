@@ -1,3 +1,26 @@
+## PHX-MASTER UTC16 — exact role PR and CI heads
+
+No ownership changed. Master owns coordination/phoenix/ only. CORE, RENTAL, PISONET, HARDWARE, QA and RELEASE source branches remain owner-reserved.
+
+| Role / PR | Exact current head | Exact-head CI / disposition |
+|---|---|---|
+| MASTER #288 | 081a79a58127db90f5c649926187b238ba959cab (pre-update) | No exact-head runs or combined statuses. |
+| CORE #252 | c82705f2de865c89ab733b10efa84f26f56a5cc4 | Build #42698139210 PASS, scoped only. |
+| RENTAL #328 | 10fc200b6dbf470a95e679d3acc58aff4ab2a67f | API #45622918364, auth/installer #45622918551 and APK identity #45622918340 PASS; shared build #45622918468 FAIL. |
+| PISONET #255 | d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | Windows synthetic #42462978704 PASS; native COM acceptance NOT TESTED. |
+| HARDWARE #361 | 8a1999ccdcab02445ef93c153316e519d9476210 | Poll #46018576706 PASS; Mbed TLS #46018576254 PASS 3/3; Full #46018576372 FAIL at Controller protocol parity. |
+| HARDWARE #362 | eeddfc37d24d20ebc14641dfe3ffa247bbbc1ebd | Focused push #46029346165 and PR #46029353181 PASS; Mbed TLS #46029353094 PASS 3/3; Full #46029353015 FAIL at tests/controllers.sh:21 config_revision; Native #46029353001 FAIL at QA-owned PAY-0745 literal assertion. |
+| QA #290 / #292 | 5c29d15994cee1279058f1eca12f2a3180704292 / 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | #290 Windows synthetic #43633486963 PASS without native COM lab; #292 no exact-head run. |
+| RELEASE #291 / #242 | bf339a76964a1abe2412fac45392fe06a8e66418 / 36c0d0bb3e58786359555b307bb784f720f023ce | No exact-head PR-triggered workflow runs. |
+
+HARDWARE #362 is stacked on #361 at 8a1999cc, whose base is #359 at 47357aab. #362's firmware/test commit is a45b2491; harness assertion correction 2768bf7; workflow sync 7536b656; final docs head eeddfc37. Its focused C++ recovery lab reports 15 scenarios per board, six ambiguous-preservation cases and 18/18 unsafe mutations rejected. These are source/host-lab CI results only.
+
+Full #362 passes ESP8266, ESP32, Android and all 13 firmware target jobs but fails QA-owned Controller protocol parity; downstream update, simulation, signing and publishing jobs skip. Native #362 fails PAY-0745's literal assertion while retaining an explicit fail-closed source block. QA must reconcile assertion semantics; no decoy token or guard weakening is permitted.
+
+CORE remains reserved to its separate owner. No Master source ownership, cleanup checkbox, subsystem branch or automation was changed.
+
+---
+
 ## PHX-MASTER UTC15 — exact role PR and CI heads
 
 No ownership changed. CORE, RENTAL, PISONET, HARDWARE, QA and RELEASE source branches remain owner-reserved. Master owns coordination/phoenix/ only.

@@ -1,3 +1,15 @@
+## PHX-MASTER UTC16 — live exact-head checkpoint (2026-11-27T16:36:51Z)
+
+- [UTC16 exact-head, PR #362, P0 and COE #26 provenance audit](PHX_MASTER_UTC16_20261127_HW362_EXACT_TREE_PROVENANCE_AND_ROLE_CI_RECONCILIATION.md).
+- PR #288 pre-update HEAD 081a79a58127db90f5c649926187b238ba959cab; OPEN / DRAFT / UNMERGED. No Master exact-head workflow runs/statuses.
+- New owner delta: HARDWARE PR #362 at eeddfc37, stacked on #361; focused and Mbed CI pass, Full and Native remain blocked by QA-owned assertions.
+- COE #26 remains FROZEN at b382d233; exact tree, route, test, license and intake/map comparisons remain materially incomplete. No staging or destination write.
+- P0 #177 remains OPEN; active v0.6 still polls synchronously before the first coin sample on both boards.
+- Cleanup #266 remains OPEN / 0-of-7. Canonical private registry v11/newer corrections and AGENTS-linked cloud policy files remain NOT_RECOVERED / NOT_READ.
+- PRODUCTION NO-GO.
+
+---
+
 ## PHX-MASTER UTC15 — live checkpoint (2026-11-27T15:36:54Z)
 
 - [Full exact-head, P0 poll-order, owner CI, and COE #26 provenance audit](PHX_MASTER_UTC15_20261127_LIVE_HEAD_CI_P0_AND_COE26_PROVENANCE_RECHECK.md).

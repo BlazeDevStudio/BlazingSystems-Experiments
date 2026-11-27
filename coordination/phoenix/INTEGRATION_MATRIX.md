@@ -1,3 +1,45 @@
+## PHX-MASTER UTC16 — exact #362 candidate and COE #26 source/destination matrix
+
+**Refs:** source candidate HARDWARE PR #362 at eeddfc37d24d20ebc14641dfe3ffa247bbbc1ebd; COE integration PR #26 at b382d233ff06c8791b1028bed3c617cc7b670d12. Both recursive trees were non-truncated.
+
+- #362 source tree: 2,428 entries / 1,882 blobs.
+- SOURCE_INTAKE pinned source 6d4c9b487af4d768c4d7627654d119417fcc6e00: 2,391 entries / 1,845 blobs.
+- COE #26 destination: 286 entries / 207 blobs.
+
+The following route comparison applies the manifest's path-prefix substitution only. It is not a copy plan or authorization.
+
+| Route | Source blobs | Destination blobs | Exact | Divergent | Missing | Destination-only |
+|---|---:|---:|---:|---:|---:|---:|
+| CORE OpenWrt library | 20 | 20 | 14 | 6 | 0 | 0 |
+| CORE Vendo CGI | 1 | 1 | 0 | 1 | 0 | 0 |
+| RENTAL Android | 983 | 8 | 0 | 0 | 983 | 8 |
+| RENTAL standalone server | 12 | 4 | 0 | 1 | 11 | 3 |
+| PISONET SoftTimer | 44 | 47 | 16 | 9 | 19 | 22 |
+| HARDWARE ESP32 | 3 | 1 | 0 | 1 | 2 | 0 |
+| HARDWARE ESP8266 | 3 | 1 | 0 | 1 | 2 | 0 |
+| QA PisoWiFi tests | 149 | 19 | 2 | 2 | 145 | 15 |
+| RELEASE workflow reimplementation | 1 | 1 | 0 | 1 | 0 | 0 |
+
+The QA test inventory includes README, fixture and vendor entries, not only executable tests.
+
+### Hardware candidate drift
+
+At #362 head, ESP8266 sketch blob 7527dbff41b7f21bdc3d3ed9ee3db1c0d21eb07b and ESP32 sketch blob a673e323e1c160cbfe03949d13a9e01b47386596 differ from COE #26 destination blobs c8be98f72596681e36a3ad1f8939bf8046c96887 and 3cc7ec54b476943dc04a8d1af5e2df5fe054e422.
+
+The #362 pending-recovery lab blob 05e65ff1d78fcd347d039fd06b13cb34b02aa98c, harness blob e460fee5d4935ebeb8707a2941a35868d4f5dc4c and firmware_source_extract.py dependency blob 22f86bd5e0b462c125b55110356641bf1d759767 have no route-derived destination counterparts at #26. Hardware/tests contains only test_firmware_hardening.sh.
+
+### Pinned intake and test-map integrity
+
+SOURCE_INTAKE.json blob 1b9018ff944f7f673934d0fc2a97e0a0090d3f5f contains 61 runtime rows; actual statuses are 46 byte_identical / 15 derived, but summary says 47 / 14. Intake derived_tests has 15 entries; MIGRATION_MAP.md blob b54fc15d83bc2269de03db8aadd0e76259fd13d9 has 14 test rows. tests/voucher_txn_journal.sh is missing from the map. The map's run_focus.sh and member_txn_journal.sh hashes disagree with both intake and actual destination blobs. The intake pins source 6d4c9b48 and destination branch feature/pisowifi-cleanup-stabilization; live PR #26 uses integration/ecosystem-nonproprietary-candidate-20261111 at b382d233.
+
+### License / NOTICE
+
+Pinned source has nine LICENSE/NOTICE paths; destination has four. Four mapped counterparts are exact. Five source artifacts have no exact destination counterpart: repository-root NOTICE.md, BlazeRentalLauncher/LICENSE, jsqr vendor LICENSE, UI qrcode LICENSE and UI Tabler LICENSE. This is provenance evidence, not legal approval.
+
+All five #26 candidate workflows are CANCELLED (#43096752563, #43096752800, #43096752557, #43096752609, #43096752632); combined destination statuses are empty. Keep #26 FROZEN. No migration staging, copy, move, overwrite, rebase or destination write.
+
+---
+
 ## PHX-MASTER UTC15 — exact COE #26 migration provenance recheck
 
 - Source intake blob 1b9018ff944f7f673934d0fc2a97e0a0090d3f5f pins source 6d4c9b48 and destination branch feature/pisowifi-cleanup-stabilization; live PR #26 is integration/ecosystem-nonproprietary-candidate-20261111@b382d233. These pins disagree.

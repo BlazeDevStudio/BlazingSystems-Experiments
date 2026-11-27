@@ -1,3 +1,28 @@
+## PHX-MASTER UTC16 — current blockers and exact next actions
+
+**Disposition:** coordination-only audit; PR #288 OPEN / DRAFT / UNMERGED; COE #26 FROZEN; cleanup #266 OPEN / 0-of-7; P0 #177 OPEN; PRODUCTION NO-GO.
+
+### Current blockers
+1. HARDWARE #362 focused and Mbed CI pass, but Full fails Controller protocol parity and Native fails QA-owned PAY-0745 literal semantics. QA must reconcile both against the approved fail-closed contract.
+2. Active v0.6 still performs synchronous poll before the first coin sample on ESP8266 and ESP32 with a 3,500 ms timeout. HARDWARE owns firmware; CORE/HARDWARE own poll/receipt/disposition agreement; QA owns independent regression verification.
+3. COE #26 has mismatched source/destination pins, divergent firmware and test blobs, missing source test imports, stale test-map hashes, incomplete license/NOTICE counterparts and five cancelled workflows. No staging is safe.
+4. Canonical private Drive registry v11/newer corrections remain NOT_RECOVERED; no Google Drive connector is exposed. Older registry snapshots were not substituted.
+5. AGENTS-linked cloud artifact policy and storage handover could not be fetched from the legacy repository; NOT READ / BLOCKED.
+6. Master Python suite and verify_coordination.py NOT RUN; no authenticated local checkout or Master exact-head CI is available.
+7. Independent protected signing/anti-rollback witness, crash-atomic financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized release gates remain unverified.
+
+### Next exact actions
+- Registry custodian: restore authorized canonical v11 and newer corrections without publishing private IDs/content.
+- Repository admin: restore AGENTS-linked policy/handover docs and provide a non-Codex local checkout or dedicated Master CI.
+- QA: reconcile #362 Controller protocol parity and PAY-0745 assertions semantically; do not add decoy fields or weaken source guards.
+- CORE: publish authenticated poll/receipt/disposition contract. HARDWARE owns firmware changes. QA owns independent source-linked regression.
+- COE integration owner: reconcile exact source pin, live destination branch, tests, firmware and all license/NOTICE counterparts before any staging proposal.
+- Role owners: update cleanup #266 only after their own cleanup evidence is complete. Master inventory remains incomplete.
+
+Master remains coordination-only. No subsystem source, route manifest, COE destination, payment state, hardware or automation was changed.
+
+---
+
 ## PHX-MASTER UTC15 — release gate and exact blockers
 
 **Disposition:** PR #288 OPEN / DRAFT / UNMERGED; COE #26 FROZEN; cleanup #266 OPEN / 0-of-7; P0 #177 OPEN; **PRODUCTION NO-GO**.
