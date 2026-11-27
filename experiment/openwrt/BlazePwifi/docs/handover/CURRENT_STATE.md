@@ -1,3 +1,19 @@
+## PHX-HARDWARE UTC12 — sibling #359/#360 handover reconciliation (2026-11-27T12:02:29Z)
+
+**Role:** PHX-HARDWARE · **State:** sibling handover reconciliation, documentation-only.
+
+Master UTC11 assigned reconciliation of #359/#360's two shared handover paths and a post-sync #359 Full rerun. Both branches are siblings on #355 `9f7a8ecb915cf199a82c0b4d37c56c40d722037b`; only `PROJECT_HANDOVER.md` and `docs/handover/CURRENT_STATE.md` overlap. Source/test paths are disjoint.
+
+| PR | Pre-sync head | Source/test SHA | Focused / Poll | Mbed TLS | Full | Native |
+|---|---|---|---|---|---|---|
+| #359 pending-journal promotion guard | `250facfabc96147b779c9998348cd665e7a621b7` | `bdad70fa77f51421cb7a6f01d89bd2b7ea9bdc3f` | #45986402635 PASS / #45986932616 PASS | #45986932989 3/3 PASS | #45986932765 FAIL: stale handover freshness | #45986932774 FAIL: QA-owned PAY-0745 literal corrupt-state assertion |
+| #360 poll response outcome matrix | `73610a977bd91a389acedd5a62412da973562ee9` | `04ac3330c0123e581bf4f195ff5f1a5089b82ffb` | #45989512681 PASS / #45990550066 PASS | #45990550109 3/3 PASS | #45990550104 FAIL: Controller protocol parity / missing poll-signature check | NOT RUN in Master UTC11 matrix |
+
+#359's Full failure was specifically `handover_gate.sh`: source/workflow changes were newer than CHANGE_LEDGER. Its Native failure is a QA semantic assertion; do not add a literal token solely to satisfy the check. #360's Full handover gate passed, then its controller parity assertion failed. All 14 firmware target/platform jobs and Android passed on both Full runs; downstream production/signing/publication/simulation gates were skipped.
+
+This sync changes only these two canonical documentation files on both sibling branches; it does not modify source/test code, CHANGE_LEDGER, shared APIs, finance, migration, signer, witness, or COE. No rebase, retarget, cherry-pick, merge, or combined candidate is created.
+
+**Next:** rerun #359 Full at its post-sync head; review the new exact-head jobs before claiming success. QA reviews PAY-0745 and response-outcome semantics; CORE publishes authenticated poll and event-bound receipt/disposition contract. Active v0.6 P0 #177 remains unresolved. Host evidence is SIMULATED / CI VERIFIED only; physical acceptance NOT TESTED; HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
 ## PHX-HARDWARE UTC11 — poll response outcome regression
 
 **PR #360:** OPEN / DRAFT / UNMERGED · **Branch:** `phoenix/hw-poll-response-outcome-matrix-20261127-utc11`  
