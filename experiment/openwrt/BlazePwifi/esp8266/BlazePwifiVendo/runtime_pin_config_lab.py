@@ -52,6 +52,9 @@ def assert_source_contract(board: str, source: str) -> tuple[str, str]:
     if board == "ESP8266":
         require("coinPin>16" in valid_code and "relayPin>16" in valid_code and "ledPin>16" in valid_code,
                 "ESP8266: GPIO range must remain 0..16")
+        strap_guard = "coinPin==0||coinPin==2||coinPin==15||relayPin==0||relayPin==2||relayPin==15||ledPin==0||ledPin==2||ledPin==15"
+        require(strap_guard in valid_code,
+                "ESP8266: ROM boot-strap GPIO0/GPIO2/GPIO15 must not be assigned to runtime roles")
         coin_max, output_max = 16, 16
         defaults = ("cfg.coinPin=4;", "cfg.insertLedPin=14;", "cfg.relayPin=5;")
     else:
@@ -112,6 +115,9 @@ def harness(parse_fn: str, valid_fn: str, board: str) -> str:
     if (validRuntimePins(4,14,14)) return 13;
     if (validRuntimePins(6,5,14) || validRuntimePins(4,11,14) || validRuntimePins(4,5,10)) return 14;
     if (validRuntimePins(-1,5,14) || validRuntimePins(4,17,14) || validRuntimePins(4,5,17)) return 15;
+    if (validRuntimePins(0,5,14) || validRuntimePins(2,5,14) || validRuntimePins(15,5,14)) return 17;
+    if (validRuntimePins(4,0,14) || validRuntimePins(4,2,14) || validRuntimePins(4,15,14)) return 18;
+    if (validRuntimePins(4,5,0) || validRuntimePins(4,5,2) || validRuntimePins(4,5,15)) return 19;
 """
     else:
         cases = r"""
@@ -204,6 +210,12 @@ def verify_board(board: str, path: Path) -> None:
     )
     require(flash_mutation != valid_fn, f"{board}: flash-pin mutation anchor missing")
     expect_rejected(parse_fn, valid_fn, board, "flash-pin-guard-removed", flash_mutation)
+
+    if board == "ESP8266":
+        strap_guard = "if(coinPin==0||coinPin==2||coinPin==15||relayPin==0||relayPin==2||relayPin==15||ledPin==0||ledPin==2||ledPin==15) return false;"
+        strap_mutation = valid_fn.replace(strap_guard, "", 1)
+        require(strap_mutation != valid_fn, "ESP8266: boot-strap mutation anchor missing")
+        expect_rejected(parse_fn, valid_fn, board, "boot-strap-guard-removed", strap_mutation)
 
     digit_mutation = parse_fn.replace("if(*cursor<'0'||*cursor>'9') return false;", "if(false) return false;", 1)
     require(digit_mutation != parse_fn, f"{board}: digit-parser mutation anchor missing")
