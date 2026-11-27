@@ -39,3 +39,10 @@ Only `experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/runtime_pin_config_l
 ## UTC06 addendum — decimal overflow failure injection
 
 The same Hardware-owned lab now checks that a rejected overflowing decimal string leaves the caller's output value unchanged. It also removes the parser's overflow guard as a negative mutation and requires the ASan/UBSan host harness to reject that unsafe parser on both ESP8266 and ESP32. This is SIMULATED / CI VERIFIED only; no firmware source or physical hardware behavior changed. The combined source+handover commit is the new exact-head evidence point; see PR #357 and the current branch HEAD for its SHA and Actions runs.
+
+
+## UTC06 follow-up — overflow mutation fixture correction
+
+The first mutation at `a775ccf4` failed to compile because removing the overflow guard made parameter `maximum` unused under `-Werror`; this was a harness-construction failure, not a firmware failure. The mutation now retains a harmless `maximum` reference while disabling the guard, and the positive harness asserts rejected overflow leaves the output value unchanged. A new focused run is required before claiming the overflow mutation passes.
+
+Full [#45955085639](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45955085639) failed at QA-owned Controller protocol parity; this is independent of the GPIO lab. Physical GPIO/relay/coin acceptance remains NOT TESTED.

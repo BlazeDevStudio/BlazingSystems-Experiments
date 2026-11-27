@@ -210,7 +210,7 @@ def verify_board(board: str, path: Path) -> None:
     compile_and_run(harness(digit_mutation, valid_fn, board), False, f"{board} nonnumeric-parser mutation")
 
     overflow_guard = "if(parsed>maximum/10 || (parsed==maximum/10 && digit>maximum%10)) return false;"
-    overflow_mutation = parse_fn.replace(overflow_guard, "", 1)
+    overflow_mutation = parse_fn.replace(overflow_guard, "if(false && maximum<0) return false;", 1)
     require(overflow_mutation != parse_fn, f"{board}: decimal-overflow mutation anchor missing")
     compile_and_run(harness(overflow_mutation, valid_fn, board), False, f"{board} decimal-overflow mutation")
     print(f"RUNTIME_GPIO_MUTATION_REJECTED {board} decimal-overflow-guard-removed")

@@ -1,3 +1,13 @@
+## PHX-HARDWARE UTC06 follow-up — sanitizer overflow-mutation fixture correction
+
+The first overflow-guard mutation attempt at `a775ccf4e1ef4bb385fe7de4c297bd0048cfaff1` did **not** reach runtime: removing the guard also made the extracted C++ parameter `maximum` unused, and the harness correctly stopped at `-Werror=unused-parameter`. This was a test-fixture compile failure, not a firmware defect and not valid overflow-mutation evidence.
+
+The mutation now replaces the guard with `if(false && maximum<0) return false;`, preserving the parameter reference while disabling the protection. The positive harness also checks that rejected overflow leaves the output argument unchanged. The next focused run must demonstrate compile success followed by expected runtime rejection of the unsafe mutation on both boards.
+
+The exact-head Full run [#45955085639](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45955085639) reached Controller protocol parity and failed there under QA-owned assertions; that is separate from this GPIO lab. Target jobs were still running at the last read. No physical acceptance is implied.
+
+---
+
 ## PHX-HARDWARE UTC06 — GPIO save-handler and decimal-overflow fail-closed tests (PR #357)
 
 **Branch:** `phoenix/hw-runtime-pin-config-guard-20261127-utc04`  

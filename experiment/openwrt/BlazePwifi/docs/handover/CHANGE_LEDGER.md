@@ -3755,3 +3755,11 @@ PR #354 remains OPEN / DRAFT / UNMERGED. PRs #239/#254/#283 remain OPEN / DRAFT 
 - This is a host-only regression test. No firmware sketch, coin/relay behavior, shared API, financial code, QA-owned test or COE file changed.
 - The combined source+handover commit is the exact-head evidence point; focused and Full Actions were triggered by the source+documentation commit and are recorded in PR #357 after terminal completion.
 - SIMULATED / CI VERIFIED only; physical GPIO/relay/coin/power acceptance NOT TESTED; HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+
+
+## 2026-11-27 — PHX-HARDWARE overflow mutation fixture correction (UTC06)
+
+- The first parser-overflow mutation at `a775ccf4` failed compilation because deleting the guard made `maximum` unused under `-Werror`; this was a test-fixture failure, not a firmware defect.
+- Corrected the mutation to retain a harmless `maximum` reference while disabling the guard; added a positive check that rejected overflow leaves the output value unchanged.
+- Focused rerun is required for valid mutation evidence. Full #45955085639 separately failed QA-owned Controller protocol parity; its target jobs were not yet terminal at last read.
+- No firmware/runtime behavior changed. Physical acceptance NOT TESTED; HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
