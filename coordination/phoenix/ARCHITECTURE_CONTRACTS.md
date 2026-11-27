@@ -1,3 +1,17 @@
+## PHX-MASTER UTC05 — pending disposition is a semantic contract, not a callsite grep (2026-11-27T05Z)
+
+The current #355/#357 deny-only candidate must not be modified to satisfy a test that merely requires literal `clearPending(true)` and `clearPending(false)` callsites. The #357 Native run #45939854159 logs `Vendo pending sequence contract passed`, then fails at `v060_vendo_sequence_contract.py:20` on that string-presence assertion. A syntactic clear call can erase unresolved evidence without proving authority or durability.
+
+**Required acceptance semantics:**
+1. Missing, unsigned, malformed, stale, replayed or otherwise untrusted poll responses leave coin admission denied and preserve pending evidence.
+2. A positive disposition requires a canonical CORE-owned authenticated receipt bound to the device/event/sequence and the approved epoch/nonce identity; no unsigned remote field may enable admission.
+3. A specific pending event may be cleared only after its authenticated disposition is accepted, the durable state transition is committed, and exact readback/sequence reconciliation succeeds. Any write, readback, crash or ambiguity failure preserves the deny hold and unresolved evidence.
+4. QA verifies state transitions, replay/idempotency and failure recovery against the same exact source SHA; it must not infer correctness from the presence of a function-call string.
+
+**Ownership:** CORE defines the producer/receipt/disposition schema and golden vectors; HARDWARE owns the firmware consumer and local intake protection; QA owns independent semantic regressions; MASTER owns this cross-role contract. This clarification does not approve a positive poll path or change firmware. **PRODUCTION NO-GO.**
+
+---
+
 ## PHX-MASTER UTC04 — cross-role ledger and coin-intake contracts (2026-11-27T04Z)
 
 ### Canonical ledger preservation — invariant retained

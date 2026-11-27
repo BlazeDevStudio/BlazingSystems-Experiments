@@ -1,3 +1,21 @@
+## PHX-MASTER UTC05 — exact-head Hardware and COE integration matrix (2026-11-27T05Z)
+
+| Evidence | Exact source | Exact run / destination | Result |
+|---|---|---|---|
+| Active v0.6 ESP8266 | branch `blazepwifi-v0.6.0-audit-foundation@2fbd2475`; blob `12c4bb82` | `post("poll")` line 354; first coin sample line 357; timeout 3,500 ms | P0 order remains |
+| Active v0.6 ESP32 | same branch; blob `29f1125d` | `post("poll")` line 314; first coin sample line 318; timeout 3,500 ms | P0 order remains |
+| Hardware #355 | docs head `0adb541a`; source/test `444c9a68` | Poll #45930541259 / Mbed #45930541401 | PASS / PASS |
+| Hardware #355 | same head | Full #45930541357 / Native #45930541359 | FAIL / FAIL; QA-owned active-clear assertion |
+| Hardware #356 | docs head `0ea32d31`; source/test `414048cd` | Preflight #45940999149 / Native #45940999113 / Mbed #45940999085 / Full #45940999134 | PASS / PASS / PASS / SUCCESS |
+| Hardware #357 | head `94cbb9d2`, base #355 `0adb541a` | Full #45939854153 / Native #45939854159 | FAIL / FAIL; Full Controller protocol parity; Native `v060_vendo_sequence_contract.py:20` requires `clearPending(true/false)` |
+| COE #26 | destination head `b382d233`, base main `a6513ab4` | #43096752609, #43096752632, #43096752800, #43096752563, #43096752557 | 5 QUEUED; zero jobs/check-runs |
+
+The #357 Native log records `Vendo pending sequence contract passed` before the Python callsite assertion fails. Treat this as an implementation-specific QA assertion mismatch. Do not add a pending-clear call merely to turn the test green; CORE/QA must define and test the durable authenticated disposition transition. #355 PR body is stale (it still names `51bd2145` / `68416f69`); #356 PR body must include the newer Full result at `0ea32d31`.
+
+COE #26's current description says the licensing/privacy conflict is “resolved & removed”; the last exact path audit still found missing source-side NOTICE/LICENSE counterparts (including root NOTICE and Tabler/Launcher/vendor notices). That claim remains unverified pending owner/legal path reconciliation. No migration staging, copy, move, overwrite or cherry-pick is authorized.
+
+---
+
 ## PHX-MASTER UTC04 — exact-head CI and migration matrix (2026-11-27T04Z)
 
 | Evidence | Exact source | Exact destination / run | Result |

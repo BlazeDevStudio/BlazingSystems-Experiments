@@ -1,3 +1,15 @@
+## PHX-MASTER UTC05 — #357 pending-disposition test mismatch, active v0.6 pulse order and COE #26 (2026-11-27T05Z)
+
+- [UTC05 full audit](./PHX_MASTER_UTC05_20261127_HW357_PENDING_DISPOSITION_COE26_EXACT_HEAD_AUDIT.md).
+- Live refs: Experiments main `6be5d19b`; development `aad3aade`; active v0.6 `2fbd2475`; Master `f426d567`; COE main `a6513ab4`; COE #26 `b382d233`.
+- New Hardware #357 is `94cbb9d2`, stacked on #355 `0adb541a`. Full #45939854153 fails at Controller protocol parity; Native #45939854159 fails because `v060_vendo_sequence_contract.py:20` requires literal `clearPending(true/false)`. The preceding Vendo pending-sequence shell contract passes. All 14 target/platform jobs pass; this remains a QA contract/test mismatch, not proof of GPIO acceptance.
+- #355 Full/Native #45930541357/#45930541359 remain FAIL; its PR body still cites older #355 head/source refs. #356 exact docs-head `0ea32d31` Full #45940999134, preflight #45940999149, Native #45940999113 and Mbed #45940999085 all PASS; simulated/CI only.
+- Active v0.6 still calls synchronous poll before coin sampling: ESP8266 blob `12c4bb82`, lines 354→357; ESP32 blob `29f1125d`, lines 314→318; both set a 3,500 ms timeout. P0 #177 remains OPEN.
+- COE #26 FROZEN at `b382d233`: five workflows QUEUED, zero jobs/check-runs. Manifest remains 11 routes / DRAFT_REVIEW_ONLY / PHX-MASTER target null. No staging, copying or route promotion.
+- Cleanup #266 OPEN / 0-of-7. Private Drive v11/newer registry corrections NOT_RECOVERED. Master Actions zero runs/statuses; Master Python suite NOT RUN. PRODUCTION NO-GO.
+
+---
+
 ## PHX-MASTER UTC04 — #355 ledger restored, #356 exact-head Full PASS, P0 poll and COE #26 (2026-11-27T04Z)
 
 - [UTC04 full audit](./PHX_MASTER_UTC04_20261127_HW355_LEDGER_RESTORED_HW356_FULL_CI_COE26_PROVENANCE_AUDIT.md).

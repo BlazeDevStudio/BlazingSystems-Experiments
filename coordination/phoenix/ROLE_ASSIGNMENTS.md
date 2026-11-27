@@ -1,3 +1,21 @@
+## PHX-MASTER UTC05 — live role heads and exact CI (2026-11-27T05Z)
+
+| Owner | Live PR head(s) | Exact-head evidence | Boundary / next owner action |
+|---|---|---|---|
+| PHX-CORE | #252 `c82705f2` | Build #42698139210 SUCCESS; scoped only | CORE retains authenticated register/poll and receipt/disposition authority; no Master source edits. |
+| PHX-RENTAL | #328 `10fc200b` | API21/23 #45622918364, auth/installer #45622918551, APK identity #45622918340 SUCCESS; shared build #45622918468 FAILURE | RENTAL owns shared-build/handover correction. |
+| PHX-PISONET | #255 `d01fd164` | Windows synthetic #42462978704 SUCCESS | Native COM acceptance NOT TESTED. |
+| PHX-HARDWARE | #355 `0adb541a`; source/test `444c9a68` | Poll #45930541259 and Mbed #45930541401 SUCCESS; Full #45930541357 and Native #45930541359 FAILURE | PR body still cites stale `51bd2145` / `68416f69`; Hardware refreshes its own body. CORE/QA reconcile pending-disposition semantics; no unsafe clear calls. |
+| PHX-HARDWARE | #356 docs `0ea32d31`; source/test `414048cd` | Preflight #45940999149, Native #45940999113, Mbed #45940999085 and Full #45940999134 SUCCESS | CI VERIFIED / SIMULATED only; physical storage and power-cut acceptance NOT TESTED. Add the latest Full result to the owner handover. |
+| PHX-HARDWARE | #357 `94cbb9d2`, stacked on #355 `0adb541a` | Full #45939854153 FAILURE at Controller protocol parity; Native #45939854159 FAILURE at `v060_vendo_sequence_contract.py:20` requiring literal `clearPending(true/false)`. All 14 target/platform jobs, including ESP32 and ESP8266, SUCCESS. | QA owns the semantic assertion; Hardware owns GPIO validation. Do not add unsafe clear calls to satisfy callsite presence. |
+| PHX-QA | #290 `5c29d159`; #292 `75a3f66d` | #290 Windows synthetic #43633486963 SUCCESS; #292 no exact-head run | #292 is based on old Master `b1ca02e2`, not current `f426d567`; QA revalidates against current Master before acceptance. |
+| PHX-RELEASE | #242 `36c0d0bb`; #291 `bf339a76` | No exact-head workflow runs returned | RELEASE owns its signing/publisher gates and must refresh exact-head evidence. |
+| COE RELEASE | #35 `bc57ba8e` | Case #45897198239 SUCCESS; Sandbox #45897198204 and shared Hardware #45897198326 FAILURE | COE RELEASE owns ULA/sandbox and shared Hardware corrections; PR body also needs exact-head reconciliation. |
+| COE CORE | #45 `9d76a134` | Overlay #44295049727 and case #44295049903 SUCCESS | Synthetic contract vectors only; no financial acceptance. |
+| COE INTERCON | #49 `aeb8ff11` | Stage 5.1 #44646341873 and case #44646341992 SUCCESS; shared Hardware #44646341922 FAILURE | Separate LAB candidate; not adopted as canonical Phoenix financial authority. |
+| COE integration | #26 `b382d233` | Five workflows QUEUED; zero jobs/check-runs | FROZEN; no staging or migration. |
+
+The enabled separate automation currently visible as **Blaze Hourly Production Development** declares PHX-HARDWARE ownership. No separate task with the exact title “Blaze Production Continuation” was returned by the automation inventory. CORE remains owner-reserved and untouched; PHX-MASTER did not edit any subsystem source branch.
 ## PHX-MASTER UTC04 — live role heads and exact CI (2026-11-27T04Z)
 
 | Owner | Live PR head(s) | Exact-head evidence | Boundary / next owner action |

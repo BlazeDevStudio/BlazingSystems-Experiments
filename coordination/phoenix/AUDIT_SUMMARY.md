@@ -1,3 +1,20 @@
+## PHX-MASTER UTC05 — decision and blockers (2026-11-27T05Z)
+
+**PR #288 OPEN / DRAFT / UNMERGED. COE #26 FROZEN. Cleanup #266 OPEN / 0-of-7. PRODUCTION NO-GO.**
+
+- **P0 #177 OPEN:** active v0.6 exact branch `2fbd2475` still performs synchronous poll before first coin sample on ESP8266 (354→357) and ESP32 (314→318), with a 3,500 ms timeout. Physical coin/relay acceptance NOT TESTED.
+- **#355:** ledger-prefix repair remains separately evidenced; Poll/Mbed PASS, Full/Native FAIL at QA-owned pending-clear assertion. PR body is stale and still cites older docs/source heads.
+- **#356:** current docs head `0ea32d31` has exact-head preflight, Native, Mbed and Full PASS; Full #45940999134 is CI VERIFIED / SIMULATED, not physical storage or power-cut acceptance.
+- **#357:** new Hardware GPIO-role child at `94cbb9d2`, based on #355 `0adb541a`; Full #45939854153 fails Controller protocol parity; Native #45939854159 fails the literal clearPending assertion after the Vendo pending-sequence shell contract passes. All 14 target/platform jobs pass. CORE/QA must reconcile semantics; Hardware retains implementation ownership.
+- **Role CI:** CORE #252 scoped build PASS; RENTAL #328 focused API/auth/APK PASS but shared build FAIL; PISONET #255 Windows synthetic PASS; QA #290 synthetic PASS/#292 no exact-head run; RELEASE #242/#291 no exact-head runs. COE #35 case PASS but sandbox/shared Hardware FAIL; #45 overlay/case PASS; #49 Stage 5.1/case PASS but shared Hardware FAIL.
+- **COE #26 FROZEN:** head `b382d233`, five workflows QUEUED / zero jobs; prior exact-tree audit still shows firmware/test/license/intake provenance gaps. Its PR description's “licensing resolved” statement is not yet supported by the file-level NOTICE/LICENSE comparison.
+- **Master:** current head at start `f426d567`; exact-head Actions and combined statuses returned zero. Master Python suite and `verify_coordination.py` NOT RUN.
+- **Private registry:** exact v11 and newer corrections NOT_FOUND in the Library title search; no Google Drive connector action was available. No older registry substitute or private data was used.
+- **Automation deconflict:** current enabled “Blaze Hourly Production Development” declares PHX-HARDWARE. No separate task with exact title “Blaze Production Continuation” was listed. CORE remains owner-reserved and untouched.
+- No subsystem source, firmware, ownership route, COE destination, payment system, secret, release artifact or physical device was modified/operated.
+
+---
+
 ## PHX-MASTER UTC04 — decision and blockers (2026-11-27T04Z)
 
 **PR #288 OPEN / DRAFT / UNMERGED. COE #26 FROZEN. Cleanup #266 OPEN / 0-of-7. PRODUCTION NO-GO.**
