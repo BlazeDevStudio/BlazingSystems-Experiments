@@ -1,3 +1,11 @@
+## PHX-MASTER UTC22 — exact #367 and COE #26 provenance refresh
+
+- #367 exact head `c473b9ad`: 2,438 tree entries / 1,892 blobs / 546 trees, non-truncated; 8 changed paths, no deleted paths from #366 base. Focused and Mbed pass; Full fails canonical handover freshness.
+- COE #26 exact source pin `6d4c9b48` tree 2,391 entries / 1,845 blobs; destination `b382d233` tree 286 / 207. SOURCE_INTAKE runtime 61/61 source/destination blob+mode matches; actual 46 identical / 15 derived, summary says 47/14. Original tests 4/4 match. Derived tests 15/15 match destination blobs/modes; 11 NOT_RUN, 4 PENDING_CI_RUN.
+- MIGRATION_MAP covers 14 derived tests, omitting destination-only `tests/voucher_txn_journal.sh`. Destination branch pin remains stale. PisoWiFi LICENSE blob is identical source/destination. COE #26 workflows all CANCELLED. No staging or move.
+
+---
+
 ## PHX-MASTER UTC21 — pinned source intake and exact destination provenance (2026-11-27T21:42Z)
 
 The COE #26 SOURCE_INTAKE schema-8 blob 1b9018ff944f7f673934d0fc2a97e0a0090d3f5f pins source commit 6d4c9b487af4d768c4d7627654d119417fcc6e00 and destination branch feature/pisowifi-cleanup-stabilization. Against that exact source tree and current #26 head b382d233ff06c8791b1028bed3c617cc7b670d12, all 61 runtime rows have exact source/destination blob and mode matches (zero row mismatches). Actual row statuses are 46 byte-identical / 15 derived, while the summary says 47 / 14. The destination branch label is stale, but the row blobs are present at #26. Current #366 source differs from the pin in one runtime path: common.sh, pinned 4ccb1077 versus current 50fa2d02.
