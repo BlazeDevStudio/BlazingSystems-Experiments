@@ -1,3 +1,41 @@
+# CURRENT STATUS — 2026-11-27T22:52Z
+
+## PHX-HARDWARE UTC22 — PR #367 full-tree repair and deny-latch guard correction
+
+**Role:** PHX-HARDWARE  
+**Repository:** BlazeDevStudio/BlazingSystems-Experiments (owner verified as BlazeDevStudio; default branch main)  
+**Main HEAD:** `6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5`  
+**Branch:** `phoenix/hw-deny-latch-monotonicity-20261127-utc21`  
+**PR #367:** OPEN / DRAFT / UNMERGED; base #366 `07fef4e8e1055c06cf5e5c3a0d3829c52be31cc9`  
+**Source/test commits:** `e1e333bc8b8bc53f37eb1ff62c5a94573ed31b3f`, `83504c222c60e823e5883f814e28f9948a1f7702`  
+**Tree restoration:** `f3988697ed960294bca1c849661a53ad0355b7b3`  
+**Last docs/test head before this canonical sync:** `c473b9adba229661642b2c4ab7a2acd489399d2f`
+
+### Current evidence
+
+- MASTER's UTC21 audit found the prior #367 tree had 13 entries / 6 blobs versus the 2,435-entry #366 base, deleting 1,884 unrelated blobs from the PR comparison. The branch was repaired without force-push by rebuilding from exact base tree `4f0552d1926d134ff48be9b0c2dce512af69702e` and overlaying the six intended blobs. Current recursive tree at the pre-sync head: 2,438 entries / 1,892 blobs, not truncated; PR comparison has eight changed paths (five modified, three added), zero deletions.
+- The first restored-head focused run #46078329448 failed because the new address-of detector treated normal C++ `&& coinEnabled` as address-of. The append-only ledger guard and all seven of its unit tests passed before that false positive.
+- Fixed the detector to require a single ampersand, not adjacent to another, and added a `coinEnabled` pointer-escape mutation plus a logical-AND read-only positive control.
+- Exact-head focused run [#46078501079](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46078501079), job `140771750589`, PASS at `c473b9adba229661642b2c4ab7a2acd489399d2f`. Both ESP8266 and ESP32: deny-latch base mutations 7/7 rejected; pointer/reference/address mutations 5/5 rejected; logical-AND read-only positive control accepted; register mutations 8/8 rejected; poll transport outcome matrix 20 cases per board. Append-only ledger check PASS (base_bytes=1,132,798; appended_bytes=51,959); seven ledger-guard unit tests PASS.
+- Mbed TLS matrix #46078500994 at `c473b9adba229661642b2c4ab7a2acd489399d2f`: source-contract job `140771935976` PASS; core 3.3.13 and 4.0.0 target-build jobs were still running at this checkpoint.
+- Full build #46078501073 at `c473b9adba229661642b2c4ab7a2acd489399d2f`: validation job `140771821462` failed at the canonical handover freshness gate because this code/test change had not yet been synchronized into PROJECT_HANDOVER.md, CURRENT_STATE.md and CHANGE_LEDGER.md. This commit synchronizes those canonical records; a new exact-head Full run is required. ESP8266, ESP32 and multiple OpenWrt jobs passed; optional Orange Pi One Plus job `140771821527` failed because packages.microsoft.com returned HTTP 403 during apt update. That is an external runner/package-source failure, not a firmware test result. Remaining jobs were still running at the checkpoint.
+
+### Scope and safety
+
+Only the Hardware-owned source-contract and failure-injection files changed. No production ESP8266/ESP32 sketch, shared CORE API, QA-owned assertion, finance, signer, witness, migration, release setting, COE destination, or Master-owned coordination file changed. Coin and relay admission remain denied. No physical flashing, reset, live-money test, migration, signing, merge, tag or deployment.
+
+### Authoritative live links
+
+- [PR #367](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/367) — current Hardware DRAFT.
+- [PR #366](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/366) — stacked base.
+- [Control Plane #172](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/172) — UTC22 BLAZE-COMMS/1 checkpoint.
+- [Cleanup-first #266](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/266).
+- [P0 missed pulse #177](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/177) — unresolved; active v0.6 poll-before-first-sample race remains.
+- [Safety #34](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/34), [finance #31](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/31), [rental finance #32](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/32), [witness #43](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/43).
+- Protected Hardware PRs: [#239](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/239), [#254](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/254), [#283](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/283); all remain OPEN / DRAFT / UNMERGED.
+- COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; integration PR [#26](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/pull/26) remains FROZEN / DRAFT at `b382d233ff06c8791b1028bed3c617cc7b670d12`.
+
+**Production gates:** CI evidence is scoped to host source contracts and target builds. Physical pulse/relay acceptance, electrical recovery, 150 power cuts, 30-device/24-hour soak, protected anti-rollback signer/witness, durable accounting/replay, v1-to-v2 migration and independent QA/release signoff remain NOT TESTED / NOT ACCEPTED. HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
 ## PHX-HARDWARE UTC21 — deny-latch pointer/reference escape guard
 
 **Recorded:** 2026-11-27T21:33:50Z  

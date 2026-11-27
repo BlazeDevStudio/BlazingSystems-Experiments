@@ -1,3 +1,53 @@
+# CURRENT STATE — 2026-11-27T22:52Z — #367 tree restored; focused exact-head PASS; Full handover sync required
+
+## PHX-HARDWARE UTC22 — current execution
+
+**Role:** PHX-HARDWARE  
+**Repository/branch:** BlazeDevStudio/BlazingSystems-Experiments / `phoenix/hw-deny-latch-monotonicity-20261127-utc21`  
+**PR:** #367 OPEN / DRAFT / UNMERGED; stacked on #366 at `07fef4e8e1055c06cf5e5c3a0d3829c52be31cc9`  
+**Source/test commits:** `e1e333bc8b8bc53f37eb1ff62c5a94573ed31b3f`, `83504c222c60e823e5883f814e28f9948a1f7702`  
+**Tree repair:** `f3988697ed960294bca1c849661a53ad0355b7b3`  
+**Pre-sync exact docs head:** `c473b9adba229661642b2c4ab7a2acd489399d2f`
+
+### What changed
+
+1. Restored the complete #366 parent tree after Master identified a 13-entry/6-blob truncated #367 tree. Final pre-sync tree was 2,438 entries / 1,892 blobs, non-truncated; eight PR diff paths, zero deletions.
+2. Corrected the source-contract address detector: a single ampersand is address-of; adjacent ampersands are logical conjunction.
+3. Added a `coinEnabled` pointer escape failure injection and a logical-AND read-only positive control. No production sketches or shared APIs changed.
+
+### Tests and evidence
+
+| Evidence | Exact result |
+|---|---|
+| Focused #46078501079 / job 140771750589 at `c473b9adba229661642b2c4ab7a2acd489399d2f` | PASS |
+| ESP8266 deny-latch mutations | 7/7 rejected |
+| ESP32 deny-latch mutations | 7/7 rejected |
+| Pointer/reference/address mutations | 5/5 rejected per board |
+| Logical-AND read-only positive control | PASS per board |
+| Register mutation suite | 8/8 rejected per board |
+| Poll transport matrix | 20 cases per board |
+| Append-only ledger guard | PASS; base 1,132,798 bytes, append 51,959 bytes |
+| Ledger guard unit tests | 7/7 PASS |
+| Mbed #46078500994 | Source-contract PASS; core 3.3.13 and 4.0.0 builds IN PROGRESS at checkpoint |
+| Full #46078501073 | Validate job FAIL at canonical handover freshness; optional Orange Pi One Plus failed on external apt HTTP 403; other target jobs partially passed/in progress |
+
+The Full validation failure is a documentation-freshness gate, not a controller-parity result. The previous #366 controller parity failure remains a separate known QA/CORE contract issue and must not be hidden by inserting an untrusted `config_revision` field.
+
+### Boundaries / blockers
+
+- P0 #177 pulse-loss race remains unresolved; active v0.6 still performs synchronous poll before first coin sample.
+- Keep coin and relay admission denied.
+- QA owns controller parity/PAY-0745; CORE owns authenticated register/poll/receipt/disposition; Master owns role/integration matrices.
+- Master matrix still needs to replace the stale #367 head `fb8ea5a...` and truncated-tree finding with the restored current head.
+- Private `BLAZE_PROJECT_REGISTRY_v11_20261027.json` remains NOT RECOVERED. The connected Library search did not surface it and no Google Drive connector is available; no older checkpoint was substituted.
+
+## NEXT EXACT ACTION
+
+After this canonical documentation sync, PHX-HARDWARE must query Actions for the new documentation commit SHA and inspect the exact-head runs for `phx-hw-active-v06-poll-intake-deny`, `phx-hw-active-v06-esp32-core-compat.yml`, and `blazepwifi-build.yml`. Require the focused job PASS and both Mbed target builds to terminate; verify the Full `validate` job passes `tests/handover_gate.sh`, then report any independent QA/CORE parity failure without weakening deny-only behavior. PHX-MASTER must refresh the #367 role/integration matrix; PHX-QA must review the address detector and positive control. Do not merge or promote.
+
+## Resume prompt
+
+Continue as PHX-HARDWARE on `BlazeDevStudio/BlazingSystems-Experiments`, PR #367, branch `phoenix/hw-deny-latch-monotonicity-20261127-utc21`. Read this CURRENT_STATE, PROJECT_HANDOVER, CHANGE_LEDGER and HANDOVER_POLICY first. Verify the live branch head and exact Actions for that SHA. The source/test changes are in `e1e333b` and `83504c2`; tree restoration is `f3988697`. Keep coin/relay denied, do not touch CORE/QA/Master files, and do not claim hardware acceptance or production readiness.
 # CURRENT STATE — 2026-11-27T21:33Z — pointer/reference escape guard committed; CI pending
 
 ## PHX-HARDWARE UTC21 — deny-latch pointer/reference escape guard
