@@ -1,3 +1,14 @@
+## PHX-MASTER UTC12 — migration routing and provenance hold
+
+- OWNERSHIP_ROUTES.json remains blob e4db324315a1b3543fec17a148fbf960170fcb29, schema v1, 11 routes, DRAFT_REVIEW_ONLY; PHX-MASTER target remains null. No owner or route was changed.
+- Current refs: Experiments main 6be5d19b; active v0.6 development 2fbd2475; legacy v0.5.3 development aad3aade; Hardware #358 fc8b429b; #359 47357aab; #360 b1a709c2; COE main a6513ab; COE #26 b382d233.
+- SOURCE_INTAKE still names destination branch feature/pisowifi-cleanup-stabilization, while the live integration PR #26 branch is integration/ecosystem-nonproprietary-candidate-20261111. Its source pin is historical 6d4c9b, not the current Hardware #358 candidate. No single migration source is approved.
+- Exact firmware/test/license provenance is in INTEGRATION_MATRIX.md. COE #26 remains FROZEN; no staging, copy, move, overwrite, rebase, cherry-pick or retarget.
+- Private registry v11 and newer corrections remain NOT_RECOVERED. Do not substitute older Library snapshots or expose private Drive IDs/content. Registry custodian must restore approved access before any registry-dependent promotion.
+- Production remains NO-GO.
+
+---
+
 ## PHX-MASTER UTC11 — 2026-11-27 migration routing and provenance hold
 
 - OWNERSHIP_ROUTES.json remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`, schema v1, 11 routes, status `DRAFT_REVIEW_ONLY`; source_ref is historical `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`. PHX-MASTER target remains null. No route or owner changed.

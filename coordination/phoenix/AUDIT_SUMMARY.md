@@ -1,3 +1,22 @@
+## PHX-MASTER UTC12 — live audit summary
+
+**Updated:** 2026-11-27T12:41:33Z  
+**Role / task:** PHX-MASTER / PHX-MASTER-UTC12-20261127  
+**Execution:** GitHub read-only branch, PR, issue, workflow, recursive-tree and blob inspection; no Codex; no local checkout; no Google Drive connector.  
+**Disposition:** coordination-only. PR #288 OPEN / DRAFT / UNMERGED; COE #26 FROZEN; cleanup #266 OPEN / 0-of-7; P0 #177 OPEN; PRODUCTION NO-GO.
+
+Live main/Master compare is 659 ahead / 1 behind with 251 coordination-only paths. Master exact-head workflow runs and combined statuses are empty. Owner CI is recorded in ROLE_ASSIGNMENTS.md; source/destination tree, test and license provenance is recorded in INTEGRATION_MATRIX.md.
+
+COE #26 remains frozen because the board firmware blobs differ, test import identity is incomplete (47 source tests / 19 destination tests; 1 exact, 3 divergent, 43 source-only, 15 destination-only), intake summary rows conflict with actual statuses, migration-map test rows/hashes disagree, license/notice counterparts are missing, and all five candidate workflows are cancelled. No staging or migration was performed.
+
+Active v0.6 still polls synchronously before the first coin sample on both ESP8266 and ESP32 with a 3,500 ms timeout. Durable member/rental state, independent freshness witness, reversible migration, independent QA, native acceptance and physical acceptance remain open. The 150 real power cuts and 30-device/24-hour soak are NOT TESTED.
+
+Private BLAZE_PROJECT_REGISTRY_v11_20261027.json and newer corrections remain NOT_RECOVERED. Only older registry snapshots surfaced in Library search; no older snapshot was substituted. The available tool surface exposes no Google Drive connector. Master Python tests and verify_coordination.py were NOT RUN because no authenticated local checkout is available. No Master Actions result is claimed.
+
+No subsystem source, ownership manifest, COE destination, firmware, payment state or release artifact changed. **PRODUCTION NO-GO.**
+
+---
+
 ## PHX-MASTER UTC11 — 2026-11-27 live owner CI, sibling Hardware PR overlap, and exact COE provenance
 
 **Updated:** 2026-11-27T11:38:31Z  

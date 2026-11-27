@@ -1,3 +1,16 @@
+## PHX-MASTER UTC12 — active v0.6 poll ordering and interface boundary
+
+Read the exact active development branch blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859:
+- ESP8266 source blob 12c4bb82b6fddafe813674a0b5f692c1d3634073: post poll at line 354, first digitalRead(runCoinPin) at line 357, HTTP timeout 3,500 ms.
+- ESP32 source blob 29f1125d52ff474a0d028ad41f7af201be1f0f9d: post poll at line 314, first digitalRead(runCoinPin) at line 318, HTTP timeout 3,500 ms.
+- Issue #177 remains OPEN. This exact source readback confirms the blocking poll-before-sample ordering; no coin pulse, relay, physical power or money was operated.
+
+Preserve the existing boundary: untrusted or missing poll authentication cannot enable coin admission; pending evidence is not cleared on ambiguous response or failed durable commit; a positive disposition requires the CORE-owned authenticated receipt/sequence contract and durable readback. HARDWARE owns firmware intake/relay implementation, CORE owns receipt/authentication and financial state, QA owns independent semantic regression, and MASTER owns only cross-role interface coordination. #358/#359/#360 do not independently establish the missing CORE response/disposition contract.
+
+No interface schema or ownership route changed in this refresh. Physical GPIO/relay/coin acceptance, independent witness and crash-atomic financial migration remain NOT TESTED / NOT VERIFIED. Production remains NO-GO.
+
+---
+
 ## PHX-MASTER UTC07 — pending disposition and poll-intake guard (2026-11-27T07:41Z)
 
 The current #357 exact-head Native failure at [#45958868726](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45958868726) is a source-presence assertion for `clearPending(true)` and `clearPending(false)`, not proof that an authenticated disposition is absent or that a callsite would be safe. Preserve the existing semantic contract:
