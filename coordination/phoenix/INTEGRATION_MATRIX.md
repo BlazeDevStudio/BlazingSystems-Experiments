@@ -6217,3 +6217,53 @@ Only #354 security.sh is an exact selected test match. The #354 mbedtls compatib
 Intake and map: SOURCE_INTAKE.json blob 1b9018ff944f7f673934d0fc2a97e0a0090d3f5f pins source commit 6d4c9b487af4d768c4d7627654d119417fcc6e00 and old destination branch feature/pisowifi-cleanup-stabilization. Its 61 runtime rows count 46 byte-identical / 15 derived, while summary declares 47 / 14. MIGRATION_MAP.md blob b54fc15d83bc2269de03db8aadd0e76259fd13d9 repeats the old source and branch pins. HARDWARE_FIRMWARE_AUDIT.md blob 86c06e7574761465b80482430296eb712d985367 says the sketches were not copied, but both are present in COE with divergent blobs. PR #26 body says P0-1 resolved; these records require owner reconciliation.
 
 License readback: PisoWiFi project LICENSE exact blob 1ee55b94183417be977ca287cd7391f9a6f7e721; QRCode LICENSE exact 150770c0fc2994865ccdbef6662735cc083e780d; TailAdmin LICENSE exact cb92d4176b21b0594e5a6caf94d79340505e3d33; TailAdmin NOTICE exact f0425bbbe34c1227311098173b1eae0c3e2a807b. Source project root and destination Pisowifi root both lack NOTICE.md, so a source NOTICE omission is not established. No staging or destination writes.
+
+## PHX-MASTER UTC01 — exact current HARDWARE #355 to COE #26 provenance (2026-11-27)
+
+**Exact refs:** Experiments HARDWARE #355 `fa33bd1841494e0c271f99b18fbe244546ebd0b9`; COE integration #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`. Both recursive Git trees were fetched completely (`truncated=false`): 2,418 source-repository entries and 286 destination entries. Whole-repository counts are not a direct coverage ratio; the scoped route comparisons below are.
+
+### Board firmware and support-file mapping
+
+| Route | Source files | Destination files | Identical | Divergent | Source-only |
+|---|---:|---:|---:|---:|---:|
+| ESP32 `experiment/openwrt/BlazePwifi/esp32/` → `Hardware/esp32/` | 4 | 1 | 0 | 1 | 3 |
+| ESP8266 `experiment/openwrt/BlazePwifi/esp8266/` → `Hardware/esp8266/` | 13 | 1 | 0 | 1 | 12 |
+| **Combined** | **17** | **2** | **0** | **2** | **15** |
+
+- ESP32 Vendo source blob `fcf26a50cd3238941caf918a849c30ca66f4ce4b`; COE destination blob `3cc7ec54b476943dc04a8d1af5e2df5fe054e422` — DIVERGENT.
+- ESP8266 Vendo source blob `9f0f4829cf57a6a12f4d940b051f17035e0a1670`; COE destination blob `c8be98f72596681e36a3ad1f8939bf8046c96887` — DIVERGENT.
+- Source-only board files include both board READMEs, the ESP32 Mbed TLS compatibility lab, and ESP8266 config-persistence, storage-integrity, auth-guard, source-extractor, output-enable, poll-inhibit and remote-config-deny lab modules. No byte-identical firmware copy exists at the current candidate refs.
+
+### PisoWiFi test identity
+
+Exact path mapping `experiment/openwrt/BlazePwifi/tests/` → `Pisowifi/tests/`:
+
+| Source test files | Destination test files | Byte-identical | Divergent | Source-only | Destination-only |
+|---:|---:|---:|---:|---:|---:|
+| 150 | 19 | 2 | 2 | 146 | 15 |
+
+The two divergent common paths are `config.sh` and `integration.sh`; destination-only tests are not substitutes for the 146 missing source tests. These are Git blob-identity results, not test-execution results.
+
+### Intake, map and firmware-audit consistency
+
+- `Pisowifi/SOURCE_INTAKE.json` blob `1b9018ff944f7f673934d0fc2a97e0a0090d3f5f`, schema 8: 61 runtime rows recount to 46 `byte_identical` + 15 derived, while its summary declares 47 identical + 14 locally derived. Its separate test list has 4 rows (2 byte-identical / 2 derived) and `derived_tests` has 15 entries.
+- Intake and `Pisowifi/MIGRATION_MAP.md` blob `b54fc15d83bc2269de03db8aadd0e76259fd13d9` pin source commit `6d4c9b487af4d768c4d7627654d119417fcc6e00` and destination branch `feature/pisowifi-cleanup-stabilization`. Actual COE #26 head is branch `integration/ecosystem-nonproprietary-candidate-20261111` at `b382d233`; the current Experiments source #355 is `fa33bd18`. These are not the same refs.
+- `docs/audits/HARDWARE_FIRMWARE_AUDIT.md` blob `86c06e7574761465b80482430296eb712d985367` still says the two sketches were not copied pending P0-1, but both are present in #26 with the divergent blobs above. This is a stale/contradictory audit statement, not migration approval.
+
+### License / notice identity
+
+| Source path → destination path | Result |
+|---|---|
+| `experiment/openwrt/BlazePwifi/LICENSE` → `Pisowifi/LICENSE` | IDENTICAL `1ee55b94183417be977ca287cd7391f9a6f7e721` |
+| QRCode `LICENSE` | IDENTICAL `150770c0fc2994865ccdbef6662735cc083e780d` |
+| TailAdmin `LICENSE` / `NOTICE.md` | IDENTICAL `cb92d4176b21b0594e5a6caf94d79340505e3d33` / `f0425bbbe34c1227311098173b1eae0c3e2a807b` |
+| Source-repo root `NOTICE.md` → COE root `NOTICE.md` | DESTINATION MISSING |
+| `ui/vendor/tabler/LICENSE` → `Pisowifi/ui/vendor/tabler/LICENSE` | DESTINATION MISSING |
+| `tests/vendor/jsqr-1.4.0/LICENSE` → `Pisowifi/tests/vendor/jsqr-1.4.0/LICENSE` | DESTINATION MISSING |
+| `android/BlazeRentalLauncher/LICENSE` → `Rental/android/BlazeRentalLauncher/LICENSE` | DESTINATION MISSING |
+
+Four exact license/notice counterparts were verified; four counterpart paths are absent at the candidate. The root NOTICE is repo-level and requires owner/legal routing review; do not assume it is a simple subtree copy.
+
+### CI and disposition
+
+COE #26 exact-head PR workflows: #43096752609, #43096752632, #43096752800, #43096752563 and #43096752557 — all QUEUED, zero jobs/check-runs. **FROZEN.** No staging, copy, move, overwrite, cherry-pick, rebase or destination write was performed. COE owner must reconcile pins, firmware blobs, test import, licenses and stale audit claims before any file-level proposal.

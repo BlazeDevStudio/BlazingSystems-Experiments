@@ -2322,3 +2322,29 @@ PHX-RELEASE owns workflow/toolchain pinning, artifact retention and reproducibil
 
 This contract does not close the separate authenticated register/poll response P0, durable financial state, migration, QA, native acceptance, 150 real power cuts or 30-device/24-hour soak. **PRODUCTION NO-GO.**
 
+
+
+## 7.24 Active v0.6 coin-pulse sampling is ordered after a blocking poll — P0 loss risk remains open (2026-11-27 UTC01)
+
+This is a source-level revalidation of issue #177, not a firmware fix or physical acceptance. Active branch `blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859` was fetched directly:
+
+| Board | Sketch blob | Synchronous poll | First coin-pin sample |
+|---|---|---:|---:|
+| ESP8266 | `12c4bb82b6fddafe813674a0b5f692c1d3634073` | line 354 | line 357 |
+| ESP32 | `29f1125d52ff474a0d028ad41f7af201be1f0f9d` | line 314 | line 318 |
+
+Both `loop()` implementations call synchronous `post("poll")` before `digitalRead(runCoinPin)`. The issue #177 host C++ extraction reports a 3.5-second wait that misses an 80 ms active-low pulse while the relay remains energized; that is **SIMULATED** evidence, not a real coin-slot, relay-electrical or power-loss test.
+
+**Required cross-role invariant:** a coin acceptor must not remain energized during a blocking network wait that prevents pulse capture. HARDWARE owns a reversible local intake-inhibit or nonblocking capture implementation and the electrical polarity review; CORE owns the authenticated, fresh, device/target/sequence-bound poll, receipt and durable disposition contract; QA independently verifies the same exact source SHA and negative/reboot/failure paths. Do not re-enable from unsigned `insert` / `target_nonce` fields, do not treat RAM-only ISR counts as durable credit, and do not invent `response_sig`. The existing deny-only #355 candidate is not integrated into active v0.6 and does not close this issue.
+
+## 7.25 STORCHK-0674 physical-parent/holder guard is synthetic-only — issue #34 remains NOT TESTED (2026-11-27 UTC01)
+
+HARDWARE-owned draft PR #356 current docs/PR head is `5c0f58db6a2df74390ca00d946c594ec417942ab`; source/test correction `9fad1abd1eab8bcb2caadff6901999df4be30944`. The helper resolves sysfs parent relationships and rejects candidate/parent block nodes with active `slaves` or `holders`; tests use synthetic mountinfo and fake sysfs only.
+
+- Expected RED for active-holder topology: #45923702833, job 140260078848.
+- Exact-source focused push #45923785751, job 140260350436 — PASS.
+- Exact-source focused PR #45923791729 — PASS.
+- Final docs-head focused PR #45923906079 — PASS.
+- Final docs-head Full #45923906088 — FAILURE. ESP32 build job 140260850690 fails because `mbedtls/sha256.h` is unavailable; validation job 140260850694 also fails. 12/13 firmware/platform jobs and Android pass; downstream simulation, update, candidate, signing and publication jobs are skipped.
+
+This establishes only a synthetic topology guard. It does not prove separate enclosure/controller, physical media independence, disposability, actual mount safety, flash durability or power-cut behavior. Physical issue #34 remains NOT TESTED; no mount, block write, power cut, flash or customer install was performed.

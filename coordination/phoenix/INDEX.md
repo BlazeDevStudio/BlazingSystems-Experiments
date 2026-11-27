@@ -1781,3 +1781,14 @@ UTC05 final refresh: HARDWARE owner updated PR #349 body to current source/test/
 
 - [PHX-MASTER UTC18 exact-head owner CI, COE #26 provenance and registry-access audit](PHX_MASTER_UTC18_20261126_EXACT_HEAD_ROLE_CI_COE26_PROVENANCE_AND_REGISTRY_ACCESS_AUDIT.md) — current Experiments/COE refs, exact owner PR heads and CI, #354 QA assertion mismatch, #26 firmware/test blob identity, SOURCE_INTAKE 46/15 vs 47/14, stale migration/audit records, license readback and private Drive v11 access limitation.
 - Scope: coordination/phoenix only. COE #26 remains FROZEN; no destination staging or writes. CORE and all subsystem source branches remain owner-reserved. PRODUCTION NO-GO.
+
+## PHX-MASTER UTC01 — 2026-11-27 live owner/CI, #356, P0 #177 and COE #26 exact-tree audit
+
+[UTC01 exact-head audit report](PHX_MASTER_UTC01_20261127_HW356_P0_POLL_COE26_EXACT_TREE_AUDIT.md)
+
+- Live refs: Experiments `main@6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5`; `blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5`; active v0.6 comparison branch `2fbd2475e9f54878c316fa7cea2f228386b0e859`; Master `phoenix/master-coordination@c51ad08cd0952e991cfc19c50bfd1245891a51f3`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`.
+- HARDWARE #356 is now `5c0f58db6a2df74390ca00d946c594ec417942ab` (source/test `9fad1abd1eab8bcb2caadff6901999df4be30944`). Exact docs-head focused CI #45923906079 PASS; Full #45923906088 completed FAILURE: ESP32 compile lacks `mbedtls/sha256.h`, validation failed, 12/13 firmware/platform jobs and Android passed, downstream gates skipped. The storage guard is synthetic-only.
+- Active v0.6 still polls before sampling: ESP8266 blob `12c4bb82b6fddafe813674a0b5f692c1d3634073`, lines 354/357; ESP32 blob `29f1125d52ff474a0d028ad41f7af201be1f0f9d`, lines 314/318. Issue #177 host reproduction remains simulation, not physical acceptance.
+- COE #26 remains FROZEN. Exact non-truncated tree comparison and mapped test/license/blob counts are in the UTC01 report and INTEGRATION_MATRIX.md. No destination staging or writes.
+- 23/23 read-only structural assertions passed; Master product suite and `verify_coordination.py` NOT RUN. Private Drive registry v11/newer corrections NOT_RECOVERED. Cleanup #266 remains OPEN / 0-of-7. PRODUCTION NO-GO.
+- No subsystem source, ownership manifest, COE destination, firmware, payment or release artifact changed.

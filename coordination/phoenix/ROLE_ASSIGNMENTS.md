@@ -4966,3 +4966,21 @@ CORE retains authenticated producer and canonical handover ownership; HARDWARE r
 | COE integration #26 | b382d233ff06c8791b1028bed3c617cc7b670d12 | Five workflows queued, zero jobs/statuses; FROZEN. |
 
 Master #288 starts at 0730fff529d62ae2b6c436e14cfd520025291f6c; no Master PR-triggered Actions runs exist at that SHA. CORE ownership remains with its separate continuation; Master made no CORE or subsystem source edits.
+
+## PHX-MASTER UTC01 exact owner-head and CI reconciliation — 2026-11-27T01:38:54Z
+
+| Role / PR | Current exact PR head | Exact-head evidence / disposition |
+|---|---|---|
+| PHX-CORE #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | Build #42698139210 PASS (scoped only; no financial acceptance). CORE source remains with the separate active continuation. |
+| PHX-RENTAL #328 | `10fc200b6dbf470a95e679d3acc58aff4ab2a67f` | API #45622918364, APK identity #45622918340 and instrumentation #45622918551 PASS; shared build #45622918468 FAIL. |
+| PHX-PISONET #255 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | Windows synthetic #42462978704 PASS; native COM acceptance NOT TESTED. |
+| PHX-QA #290 / #292 | `5c29d15994cee1279058f1eca12f2a3180704292` / `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | #290 Windows synthetic #43633486963 PASS; #292 no PR-triggered workflow runs. |
+| PHX-RELEASE #242 / #291 | `36c0d0bb3e58786359555b307bb784f720f023ce` / `bf339a76964a1abe2412fac45392fe06a8e66418` | No PR-triggered runs returned at either exact head. #291 remains stacked on #242's older base. |
+| PHX-HARDWARE #355 | `fa33bd1841494e0c271f99b18fbe244546ebd0b9` | Poll-deny #45907943770 PASS; Mbed TLS 3/4 #45907943783 PASS; Full #45907943784 FAIL; Native #45907943785 FAIL. These are not physical acceptance. |
+| PHX-HARDWARE #356 / STORCHK-0674 | `5c0f58db6a2df74390ca00d946c594ec417942ab` (source/test `9fad1abd1eab8bcb2caadff6901999df4be30944`) | Focused PR exact-source #45923791729 PASS; final docs-head focused #45923906079 PASS. Full #45923906088 completed FAIL: ESP32 missing `mbedtls/sha256.h`; validation FAIL; 12/13 firmware/platform jobs PASS, Android PASS, downstream gates skipped. Synthetic sysfs only; physical issue #34 NOT TESTED. |
+| COE RELEASE #35 | `bc57ba8ecc5245ce538c6770a45bb25e2b8b5ef3` | Case #45897198239 PASS; sandbox #45897198204 FAIL (trusted Bubblewrap/private host mask unavailable); shared #45897198326 FAIL (10/10 appliance profiles deny for missing approved site ULA /48; firmware compiles skipped). PR body still names older head `e1ad4fad`; owner must refresh. |
+| COE CORE #45 | `9d76a134c1f6512aa40c20ec4d247306a71a8cce` | Overlay/shell #44295049727 and case guard #44295049903 PASS; contract-only, not financial acceptance. |
+| COE INTERCON #49 | `aeb8ff11b2f5db9a5f86280ab62ab988245f3919` | Stage 5.1 #44646341873 and case #44646341992 PASS; Shared Contracts #44646341922 FAIL. |
+| COE integration #26 | `b382d233ff06c8791b1028bed3c617cc7b670d12` | Five workflows queued, zero jobs/check-runs; FROZEN. |
+
+**Ownership boundary:** PHX-MASTER changed no subsystem source. CORE remains reserved to its separate continuation. #356 is HARDWARE-owned read-only storage-preflight tooling; it has no destination route in the current 11-route ownership manifest. Do not add a route or copy these tools into COE without owner-approved path mapping. #266 remains OPEN / 0-of-7.

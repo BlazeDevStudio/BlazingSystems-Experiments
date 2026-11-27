@@ -2202,3 +2202,20 @@ HARDWARE #349 is now dce158b3. Its only new source changes are the poll-loop lab
 - HARDWARE #349 remains child of #347 at `960184670379f01e20f0e7e8bc23b3e5eedacd3f`. CORE owns authenticated poll/register producer bytes; QA owns the inherited signature assertion; HARDWARE remains deny-only.
 - COE #26 is a destination candidate only. PHX-MASTER route target is null; no role route is promoted, no owner is reassigned, and no destination staging/copy is authorized by this audit.
 
+
+
+## PHX-MASTER UTC01 routing revalidation — HARDWARE #356 tools and COE #26 freeze (2026-11-27)
+
+The current `OWNERSHIP_ROUTES.json` remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`, 11 routes, `DRAFT_REVIEW_ONLY`; PHX-MASTER target remains `null`. The manifest is on `phoenix/master-coordination` and is not present at Experiments main; do not treat the current Master branch copy as a main-branch route change.
+
+HARDWARE PR #356 changes only Hardware-owned source/lab/tooling and handover paths, including:
+- `experiment/openwrt/BlazePwifi/tools/v060_lab_block_parent_guard.sh`
+- `experiment/openwrt/BlazePwifi/tools/v060_lab_mountinfo_guard.awk`
+- `experiment/openwrt/BlazePwifi/tools/v060_lab_storage_preflight.sh`
+- `experiment/openwrt/BlazePwifi/tests/v060_lab_storage_preflight.sh`
+- `.github/workflows/phx-hw-storage-preflight-device-separation.yml`
+- Hardware-owned project/handover/current-state records.
+
+No current manifest route maps these `tools/` or issue #34 storage-preflight test paths to COE. Keep them in Experiments under Hardware ownership; do not invent a `Hardware/tools/` or `Hardware/tests/` destination route. Any future route requires COE owner path selection, exact blob/mode/license review, import completeness and exact-head CI before staging.
+
+COE #26 remains branch `integration/ecosystem-nonproprietary-candidate-20261111@b382d233ff06c8791b1028bed3c617cc7b670d12`, DRAFT / FROZEN. Its intake/map still pin the historical `6d4c9b48` source and `feature/pisowifi-cleanup-stabilization` destination branch; current source and destination heads differ. No route promotion or migration is authorized.
