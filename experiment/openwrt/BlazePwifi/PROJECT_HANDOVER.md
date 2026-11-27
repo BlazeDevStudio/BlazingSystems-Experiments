@@ -1513,3 +1513,31 @@ PR #354 remains OPEN / DRAFT / UNMERGED. PRs #239/#254/#283 remain OPEN / DRAFT 
 - **Evidence:** SIMULATED / CI VERIFIED only. Physical LittleFS, electrical, 150 power cuts and 30-device/24-hour soak remain NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
 - **Narrow handover:** [2026-11-27-hw-pending-recovery-promotion-guard-utc10.md](docs/handover/2026-11-27-hw-pending-recovery-promotion-guard-utc10.md).
 - **Next exact action:** rerun Full on the post-sync documentation HEAD, then request independent QA review. Keep #359 DRAFT and unmerged.
+
+
+---
+
+## PHX-HARDWARE UTC14 — pending-recovery host String ownership regression
+
+**PR:** [#361](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/361), OPEN / DRAFT / UNMERGED; child of #359 at `47357aab2ff7910b38ca538a46dfa01bdbca01e8`.  
+**Branch:** `phoenix/hw-pending-recovery-harness-module-split-20261127-utc13`  
+**Source/test SHA:** `4a85070a1f6a1caa417570a91dcdf355ff072fcc`  
+**Scope:** Hardware-owned host-only C++ fake-LittleFS harness; no production firmware or shared interface changed.
+
+### Defect and correction
+
+The source-extracted `loadPending()` creates a stack-local `BpPendingSequence r{}` and then assigns `pendingNonce=String(r.nonce)` and `pendingTarget=String(r.target)`. The host fixture's fake Arduino `String` previously stored the incoming `const char *` without copying it. That borrowed pointer outlived the stack-local `r`, so the host harness did not model Arduino `String` ownership and could read dangling storage after `loadPending()` returned.
+
+The fixture now owns a `std::string` copy and exposes `c_str()` / `length()` for assertions. The existing 11 scenarios now verify that the recovered nonce/target survive return for canonical, `pending.new`, and `pending.bak` success paths; ambiguous candidates, rename failures, invalid-only journals, and empty-journal paths leave identity empty; legacy-migration failure retains the recovered identity while the journal remains fail-closed. No scenario count or production behavior changed.
+
+### Exact source/test evidence at `4a85070a1f6a1caa417570a91dcdf355ff072fcc`
+
+- Focused [run #46016953274](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46016953274), job `140566402392`: **PASS**.
+- ESP32 Mbed TLS [run #46016953049](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46016953049): source-contract job `140566402516` PASS; Arduino core 3.3.13 job `140566402198` PASS; core 4.0.0 job `140566402334` was still in progress at this checkpoint.
+- Pre-sync Full [run #46016953164](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46016953164): validation job `140566586511` failed at the mandatory handover freshness gate because this source commit had not yet been documented. CI-0701 job `140566403456` passed; target jobs were still running at this checkpoint, so no terminal target count is claimed. A post-sync exact-head Full rerun is required.
+
+### Boundaries
+
+No ESP8266/ESP32 sketch, shared API, QA-owned assertion, financial state, signer/witness, migration, COE destination, or release workflow changed. Parent #359's deny-only recovery behavior is unchanged. CORE retains authenticated register/poll and receipt/disposition contract ownership; QA retains independent semantic assertion ownership; MASTER retains global stack and release authority.
+
+**Classification:** SIMULATED / CI VERIFIED only. Physical LittleFS, electrical/coin/relay acceptance, 150 power cuts, and 30-device/24-hour soak remain NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.

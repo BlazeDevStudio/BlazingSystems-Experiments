@@ -1410,3 +1410,12 @@ Focused exact-head [#45986402635](https://github.com/BlazeDevStudio/BlazingSyste
 Full [#45986402891](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45986402891) passed CI-0701 but validation stopped at handover freshness before this sync; exact post-sync Full rerun required. Active v0.6 poll-before-sample P0 #177 remains unresolved. Physical LittleFS/electrical recovery, 150 power cuts and 30-device/24-hour soak remain NOT TESTED. HARDWARE ACCEPTED NO; PRODUCTION NO-GO.
 
 See [narrow handover](2026-11-27-hw-pending-recovery-promotion-guard-utc10.md).
+
+
+## PHX-HARDWARE UTC14 — PR #361 host-fixture lifetime correction
+
+- PR #361 remains OPEN / DRAFT / UNMERGED, child of #359 at `47357aab2ff7910b38ca538a46dfa01bdbca01e8`; branch `phoenix/hw-pending-recovery-harness-module-split-20261127-utc13`.
+- Source/test commit `4a85070a1f6a1caa417570a91dcdf355ff072fcc` changes only `pending_recovery_promotion_lab_harness.hpp`: fake Arduino `String` now copies into owned `std::string` storage instead of retaining a pointer into `loadPending()`'s stack-local record.
+- Existing 11 recovery scenarios now assert nonce/target persistence after successful canonical/fallback recovery, empty identity after ambiguous/failed promotion, and retained identity with fail-closed state after legacy migration persistence failure.
+- Focused run #46016953274 job 140566402392 PASS. Mbed run #46016953049: source contract and core 3.3.13 PASS; core 4.0.0 pending at checkpoint. Pre-sync Full #46016953164 validation failed only at handover freshness; CI-0701 passed and target jobs were not yet terminal. Post-sync exact-head rerun required.
+- Host simulation/CI only; no production sketch, shared API, QA test, finance, signer, witness, migration, or COE file changed. Physical acceptance NOT TESTED; HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
