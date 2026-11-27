@@ -3777,3 +3777,12 @@ PR #354 remains OPEN / DRAFT / UNMERGED. PRs #239/#254/#283 remain OPEN / DRAFT 
 - Current #355 prefix bytes: 1147637; appended #357 historical bytes: 4309.
 - Restacked #357 with first parent 79470fb6cfa1daf274c33d2100ad19eabd5b39fd and second parent 9f7a8ecb915cf199a82c0b4d37c56c40d722037b; no force-push and no #355 mutation.
 - No existing ledger bytes were deleted or rewritten. Physical acceptance remains NOT TESTED; production remains NO-GO.
+
+
+## 2026-11-27 — PHX-HARDWARE PR #357 exact-head CI terminal readback (UTC07)
+
+- Restack commit: 69ef1b4905a1adefdb74b69d701057d6d331540f; base #355 9f7a8ecb915cf199a82c0b4d37c56c40d722037b; PR remains DRAFT / unmerged.
+- Full #45958121607: 15 success / 1 failure / 13 skipped; sole failure is QA-owned Controller protocol parity. All ESP8266, ESP32, Android and 11 OpenWrt target jobs succeeded; CI-0701 and handover freshness passed.
+- Native #45958121633: PAY-0745 durable Vendo pending sequence and corruption contract failed; no unsafe pending-clear workaround added.
+- Mbed TLS #45958121512: 3/3 PASS. Exact-source push #45958114250 and PR #45958121684: PASS.
+- These are CI results only. Physical GPIO/relay/electrical acceptance, 150 power cuts and 30-device/24-hour soak remain NOT TESTED. Production remains NO-GO.

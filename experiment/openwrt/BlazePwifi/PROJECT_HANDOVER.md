@@ -1,28 +1,23 @@
-## PHX-HARDWARE UTC07 — PR #357 restacked onto current #355 (2026-11-27)
+## PHX-HARDWARE UTC07 — PR #357 restack terminal CI evidence (2026-11-27)
 
 **Branch:** `phoenix/hw-runtime-pin-config-guard-20261127-utc04`  
-**PR:** [#357](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/357), OPEN / DRAFT / UNMERGED  
-**Parent PR:** #355 at `9f7a8ecb915cf199a82c0b4d37c56c40d722037b`  
-**Pre-restack #357 HEAD:** `79470fb6cfa1daf274c33d2100ad19eabd5b39fd`  
-**Merge operation:** two-parent, non-force fast-forward; first parent preserves #357 history and second parent records current #355 HEAD.
+**Restack commit:** [`69ef1b4905a1adefdb74b69d701057d6d331540f`](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/commit/69ef1b4905a1adefdb74b69d701057d6d331540f)  
+**Parent PR #355 HEAD:** `9f7a8ecb915cf199a82c0b4d37c56c40d722037b`  
+**Compare:** 11 ahead / 0 behind; merge-base is current #355. PR #357 remains OPEN / DRAFT / UNMERGED.
 
-### Restacked Hardware-owned change
-- Both Vendo sketches use bounded decimal GPIO parsing, board-specific numeric bounds, flash-reserved-pin rejection, and distinct coin/relay/LED role checks.
-- Startup rejects invalid persisted pin tuples and falls back to board defaults; ESP32 keeps station/poll disabled until a valid saved tuple is available.
-- Both setup save handlers reject invalid GPIO assignments with HTTP 400 and return before Wi-Fi verification or EEPROM/Preferences persistence.
-- The source-extracted host lab injects duplicate-role, flash-pin, nonnumeric, overflow, ESP32 input-only, and missing-early-return mutations; it explicitly reports SIMULATED_ONLY and physical acceptance false.
-- The existing workflow includes the runtime GPIO lab and remains branch-filtered for this Hardware branch.
+### Exact-head Actions at restack commit 69ef1b49
+- Full BlazePwifi build [#45958121607](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45958121607): **FAILURE** — 15 jobs succeeded, 1 failed, 13 skipped. CI-0701 and the mandatory handover freshness gate passed. The sole validation failure was the QA-owned **Controller protocol parity** step. ESP8266, ESP32, Android and all 11 OpenWrt firmware target jobs succeeded. Release/signing/simulation jobs were skipped.
+- Native synthetic journal [#45958121633](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45958121633): **FAILURE** at PAY-0745 durable Vendo pending sequence and corruption contract; preceding synthetic journal and installed read-only/deny gates passed. Hardware did not add a pending-clear workaround.
+- ESP32 Mbed TLS 3/4 [#45958121512](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45958121512): **3/3 PASS** (source contract, clean core 3.3.13 build, clean core 4.0.0 build).
+- Exact-source GPIO/poll workflow: push [#45958114250](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45958114250) **PASS**; PR [#45958121684](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45958121684) **PASS**.
 
-### Pre-restack evidence (not transferred as new-head evidence)
-- Exact-source #45955340512 at `79470fb6cfa1daf274c33d2100ad19eabd5b39fd`: PASS.
-- Full #45955340513 at `79470fb6cfa1daf274c33d2100ad19eabd5b39fd`: FAILED in the QA-owned validation step at controller-protocol parity (config_revision); ESP8266/ESP32 and all 14 target/platform build jobs succeeded. No QA assertions or unsafe clearPending callsites were changed.
-- Post-restack exact-head Full/Native/Poll/Mbed reruns are required; no new-head result is claimed here.
+### Interpretation
+The local GPIO parsing/policy and mutation harness is CI VERIFIED. The Full and Native failures are cross-role contract blockers, not grounds to bypass QA or CORE. No source change was made to controller protocol, financial state, pending disposition, migration, signer, witness, or COE. Coin admission remains fail-closed.
 
-### Boundaries
-No authenticated controller API, receipt/disposition, finance, migration, signer, witness, or COE source changed. Coin admission and pending disposition remain fail-closed. Physical GPIO/strap/relay/coin/power acceptance remains NOT TESTED; 150 power cuts and 30-device/24-hour soak remain NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+Physical GPIO/strap/relay/coin acceptance, electrical pulse/recovery, 150 power cuts and 30-device/24-hour soak remain **NOT TESTED**. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
 
-### Required coordination
-PHX-QA owns the semantic controller/pending-disposition assertions. PHX-CORE owns the authenticated register/poll/receipt/disposition contract. PHX-MASTER owns the role matrix and integration order. Hardware will not add unsigned admission or pending-clear calls to satisfy implementation-specific tests.
+### Coordination
+PHX-QA must reconcile the Controller protocol parity and PAY-0745 assertions against semantic deny-only/pending-state behavior. PHX-CORE must publish the authenticated register/poll/receipt/disposition contract. PHX-MASTER owns the integration matrix. Hardware will not add unsigned admission or clearPending calls to satisfy implementation-specific tests.
 
 ---
 
