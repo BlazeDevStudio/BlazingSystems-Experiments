@@ -1,3 +1,86 @@
+## PHX-MASTER UTC11 — 2026-11-27 live owner CI, sibling Hardware PR overlap, and exact COE provenance
+
+**Updated:** 2026-11-27T11:38:31Z  
+**Role / task:** PHX-MASTER / PHX-MASTER-UTC11-20261127  
+**Execution:** connected GitHub read/write and read-only recursive-tree/blob comparisons; no Codex; no local repository checkout.  
+**Disposition:** coordination-only update. PR #288 remains OPEN / DRAFT / UNMERGED; COE #26 remains FROZEN; cleanup #266 remains OPEN / 0-of-7; P0 #177 remains OPEN; PRODUCTION NO-GO.
+
+### 1. Exact control-plane refs
+
+- Experiments main: `6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5`.
+- Experiments development: `aad3aade72c1156eecba1fed30907c6d0283b2c5`.
+- Master branch at start of this update: `phoenix/master-coordination@db7e4684636db9bf097cee737dcc8a484812c168`.
+- Master PR #288: OPEN / DRAFT / UNMERGED; base/merge-base `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; comparison with current main is 657 ahead / 1 behind; 251 changed paths, all under `coordination/phoenix/`. No rebase or merge was performed.
+- COE main: `a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE PR #26: OPEN / DRAFT at `b382d233ff06c8791b1028bed3c617cc7b670d12`.
+- Issue #172 and cleanup issue #266 remain open. Cleanup checklist remains 0/7; no Master checkbox is claimed complete.
+- Active v0.6 branch: `2fbd2475e9f54878c316fa7cea2f228386b0e859`; ESP8266 sketch blob `12c4bb82b6fddafe813674a0b5f692c1d3634073`, ESP32 sketch blob `29f1125d52ff474a0d028ad41f7af201be1f0f9d`.
+- Current `OWNERSHIP_ROUTES.json` blob `e4db324315a1b3543fec17a148fbf960170fcb29`: 11 routes, `DRAFT_REVIEW_ONLY`, historical source ref `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`; PHX-MASTER target remains null. No route or owner was changed.
+
+### 2. Current role PRs and exact-head CI
+
+| Owner / PR | Exact current head | Exact-head evidence | Boundary / next owner action |
+|---|---|---|---|
+| CORE #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | [Build #42698139210](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42698139210) SUCCESS; scoped build only. | CORE remains reserved to its separate continuation; no duplicate CORE task or source edit. |
+| RENTAL #328 | `10fc200b6dbf470a95e679d3acc58aff4ab2a67f` | API21/23 [#45622918364](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45622918364), auth/installer [#45622918551](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45622918551), APK identity [#45622918340](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45622918340) SUCCESS; shared build [#45622918468](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45622918468) FAILURE. | RENTAL owns handover freshness and shared ESP32 build correction. |
+| PISONET #255 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | [Windows synthetic #42462978704](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42462978704) SUCCESS. | Native COM/device acceptance NOT TESTED. |
+| HARDWARE #359 | `250facfabc96147b779c9998348cd665e7a621b7` | Poll intake [#45986932616](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45986932616) SUCCESS; Mbed [#45986932989](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45986932989) SUCCESS; Full [#45986932765](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45986932765) FAILURE at mandatory handover freshness; Native [#45986932774](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45986932774) FAILURE at PAY-0745 corruption assertion. Earlier focused source/test [#45986402635](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45986402635) PASS at source/test SHA `bdad70fa77f51421cb7a6f01d89bd2b7ea9bdc3f`; that does not make the current Full/Native gates green. | HARDWARE owns journal-recovery implementation and handover; QA owns the failing semantic assertion review. Do not add a literal call merely to satisfy source-presence matching. |
+| HARDWARE #360 | `73610a977bd91a389acedd5a62412da973562ee9` | Poll intake [#45990550066](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45990550066) SUCCESS; Mbed [#45990550109](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45990550109) SUCCESS; Full [#45990550104](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45990550104) FAILURE at Controller protocol parity. Earlier focused source/test [#45989512681](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45989512681) PASS at source/test SHA `04ac3330c0123e581bf4f195ff5f1a5089b82ffb`. | HARDWARE owns the host-only response-outcome regression; it does not solve the blocking-poll pulse-loss path or enable positive admission. |
+| HARDWARE #358 | `d8c3261e9b8aac2637c4395e5c92285bf7d8df53` | Relay [#45976531381](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45976531381) and Quarantine [#45976531391](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45976531391) SUCCESS; Full [#45976531386](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45976531386) FAILURE at Controller protocol parity. | Separate Hardware branch; no ownership transfer. |
+| HARDWARE #357 | `a37a55dc9b9d6b51dad3383f2ad808548e57ba7c` | Poll [#45974563611](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45974563611) and Mbed [#45974563443](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45974563443) SUCCESS; Full [#45974563563](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45974563563) and Native [#45974563682](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45974563682) FAILURE. | HARDWARE owns GPIO guard; QA/CORE own semantic contract reconciliation. |
+| HARDWARE #356 | `0ea32d31ed5c902b2187d98c181aab14bc9fdeae` | Preflight [#45940999149](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45940999149), Mbed [#45940999085](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45940999085), Native [#45940999113](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45940999113), Full [#45940999134](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45940999134) SUCCESS. | CI/synthetic only; physical storage, flash, and power-cut acceptance NOT TESTED. |
+| QA #290 | `5c29d15994cee1279058f1eca12f2a3180704292` | [Windows synthetic #43633486963](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43633486963) SUCCESS. | Independent semantic review remains required. |
+| QA #292 | `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | No PR-triggered workflow run at this head. | QA owns restacking from stale Master base `b1ca02e2087f3b1a7169ceab9c34e52646e700df`. |
+| RELEASE #242 / #291 | `36c0d0bb3e58786359555b307bb784f720f023ce` / `bf339a76964a1abe2412fac45392fe06a8e66418` | No exact-head PR workflow runs returned for either head. | RELEASE owns exact-head signing/publisher evidence. |
+
+### 3. Hardware sibling-PR collision review
+
+- #359 and #360 are separate OPEN / DRAFT / UNMERGED branches, both based on #355 at `9f7a8ecb915cf199a82c0b4d37c56c40d722037b`.
+- Their changed-path intersection is exactly two shared documentation paths: `experiment/openwrt/BlazePwifi/PROJECT_HANDOVER.md` and `experiment/openwrt/BlazePwifi/docs/handover/CURRENT_STATE.md`. No changed .ino or .py source/test path overlaps.
+- #359 changes the two board sketches plus its pending-recovery host lab. #360 changes poll-response host harness/cases and handover documentation, not production sketches.
+- They are not stacked on one another and no combined source tree exists. HARDWARE should reconcile the two shared handover files before either branch is integrated; MASTER did not edit either Hardware branch.
+
+### 4. P0 poll-before-sample source readback
+
+At active v0.6 head `2fbd2475e9f54878c316fa7cea2f228386b0e859`, ESP8266 calls `post("poll")` at line 354 and first samples `digitalRead(runCoinPin)` at line 357; timeout is 3,500 ms at line 263. ESP32 calls `post("poll")` at line 314 and first samples the coin pin at line 318; timeout is 3,500 ms at line 230. Issue #177 remains P0. #360 adds a host-only positive-response/transient-output regression, but it does not eliminate the blocking wait before the first sample. Keep admission deny-only; no physical pulse/relay acceptance is inferred.
+
+### 5. COE #26 exact-tree, license, and test-identity reconciliation
+
+All recursive trees below were complete and non-truncated. Destination COE #26 is `b382d233ff06c8791b1028bed3c617cc7b670d12` with 286 tree entries. Current source candidates are not one interchangeable tree:
+
+| Source candidate | Tree entries | ESP32 files | ESP8266 files | PisoWiFi test files |
+|---|---:|---:|---:|---:|
+| Experiments main `6be5d19b` | 2,341 | 3 | 3 | 38 |
+| Experiments development `aad3aade` | 2,079 | 3 | 3 | 33 |
+| HARDWARE #358 `d8c3261e` | 2,573 | 16 | 67 | 47 |
+| HARDWARE #359 `250facf` | 2,424 | 4 | 14 | 151 |
+| HARDWARE #360 `73610a9` | 2,423 | 4 | 13 | 151 |
+
+At #359 versus COE #26 mapped routes: CORE library 20/20 (14 identical, 6 divergent); Vendo CGI 1/1 divergent; Rental Android 983/8 (983 source-only, 8 destination-only); Rental server 12/4 (1 divergent, 11 source-only, 3 destination-only); Pisonet 44/47 (16 identical, 9 divergent, 19 source-only, 22 destination-only); ESP32 4/1 (0 identical, 1 divergent, 3 source-only); ESP8266 14/1 (0 identical, 1 divergent, 13 source-only); tests 151/19 (2 identical, 2 divergent, 147 source-only, 15 destination-only); release workflow 1/1 divergent. #360 has the same counts except ESP8266 is 13 / 1 (12 source-only). This is a parity audit only; no source branch is selected or admitted.
+
+License/NOTICE path review at #359/#360: 9 source project LICENSE/NOTICE paths; 4 exact destination path/blob counterparts. The project LICENSE matches COE Pisowifi/LICENSE at blob `1ee55b94183417be977ca287cd7391f9a6f7e721`. Repository-root NOTICE.md blob `f6d92cd21465312be5993631fe26977219be0fb9` has no COE root counterpart. Five source-side project paths have no exact destination path counterpart; duplicate QRCode license content does not resolve missing path/provenance obligations. This is not legal approval.
+
+COE #26 SOURCE_INTAKE blob `1b9018ff944f7f673934d0fc2a97e0a0090d3f5f` has 61 runtime rows: actual 46 byte-identical / 15 derived, while the declared summary says 47 / 14. It lists 15 derived tests (11 NOT_RUN, 4 PENDING_CI_RUN). MIGRATION_MAP has only 14 derived-test rows and omits `voucher_txn_journal.sh`. For derived tests, MIGRATION_MAP hashes disagree with SOURCE_INTAKE: run_focus map `fa1f4f2c6393504499d50659d8bf980caf7ff85b` vs intake `2b7b861ec63cf811d18d0e63b11a65efd1bec0e9`; member_txn_journal map `01dc9c65ae9d74eaafb403d47aebcd20edd14390` vs intake `d04df3c6f3ada60b9fda8c8c04230dd31e37019a`. The new #359 recovery lab and #360 poll-response harness paths have no counterpart at the COE #26 destination.
+
+The intake source pin is Experiments commit `6d4c9b487af4d768c4d7627654d119417fcc6e00` and destination branch `feature/pisowifi-cleanup-stabilization`; the live PR #26 instead targets `integration/ecosystem-nonproprietary-candidate-20261111@b382d233`. The 5 PR #26 workflows remain CANCELLED (runs #43096752563, #43096752800, #43096752557, #43096752609, #43096752632) with zero check-runs. Keep COE #26 FROZEN. No staging, copy, move, overwrite, cherry-pick, route promotion, or destination write.
+
+### 6. Registry and execution limitations
+
+The requested private Drive BLAZE_PROJECT_REGISTRY v11 and newer corrections were not recovered. The Library search exposed older registry snapshots only; no Google Drive connector action is available in this execution runtime. No older registry was substituted, and no private Drive contents or identifiers were copied into GitHub. No new artifact path was created.
+
+Nine read-only structural checks passed: manifest JSON/schema and 11-route shape; PHX-MASTER target-null and DRAFT_REVIEW_ONLY status; all 251 PR #288 paths confined to coordination/phoenix; #359/#360 same base and documentation-only path overlap; no source/test overlap; and no duplicate UTC11 Master checkpoint on #172 or #288. Recursive source/destination trees were also checked for truncation and all were complete. These checks are not the Master Python suite or verify_coordination.py.
+
+The Master Python suite and verify_coordination.py were NOT RUN because no authenticated local checkout or Master CI execution path was available. PR #288 exact-head Actions and combined statuses are empty. No local test result is claimed.
+
+### 7. Next owner actions
+
+1. HARDWARE reconciles shared #359/#360 handover files, refreshes #359 Full at the post-sync exact head, and keeps both branches draft-only.
+2. QA reviews the #359 PAY-0745 assertion as a semantic state-transition contract, not a literal source-string requirement; QA also restacks #292 on current Master.
+3. CORE continues its separately owned authenticated poll/receipt/disposition work; PHX-MASTER did not start a competing CORE task.
+4. COE integration owner reconciles source/destination branch pins, intake counts, test rows/hashes, missing files and licensing, then reruns all five workflows at an exact proposed destination SHA before requesting staging review.
+5. Registry custodian supplies v11 and newer corrections through authorized private Drive access. Master test suite runs only after an authenticated checkout or dedicated Master CI path is available.
+
+**No merge, release, flash, secret provisioning, real payment, live migration, physical test, signer/witness approval, or production gate approval occurred. PRODUCTION NO-GO.**
+
 ## PHX-MASTER UTC10 — live decision and blockers (2026-11-27T10:08Z)
 
 **PR #288 OPEN / DRAFT / UNMERGED. COE #26 FROZEN. Cleanup #266 OPEN / 0-of-7. P0 #177 OPEN. PRODUCTION NO-GO.**

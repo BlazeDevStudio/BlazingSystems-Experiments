@@ -1,3 +1,42 @@
+## PHX-MASTER UTC11 — 2026-11-27 exact source candidate versus COE #26 destination
+
+All recursive trees are complete and non-truncated. Destination COE #26 is `b382d233ff06c8791b1028bed3c617cc7b670d12` (286 tree entries). Source branch candidates are materially different and must not be treated as interchangeable:
+
+| Source candidate | Tree entries | ESP32 files | ESP8266 files | PisoWiFi tests |
+|---|---:|---:|---:|---:|
+| Experiments main `6be5d19b` | 2,341 | 3 | 3 | 38 |
+| Experiments development `aad3aade` | 2,079 | 3 | 3 | 33 |
+| HARDWARE #358 `d8c3261e` | 2,573 | 16 | 67 | 47 |
+| HARDWARE #359 `250facf` | 2,424 | 4 | 14 | 151 |
+| HARDWARE #360 `73610a9` | 2,423 | 4 | 13 | 151 |
+
+### #359 and #360 route parity against COE #26
+
+| Route | #359 source / destination | Identical | Divergent | Source-only | Destination-only |
+|---|---:|---:|---:|---:|---:|
+| CORE library | 20 / 20 | 14 | 6 | 0 | 0 |
+| Vendo CGI | 1 / 1 | 0 | 1 | 0 | 0 |
+| Rental Android | 983 / 8 | 0 | 0 | 983 | 8 |
+| Rental server | 12 / 4 | 0 | 1 | 11 | 3 |
+| Pisonet SoftTimer | 44 / 47 | 16 | 9 | 19 | 22 |
+| ESP32 | 4 / 1 | 0 | 1 | 3 | 0 |
+| ESP8266 | 14 / 1 | 0 | 1 | 13 | 0 |
+| PisoWiFi tests | 151 / 19 | 2 | 2 | 147 | 15 |
+| Release workflow | 1 / 1 | 0 | 1 | 0 | 0 |
+
+#360 has the same route counts except ESP8266 is 13 / 1 with 12 source-only files. #359 and #360 are sibling branches; neither contains the other’s changes. The #358 source candidate has a different tree and test shape, so prior #358 parity counts are not reusable for #359/#360.
+
+### Intake, test identity, and license gates
+
+- SOURCE_INTAKE has 61 runtime rows; actual 46 byte-identical / 15 derived, but its summary declares 47 / 14.
+- It lists 15 derived tests (11 NOT_RUN, 4 PENDING_CI_RUN); MIGRATION_MAP has only 14 rows and omits voucher_txn_journal.sh.
+- MIGRATION_MAP derived-test hashes disagree with SOURCE_INTAKE for run_focus.sh (fa1f4f2c… vs 2b7b861e…) and member_txn_journal.sh (01dc9c65… vs d04df3c6…).
+- Four of nine source project LICENSE/NOTICE paths have exact destination path/blob counterparts; five source paths lack exact counterparts. Project LICENSE equals Pisowifi/LICENSE; repository-root NOTICE.md is absent from COE #26.
+- The #359 pending-recovery lab and #360 poll-response harness paths are absent from COE #26. No destination test identity or import completeness is established.
+- COE #26 five workflows remain CANCELLED with zero check-runs. Keep FROZEN; no staging or destination writes.
+
+Manifest blob e4db324315a1b3543fec17a148fbf960170fcb29 remains DRAFT_REVIEW_ONLY, 11 routes, historical source_ref f4e8a891; PHX-MASTER target remains null. SOURCE_INTAKE still points to source commit 6d4c9b and destination branch feature/pisowifi-cleanup-stabilization, while live PR #26 uses integration/ecosystem-nonproprietary-candidate-20261111@b382d233. Resolve these pins before any migration proposal.
+
 ## PHX-MASTER UTC10 — exact source/destination tree and migration-intake reconciliation (2026-11-27T10:08Z)
 
 Read-only recursive trees were complete and non-truncated: Hardware source candidate #358 at `d8c3261e9b8aac2637c4395e5c92285bf7d8df53` (2,573 entries) and COE #26 destination at `b382d233ff06c8791b1028bed3c617cc7b670d12` (286 entries). This is a parity audit, not a source-selection decision or migration authorization.

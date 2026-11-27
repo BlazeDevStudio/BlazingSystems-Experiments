@@ -1,3 +1,14 @@
+## PHX-MASTER UTC11 — 2026-11-27 migration routing and provenance hold
+
+- OWNERSHIP_ROUTES.json remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`, schema v1, 11 routes, status `DRAFT_REVIEW_ONLY`; source_ref is historical `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`. PHX-MASTER target remains null. No route or owner changed.
+- Experiments main `6be5d19b`, development `aad3aade`, Hardware #358 `d8c3261e`, #359 `250facf`, and #360 `73610a9` have different complete tree shapes (2,341 / 2,079 / 2,573 / 2,424 / 2,423 entries). COE #26 destination is 286 entries. There is no single source candidate selected.
+- SOURCE_INTAKE source pin is Experiments `6d4c9b487af4d768c4d7627654d119417fcc6e00`; its destination field names branch `feature/pisowifi-cleanup-stabilization`. Live PR #26 instead targets `integration/ecosystem-nonproprietary-candidate-20261111@b382d233`. The intake and migration map therefore do not describe the live PR destination.
+- Exact current source/destination route counts and tree identities are in INTEGRATION_MATRIX.md (UTC11 section). No file is eligible for staging on this evidence.
+- License/NOTICE check: source project LICENSE and COE Pisowifi/LICENSE are byte-identical at blob `1ee55b94183417be977ca287cd7391f9a6f7e721`; source repository-root NOTICE.md blob `f6d92cd21465312be5993631fe26977219be0fb9` is absent from COE root. Only 4 of 9 source project LICENSE/NOTICE paths have exact destination path/blob counterparts; this is not legal approval.
+- SOURCE_INTAKE runtime count is 61, actual 46 identical / 15 derived versus declared 47 / 14. Derived tests are 15 (11 NOT_RUN, 4 PENDING); MIGRATION_MAP has 14 and omits voucher_txn_journal.sh. run_focus and member_txn_journal derived-test hashes differ between the map and intake.
+- All five COE #26 workflows are CANCELLED and check-runs total_count is zero. Keep PR #26 FROZEN.
+- No copy, move, overwrite, cherry-pick, staging, route promotion, destination write, or migration approval. Re-review only after COE owner reconciles exact source/destination branch pins, every mapped blob, license notices, test identities, and terminal exact-head CI.
+
 ## PHX-MASTER UTC10 — route-manifest and intake-pin reconciliation (2026-11-27T10:08Z)
 
 - Live `OWNERSHIP_ROUTES.json` blob: `e4db324315a1b3543fec17a148fbf960170fcb29`. It still contains 11 routes, `DRAFT_REVIEW_ONLY`, source ref `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`, destination candidate PR #26 at `b382d233ff06c8791b1028bed3c617cc7b670d12`, and PHX-MASTER target `null`.

@@ -1,3 +1,30 @@
+## PHX-MASTER UTC11 — 2026-11-27 live role PR and exact-head CI reconciliation
+
+No ownership changed. PHX-CORE remains reserved to the separate CORE continuation; PHX-MASTER did not modify any subsystem source branch.
+
+| Role | Current PR / exact head | Exact-head CI | Owner action / boundary |
+|---|---|---|---|
+| PHX-MASTER | #288 / `db7e4684636db9bf097cee737dcc8a484812c168` at start of this update | No workflow runs or combined statuses; 657 ahead / 1 behind main; 251 paths all coordination-only. | Coordination/architecture/provenance only; no rebase/merge. |
+| PHX-CORE | #252 / `c82705f2de865c89ab733b10efa84f26f56a5cc4` | Build #42698139210 SUCCESS (scoped). | Separate continuation owns CORE; no duplicate work. |
+| PHX-RENTAL | #328 / `10fc200b6dbf470a95e679d3acc58aff4ab2a67f` | API21/23 #45622918364, auth/installer #45622918551, APK identity #45622918340 SUCCESS; shared build #45622918468 FAILURE. | RENTAL resolves handover freshness and shared build. |
+| PHX-PISONET | #255 / `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | Windows synthetic #42462978704 SUCCESS. | Native COM/device acceptance NOT TESTED. |
+| PHX-HARDWARE | #359 / `250facfabc96147b779c9998348cd665e7a621b7` | Poll #45986932616 and Mbed #45986932989 SUCCESS; Full #45986932765 FAILURE at handover freshness; Native #45986932774 FAILURE at PAY-0745 corruption assertion. Focused source/test #45986402635 PASS at bdad70fa. | Hardware owns firmware/handover; QA reviews semantic assertion. |
+| PHX-HARDWARE | #360 / `73610a977bd91a389acedd5a62412da973562ee9` | Poll #45990550066 and Mbed #45990550109 SUCCESS; Full #45990550104 FAILURE at Controller protocol parity. Focused source/test #45989512681 PASS at 04ac3330. | Host-only regression; no positive admission or P0 resolution. |
+| PHX-HARDWARE | #358 / `d8c3261e9b8aac2637c4395e5c92285bf7d8df53` | Relay #45976531381 and Quarantine #45976531391 SUCCESS; Full #45976531386 FAILURE at Controller protocol parity. | Separate branch; physical acceptance NOT TESTED. |
+| PHX-HARDWARE | #357 / `a37a55dc9b9d6b51dad3383f2ad808548e57ba7c` | Poll #45974563611 and Mbed #45974563443 SUCCESS; Full #45974563563 and Native #45974563682 FAILURE. | QA/CORE own semantic reconciliation; no unsafe clear call. |
+| PHX-HARDWARE | #356 / `0ea32d31ed5c902b2187d98c181aab14bc9fdeae` | Preflight #45940999149, Mbed #45940999085, Native #45940999113, Full #45940999134 SUCCESS. | Synthetic CI only; physical storage/power-cut acceptance NOT TESTED. |
+| PHX-QA | #290 / `5c29d15994cee1279058f1eca12f2a3180704292` | Windows synthetic #43633486963 SUCCESS. | Independent semantic review still required. |
+| PHX-QA | #292 / `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | No PR-triggered run. | Restack from stale Master base b1ca02e. |
+| PHX-RELEASE | #242 / `36c0d0bb3e58786359555b307bb784f720f023ce`; #291 / `bf339a76964a1abe2412fac45392fe06a8e66418` | No exact-head PR workflow runs for either. | RELEASE supplies exact-head signing/publisher evidence. |
+
+### Hardware branch coordination note
+
+#359 and #360 both use #355 head `9f7a8ecb915cf199a82c0b4d37c56c40d722037b` as their base. Their only changed-path overlap is the two canonical handover files, PROJECT_HANDOVER.md and docs/handover/CURRENT_STATE.md; their changed source/test paths are disjoint. They remain sibling draft branches, not a combined source candidate. HARDWARE must reconcile shared documentation before integration; PHX-MASTER did not edit either branch.
+
+### Standing gate
+
+Active v0.6 P0 #177 remains poll-before-first-sample on ESP8266 354→357 and ESP32 314→318 with 3,500 ms timeout. COE #26 remains FROZEN. Cleanup #266 remains OPEN / 0-of-7. PRODUCTION NO-GO.
+
 ## PHX-MASTER UTC10 — live role PR heads and exact-head CI (2026-11-27T10:08Z)
 
 | Owner | Current draft PR / exact head | Exact-head CI evidence | Ownership boundary / next owner action |
