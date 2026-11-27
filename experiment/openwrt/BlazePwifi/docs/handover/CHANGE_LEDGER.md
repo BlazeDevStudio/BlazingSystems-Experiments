@@ -3931,3 +3931,17 @@ This is the required documentation-first IN-PROGRESS record. No source/test resu
 - Physical relay polarity, pulse retention, electrical recovery, 150 power cuts and 30-device/24-hour soak remain NOT TESTED. HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
 - Prefix provenance: exact current ledger content began with the full blob at phoenix/hw-active-v06-poll-intake-deny-20261126-utc05; the append preserves that historical prefix byte-for-byte.
 - Updated UTC: 2026-11-27T21:14:00Z.
+
+
+## 2026-11-27T21:19Z — PHX-HARDWARE #177 — terminal CI evidence for PR #367
+
+- Exact tested head: 183650be2174e94027b245654cf1eb5db5451dac (source/test code unchanged after the source commits).
+- Focused run #46069083820, job 140741404795: PASS. New deny-latch contract reports 7/7 unsafe mutations rejected on ESP8266 and 7/7 on ESP32; existing poll-intake, register, GPIO, configuration-persistence and pending-recovery host labs pass. Append-only guard: CHANGE_LEDGER_APPEND_ONLY_PASS base_bytes=1132798 appended_bytes=46976.
+- ESP32 clean-build matrix #46069083861: 3/3 PASS. Source-contract job 140741697634 PASS; Arduino ESP32 core 3.3.13 job 140741697559 PASS with two byte-identical builds SHA256 a53c3c91a5a52274c3e94cff3f1836764c07c33087938d7152f20b44d699c4e4; Arduino ESP32 core 4.0.0 job 140741697175 PASS with two byte-identical builds SHA256 bd59c469b50ce6bb579083110e089df3082aa0dff79b55f010aaac7fec83bfac.
+- Full run #46069084089: handover freshness, HND-0700 and CI-0701 PASS. All 14 build jobs PASS (ESP8266, ESP32, Android and 11 OpenWrt firmware targets). Validation job 140741571137 FAILS at QA-owned experiment/openwrt/BlazePwifi/tests/controllers.sh:21 because the deny-only v0.6 candidate lacks config_revision. This is an inherited CORE/QA contract parity blocker; this PR did not modify controllers.sh or add a decoy field. Update-bundle, simulations, candidate, signing and publication jobs were skipped.
+- No Native PAY-0745 run was triggered for this PR head; its prior QA-owned source-expression mismatch remains open.
+- This PR changes only host-lab source-contract tests and handovers/ledger. No production sketch, authenticated API, financial authority, COE source, signer, migration or release configuration changed.
+- Active v0.6 poll-before-first-sample P0 #177 remains unresolved. The candidate remains deny-only; coin and relay admission stay denied.
+- Physical pulse/relay retention, polarity, electrical recovery, 150 controlled power cuts, 30-device/24-hour soak, protected witness, v1-to-v2 migration and independent release acceptance remain NOT TESTED / NOT ACCEPTED. HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
+- The previous full CHANGE_LEDGER prefix at phoenix/hw-active-v06-poll-intake-deny-20261126-utc05 remains preserved byte-for-byte.
+- Updated UTC: 2026-11-27T21:19:00Z.
