@@ -1,3 +1,26 @@
+## PHX-MASTER UTC19 — current blockers and exact next actions
+
+**Disposition:** PR #288 OPEN / DRAFT / UNMERGED; COE #26 FROZEN; cleanup #266 OPEN / 0-of-7; P0 #177 OPEN; PRODUCTION NO-GO.
+
+1. **P0 coin pulse loss:** active v0.6 ESP8266/ESP32 still synchronously poll before the first coin sample. HARDWARE owns firmware; CORE/HARDWARE own poll/receipt/disposition; QA owns independent regression.
+2. **Controller authentication contract:** current main CGI register/ping and poll do not emit controller `response_sig`; member endpoint signatures are not poll authentication. CORE must publish the canonical contract and golden vectors; QA must independently verify them.
+3. **HARDWARE #365:** focused/Mbed exact-head CI pass, Full fails at Controller protocol parity; test-only matrix does not resolve P0 or physical pulse retention.
+4. **COE #26:** exact route trees show large missing/divergent paths; both firmware sketches differ; test map omits voucher journal and has stale hashes; six license/NOTICE counterparts are missing; intake counts disagree; source/destination pins are stale. No staging is safe.
+5. **Private records:** canonical Drive registry v11/newer corrections are NOT_RECOVERED. Library contains only v3–v7/base registry snapshots and a 2026-11-09 checkpoint referencing v11; manifest/ledger snapshots are 2026-10-26. No dedicated Google Drive connector is exposed. No private IDs/content were published.
+6. **Master execution:** Master Python suite and `verify_coordination.py` NOT RUN; no exact-head Master Actions run or combined status. Read-only GitHub/in-memory assertions are not repository test execution.
+7. **Cleanup:** issue #266 remains OPEN / 0-of-7; #365 is one bounded Hardware test-harness contribution, not completion of any cleanup gate.
+8. **Release gates:** independent protected signing/anti-rollback witness, crash-atomic durable financial state, reversible migration tests, independent QA/native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized release gates remain unverified.
+
+### Next exact actions
+
+- Registry custodian: restore authorized canonical v11 and newer corrections plus current manifest/ledger through a connected Drive surface.
+- CORE + HARDWARE: publish the authenticated register/poll/receipt/disposition contract and reconcile the active-v0.6 source base.
+- QA: review #365 transport cases and resolve Controller protocol parity without weakening fail-closed semantics.
+- COE integration owner: reconcile exact source/destination pins, file blobs, test identities and license counterparts; keep #26 frozen until independently reviewed.
+- Repository admin: provide an ordinary non-Codex local checkout or dedicated Master CI path so `verify_coordination.py` and the Master Python suite can actually run.
+
+---
+
 ## PHX-MASTER UTC17 — current blockers and exact next actions
 
 **Disposition:** coordination-only audit; PR #288 OPEN / DRAFT / UNMERGED; COE #26 FROZEN; cleanup #266 OPEN / 0-of-7; P0 #177 OPEN; PRODUCTION NO-GO.

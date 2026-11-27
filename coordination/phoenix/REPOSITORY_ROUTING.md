@@ -1,3 +1,13 @@
+## PHX-MASTER UTC19 — routing and private artifact access hold
+
+- `OWNERSHIP_ROUTES.json` remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`: schema v1, 11 routes, `DRAFT_REVIEW_ONLY`, PHX-MASTER target null. No owner or route changed. Its `source_ref=f4e8a891...` is historical; live Experiments main is `6be5d19b...`.
+- COE #26 remains the only destination candidate: branch `integration/ecosystem-nonproprietary-candidate-20261111` at `b382d233...`; COE main `a6513ab4...` is a three-entry scaffold. SOURCE_INTAKE/MIGRATION_MAP still pin historical source `6d4c9b48...` and destination `feature/pisowifi-cleanup-stabilization`; this is not the live PR branch.
+- Current root AGENTS.md blob `d8777e3b58efc41caa5aa3c969c932aee9103d5f` links cloud policy blob `5e503925750c4e511314e4b7624579d82f60aae2` and storage handover blob `a15f14cb3baf46424b820e1a921462794422f06b`; both were read from renamed `BlazeDevStudio/BlazingSystems`.
+- Full Library pagination covered 1,422 items / 8 pages. It surfaced registry snapshots v3–v7 and a base registry, plus a 2026-11-09 production checkpoint that references v11; the canonical `BLAZE_PROJECT_REGISTRY_v11_20261027.json` and newer corrections themselves were not present. Artifact manifest and sync ledger snapshots are dated 2026-10-26, not current authority.
+- No dedicated Google Drive connector is exposed. Do not substitute old snapshots, disclose private IDs/content, or create/modify Drive artifacts. Registry custodian must restore the canonical private control folder and current corrections before any mirror or migration work.
+
+---
+
 ## PHX-MASTER UTC17 — routing and artifact-policy revalidation
 
 - `OWNERSHIP_ROUTES.json` remains blob e4db324315a1b3543fec17a148fbf960170fcb29: schema v1, 11 routes, `DRAFT_REVIEW_ONLY`, PHX-MASTER target null. Its source_ref f4e8a891 is historical; current Experiments main is 6be5d19b. Do not silently refresh this pin or promote any route without registry-custodian and destination-owner review.

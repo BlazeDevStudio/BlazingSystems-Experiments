@@ -1,3 +1,25 @@
+## PHX-MASTER UTC19 — exact role heads and CI (2026-11-27T19:38Z)
+
+No ownership changed. MASTER owns `coordination/phoenix/` only; all subsystem source branches remain owner-reserved.
+
+| Role / PR | Exact head | Exact-head CI / disposition |
+|---|---|---|
+| MASTER #288 | audit-start `13d397095f8712f17c9b700cf5f0812d81e07fea` | No exact-head workflow run or combined status. |
+| CORE #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | Build [#42698139210 PASS](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42698139210), scoped only. CORE source untouched. |
+| RENTAL #328 | `10fc200b6dbf470a95e679d3acc58aff4ab2a67f` | API [#45622918364 PASS](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45622918364); auth/installer [#45622918551 PASS](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45622918551); APK [#45622918340 PASS](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45622918340); shared build [#45622918468 FAIL](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45622918468). |
+| PISONET #255 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | Windows synthetic [#42462978704 PASS](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42462978704); native COM acceptance NOT TESTED. |
+| HARDWARE #365 | `e65b0b895af9c3fc5e5632f704cb67b347e69725` | Focused [#46056656161 PASS](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46056656161); Mbed [#46056656203 PASS, 3/3](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46056656203); Full [#46056656151 FAIL](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46056656151) at Controller protocol parity; 13 downstream jobs skipped. Source/test SHA `fcd5d7df210c8521f9c8fcc1019c8db8bdaf7eb0`; evidence docs head `6e5e126199368cbe78f9d46dd6c702c883cfa5cb`. |
+| HARDWARE #363 | `6fcacbc1dff79f5f0b933da8ab66b5ee044080ee` | Focused [#46045686250 PASS](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46045686250); Mbed [#46045686112 PASS, 3/3](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46045686112); Full [#46045686333 FAIL](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46045686333); Native [#46045686154 FAIL](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46045686154). |
+| HARDWARE #364 | `ea765fb822e1c517db4e61c103b86d8eb2c66c92` | Focused [#46041398065 PASS](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46041398065); Mbed [#46041397937 PASS](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46041397937); Full [#46041397974 FAIL](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46041397974). |
+| HARDWARE #362 | `eeddfc37d24d20ebc14641dfe3ffa247bbbc1ebd` | Focused [#46029353181 PASS](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46029353181); Mbed [#46029353094 PASS](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46029353094); Full [#46029353015 FAIL](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46029353015); Native [#46029353001 FAIL](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46029353001). |
+| HARDWARE #361 | `8a1999ccdcab02445ef93c153316e519d9476210` | Focused [#46018576706 PASS](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46018576706); Mbed [#46018576254 PASS](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46018576254); Full [#46018576372 FAIL](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46018576372). |
+| QA #290 / #292 | `5c29d15994cee1279058f1eca12f2a3180704292` / `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | #290 Windows synthetic [#43633486963 PASS](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43633486963); #292 no exact-head runs/statuses. |
+| RELEASE #291 / #242 | `bf339a76964a1abe2412fac45392fe06a8e66418` / `36c0d0bb3e58786359555b307bb784f720f023ce` | No exact-head PR-triggered runs/statuses. |
+
+The current automation inventory surfaced active `Blaze Hourly Production Development` assigned to PHX-HARDWARE; no exact-title `Blaze Production Continuation` entry surfaced. CORE #252 was left untouched; no competing CORE work was started. All owner PRs remain OPEN / DRAFT / UNMERGED. CI is not physical acceptance.
+
+---
+
 ## PHX-MASTER UTC17 — exact owner heads and CI
 
 No ownership changed. MASTER owns `coordination/phoenix/` only; CORE, RENTAL, PISONET, HARDWARE, QA and RELEASE source branches remain owner-reserved.

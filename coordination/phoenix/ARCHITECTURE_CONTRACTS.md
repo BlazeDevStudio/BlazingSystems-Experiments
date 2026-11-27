@@ -1,3 +1,20 @@
+## PHX-MASTER UTC19 — poll transport outcomes do not clear P0 or authorize coin admission
+
+HARDWARE #365 is a test-harness-only child of #364. Its source/test SHA is `fcd5d7df210c8521f9c8fcc1019c8db8bdaf7eb0`; evidence docs head `6e5e126199368cbe78f9d46dd6c702c883cfa5cb`; current PR head `e65b0b895af9c3fc5e5632f704cb67b347e69725`. It adds five transport outcomes × four relay/LED polarity combinations (20 cases per board / 40 total): immediate begin failure, empty timeout, malformed body, server-error body and untrusted positive `insert=true`. The transient response-consumption/re-enable mutation is rejected on both boards. No production ESP sketch or CORE API changed.
+
+Exact current-head CI: focused [#46056656161 PASS](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46056656161); Mbed [#46056656203 PASS, 3/3](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46056656203); Full [#46056656151 FAIL](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46056656151) at `Controller protocol parity`; 13 jobs skipped. This is host/CI evidence only, not physical acceptor retention.
+
+P0 #177 remains OPEN. Its embedded source pin `9df0a7e7cae31fc06d098d5a0ea7ae27f56a75ed` is stale relative to live active v0.6 branch `2fbd2475e9f54878c316fa7cea2f228386b0e859`:
+- ESP8266 blob `12c4bb82b6fddafe813674a0b5f692c1d3634073`: synchronous `post("poll")` at line 354 precedes first `digitalRead(runCoinPin)` at line 357.
+- ESP32 blob `29f1125d52ff474a0d028ad41f7af201be1f0f9d`: synchronous `post("poll")` at line 314 precedes first `digitalRead(runCoinPin)` at line 318.
+- The blocking poll is configured for 3,500 ms. Candidate #365 does not alter the active v0.6 branch and does not resolve this pulse-loss race.
+
+Current main CGI producer `vendo` blob `2e3a1430d08cc6606429a042df3b5848f53c7267`: `register|ping` and `poll` response blocks (lines 63–86) do not include controller `response_sig`; later `response_sig` fields belong to member endpoints and do not authenticate controller poll/disposition. The current consumer also does not verify a controller poll response signature.
+
+**Contract boundary:** CORE owns authenticated register/poll, receipt identity and disposition semantics; HARDWARE owns firmware intake/relay implementation; QA owns independent golden-vector and source-linked regression review; MASTER owns only cross-role contract coordination. Keep coin admission and relay output deny-only until CORE publishes the contract and QA independently verifies it. Do not add a decoy `config_revision` or `response_sig` token, weaken default-deny, or treat #365 as a P0 fix.
+
+---
+
 ## PHX-MASTER UTC17 — observed controller contract divergence (no schema change authorized)
 
 Current main `6be5d19b` includes `config_revision` in ESP8266/ESP32 poll handling, but active v0.6 `2fbd2475` does not. HARDWARE #364 Full CI fails at QA-owned `tests/controllers.sh:21` on this exact branch-parity difference. Do not resolve by adding a decoy field or weakening the assertion; CORE/HARDWARE must establish the authoritative source/base and QA must independently validate the approved semantics.

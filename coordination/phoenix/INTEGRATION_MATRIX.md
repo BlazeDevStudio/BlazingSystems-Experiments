@@ -1,3 +1,34 @@
+## PHX-MASTER UTC19 — #365 source candidate vs COE #26 exact route map
+
+Source tree #365 `e65b0b895af9c3fc5e5632f704cb67b347e69725`: 2,432 entries / 1,886 blobs, non-truncated. Destination PR #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`: 286 entries / 207 blobs, non-truncated. This is path-prefix/blob-mode provenance only, not a copy plan.
+
+| Route | Source blobs | Destination blobs | Exact | Divergent | Source-only | Destination-only |
+|---|---:|---:|---:|---:|---:|---:|
+| CORE OpenWrt library | 20 | 20 | 14 | 6 | 0 | 0 |
+| CORE Vendo CGI | 1 | 1 | 0 | 1 | 0 | 0 |
+| RENTAL Android | 983 | 8 | 0 | 0 | 983 | 8 |
+| RENTAL standalone server | 12 | 4 | 0 | 1 | 11 | 3 |
+| PISONET SoftTimer | 44 | 47 | 16 | 9 | 19 | 22 |
+| HARDWARE ESP32 | 4 | 1 | 0 | 1 | 3 | 0 |
+| HARDWARE ESP8266 | 16 | 1 | 0 | 1 | 15 | 0 |
+| QA PisoWiFi tests | 151 | 19 | 2 | 2 | 147 | 15 |
+| RELEASE workflow reimplementation | 1 | 1 | 0 | 1 | 0 | 0 |
+
+### Firmware, tests and licensing
+
+- ESP32 sketch source blob `a673e323e1c160cbfe03949d13a9e01b47386596` differs from destination `3cc7ec54b476943dc04a8d1af5e2df5fe054e422`.
+- ESP8266 sketch source blob `7527dbff41b7f21bdc3d3ed9ee3db1c0d21eb07b` differs from destination `c8be98f72596681e36a3ad1f8939bf8046c96887`.
+- QA test route: 151 source blobs / 19 destination blobs; 2 exact, 2 divergent, 147 source-only and 15 destination-only. Counts include docs, fixtures and vendor files, not only executable tests.
+- SOURCE_INTAKE has 61 runtime rows. Actual statuses are 46 `byte_identical` / 15 derived, while its summary says 47 / 14. It lists 15 derived tests; MIGRATION_MAP has 18 test rows (4 original + 14 derived) and omits `tests/voucher_txn_journal.sh`. Map hashes for `run_focus.sh` and `member_txn_journal.sh` disagree with intake hashes.
+- Ten source LICENSE/NOTICE/license artifacts were enumerated; four mapped counterparts are exact and six are absent: root NOTICE, Android launcher LICENSE, Android `assets/license.html`, jsQR LICENSE, UI QR LICENSE and Tabler LICENSE.
+- HARDWARE_FIRMWARE_AUDIT says both controller sketches were not copied pending P0-1, but the live destination tree contains one divergent sketch under each board directory.
+- SOURCE_INTAKE pins source `6d4c9b487af4d768c4d7627654d119417fcc6e00` and destination `feature/pisowifi-cleanup-stabilization`; live PR #26 uses `integration/ecosystem-nonproprietary-candidate-20261111@b382d233`. Intake flags `release_authorized`, `hardware_tested` and `full_ci_tested` are false.
+- All five PR #26 candidate workflows are terminal CANCELLED: [Rental #43096752563](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/43096752563), [Hardware #43096752800](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/43096752800), [PisoWiFi #43096752557](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/43096752557), [case collision #43096752609](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/43096752609), [SoftTimer #43096752632](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/43096752632).
+
+COE #26 remains FROZEN. No staging, copy, move, overwrite, cherry-pick, rebase, retarget or destination write occurred.
+
+---
+
 ## PHX-MASTER UTC17 — #364 source candidate vs COE #26 exact route map
 
 Source tree `ea765fb822e1c517db4e61c103b86d8eb2c66c92`: 2,430 entries, non-truncated. COE #26 destination `b382d233ff06c8791b1028bed3c617cc7b670d12`: 286 entries, non-truncated. The route-prefix comparison is an audit only, not a copy plan.
