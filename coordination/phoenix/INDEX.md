@@ -1,3 +1,14 @@
+## PHX-MASTER UTC00 — exact-head Hardware #356, P0 poll sequence and COE #26 provenance audit (2026-11-27T00:47:02.187Z)
+
+- [UTC00 exact-head Hardware #356, P0 poll sequence and COE #26 provenance report](PHX_MASTER_UTC00_20261127_HW356_P0_POLL_AND_COE26_PROVENANCE_AUDIT.md).
+- Live refs: Experiments main 6be5d19b; v0.5.3 development aad3aade; active v0.6 2fbd2475; Master start a56750fb; COE main a6513ab4; COE #26 b382d233.
+- Current v0.6 still polls synchronously before sampling the coin input on ESP8266 (354/357) and ESP32 (314/318); issue #177's body pins an older source SHA. Physical acceptance NOT TESTED.
+- Hardware #356 current head 660660a: exact-source run #45918239625 FAILS because sibling partition on the same physical disk is accepted; Full #45918239713 handover freshness FAILS and other jobs were still running at readback.
+- COE #26 FROZEN: source/destination trees 2395/286; mapped tests 153/19 (2 exact, 2 divergent, 149 source-only, 15 destination-only); both firmware blobs differ; licence/NOTICE gaps and no mapping for new #356 lab files.
+- Manifest remains 11 routes / DRAFT_REVIEW_ONLY / Master target null; its source pin is historical. Cleanup #266 OPEN / 0-of-7. Private Drive v11/newer corrections NOT_RECOVERED; Master product tests NOT RUN. PRODUCTION NO-GO.
+
+---
+
 ## PHX-MASTER UTC23 — exact Hardware, P0 pulse-loss and COE migration audit (2026-11-26T23:39Z)
 
 - [UTC23 exact-head Hardware #355, issue #177 pulse-loss and COE #26 tree/provenance audit](PHX_MASTER_UTC23_20261126_HW355_NVS_PULSE_LOSS_COE26_EXACT_TREE_AUDIT.md).
