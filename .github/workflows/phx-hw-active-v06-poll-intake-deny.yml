@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - phoenix/hw-active-v06-poll-intake-deny-20261126-utc05
+      - phoenix/hw-poll-preflight-lab-modules-20261127-utc18
     paths:
       - 'experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino'
       - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/BlazePwifiVendo.ino'
@@ -18,6 +19,8 @@ on:
       - 'experiment/openwrt/BlazePwifi/PROJECT_HANDOVER.md'
       - 'experiment/openwrt/BlazePwifi/docs/handover/CURRENT_STATE.md'
       - 'experiment/openwrt/BlazePwifi/docs/handover/CHANGE_LEDGER.md'
+      - 'experiment/openwrt/BlazePwifi/tools/handover_ledger_append_only_guard.py'
+      - 'experiment/openwrt/BlazePwifi/tests/handover_ledger_append_only_guard_test.py'
       - 'experiment/openwrt/BlazePwifi/docs/handover/2026-11-27-hw-config-persistence-write-results-utc21.md'
       - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/firmware_source_extract.py'
       - 'experiment/openwrt/BlazePwifi/docs/handover/2026-11-26-hw-active-v06-poll-intake-deny-utc05.md'
@@ -38,6 +41,8 @@ on:
       - 'experiment/openwrt/BlazePwifi/PROJECT_HANDOVER.md'
       - 'experiment/openwrt/BlazePwifi/docs/handover/CURRENT_STATE.md'
       - 'experiment/openwrt/BlazePwifi/docs/handover/CHANGE_LEDGER.md'
+      - 'experiment/openwrt/BlazePwifi/tools/handover_ledger_append_only_guard.py'
+      - 'experiment/openwrt/BlazePwifi/tests/handover_ledger_append_only_guard_test.py'
       - 'experiment/openwrt/BlazePwifi/docs/handover/2026-11-27-hw-config-persistence-write-results-utc21.md'
       - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/firmware_source_extract.py'
       - '.github/workflows/phx-hw-active-v06-poll-intake-deny.yml'
@@ -52,8 +57,25 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
       - name: Verify exact checkout
         run: test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
+      - name: Verify historical hardware ledger is preserved byte-for-byte
+        env:
+          LEDGER_BASE_REF: phoenix/hw-active-v06-poll-intake-deny-20261126-utc05
+          LEDGER_EXPECTED_BASE_SHA: fc842342596786e072630179acfbbc4feeb2ba02
+          LEDGER_PATH: experiment/openwrt/BlazePwifi/docs/handover/CHANGE_LEDGER.md
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin "$LEDGER_BASE_REF"
+          actual_base="$(git rev-parse FETCH_HEAD)"
+          test "$actual_base" = "$LEDGER_EXPECTED_BASE_SHA"
+          base_file="$(mktemp)"
+          trap 'rm -f "$base_file"' EXIT
+          git show "$actual_base:$LEDGER_PATH" > "$base_file"
+          python3 experiment/openwrt/BlazePwifi/tools/handover_ledger_append_only_guard.py --base "$base_file" --candidate "$LEDGER_PATH"
+      - name: Test append-only ledger guard failure injection
+        run: python3 experiment/openwrt/BlazePwifi/tests/handover_ledger_append_only_guard_test.py
       - name: Compile source-extracted poll, relay and pending-evidence regression
         run: python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_preflight_inhibit_lab.py
       - name: Compile source-extracted deny-only remote-config regression
