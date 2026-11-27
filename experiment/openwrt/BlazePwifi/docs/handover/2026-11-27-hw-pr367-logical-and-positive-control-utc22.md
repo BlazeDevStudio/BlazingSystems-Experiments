@@ -34,3 +34,11 @@ The same run independently passed the append-only ledger check (`base_bytes=1132
 The preceding tree-repair handover records restoration of the complete #366 base tree. This correction is committed on that restored branch; do not force-push or merge. PR #367 remains OPEN / DRAFT / UNMERGED.
 
 **Disposition:** test-guard false positive corrected; coin and relay admission remain denied; production remains NO-GO.
+
+
+## Exact-head revalidation — 2026-11-27T22:55Z
+
+- Focused [#46078860359](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46078860359), job 140772887391: PASS at docs head `638444dfa4f36a0a38cac8d06fd31f07ce9b8228`. Both boards: 7/7 direct deny mutations rejected, 5/5 pointer/reference/address mutations rejected, logical-AND positive control accepted, register 8/8, poll transport 20 cases/board, append-only ledger guard and 7 ledger unit tests PASS.
+- Mbed [#46078860303](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46078860303): source-contract 140773102073 PASS; core 3.3.13/4.0.0 target jobs still in progress.
+- Full [#46078860354](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46078860354): handover freshness gate PASS; QA-owned `tests/controllers.sh` fails on `config_revision` missing from both deny-only sketches. Main contains the token; candidate does not. All 14 target jobs PASS at last read; Full workflow still settling. No change to QA-owned test or production sketches.
+- The current source/test SHA remains `83504c222c60e823e5883f814e28f9948a1f7702`; exact docs head tested was `638444dfa4f36a0a38cac8d06fd31f07ce9b8228`. Production remains NO-GO; physical acceptance NOT TESTED.
