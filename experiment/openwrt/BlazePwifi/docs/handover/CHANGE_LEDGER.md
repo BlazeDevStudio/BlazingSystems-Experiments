@@ -3439,3 +3439,14 @@ Application/source snapshot is still exact520; this note is metadata only.
 - This exercises the existing `[ -e ] || [ -L ]` fail-closed rule; no production firmware or storage behavior changes.
 - The test and canonical handovers are committed together so the mandatory handover freshness gate remains valid. Exact-head focused and Full CI are pending.
 - Physical storage, power-cut, customer, coin, finance and migration tests remain NOT TESTED; production NO-GO.
+
+
+## PHX-HARDWARE UTC02 — final Full run reconciliation
+
+- Exact source/test/firmware-preflight head: `46e93bb113a10eed3d26f3a4c240175dde4681a0` on `phoenix/hardware-storage-preflight-device-separation-20261126-utc23`; PR #356 remains OPEN / DRAFT / UNMERGED.
+- Exact-head focused push [#45925391274](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45925391274), job `140265388786`, and focused PR [#45925396944](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45925396944), job `140265408068`: PASS. Both assert exact SHA, zero ledger deletions, append-only PASS, mountinfo and physical-parent matrices PASS including dangling-holder failure injection.
+- Full push [#45925391298](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45925391298) and Full PR [#45925397000](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45925397000): both terminal FAILURE solely at the ESP32 compile job in this run set. Exact error: `BlazePwifiVendo32.ino:6:10: fatal error: mbedtls/sha256.h: No such file or directory`.
+- Full validation job `140265440632`: PASS, 135/135 steps, including mandatory handover freshness, storage preflight and all synthetic payment/replay/witness checks.
+- ESP8266 PASS; Android APK PASS; all 11 OpenWrt targets PASS; v0.4 Ruijie/Orange Pi/x86/browser/Android-emulator simulations PASS; update bundle PASS. ESP simulation SKIPPED. Production import, signing handoff, preview and release jobs SKIPPED.
+- This is CI evidence only. ESP32 build remains a blocker; Full aggregate is not green. No release or deployment was performed.
+- Physical power cuts, 30-device/24-hour soak, electrical pulse/recovery and actual scratch-media independence remain NOT TESTED. Production NO-GO.
