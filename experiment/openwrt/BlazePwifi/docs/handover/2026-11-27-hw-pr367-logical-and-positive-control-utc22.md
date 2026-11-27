@@ -42,3 +42,11 @@ The preceding tree-repair handover records restoration of the complete #366 base
 - Mbed [#46078860303](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46078860303): source-contract 140773102073 PASS; core 3.3.13/4.0.0 target jobs still in progress.
 - Full [#46078860354](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46078860354): handover freshness gate PASS; QA-owned `tests/controllers.sh` fails on `config_revision` missing from both deny-only sketches. Main contains the token; candidate does not. All 14 target jobs PASS at last read; Full workflow still settling. No change to QA-owned test or production sketches.
 - The current source/test SHA remains `83504c222c60e823e5883f814e28f9948a1f7702`; exact docs head tested was `638444dfa4f36a0a38cac8d06fd31f07ce9b8228`. Production remains NO-GO; physical acceptance NOT TESTED.
+
+
+## Terminal revalidation — 2026-11-27T23:02Z
+
+- Focused #46079211743 job 140773999801: PASS at `8709a7f60c2dc8c2978c39d93d9e72f6b64e6ef4`; both boards 7/7 direct deny mutations, 5/5 pointer/reference/address mutations, logical-AND positive control, register 8/8, poll 20 cases/board, append-only ledger guard and 7 ledger tests PASS.
+- Mbed #46079211640: 3/3 PASS (source contract, ESP32 core 3.3.13, ESP32 core 4.0.0).
+- Full #46079211670: handover freshness PASS; QA-owned controller parity fails because `config_revision` is absent from both deny-only candidate sketches. All 14 target builds PASS; downstream bundle/simulation/signing/publication skipped.
+- No production sketches or shared APIs changed. P0 #177 unresolved; physical acceptance NOT TESTED; PRODUCTION NO-GO.

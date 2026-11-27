@@ -1,26 +1,29 @@
-# CURRENT STATUS — 2026-11-27T22:55Z
+# CURRENT STATUS — 2026-11-27T23:02Z
 
-## PHX-HARDWARE UTC22 — #367 restored tree and exact-head validation
+## PHX-HARDWARE UTC22 — PR #367 tree restored; source guard CI verified; Full parity blocked
 
 **Role:** PHX-HARDWARE  
-**Repository:** BlazeDevStudio/BlazingSystems-Experiments; owner verified as BlazeDevStudio; default branch main  
+**Repository:** BlazeDevStudio/BlazingSystems-Experiments; owner verified as BlazeDevStudio  
 **Main HEAD:** `6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5`  
-**PR #367:** OPEN / DRAFT / UNMERGED; branch `phoenix/hw-deny-latch-monotonicity-20261127-utc21`; base #366 `07fef4e8e1055c06cf5e5c3a0d3829c52be31cc9`  
-**Exact source/test head:** `83504c222c60e823e5883f814e28f9948a1f7702`  
-**Exact docs head before this sync:** `638444dfa4f36a0a38cac8d06fd31f07ce9b8228`  
+**Branch:** `phoenix/hw-deny-latch-monotonicity-20261127-utc21`  
+**PR #367:** OPEN / DRAFT / UNMERGED; base #366 `07fef4e8e1055c06cf5e5c3a0d3829c52be31cc9`  
+**Source/test SHA:** `83504c222c60e823e5883f814e28f9948a1f7702`  
+**Docs head tested:** `8709a7f60c2dc8c2978c39d93d9e72f6b64e6ef4`  
 **Tree repair:** `f3988697ed960294bca1c849661a53ad0355b7b3`
 
-### Verified current results
+### Final exact-head evidence at docs head `8709a7f60c2dc8c2978c39d93d9e72f6b64e6ef4`
 
-- Full parent tree restored from exact #366 tree `4f0552d1926d134ff48be9b0c2dce512af69702e`. Current tree: 2,438 entries / 1,892 blobs, non-truncated; PR diff eight paths, zero deletions.
-- Focused [#46078860359](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46078860359), exact-head job `140772887391`: **PASS**. Both board source labs reject 7/7 direct deny-latch mutations and 5/5 pointer/reference/address mutations; logical-AND positive control passes; register mutations 8/8; poll transport matrix 20 cases per board; append-only ledger guard and seven ledger unit tests pass.
-- Mbed TLS [#46078860303](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46078860303): source-contract job `140773102073` **PASS**; Arduino ESP32 core 3.3.13 job `140773102367` and core 4.0.0 job `140773102323` were **IN PROGRESS** at checkpoint.
-- Full [#46078860354](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46078860354): canonical handover freshness gate and its fresh/stale/partial/resync regression tests **PASS**. Validation then **FAILS** at QA-owned `tests/controllers.sh` because it requires `config_revision` in both sketches. The current main sketches contain that token; the deny-only #366 candidate sketches do not. This is the known QA/CORE contract-parity mismatch, not a reason to insert an unauthenticated or decoy field. All 14 target build jobs (ESP8266, ESP32, Android and 11 OpenWrt targets) **PASS** at the last job read; workflow still showed IN_PROGRESS while final jobs/cleanup settled. Update-bundle and simulation jobs were skipped after validation failed.
-- The earlier #46078501073 Full run failed at handover freshness before canonical sync; that failure is superseded by #46078860354, whose gate passes.
+- Recursive tree: 2,438 entries / 1,892 blobs, not truncated; PR comparison has eight paths (five modified, three added), zero deletions.
+- Focused [#46079211743](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46079211743), job `140773999801`: **PASS**. Both ESP8266 and ESP32 labs reject 7/7 direct deny-latch mutations and 5/5 pointer/reference/address mutations; logical-AND read-only positive control accepted; register mutations 8/8 rejected; poll transport matrix 20 cases per board; append-only ledger guard PASS (`base_bytes=1132798`, `appended_bytes=59869`) and seven ledger-guard unit tests PASS.
+- Mbed [#46079211640](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46079211640): **3/3 PASS** — source-contract job `140773999722`, Arduino ESP32 core 3.3.13 job `140773999982`, core 4.0.0 job `140773999999`.
+- Full [#46079211670](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46079211670): **FAILURE**. Canonical handover freshness gate and its fresh/stale/partial/resync regression tests PASS. Validation job `140774059558` fails at QA-owned `tests/controllers.sh`: `config_revision` is required in both sketches, but it is absent from the deny-only #366 candidate sketches; both current main sketches contain it. All 14 target build jobs (ESP8266, ESP32, Android and 11 OpenWrt targets) PASS. Update-bundle, simulation, signing and publication stages skipped after validation failure.
+- The previous exact-head failure #46078329448 was a false positive where `&& coinEnabled` matched address-of. The single-ampersand correction and explicit positive control now pass at the exact head above.
 
-### Scope and release boundary
+### Scope / safety
 
-Only Hardware-owned source-contract/test files and canonical handovers changed. No production sketch, shared CORE API, QA-owned assertion, finance, signer, witness, migration, release setting, COE destination or Master-owned matrix changed. Coin and relay admission remain denied. P0 #177 poll-before-first-sample race remains unresolved. Physical pulse/relay/electrical recovery, 150 power cuts and 30-device/24-hour soak remain NOT TESTED. HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
+Only Hardware-owned source-contract and failure-injection files plus canonical handovers changed. No production sketch, shared CORE API, QA-owned assertion, finance, signer, witness, migration, release setting, COE destination or Master-owned matrix changed. No physical flashing, device reset, live-money test, production migration, signing, merge, tag or deployment. Coin and relay admission remain denied.
+
+**Unresolved:** P0 #177 poll-before-first-sample race; QA/CORE controller parity; Master matrix update; physical pulse/relay/electrical recovery; 150 power cuts; 30-device/24-hour soak; protected witness; durable accounting/replay; v1-to-v2 migration; independent QA/release signoff. HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
 
 ## AUTHORITATIVE LIVE LINKS
 
@@ -30,7 +33,7 @@ Only Hardware-owned source-contract/test files and canonical handovers changed. 
 - [Safety #34](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/34), [finance #31](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/31), [finance #32](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/32), [witness #43](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/43).
 - Protected Hardware PRs [#239](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/239), [#254](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/254), [#283](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/283) remain OPEN / DRAFT / UNMERGED.
 - COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; [COE PR #26](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/pull/26) remains FROZEN / DRAFT at `b382d233ff06c8791b1028bed3c617cc7b670d12`.
-- Private `BLAZE_PROJECT_REGISTRY_v11_20261027.json` remains NOT RECOVERED; no Google Drive connector is exposed and the Library search did not surface that exact file. No older checkpoint was substituted.
+- Private `BLAZE_PROJECT_REGISTRY_v11_20261027.json` remains NOT RECOVERED; no Google Drive connector is exposed and the Library search did not surface the exact file. No older checkpoint substituted.
 ## PHX-HARDWARE UTC21 — deny-latch pointer/reference escape guard
 
 **Recorded:** 2026-11-27T21:33:50Z  
