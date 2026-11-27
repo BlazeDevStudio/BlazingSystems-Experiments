@@ -1,4 +1,25 @@
-## PHX-HARDWARE UTC13 — pending-recovery harness module split
+
+
+## PHX-HARDWARE UTC13 — post-sync exact-head terminal CI
+
+**PR #361 documentation head at this verification:** `98b23b749fd8cc1c11b82c526543947aed2b6d21`  
+**Source/test SHA:** `13ef08db75acb5bfa609b6f0c445f35d2584a024`  
+**State:** OPEN / DRAFT / UNMERGED; child of #359.
+
+### Exact-head focused and target matrix
+
+- Focused [#46011260202](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46011260202), job `140547052760`: **PASS**. `CHANGE_LEDGER_APPEND_ONLY_PASS base_bytes=1132798 appended_bytes=20192`; source extractor PASS; both ESP8266 and ESP32 report 11 recovery scenarios, two rename-failure cases, ambiguity preservation; 16/16 unsafe source mutations rejected.
+- ESP32 Mbed TLS [#46011260194](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46011260194): **3/3 PASS** — source contract job `140547053507`, Arduino core 3.3.13 job `140547053897`, Arduino core 4.0.0 job `140547054123`.
+- Full [#46011260334](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46011260334): **FAIL** at validation job `140547173691`, after the handover gate and CI-0701 passed. The failing step is `tests/controllers.sh` line 21, `grep -q 'config_revision'`. This is a legacy token-presence parity assertion, not a cryptographic response-signature verification. Both current #359 sketch blobs lack `config_revision`; they retain the generic `sig` token. The main CGI still lacks the approved controller `response_sig` producer for register/poll/coin. Hardware did not add a decoy token or weaken deny-default.
+- All 13 firmware target jobs passed (ESP8266, ESP32, x86_64, Ruijie, and the nine listed Orange Pi target variants); Android passed. Production import/signing, update bundle, simulation, candidate and publication jobs were skipped after validation failed.
+
+### Inherited parent blocker
+
+Parent #359 exact-head Full [#45997708895](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45997708895) fails at the same controller parity gate. Parent Native [#45997708911](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45997708911) fails at QA-owned PAY-0745 corrupt-state assertion. PR #361 did not change the firmware sketches or Native assertions; no Native run was triggered for this test-only module split.
+
+The post-sync Full result is not a Full PASS. CORE owns the authenticated controller contract; QA owns semantic assertion changes.
+
+Physical acceptance NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.## PHX-HARDWARE UTC13 — pending-recovery harness module split
 
 - PR #361 OPEN / DRAFT / UNMERGED; child of #359 at parent head `47357aab2ff7910b38ca538a46dfa01bdbca01e8`.
 - Source/test SHA `13ef08db75acb5bfa609b6f0c445f35d2584a024`: extracted the embedded C++17 fake-LittleFS harness from the 382-line Python runner into adjacent `pending_recovery_promotion_lab_harness.hpp`; the runner substitutes exactly one marker with the source-extracted `loadPending()`.

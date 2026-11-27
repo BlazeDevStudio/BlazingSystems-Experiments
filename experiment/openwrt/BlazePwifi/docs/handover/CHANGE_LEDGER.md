@@ -3757,3 +3757,13 @@ PR #354 remains OPEN / DRAFT / UNMERGED. PRs #239/#254/#283 remain OPEN / DRAFT 
 - Pre-sync Full [#46010669130](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46010669130), validation job `140545112859`: FAIL at handover freshness because this record was not yet synchronized. Post-sync Full rerun required; no terminal target count claimed here.
 - SIMULATED / CI VERIFIED only. Physical LittleFS, coin/relay/electrical, 150 power cuts and 30-device/24-hour soak NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
 - No production sketch, shared API, QA assertion, finance, signer/witness, migration, COE source, flash, reset, live money, release tag, or deployment changed.
+
+## 2026-11-27 — PHX-HARDWARE UTC13 post-sync terminal evidence for PR #361
+
+- Documentation head: `98b23b749fd8cc1c11b82c526543947aed2b6d21`; source/test SHA: `13ef08db75acb5bfa609b6f0c445f35d2584a024`.
+- Focused [#46011260202](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46011260202), job `140547052760`: PASS; append-only guard PASS; 11 recovery scenarios per board; 16 unsafe mutations rejected.
+- Mbed [#46011260194](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46011260194): 3/3 PASS (source contract, Arduino core 3.3.13 and 4.0.0).
+- Post-sync Full [#46011260334](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46011260334): FAIL at validation job `140547173691`, `tests/controllers.sh:21`, missing `config_revision` token. Handover freshness and CI-0701 pass; all 13 firmware target jobs and Android pass; downstream production/signing/simulation/publication jobs skipped.
+- The failing assertion is token presence, not cryptographic signature verification. Current main CGI still lacks the approved controller `response_sig` producer for register/poll/coin. No decoy token or positive response consumer was added.
+- Parent #359 Native [#45997708911](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45997708911) remains FAIL at QA-owned PAY-0745; no Native run was triggered on #361.
+- SIMULATED / CI VERIFIED only. Physical LittleFS, GPIO/relay/electrical, 150 power cuts and 30-device/24-hour soak NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
