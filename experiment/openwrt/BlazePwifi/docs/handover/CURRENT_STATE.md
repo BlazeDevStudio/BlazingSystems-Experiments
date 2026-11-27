@@ -1,3 +1,29 @@
+## PHX-HARDWARE UTC17 — pending-journal write/readback verification
+
+**Role:** PHX-HARDWARE · **Issue:** [#177](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/177) · **PR:** [#363](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/363) · **State:** OPEN / DRAFT / UNMERGED.  
+**Branch:** `phoenix/hw-pending-persist-io-failure-guard-20261127-utc16` · **Source/test SHA:** `cca859a859c748a3a06653bbe217af7d81749eba` · **Parent:** #362 at `eeddfc37d24d20ebc14641dfe3ffa247bbbc1ebd`.
+
+### Actual firmware correction
+Both ESP8266 and ESP32 `persistPendingSequence()` now reopen the closed `/pending.new` record through the existing `readPendingFile()` validator before any stale-backup removal or canonical rotation. The readback must be v2 and match magic, version, reserved, acked sequence, sequence, pulse count, nonce, target and checksum. Open/short/corrupt/mismatched readback returns false, leaves the previous canonical and new candidate intact, performs no rename, and does not publish the new RAM sequence state. No positive coin path or relay enable was added.
+
+### Test-first and exact-head evidence
+- Expected RED on old firmware: [#46044749729](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46044749729), job `140661084265`, failed with harness exit 14 because a full-length but corrupted `/pending.new` write was promoted without readback.
+- Corrected source/test commit: `cca859a859c748a3a06653bbe217af7d81749eba`.
+- Focused push [#46044948992](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46044948992), job `140661750430`: PASS.
+- Focused PR [#46044956444](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46044956444), job `140661774727`: PASS.
+- Both focused runs report ESP8266 and ESP32 `PENDING_PERSIST_FAILURE_PASS scenarios=17`; 9 unsafe source mutations per board rejected, 18 total. New injected cases cover full-length corrupt write, readback-open failure, short read and readback mismatch.
+- ESP32 Mbed TLS [#46044956381](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46044956381): **3/3 PASS** — source-contract job `140662066528`, Arduino core 3.3.13 job `140662066496`, core 4.0.0 job `140662066238`.
+- Full source-head [#46044956380](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46044956380): validation job `140661988862` failed at the mandatory handover-freshness gate because this source commit had not yet been recorded in canonical handovers. ESP8266, ESP32, Android and all 11 scheduled firmware-target jobs passed; 13 downstream validation/simulation/update jobs were skipped. A new PR Full run is required after this handover/ledger commit.
+- Native synthetic [#46044956397](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46044956397), job `140661775342`: FAIL at QA-owned PAY-0745 assertion. No QA source was changed.
+- The focused workflow's historical-ledger guard passed at source head: `base_bytes=1132798 appended_bytes=31328`.
+
+### Scope and acceptance boundary
+This is immediate filesystem readback plus host failure injection, **SIMULATED / CI VERIFIED only**. It does not establish flash-cell durability across power loss or physical LittleFS acceptance. No shared CORE API, QA assertion, financial state, migration, signer/witness, COE destination, device flash/reset, customer money, merge or deployment changed. Physical LittleFS/electrical acceptance, 150 power cuts and 30-device/24-hour soak remain NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+
+**Next exact action:** verify the docs-head Full workflow after this checkpoint; PHX-MASTER records #363 and its #362 → #361 → #359 ancestry in role/integration matrices; CORE/QA resolve authenticated controller disposition and PAY-0745 semantics before any positive coin path.
+
+---
+
 
 
 ## PHX-HARDWARE UTC13 — post-sync exact-head terminal CI

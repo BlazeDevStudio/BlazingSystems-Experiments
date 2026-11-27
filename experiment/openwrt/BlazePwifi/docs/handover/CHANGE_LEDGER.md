@@ -3826,3 +3826,15 @@ PR #354 remains OPEN / DRAFT / UNMERGED. PRs #239/#254/#283 remain OPEN / DRAFT 
 - AGENTS-linked cloud policy and storage handover were read at current owner path BlazeDevStudio/BlazingSystems (blobs 5e503925750c4e511314e4b7624579d82f60aae2 and a15f14cb3baf46424b820e1a921462794422f06b). Private registry v11 remains NOT RECOVERED; Library v7 not substituted; no Drive connector or upload.
 - Master #288 head 0662a64e1fe450cf1517a910e058491bb7de7a58 has not yet listed #363 in role/integration matrices. Master owns the update. Cleanup #266 remains 0/7. Active #177 poll-before-first-sample remains unresolved; this PR does not enable coin/relay.
 - Physical LittleFS/electrical acceptance, 150 power cuts and 30-device/24-hour soak NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+
+## 2026-11-28 — PHX-HARDWARE UTC17 pending-journal readback verification
+
+- Role: PHX-HARDWARE; issue #177; draft PR #363; branch `phoenix/hw-pending-persist-io-failure-guard-20261127-utc16`; parent #362 at `eeddfc37d24d20ebc14641dfe3ffa247bbbc1ebd`.
+- Source/test SHA: `cca859a859c748a3a06653bbe217af7d81749eba`. Both ESP8266 and ESP32 now read back `/pending.new` through `readPendingFile()` and compare all persisted fields before backup/canonical rotation. Failed open, short read, corrupt bytes, legacy format or field mismatch aborts before rotation and RAM state publication.
+- Test-first RED: #46044749729 job 140661084265 failed with harness exit 14 on full-length corrupted write.
+- Focused push #46044948992 job 140661750430 PASS; focused PR #46044956444 job 140661774727 PASS. Each board: 17 persistence scenarios PASS; 18/18 unsafe mutations rejected.
+- Mbed #46044956381: source contract 140662066528, core 3.3.13 job 140662066496 and core 4.0.0 job 140662066238 PASS (3/3).
+- Full source-head #46044956380: handover freshness failed before validation; ESP8266, ESP32, Android and 11 firmware targets passed; downstream validation/simulation/update jobs skipped. Docs-head Full rerun required.
+- Native #46044956397 job 140661775342 remains failed at QA-owned PAY-0745. No QA source changed.
+- This is SIMULATED / CI VERIFIED filesystem readback, not power-loss durability or hardware acceptance. Physical LittleFS/electrical tests, 150 power cuts and 30-device/24-hour soak NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+- No positive coin path, relay enable, finance, shared API, migration, signer/witness, COE, device flash/reset, live money, merge or deployment.
