@@ -1,3 +1,13 @@
+## PHX-MASTER UTC15 — routing and private artifact access
+
+OWNERSHIP_ROUTES.json remains unchanged at blob e4db324315a1b3543fec17a148fbf960170fcb29: 11 routes, DRAFT_REVIEW_ONLY, PHX-MASTER target null. It is not a copy/move command.
+
+SOURCE_INTAKE names destination branch feature/pisowifi-cleanup-stabilization; live PR #26 is integration/ecosystem-nonproprietary-candidate-20261111@b382d233. Do not promote any route until the COE integration owner reconciles the source pin, live destination pin, exact file blobs, licenses, tests and CI.
+
+The canonical private BLAZE_PROJECT_REGISTRY_v11_20261027.json and newer corrections were not found by exact Library title search; only older v3-v7 snapshots surfaced. No Google Drive connector is exposed. Do not substitute an older registry or publish private IDs/content. The two cloud policy/handover links in AGENTS.md could not be fetched; repository admin must restore them.
+
+---
+
 ### UTC14 cloud-policy dependency
 
 Root AGENTS.md links the cloud artifact policy and verified recovery handover in legacy `BlazingSystems/BlazingSystems`; both could not be fetched and were not found by current organization code search. Do not infer their contents. Repository admin must restore the links or provide current documents. No Drive artifact was created or modified.

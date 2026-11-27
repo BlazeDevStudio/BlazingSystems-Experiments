@@ -1,3 +1,26 @@
+## PHX-MASTER UTC15 — release gate and exact blockers
+
+**Disposition:** PR #288 OPEN / DRAFT / UNMERGED; COE #26 FROZEN; cleanup #266 OPEN / 0-of-7; P0 #177 OPEN; **PRODUCTION NO-GO**.
+
+### Verified
+- Live refs and owner PR/CI heads reconciled in ROLE_ASSIGNMENTS.md.
+- Active v0.6 source still performs synchronous poll before the first coin sample on ESP8266 and ESP32; the 3,500 ms timeout is present.
+- COE #26 exact source/destination firmware, tests, intake counts, test-map hashes and license/NOTICE gaps were rechecked.
+- No subsystem source, ownership manifest, COE destination, cleanup checkbox, financial state or hardware was changed.
+
+### Blockers
+1. Canonical private Drive v11/newer corrections unavailable; no Drive connector.
+2. AGENTS-linked cloud artifact policy and recovery handover not readable.
+3. Master Python suite and verify_coordination.py NOT RUN; local git ls-remote failed because github.com DNS resolution failed; Master exact-head CI has no runs/statuses.
+4. QA-owned Controller protocol parity step fails at HARDWARE #361 Full exact-head CI.
+5. P0 #177 poll-before-first-sample remains in active v0.6.
+6. COE #26 branch pins, firmware blobs, intake counts, derived test map/hashes, and five license/NOTICE counterparts remain unresolved; five destination workflows CANCELLED.
+7. Independent signing/anti-rollback witness, crash-atomic financial state, reversible migration, QA, native and physical acceptance remain unverified.
+
+No test is marked PASS unless an exact workflow or local command actually ran. No 150 real power cuts, 30-device/24-hour soak, or physical acceptance is claimed complete.
+
+---
+
 ### UTC14 additional documentation blocker
 
 The cloud artifact policy and verified recovery handover linked by root AGENTS.md in legacy `BlazingSystems/BlazingSystems` could not be fetched (HTTP 400/no file metadata) and were not found by current organization code search. They remain NOT READ / BLOCKED. Repository admin must restore the canonical docs or provide the current versions. No Drive artifact was created or modified.

@@ -1,3 +1,23 @@
+## PHX-MASTER UTC15 — exact role PR and CI heads
+
+No ownership changed. CORE, RENTAL, PISONET, HARDWARE, QA and RELEASE source branches remain owner-reserved. Master owns coordination/phoenix/ only.
+
+| Role / PR | Exact head | Exact-head CI / disposition |
+|---|---|---|
+| MASTER #288 | 4e740635beceb3504aa718ce0d0b4810b1b4eef4 (audit start) | No exact-head runs or combined statuses; 254 paths all coordination-only; 665 ahead / 1 behind current main. |
+| CORE #252 | c82705f2de865c89ab733b10efa84f26f56a5cc4 | Build #42698139210 PASS, scoped only. |
+| RENTAL #328 | 10fc200b6dbf470a95e679d3acc58aff4ab2a67f | API #45622918364, auth/installer #45622918551, APK #45622918340 PASS; shared build #45622918468 FAIL. |
+| PISONET #255 | d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | Windows synthetic #42462978704 PASS; native COM acceptance NOT TESTED. |
+| HARDWARE #361 | 8a1999ccdcab02445ef93c153316e519d9476210 | Poll #46018576706 PASS; Mbed TLS #46018576254 PASS 3/3; Full #46018576372 FAIL at Controller protocol parity. |
+| QA #290 / #292 | 5c29d15994cee1279058f1eca12f2a3180704292 / 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | #290 Windows synthetic #43633486963 PASS without native COM lab; #292 no exact-head run. |
+| RELEASE #291 / #242 | bf339a76964a1abe2412fac45392fe06a8e66418 / 36c0d0bb3e58786359555b307bb784f720f023ce | No exact-head PR-triggered runs. |
+
+HARDWARE #361 Full run #46018576372 failed in validate job 140572092833 at Controller protocol parity. Target firmware and Android jobs passed; downstream production/signing/release jobs skipped. No physical acceptance is implied.
+
+The automation inventory surfaced an active Blaze Hourly Production Development task explicitly assigned to PHX-HARDWARE; no exact-title Blaze Production Continuation task appeared. CORE remained untouched. No source ownership or cleanup checkbox was transferred.
+
+---
+
 ## PHX-MASTER UTC14 — 2026-11-27 live role PR and exact-head CI reconciliation
 
 No ownership changed. CORE, RENTAL, PISONET, HARDWARE, QA and RELEASE source branches remain with their assigned owners. MASTER changed only coordination/phoenix/. The separate active Blaze hourly automation is explicitly PHX-HARDWARE; no competing CORE work was started.

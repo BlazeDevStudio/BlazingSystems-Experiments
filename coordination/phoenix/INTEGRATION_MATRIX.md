@@ -1,3 +1,18 @@
+## PHX-MASTER UTC15 — exact COE #26 migration provenance recheck
+
+- Source intake blob 1b9018ff944f7f673934d0fc2a97e0a0090d3f5f pins source 6d4c9b48 and destination branch feature/pisowifi-cleanup-stabilization; live PR #26 is integration/ecosystem-nonproprietary-candidate-20261111@b382d233. These pins disagree.
+- Exact recursive trees: pinned source 2,391 entries; destination #26 286; current Experiments main 2,341; active v0.6 2,392; COE main 3. None was truncated.
+- Both board sketches differ from the destination: ESP32 source 29f1125d vs destination 3cc7ec54; ESP8266 source 12c4bb82 vs destination c8be98f7.
+- Runtime inventory has 61 rows; actual statuses 46 identical / 15 derived, while summary claims 47 / 14.
+- Derived tests count 15; migration map has 14. voucher_txn_journal.sh is omitted; run_focus and member_txn_journal hashes disagree between intake and map.
+- Source tests/ path has 149 entries; destination Pisowifi/tests/ has 19. Four relative paths overlap (two identical, two divergent); 145 source-only and 15 destination-only. This includes README/fixture/vendor path entries.
+- Nine source LICENSE/NOTICE paths; four exact destination counterparts and five missing mapped counterparts: root NOTICE, Rental Android launcher LICENSE, jsqr test-vendor LICENSE, UI qrcode LICENSE, and UI Tabler LICENSE.
+- All five candidate workflows are CANCELLED; destination has no combined statuses. OWNERSHIP_ROUTES.json remains e4db324315a1b3543fec17a148fbf960170fcb29, 11 routes, DRAFT_REVIEW_ONLY, PHX-MASTER target null.
+
+No staging, copy, move, overwrite, cherry-pick, rebase, retarget, or destination write was performed. COE #26 remains FROZEN.
+
+---
+
 ## PHX-MASTER UTC14 — 2026-11-27 exact #361 / current-main source versus COE #26 destination
 
 Complete, non-truncated recursive trees were re-read at immutable commits: Experiments main `6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5` (tree `3c32720a899da535849ac9cebb99d47241b712e2`; 2,341 entries / 1,765 blobs), HARDWARE #361 `8a1999ccdcab02445ef93c153316e519d9476210` (tree `371da983142eaa20a0479858ebc54d6c7a7facf4`; 2,427 / 1,881), and COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12` (tree `8a7d4cf81d7227118b876c1138dd2da12345fefa`; 286 / 207).

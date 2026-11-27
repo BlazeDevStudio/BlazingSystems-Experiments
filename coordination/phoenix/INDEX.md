@@ -1,3 +1,14 @@
+## PHX-MASTER UTC15 — live checkpoint (2026-11-27T15:36:54Z)
+
+- [Full exact-head, P0 poll-order, owner CI, and COE #26 provenance audit](PHX_MASTER_UTC15_20261127_LIVE_HEAD_CI_P0_AND_COE26_PROVENANCE_RECHECK.md).
+- Experiments main 6be5d19b; active v0.6 2fbd2475; legacy v0.5.3 development aad3aade; Master pre-update 4e740635; COE main a6513ab4; COE #26 b382d233.
+- PR #288 remains OPEN / DRAFT / UNMERGED. Before this update it had 254 changed paths, all coordination/phoenix; current-main comparison was 665 ahead / 1 behind. No rebase or merge.
+- P0 #177 remains OPEN: both active-v0.6 board loops synchronously poll before the first coin sample with a 3,500 ms HTTP timeout.
+- COE #26 remains FROZEN: firmware, intake/test-map, test identity, and license/NOTICE provenance remain divergent. No staging.
+- Cleanup #266 remains OPEN / 0-of-7. Canonical private registry v11/newer corrections remain NOT_RECOVERED. **PRODUCTION NO-GO.**
+
+---
+
 ### UTC14 access limitation
 
 The root AGENTS.md links the cloud artifact policy and recovery handover in legacy `BlazingSystems/BlazingSystems`; both linked files could not be fetched and were not found by current organization code search. Treat them as NOT READ / BLOCKED until the repository admin restores the canonical docs. No Drive artifacts were created or modified.
