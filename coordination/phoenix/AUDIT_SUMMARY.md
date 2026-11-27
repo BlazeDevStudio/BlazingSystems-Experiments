@@ -1,3 +1,26 @@
+## PHX-MASTER UTC20 — current blockers and exact next actions (2026-11-27T20:39Z)
+
+**Disposition:** PR #288 OPEN / DRAFT / UNMERGED; COE #26 FROZEN; cleanup #266 OPEN / 0-of-7; P0 #177 OPEN; PRODUCTION NO-GO.
+
+1. **Controller parity / QA assertion:** Full CI on HARDWARE #354 and #366 fails at tests/controllers.sh:21 because the shared QA script requires config_revision while the deny-only candidate sketches intentionally omit it. Current main and active-v0.6 base still contain the field; candidate #354/#366 do not. QA must replace the assertion with source-linked proof that untrusted poll/config fields are discarded and admission remains denied. Do not add a decoy field or weaken fail-closed behavior.
+2. **P0 coin pulse:** active v0.6 still executes synchronous post("poll") before first coin sample on ESP8266 and ESP32. HARDWARE #354 is draft deny-only work; electrical relay-off polarity and pulse retention remain NOT TESTED. HARDWARE owns firmware; CORE/HARDWARE own the poll/receipt/disposition contract; QA owns independent regression.
+3. **Controller authentication:** current main CGI register/ping and poll do not emit controller response_sig. Member endpoint signatures do not authenticate controller poll/disposition. CORE must publish the canonical authenticated contract and golden vectors; QA must independently verify them.
+4. **COE #26 migration:** exact #366/#26 trees show missing/divergent routes, both firmware sketch blobs differ, 141 source test-code files are absent, 15 destination-only tests exist, intake counts disagree, voucher_txn_journal.sh is missing from the map, six license/NOTICE path counterparts are absent, and source/destination pins are stale. No staging is safe.
+5. **Private records:** canonical Drive registry v11/newer corrections and current manifest/ledger remain NOT_RECOVERED. Library search surfaced older v3–v7/base snapshots and a checkpoint reference only. No Google Drive connector is exposed. No older snapshot was substituted and no private data was published.
+6. **Master execution:** Master Python suite and verify_coordination.py NOT RUN; no exact-head Master Actions run or combined status. GitHub source/tree inspection is not repository test execution.
+7. **Automation deconfliction:** current automation inventory shows active Blaze Hourly Production Development assigned to PHX-HARDWARE; no exact-title Blaze Production Continuation entry surfaced. CORE was not touched and no competing CORE task was created.
+8. **Cleanup / release gates:** cleanup #266 remains 0-of-7. Protected signing/anti-rollback witness, crash-atomic durable financial state, reversible migration tests, independent QA/native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized release gates remain unverified.
+
+### Next exact actions
+
+- PHX-QA: replace the stale config_revision presence assertion with source-linked deny-only candidate assertions; run focused and Full CI at the exact owner-approved stack head.
+- PHX-CORE + PHX-HARDWARE: publish and validate authenticated register/poll/receipt/disposition semantics; keep active-v0.6 coin admission fail-closed.
+- COE integration owner: reconcile live source/destination refs, test identities, missing files, exact license paths and hardware audit before any staging.
+- Registry custodian: restore authorized canonical v11 and newer corrections plus current artifact manifest/sync ledger through a connected Drive surface.
+- Repository administrator: provide a non-Codex checkout or dedicated Master CI path for the Master Python suite and verifier.
+
+---
+
 ## PHX-MASTER UTC19 — current blockers and exact next actions
 
 **Disposition:** PR #288 OPEN / DRAFT / UNMERGED; COE #26 FROZEN; cleanup #266 OPEN / 0-of-7; P0 #177 OPEN; PRODUCTION NO-GO.

@@ -1,3 +1,16 @@
+## PHX-MASTER UTC20 — deny-only parity and exact COE route audit (2026-11-27T20:39Z)
+
+- [UTC20 exact-head, #366 deny-only parity, active-v0.6 P0, and COE #26 exact tree/test/license provenance audit](PHX_MASTER_UTC20_20261127_HW366_DENY_ONLY_PARITY_AND_COE26_EXACT_PROVENANCE_AUDIT.md).
+- Audit-start Master branch / PR #288 head 90292a7a280c21dee29eebca7e76186bd4c02034; current main 6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5; active v0.6 2fbd2475e9f54878c316fa7cea2f228386b0e859; legacy v0.5.3 aad3aade72c1156eecba1fed30907c6d0283b2c5; COE main a6513ab4412b4c014eee2863e45cbe32d06cb243; COE #26 b382d233ff06c8791b1028bed3c617cc7b670d12.
+- Master main compare at audit start: 673 ahead / 1 behind, merge base f4e8a891; PR #288 had 259 paths, all coordination-only. No exact-head Master Actions run/status.
+- HARDWARE #366 current head 07fef4e8e1055c06cf5e5c3a0d3829c52be31cc9: focused #46059524018 PASS, Mbed #46059523991 3/3 PASS, Full #46059524022 FAIL at tests/controllers.sh:21. The candidate stack intentionally removes config_revision; the QA assertion still requires it. Do not reintroduce an untrusted field or decoy.
+- Separate HARDWARE #354 active-v0.6 deny candidate fc842342596786e072630179acfbbc4feeb2ba02: focused #45864684458 PASS, Mbed #45864684325 3/3 PASS, Full #45864684497 FAIL at Controller parity, Native #45864684295 FAIL at PAY-0745.
+- Active v0.6 still polls synchronously before the first coin sample (ESP8266 354→357; ESP32 314→318); P0 #177 remains OPEN. Current main CGI register/ping and poll blocks lack controller response_sig. CORE/HARDWARE/QA contract work remains required.
+- Exact #366 tree: 2,435 entries / 1,889 blobs, non-truncated. COE #26: 286 entries / 207 blobs, non-truncated. Route, firmware, test, intake, license and workflow mismatches are detailed in the UTC20 report. No staging or destination write.
+- Canonical private registry v11/newer corrections NOT RECOVERED; no Drive connector exposed. Cleanup #266 OPEN / 0-of-7. Master Python suite and verify_coordination.py NOT RUN. PRODUCTION NO-GO.
+
+---
+
 ## PHX-MASTER UTC19 — live exact-head poll matrix and COE provenance (2026-11-27T19:38Z)
 
 - [UTC19 exact-head, #365 poll transport, active-v0.6 P0, COE #26 provenance and registry-access audit](PHX_MASTER_UTC19_20261127_HW365_POLL_TRANSPORT_COE26_PROVENANCE_AND_REGISTRY_AUDIT.md).
