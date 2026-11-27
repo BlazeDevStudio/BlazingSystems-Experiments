@@ -1,0 +1,201 @@
+#!/usr/bin/env python3
+"""Board-aware GPIO role validation for both deny-only Vendo sketches.
+
+Host-only source extraction and failure injection. This does not probe physical
+GPIO levels, board straps, relay contacts, or wiring.
+"""
+from pathlib import Path
+import subprocess
+import tempfile
+
+from firmware_source_extract import extract_braced, extract_function, mask_non_code
+
+ROOT = Path(__file__).resolve().parents[2]
+SKETCHES = {
+    "ESP8266": ROOT / "esp8266/BlazePwifiVendo/BlazePwifiVendo.ino",
+    "ESP32": ROOT / "esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino",
+}
+
+
+def require(condition: bool, message: str) -> None:
+    if not condition:
+        raise AssertionError(message)
+
+
+def assert_source_contract(board: str, source: str) -> tuple[str, str]:
+    parse_fn = extract_function(source, "bool parseGpioNumber(")
+    valid_fn = extract_function(source, "bool validRuntimePins(")
+    parse_code = mask_non_code(parse_fn)
+    valid_code = mask_non_code(valid_fn)
+
+    for token in ("if(!text || !*text) return false;", "if(*cursor<'0'||*cursor>'9') return false;"):
+        require(token in parse_code, f"{board}: numeric GPIO parser missing {token!r}")
+    require("value=parsed;" in parse_code, f"{board}: parsed GPIO result is not returned")
+
+    for token in (
+        "coinPin!=relayPin",
+        "coinPin!=ledPin",
+        "relayPin!=ledPin",
+        "coinPin>=6&&coinPin<=11",
+        "relayPin>=6&&relayPin<=11",
+        "ledPin>=6&&ledPin<=11",
+    ):
+        require(token in valid_code, f"{board}: runtime GPIO validator missing {token!r}")
+
+    if board == "ESP8266":
+        require("coinPin>16" in valid_code and "relayPin>16" in valid_code and "ledPin>16" in valid_code,
+                "ESP8266: GPIO range must remain 0..16")
+        coin_max, output_max = 16, 16
+        defaults = ("cfg.coinPin=4;", "cfg.insertLedPin=14;", "cfg.relayPin=5;")
+    else:
+        require("coinPin>39" in valid_code and "relayPin>33" in valid_code and "ledPin>33" in valid_code,
+                "ESP32: coin input must be 0..39 and output pins 0..33")
+        coin_max, output_max = 39, 33
+        defaults = ("cfg.coinPin=27;", "cfg.insertLedPin=2;", "cfg.relayPin=26;")
+
+    setup = mask_non_code(extract_function(source, "void setup()"))
+    setup_guard = setup.find("if(!validRuntimePins(cfg.coinPin,cfg.relayPin,cfg.insertLedPin))")
+    configure_at = setup.find("configureRuntimePins(")
+    require(0 <= setup_guard < configure_at,
+            f"{board}: persisted GPIO config must be checked before any output pin setup")
+    fallback = setup[setup_guard:configure_at]
+    for token in defaults:
+        require(token in fallback, f"{board}: invalid stored GPIO config lacks safe default {token!r}")
+    if board == "ESP32":
+        require("configStoreValid=false;" in fallback,
+                "ESP32: invalid stored GPIO config must keep station/poll disabled")
+
+    portal = extract_function(source, "void setupPortal()")
+    save_marker = 'web.on("/save",HTTP_POST,[](){'
+    save_at = portal.find(save_marker)
+    require(save_at >= 0, f"{board}: setup save handler missing")
+    save_open = portal.find("{", save_at)
+    save_block = mask_non_code(extract_braced(portal, save_open))
+    parse_calls = (
+        f'parseGpioNumber(web.arg("coin").c_str(),{coin_max},coinPin)',
+        f'parseGpioNumber(web.arg("led").c_str(),{output_max},ledPin)',
+        f'parseGpioNumber(web.arg("relay").c_str(),{output_max},relayPin)',
+    )
+    for call in parse_calls:
+        require(call in save_block, f"{board}: setup save handler missing {call!r}")
+    role_guard = save_block.find("validRuntimePins(coinPin,relayPin,ledPin)")
+    wifi_verify = save_block.find("verifyWifi(")
+    persist = max(save_block.find("saveCfg()"), save_block.find("saveConfig()"))
+    require(0 <= role_guard < wifi_verify < persist,
+            f"{board}: GPIO validation must precede Wi-Fi side effects and persistence")
+    for field in ("coin", "led", "relay"):
+        require(f'web.arg("{field}").toInt()' not in save_block,
+                f"{board}: pin {field} still uses permissive toInt parsing")
+    for token in ("cfg.coinPin=coinPin;", "cfg.insertLedPin=ledPin;", "cfg.relayPin=relayPin;"):
+        require(token in save_block, f"{board}: validated local GPIO value is not persisted: {token}")
+    return parse_fn, valid_fn
+
+
+def harness(parse_fn: str, valid_fn: str, board: str) -> str:
+    if board == "ESP8266":
+        cases = r"""
+    if (!validRuntimePins(4,5,14)) return 10;
+    if (validRuntimePins(4,4,14)) return 11;
+    if (validRuntimePins(4,5,5)) return 12;
+    if (validRuntimePins(4,14,14)) return 13;
+    if (validRuntimePins(6,5,14) || validRuntimePins(4,11,14) || validRuntimePins(4,5,10)) return 14;
+    if (validRuntimePins(-1,5,14) || validRuntimePins(4,17,14) || validRuntimePins(4,5,17)) return 15;
+"""
+    else:
+        cases = r"""
+    if (!validRuntimePins(27,26,2)) return 10;
+    if (validRuntimePins(27,27,2)) return 11;
+    if (validRuntimePins(27,26,26)) return 12;
+    if (validRuntimePins(2,26,2)) return 13;
+    if (validRuntimePins(6,26,2) || validRuntimePins(27,11,2) || validRuntimePins(27,26,10)) return 14;
+    if (validRuntimePins(-1,26,2) || validRuntimePins(40,26,2) || validRuntimePins(27,34,2) || validRuntimePins(27,26,39)) return 15;
+    if (!validRuntimePins(34,26,2) || !validRuntimePins(39,26,2)) return 16;
+"""
+    return r"""
+#include <iostream>
+""" + parse_fn + "\n" + valid_fn + r"""
+int main() {
+    int value=-1;
+    if (!parseGpioNumber("0", 16, value) || value!=0) return 1;
+    if (!parseGpioNumber("16", 16, value) || value!=16) return 2;
+    if (parseGpioNumber("", 16, value)) return 3;
+    if (parseGpioNumber("-1", 16, value)) return 4;
+    if (parseGpioNumber("1x", 16, value)) return 5;
+    if (parseGpioNumber("0/", 16, value)) return 6;
+    if (parseGpioNumber("17", 16, value)) return 7;
+    if (parseGpioNumber("999999999999999999999999", 16, value)) return 8;
+    if (!parseGpioNumber("33", 33, value) || value!=33) return 9;
+""" + cases + r"""
+    std::cout << "RUNTIME_GPIO_CONFIG_PASS """ + board + r"""\\n";
+    return 0;
+}
+"""
+
+
+def compile_and_run(code: str, expect_success: bool, label: str) -> None:
+    with tempfile.TemporaryDirectory(prefix="phx-runtime-gpio-") as directory:
+        cpp = Path(directory) / "runtime_gpio.cpp"
+        binary = Path(directory) / "runtime_gpio"
+        cpp.write_text(code, encoding="utf-8")
+        compiled = subprocess.run(
+            ["g++", "-std=c++11", "-Wall", "-Wextra", "-Werror",
+             "-fsanitize=address,undefined", "-fno-omit-frame-pointer",
+             str(cpp), "-o", str(binary)],
+            text=True, capture_output=True,
+        )
+        if compiled.returncode:
+            raise AssertionError(f"{label}: compile failed:\\n{compiled.stdout}{compiled.stderr}")
+        result = subprocess.run([str(binary)], text=True, capture_output=True)
+        if expect_success and result.returncode:
+            raise AssertionError(f"{label}: failed ({result.returncode}): {result.stdout}{result.stderr}")
+        if not expect_success and result.returncode == 0:
+            raise AssertionError(f"{label}: unsafe mutation survived")
+
+
+def expect_rejected(parse_fn: str, valid_fn: str, board: str, label: str, mutated: str) -> None:
+    code = harness(parse_fn, mutated, board)
+    compile_and_run(code, False, f"{board} {label}")
+    print(f"RUNTIME_GPIO_MUTATION_REJECTED {board} {label}")
+
+
+def verify_board(board: str, path: Path) -> None:
+    source = path.read_text(encoding="utf-8")
+    parse_fn, valid_fn = assert_source_contract(board, source)
+    compile_and_run(harness(parse_fn, valid_fn, board), True, f"{board} runtime GPIO policy")
+    print(f"RUNTIME_GPIO_POLICY_PASS {board}")
+
+    duplicate_mutation = valid_fn.replace("coinPin!=relayPin && ", "", 1)
+    require(duplicate_mutation != valid_fn, f"{board}: duplicate-pin mutation anchor missing")
+    expect_rejected(parse_fn, valid_fn, board, "duplicate-role-guard-removed", duplicate_mutation)
+
+    flash_mutation = valid_fn.replace(
+        "if((coinPin>=6&&coinPin<=11)||(relayPin>=6&&relayPin<=11)||(ledPin>=6&&ledPin<=11)) return false;",
+        "",
+        1,
+    )
+    require(flash_mutation != valid_fn, f"{board}: flash-pin mutation anchor missing")
+    expect_rejected(parse_fn, valid_fn, board, "flash-pin-guard-removed", flash_mutation)
+
+    digit_mutation = parse_fn.replace("if(*cursor<'0'||*cursor>'9') return false;", "if(false) return false;", 1)
+    require(digit_mutation != parse_fn, f"{board}: digit-parser mutation anchor missing")
+    compile_and_run(harness(digit_mutation, valid_fn, board), False, f"{board} nonnumeric-parser mutation")
+
+    if board == "ESP32":
+        output_mutation = valid_fn.replace("relayPin>33", "relayPin>39", 1)
+        require(output_mutation != valid_fn, "ESP32: output-capability mutation anchor missing")
+        expect_rejected(parse_fn, valid_fn, board, "input-only-relay-guard-removed", output_mutation)
+
+    print(f"RUNTIME_GPIO_FAILURE_INJECTION_PASS {board}")
+
+
+def main() -> None:
+    for board, path in SKETCHES.items():
+        if not path.is_file():
+            raise SystemExit(f"missing sketch: {path}")
+        verify_board(board, path)
+    print("RUNTIME_GPIO_CONFIG_SIMULATED_ONLY=1")
+    print("PHYSICAL_GPIO_OR_RELAY_ACCEPTANCE=0")
+
+
+if __name__ == "__main__":
+    main()

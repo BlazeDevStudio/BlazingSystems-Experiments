@@ -4,6 +4,7 @@ on:
     branches:
       - phoenix/hw-active-v06-poll-intake-deny-20261126-utc05
       - phoenix/hw-poll-preflight-lab-modules-20261127-utc18
+      - phoenix/hw-runtime-pin-config-guard-20261127-utc04
     paths:
       - 'experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino'
       - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/BlazePwifiVendo.ino'
@@ -16,6 +17,7 @@ on:
       - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/output_enable_sequence_lab.py'
       - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/config_storage_integrity_lab.py'
       - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/config_persistence_write_result_lab.py'
+      - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/runtime_pin_config_lab.py'
       - 'experiment/openwrt/BlazePwifi/PROJECT_HANDOVER.md'
       - 'experiment/openwrt/BlazePwifi/docs/handover/CURRENT_STATE.md'
       - 'experiment/openwrt/BlazePwifi/docs/handover/CHANGE_LEDGER.md'
@@ -38,6 +40,7 @@ on:
       - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/output_enable_sequence_lab.py'
       - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/config_storage_integrity_lab.py'
       - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/config_persistence_write_result_lab.py'
+      - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/runtime_pin_config_lab.py'
       - 'experiment/openwrt/BlazePwifi/PROJECT_HANDOVER.md'
       - 'experiment/openwrt/BlazePwifi/docs/handover/CURRENT_STATE.md'
       - 'experiment/openwrt/BlazePwifi/docs/handover/CHANGE_LEDGER.md'
@@ -88,3 +91,5 @@ jobs:
         run: python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/config_storage_integrity_lab.py
       - name: Verify EEPROM and Preferences write results before setup reboot
         run: python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/config_persistence_write_result_lab.py
+      - name: Validate board GPIO assignments before config persistence
+        run: python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/runtime_pin_config_lab.py
