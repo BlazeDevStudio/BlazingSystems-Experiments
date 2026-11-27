@@ -777,3 +777,22 @@ Verify the post-sync Full run on the new docs head; obtain independent PHX-QA re
 - ESP8266 PASS; Android APK PASS; all 11 OpenWrt targets PASS; v0.4 Ruijie/Orange Pi/x86/browser/Android-emulator simulations PASS; update bundle PASS. ESP simulation SKIPPED. Production import, signing handoff, preview and release jobs SKIPPED.
 - This is CI evidence only. ESP32 build remains a blocker; Full aggregate is not green. No release or deployment was performed.
 - Physical power cuts, 30-device/24-hour soak, electrical pulse/recovery and actual scratch-media independence remain NOT TESTED. Production NO-GO.
+
+
+## PHX-HARDWARE UTC03 — ESP32 Mbed TLS 3/4 compatibility
+
+- Exact source/test head: `050f0f0ca53533e8609ff0cb63e414538a50d132` on `phoenix/hardware-storage-preflight-device-separation-20261126-utc23`; PR #356 remains OPEN / DRAFT / UNMERGED, base `blazepwifi-v0.6.0-audit-foundation` at `2fbd2475e9f54878c316fa7cea2f228386b0e859`.
+- Source change: `experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino`. Mbed TLS 3 selects the checked legacy SHA-256 API; Mbed TLS 4 selects PSA SHA-256. Provider initialization/status/output length and digest format fail closed. `signedBody` refuses missing key/ID or invalid digest; `post` refuses an empty body before opening HTTP. Existing request action semantics are unchanged.
+- New source-contract lab: `experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/mbedtls_sha256_compat_lab.py`; seven injected unsafe mutations are rejected.
+- New workflow: `.github/workflows/phx-hw-active-v06-esp32-core-compat.yml`; exact-SHA checkout, pinned Espressif package index, Arduino CLI 1.6.0, ESP32 cores 3.3.13 and 4.0.0, clean canonical staging twice, byte-identical staged source and application image checks.
+- Test-first RED commit `f0bc8001d3fbbbfe852129b8566d8465165dd86d`: source-contract failed as expected on the missing provider selector. Its push/PR matrix runs #45935375367 and #45935381260 were expected failures.
+- GREEN source-contract: push run [#45935603861](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45935603861), job `140297982426`, PASS; PR run [#45935608508](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45935608508), job `140297996882`, PASS. All seven mutations rejected.
+- At this checkpoint, the exact-SHA target-build jobs were still IN_PROGRESS: push jobs `140297982713` (core 4.0.0) and `140297982791` (core 3.3.13); PR jobs `140297996749` (4.0.0) and `140297996953` (3.3.13). Do not call either target CI VERIFIED until terminal results.
+- Full runs on this code head: push [#45935603830](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45935603830), PR [#45935608564](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45935608564). The first run's validation job `140298123820` stopped at the mandatory handover freshness gate because this entry had not yet been committed; subsequent exact-head Full must be checked.
+- Prior failure on the old source head `8ce12c96a602c5856222aea8884451ac3841b376`: Full run [#45926090166](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45926090166) failed at ESP32 compile with missing `mbedtls/sha256.h`.
+- Evidence boundary: `SIMULATED_ONLY=1`, `COIN_ADMISSION_ENABLED=0`. No physical firmware flash, coin, finance, signer, migration or production operation was performed. Hardware acceptance and production readiness remain NO.
+
+## NEXT EXACT ACTION
+
+Read terminal results for the four Mbed TLS matrix jobs and the refreshed Full run on the handover-updated SHA. Request independent PHX-QA review of the provider selection and failure guards; keep #356 DRAFT and unmerged.
+

@@ -3450,3 +3450,11 @@ Application/source snapshot is still exact520; this note is metadata only.
 - ESP8266 PASS; Android APK PASS; all 11 OpenWrt targets PASS; v0.4 Ruijie/Orange Pi/x86/browser/Android-emulator simulations PASS; update bundle PASS. ESP simulation SKIPPED. Production import, signing handoff, preview and release jobs SKIPPED.
 - This is CI evidence only. ESP32 build remains a blocker; Full aggregate is not green. No release or deployment was performed.
 - Physical power cuts, 30-device/24-hour soak, electrical pulse/recovery and actual scratch-media independence remain NOT TESTED. Production NO-GO.
+
+## 2026-11-27 — PHX-HARDWARE ESP32 Mbed TLS 3/4 compatibility
+
+- PR #356 remains OPEN / DRAFT / UNMERGED on `phoenix/hardware-storage-preflight-device-separation-20261126-utc23`; source fix commit `050f0f0ca53533e8609ff0cb63e414538a50d132`.
+- Replaced the unconditional Mbed TLS 3 SHA header/API with a version-gated provider: Mbed TLS 3 uses the checked legacy SHA API; Mbed TLS 4 uses PSA SHA-256. Initialization, provider status, output length and 64-hex digest are checked; missing key/ID or invalid digest prevents HTTP submission.
+- Added source-contract lab with seven negative mutation cases and a pinned ESP32 Arduino 3.3.13 / 4.0.0 clean-build matrix. Evidence remains SIMULATED / CI only; no physical hardware or money acceptance.
+- Exact source-contract push run #45935603861 job 140297982426 PASS. Exact PR run #45935608508 job 140297996882 PASS. At ledger entry time the target-build matrix jobs were still running; no target-build pass is claimed here.
+- Previous exact-head Full run #45926090166 exposed `mbedtls/sha256.h: No such file or directory`; this change addresses that compile blocker. Production remains NO-GO.
