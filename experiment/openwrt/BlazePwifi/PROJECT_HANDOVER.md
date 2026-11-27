@@ -1,3 +1,51 @@
+## PHX-HARDWARE UTC04 — #356 exact-head Full CI and handover refresh
+
+**Updated:** 2026-11-27T04:30:51Z  
+**Role:** PHX-HARDWARE  
+**Repository:** BlazeDevStudio/BlazingSystems-Experiments  
+**Branch:** `phoenix/hardware-storage-preflight-device-separation-20261126-utc23`  
+**DRAFT PR:** [#356](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/356) — OPEN / DRAFT / UNMERGED  
+**Base:** `blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859`  
+**Source/test SHA:** `414048cdc390c7ade2207661ca7e5009c413389e`  
+**Previous docs HEAD:** `e53296447acfe84a002187c148e73bbe613dbbdc`
+
+### Exact-head CI terminal readback
+
+The docs-head Full workflow [#45937188987](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45937188987) checked out the exact previous docs HEAD `e53296447acfe84a002187c148e73bbe613dbbdc` and completed **SUCCESS: 26 jobs passed, 0 failed, 4 expected production jobs skipped**.
+
+- CI-0701 / mandatory validation: PASS, job `140303054901`.
+- Firmware/platform builds: 14/14 PASS, including ESP8266, ESP32, x86_64, Ruijie and supported Orange Pi targets.
+- v0.4 synthetic simulations: 9/9 PASS.
+- Update bundle: PASS, job `140304152013`.
+- Android: PASS, job `140303054900`.
+- Production APK import, prerelease, production signing handoff and release publication: SKIPPED.
+
+Focused exact-head runs:
+- Storage preflight [#45937189029](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45937189029), job `140303002887`: PASS. Exact checkout SHA matched. `CHANGE_LEDGER_DELETED_LINES=0`, `CHANGE_LEDGER_APPEND_ONLY_PASS`, STORCHK-0674 physical-parent matrix PASS.
+- Native synthetic journal [#45937189069](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45937189069), job `140303003067`: PASS. Synthetic PAY-0718 and related contract checks only; log explicitly says no production authority or physical durability.
+- ESP32 Mbed TLS matrix [#45937188993](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45937188993): all 3 jobs PASS — source contract `140303003137`, ESP32 core 3.3.13 `140303002937`, core 4.0.0 `140303003111`. Eight unsafe source mutations were rejected. `COIN_ADMISSION_ENABLED=0`.
+
+### Scope and safety boundary
+
+This is a **documentation/provenance refresh only**. No firmware source, test source, controller API, financial logic, migration, signer, witness, or COE destination changed. The source/test SHA remains `414048cdc390c7ade2207661ca7e5009c413389e`.
+
+Storage and native evidence are **CI VERIFIED / SIMULATED ONLY**. The storage job printed `SIMULATED_ONLY=1`, `PHYSICAL_POWER_CUT_VERIFIED=0`, and `CUSTOMER_INSTALL_AUTHORIZED=0`. No real scratch-media mount/write, device reset, flash, power cut, coin pulse, or live-money operation occurred.
+
+### Remaining blockers
+
+- P0 #177 remains OPEN: active v0.6 foundation `2fbd2475e9f54878c316fa7cea2f228386b0e859` still has synchronous poll-before-coin-sample ordering. The deny-only #354/#355 candidate does not authorize positive admission; CORE's authenticated poll/receipt/disposition contract and QA's independent verification remain required.
+- #355 remains OPEN / DRAFT; its Full and Native gates still require QA/CORE reconciliation of the pending-disposition assertion. Do not add unsafe clear callsites.
+- #34 physical storage/power acceptance, 150 power cuts, 30-device 24-hour soak, electrical pulse/recovery, #31/#32 durable accounting/replay, #43 protected witness, v1-to-v2 migration and independent QA/RELEASE signoff remain NOT TESTED / NOT ACCEPTED.
+- COE #26 remains FROZEN; no destination changes.
+- Private Drive `BLAZE_PROJECT_REGISTRY_v11_20261027.json` remains NOT RECOVERED through the available connector/Library surface; no older registry substitute used.
+
+### Next exact action
+
+PHX-QA independently reviews the #356 Mbed TLS/storage evidence; PHX-MASTER refreshes #288's exact role pins; PHX-CORE publishes the authenticated poll/receipt/disposition contract for #177. PHX-HARDWARE keeps #356 DRAFT and resumes the next owned source task only after revalidating the stack and ownership boundaries.
+
+**HARDWARE ACCEPTED: NO. PRODUCTION READY: NO-GO.**
+
+
 ## PHX-HARDWARE UTC00 — exact-docs-head Full validation update
 
 - Exact docs/source workflow run: [#45918825520](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45918825520), checked out docs head 11f406a89ef4c5ae56c97b89678df6d737f1edbd and source/test SHA cb07904ccbedaeeb93e7eb763dc3c795e7e90c9f.

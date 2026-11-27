@@ -3473,3 +3473,15 @@ Application/source snapshot is still exact520; this note is metadata only.
 - Docs-head Full PR #45936443886 completed SUCCESS: validation job 140300788918 PASS; 14/14 target/platform builds PASS; 9/9 v0.4 synthetic simulations PASS; update bundle job 140301744469 PASS. Production import/signing, production sign handoff, prerelease and release jobs were SKIPPED.
 - Docs-head storage preflight #45936443677 job 140300635005 PASS with `CHANGE_LEDGER_DELETED_LINES=0`, `CHANGE_LEDGER_APPEND_ONLY_PASS`, STORCHK-0674 physical-parent matrix PASS and `SIMULATED_ONLY=1`. Native synthetic journal gate #45936443771 PASS.
 - These are CI/SIMULATED results only. Physical acceptance, electrical pulse/recovery, protected anti-rollback signer/witness, v1-to-v2 migration, durable accounting/replay and independent QA/release acceptance remain outstanding. Production remains NO-GO.
+
+
+## 2026-11-27 — STORCHK-0674 exact-head Full integration terminal result
+
+- Role/task: PHX-HARDWARE / STORCHK-0674 / issue #34 / DRAFT PR #356.
+- Source/test SHA: `414048cdc390c7ade2207661ca7e5009c413389e`; previous docs HEAD: `e53296447acfe84a002187c148e73bbe613dbbdc`.
+- Full [#45937188987](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45937188987): terminal SUCCESS, 26 passed / 0 failed / 4 production-related jobs skipped. Mandatory validation PASS; 14/14 target/platform jobs PASS; 9/9 v0.4 synthetic simulations PASS; update bundle PASS.
+- Storage preflight [#45937189029](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45937189029) job `140303002887`: append-only ledger guard and STORCHK-0674 synthetic physical-parent matrix PASS; `SIMULATED_ONLY=1`, `PHYSICAL_POWER_CUT_VERIFIED=0`, `CUSTOMER_INSTALL_AUTHORIZED=0`.
+- Native synthetic [#45937189069](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45937189069) job `140303003067`: PASS; no production authority or physical durability established.
+- ESP32 Mbed TLS [#45937188993](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45937188993): source contract + ESP32 core 3.3.13 + 4.0.0 PASS (3/3); eight unsafe mutations rejected; coin admission remains disabled.
+- Documentation refresh only; no source/test code or cross-role API changed. This entry is appended after the complete prior ledger; no historical bytes removed or rewritten.
+- P0 #177, physical issue #34, financial #31/#32, witness #43, cleanup #266, COE #26 and private Drive registry v11 remain open/unaccepted. Production NO-GO.
