@@ -184,9 +184,10 @@ static bool statePreserved() {
 }
 
 int main() {
+  // Common safe tuple: GPIO4/13/14 avoids ESP8266 and ESP32 boot-strap pins.
   const String stale="{\"config_revision\":4,\"enabled\":1,\"coin_enabled\":1,"
-      "\"relay_enabled\":1,\"led_enabled\":1,\"coin_pin\":2,\"relay_pin\":14,"
-      "\"led_pin\":15,\"coin_active_low\":1,\"coin_debounce_ms\":100,"
+      "\"relay_enabled\":1,\"led_enabled\":1,\"coin_pin\":4,\"relay_pin\":13,"
+      "\"led_pin\":14,\"coin_active_low\":1,\"coin_debounce_ms\":100,"
       "\"pulse_group_ms\":1200,\"max_wifi_retries\":20}";
   resetState();
   applyRemoteConfig(stale);
@@ -195,8 +196,8 @@ int main() {
   std::cout<<"REMOTE_CONFIG_STALE_REVISION_DENY_PASS\n";
 
   const String equal="{\"config_revision\":5,\"enabled\":1,\"coin_enabled\":1,"
-      "\"relay_enabled\":1,\"led_enabled\":1,\"coin_pin\":2,\"relay_pin\":14,"
-      "\"led_pin\":15,\"coin_active_low\":1}";
+      "\"relay_enabled\":1,\"led_enabled\":1,\"coin_pin\":4,\"relay_pin\":13,"
+      "\"led_pin\":14,\"coin_active_low\":1}";
   resetState();
   applyRemoteConfig(equal);
   if(!statePreserved() || quarantineCalls!=0 || applyOutputsCalls!=0 ||
@@ -205,32 +206,32 @@ int main() {
 
   resetState();
   remoteRevision=0;
-  applyRemoteConfig(String("{\"config_revision\":0,\"enabled\":1,\"coin_pin\":2,"
-      "\"relay_pin\":14,\"led_pin\":15}"));
+  applyRemoteConfig(String("{\"config_revision\":0,\"enabled\":1,\"coin_pin\":4,"
+      "\"relay_pin\":13,\"led_pin\":14}"));
   if(remoteRevision!=0 || controllerEnabled || runCoinPin!=3 ||
      quarantineCalls!=0 || applyOutputsCalls!=0 || pinModeCalls!=0) return 12;
   std::cout<<"REMOTE_CONFIG_ZERO_INITIAL_REVISION_DENY_PASS\n";
 
   resetState();
   applyRemoteConfig(String("{\"config_revision\":6,\"enabled\":1,\"coin_enabled\":1,"
-      "\"relay_enabled\":1,\"led_enabled\":1,\"coin_pin\":2,\"relay_pin\":14,"
-      "\"led_pin\":15,\"coin_active_low\":1,\"coin_debounce_ms\":100,"
+      "\"relay_enabled\":1,\"led_enabled\":1,\"coin_pin\":4,\"relay_pin\":13,"
+      "\"led_pin\":14,\"coin_active_low\":1,\"coin_debounce_ms\":100,"
       "\"pulse_group_ms\":1200,\"max_wifi_retries\":20}"));
   if(remoteRevision!=6 || !controllerEnabled || !coinEnabled || !relayEnabled ||
-     !ledEnabled || !runCoinActiveLow || runCoinPin!=2 || runRelayPin!=14 ||
-     runLedPin!=15 || runDebounceMs!=100 || runPulseGroupMs!=1200 ||
+     !ledEnabled || !runCoinActiveLow || runCoinPin!=4 || runRelayPin!=13 ||
+     runLedPin!=14 || runDebounceMs!=100 || runPulseGroupMs!=1200 ||
      maxWifiRetries!=20 || quarantineCalls!=1 || applyOutputsCalls!=EXPECTED_APPLY_OUTPUT_CALLS ||
-     outputModeCalls!=2 || pinModes[14]!=OUTPUT || pinModes[15]!=OUTPUT) return 13;
+     outputModeCalls!=2 || pinModes[13]!=OUTPUT || pinModes[14]!=OUTPUT) return 13;
   std::cout<<"REMOTE_CONFIG_NEWER_REVISION_ACCEPT_PASS\n";
 
   resetState();
   outputPolarityKnown=false;
   pinConfigSafe=false;
   applyRemoteConfig(String("{\"config_revision\":6,\"enabled\":1,\"coin_enabled\":1,"
-      "\"relay_enabled\":1,\"led_enabled\":1,\"coin_pin\":2,\"relay_pin\":14,"
-      "\"led_pin\":15,\"coin_active_low\":1}"));
-  if(remoteRevision!=6 || pinConfigSafe || pinModes[2]!=INPUT_PULLUP ||
-     pinModes[14]!=INPUT || pinModes[15]!=INPUT || outputModeCalls!=0 ||
+      "\"relay_enabled\":1,\"led_enabled\":1,\"coin_pin\":4,\"relay_pin\":13,"
+      "\"led_pin\":14,\"coin_active_low\":1}"));
+  if(remoteRevision!=6 || pinConfigSafe || pinModes[4]!=INPUT_PULLUP ||
+     pinModes[13]!=INPUT || pinModes[14]!=INPUT || outputModeCalls!=0 ||
      insertMode || activeTarget.length()!=0 || quarantineCalls!=1 ||
      applyOutputsCalls!=EXPECTED_APPLY_OUTPUT_CALLS) return 14;
   std::cout<<"REMOTE_CONFIG_UNKNOWN_POLARITY_DENY_PASS\n";

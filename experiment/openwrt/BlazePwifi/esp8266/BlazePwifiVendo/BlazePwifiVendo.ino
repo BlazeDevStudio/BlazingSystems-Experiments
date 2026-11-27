@@ -833,14 +833,19 @@ int jsonInt(const String&r,const String&k,int def){
 void writeLogical(int pin,bool on,bool activeHigh){ digitalWrite(pin,(on==activeHigh)?HIGH:LOW); }
 
 bool validInputPullupPin(int pin){
-  return (pin>=0 && pin<=5) || (pin>=12 && pin<=15);
+  // Serial.begin(115200) keeps UART0 on GPIO1/TX and GPIO3/RX. Reserve both
+  // pins for boot/programming and diagnostics; neither may be coin input.
+  return ((pin>=0 && pin<=5) || (pin>=12 && pin<=15)) && pin!=1 && pin!=3;
 }
 
 bool validOutputPin(int pin){
-  return (pin>=0 && pin<=5) || (pin>=12 && pin<=16);
+  // UART0 TX/RX remain reserved while this sketch uses the default Serial mapping.
+  return ((pin>=0 && pin<=5) || (pin>=12 && pin<=16)) && pin!=1 && pin!=3;
 }
 
 bool runtimePinsSafe(int coinPin,int relayPin,int ledPin){
+  // ESP8266 ROM samples GPIO0/GPIO2/GPIO15 at reset; external coin, relay or LED circuits can change boot mode.
+  if(coinPin==0||coinPin==2||coinPin==15||relayPin==0||relayPin==2||relayPin==15||ledPin==0||ledPin==2||ledPin==15) return false;
   return validInputPullupPin(coinPin) && validOutputPin(relayPin) &&
          validOutputPin(ledPin) && coinPin!=relayPin &&
          coinPin!=ledPin && relayPin!=ledPin;
