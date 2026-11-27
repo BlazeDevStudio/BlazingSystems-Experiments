@@ -324,7 +324,7 @@ def deny_latch_assignment_contract(source: str) -> None:
     )
     protected_pattern = "|".join(re.escape(name) for name in protected_names)
     address_escape = re.search(
-        rf"&\s*(?P<name>{protected_pattern})\b",
+        rf"(?<!&)&(?!&)\s*(?P<name>{protected_pattern})\b",
         masked,
     )
     if address_escape:
