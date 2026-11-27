@@ -3881,3 +3881,18 @@ Complete the post-handover exact-head Full and Native reads. PHX-QA/PHX-CORE sti
 - **WHY:** ESP8266 GPIO16 lacks `INPUT_PULLUP`, while the coin-input setup requires it. Only the coin role is denied; GPIO16 output roles remain accepted.
 - **LIMITS:** host/source-contract simulation only; physical GPIO/electrical acceptance NOT TESTED. P0 blocking-poll pulse loss, authenticated CORE poll/receipt contract, signer/witness, durable accounting/replay, v1→v2 migration and release acceptance remain unresolved.
 - **NEXT ACTION:** exact-head focused/Full CI on source+handover co-commit; Master refreshes #357 integration pin; QA owns PAY-0745 semantics. No production admission.
+
+
+## 2026-11-27 — PHX-HARDWARE GPIO16 capability guard — final exact-head evidence
+
+- **ID / PRIORITY:** PR-357 / P1.
+- **BRANCH / TESTED HEAD:** `phoenix/hw-runtime-pin-config-guard-20261127-utc04` at `cfc251d3b947982ec3d24ba6a4875bdfaf6fbdcd`; substantive source/test SHA `750af995e28d7977dcac8ea4cc800f71c71d27d8`; base #355 `9f7a8ecb915cf199a82c0b4d37c56c40d722037b`.
+- **FILES:** ESP8266 Vendo sketch, Hardware runtime pin lab, canonical handovers, narrow handover.
+- **STATUS:** validated (scoped CI); Full controller parity blocked; physical acceptance NOT TESTED.
+- **FOCUSED:** push #46066316984 / job 140732371645 PASS; PR #46066323699 / job 140732392213 PASS; GPIO16 coin-role deny, relay/LED output-role allow, guard-removal mutation rejected; append-only ledger guard PASS.
+- **MBED:** #46065708312 PASS 3/3 at source/test SHA 750af995 (source contract 140730385175, core 3.3.13 140730384776, core 4.0.0 140730385291). Final-head rerun #46066323347 still in progress at last read.
+- **NATIVE:** #46066323479 FAIL job 140732392015 at QA-owned literal `clearPending(true/false)` assertion after pending sequence contract passed; no unsafe callsite added.
+- **FULL:** #46066316962; handover gate and CI-0701 PASS; validation job 140732545614 FAIL at Controller protocol parity because `tests/controllers.sh:21` requires `config_revision` absent from both v0.6 sketches. All 13 firmware target jobs PASS; Android 140732545663 still in progress at last read; downstream bundle/simulation/sign/publish skipped.
+- **WHY:** ESP8266 GPIO16 has no `INPUT_PULLUP` in the documented core capability set; firmware uses `INPUT_PULLUP` for coin input. GPIO16 remains allowed for relay/LED outputs; default tuple 4/14/5 unchanged.
+- **BLOCKERS:** CORE controller contract; QA PAY-0745; P0 poll/pulse loss; physical GPIO/relay/electrical acceptance; 150 power cuts; 30-device/24-hour soak; signer/witness; durable accounting/replay; v1→v2 migration; independent QA/release acceptance.
+- **NEXT ACTION:** Master refresh #357 exact head in the integration matrix; CORE publishes config_revision contract; QA reconciles PAY-0745. No production admission.

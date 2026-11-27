@@ -1,3 +1,11 @@
+## PHX-HARDWARE UTC20 — final GPIO16 capability evidence (SCOPED CI VERIFIED; FULL BLOCKED)
+
+PR #357 is OPEN / DRAFT / UNMERGED at tested source+handover head `cfc251d3b947982ec3d24ba6a4875bdfaf6fbdcd`; substantive guard/test SHA `750af995e28d7977dcac8ea4cc800f71c71d27d8`. ESP8266 GPIO16 is rejected only for the coin-input role because the firmware configures `INPUT_PULLUP`; GPIO16 remains accepted for relay/LED outputs. Default tuple 4/14/5 is unchanged.
+
+Focused push #46066316984 job 140732371645 and focused PR #46066323699 job 140732392213 PASS. Mbed #46065708312 PASS 3/3 on source/test SHA 750af995. Native #46066323479 fails QA-owned PAY-0745 literal `clearPending(true/false)` assertion after pending sequence contract passes. Full #46066316962 handover gate and CI-0701 PASS; controller protocol parity fails because `tests/controllers.sh:21` requires `config_revision` absent from both current PR sketches. All 13 firmware targets PASS; Android remained in progress; downstream update/simulation/sign/publish stages skipped. Final-head Mbed rerun #46066323347 and Full Android job were still in progress at last read.
+
+**NEXT EXACT ACTION:** Master refreshes #357's integration-matrix head; CORE publishes the shared `config_revision` contract; QA reconciles PAY-0745. Keep coin/relay admission denied. Physical acceptance remains NOT TESTED.
+
 ## PHX-HARDWARE UTC20 — GPIO16 coin-input capability guard (SCOPED CI VERIFIED; FULL BLOCKED)
 
 PR #357 remains OPEN / DRAFT / UNMERGED on `phoenix/hw-runtime-pin-config-guard-20261127-utc04`. Source/test SHA `750af995e28d7977dcac8ea4cc800f71c71d27d8` rejects ESP8266 GPIO16 as the coin-input role because the sketch calls `INPUT_PULLUP`, which the ESP8266 Arduino Core does not document for GPIO16. GPIO16 remains allowed for relay/LED output roles; default tuple 4/14/5 is unchanged. The host lab checks both role outcomes and injects removal of the guard.
