@@ -1,3 +1,40 @@
+## PHX-HARDWARE UTC09 — final integration readback (SCOPED CI VERIFIED; FULL/QA BLOCKED)
+
+**Repository:** `BlazeDevStudio/BlazingSystems-Experiments`  
+**Branch:** `phoenix/hw-runtime-pin-config-guard-20261127-utc04`  
+**PR:** [#357](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/357), OPEN / DRAFT / UNMERGED  
+**Docs HEAD at final Full run:** `2fb6bd1761b37284ed5fc7a7535467ee686c2df7`  
+**Source/test SHA:** `32f63aa335714d63fba8bae406a102a8d5d191e9`  
+**Base:** #355 `9f7a8ecb915cf199a82c0b4d37c56c40d722037b`.
+
+### Final exact-head results
+
+- Focused PR [#45973701941](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45973701941), job `140420085629`: **PASS**. The ESP32 boot-strap guard-removal mutation is rejected; independent coin/relay/LED strap-role cases pass. `RUNTIME_GPIO_CONFIG_SIMULATED_ONLY=1`.
+- Focused push [#45973694879](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45973694879), job `140420060317`: **PASS**.
+- ESP32 Mbed TLS [#45973701926](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45973701926): **3/3 PASS** — source contract, Arduino core 3.3.13 and 4.0.0. `arduino-cli 1.6.0`; Espressif package index pinned to `8f6bee9761f7b15cce27b79cbd1ae199d0df2adf`; staged source-tree SHA-256 `406f60258b9eac7c649cda02f2244cdd4f26195a5bb532dcd59e55fd7d978564`. Within-run clean A/B outputs match: core 3.3.13 `3060e8c1f3df6fc5b42cc9d3d823f92fba0ce8c7d6400d690a16a4e2f6acd459`; core 4.0.0 `5ee433de29ab928f0753ac33a94a8a4bcbbebf09c33ca2bfd868f21ec6c7ec3d`. The earlier source-head run used a different `SOURCE_DATE_EPOCH` and produced different cross-run binary hashes; the staged source tree remained identical and each run's A/B pair matched.
+- Final docs-head Full [#45973701897](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45973701897): **overall FAIL** at `Controller protocol parity` / `tests/controllers.sh:21` (`grep -q 'config_revision'`). Both current sketches lack `config_revision`; exact blobs ESP8266 `96fa83d9ae5404eefbad425e5b032db962fa45a4`, ESP32 `321800051fac00828aa8830668c0c4f7e58c6e50`. The mandatory handover gate, HND-0700 and CI-0701 pass; all **14/14** firmware/platform/Android build jobs pass. Signing, production import, simulations and publication remain skipped.
+- Native [#45973701913](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45973701913), job `140420085450`: **FAIL** at QA-owned PAY-0745 assertion requiring active `clearPending(true/false)` callsites. The preceding Vendo pending-sequence shell contract passes. Hardware did not add unsafe clear calls.
+
+### Hardware change and safety boundary
+
+ESP32 GPIO0/2/5/12/15 are rejected for coin and relay roles; GPIO0/5/12/15 are rejected for LED. GPIO2 remains allowed only as the LED role to preserve the current default tuple `(27,26,2)`. The external GPIO2 LED circuit and exact board revision remain unmeasured; this software exception is not electrical qualification. Coin/relay admission remains denied. No positive poll-response consumer, `response_sig`, `config_revision`, pending-clear, financial, migration, signer, witness, or COE source was added.
+
+### Coordination and remaining gates
+
+Current main is `6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5`; Master branch/PR #288 is `fb18d3d7579eaa01e1cbaa3246355e485b2955f2`. Master-owned `ROLE_ASSIGNMENTS.md` / `INTEGRATION_MATRIX.md` still list older #355/#356 heads and do not yet list #357. Master must refresh those files; Hardware did not edit Master-owned coordination.
+
+Live PRs remain: #239 `d83b715b`, #254 `84c442a4`, #283 `4dd0b01b`, #355 `9f7a8ecb`, #356 `0ea32d31`, #357 `2fb6bd1`. COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12` remains FROZEN; no migration or destination edit.
+
+Issues #172/#266/#177/#34/#31/#32/#43 remain OPEN; #266 cleanup-first remains 0/7. P0 #177 pulse-loss is not resolved by this GPIO guard. CORE must publish the authenticated register/poll/receipt/disposition contract; QA must reconcile `config_revision` and PAY-0745 against the deny-only lifecycle. Physical GPIO/relay/coin acceptance, 150 power cuts, 30-device/24-hour soak, electrical pulse/brownout recovery, protected signer/witness, durable accounting/replay, v1→v2 migration and independent QA/release signoff remain NOT TESTED or NOT ACCEPTED.
+
+Private Google Drive `BLAZE_PROJECT_REGISTRY_v11_20261027.json` was not accessible through this runtime; Library search found older v4-v7 snapshots only. No older snapshot was substituted.
+
+**HARDWARE ACCEPTED: NO. PRODUCTION READY: NO-GO.** This block supersedes the UTC09 preflight and pre-sync Full notes below; those are retained as history.
+
+**NEXT EXACT ACTION:** PHX-QA and PHX-CORE reconcile the `config_revision` controller contract and PAY-0745 pending-disposition assertion; Hardware must not invent either response fields or clearPending callsites.
+
+---
+
 ## PHX-HARDWARE UTC09 — ESP32 strapping GPIO role guard (SCOPED CI VERIFIED; INTEGRATION BLOCKED)
 
 **Task:** bounded Hardware-owned extension of PR #357; no new branch or PR.

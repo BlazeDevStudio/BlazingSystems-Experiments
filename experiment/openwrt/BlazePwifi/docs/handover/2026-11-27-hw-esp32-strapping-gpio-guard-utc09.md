@@ -16,6 +16,12 @@ The ESP32 Vendo runtime GPIO validator now rejects GPIO0, GPIO2, GPIO5, GPIO12 a
 
 Espressif documents GPIO0/2/5/12/15 as strapping pins. GPIO2 is retained as a narrow LED-role compatibility exception; its external circuit and exact board revision have not been electrically inspected. It can affect serial-download boot if the reset level is wrong. Do not treat this as hardware acceptance.
 
+## Final post-sync Full and Mbed evidence
+
+- Final docs-head Full [#45973701897](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45973701897): 14/14 firmware/platform/Android build jobs PASS; overall validation FAIL at `tests/controllers.sh:21`, which requires `config_revision` in both sketches. The handover freshness gate passes. The current ESP8266 and ESP32 blobs do not contain `config_revision`; CORE/QA must publish/reconcile the contract.
+- Native [#45973701913](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45973701913), job `140420085450`: FAIL at QA-owned PAY-0745 `clearPending(true/false)` assertion; the preceding pending-sequence shell contract passes. No unsafe clear calls added.
+- Mbed TLS [#45973701926](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45973701926): 3/3 PASS. Core 3.3.13 and 4.0.0 clean A/B outputs match within each run; staged source tree SHA-256 `406f60258b9eac7c649cda02f2244cdd4f26195a5bb532dcd59e55fd7d978564`.
+
 ## Exact evidence
 
 - Focused PR [#45972810167](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45972810167), job `140417125204`: PASS.
@@ -31,6 +37,12 @@ Source-extracted tests are SIMULATED / CI VERIFIED only. Physical strap voltages
 CORE owns authenticated poll/receipt/disposition. QA owns independent assertion semantics. MASTER owns stack/integration/release sequencing. Active P0 #177 remains unresolved; keep coin/relay admission denied.
 
 Private Google Drive `BLAZE_PROJECT_REGISTRY_v11_20261027.json` was not accessible through this runtime. No older registry snapshot was substituted.
+
+## Current coordination
+
+Master branch/PR #288 is `fb18d3d7579eaa01e1cbaa3246355e485b2955f2`; its role assignment and integration matrix still omit current #357 and retain older #355/#356 heads. Master owns the update. Private Google Drive registry v11 remains unavailable in this runtime; no older registry was substituted.
+
+**Next exact action:** PHX-QA and PHX-CORE reconcile the `config_revision` controller contract and PAY-0745 pending-disposition assertion. Hardware must not invent response fields or pending-clear callsites.
 
 ## Resume instruction
 

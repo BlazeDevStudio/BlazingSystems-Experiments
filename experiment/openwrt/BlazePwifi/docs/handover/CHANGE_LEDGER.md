@@ -3844,3 +3844,16 @@ Complete the post-handover exact-head Full and Native reads. PHX-QA/PHX-CORE sti
 - **blockers:** post-sync Full rerun; QA-owned pending disposition assertion; CORE authenticated register/poll/receipt/disposition contract; physical GPIO/relay/coin/power acceptance; 150 power cuts; 30-device/24-hour soak; protected signer/witness; v1→v2 durable accounting/replay; independent QA/release approval.
 - **NEXT ACTION:** rerun Full on the final documentation-synchronized PR HEAD and preserve all deny-only behavior.
 
+
+## 2026-11-27 17:30 Asia/Manila — PHX-HARDWARE UTC09 post-sync Full reconciliation
+
+- **scope/status:** final exact-head integration readback for ESP32 strapping GPIO role guard on #357; scoped source/test remains `validated`; Full/Native integration remains `blocked`.
+- **exact refs:** PR/docs HEAD `2fb6bd1761b37284ed5fc7a7535467ee686c2df7`; source/test SHA `32f63aa335714d63fba8bae406a102a8d5d191e9`; base #355 `9f7a8ecb915cf199a82c0b4d37c56c40d722037b`.
+- **Focused:** #45973701941 job 140420085629 PASS; push #45973694879 job 140420060317 PASS. ESP32 strap-guard removal rejected; coin/relay cases use non-overlapping GPIO33 LED assignment; LED strap cases tested independently.
+- **Mbed TLS:** #45973701926 jobs 140420086169 / 140420085817 / 140420086064 PASS 3/3. Arduino CLI 1.6.0; core 3.3.13 and 4.0.0. Staged source tree SHA-256 `406f60258b9eac7c649cda02f2244cdd4f26195a5bb532dcd59e55fd7d978564`. Clean A/B binary hashes match within each run: 3.3.13 `3060e8c1f3df6fc5b42cc9d3d823f92fba0ce8c7d6400d690a16a4e2f6acd459`; 4.0.0 `5ee433de29ab928f0753ac33a94a8a4bcbbebf09c33ca2bfd868f21ec6c7ec3d`. Prior source-head run had a different SOURCE_DATE_EPOCH and different cross-run binary hashes; source tree remained identical.
+- **Full:** #45973701897 at docs HEAD 2fb6bd1 — overall FAIL at `tests/controllers.sh:21` requiring `config_revision`. Both sketches lack the field (ESP8266 blob `96fa83d9ae5404eefbad425e5b032db962fa45a4`; ESP32 blob `321800051fac00828aa8830668c0c4f7e58c6e50`). Handover gate/HND-0700/CI-0701 pass; 14/14 firmware/platform/Android jobs pass; signing/import/simulation/publication stages skipped.
+- **Native:** #45973701913 job 140420085450 FAIL at QA-owned PAY-0745 `clearPending(true/false)` assertion; preceding pending-sequence shell contract passed. No unsafe workaround added.
+- **Master coordination:** Master branch/PR #288 `fb18d3d7579eaa01e1cbaa3246355e485b2955f2`; current Master role/matrix docs still omit #357 and pin older #355/#356 heads. Master owns their update; Hardware did not edit them.
+- **release status:** HARDWARE ACCEPTED NO; PRODUCTION READY NO-GO. Physical GPIO/relay/coin, 150 power cuts, 30-device/24-hour soak, electrical recovery, signer/witness, durable accounting/replay, v1→v2 migration and independent QA/release acceptance remain untested/unaccepted.
+- **NEXT ACTION:** PHX-QA/PHX-CORE reconcile `config_revision` and PAY-0745 semantics against the deny-only controller contract; Hardware must not invent response fields or pending-clear callsites.
+
