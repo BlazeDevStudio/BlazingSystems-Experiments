@@ -11,3 +11,7 @@
 - Physical GPIO/relay/polarity, coin pulse, power-cut and soak acceptance: NOT TESTED. HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
 - No production sketch, API, finance, QA-owned test, COE destination, secret, migration, signer, flash, reset, merge or deployment changed.
 - Updated UTC: 2026-11-27T19:31:19Z.
+
+## PHX-HW-20261127T19Z-OUTPUT-SEQUENCE-LAB-MODULE-SPLIT-CORRECTION
+
+The preceding UTC19 module-split ledger entry contains a transcription error in its parent SHA. The correct parent branch/PR #365 head is e65b0b895af9c3fc5e5632f704cb67b347e69725. The incorrect value in the preceding entry is superseded; all other fields remain unchanged. The source/test commit is ff73702adf6fb958c9f21ebe9a68c908ee829ea4.
