@@ -1,3 +1,12 @@
+## PHX-MASTER UTC07 post-audit Hardware #357 refresh (2026-11-27T08:00Z)
+
+- #357 current docs HEAD `2b5130d5`, source/test `7ee0bc95`, base #355 `9f7a8ecb`; Hardware's PR description now reconciles the head fields.
+- New source-extracted ESP8266 boot-strap guard rejects GPIO0/GPIO2/GPIO15 for coin/relay/LED roles; defaults 4/14/5 preserved. Focused tests report 14/14 injected regressions rejected; append-only ledger guard passes.
+- Exact-head Poll #45961809870 and Mbed #45961809743 PASS; Full #45961809866 FAILS at QA-owned `config_revision`; Native #45961809750 FAILS at QA-owned PAY-0745 literal clearPending assertion. No unsafe pending-clear workaround.
+- This update supersedes only the earlier UTC07 #357 head/CI note. #177 poll-before-sample and COE #26 intake/tree/license/test/CI blockers remain unchanged. No physical GPIO/relay/coin acceptance; PRODUCTION NO-GO.
+
+---
+
 ## PHX-MASTER UTC07 — decision and blockers (2026-11-27T07:41Z)
 
 **PR #288 OPEN / DRAFT / UNMERGED. COE #26 FROZEN. Cleanup #266 OPEN / 0-of-7. PRODUCTION NO-GO.**

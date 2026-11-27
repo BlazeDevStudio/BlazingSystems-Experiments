@@ -178,3 +178,42 @@ No destination staging, copy, move, overwrite, cherry-pick or promotion is autho
 6. MASTER runs the coordination suite once an authenticated local checkout or Master CI execution path is available.
 
 **Final:** PR #288 remains draft/unmerged; COE #26 remains frozen; production remains **NO-GO**. No merge, release, signer operation, secret provisioning, flash, physical test, payment operation, migration or customer cutover occurred.
+
+
+---
+
+## Post-audit Hardware #357 refresh — 2026-11-27T08:00:27Z
+
+The earlier UTC07 audit captured #357 at docs-sync head `2476b2cdf820c57ac6d97e5c81abc6292836c609`. HARDWARE subsequently published a new exact-head handover and CI refresh. This addendum supersedes the #357 head/CI fields above; it does not alter the earlier timestamped tree and intake comparisons.
+
+**Current live PR #357:**
+- PR/docs HEAD: `2b5130d5cba54acf354ffdbdbe04127d6a61113f`
+- Source/test SHA: `7ee0bc955cdf67763d032f81e488141e4a270a88`
+- Base #355: `9f7a8ecb915cf199a82c0b4d37c56c40d722037b`
+- PR remains OPEN / DRAFT / UNMERGED.
+- The previous conflicting restack/docs-sync head fields are now reconciled in the live Hardware PR body.
+
+### New Hardware source improvement
+
+The Hardware-owned ESP8266 `validRuntimePins()` now rejects GPIO0, GPIO2 and GPIO15 for coin, relay and LED runtime roles because the ESP8266 ROM samples these strap pins at reset. Defaults coin GPIO4 / LED GPIO14 / relay GPIO5 remain valid. Invalid stored tuples retain the existing default-fallback behavior; this change does not add positive coin/relay admission.
+
+Exact source/test blobs:
+- ESP8266 sketch: `96fa83d9ae5404eefbad425e5b032db962fa45a4`
+- Source-extracted lab: `9728fd0a1d9044fbb5188959d73c0ae20e1bc0dc`
+- Handover: `eea8a9781065e0bed4590230dfaa95e4cc3a0d47`
+
+The lab covers all three strap pins in all three runtime roles and rejects a mutation that removes the strap guard. The handover reports 14/14 injected regressions rejected and `CHANGE_LEDGER_APPEND_ONLY_PASS`. These are source-extracted/host-simulated checks, not electrical or board acceptance.
+
+### Terminal exact-head CI at 2b5130d5
+
+| Workflow | Run | Result |
+|---|---:|---|
+| Focused Poll Intake Deny | [#45961809870](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45961809870) | PASS |
+| Focused push | [#45961801597](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45961801597) | PASS |
+| ESP32 Mbed TLS 3/4 | [#45961809743](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45961809743) | 3/3 PASS |
+| Full | [#45961809866](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45961809866) | FAIL — QA-owned `tests/controllers.sh:21` requires `config_revision` in both sketches; all 13 firmware-target jobs and Android pass; production import/signing/publication and candidate simulations skipped |
+| Native | [#45961809750](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45961809750) | FAIL — QA-owned PAY-0745 literal `clearPending(true/false)` assertion; preceding Vendo pending-sequence shell contract passes |
+
+The new GPIO source guard is a useful Hardware improvement, but #357 remains Full/Native FAIL. Do not add unsafe pending-clear calls to satisfy a string-presence assertion. QA owns semantic contract repair; CORE owns authenticated receipt/disposition; HARDWARE owns firmware; MASTER owns cross-role coordination.
+
+**Physical boundary unchanged:** GPIO strap levels, external pulls, relay contacts, coin pulses, brownout, 150 power cuts and 30-device/24-hour soak remain NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.

@@ -1,3 +1,13 @@
+## PHX-MASTER UTC07 post-audit refresh — HARDWARE #357 current exact-head CI (2026-11-27T08:00Z)
+
+| PR | Exact docs head | Source/test | Focused Poll | Mbed | Full | Native |
+|---|---|---|---|---|---|---|
+| #357 | `2b5130d5cba54acf354ffdbdbe04127d6a61113f` | `7ee0bc955cdf67763d032f81e488141e4a270a88` | #45961809870 PASS | #45961809743 3/3 PASS | #45961809866 FAIL (`config_revision`) | #45961809750 FAIL (PAY-0745 literal clearPending assertion) |
+
+The new ESP8266 GPIO strap guard is a source-extracted/host-lab improvement; 14/14 injected regressions are reported rejected. All 13 firmware target jobs and Android pass in Full, but validation still fails. No physical GPIO, relay, coin pulse, brownout, power-cut or soak acceptance is implied. The previous #357 `2476b2cd` row above is historical and superseded by this live exact head.
+
+---
+
 ## PHX-MASTER UTC07 — exact-head Hardware and COE matrix (2026-11-27T07:41Z)
 
 | Evidence | Exact source | Exact run / destination | Result |

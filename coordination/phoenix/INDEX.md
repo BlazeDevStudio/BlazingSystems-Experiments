@@ -1,3 +1,12 @@
+## PHX-MASTER UTC07 post-audit refresh — HARDWARE #357 terminal exact head (2026-11-27T08:00Z)
+
+- Current #357 PR/docs HEAD: `2b5130d5cba54acf354ffdbdbe04127d6a61113f`; source/test `7ee0bc955cdf67763d032f81e488141e4a270a88`; base #355 `9f7a8ecb915cf199a82c0b4d37c56c40d722037b`.
+- HARDWARE added ESP8266 boot-strap GPIO rejection for GPIO0/GPIO2/GPIO15 across coin/relay/LED roles; defaults 4/14/5 remain. Source-extracted lab rejects 14/14 injected regressions and records append-only ledger PASS.
+- Exact-head Focused Poll #45961809870, Focused push #45961801597 and Mbed #45961809743 (3/3) PASS. Full #45961809866 still FAILS at QA-owned `config_revision` parity; Native #45961809750 still FAILS at PAY-0745 literal clearPending assertion. Physical strap/electrical acceptance NOT TESTED.
+- [Post-audit addendum](./PHX_MASTER_UTC07_20261127_HW357_COE26_EXACT_PROVENANCE_AUDIT.md#post-audit-hardware-357-refresh--2026-11-27t080027z). Earlier 07:41 #357 head/CI fields are superseded by this exact-head update; COE #26 intake/tree findings are unchanged.
+
+---
+
 ## PHX-MASTER UTC07 — #357 exact-head CI and COE #26 intake-branch drift (2026-11-27T07:41Z)
 
 - [UTC07 exact-provenance audit](./PHX_MASTER_UTC07_20261127_HW357_COE26_EXACT_PROVENANCE_AUDIT.md).

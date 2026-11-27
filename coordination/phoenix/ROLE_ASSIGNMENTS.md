@@ -1,3 +1,13 @@
+## PHX-MASTER UTC07 post-audit refresh — HARDWARE #357 current owner checkpoint (2026-11-27T08:00Z)
+
+| Owner | Current PR head | Exact-head evidence | Owner action |
+|---|---|---|---|
+| PHX-HARDWARE #357 | docs `2b5130d5`; source/test `7ee0bc95`; base #355 `9f7a8ecb` | Focused Poll #45961809870 PASS; focused push #45961801597 PASS; Mbed #45961809743 3/3 PASS; Full #45961809866 FAIL at `config_revision`; Native #45961809750 FAIL at PAY-0745 literal clearPending assertion | HARDWARE GPIO strap guard is source-extracted/CI verified; QA/CORE must reconcile semantic tests/receipt disposition; no unsafe clear call. Physical GPIO/electrical acceptance NOT TESTED. |
+
+The current #357 PR body now agrees with live PR metadata at `2b5130d5`; the earlier UTC07 07:41 conflicting-head note is superseded. No Master source takeover or ownership change.
+
+---
+
 ## PHX-MASTER UTC07 — live role heads and exact CI (2026-11-27T07:41Z)
 
 | Owner | Live PR head(s) | Exact-head evidence | Boundary / next owner action |
