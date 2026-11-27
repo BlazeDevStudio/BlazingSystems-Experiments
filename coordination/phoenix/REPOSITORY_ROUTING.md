@@ -1,3 +1,13 @@
+## PHX-MASTER UTC10 — route-manifest and intake-pin reconciliation (2026-11-27T10:08Z)
+
+- Live `OWNERSHIP_ROUTES.json` blob: `e4db324315a1b3543fec17a148fbf960170fcb29`. It still contains 11 routes, `DRAFT_REVIEW_ONLY`, source ref `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`, destination candidate PR #26 at `b382d233ff06c8791b1028bed3c617cc7b670d12`, and PHX-MASTER target `null`.
+- Current Experiments main is `6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5`; development is `aad3aade72c1156eecba1fed30907c6d0283b2c5`. The manifest source ref is historical and is not a current source-selection or copy authorization.
+- The broad Rental profile route remains `manual-file-mapping-required` with `copy_permitted=false`; keep per-file provenance and owner review.
+- COE #26 live branch is `integration/ecosystem-nonproprietary-candidate-20261111@b382d233`, while its `SOURCE_INTAKE.json` blob `1b9018ff944f7f673934d0fc2a97e0a0090d3f5f` still names destination branch `feature/pisowifi-cleanup-stabilization` and source commit `6d4c9b487af4d768c4d7627654d119417fcc6e00`. This branch/source pin mismatch must be corrected by the COE integration owner.
+- No route or ownership manifest was changed. No move, copy, overwrite, cherry-pick, rebase, staging or destination write is authorized.
+
+---
+
 ## PHX-MASTER UTC07 — exact source/destination pins and migration hold (2026-11-27T07:41Z)
 
 - Manifest blob `e4db324315a1b3543fec17a148fbf960170fcb29`, 11 routes, `DRAFT_REVIEW_ONLY`; PHX-MASTER target remains null.

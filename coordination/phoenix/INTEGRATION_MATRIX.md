@@ -1,3 +1,32 @@
+## PHX-MASTER UTC10 — exact source/destination tree and migration-intake reconciliation (2026-11-27T10:08Z)
+
+Read-only recursive trees were complete and non-truncated: Hardware source candidate #358 at `d8c3261e9b8aac2637c4395e5c92285bf7d8df53` (2,573 entries) and COE #26 destination at `b382d233ff06c8791b1028bed3c617cc7b670d12` (286 entries). This is a parity audit, not a source-selection decision or migration authorization.
+
+| Mapped area | Source files | Destination files | Identical | Divergent | Source-only | Destination-only |
+|---|---:|---:|---:|---:|---:|---:|
+| ESP32 board tree | 16 | 1 | 0 | 1 | 15 | 0 |
+| ESP8266 board tree | 67 | 1 | 0 | 1 | 66 | 0 |
+| PisoWiFi tests | 47 | 19 | 1 | 3 | 43 | 15 |
+| OpenWrt `blazepwifi` library overlay | 15 | 20 | 6 | 9 | 0 | 5 |
+| Vendo CGI entry | 1 | 1 | 0 | 1 | 0 | 0 |
+
+Neither destination board sketch is byte-identical to the current #358 source candidate. The test path has only one exact blob; three mapped originals diverge, 43 source tests are absent and 15 destination-only tests exist. The overlay contains six exact blobs, nine changed files and five destination-only files.
+
+### License/notice identity
+
+The mapped source contains eight relevant LICENSE/NOTICE path entries; the candidate contains four destination LICENSE/NOTICE paths. Four destination counterparts are exact (product LICENSE, QRCode LICENSE, TailAdmin LICENSE and TailAdmin NOTICE). The UI QRCode LICENSE is a duplicate source path with the same blob as the mapped OpenWrt QRCode license. Three unique source notice/license blobs have no destination counterpart: repository-root `NOTICE.md`, Android `BlazeRentalLauncher/LICENSE`, and `ui/vendor/tabler/LICENSE`. This is path/blob evidence only, not legal approval.
+
+### Intake and test-map inconsistencies
+
+- `SOURCE_INTAKE.json` blob `1b9018ff944f7f673934d0fc2a97e0a0090d3f5f` has 61 runtime rows. Its summary declares 47 byte-identical / 14 derived, while the rows actually contain 46 byte-identical / 15 derived.
+- It lists four original tests and 15 derived tests; derived CI state is 11 NOT_RUN and four PENDING_CI_RUN. `release_authorized`, `hardware_tested`, `full_ci_tested` and `source_admission_complete` are all false.
+- `MIGRATION_MAP.md` blob `b54fc15d83bc2269de03db8aadd0e76259fd13d9` contains four original-test rows and 14 derived-test rows. It omits `voucher_txn_journal.sh`; `run_focus.sh` and `member_txn_journal.sh` hashes disagree with SOURCE_INTAKE (`fa1f4f2c` vs `2b7b861e`; `01dc9c65` vs `d04df3c6`).
+- The five PR #26 workflows are CANCELLED and there are zero check-runs. No destination test acceptance or import completeness is established.
+
+**Disposition:** keep COE #26 FROZEN. The COE integration owner must reconcile source/destination branch pins, runtime 46/15 vs 47/14, test-map rows/hashes, missing firmware/tests and license notices, then run CI at the exact proposed SHA before requesting any staging review.
+
+---
+
 ## PHX-MASTER UTC07 post-audit refresh — HARDWARE #357 current exact-head CI (2026-11-27T08:00Z)
 
 | PR | Exact docs head | Source/test | Focused Poll | Mbed | Full | Native |

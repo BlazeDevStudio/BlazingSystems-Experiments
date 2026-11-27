@@ -1,3 +1,26 @@
+## PHX-MASTER UTC10 — live decision and blockers (2026-11-27T10:08Z)
+
+**PR #288 OPEN / DRAFT / UNMERGED. COE #26 FROZEN. Cleanup #266 OPEN / 0-of-7. P0 #177 OPEN. PRODUCTION NO-GO.**
+
+- Current Experiments refs: main `6be5d19b`; development `aad3aade`; Master `066b052f`. COE main `a6513ab4`; COE #26 `b382d233`. Master PR #288 is 656 commits ahead / one behind current main; its changes remain coordination-only.
+- The live #358 Full gate still fails the inherited missing poll-signature/controller-parity assertion. Active v0.6 #177 still polls synchronously before the first coin sample: ESP8266 `post("poll")` line 354 then `digitalRead(runCoinPin)` line 357; ESP32 line 314 then line 318; 3,500 ms timeout. Current active branch head is `2fbd2475e9f54878c316fa7cea2f228386b0e859`; the exact sketch blobs remain `12c4bb82` and `29f1125d`. The issue body's older source pin does not change the live finding.
+- A 45/45 read-only structural audit passed over exact trees, routes, intake, migration map, PR refs and cleanup checklist. This is **not** the repository Python suite or hardware acceptance.
+- The Master Python suite and `verify_coordination.py` were NOT RUN: local Git access failed because `github.com` DNS could not resolve; no exact-head Master workflow run or combined status is present at `066b052f`.
+- The private `BLAZE_PROJECT_REGISTRY_v11_20261027.json` and newer corrections were NOT RECOVERED. The connected Library search exposed only older v7/v6/v5/v4/v3 registry snapshots; no Google Drive connector action is exposed. No older snapshot was substituted and no private contents/IDs were published.
+- No subsystem source, destination file, firmware, payment system, secret, signer, release artifact or physical device was changed or operated. No merge, release, flash or migration occurred.
+
+### Required next actions
+
+1. COE integration owner reconciles #26's live branch/source pins, 46/15 vs 47/14 intake count, missing/divergent tests, stale test hashes and license/notice counterparts; rerun the five destination workflows at an exact SHA before staging review.
+2. PHX-QA refreshes #292 against current Master and owns independent semantic tests; PHX-CORE publishes the authenticated register/poll and receipt/disposition contract. Do not add unsigned response trust or unsafe `clearPending` callsites.
+3. PHX-HARDWARE owns #358 and P0 #177 implementation; keep coin/relay admission deny-only until local pulse capture/inhibit and authenticated disposition are independently verified. Physical GPIO, relay, coin, power-cut and soak evidence remains NOT TESTED.
+4. PHX-RENTAL resolves #328 handover freshness and ESP32 compile failure; PHX-RELEASE supplies exact-head workflow evidence for #242/#291.
+5. Registry custodian supplies v11 and newer corrections through authorized private Drive access. MASTER reruns the repository suite when an authenticated checkout or Master CI execution path is available.
+
+**No ownership reassignment, merge, release, hardware flash, financial migration, or production approval.**
+
+---
+
 ## PHX-MASTER UTC07 post-audit Hardware #357 refresh (2026-11-27T08:00Z)
 
 - #357 current docs HEAD `2b5130d5`, source/test `7ee0bc95`, base #355 `9f7a8ecb`; Hardware's PR description now reconciles the head fields.

@@ -1,3 +1,22 @@
+## PHX-MASTER UTC10 — live role PR heads and exact-head CI (2026-11-27T10:08Z)
+
+| Owner | Current draft PR / exact head | Exact-head CI evidence | Ownership boundary / next owner action |
+|---|---|---|---|
+| PHX-MASTER | #288 `phoenix/master-coordination@066b052fd78bd87757584f36ca8e7b433c836859`; base `main@f4e8a891` | No workflow runs and no combined statuses at this head. Compare with current main `6be5d19b`: 656 ahead / 1 behind. 250 changed paths are all under `coordination/phoenix/`. | Coordination-only. Do not rebase/merge in this audit. |
+| PHX-CORE | #252 `c82705f2de865c89ab733b10efa84f26f56a5cc4` | [Build #42698139210](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42698139210) SUCCESS; scoped build only. | CORE remains separately owner-reserved; no duplicate CORE task or source edit. |
+| PHX-RENTAL | #328 `10fc200b6dbf470a95e679d3acc58aff4ab2a67f`; predecessor #289 `68928774d0d7cf65adb26bc6b54199a3159d066c` | #328 API21/23 #45622918364, auth/installer #45622918551 and APK identity #45622918340 SUCCESS; shared build [#45622918468](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45622918468) FAILURE at mandatory handover freshness and ESP32 compile. #289 build #43653329229 and isolated auth #43653329235 SUCCESS. | RENTAL owns handover freshness and ESP32 build correction. |
+| PHX-PISONET | #255 `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | [Windows synthetic #42462978704](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42462978704) SUCCESS. | Native COM/device acceptance NOT TESTED. |
+| PHX-HARDWARE | #358 docs `d8c3261e9b8aac2637c4395e5c92285bf7d8df53`; source/test `af3ed03db1c07a950ad27adc3e18f27a1afc1ec6`; base #353 `f527b33c` | [Relay #45976531381](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45976531381) PASS; [Quarantine #45976531391](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45976531391) PASS; [Full #45976531386](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45976531386) FAIL at QA-owned Controller protocol parity / missing poll signature. All 14 target/platform jobs and Android PASS; downstream production stages skipped. | HARDWARE owns firmware/fixture; QA/CORE own semantic contract. Physical GPIO/relay/coin acceptance NOT TESTED. |
+| PHX-HARDWARE | #356 `0ea32d31ed5c902b2187d98c181aab14bc9fdeae` | Preflight #45940999149, Mbed #45940999085, Native #45940999113 and Full #45940999134 all SUCCESS. | CI VERIFIED / SIMULATED only; physical storage, flash and power-cut acceptance NOT TESTED. |
+| PHX-HARDWARE | #355 `9f7a8ecb915cf199a82c0b4d37c56c40d722037b`; #354 `fc842342596786e072630179acfbbc4feeb2ba02` | #355 Poll #45948626013 and Mbed #45948625942 PASS; Full #45948625969 and Native #45948626003 FAIL. #354 Poll #45864684458 and Mbed #45864684325 PASS; Full #45864684497 and Native #45864684295 FAIL. | Preserve deny-only behavior; QA/CORE reconcile assertions and receipt/disposition semantics. |
+| PHX-QA | #290 `5c29d15994cee1279058f1eca12f2a3180704292`; #292 `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | [#290 Windows synthetic #43633486963](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43633486963) SUCCESS. #292 has no PR-triggered run and is based on stale Master `b1ca02e2`, not current `066b052f`. | QA refreshes #292 against current Master and owns independent semantic regressions. |
+| PHX-RELEASE | #242 `36c0d0bb3e58786359555b307bb784f720f023ce`; #291 `bf339a76964a1abe2412fac45392fe06a8e66418` | No exact-head PR workflow runs returned for either head. | RELEASE owns signing/publisher and exact-head CI evidence. |
+| COE integration | #26 `b382d233ff06c8791b1028bed3c617cc7b670d12` | Five candidate workflows are terminal CANCELLED; check-runs total_count=0. | FROZEN. No staging or destination writes. |
+
+CORE ownership was respected. No subsystem source branch or role-owned PR was modified by PHX-MASTER.
+
+---
+
 ## PHX-MASTER UTC07 post-audit refresh — HARDWARE #357 current owner checkpoint (2026-11-27T08:00Z)
 
 | Owner | Current PR head | Exact-head evidence | Owner action |

@@ -1,3 +1,15 @@
+## Latest live refresh — PHX-MASTER UTC10 (2026-11-27T10:08Z)
+
+[UTC10 live owner/CI, active-v0.6, COE #26 exact-tree and registry-access audit](PHX_MASTER_UTC10_20261127_LIVE_OWNER_CI_COE26_EXACT_TREE_AND_REGISTRY_ACCESS_AUDIT.md)
+
+- Experiments default `main@6be5d19b`; development `blazepwifi-v0.5.3-development@aad3aade`; Master branch before this refresh `066b052f`.
+- PR #288 remains OPEN / DRAFT / UNMERGED. Its head is 656 commits ahead and one behind current `main`; its 250 changed paths remain coordination-only.
+- Current owner evidence: CORE #252 scoped build PASS; RENTAL #328 focused checks PASS but shared build FAIL; PISONET #255 synthetic PASS; HARDWARE #358 focused Relay/Quarantine PASS but Full FAIL at missing poll signature; QA #290 PASS / #292 no run; RELEASE #242/#291 no exact-head runs.
+- COE main `a6513ab4`; integration PR #26 `b382d233` remains FROZEN with five cancelled workflows and zero check-runs. Exact tree/test/license/intake differences are recorded in the UTC10 report.
+- Cleanup #266 remains OPEN / 0-of-7; P0 #177 remains OPEN. Private Drive registry v11/newer corrections remain NOT RECOVERED. No migration staging or source changes. **PRODUCTION NO-GO.**
+
+---
+
 ## PHX-MASTER UTC07 post-audit refresh — HARDWARE #357 terminal exact head (2026-11-27T08:00Z)
 
 - Current #357 PR/docs HEAD: `2b5130d5cba54acf354ffdbdbe04127d6a61113f`; source/test `7ee0bc955cdf67763d032f81e488141e4a270a88`; base #355 `9f7a8ecb915cf199a82c0b4d37c56c40d722037b`.
