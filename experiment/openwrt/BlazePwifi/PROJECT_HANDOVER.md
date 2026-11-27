@@ -1,22 +1,22 @@
-## PHX-HARDWARE UTC19 — poll transport outcome matrix (SCOPED CI VERIFIED; FULL INTEGRATION BLOCKED)
+## PHX-HARDWARE UTC19 — poll transport outcome matrix (FINAL DOCS-HEAD CI VERIFIED; FULL INTEGRATION BLOCKED)
 
 **PR:** [#365](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/365) — OPEN / DRAFT / UNMERGED  
 **Branch:** `phoenix/hw-poll-boundary-pulse-matrix-20261128-utc18`  
 **Source/test SHA:** `fcd5d7df210c8521f9c8fcc1019c8db8bdaf7eb0`  
-**Final docs/CI head:** `0e5b838cfc7db86c2ce9aaf25b1cabe9e5b2ad73`  
-**Docs-first commit:** `71ea4c332227b58b6bc51a58908bc855bfadc0a8`
+**Evidence docs head:** `6e5e126199368cbe78f9d46dd6c702c883cfa5cb`  
+**Current branch head before this handover refresh:** `6e5e126199368cbe78f9d46dd6c702c883cfa5cb`
 
-**Focused CI:** source/test [run #46055268572](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46055268572), job `140696113739`: **PASS**. Docs-head [run #46055555335](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46055555335), job `140697053907`: **PASS**. Both boards report five transport outcomes × four relay/LED polarity combinations = 20 cases per board (40 total): immediate begin failure, empty timeout, malformed body, server-error body and untrusted positive `insert=true`. The response-consumption/transient re-enable mutation was rejected on both boards. Existing six pulse windows × four polarity combinations, startup output latch and pending-recovery regressions also pass; pending recovery reports 15 scenarios per board and 18 mutations rejected.
+**Focused:** [#46056036171](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46056036171), job `140698629886`: **PASS**. Both boards ran five transport outcomes × four relay/LED polarity combinations (20 cases per board / 40 total): immediate begin failure, empty timeout, malformed body, server-error body and untrusted positive `insert=true`. The transient response-consumption/re-enable mutation was rejected on both boards. Existing six pulse windows × four polarity combinations and pending-recovery regressions pass.
 
-**Mbed TLS:** exact source/test SHA run [#46055268521](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46055268521): **3/3 PASS** — source contract job `140696739516`, core 3.3.13 job `140696740005`, core 4.0.0 job `140696740049`. Docs-head matrix [#46055555322](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46055555322) was still in progress; no docs-head terminal result is claimed.
+**Mbed TLS:** [#46056036039](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46056036039): **3/3 PASS** — source contract `140698947089`, ESP32 core 3.3.13 `140698947145`, core 4.0.0 `140698946770`.
 
-**Full integration:** docs-synced exact-head [run #46055555331](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46055555331) completed **FAIL** at controller protocol parity, validation job `140697234100`. Mandatory handover freshness and CI-0701 job `140697154250` passed. All 13 firmware targets and Android passed: ESP8266 `140697234058`, ESP32 `140697233967`, Android `140697234021`, plus 11 other firmware targets. Downstream simulation, update-bundle, signing, candidate and publication jobs were skipped. The preceding stale-handover runs #46055268629/#46055260220 are superseded by this docs-synced run. The same v0.6/main controller parity mismatch was previously identified in #46052478996 at `tests/controllers.sh:21` (`config_revision`); do not add a decoy token or weaken deny-default.
+**Full:** [#46056036335](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46056036335): **FAIL** at controller protocol parity validation job `140698695827`. Handover freshness and CI-0701 `140698630537` pass. ESP8266 `140698695835`, ESP32 `140698695924`, Android `140698695931`, and all 11 other firmware targets pass. Downstream simulation, update-bundle, signing, candidate and publication jobs skipped. Prior docs-head #46055555331 also completed with all 13 firmware targets and Android passing and the same controller parity failure.
 
-**Scope boundary:** host test harness only. No production sketch, CORE API, QA-owned assertion, finance, receipt/disposition, COE source, or active v0.6 branch changed. Active `blazepwifi-v0.6.0-audit-foundation` remains `2fbd2475e9f54878c316fa7cea2f228386b0e859`. PR #365 remains a test-only child of the unmerged deny-only stack (#354 → #355 → #359 → #361 → #362 → #364); it does not resolve P0 #177's active poll-before-first-sample race. The current candidate intentionally keeps coin/relay admission denied. Host simulation does not prove physical acceptor coin retention when inhibited mid-pulse.
+**Scope boundary:** test harness only. No production sketch, CORE API, QA-owned assertion, finance, COE source or active v0.6 branch changed. Active `blazepwifi-v0.6.0-audit-foundation` remains `2fbd2475e9f54878c316fa7cea2f228386b0e859`. PR #365 is test-only and does not resolve P0 #177's poll-before-first-sample race. Keep coin/relay admission denied.
 
-**Acceptance:** SIMULATED / CI VERIFIED (scoped only). Physical relay polarity, pulse retention, electrical recovery, 150 power cuts, and 30-device/24-hour soak remain NOT TESTED. HARDWARE ACCEPTED = NO. PRODUCTION READY = NO-GO.
+**Acceptance:** SIMULATED / CI VERIFIED (scoped only). Physical relay polarity, pulse retention, electrical recovery, 150 power cuts and 30-device/24-hour soak remain NOT TESTED. HARDWARE ACCEPTED = NO. PRODUCTION READY = NO-GO.
 
-**Next:** Master register #365 and reconcile stack ancestry; CORE publish the authenticated controller register/poll/receipt/disposition contract; QA independently review exact source/test SHA and controller parity; Hardware keep admission denied until contract and physical electrical review are approved.
+**Next:** Master register #365 in role/integration matrices; CORE publish authenticated register/poll/receipt/disposition contract; QA independently review exact source/test SHA and controller parity; Hardware keep intake denied until contract and physical electrical review are approved.
 
 ---
 

@@ -3881,3 +3881,11 @@ This is the required documentation-first IN-PROGRESS record. No source/test resu
 - Mbed exact source/test run #46055268521: 3/3 PASS (source contract, ESP32 core 3.3.13 and 4.0.0). Docs-head Mbed #46055555322 still running at finalization.
 - Full docs-head #46055555331: controller protocol parity FAIL job `140697234100`; handover freshness/CI-0701 PASS; all 13 firmware targets and Android PASS; downstream simulation/update/signing/publication skipped. Previous stale-handover runs #46055268629/#46055260220 superseded.
 - Test-harness-only scope. Active v0.6 branch `2fbd2475e9f54878c316fa7cea2f228386b0e859` unchanged; P0 #177 remains OPEN. Physical relay polarity, pulse retention, electrical acceptance, 150 power cuts and 30-device/24-hour soak NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+
+
+## 2026-11-28 UTC19 — final docs-head reruns for PHX-HARDWARE PR #365
+- Source/test SHA `fcd5d7df210c8521f9c8fcc1019c8db8bdaf7eb0`; evidence docs head `6e5e126199368cbe78f9d46dd6c702c883cfa5cb`; branch `phoenix/hw-poll-boundary-pulse-matrix-20261128-utc18`.
+- Focused #46056036171 job `140698629886` PASS; five transport outcomes × four relay/LED polarity combinations = 20 cases per board; transient response-actuation mutation rejected on both.
+- Mbed #46056036039 3/3 PASS: source contract `140698947089`, core 3.3.13 `140698947145`, core 4.0.0 `140698946770`.
+- Full #46056036335 controller parity job `140698695827` FAIL; handover freshness/CI-0701 PASS; all 13 firmware targets and Android PASS; downstream simulation/update/signing/publication skipped.
+- Active v0.6 branch unchanged; P0 #177 unresolved. Physical relay polarity, pulse retention, electrical recovery, 150 power cuts and 30-device/24-hour soak NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
