@@ -3827,3 +3827,14 @@ PR #354 remains OPEN / DRAFT / UNMERGED. PRs #239/#254/#283 remain OPEN / DRAFT 
 - **Rollback:** revert/close only child #364 if module separation is not accepted; parent #362/#361/#359 untouched. `CHANGE_LEDGER.md` remains append-only; this entry is appended without rewriting prior bytes.
 - **Blockers:** authenticated controller contract; QA review; physical LittleFS/electrical/relay acceptance; 150 power cuts; 30-device/24-hour soak; protected anti-rollback witness; durable accounting/replay; v1→v2 migration; private Drive registry unavailable through this runtime.
 - **NEXT ACTION:** request QA review of the new contract module and CORE response contract; keep #364 DRAFT. Do not merge, enable coin/relay, flash, migrate or release.
+
+## 2026-11-27 UTC18 — PHX-HARDWARE poll-boundary pulse matrix (PR #365)
+
+- **Repo/branch:** `BlazeDevStudio/BlazingSystems-Experiments` / `phoenix/hw-poll-boundary-pulse-matrix-20261128-utc18`
+- **Parent/base:** #364 at `ea765fb822e1c517db4e61c103b86d8eb2c66c92`
+- **Source/test SHA:** `f38e86b683bbf1e77cdb63e3071630a5b3aedb2c`
+- **Change:** source-extracted blocking-poll host harness now covers six 80 ms pulse windows (-40..40, 0..80, 1600..1680, 3420..3500, 3460..3540, 3500..3580 ms) across four independent relay/LED polarity combinations; 24 cases per board, 48 total. A non-empty untrusted `insert=true` poll response is returned by the stub and remains discarded.
+- **Focused evidence:** PR run [#46052209034](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46052209034), job `140686051553`, PASS at exact source/test SHA. Both boards report `accepted=0`, no GPIO samples during the 3,500 ms wait, preserved pending evidence, and boundary pulse state retained for the post-poll sample.
+- **Status:** SIMULATED / CI VERIFIED only. No production sketch, API, finance or release source changed. Physical acceptor/relay pulse retention remains NOT TESTED; pre-poll in-flight denial does not prove coin retention. P0 #177 remains OPEN and production NO-GO.
+- **Next:** independent QA review of the exact boundary vectors; CORE contract and physical electrical acceptance remain prerequisites. PR #365 stays DRAFT / UNMERGED.
+

@@ -1,4 +1,19 @@
-# BlazePwifi — CURRENT STATUS (2026-11-28 UTC17)
+# BlazePwifi — CURRENT STATUS (2026-11-28 UTC18)
+
+**Role:** PHX-HARDWARE. **Current work:** [DRAFT PR #365](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/365), child of #364 → #362 → #361 → #359 → #355 → #354.  
+**Branch:** `phoenix/hw-poll-boundary-pulse-matrix-20261128-utc18`  
+**Exact source/test SHA:** `f38e86b683bbf1e77cdb63e3071630a5b3aedb2c`  
+**Scope:** host poll-inhibit harness only; no ESP8266/ESP32 production sketch, controller API, finance path or release behavior changed.
+
+**Change:** the source-extracted 3,500 ms blocking-poll harness now tests six 80 ms pulse windows: already active at pre-poll deny (-40..40 ms), poll start (0..80), middle (1600..1680), ends at return (3420..3500), crosses return (3460..3540), and starts at return (3500..3580). Each window runs across four independent relay/LED polarity combinations: 24 cases per board, 48 total. The poll stub returns a non-empty deliberately untrusted `insert=true` response. The harness keeps a pulse active at poll return for the post-poll sample instead of forcing it inactive.
+
+**Focused CI:** PR run [#46052209034](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46052209034), exact job `140686051553`, **PASS** at `f38e86b683bbf1e77cdb63e3071630a5b3aedb2c`. Both boards emitted `BLOCKING_POLL_WAIT_PASS` with `pulse_cases=6`, `polarity_combinations=4`, `pre_poll_inflight=1`, `cross_return=1`, `at_return=1`, `untrusted_response_ignored=1`, `accepted=0`. Existing poll/register deny, relay polarity, config-write and pending-recovery regressions also passed. 18 pending-recovery mutations remain rejected per the inherited lab.
+
+**Full build:** PR run [#46052209068](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46052209068) was still executing target jobs when this checkpoint was written; no terminal result is claimed here.
+
+**P0 #177 boundary:** this is SIMULATED evidence only. The pre-poll in-flight pulse case confirms the deny latch is applied while the input is active; it does **not** prove the physical acceptor retains a coin if the enable/relay is inhibited mid-pulse. Physical acceptor/relay polarity, pulse retention, power cuts and hardware recovery remain NOT TESTED. Keep coin/relay denied; do not re-enable positive admission.
+
+**Release state:** HARDWARE ACCEPTED = NO. PRODUCTION READY = NO-GO. CORE authenticated register/poll and receipt/disposition contract, independent QA, physical electrical acceptance, 150 power cuts, 30-device/24-hour soak, protected anti-rollback witness, durable accounting/replay and v1→v2 migration remain outstanding.
 
 **Role:** PHX-HARDWARE. **Current work:** [DRAFT PR #364](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/364), child of #362 → #361 → #359 → #355 → #354.  
 **Branch:** `phoenix/hw-pending-recovery-contract-module-split-20261128-utc17`  
