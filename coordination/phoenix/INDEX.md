@@ -1,3 +1,9 @@
+## PHX-MASTER UTC22 — restored #367 tree and exact COE intake reconciliation
+
+[Full UTC22 audit report](PHX_MASTER_UTC22_20261127_HW367_RESTORED_TREE_COE26_MANIFEST_RECOUNT.md). #367 is restored to 2,438 entries / 1,892 blobs, but Full fails at canonical handover freshness. COE #26's 61 runtime rows and 4 original test rows match exact pinned blobs/modes; summary count is 46 identical / 15 derived, and the derived-test map omits destination-only `voucher_txn_journal.sh`. P0 #177 and production gates remain open.
+
+---
+
 ## PHX-MASTER UTC21 — critical #367 tree-integrity blocker and COE pinned-intake verification (2026-11-27T21:42Z)
 
 [Full UTC21 audit report](PHX_MASTER_UTC21_20261127_HW367_TREE_TRUNCATION_COE26_PINNED_INTAKE_AND_ROLE_CI.md). PR #367 live head fb8ea5a496c81e4d13f2f48fdb143de32565faab has only 13 tree entries / 6 blobs against its #366 base's 2,435 entries / 1,889 blobs: 1,884 blobs removed, 5 modified, 1 added. First truncation is c97f6460. No exact-head CI/status. Keep #367 draft; HARDWARE must restore the full base tree. COE #26 remains frozen; pinned SOURCE_INTAKE rows all match their exact source/destination blobs but its summary miscounts 46 identical / 15 derived as 47 / 14, destination branch pin is stale, test/license/route gaps remain. P0 #177, controller authentication, private v11 registry, and production gates remain open.
