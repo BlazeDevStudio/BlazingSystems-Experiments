@@ -1,12 +1,22 @@
-## PHX-HARDWARE UTC19 — poll transport outcome matrix (IN PROGRESS)
+## PHX-HARDWARE UTC19 — poll transport outcome matrix (SCOPED CI VERIFIED)
 
 **PR:** [#365](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/365) — OPEN / DRAFT / UNMERGED  
 **Branch:** `phoenix/hw-poll-boundary-pulse-matrix-20261128-utc18`  
-**Base/source head before this task:** `7c4ca74838be3d4469bef6acc2c2209849f30869`  
-**Scope:** extend the source-extracted blocking-poll host harness with immediate transport-begin failure, timeout/empty response, malformed response, server-error body and untrusted positive response outcomes across four relay/LED polarity combinations. Add a deliberate response-consumption/transient-re-enable mutation that must fail.  
-**Ownership:** PHX-HARDWARE test harness only. No production sketch, CORE API, QA assertion, finance, receipt/disposition or COE source change is authorized.
+**Documentation-first commit:** `71ea4c332227b58b6bc51a58908bc855bfadc0a8`  
+**Source/test SHA:** `fcd5d7df210c8521f9c8fcc1019c8db8bdaf7eb0`  
+**Scope:** Hardware-owned host harness only; no production ESP8266/ESP32 sketch, CORE API, QA assertion, finance, receipt/disposition or COE source changed.
 
-This is the required documentation-first IN-PROGRESS record. No source/test result is claimed yet. The candidate remains deny-only; the active v0.6 branch remains unchanged. Physical acceptor/relay behavior and pulse retention remain NOT TESTED.
+**Focused CI:** [run #46055268572](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46055268572), exact job `140696113739`: **PASS** at source/test SHA `fcd5d7df210c8521f9c8fcc1019c8db8bdaf7eb0`. Both boards report `POLL_TRANSPORT_OUTCOME_PASS outcomes=5 polarity_combinations=4 cases=20` covering immediate begin failure, empty timeout, malformed body, server-error body and untrusted positive `insert=true`. A deliberate response-consumption mutation that transiently enables relay/LED before the final deny was rejected on both boards (exit 20). Existing six pulse windows × four polarity combinations, register/poll denial, startup output latch and pending-recovery regressions also passed; the inherited pending-recovery lab reports 15 scenarios per board and 18 mutations rejected.
+
+**Mbed TLS:** [run #46055268521](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46055268521) was still **PENDING** when this record was prepared; no terminal result is claimed.
+
+**Full workflow:** PR run [#46055268629](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46055268629) and push run [#46055260220](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46055260220) failed the mandatory handover-freshness gate because this source/test SHA had not yet been recorded in the canonical handover. This is a documentation-order failure, not a controller/build result. Re-run Full after this docs synchronization. The last terminal Full integration result on the preceding stack remains [#46052478996](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46052478996), with controller parity failing at `tests/controllers.sh:21` (`config_revision`); 13/13 firmware targets and Android passed, downstream signing/publication skipped.
+
+**Critical scope boundary:** active `blazepwifi-v0.6.0-audit-foundation` remains `2fbd2475e9f54878c316fa7cea2f228386b0e859` and was not modified. PR #365 is a test-only child of the unmerged deny-only stack (#354 → #355 → #359 → #361 → #362 → #364); it does not fix the active branch's poll-before-first-sample race. P0 #177 remains OPEN. Pre-poll in-flight simulation does not prove physical acceptor coin retention when inhibited mid-pulse.
+
+**Acceptance:** SIMULATED / CI VERIFIED (scoped only). Physical relay polarity, pulse retention, electrical recovery, 150 power cuts, and 30-device/24-hour soak remain NOT TESTED. HARDWARE ACCEPTED = NO. PRODUCTION READY = NO-GO. Keep coin/relay admission denied.
+
+**Next:** read terminal Mbed result, rerun Full after this handover sync, request independent QA review and Master matrix registration, keep PR #365 DRAFT.
 
 ---
 

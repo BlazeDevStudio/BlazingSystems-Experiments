@@ -3865,3 +3865,11 @@ This is the required documentation-first IN-PROGRESS record. No source/test resu
 - PR #365 remains OPEN / DRAFT / UNMERGED on `phoenix/hw-poll-boundary-pulse-matrix-20261128-utc18`, current pre-task head `7c4ca74838be3d4469bef6acc2c2209849f30869`, stacked on #364.
 - Documentation-first handover staged before source changes. Planned host-only outcomes: immediate begin failure, empty timeout response, malformed body, server-error body, and untrusted positive `insert=true`; four independent relay/LED polarity combinations; injected transient response-consumption/re-enable mutation.
 - No source/test result claimed yet. No production sketch, CORE, QA, finance, COE, or active-v0.6 source changed. Physical behavior NOT TESTED; production NO-GO.
+
+
+## 2026-11-28 UTC19 — PHX-HARDWARE terminal poll transport outcome matrix (PR #365)
+- **Source/test SHA:** `fcd5d7df210c8521f9c8fcc1019c8db8bdaf7eb0`; **docs-first commit:** `71ea4c332227b58b6bc51a58908bc855bfadc0a8`; **branch:** `phoenix/hw-poll-boundary-pulse-matrix-20261128-utc18`.
+- **Focused:** run #46055268572 job `140696113739` PASS. Five transport outcomes × four relay/LED polarity combinations = 20 cases per board; transient untrusted-response actuation mutation rejected on both boards. Existing six pulse windows × four polarity combinations and pending recovery (15 scenarios per board; 18 mutations rejected) also PASS.
+- **Mbed:** run #46055268521 PENDING at handover time; no result claimed.
+- **Full:** #46055268629 (PR) and #46055260220 (push) failed the mandatory handover-freshness gate because this source/test SHA was not yet recorded; rerun after docs synchronization. Previous terminal Full #46052478996 failed controller parity at `tests/controllers.sh:21` (`config_revision`), with 13/13 firmware targets and Android PASS; downstream signing/publication skipped.
+- **Scope:** test harness only. Active v0.6 branch `2fbd2475e9f54878c316fa7cea2f228386b0e859` unchanged; P0 #177 remains OPEN. Physical pulse retention and relay polarity NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
