@@ -3902,3 +3902,14 @@ This is the required documentation-first IN-PROGRESS record. No source/test resu
 - Physical GPIO/relay/polarity, coin pulse, power-cut and soak acceptance: NOT TESTED. HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
 - No production sketch, API, finance, QA-owned test, COE destination, secret, migration, signer, flash, reset, merge or deployment changed.
 - Updated UTC: 2026-11-27T19:31:19Z.
+
+## PHX-HW-20261127T19Z-OUTPUT-SEQUENCE-LAB-MODULE-SPLIT-CI-EVIDENCE
+
+- Role: PHX-HARDWARE; PR #366 DRAFT child of #365; branch: phoenix/hw-output-enable-lab-modules-20261128-utc19.
+- Source/test SHA: ff73702adf6fb958c9f21ebe9a68c908ee829ea4; evidence docs head: 9012440c1b80bf0b85d4399e7d37563e75014c62.
+- Focused run #46058803158 job 140707756468 PASS: 8/8 polarity scenarios, 14/14 mutations rejected; append-only ledger guard and existing hardware labs PASS.
+- Mbed run #46058803171 PASS 3/3: source contract 140708321000; core 3.3.13 140708321364; core 4.0.0 140708321346. A/B build hashes match within each core.
+- Full run #46058803255: CI-0701 140707777619 PASS; controller protocol parity 140707834236 FAIL; ESP8266 140707834283, ESP32 140707834337, Android 140707834353, and 11 OpenWrt firmware target jobs PASS; downstream update/simulation/signing/publication skipped.
+- This PR is a host-lab maintainability refactor only; no production sketch or shared API changed. Physical GPIO/relay, pulse retention, 150 power cuts and 30-device/24-hour soak NOT TESTED; HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
+- CHANGE_LEDGER parent prefix preserved byte-for-byte; focused append-only guard reports base_bytes=1132798 appended_bytes=43445.
+- Updated UTC: 2026-11-27T19:31:19Z.

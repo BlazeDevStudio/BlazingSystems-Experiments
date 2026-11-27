@@ -1,14 +1,34 @@
-## PHX-HARDWARE UTC19 — startup GPIO sequence lab modularization (DRAFT; CI PENDING)
+## PHX-HARDWARE UTC19 — startup GPIO sequence lab modularization
 
-Branch: phoenix/hw-output-enable-lab-modules-20261128-utc19
-Source/test SHA: ff73702adf6fb958c9f21ebe9a68c908ee829ea4
-Parent: DRAFT PR #365 at e65b0b895af9c3fc5e5632f704cb67b347e69725.
-Scope: host-lab modularization only; no production sketch or shared interface changed.
+**PR #366: OPEN / DRAFT / UNMERGED** — child of #365; base remains e65b0b895af9c3fc5e5632f704cb67b347e69725.
+**Branch:** phoenix/hw-output-enable-lab-modules-20261128-utc19
+**Source/test SHA:** ff73702adf6fb958c9f21ebe9a68c908ee829ea4
+**Evidence docs head:** 9012440c1b80bf0b85d4399e7d37563e75014c62
 
-The output-enable sequence lab is split into a source-contract/mutation module and a C++ host-harness module. The entry-point command and existing 8/8 polarity scenarios plus 14/14 failure-injection cases are preserved.
+### Actual source changes
 
-The CHANGE_LEDGER.md historical prefix was restored from the exact parent blob and verified byte-for-byte; one UTC19 record is appended. No prior ledger history was removed. Physical GPIO/relay behavior remains NOT TESTED. HARDWARE ACCEPTED = NO. PRODUCTION READY = NO-GO.
+Split the former single-purpose output-enable sequence lab into:
+- output_enable_sequence_lab_contract.py — board paths, source-extractor decoy guard, and source mutation helpers.
+- output_enable_sequence_lab_harness.py — C++ event recorder and compile/run harness.
+- output_enable_sequence_lab.py — thin runner retaining the original workflow command.
 
+No production ESP8266/ESP32 sketch, controller API, finance, receipt/disposition contract, QA-owned assertion, migration, signer/witness, or COE source changed. Existing relay/LED active-polarity scenarios, old-pin shutdown checks, OFF-before-OUTPUT preload checks, OFF-after-OUTPUT confirmation, and 14 injected regressions are preserved.
+
+### Exact-head GitHub Actions evidence
+
+- Focused [run #46058803158](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46058803158), job 140707756468: PASS. The lab reports 8/8 board/polarity scenarios and 14/14 unsafe mutations rejected. The same job also passes the append-only ledger check (base_bytes=1132798, appended_bytes=43445), its guard failure-injection tests, config integrity/persistence labs, and pending recovery (15 scenarios per board; 18 mutations rejected).
+- Mbed TLS [run #46058803171](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46058803171): 3/3 PASS — source contract job 140708321000; core 3.3.13 job 140708321364; core 4.0.0 job 140708321346. Clean A/B builds are byte-identical on each core (3.3.13 SHA256 044d78aa3540f2baa2de24430974c2c6db51cdff95d6a24dcfca878cfd41f9a5; 4.0.0 SHA256 160da9c7368abc85559c6bc2a941106f1d6dd7e6bd7d68ca545c42f1d6b51bac).
+- Full [run #46058803255](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46058803255): CI-0701 job 140707777619 PASS; controller protocol parity job 140707834236 FAIL. ESP8266 job 140707834283, ESP32 job 140707834337, Android job 140707834353, and all 11 OpenWrt firmware target jobs PASS. Downstream update/simulation/signing/publication jobs were skipped. The controller-parity failure is inherited from the v0.6/current-main contract mismatch; this PR does not alter controller source.
+
+### Preservation and acceptance
+
+The CHANGE_LEDGER historical prefix was restored from the exact parent blob and verified byte-for-byte; one UTC19 work record is appended. The focused Actions append-only guard independently passes. An intermediate oversized-contents write was corrected before review; the incomplete candidate is absent from the final tree and the PR body records that recovery.
+
+Physical GPIO voltage, relay contacts, pulse retention, electrical recovery, 150 power cuts and 30-device/24-hour soak remain NOT TESTED. This is host simulation/CI only. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+
+### Next exact action
+
+PHX-MASTER: register #366 and its #365 ancestry in the role/integration matrices. PHX-QA: review the exact source/test SHA and focused logs. PHX-HARDWARE: keep the P0 #177 deny-only boundary; do not re-enable from unsigned poll fields while CORE's authenticated register/poll/receipt/disposition contract is absent.
 ---
 ## PHX-HARDWARE UTC19 — poll transport outcome matrix (FINAL DOCS-HEAD CI VERIFIED; FULL INTEGRATION BLOCKED)
 
