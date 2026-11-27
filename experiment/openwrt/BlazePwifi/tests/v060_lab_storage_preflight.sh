@@ -94,42 +94,48 @@ echo 'LAB ONLY: software preflight is NOT physical power-loss durability'
 # STORCHK-0674 follow-up: partitions on the same physical parent are not isolated.
 PARENT_GUARD="$BASE/tools/v060_lab_block_parent_guard.sh"
 SYSFS="$TEMP/sys"
-mkdir -p "$SYSFS/dev/block" "$SYSFS/devices/pci/block/sda" "$SYSFS/devices/pci/block/sdb" "$SYSFS/devices/virtual/block/dm-0/slaves"
+mkdir -p "$SYSFS/dev/block" "$SYSFS/devices/pci/block/sda" "$SYSFS/devices/pci/block/sdb" "$SYSFS/devices/pci/block/sdc" "$SYSFS/devices/pci/block/sdd" "$SYSFS/devices/platform/mtd/block/mtdblock0" "$SYSFS/devices/virtual/block/dm-0/slaves"
 make_disk() {
   disk="$1"; mm="$2"
   mkdir -p "$SYSFS/devices/pci/block/$disk"
-  printf '%s\\n' "$mm" > "$SYSFS/devices/pci/block/$disk/dev"
+  printf '%s\n' "$mm" > "$SYSFS/devices/pci/block/$disk/dev"
   ln -s "../../devices/pci/block/$disk" "$SYSFS/dev/block/$mm"
 }
 make_partition() {
   disk="$1"; part="$2"; mm="$3"
   mkdir -p "$SYSFS/devices/pci/block/$disk/$part"
-  printf '%s\\n' "$mm" > "$SYSFS/devices/pci/block/$disk/$part/dev"
-  printf '1\\n' > "$SYSFS/devices/pci/block/$disk/$part/partition"
+  printf '%s\n' "$mm" > "$SYSFS/devices/pci/block/$disk/$part/dev"
+  printf '1\n' > "$SYSFS/devices/pci/block/$disk/$part/partition"
   ln -s "../../devices/pci/block/$disk/$part" "$SYSFS/dev/block/$mm"
 }
 make_disk sda 8:0
 make_disk sdb 8:16
+make_disk sdc 8:32
+make_disk sdd 8:48
 make_partition sda sda1 8:1
 make_partition sda sda2 8:2
-make_partition sda sda3 8:3
-make_partition sda sda4 8:4
 make_partition sdb sdb1 8:17
-printf '253:0\\n' > "$SYSFS/devices/virtual/block/dm-0/dev"
-ln -s ../../../../pci/block/sda/sda2 "$SYSFS/devices/virtual/block/dm-0/slaves/sda2"
+make_partition sdb sdb2 8:18
+make_partition sdc sdc1 8:33
+make_partition sdc sdc2 8:34
+make_partition sdd sdd1 8:49
+printf '31:0\n' > "$SYSFS/devices/platform/mtd/block/mtdblock0/dev"
+ln -s "../../devices/platform/mtd/block/mtdblock0" "$SYSFS/dev/block/31:0"
+printf '253:0\n' > "$SYSFS/devices/virtual/block/dm-0/dev"
+ln -s ../../../../pci/block/sda/sda1 "$SYSFS/devices/virtual/block/dm-0/slaves/sda1"
 ln -s ../../devices/virtual/block/dm-0 "$SYSFS/dev/block/253:0"
 [ -s "$PARENT_GUARD" ] || { echo 'missing STORCHK-0674 physical-parent guard' >&2; exit 1; }
 sh -n "$PARENT_GUARD"
 check_parent_ok() {
-  scratch_mm="$1"; root_mm="$2"; overlay_mm="$3"; boot_mm="$4"; root_fs="$5"; label="$6"
-  sh "$PARENT_GUARD" "$SYSFS" "$scratch_mm" "$root_mm" "$overlay_mm" "$boot_mm" "$root_fs" > "$TEMP/parent-out" 2> "$TEMP/parent-err" || {
+  scratch_mm="$1"; root_mm="$2"; overlay_mm="$3"; rom_mm="$4"; boot_mm="$5"; root_fs="$6"; label="$7"
+  sh "$PARENT_GUARD" "$SYSFS" "$scratch_mm" "$root_mm" "$overlay_mm" "$rom_mm" "$boot_mm" "$root_fs" > "$TEMP/parent-out" 2> "$TEMP/parent-err" || {
     cat "$TEMP/parent-err" >&2; echo "unexpected physical-parent rejection: $label" >&2; exit 1;
   }
   grep -Fqx 'physical_parent_separation_verified=1' "$TEMP/parent-out"
 }
 check_parent_bad() {
-  scratch_mm="$1"; root_mm="$2"; overlay_mm="$3"; boot_mm="$4"; root_fs="$5"; label="$6"
-  if sh "$PARENT_GUARD" "$SYSFS" "$scratch_mm" "$root_mm" "$overlay_mm" "$boot_mm" "$root_fs" > "$TEMP/parent-out" 2> "$TEMP/parent-err"; then
+  scratch_mm="$1"; root_mm="$2"; overlay_mm="$3"; rom_mm="$4"; boot_mm="$5"; root_fs="$6"; label="$7"
+  if sh "$PARENT_GUARD" "$SYSFS" "$scratch_mm" "$root_mm" "$overlay_mm" "$rom_mm" "$boot_mm" "$root_fs" > "$TEMP/parent-out" 2> "$TEMP/parent-err"; then
     echo "unsafe physical-parent layout accepted: $label" >&2
     exit 1
   fi
@@ -138,11 +144,13 @@ check_parent_bad() {
   }
   [ ! -s "$TEMP/parent-out" ] || { echo "unsafe physical-parent layout emitted success: $label" >&2; exit 1; }
 }
-check_parent_ok 8:17 8:1 8:2 8:3 ext4 'separate physical scratch disk'
-check_parent_bad 8:4 8:1 8:2 8:3 ext4 'scratch sibling partition shares root physical disk'
-check_parent_bad 8:0 8:1 8:2 8:3 ext4 'scratch is the same whole disk as protected mounts'
-check_parent_bad 253:0 8:1 8:2 8:3 ext4 'device-mapper topology is unsupported'
-check_parent_bad 8:99 8:1 8:2 8:3 ext4 'scratch sysfs identity is missing'
-check_parent_ok 8:17 0:42 8:2 8:3 overlay 'overlay root is checked through its upper storage'
-check_parent_bad 8:4 0:42 8:2 8:3 overlay 'scratch shares overlay upper physical disk'
-echo 'STORCHK-0674 PHYSICAL-PARENT RED/GREEN MATRIX PASS: sibling partitions, whole-disk reuse, mapper ambiguity and missing sysfs identity fail closed'
+check_parent_ok 8:49 8:1 8:17 31:0 8:33 ext4 'separate physical scratch disk'
+check_parent_bad 8:2 8:1 8:17 31:0 8:33 ext4 'scratch sibling partition shares root disk'
+check_parent_bad 8:18 8:1 8:17 31:0 8:33 ext4 'scratch sibling partition shares overlay disk'
+check_parent_bad 8:34 8:1 8:17 31:0 8:33 ext4 'scratch sibling partition shares boot disk'
+check_parent_bad 8:0 8:1 8:17 31:0 8:33 ext4 'scratch is the same whole disk as root'
+check_parent_bad 253:0 8:1 8:17 31:0 8:33 ext4 'device-mapper topology is unsupported'
+check_parent_bad 8:99 8:1 8:17 31:0 8:33 ext4 'scratch sysfs identity is missing'
+check_parent_ok 8:49 0:42 8:17 31:0 8:33 overlay 'overlay root is checked through its upper storage'
+check_parent_bad 8:18 0:42 8:17 31:0 8:33 overlay 'scratch shares overlay upper physical disk'
+echo 'STORCHK-0674 PHYSICAL-PARENT MATRIX PASS: root/overlay/boot sibling partitions, whole-disk reuse, mapper ambiguity and missing sysfs identity fail closed'
