@@ -3737,3 +3737,13 @@ PR #354 remains OPEN / DRAFT / UNMERGED. PRs #239/#254/#283 remain OPEN / DRAFT 
 - Added source-extracted C++ sanitizer and failure-injection lab \`runtime_pin_config_lab.py\`; test-only RED #45938629972; focused push #45939247440 and PR #45939251952 PASS.
 - Mbed TLS 3.3.13/4.0.0 matrix #45939251950 PASS; Full #45939247661 ESP8266/ESP32 target jobs PASS. Full validation needs post-handover rerun; Native #45939251963 remains blocked by QA-owned PAY-0745.
 - SIMULATED / CI VERIFIED only. Physical GPIO/relay/coin/power acceptance NOT TESTED. No positive coin admission, journal disposition, financial or production behavior enabled.
+
+
+## 2026-11-27 — PHX-HARDWARE GPIO save-handler early-return guard (UTC06)
+
+- PR #357 branch `phoenix/hw-runtime-pin-config-guard-20261127-utc04`; test commit `69788217b3e1e6153d5be9e9b6ebd2e52e2de9d6`; stacked base remains the #355 branch at merge-base `0adb541ae43143d6fc242f3746f56f71a3040d47`.
+- Strengthened `runtime_pin_config_lab.py`: the invalid-GPIO HTTP 400 response must be followed by an early `return;` before Wi-Fi verification and EEPROM/Preferences persistence.
+- Added a source mutation that removes that first return; both ESP8266 and ESP32 must reject the fallthrough. Firmware sketches and runtime behavior were not changed.
+- Focused push [#45954138864](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45954138864), exact-source job `140356585158`: PASS. Logs report `RUNTIME_GPIO_MUTATION_REJECTED` for the removed-return mutation on both boards, all existing GPIO mutations rejected, and `RUNTIME_GPIO_CONFIG_SIMULATED_ONLY=1` / `PHYSICAL_GPIO_OR_RELAY_ACCEPTANCE=0`.
+- Full push [#45954139008](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45954139008), validation job `140356680635`: failed the mandatory handover-freshness gate on pre-sync HEAD `69788217b3e1e6153d5be9e9b6ebd2e52e2de9d6`; target jobs were still running at last read. Re-run after this documentation sync; do not treat the pre-sync Full as a completed integration result.
+- SIMULATED / CI VERIFIED only. No physical GPIO, relay, coin, power-cut or electrical acceptance is claimed. P0 #177, CORE authenticated poll/receipt/disposition, QA semantic assertions, and Master stack reconciliation remain open.

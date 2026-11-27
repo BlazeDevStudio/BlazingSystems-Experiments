@@ -1,3 +1,14 @@
+## PHX-HARDWARE UTC06 — GPIO save-handler early-return regression guard
+
+- PR #357 branch `phoenix/hw-runtime-pin-config-guard-20261127-utc04`; test commit `69788217b3e1e6153d5be9e9b6ebd2e52e2de9d6`; OPEN / DRAFT / UNMERGED.
+- Added a source-contract requirement that invalid GPIO HTTP 400 handling returns before Wi-Fi verification and EEPROM/Preferences persistence; injected removal of the return and required rejection on ESP8266 and ESP32.
+- Focused [#45954138864](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45954138864), job `140356585158`: PASS. Both invalid-return mutations rejected; existing board/range/role mutation matrix PASS.
+- Pre-sync Full [#45954139008](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45954139008), job `140356680635`: FAIL at handover freshness; post-sync Full must be checked. No aggregate PASS is claimed.
+- #357 is 6 ahead / 1 behind current #355 head `9f7a8ecb`; merge-base `0adb541a`. Master must reconcile stack ancestry.
+- Firmware, shared APIs and financial behavior unchanged. SIMULATED / CI VERIFIED only; physical GPIO/relay/coin/power acceptance NOT TESTED.
+
+---
+
 ## PHX-HARDWARE UTC04 — board GPIO configuration guard (PR #357)
 
 - Repository: \`BlazeDevStudio/BlazingSystems-Experiments\`.

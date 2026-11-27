@@ -1,3 +1,18 @@
+## PHX-HARDWARE UTC06 — GPIO save-handler early-return regression guard (PR #357)
+
+**Branch:** `phoenix/hw-runtime-pin-config-guard-20261127-utc04`  
+**Test commit:** `69788217b3e1e6153d5be9e9b6ebd2e52e2de9d6`  
+**PR:** OPEN / DRAFT / UNMERGED. #357 remains stacked on #355; compare is 6 ahead / 1 behind current #355 branch HEAD `9f7a8ecb915cf199a82c0b4d37c56c40d722037b`, with merge-base `0adb541ae43143d6fc242f3746f56f71a3040d47`. PHX-MASTER owns ancestry reconciliation.
+
+The GPIO source-contract lab previously checked validation order but did not prove that the invalid-GPIO HTTP 400 branch returned before Wi-Fi verification and persistence. A removed `return;` could otherwise fall through while the ordering-only test still passed. The Hardware-owned lab now asserts response → early return → Wi-Fi verification → persistence ordering and injects a missing-return mutation for both boards.
+
+- Focused push [#45954138864](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45954138864), job `140356585158`: **PASS**. Both ESP8266 and ESP32 reject `invalid-config-return-removed`; existing GPIO mutation tests pass.
+- Pre-sync Full [#45954139008](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45954139008), validation job `140356680635`: **FAIL** at mandatory handover freshness on the pre-sync checkout. Post-sync Full must be rechecked.
+- No firmware source or runtime behavior changed. This is SIMULATED / CI VERIFIED only; physical GPIO/relay acceptance remains NOT TESTED.
+- CORE still owns authenticated register/poll and receipt/disposition; QA owns semantic regression assertions. Do not add unsafe pending-clear calls or unsigned admission. P0 #177 remains open.
+
+---
+
 ## PHX-HARDWARE UTC04 — board GPIO configuration guard (PR #357)
 
 **Repository:** \`BlazeDevStudio/BlazingSystems-Experiments\`  
