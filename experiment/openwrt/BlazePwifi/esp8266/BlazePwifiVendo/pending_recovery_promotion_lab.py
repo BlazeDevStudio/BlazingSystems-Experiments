@@ -93,6 +93,15 @@ def assert_source_contract(source: str) -> None:
     require_deny_block(legacy_failure, "legacy-journal-migration")
 
 
+def mutate_load(source: str, old: str, new: str) -> str:
+    load = extract_function(source, "bool loadPending()")
+    require(old in load, f"missing mutation anchor in loadPending: {old}")
+    changed = load.replace(old, new, 1)
+    start = source.find(load)
+    require(start >= 0, "could not locate loadPending source span")
+    return source[:start] + changed + source[start + len(load):]
+
+
 def expect_rejected(label: str, mutated: str) -> None:
     try:
         assert_source_contract(mutated)
@@ -317,41 +326,41 @@ def main() -> None:
 
         expect_rejected(
             f"{board}-ambiguous-canonical-accepted",
-            source.replace('if(LittleFS.exists("/pending.dat"))',
-                           "if(false)", 1),
+            mutate_load(source, 'if(LittleFS.exists("/pending.dat"))',
+                        "if(false)"),
         )
         expect_rejected(
             f"{board}-rename-result-ignored",
-            source.replace('if(!LittleFS.rename(chosen,"/pending.dat"))',
-                           'if(LittleFS.rename(chosen,"/pending.dat"))', 1),
+            mutate_load(source, 'if(!LittleFS.rename(chosen,"/pending.dat"))',
+                        'if(LittleFS.rename(chosen,"/pending.dat"))'),
         )
         expect_rejected(
             f"{board}-canonical-evidence-deleted",
-            source.replace('if(strcmp(chosen,"/pending.dat")!=0){',
-                           'if(strcmp(chosen,"/pending.dat")!=0){LittleFS.remove("/pending.dat");', 1),
+            mutate_load(source, 'if(strcmp(chosen,"/pending.dat")!=0){',
+                        'if(strcmp(chosen,"/pending.dat")!=0){LittleFS.remove("/pending.dat");'),
         )
         expect_rejected(
             f"{board}-filesystem-not-denied",
-            source.replace("fsReady=false;", "fsReady=true;", 1),
+            mutate_load(source, "fsReady=false;", "fsReady=true;"),
         )
         expect_rejected(
             f"{board}-pending-hold-not-latched",
-            source.replace("pendingReady=true;", "pendingReady=false;", 1),
+            mutate_load(source, "pendingReady=true;", "pendingReady=false;"),
         )
         expect_rejected(
             f"{board}-ram-state-published-before-promotion",
-            source.replace('if(strcmp(chosen,"/pending.dat")!=0){',
-                           'pendingSequenceState=r;\n  if(strcmp(chosen,"/pending.dat")!=0){', 1),
+            mutate_load(source, 'if(strcmp(chosen,"/pending.dat")!=0){',
+                        'pendingSequenceState=r;\n  if(strcmp(chosen,"/pending.dat")!=0){'),
         )
         expect_rejected(
             f"{board}-empty-journal-write-result-ignored",
-            source.replace("if(!persistPendingSequence(pendingSequenceState))",
-                           "if(persistPendingSequence(pendingSequenceState))", 1),
+            mutate_load(source, "if(!persistPendingSequence(pendingSequenceState))",
+                        "if(persistPendingSequence(pendingSequenceState))"),
         )
         expect_rejected(
             f"{board}-legacy-migration-result-ignored",
-            source.replace("if(legacy && !persistPendingSequence(r))",
-                           "if(legacy && persistPendingSequence(r))", 1),
+            mutate_load(source, "if(legacy && !persistPendingSequence(r))",
+                        "if(legacy && persistPendingSequence(r))"),
         )
 
         output = compile_and_run(cxx_harness(load), board.lower())
