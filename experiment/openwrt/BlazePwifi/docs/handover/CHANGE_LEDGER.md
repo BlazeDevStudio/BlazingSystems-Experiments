@@ -3735,3 +3735,173 @@ PR #354 remains OPEN / DRAFT / UNMERGED. PRs #239/#254/#283 remain OPEN / DRAFT 
 - Mbed TLS #45930541401 is 3/3 PASS. Full #45930541357 fails at QA-owned `tests/controllers.sh:21` (`config_revision` assertion); all 14 target/platform jobs and Android pass. Native #45930541359 fails at QA-owned `tests/v060_vendo_sequence_contract.py:20` (active `clearPending(true/false)` callsite assertion). No unsafe response consumer or pending-clear callsite was added.
 - #354/#355 remains deny-only and preserves pending evidence. CORE's authenticated poll/receipt/disposition contract and QA's independent assertion reconciliation are required before positive admission/disposition.
 - SIMULATED / CI VERIFIED only; physical GPIO/relay/electrical recovery, 150 power cuts and 30-device/24-hour soak NOT TESTED. HARDWARE ACCEPTED NO; PRODUCTION NO-GO.
+## 2026-11-27 — PHX-HARDWARE runtime GPIO configuration guard
+
+- Branch \`phoenix/hw-runtime-pin-config-guard-20261127-utc04\`; DRAFT PR #357 stacked on #355 at base \`0adb541ae43143d6fc242f3746f56f71a3040d47\`.
+- Source/test commit \`ede3acab5dd8f3aefc1a3d3d2780c00fb8bc3c04\`.
+- Added strict bounded decimal GPIO parsing, board-aware GPIO range checks, flash-pin exclusion and distinct coin/relay/LED roles to both Vendo sketches. Invalid stored tuples fall back before pin setup; ESP32 station/poll remains disabled until corrected configuration is saved.
+- Added source-extracted C++ sanitizer and failure-injection lab \`runtime_pin_config_lab.py\`; test-only RED #45938629972; focused push #45939247440 and PR #45939251952 PASS.
+- Mbed TLS 3.3.13/4.0.0 matrix #45939251950 PASS; Full #45939247661 ESP8266/ESP32 target jobs PASS. Full validation needs post-handover rerun; Native #45939251963 remains blocked by QA-owned PAY-0745.
+- SIMULATED / CI VERIFIED only. Physical GPIO/relay/coin/power acceptance NOT TESTED. No positive coin admission, journal disposition, financial or production behavior enabled.
+
+
+## 2026-11-27 — PHX-HARDWARE GPIO save-handler early-return guard (UTC06)
+
+- PR #357 branch `phoenix/hw-runtime-pin-config-guard-20261127-utc04`; test commit `69788217b3e1e6153d5be9e9b6ebd2e52e2de9d6`; stacked base remains the #355 branch at merge-base `0adb541ae43143d6fc242f3746f56f71a3040d47`.
+- Strengthened `runtime_pin_config_lab.py`: the invalid-GPIO HTTP 400 response must be followed by an early `return;` before Wi-Fi verification and EEPROM/Preferences persistence.
+- Added a source mutation that removes that first return; both ESP8266 and ESP32 must reject the fallthrough. Firmware sketches and runtime behavior were not changed.
+- Focused push [#45954138864](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45954138864), exact-source job `140356585158`: PASS. Logs report `RUNTIME_GPIO_MUTATION_REJECTED` for the removed-return mutation on both boards, all existing GPIO mutations rejected, and `RUNTIME_GPIO_CONFIG_SIMULATED_ONLY=1` / `PHYSICAL_GPIO_OR_RELAY_ACCEPTANCE=0`.
+- Full push [#45954139008](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45954139008), validation job `140356680635`: failed the mandatory handover-freshness gate on pre-sync HEAD `69788217b3e1e6153d5be9e9b6ebd2e52e2de9d6`; target jobs were still running at last read. Re-run after this documentation sync; do not treat the pre-sync Full as a completed integration result.
+- SIMULATED / CI VERIFIED only. No physical GPIO, relay, coin, power-cut or electrical acceptance is claimed. P0 #177, CORE authenticated poll/receipt/disposition, QA semantic assertions, and Master stack reconciliation remain open.
+
+
+## 2026-11-27 — PHX-HARDWARE GPIO parser overflow failure injection (UTC06)
+
+- Extended `runtime_pin_config_lab.py` on PR #357: rejected overflowing decimal input must leave the output argument unchanged; removing the bounded decimal overflow guard must be rejected by the ASan/UBSan harness on ESP8266 and ESP32.
+- This is a host-only regression test. No firmware sketch, coin/relay behavior, shared API, financial code, QA-owned test or COE file changed.
+- The combined source+handover commit is the exact-head evidence point; focused and Full Actions were triggered by the source+documentation commit and are recorded in PR #357 after terminal completion.
+- SIMULATED / CI VERIFIED only; physical GPIO/relay/coin/power acceptance NOT TESTED; HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+
+
+## 2026-11-27 — PHX-HARDWARE overflow mutation fixture correction (UTC06)
+
+- The first parser-overflow mutation at `a775ccf4` failed compilation because deleting the guard made `maximum` unused under `-Werror`; this was a test-fixture failure, not a firmware defect.
+- Corrected the mutation to retain a harmless `maximum` reference while disabling the guard; added a positive check that rejected overflow leaves the output value unchanged.
+- Focused rerun is required for valid mutation evidence. Full #45955085639 separately failed QA-owned Controller protocol parity; its target jobs were not yet terminal at last read.
+- No firmware/runtime behavior changed. Physical acceptance NOT TESTED; HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+
+
+## 2026-11-27 — PHX-HARDWARE PR #357 restack onto current #355 (UTC07)
+
+- Preserved the full current #355 CHANGE_LEDGER as an exact byte prefix, then appended the #357-only suffix from its prior branch history.
+- Current #355 prefix bytes: 1147637; appended #357 historical bytes: 4309.
+- Restacked #357 with first parent 79470fb6cfa1daf274c33d2100ad19eabd5b39fd and second parent 9f7a8ecb915cf199a82c0b4d37c56c40d722037b; no force-push and no #355 mutation.
+- No existing ledger bytes were deleted or rewritten. Physical acceptance remains NOT TESTED; production remains NO-GO.
+
+
+## 2026-11-27 — PHX-HARDWARE PR #357 exact-head CI terminal readback (UTC07)
+
+- Restack commit: 69ef1b4905a1adefdb74b69d701057d6d331540f; base #355 9f7a8ecb915cf199a82c0b4d37c56c40d722037b; PR remains DRAFT / unmerged.
+- Full #45958121607: 15 success / 1 failure / 13 skipped; sole failure is QA-owned Controller protocol parity. All ESP8266, ESP32, Android and 11 OpenWrt target jobs succeeded; CI-0701 and handover freshness passed.
+- Native #45958121633: PAY-0745 durable Vendo pending sequence and corruption contract failed; no unsafe pending-clear workaround added.
+- Mbed TLS #45958121512: 3/3 PASS. Exact-source push #45958114250 and PR #45958121684: PASS.
+- These are CI results only. Physical GPIO/relay/electrical acceptance, 150 power cuts and 30-device/24-hour soak remain NOT TESTED. Production remains NO-GO.
+## 2026-11-27 UTC07 — ESP8266 boot-strap GPIO role rejection (2026-11-27)
+
+**Task:** PR #357, Hardware-owned runtime GPIO validation hardening  
+**Branch:** `phoenix/hw-runtime-pin-config-guard-20261127-utc04`  
+**Source/test SHA:** `7ee0bc955cdf67763d032f81e488141e4a270a88`  
+**Base:** PR #355 at `9f7a8ecb915cf199a82c0b4d37c56c40d722037b`  
+**PR:** [#357](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/357), OPEN / DRAFT / UNMERGED
+
+### Defect and change
+
+The ESP8266 `validRuntimePins()` policy rejected out-of-range, flash-reserved (GPIO6–11), and overlapping roles, but still allowed GPIO0, GPIO2 and GPIO15 for coin, relay or LED. Espressif documents these as reset-time boot-strapping pins; external circuits can alter normal flash boot or bootloader selection.
+
+The Hardware-owned ESP8266 validator now rejects GPIO0/GPIO2/GPIO15 for all three configurable runtime roles. Existing defaults (coin GPIO4, LED GPIO14, relay GPIO5) remain valid. Invalid stored tuples continue to fall back to the existing default tuple; this change does not add positive coin/relay admission.
+
+The source-extracted host lab now:
+- Requires the strap-pin guard in the actual sketch.
+- Tests GPIO0, GPIO2 and GPIO15 independently as coin, relay and LED roles.
+- Removes the complete strap guard as a negative mutation and requires the harness to reject that unsafe candidate.
+
+Reference: [Espressif ESP8266 boot-mode selection](https://docs.espressif.com/projects/esptool/en/latest/esp8266/advanced-topics/boot-mode-selection.html).
+
+### Exact evidence at source/test SHA
+
+- Focused PR [#45961383769](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45961383769), job `140379762193`: **PASS**.
+- Focused push [#45961376783](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45961376783), job `140379740076`: **PASS**.
+- Logs: `RUNTIME_GPIO_POLICY_PASS ESP8266`; `RUNTIME_GPIO_MUTATION_REJECTED ESP8266 boot-strap-guard-removed`; `RUNTIME_GPIO_FAILURE_INJECTION_PASS ESP8266`; both board policy harnesses passed; 14/14 injected regressions were rejected.
+- Append-only ledger guard: `CHANGE_LEDGER_APPEND_ONLY_PASS base_bytes=1132798 appended_bytes=22069`.
+- ESP32 Mbed TLS matrix [#45961383705](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45961383705): **3/3 PASS** (source contract, Arduino core 3.3.13, Arduino core 4.0.0).
+- Native synthetic journal [#45961383755](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45961383755), job `140379762596`: **FAIL** at QA-owned PAY-0745 assertion requiring active `clearPending(true/false)` callsites. Hardware did not add a pending-clear workaround.
+- Pre-handover Full push [#45961376884](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45961376884), validation job `140379814945`: **FAIL** at the mandatory handover-freshness gate because this source change had not yet been recorded. This is not terminal integrated validation; exact docs-head Full/Native runs are required after this sync.
+
+### Scope and limitations
+
+Only the ESP8266 sketch and Hardware-owned GPIO lab changed in the source commit. ESP32 strap policy/default GPIO2 was not altered; its board-specific electrical qualification remains separate. UART0 GPIO1/GPIO3 and GPIO16 role capability are not addressed by this change and must not be treated as physically accepted.
+
+Host/source-extracted failure injection is **SIMULATED / CI VERIFIED** only. Physical strap levels, external pull-ups, GPIO voltage, relay contact behavior, coin pulses, brownout recovery, 150 power cuts and 30-device/24-hour soak remain **NOT TESTED**. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+
+No shared API, QA-owned test, financial code, migration, signer, witness, COE destination, production configuration or release path changed. No device was flashed or reset.
+
+### Next exact action
+
+Complete the post-handover exact-head Full and Native reads. PHX-QA/PHX-CORE still own the Controller protocol and pending-disposition contract blockers; PHX-MASTER owns the integration matrix. Hardware retains #357 DRAFT/unmerged.
+
+## 2026-11-27 17:21 Asia/Manila — PHX-HARDWARE ESP32 strapping GPIO role guard
+
+- **ID / scope:** PHX-HW-ESP32-STRAP-UTC09; Hardware-owned ESP32 Vendo runtime GPIO role validation on PR #357.
+- **status:** `validated` for focused source-extracted policy/mutation tests and ESP32 build matrix; overall integration remains `blocked` by pre-sync handover freshness and QA-owned PAY-0745 assertion. **priority:** P1 board boot/electrical safety.
+- **branch:** `phoenix/hw-runtime-pin-config-guard-20261127-utc04`; PR #357 OPEN / DRAFT / UNMERGED; base #355 `9f7a8ecb915cf199a82c0b4d37c56c40d722037b`.
+- **source commits:** `cd5b0cc0e2d721e59916f63c7ebf95a21c9cb2db` (ESP32 guard + first matrix); `32f63aa335714d63fba8bae406a102a8d5d191e9` (independent non-overlapping role cases + precise GPIO2 LED exception comment). Preflight `CURRENT_STATE` commit: `3208276216640687acd7ba5f7210c083c51e34b4`.
+- **paths:** `experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino`; `experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/runtime_pin_config_lab.py`; canonical handovers and new narrow UTC09 record.
+- **why:** ESP32 GPIO0/2/5/12/15 are documented strapping pins. Reject all five for coin/relay; reject 0/5/12/15 for LED; retain GPIO2 only for the LED role to preserve the current default tuple 27/26/2. GPIO2 external circuit/board revision remains unmeasured.
+- **tests:** focused PR #45972810167 job 140417125204 PASS; focused push #45972801632 job 140417096963 PASS; ESP32 Mbed TLS #45972810179 jobs 140417258436/140417257943/140417258338 PASS 3/3. Mutation removing the strap guard rejected; each strap role tested independently.
+- **Full:** #45972810260 at source/test SHA 32f63aa — 14/14 target/platform builds PASS; validation failed at `handover_gate.sh` freshness because the final source evidence had not yet been synchronized. This is pre-sync evidence, not a terminal Full pass.
+- **Native:** #45972810157 job 140417125670 FAIL at QA-owned `tests/v060_vendo_sequence_contract.py:20` requiring `clearPending(true/false)` callsites; preceding sequence shell contract passed. No unsafe callsite added.
+- **reversibility:** revert the two source/test commits on the draft branch; no mainline/production change, flash, reset, migration or persisted device config operation.
+- **blockers:** post-sync Full rerun; QA-owned pending disposition assertion; CORE authenticated register/poll/receipt/disposition contract; physical GPIO/relay/coin/power acceptance; 150 power cuts; 30-device/24-hour soak; protected signer/witness; v1→v2 durable accounting/replay; independent QA/release approval.
+- **NEXT ACTION:** rerun Full on the final documentation-synchronized PR HEAD and preserve all deny-only behavior.
+
+
+## 2026-11-27 17:30 Asia/Manila — PHX-HARDWARE UTC09 post-sync Full reconciliation
+
+- **scope/status:** final exact-head integration readback for ESP32 strapping GPIO role guard on #357; scoped source/test remains `validated`; Full/Native integration remains `blocked`.
+- **exact refs:** PR/docs HEAD `2fb6bd1761b37284ed5fc7a7535467ee686c2df7`; source/test SHA `32f63aa335714d63fba8bae406a102a8d5d191e9`; base #355 `9f7a8ecb915cf199a82c0b4d37c56c40d722037b`.
+- **Focused:** #45973701941 job 140420085629 PASS; push #45973694879 job 140420060317 PASS. ESP32 strap-guard removal rejected; coin/relay cases use non-overlapping GPIO33 LED assignment; LED strap cases tested independently.
+- **Mbed TLS:** #45973701926 jobs 140420086169 / 140420085817 / 140420086064 PASS 3/3. Arduino CLI 1.6.0; core 3.3.13 and 4.0.0. Staged source tree SHA-256 `406f60258b9eac7c649cda02f2244cdd4f26195a5bb532dcd59e55fd7d978564`. Clean A/B binary hashes match within each run: 3.3.13 `3060e8c1f3df6fc5b42cc9d3d823f92fba0ce8c7d6400d690a16a4e2f6acd459`; 4.0.0 `5ee433de29ab928f0753ac33a94a8a4bcbbebf09c33ca2bfd868f21ec6c7ec3d`. Prior source-head run had a different SOURCE_DATE_EPOCH and different cross-run binary hashes; source tree remained identical.
+- **Full:** #45973701897 at docs HEAD 2fb6bd1 — overall FAIL at `tests/controllers.sh:21` requiring `config_revision`. Both sketches lack the field (ESP8266 blob `96fa83d9ae5404eefbad425e5b032db962fa45a4`; ESP32 blob `321800051fac00828aa8830668c0c4f7e58c6e50`). Handover gate/HND-0700/CI-0701 pass; 14/14 firmware/platform/Android jobs pass; signing/import/simulation/publication stages skipped.
+- **Native:** #45973701913 job 140420085450 FAIL at QA-owned PAY-0745 `clearPending(true/false)` assertion; preceding pending-sequence shell contract passed. No unsafe workaround added.
+- **Master coordination:** Master branch/PR #288 `fb18d3d7579eaa01e1cbaa3246355e485b2955f2`; current Master role/matrix docs still omit #357 and pin older #355/#356 heads. Master owns their update; Hardware did not edit them.
+- **release status:** HARDWARE ACCEPTED NO; PRODUCTION READY NO-GO. Physical GPIO/relay/coin, 150 power cuts, 30-device/24-hour soak, electrical recovery, signer/witness, durable accounting/replay, v1→v2 migration and independent QA/release acceptance remain untested/unaccepted.
+- **NEXT ACTION:** PHX-QA/PHX-CORE reconcile `config_revision` and PAY-0745 semantics against the deny-only controller contract; Hardware must not invent response fields or pending-clear callsites.
+
+
+
+## 2026-11-27 — PHX-HARDWARE ESP8266 GPIO16 coin-input capability guard
+
+- **BRANCH:** `phoenix/hw-runtime-pin-config-guard-20261127-utc04` (existing DRAFT PR #357; no new overlapping PR).
+- **SOURCE/TEST COMMIT:** `750af995e28d7977dcac8ea4cc800f71c71d27d8`.
+- **SCOPE:** ESP8266 Vendo sketch and Hardware-owned `runtime_pin_config_lab.py`.
+- **CHANGE:** reject GPIO16 only for the coin-input role because the firmware configures `INPUT_PULLUP`; preserve GPIO16 relay/LED output roles and default tuple 4/14/5.
+- **REGRESSION:** coin16 deny, relay16/LED16 allow, source pull-up assumption check, and mutation removing the guard.
+- **EVIDENCE:** official ESP8266 Arduino Core reference https://arduino-esp8266.readthedocs.io/en/latest/reference.html. Exact-head Actions pending.
+- **LIMITS:** host simulation only; physical GPIO, external pull-up, relay, coin pulse and power-cut acceptance NOT TESTED. No production admission enabled.
+
+
+## 2026-11-27 — PHX-HARDWARE GPIO16 INPUT_PULLUP capability guard — evidence update
+
+- **ID / PRIORITY:** PR-357 / P1.
+- **BRANCH:** `phoenix/hw-runtime-pin-config-guard-20261127-utc04`; parent PR #357, base #355 at `9f7a8ecb915cf199a82c0b4d37c56c40d722037b`.
+- **SOURCE/TEST SHA:** `750af995e28d7977dcac8ea4cc800f71c71d27d8`; subsequent source-comment + documentation checkpoint follows `5025a318feaba2449c669710d06cac99cc823e5b`.
+- **FILES:** ESP8266 `BlazePwifiVendo.ino`, `runtime_pin_config_lab.py`, canonical handovers, this append-only ledger and narrow handover.
+- **STATUS:** validated (scoped CI); full validation blocked by handover freshness on the earlier source SHA; Native QA assertion mismatch remains.
+- **EXACT EVIDENCE:** focused PR #46065708272 PASS / job 140730384339; docs-head #46065796271 PASS / job 140730661656; Mbed #46065708312 PASS 3/3 (140730384776, 140730385175, 140730385291); Native #46065708271 FAIL at `tests/v060_vendo_sequence_contract.py:20`; Full #46065702850 FAIL at handover freshness on SHA 750af995, with all 14 firmware target/platform jobs and Android PASS.
+- **WHY:** ESP8266 GPIO16 lacks `INPUT_PULLUP`, while the coin-input setup requires it. Only the coin role is denied; GPIO16 output roles remain accepted.
+- **LIMITS:** host/source-contract simulation only; physical GPIO/electrical acceptance NOT TESTED. P0 blocking-poll pulse loss, authenticated CORE poll/receipt contract, signer/witness, durable accounting/replay, v1→v2 migration and release acceptance remain unresolved.
+- **NEXT ACTION:** exact-head focused/Full CI on source+handover co-commit; Master refreshes #357 integration pin; QA owns PAY-0745 semantics. No production admission.
+
+
+## 2026-11-27 — PHX-HARDWARE GPIO16 capability guard — final exact-head evidence
+
+- **ID / PRIORITY:** PR-357 / P1.
+- **BRANCH / TESTED HEAD:** `phoenix/hw-runtime-pin-config-guard-20261127-utc04` at `cfc251d3b947982ec3d24ba6a4875bdfaf6fbdcd`; substantive source/test SHA `750af995e28d7977dcac8ea4cc800f71c71d27d8`; base #355 `9f7a8ecb915cf199a82c0b4d37c56c40d722037b`.
+- **FILES:** ESP8266 Vendo sketch, Hardware runtime pin lab, canonical handovers, narrow handover.
+- **STATUS:** validated (scoped CI); Full controller parity blocked; physical acceptance NOT TESTED.
+- **FOCUSED:** push #46066316984 / job 140732371645 PASS; PR #46066323699 / job 140732392213 PASS; GPIO16 coin-role deny, relay/LED output-role allow, guard-removal mutation rejected; append-only ledger guard PASS.
+- **MBED:** #46065708312 PASS 3/3 at source/test SHA 750af995 (source contract 140730385175, core 3.3.13 140730384776, core 4.0.0 140730385291). Final-head rerun #46066323347 still in progress at last read.
+- **NATIVE:** #46066323479 FAIL job 140732392015 at QA-owned literal `clearPending(true/false)` assertion after pending sequence contract passed; no unsafe callsite added.
+- **FULL:** #46066316962; handover gate and CI-0701 PASS; validation job 140732545614 FAIL at Controller protocol parity because `tests/controllers.sh:21` requires `config_revision` absent from both v0.6 sketches. All 13 firmware target jobs PASS; Android 140732545663 still in progress at last read; downstream bundle/simulation/sign/publish skipped.
+- **WHY:** ESP8266 GPIO16 has no `INPUT_PULLUP` in the documented core capability set; firmware uses `INPUT_PULLUP` for coin input. GPIO16 remains allowed for relay/LED outputs; default tuple 4/14/5 unchanged.
+- **BLOCKERS:** CORE controller contract; QA PAY-0745; P0 poll/pulse loss; physical GPIO/relay/electrical acceptance; 150 power cuts; 30-device/24-hour soak; signer/witness; durable accounting/replay; v1→v2 migration; independent QA/release acceptance.
+- **NEXT ACTION:** Master refresh #357 exact head in the integration matrix; CORE publishes config_revision contract; QA reconciles PAY-0745. No production admission.
+
+
+## 2026-11-27 — PHX-HARDWARE correction to UTC20 controller-parity classification
+
+- **CORRECTION:** prior UTC20 handover/checkpoint text called missing config_revision a CORE contract gap. Master clarification at ba7653f45328add655db7a2106034894dfa9acd9 states current main and active-v0.6 sketches contain it, while deny-only candidate sketches #354/#366 intentionally omit it. #357 inherits the #354 deny-only contract through #355.
+- **EXACT SOURCE CHECK:** main ESP8266 blob bfb94920eb0a189ca01d52e5443954fa133f5423 and ESP32 blob 117c6e937e8f12f3890ace2ae23b3a23ff1c3df0 contain config_revision; active v0.6 branch 2fbd2475 contains it in both sketches; deny-only #357 candidate does not.
+- **OWNERSHIP:** tests/controllers.sh:21 is QA-owned and must use a source-linked deny-only assertion for #354/#357 candidates. Do not add a decoy token or untrusted field. CORE's positive authenticated register/poll/receipt/disposition contract remains separate.
+- **MASTER BASE:** current main 6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5 is one commit ahead of Master PR #288 base f4e8a891aed8af86d5fd315d28750a0ac3a7372b; refresh before integration.
+- **NEXT:** Master refresh #357 exact head 36d8e4f05bf6c65c957c4b69c7dc3ec3b350e9f6 and #288 base; QA replaces the deny-only parity assertion. Hardware keeps intake denied.

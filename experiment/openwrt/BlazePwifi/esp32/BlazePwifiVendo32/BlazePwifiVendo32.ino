@@ -32,6 +32,31 @@ struct LegacyPendingRecord {
 static const uint32_t LEGACY_PENDING_MAGIC=0x42504332;
 BpPendingSequence pendingSequenceState;
 Config cfg;
+
+bool parseGpioNumber(const char *text,int maximum,int &value){
+  if(!text || !*text) return false;
+  int parsed=0;
+  for(const char *cursor=text;*cursor;++cursor){
+    if(*cursor<'0'||*cursor>'9') return false;
+    int digit=*cursor-'0';
+    if(parsed>maximum/10 || (parsed==maximum/10 && digit>maximum%10)) return false;
+    parsed=parsed*10+digit;
+  }
+  value=parsed;
+  return true;
+}
+
+bool validRuntimePins(int coinPin,int relayPin,int ledPin){
+  if(coinPin<0||coinPin>33||relayPin<0||relayPin>33||ledPin<0||ledPin>33) return false;
+  if((coinPin>=6&&coinPin<=11)||(relayPin>=6&&relayPin<=11)||(ledPin>=6&&ledPin<=11)) return false;
+  // Original ESP32 strap pins: GPIO0/2/5/12/15. Keep external coin/relay loads off them.
+  // GPIO2 remains allowed only for the LED role to preserve the existing default mapping; reset-level safety is not physically qualified.
+  if(coinPin==0||coinPin==2||coinPin==5||coinPin==12||coinPin==15||
+     relayPin==0||relayPin==2||relayPin==5||relayPin==12||relayPin==15||
+     ledPin==0||ledPin==5||ledPin==12||ledPin==15) return false;
+  return coinPin!=relayPin && coinPin!=ledPin && relayPin!=ledPin;
+}
+
 Preferences prefs;
 WebServer web(80);
 bool insertMode=false, lastCoin=false, pendingReady=false, fsReady=false;
@@ -345,6 +370,14 @@ void setupPortal(){
     web.send(200,"text/html",h);
   });
   web.on("/save",HTTP_POST,[](){
+    int coinPin=0,ledPin=0,relayPin=0;
+    if(!parseGpioNumber(web.arg("coin").c_str(),33,coinPin) ||
+       !parseGpioNumber(web.arg("led").c_str(),33,ledPin) ||
+       !parseGpioNumber(web.arg("relay").c_str(),33,relayPin) ||
+       !validRuntimePins(coinPin,relayPin,ledPin)){
+      web.send(400,"text/plain","GPIO assignments invalid, overlapping, or flash-reserved; settings were NOT saved.");
+      return;
+    }
     String newSsid=web.arg("s"), newPass=web.arg("p").length()?web.arg("p"):cfg.pass;
     if(!verifyWifi(newSsid,newPass)){
       web.send(400,"text/plain","Wi-Fi verification failed. Settings were NOT saved. Setup mode remains active.");
@@ -352,7 +385,7 @@ void setupPortal(){
       startSetupAp(); return;
     }
     cfg.ssid=newSsid; cfg.pass=newPass; cfg.server=web.arg("server"); if(web.arg("k").length()) cfg.key=web.arg("k"); cfg.id=web.arg("id");
-    cfg.coinPin=web.arg("coin").toInt(); cfg.insertLedPin=web.arg("led").toInt(); cfg.relayPin=web.arg("relay").toInt();
+    cfg.coinPin=coinPin; cfg.insertLedPin=ledPin; cfg.relayPin=relayPin;
     long db=web.arg("db").toInt(), pg=web.arg("pg").toInt(); if(db<1)db=1;if(db>2000)db=2000;if(pg<10)pg=10;if(pg>10000)pg=10000;
     cfg.coinDebounceMs=(uint16_t)db; cfg.pulseGroupMs=(uint16_t)pg; cfg.coinActiveLow=web.arg("cl")!="0"; cfg.relayActiveHigh=web.arg("rh")!="0"; cfg.ledActiveHigh=web.arg("lh")!="0";
     if(!saveConfig()){
@@ -379,6 +412,12 @@ void connectSta(){
 
 void setup(){
   Serial.begin(115200); loadConfig();
+  if(!validRuntimePins(cfg.coinPin,cfg.relayPin,cfg.insertLedPin)){
+    Serial.println("CRITICAL: invalid Vendo GPIO tuple; using board defaults and keeping station/poll disabled until corrected.");
+    cfg.coinPin=27;cfg.insertLedPin=2;cfg.relayPin=26;
+    cfg.coinActiveLow=true;cfg.relayActiveHigh=true;cfg.ledActiveHigh=true;
+    configStoreValid=false;
+  }
   runCoinPin=cfg.coinPin; runLedPin=cfg.insertLedPin; runRelayPin=cfg.relayPin;
   runCoinActiveLow=cfg.coinActiveLow; runRelayActiveHigh=cfg.relayActiveHigh; runLedActiveHigh=cfg.ledActiveHigh;
   runDebounceMs=cfg.coinDebounceMs; runPulseGroupMs=cfg.pulseGroupMs;
