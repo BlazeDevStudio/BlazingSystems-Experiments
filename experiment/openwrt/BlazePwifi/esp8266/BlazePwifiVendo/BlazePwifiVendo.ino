@@ -35,25 +35,6 @@ struct Config {
 
 Config cfg;
 
-bool parseGpioNumber(const char *text,int maximum,int &value){
-  if(!text || !*text) return false;
-  int parsed=0;
-  for(const char *cursor=text;*cursor;++cursor){
-    if(*cursor<'0'||*cursor>'9') return false;
-    int digit=*cursor-'0';
-    if(parsed>maximum/10 || (parsed==maximum/10 && digit>maximum%10)) return false;
-    parsed=parsed*10+digit;
-  }
-  value=parsed;
-  return true;
-}
-
-bool validRuntimePins(int coinPin,int relayPin,int ledPin){
-  if(coinPin<0||coinPin>16||relayPin<0||relayPin>16||ledPin<0||ledPin>16) return false;
-  if((coinPin>=6&&coinPin<=11)||(relayPin>=6&&relayPin<=11)||(ledPin>=6&&ledPin<=11)) return false;
-  return coinPin!=relayPin && coinPin!=ledPin && relayPin!=ledPin;
-}
-
 
 ESP8266WebServer web(80);
 const uint32_t MAGIC_V1=0x42505731;
@@ -77,6 +58,26 @@ struct LegacyPendingRecord {
   char target[33];
   uint32_t checksum;
 };
+
+bool parseGpioNumber(const char *text,int maximum,int &value){
+  if(!text || !*text) return false;
+  int parsed=0;
+  for(const char *cursor=text;*cursor;++cursor){
+    if(*cursor<'0'||*cursor>'9') return false;
+    int digit=*cursor-'0';
+    if(parsed>maximum/10 || (parsed==maximum/10 && digit>maximum%10)) return false;
+    parsed=parsed*10+digit;
+  }
+  value=parsed;
+  return true;
+}
+
+bool validRuntimePins(int coinPin,int relayPin,int ledPin){
+  if(coinPin<0||coinPin>16||relayPin<0||relayPin>16||ledPin<0||ledPin>16) return false;
+  if((coinPin>=6&&coinPin<=11)||(relayPin>=6&&relayPin<=11)||(ledPin>=6&&ledPin<=11)) return false;
+  return coinPin!=relayPin && coinPin!=ledPin && relayPin!=ledPin;
+}
+
 size_t boundedStringLength(const char *value,size_t capacity){
   if(!value) return capacity;
   for(size_t i=0;i<capacity;i++){

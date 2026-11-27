@@ -23,6 +23,11 @@ def require(condition: bool, message: str) -> None:
 
 
 def assert_source_contract(board: str, source: str) -> tuple[str, str]:
+    masked_source = mask_non_code(source)
+    legacy_at = masked_source.find("struct LegacyPendingRecord")
+    parse_at = masked_source.find("bool parseGpioNumber(")
+    require(0 <= legacy_at < parse_at,
+            f"{board}: LegacyPendingRecord must precede helpers for Arduino prototype generation")
     parse_fn = extract_function(source, "bool parseGpioNumber(")
     valid_fn = extract_function(source, "bool validRuntimePins(")
     parse_code = mask_non_code(parse_fn)
