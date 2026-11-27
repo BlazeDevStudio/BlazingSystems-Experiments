@@ -1,7 +1,9 @@
 
 #include <cstdint>
+#include <cstddef>
 #include <cstring>
 #include <iostream>
+#include <string>
 
 struct BpPendingSequence {
     uint32_t sequence;
@@ -10,12 +12,16 @@ struct BpPendingSequence {
     char target[33];
 };
 
+// Arduino String owns its contents; the host fake must copy the stack-local
+// BpPendingSequence fields before loadPending() returns.
 class String {
 public:
     String() = default;
     String(const char *value) : value_(value ? value : "") {}
+    const char *c_str() const { return value_.c_str(); }
+    std::size_t length() const { return value_.length(); }
 private:
-    const char *value_ = "";
+    std::string value_;
 };
 
 struct FakeLittleFS {
@@ -90,6 +96,15 @@ bool persistPendingSequence(const BpPendingSequence &) {
     return true;
 }
 
+static bool pendingIdentityMatches() {
+    return std::strcmp(pendingNonce.c_str(), "AABBCCDDEEFF0011") == 0 &&
+           std::strcmp(pendingTarget.c_str(), "00112233") == 0;
+}
+
+static bool pendingIdentityEmpty() {
+    return pendingNonce.length() == 0 && pendingTarget.length() == 0;
+}
+
 /*__LOAD_PENDING_FUNCTION__*/
 
 static void resetState() {
@@ -112,21 +127,24 @@ int main() {
     LittleFS.dat = true;
     selectedPath = "/pending.dat";
     if (!loadPending() || !fsReady || !pendingReady ||
-        pendingSequenceState.sequence != 9 || LittleFS.renameCalls != 0) return 1;
+        pendingSequenceState.sequence != 9 || LittleFS.renameCalls != 0 ||
+        !pendingIdentityMatches()) return 1;
 
     resetState();
     LittleFS.fresh = true;
     selectedPath = "/pending.new";
     if (!loadPending() || !fsReady || !pendingReady ||
         pendingSequenceState.sequence != 9 || !LittleFS.dat ||
-        LittleFS.fresh || LittleFS.renameCalls != 1) return 2;
+        LittleFS.fresh || LittleFS.renameCalls != 1 ||
+        !pendingIdentityMatches()) return 2;
 
     resetState();
     LittleFS.backup = true;
     selectedPath = "/pending.bak";
     if (!loadPending() || !fsReady || !pendingReady ||
         pendingSequenceState.sequence != 9 || !LittleFS.dat ||
-        LittleFS.backup || LittleFS.renameCalls != 1) return 3;
+        LittleFS.backup || LittleFS.renameCalls != 1 ||
+        !pendingIdentityMatches()) return 3;
 
     resetState();
     LittleFS.dat = true;
@@ -134,7 +152,8 @@ int main() {
     selectedPath = "/pending.new";
     if (loadPending() || fsReady || !pendingReady ||
         !LittleFS.dat || !LittleFS.fresh ||
-        pendingSequenceState.sequence != 0 || LittleFS.renameCalls != 0) return 4;
+        pendingSequenceState.sequence != 0 || LittleFS.renameCalls != 0 ||
+        !pendingIdentityEmpty()) return 4;
 
     resetState();
     LittleFS.dat = true;
@@ -142,7 +161,8 @@ int main() {
     selectedPath = "/pending.bak";
     if (loadPending() || fsReady || !pendingReady ||
         !LittleFS.dat || !LittleFS.backup ||
-        pendingSequenceState.sequence != 0 || LittleFS.renameCalls != 0) return 5;
+        pendingSequenceState.sequence != 0 || LittleFS.renameCalls != 0 ||
+        !pendingIdentityEmpty()) return 5;
 
     resetState();
     LittleFS.fresh = true;
@@ -150,7 +170,8 @@ int main() {
     LittleFS.failRename = true;
     if (loadPending() || fsReady || !pendingReady ||
         !LittleFS.fresh || LittleFS.dat ||
-        pendingSequenceState.sequence != 0 || LittleFS.renameCalls != 1) return 6;
+        pendingSequenceState.sequence != 0 || LittleFS.renameCalls != 1 ||
+        !pendingIdentityEmpty()) return 6;
 
     resetState();
     LittleFS.backup = true;
@@ -158,21 +179,25 @@ int main() {
     LittleFS.failRename = true;
     if (loadPending() || fsReady || !pendingReady ||
         !LittleFS.backup || LittleFS.dat ||
-        pendingSequenceState.sequence != 0 || LittleFS.renameCalls != 1) return 7;
+        pendingSequenceState.sequence != 0 || LittleFS.renameCalls != 1 ||
+        !pendingIdentityEmpty()) return 7;
 
     resetState();
     LittleFS.dat = true;
     if (loadPending() || fsReady || !pendingReady ||
-        !LittleFS.dat || pendingSequenceState.sequence != 0) return 8;
+        !LittleFS.dat || pendingSequenceState.sequence != 0 ||
+        !pendingIdentityEmpty()) return 8;
 
     resetState();
     if (!loadPending() || !fsReady || !LittleFS.dat ||
-        pendingSequenceState.sequence != 0 || persistCalls != 1) return 9;
+        pendingSequenceState.sequence != 0 || persistCalls != 1 ||
+        !pendingIdentityEmpty()) return 9;
 
     resetState();
     persistOk = false;
     if (loadPending() || fsReady || !pendingReady ||
-        LittleFS.dat || persistCalls != 1) return 10;
+        LittleFS.dat || persistCalls != 1 ||
+        !pendingIdentityEmpty()) return 10;
 
     resetState();
     LittleFS.dat = true;
@@ -181,7 +206,7 @@ int main() {
     persistOk = false;
     if (loadPending() || fsReady || !pendingReady ||
         pendingSequenceState.sequence != 9 || !LittleFS.dat ||
-        persistCalls != 1) return 11;
+        persistCalls != 1 || !pendingIdentityMatches()) return 11;
 
     std::cout << "PENDING_RECOVERY_PROMOTION_PASS scenarios=11 rename_failures=2 ambiguous_preservation=2\n";
     return 0;
