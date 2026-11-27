@@ -3458,3 +3458,10 @@ Application/source snapshot is still exact520; this note is metadata only.
 - Added source-contract lab with seven negative mutation cases and a pinned ESP32 Arduino 3.3.13 / 4.0.0 clean-build matrix. Evidence remains SIMULATED / CI only; no physical hardware or money acceptance.
 - Exact source-contract push run #45935603861 job 140297982426 PASS. Exact PR run #45935608508 job 140297996882 PASS. At ledger entry time the target-build matrix jobs were still running; no target-build pass is claimed here.
 - Previous exact-head Full run #45926090166 exposed `mbedtls/sha256.h: No such file or directory`; this change addresses that compile blocker. Production remains NO-GO.
+
+## 2026-11-27 — PHX-HARDWARE Mbed TLS bootstrap-preservation correction
+
+- Follow-up source commit `414048cdc390c7ade2207661ca7e5009c413389e` removes the provisional empty-key/empty-ID guard from `signedBody`. Source inspection confirmed the existing first-boot `post("register")` path may be the bootstrap path; this Mbed TLS compatibility task must not silently change registration semantics or claim a new provisioning contract.
+- Crypto-provider failures, invalid digest length/characters and an empty signed body still fail closed before HTTP submission. No coin, poll trust, relay or credit-admission behavior was changed.
+- The source-contract lab adds a negative mutation proving this compatibility patch does not introduce a new empty-key/empty-ID registration deny.
+- The new exact-source matrix on `414048cdc390c7ade2207661ca7e5009c413389e` was queued at checkpoint time; results are recorded in the UTC03 BLAZE-COMMS update when terminal. The prior docs-head Full run #45935932101 passed validation and all target-build jobs but was cancelled before simulation/release jobs completed after the subsequent source correction. It is not a Full integration PASS.

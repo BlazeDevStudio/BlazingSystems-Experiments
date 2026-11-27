@@ -796,3 +796,18 @@ Verify the post-sync Full run on the new docs head; obtain independent PHX-QA re
 
 Read terminal results for the four Mbed TLS matrix jobs and the refreshed Full run on the handover-updated SHA. Request independent PHX-QA review of the provider selection and failure guards; keep #356 DRAFT and unmerged.
 
+
+
+## PHX-HARDWARE UTC03 correction — preserve first-boot registration semantics
+
+- Current source/test commit: `414048cdc390c7ade2207661ca7e5009c413389e` on `phoenix/hardware-storage-preflight-device-separation-20261126-utc23`. The earlier provisional empty-key/empty-ID guard was removed after source-path inspection: `setup()` calls `post("register")`, and the existing first-boot flow may intentionally use registration to bootstrap identity/configuration. This compatibility fix does not impose a new provisioning contract or change register/poll/coin action semantics.
+- Fail-closed behavior remains for Mbed TLS provider initialization/status/output-length errors, malformed SHA-256 output, and empty signed body before HTTP. The compatibility lab now includes a negative mutation that rejects introducing an empty-key/empty-ID guard in this patch.
+- The earlier source/test head `050f0f0c` had passed both ESP32 core matrices, but it contained that provisional guard and is superseded by `414048cdc390c7ade2207661ca7e5009c413389e`. Do not treat the earlier pass as final evidence for this corrected source.
+- New exact-source Mbed TLS matrix runs on `414048cdc390c7ade2207661ca7e5009c413389e`: push [#45936317966](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45936317966) and PR [#45936322663](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45936322663) are IN PROGRESS at this handover checkpoint.
+- Prior docs-head Full [#45935932101](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45935932101) passed mandatory validation and all 14 target/platform build jobs, including ESP32, but was cancelled before synthetic simulation/release jobs completed when the corrected source commit arrived. It is not a Full integration PASS.
+- No physical acceptance, coin operation, flash, migration, signing or deployment occurred. Production remains NO-GO.
+
+## NEXT EXACT ACTION
+
+Read terminal exact-head matrix and Full results for the corrected source and updated handover; refresh the PR body and UTC03 BLAZE-COMMS checkpoint; request QA review.
+
