@@ -94,7 +94,7 @@ Root README and AGENTS.md were read. AGENTS-linked public cloud policy and stora
 
 Full Library pagination covered 1,422 items across eight pages. It surfaced registry snapshots v3–v7 and a base registry, plus a 2026-11-09 private production checkpoint that references v11; the canonical private `BLAZE_PROJECT_REGISTRY_v11_20261027.json` and newer corrections themselves were not surfaced. The available artifact-manifest and sync-ledger snapshots are dated 2026-10-26, not current authority. No dedicated Google Drive connector is exposed. Older snapshots were not substituted; private IDs/content were not emitted and no Drive artifacts were created or changed.
 
-A read-only in-memory audit ran 17 assertions over live refs, ownership, source/destination trees, intake/map counts, sketch/license identities and exact-head CI: **17/17 PASS**. This is not the repository test suite.
+A read-only in-memory audit ran 18 assertions over live refs, ownership, source/destination trees, intake/map counts, sketch/license identities, exact-head CI and UTC-hour checkpoint deduplication: **18/18 PASS**. This is not the repository test suite.
 
 Master Python suite: NOT RUN. `verify_coordination.py`: NOT RUN. No exact-head Master Actions run or combined status. Physical acceptance: NOT TESTED.
 
