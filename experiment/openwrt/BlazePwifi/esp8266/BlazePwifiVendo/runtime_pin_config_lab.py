@@ -89,10 +89,12 @@ def assert_source_contract(board: str, source: str) -> tuple[str, str]:
     require(save_block.count("parseGpioNumber(") >= 3,
             f"{board}: GPIO parser calls must be executable code")
     role_guard = save_block.find("validRuntimePins(coinPin,relayPin,ledPin)")
+    invalid_response = save_block.find("web.send(400,")
+    invalid_return = save_block.find("return;", invalid_response)
     wifi_verify = save_block.find("verifyWifi(")
     persist = max(save_block.find("saveCfg()"), save_block.find("saveConfig()"))
-    require(0 <= role_guard < wifi_verify < persist,
-            f"{board}: GPIO validation must precede Wi-Fi side effects and persistence")
+    require(0 <= role_guard < invalid_response < invalid_return < wifi_verify < persist,
+            f"{board}: invalid GPIO must return before Wi-Fi side effects and persistence")
     for field in ("coin", "led", "relay"):
         require(f'web.arg("{field}").toInt()' not in save_raw,
                 f"{board}: pin {field} still uses permissive toInt parsing")
@@ -170,6 +172,22 @@ def expect_rejected(parse_fn: str, valid_fn: str, board: str, label: str, mutate
 def verify_board(board: str, path: Path) -> None:
     source = path.read_text(encoding="utf-8")
     parse_fn, valid_fn = assert_source_contract(board, source)
+
+    save_marker = 'web.on("/save",HTTP_POST,[](){'
+    save_at = source.find(save_marker)
+    save_open = source.find("{", save_at)
+    save_raw = extract_braced(source, save_open)
+    missing_invalid_return = save_raw.replace("return;", "", 1)
+    require(missing_invalid_return != save_raw,
+            f"{board}: invalid-GPIO early-return mutation anchor missing")
+    mutated_source = source.replace(save_raw, missing_invalid_return, 1)
+    try:
+        assert_source_contract(board, mutated_source)
+    except AssertionError:
+        print(f"RUNTIME_GPIO_MUTATION_REJECTED {board} invalid-config-return-removed")
+    else:
+        raise AssertionError(f"{board}: invalid GPIO handler can fall through into Wi-Fi/persistence")
+
     compile_and_run(harness(parse_fn, valid_fn, board), True, f"{board} runtime GPIO policy")
     print(f"RUNTIME_GPIO_POLICY_PASS {board}")
 
