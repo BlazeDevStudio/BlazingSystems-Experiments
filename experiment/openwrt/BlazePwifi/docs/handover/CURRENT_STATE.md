@@ -1,16 +1,34 @@
 ## PHX-HARDWARE UTC21 — deny-latch monotonicity contract
 
-**DRAFT source-test change; exact-head CI pending.** Branch phoenix/hw-deny-latch-monotonicity-20261127-utc21, based on #366 at 07fef4e8e1055c06cf5e5c3a0d3829c52be31cc9. Source/test commits: d0797078a0f41382ca3cdaeeba5c394013e59617 and e7ec6494204681c4602436817acfaa14a860fd82, with a subsequent test-fixture formatting correction.
+**PR #367 OPEN / DRAFT / UNMERGED.** Branch phoenix/hw-deny-latch-monotonicity-20261127-utc21; stacked on #366 at 07fef4e8e1055c06cf5e5c3a0d3829c52be31cc9. Exact tested source/docs/ledger head: 183650be2174e94027b245654cf1eb5db5451dac. Terminal ledger append: 764a431a55549d7236a7d9ff398761185e139596. Source/test commits: d0797078a0f41382ca3cdaeeba5c394013e59617, e7ec6494204681c4602436817acfaa14a860fd82, e29c4705b0bcd989e3da1d0ad4fd0fe1730a4db7.
 
-The poll-preflight contract now audits every direct assignment to controllerEnabled, coinEnabled, relayEnabled, ledEnabled, insertMode, and activeTarget in both sketches. It permits only global initializers and the single unconditional denyRemoteControl() write site; that helper must clear all flags and the target. Seven unsafe mutations per board are rejected, including re-enabling each flag, restoring a stale target, and changing the deny helper to enable the relay.
+### Actual change
 
-**Scope:** source-contract and failure-injection tests only. No production sketch, CORE API, financial code, QA-owned test, COE source, or release setting changed. This does not resolve P0 #177 or authorize coin/relay admission. Direct assignment scanning is not proof against pointer aliasing, memory corruption, or electrical faults.
+Extended the existing poll-preflight source-contract lab to scan both sketches for direct writes to controllerEnabled, coinEnabled, relayEnabled, ledEnabled, insertMode and activeTarget. Only one global initializer per boolean and the unconditional denyRemoteControl() helper may write these fields. The helper must set all five flags false and clear activeTarget exactly once.
 
-**Evidence:** focused/PR Actions and Mbed TLS 3/4 are pending on the final docs head. Full controller parity and Native PAY-0745 remain inherited QA/CORE blockers. Physical acceptance remains NOT TESTED.
+Added seven unsafe mutations per board: re-enable each of the five flags outside the deny helper, restore a stale target outside the helper, and change the helper to enable the relay. This is a test-contract improvement only; no production ESP8266/ESP32 sketch or shared API changed.
 
-**Coordination:** PHX-MASTER owns assignment matrices; PHX-QA owns controller parity/PAY-0745; PHX-CORE owns authenticated poll/receipt/disposition. CHANGE_LEDGER.md is unchanged because the connected file read returned no content for that oversized blob; no append was attempted without a verifiable prefix.
+### Exact-head evidence
 
-**Sequencing deviation:** the pre-change IN_PROGRESS marker was not committed before the first source edit in this activation; this is disclosed rather than backdated.
+- Focused run #46069083820, job 140741404795: PASS. Both boards report DENY_LATCH_MONOTONIC_PASS and 7/7 unsafe mutations rejected; existing poll-intake, register, GPIO, config-persistence and pending-recovery host labs pass.
+- Append-only ledger guard in that focused job: CHANGE_LEDGER_APPEND_ONLY_PASS; base_bytes=1132798, appended_bytes=46976. The previous ledger blob was compared against the exact #354 base and the prefix remained byte-for-byte intact.
+- ESP32 clean-build matrix #46069083861: 3/3 PASS. Source-contract job 140741697634; Arduino ESP32 core 3.3.13 job 140741697559 (two byte-identical clean builds, binary SHA256 a53c3c91a5a52274c3e94cff3f1836764c07c33087938d7152f20b44d699c4e4); Arduino ESP32 core 4.0.0 job 140741697175 (two byte-identical clean builds, binary SHA256 bd59c469b50ce6bb579083110e089df3082aa0dff79b55f010aaac7fec83bfac).
+- Full run #46069084089: handover freshness, HND-0700 and CI-0701 PASS. ESP8266, ESP32, Android and all 11 OpenWrt firmware targets PASS (14/14 build jobs). Validation job 140741571137 FAILS at QA-owned tests/controllers.sh:21 because config_revision is absent from the deny-only candidate. This is the known CORE/QA contract-parity blocker; no fake field was inserted. Update-bundle, simulation, candidate, signing and publication jobs were skipped.
+- Native PAY-0745 workflow was not triggered for this PR head; its prior QA-owned assertion mismatch remains open.
+
+### Safety and remaining status
+
+The direct-assignment scan ignores comments/strings and catches ordinary assignment/compound/increment writes, but it is not a proof against pointer aliasing, memory corruption, electrical faults or physical coin retention. The new test does not resolve active-v0.6 P0 #177: the active branch still has synchronous poll-before-first-sample; the candidate remains deny-only. Coin and relay admission stay denied.
+
+Physical pulse/relay polarity and retention, electrical recovery, 150 controlled power cuts, 30-device/24-hour soak, protected anti-rollback signer/witness, durable accounting/replay, v1-to-v2 migration and independent QA/release acceptance remain NOT TESTED / NOT ACCEPTED. HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
+
+### Coordination and provenance
+
+PHX-MASTER owns the role/integration matrices; PHX-QA owns controller parity and PAY-0745; PHX-CORE owns authenticated register/poll/receipt/disposition. No shared API or another role's source was changed. PR #367 must be registered by Master; it is not self-merged.
+
+The private BLAZE_PROJECT_REGISTRY_v11_20261027.json was not recovered through the available connected sources. The accessible Library contains only the 2026-11-09 checkpoint snapshot, which identifies the registry but is not a substitute for it. The signal YAML confirms the GitHub hourly workflow is a heartbeat only, not an AI worker.
+
+**Sequencing deviation:** the pre-change IN_PROGRESS handover marker was not committed before the first source edit in this activation; this is disclosed, not backdated.
 
 ---
 ## PHX-HARDWARE UTC19 — startup GPIO sequence lab modularization
