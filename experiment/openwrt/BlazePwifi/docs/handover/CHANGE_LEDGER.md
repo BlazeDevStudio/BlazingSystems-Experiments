@@ -3896,3 +3896,12 @@ Complete the post-handover exact-head Full and Native reads. PHX-QA/PHX-CORE sti
 - **WHY:** ESP8266 GPIO16 has no `INPUT_PULLUP` in the documented core capability set; firmware uses `INPUT_PULLUP` for coin input. GPIO16 remains allowed for relay/LED outputs; default tuple 4/14/5 unchanged.
 - **BLOCKERS:** CORE controller contract; QA PAY-0745; P0 poll/pulse loss; physical GPIO/relay/electrical acceptance; 150 power cuts; 30-device/24-hour soak; signer/witness; durable accounting/replay; v1→v2 migration; independent QA/release acceptance.
 - **NEXT ACTION:** Master refresh #357 exact head in the integration matrix; CORE publishes config_revision contract; QA reconciles PAY-0745. No production admission.
+
+
+## 2026-11-27 — PHX-HARDWARE correction to UTC20 controller-parity classification
+
+- **CORRECTION:** prior UTC20 handover/checkpoint text called missing config_revision a CORE contract gap. Master clarification at ba7653f45328add655db7a2106034894dfa9acd9 states current main and active-v0.6 sketches contain it, while deny-only candidate sketches #354/#366 intentionally omit it. #357 inherits the #354 deny-only contract through #355.
+- **EXACT SOURCE CHECK:** main ESP8266 blob bfb94920eb0a189ca01d52e5443954fa133f5423 and ESP32 blob 117c6e937e8f12f3890ace2ae23b3a23ff1c3df0 contain config_revision; active v0.6 branch 2fbd2475 contains it in both sketches; deny-only #357 candidate does not.
+- **OWNERSHIP:** tests/controllers.sh:21 is QA-owned and must use a source-linked deny-only assertion for #354/#357 candidates. Do not add a decoy token or untrusted field. CORE's positive authenticated register/poll/receipt/disposition contract remains separate.
+- **MASTER BASE:** current main 6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5 is one commit ahead of Master PR #288 base f4e8a891aed8af86d5fd315d28750a0ac3a7372b; refresh before integration.
+- **NEXT:** Master refresh #357 exact head 36d8e4f05bf6c65c957c4b69c7dc3ec3b350e9f6 and #288 base; QA replaces the deny-only parity assertion. Hardware keeps intake denied.

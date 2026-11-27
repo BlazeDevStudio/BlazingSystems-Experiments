@@ -1,3 +1,7 @@
+## PHX-HARDWARE UTC20 correction — Full controller parity failure belongs to QA candidate assertion
+
+Master's current role assignment at ba7653f45328add655db7a2106034894dfa9acd9 confirms current main and active v0.6 sketches contain config_revision; the deny-only #354/#357 candidate intentionally omits it. The #357 branch inherits that candidate contract through #355. Thus tests/controllers.sh:21 is a stale QA assertion for this deny-only candidate, not a CORE field gap. QA must replace it with a source-linked deny-only assertion. Do not add a decoy token or untrusted config_revision field. CORE's authenticated positive controller contract remains separate. Current main 6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5 is one commit ahead of Master PR #288 base f4e8a891aed8af86d5fd315d28750a0ac3a7372b; Master must refresh its base and the #357 integration-matrix pin.
+
 ## PHX-HARDWARE UTC20 — final GPIO16 capability evidence (SCOPED CI VERIFIED; FULL BLOCKED)
 
 PR #357 is OPEN / DRAFT / UNMERGED at tested source+handover head `cfc251d3b947982ec3d24ba6a4875bdfaf6fbdcd`; substantive guard/test SHA `750af995e28d7977dcac8ea4cc800f71c71d27d8`. ESP8266 GPIO16 is rejected only for the coin-input role because the firmware configures `INPUT_PULLUP`; GPIO16 remains accepted for relay/LED outputs. Default tuple 4/14/5 is unchanged.

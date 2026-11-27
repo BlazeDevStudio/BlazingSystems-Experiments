@@ -1,3 +1,13 @@
+## PHX-HARDWARE UTC20 correction — controller parity is a QA assertion mismatch, not a CORE field gap
+
+**Master clarification read:** phoenix/master-coordination at ba7653f45328add655db7a2106034894dfa9acd9 (PR #288). Current Experiments main is 6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5; it is one commit ahead of Master PR #288's base f4e8a891aed8af86d5fd315d28750a0ac3a7372b. Active v0.6 branch is blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859.
+
+Master's current ROLE_ASSIGNMENTS.md explicitly states that current main and active-v0.6 source both contain config_revision, while the #354/#366 deny-only candidate sketches intentionally omit it. The #357 branch inherits the #354 deny-only candidate contract through #355. Source checks confirmed config_revision exists in both active-v0.6 sketches and both main sketches, but is absent from the deny-only #357 candidate.
+
+Therefore the Full validation failure at QA-owned tests/controllers.sh:21 is a candidate-contract assertion mismatch, not a missing CORE field that Hardware should add. QA owns replacing the literal config_revision grep with a source-linked deny-only assertion. Do not add a decoy token, an untrusted config_revision field, or any positive remote-admission behavior to the deny-only candidate. CORE's authenticated positive register/poll/receipt/disposition contract remains separate and must be coordinated before any future positive path.
+
+The earlier UTC20 wording that described this as a CORE-owned config_revision gap is superseded by this correction. The Full run still failed at Controller protocol parity; 13 firmware targets and Android passed; downstream release jobs remained skipped.
+
 ## PHX-HARDWARE UTC20 — final GPIO16 capability evidence (SCOPED CI VERIFIED; FULL CONTROLLER PARITY BLOCKED)
 
 **Role:** PHX-HARDWARE · **Repo:** `BlazeDevStudio/BlazingSystems-Experiments` · **PR:** [#357](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/357) OPEN / DRAFT / UNMERGED  
