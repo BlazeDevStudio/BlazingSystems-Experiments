@@ -28,8 +28,10 @@ def assert_source_contract(board: str, source: str) -> tuple[str, str]:
     parse_code = mask_non_code(parse_fn)
     valid_code = mask_non_code(valid_fn)
 
-    for token in ("if(!text || !*text) return false;", "if(*cursor<'0'||*cursor>'9') return false;"):
-        require(token in parse_code, f"{board}: numeric GPIO parser missing {token!r}")
+    require("if(!text || !*text) return false;" in parse_code,
+            f"{board}: numeric GPIO parser must reject an empty value")
+    require("if(*cursor<'0'||*cursor>'9') return false;" in parse_fn,
+            f"{board}: numeric GPIO parser must reject non-decimal characters")
     require("value=parsed;" in parse_code, f"{board}: parsed GPIO result is not returned")
 
     for token in (
@@ -70,21 +72,24 @@ def assert_source_contract(board: str, source: str) -> tuple[str, str]:
     save_at = portal.find(save_marker)
     require(save_at >= 0, f"{board}: setup save handler missing")
     save_open = portal.find("{", save_at)
-    save_block = mask_non_code(extract_braced(portal, save_open))
+    save_raw = extract_braced(portal, save_open)
+    save_block = mask_non_code(save_raw)
     parse_calls = (
         f'parseGpioNumber(web.arg("coin").c_str(),{coin_max},coinPin)',
         f'parseGpioNumber(web.arg("led").c_str(),{output_max},ledPin)',
         f'parseGpioNumber(web.arg("relay").c_str(),{output_max},relayPin)',
     )
     for call in parse_calls:
-        require(call in save_block, f"{board}: setup save handler missing {call!r}")
+        require(call in save_raw, f"{board}: setup save handler missing {call!r}")
+    require(save_block.count("parseGpioNumber(") >= 3,
+            f"{board}: GPIO parser calls must be executable code")
     role_guard = save_block.find("validRuntimePins(coinPin,relayPin,ledPin)")
     wifi_verify = save_block.find("verifyWifi(")
     persist = max(save_block.find("saveCfg()"), save_block.find("saveConfig()"))
     require(0 <= role_guard < wifi_verify < persist,
             f"{board}: GPIO validation must precede Wi-Fi side effects and persistence")
     for field in ("coin", "led", "relay"):
-        require(f'web.arg("{field}").toInt()' not in save_block,
+        require(f'web.arg("{field}").toInt()' not in save_raw,
                 f"{board}: pin {field} still uses permissive toInt parsing")
     for token in ("cfg.coinPin=coinPin;", "cfg.insertLedPin=ledPin;", "cfg.relayPin=relayPin;"):
         require(token in save_block, f"{board}: validated local GPIO value is not persisted: {token}")
