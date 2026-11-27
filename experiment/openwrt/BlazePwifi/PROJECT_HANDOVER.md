@@ -1,3 +1,35 @@
+# CURRENT STATUS — 2026-11-27T23:50:04Z — current-head focused deny-latch CI PASS; Full controller parity blocked
+
+## PHX-HARDWARE UTC23 final recheck — current-head Focused PASS; Mbed/Full still running; previous Full terminal failure
+
+**Recorded:** 2026-11-27T23:50:04Z (2026-11-28 07:50:04 Asia/Manila)  
+**Role:** PHX-HARDWARE  
+**Repository / branch:** `BlazeDevStudio/BlazingSystems-Experiments` / `phoenix/hw-deny-latch-monotonicity-20261127-utc21`  
+**PR #367:** OPEN / DRAFT / UNMERGED  
+**Current PR/docs head:** `f7abed43a46f9e85976d5c2897f927609cd2f446`  
+**Source/test SHA:** `1922dcba792aad40e576583db43de0d066522bf6`  
+**Base (#366):** `07fef4e8e1055c06cf5e5c3a0d3829c52be31cc9`
+
+### Current-head exact evidence
+
+- Focused [#46084613154](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46084613154), job `140791154901`, exact head `f7abed43...`: **PASS**. Job log confirms ESP8266 and ESP32 each reject 7/7 direct deny mutations and 10/10 alias mutations; logical-AND positive control and comment/string decoys accepted; poll transport matrix 20 cases per board.
+- Mbed [#46084613147](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46084613147), exact head `f7abed43...`: **IN PROGRESS**. Source-contract job `140791155163` PASS; target builds for ESP32 core 3.3.13 (`140791155501`) and 4.0.0 (`140791155419`) IN PROGRESS.
+- Full [#46084613152](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46084613152), exact head `f7abed43...`: **IN PROGRESS**; validation job `140791194190` already FAILED at the same controller parity gate. At last job read, 11/14 target/platform jobs PASS and 3 remain IN PROGRESS.
+
+### Terminal prior docs-head Full result
+
+- Full [#46084256341](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46084256341), exact head `4a78354c...`: terminal **FAILURE**. All 14/14 target/platform jobs PASS. Validation job `140790134787` fails at `tests/controllers.sh`: it requires `config_revision` in both deny-only candidate sketches, but the candidate intentionally omits it; current main sketches contain it. Simulation, update-bundle, signing and publication stages were skipped.
+- The source-head Full #46083988182 was CANCELLED after the handover-freshness gate failed; it is not a pass.
+
+### Status
+
+Focused deny-latch source-contract and Mbed matrix are CI VERIFIED at exact source/docs heads. Full integration remains BLOCKED by the QA-owned controller assertion and the unapproved CORE response contract. No production sketch or shared API changed. P0 #177 remains unresolved; coin/relay admission remains denied. Physical pulse/relay/electrical recovery and power-cut acceptance remain NOT TESTED. HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
+
+**Next exact action:** QA/CORE reconcile the deny-only controller parity without adding an unauthenticated `config_revision`; Master refreshes #367 matrices to `f7abed43...`; Hardware rechecks current-head Mbed and Full terminal results. Keep PR #367 DRAFT.
+
+
+---
+
 # CURRENT STATUS — 2026-11-27T23:48:26Z — #367 focused deny-latch + Mbed CI verified; Full controller parity blocked
 
 ## PHX-HARDWARE UTC23 CI follow-up — exact source and docs-head Focused/Mbed PASS; Full parity blocked

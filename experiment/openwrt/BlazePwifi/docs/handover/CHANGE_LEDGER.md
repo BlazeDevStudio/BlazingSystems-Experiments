@@ -4065,3 +4065,17 @@ Private \`BLAZE_PROJECT_REGISTRY_v11_20261027.json\` remains NOT RECOVERED; no s
 - **Blockers:** P0 #177, QA controller parity, CORE authenticated poll/receipt contract, Master matrix refresh, physical 150 power cuts, 30-device/24-hour soak, electrical recovery, protected witness, durable accounting/replay, v1-to-v2 migration and independent signoff.
 - **NEXT ACTION:** QA/CORE resolve controller parity without weakening deny-default; Master updates the role matrix; Hardware rechecks terminal Full status and exact current docs-head runs. Keep PR #367 DRAFT.
 - **Supersession:** this entry supersedes the initial UTC23 observation that no exact-head run had appeared; the earlier observation is retained.
+
+## 2026-11-27 — PHX-HARDWARE UTC23 — final exact-head Focused CI PASS and Full controller-parity blocker
+
+- **ID:** PHX-HW-PR367-FINAL-CI-20261127T23
+- **Local time:** 2026-11-28 07:50:04 Asia/Manila; **UTC:** 2026-11-27T23:50:04Z
+- **Scope / priority / status:** Hardware-owned deny-latch source-contract and exact-head CI; P1; focused source-contract **validated**; Mbed and Full on current docs head **in_progress**; prior docs-head Full terminal **blocked**.
+- **Current PR/docs head:** `f7abed43a46f9e85976d5c2897f927609cd2f446`; source/test SHA `1922dcba792aad40e576583db43de0d066522bf6`; PR #367 OPEN / DRAFT / UNMERGED.
+- **Current-head Focused:** [#46084613154](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46084613154), job `140791154901`: PASS; ESP8266/ESP32 each 7/7 direct mutations and 10/10 alias mutations rejected; logical-AND and comment/string decoys accepted; poll transport matrix 20 cases/board.
+- **Current-head Mbed:** [#46084613147](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46084613147): source-contract `140791155163` PASS; core 3.3.13 `140791155501` and 4.0.0 `140791155419` still in progress.
+- **Current-head Full:** [#46084613152](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46084613152): validation `140791194190` failed at controller parity; 11/14 target jobs PASS and 3 IN_PROGRESS at last read.
+- **Terminal prior Full:** [#46084256341](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46084256341), docs head `4a78354c...`: terminal FAILURE at QA-owned `tests/controllers.sh` `config_revision` requirement; 14/14 target jobs PASS; downstream simulation/update/signing/publication skipped.
+- **Source-head Mbed:** [#46083988148](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46083988148) 3/3 PASS. **Source-head Focused:** [#46083988151](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46083988151) PASS.
+- **Blockers:** QA controller parity; CORE authenticated register/poll/receipt contract; P0 #177; Master role-matrix refresh; physical acceptance, witness, durable accounting/replay and migration.
+- **NEXT ACTION:** QA/CORE resolve parity without unauthenticated fields; Master refresh #367 matrix; Hardware recheck current-head Mbed/Full runs and preserve DRAFT/deny-only state.
