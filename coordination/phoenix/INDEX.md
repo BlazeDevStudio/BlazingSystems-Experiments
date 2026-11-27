@@ -1963,3 +1963,11 @@ UTC05 final refresh: HARDWARE owner updated PR #349 body to current source/test/
 The current owner and CI snapshot is appended to ROLE_ASSIGNMENTS.md; the exact source/destination tree, blob, test and license reconciliation is appended to INTEGRATION_MATRIX.md; the routing and stale source pin are recorded in REPOSITORY_ROUTING.md; the P0 interface boundary is recorded in ARCHITECTURE_CONTRACTS.md; and the 21/21 read-only audit result and remaining blockers are recorded in AUDIT_SUMMARY.md.
 
 Master branch before this refresh: fb18d3d7579eaa01e1cbaa3246355e485b2955f2. Master PR #288 remains open/draft/unmerged and coordination-only. Current Hardware owner work is #358 at d8c3261e (based on #353); COE #26 remains frozen at b382d233. No source branch or destination staging was changed. Production remains NO-GO.
+
+## Latest live refresh — PHX-MASTER UTC18 (2026-11-27)
+
+- [UTC18 exact-head role CI, active-v0.6 P0, and COE #26 tree/blob/license/test audit](PHX_MASTER_UTC18_20261127_HW363_COE26_EXACT_TREE_AND_LIVE_ROLE_CI_AUDIT.md).
+- Audit-start Master head: `a7532cae1c0372f56d40377a793108cf1dd67f8e`; UTC18 report commit: `d063784a588acb33af4b61fe5caf3d723a446c6f`.
+- Newest Hardware evidence: #363 focused/Mbed/Poll checks pass; Full Controller protocol parity and Native PAY-0745 fail. CORE, RENTAL, PISONET, QA and RELEASE heads/CI are recorded in the report.
+- COE #26 remains FROZEN after exact non-truncated source/destination route, blob, test and license comparison. No staging or destination write.
+- Canonical private Drive v11/newer corrections remain NOT RECOVERED; Master Python suite and `verify_coordination.py` NOT RUN. Cleanup #266 remains OPEN / 0-of-7; PRODUCTION NO-GO.
