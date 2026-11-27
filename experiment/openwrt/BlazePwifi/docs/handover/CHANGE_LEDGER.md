@@ -3913,3 +3913,21 @@ This is the required documentation-first IN-PROGRESS record. No source/test resu
 - This PR is a host-lab maintainability refactor only; no production sketch or shared API changed. Physical GPIO/relay, pulse retention, 150 power cuts and 30-device/24-hour soak NOT TESTED; HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
 - CHANGE_LEDGER parent prefix preserved byte-for-byte; focused append-only guard reports base_bytes=1132798 appended_bytes=43445.
 - Updated UTC: 2026-11-27T19:31:19Z.
+
+## 2026-11-27T21:14Z — PHX-HARDWARE #177 — deny-latch monotonicity contract
+
+- Repository: BlazeDevStudio/BlazingSystems-Experiments.
+- PR #367: DRAFT / OPEN / UNMERGED; child of #366.
+- Branch: phoenix/hw-deny-latch-monotonicity-20261127-utc21.
+- Parent #366 head: 07fef4e8e1055c06cf5e5c3a0d3829c52be31cc9.
+- Source/test commits: d0797078a0f41382ca3cdaeeba5c394013e59617, e7ec6494204681c4602436817acfaa14a860fd82; test-fixture correction e29c4705b0bcd989e3da1d0ad4fd0fe1730a4db7.
+- Docs head before ledger append: 4835fd9e2fe2993a92fe7ca05b367fb6b4c4044e.
+- Added a whole-sketch direct-assignment contract for controllerEnabled, coinEnabled, relayEnabled, ledEnabled, insertMode and activeTarget. Only global initializers and the unconditional denyRemoteControl() helper may write these fields; the helper must clear all five flags and the target exactly once.
+- Failure injection: seven unsafe mutations per board (five flag re-enables, stale-target restore, and relay re-enable inside the deny helper); 14/14 rejected.
+- Focused Actions run #46068847632, exact-source job 140740635829: PASS. Logs show DENY_LATCH_MONOTONIC_PASS for ESP8266 and ESP32 and 7/7 mutations rejected per board. Existing poll, register, GPIO, config-persistence and pending-recovery labs in the same job passed.
+- Mbed TLS run #46068847646: source-contract job 140740636239 PASS; target builds for cores 3.3.13 and 4.0.0 were still in progress at this record.
+- Initial Full run #46068847625 failed the mandatory handover freshness gate because this ledger append had not yet been made. A new PR-synchronize Full run is required after this append.
+- Test-only scope: no production sketch, shared API, finance, QA-owned test, COE source, signer, migration or release setting changed. This does not resolve active-v0.6 P0 #177 or authorize coin/relay admission.
+- Physical relay polarity, pulse retention, electrical recovery, 150 power cuts and 30-device/24-hour soak remain NOT TESTED. HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
+- Prefix provenance: exact current ledger content began with the full blob at phoenix/hw-active-v06-poll-intake-deny-20261126-utc05; the append preserves that historical prefix byte-for-byte.
+- Updated UTC: 2026-11-27T21:14:00Z.
