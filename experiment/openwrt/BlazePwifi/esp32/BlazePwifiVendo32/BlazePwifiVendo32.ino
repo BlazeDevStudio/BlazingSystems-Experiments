@@ -49,6 +49,11 @@ bool parseGpioNumber(const char *text,int maximum,int &value){
 bool validRuntimePins(int coinPin,int relayPin,int ledPin){
   if(coinPin<0||coinPin>33||relayPin<0||relayPin>33||ledPin<0||ledPin>33) return false;
   if((coinPin>=6&&coinPin<=11)||(relayPin>=6&&relayPin<=11)||(ledPin>=6&&ledPin<=11)) return false;
+  // Original ESP32 strap pins: GPIO0/2/5/12/15. Keep external coin/relay loads off them.
+  // GPIO2 remains only for the established LED default; reset-level safety is not physically qualified.
+  if(coinPin==0||coinPin==2||coinPin==5||coinPin==12||coinPin==15||
+     relayPin==0||relayPin==2||relayPin==5||relayPin==12||relayPin==15||
+     ledPin==0||ledPin==5||ledPin==12||ledPin==15) return false;
   return coinPin!=relayPin && coinPin!=ledPin && relayPin!=ledPin;
 }
 

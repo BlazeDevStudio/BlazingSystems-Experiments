@@ -60,6 +60,9 @@ def assert_source_contract(board: str, source: str) -> tuple[str, str]:
     else:
         require("coinPin>33" in valid_code and "relayPin>33" in valid_code and "ledPin>33" in valid_code,
                 "ESP32: GPIO roles must use pull-up-capable/output-capable GPIO 0..33")
+        strap_guard = "coinPin==0||coinPin==2||coinPin==5||coinPin==12||coinPin==15||relayPin==0||relayPin==2||relayPin==5||relayPin==12||relayPin==15||ledPin==0||ledPin==5||ledPin==12||ledPin==15"
+        require(strap_guard in "".join(valid_code.split()),
+                "ESP32: strapping pins must be excluded from coin/relay and non-default LED roles")
         coin_max, output_max = 33, 33
         defaults = ("cfg.coinPin=27;", "cfg.insertLedPin=2;", "cfg.relayPin=26;")
 
@@ -127,6 +130,9 @@ def harness(parse_fn: str, valid_fn: str, board: str) -> str:
     if (validRuntimePins(2,26,2)) return 13;
     if (validRuntimePins(6,26,2) || validRuntimePins(27,11,2) || validRuntimePins(27,26,10)) return 14;
     if (validRuntimePins(-1,26,2) || validRuntimePins(34,26,2) || validRuntimePins(27,34,2) || validRuntimePins(27,26,39)) return 15;
+    if (validRuntimePins(0,26,2) || validRuntimePins(2,26,2) || validRuntimePins(5,26,2) || validRuntimePins(12,26,2) || validRuntimePins(15,26,2)) return 17;
+    if (validRuntimePins(27,0,2) || validRuntimePins(27,2,2) || validRuntimePins(27,5,2) || validRuntimePins(27,12,2) || validRuntimePins(27,15,2)) return 18;
+    if (validRuntimePins(27,26,0) || validRuntimePins(27,26,5) || validRuntimePins(27,26,12) || validRuntimePins(27,26,15)) return 19;
 """
     return r"""
 #include <iostream>
@@ -228,6 +234,14 @@ def verify_board(board: str, path: Path) -> None:
     print(f"RUNTIME_GPIO_MUTATION_REJECTED {board} decimal-overflow-guard-removed")
 
     if board == "ESP32":
+        strap_guard = (
+            "  if(coinPin==0||coinPin==2||coinPin==5||coinPin==12||coinPin==15||\n"
+            "     relayPin==0||relayPin==2||relayPin==5||relayPin==12||relayPin==15||\n"
+            "     ledPin==0||ledPin==5||ledPin==12||ledPin==15) return false;\n"
+        )
+        strap_mutation = valid_fn.replace(strap_guard, "", 1)
+        require(strap_mutation != valid_fn, "ESP32: boot-strap mutation anchor missing")
+        expect_rejected(parse_fn, valid_fn, board, "boot-strap-guard-removed", strap_mutation)
         output_mutation = valid_fn.replace("relayPin>33", "relayPin>39", 1)
         require(output_mutation != valid_fn, "ESP32: output-capability mutation anchor missing")
         expect_rejected(parse_fn, valid_fn, board, "input-only-relay-guard-removed", output_mutation)
