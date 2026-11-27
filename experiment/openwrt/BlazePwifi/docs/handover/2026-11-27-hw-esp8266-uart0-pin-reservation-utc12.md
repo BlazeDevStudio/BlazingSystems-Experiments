@@ -33,7 +33,7 @@ Focused log markers:
 
 Full validation failure:
 - `tests/controllers.sh` reports `Missing poll signature check` in the ESP8266 sketch.
-- All 14 firmware target/platform jobs and Android completed PASS.
+- All 13 firmware target/platform jobs and Android completed PASS; exact job inventory is 13 firmware jobs, not 14.
 - Production import, signing, update bundle, candidate, simulation and publication stages were SKIPPED.
 - This is an inherited controller-contract validation failure, not a UART0 guard or target-build failure.
 
@@ -48,3 +48,7 @@ No ESP32 production source, shared API, CGI producer, finance, replay, signer, w
 ## Next exact action
 
 PHX-QA independently reviews the six UART0 role denials and guard-removal mutations; PHX-CORE publishes the authenticated controller contract; PHX-MASTER records the #358 head and ancestry. Hardware keeps coin/relay admission fail-closed.
+
+
+## UTC12 exact job-count correction (2026-11-27T12:50:00Z)
+Full run #46000763609 has 27 total jobs: 13 firmware target jobs PASS, Android PASS, validation FAIL, and 12 downstream production/signing/update/candidate/simulation/publication jobs SKIPPED. The earlier phrase “14 firmware target jobs” was an overcount; this correction supersedes it. No source/test SHA changed.
