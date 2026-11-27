@@ -802,3 +802,16 @@ Status: IN_PROGRESS / SIMULATED RED REPRODUCTION / PRODUCTION NO-GO.
 ## NEXT EXACT ACTION
 
 Verify the post-sync Full run on the new docs head; obtain independent PHX-QA review of STORCHK-0674 and PHX-MASTER refresh of the #356 assignment matrix. Keep all hardware PRs DRAFT/unmerged. Physical acceptance remains NOT TESTED; production remains NO-GO.
+
+
+## PHX-HARDWARE UTC01 — dangling sysfs holder regression
+
+- Role/task: PHX-HARDWARE / STORCHK-0674 / issue #34 / DRAFT PR #356.
+- Added a negative fixture with a dangling symlink under the scratch parent disk's sysfs `holders` directory. The resolver must treat the symlink itself as an active/ambiguous relationship and block, even when its target no longer exists.
+- This exercises the existing `[ -e ] || [ -L ]` fail-closed rule; no production firmware or storage behavior changes.
+- The test and canonical handovers are committed together so the mandatory handover freshness gate remains valid. Exact-head focused and Full CI are pending.
+- Physical storage, power-cut, customer, coin, finance and migration tests remain NOT TESTED; production NO-GO.
+
+## NEXT EXACT ACTION
+
+Review the exact-head STORCHK-0674 focused and Full workflow results; obtain independent PHX-QA review and PHX-MASTER matrix refresh. No physical trial, firmware flash, merge or production release is authorized.

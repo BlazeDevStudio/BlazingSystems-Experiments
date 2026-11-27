@@ -3430,3 +3430,12 @@ Application/source snapshot is still exact520; this note is metadata only.
 - Added a CI gate comparing the PR head to its base; any deleted ledger lines fail closed. The check uses the exact PR base SHA and a full-depth checkout.
 - This is provenance/documentation integrity work only. Firmware, storage devices, financial state, shared APIs, COE and production behavior are unchanged. Physical acceptance NOT TESTED; production NO-GO.
 - Final exact-head focused and Full results are recorded in the PHX-HARDWARE UTC01 BLAZE-COMMS/1 checkpoint and PR conversation after completion.
+
+
+## PHX-HARDWARE UTC01 — dangling sysfs holder regression
+
+- Role/task: PHX-HARDWARE / STORCHK-0674 / issue #34 / DRAFT PR #356.
+- Added a negative fixture with a dangling symlink under the scratch parent disk's sysfs `holders` directory. The resolver must treat the symlink itself as an active/ambiguous relationship and block, even when its target no longer exists.
+- This exercises the existing `[ -e ] || [ -L ]` fail-closed rule; no production firmware or storage behavior changes.
+- The test and canonical handovers are committed together so the mandatory handover freshness gate remains valid. Exact-head focused and Full CI are pending.
+- Physical storage, power-cut, customer, coin, finance and migration tests remain NOT TESTED; production NO-GO.

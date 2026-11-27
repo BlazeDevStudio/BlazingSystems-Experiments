@@ -38,3 +38,12 @@ No ESP firmware, coin admission, storage mount, block write, power cut, finance,
 - Focused PR run [#45925051984](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45925051984), job `140264314588`: PASS; `CHANGE_LEDGER_DELETED_LINES=0`, append-only guard PASS, mountinfo and physical-parent synthetic matrices PASS.
 - Full [#45925051986](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45925051986) validation job `140264448626` failed only at handover freshness because the canonical handover/current-state documents had not yet been updated after the workflow change. This docs-only synchronization updates those canonical checkpoints; a new Full run is required.
 - The append-only gate now prevents recurrence of the 3,388-line truncation. Physical power-cut, storage independence and hardware acceptance remain NOT TESTED.
+
+
+## PHX-HARDWARE UTC01 — dangling sysfs holder regression
+
+- Role/task: PHX-HARDWARE / STORCHK-0674 / issue #34 / DRAFT PR #356.
+- Added a negative fixture with a dangling symlink under the scratch parent disk's sysfs `holders` directory. The resolver must treat the symlink itself as an active/ambiguous relationship and block, even when its target no longer exists.
+- This exercises the existing `[ -e ] || [ -L ]` fail-closed rule; no production firmware or storage behavior changes.
+- The test and canonical handovers are committed together so the mandatory handover freshness gate remains valid. Exact-head focused and Full CI are pending.
+- Physical storage, power-cut, customer, coin, finance and migration tests remain NOT TESTED; production NO-GO.
