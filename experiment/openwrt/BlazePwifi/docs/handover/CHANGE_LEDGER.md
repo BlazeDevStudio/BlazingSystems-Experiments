@@ -11,3 +11,12 @@
 - Physical acceptance NOT TESTED; production NO-GO.
 - NEXT ACTION: rerun exact-head Full after canonical handover update; request independent QA and Master matrix review; no physical trial or merge.
 
+
+## 2026-11-27 UTC00 — exact-docs-head Full validation update
+
+- Run 45918825520 at docs head 11f406a89ef4c5ae56c97b89678df6d737f1edbd; source/test SHA cb07904ccbedaeeb93e7eb763dc3c795e7e90c9f.
+- CI-0701 and HND-0700 PASS; Full validation job 140244506231 PASS, including STORCHK-0674 physical-parent matrix.
+- 13/14 target/platform jobs PASS; ESP32 job 140244506219 FAILS with mbedtls/sha256.h missing on the active v0.6 branch. No ESP32 source changed in this task.
+- v0.4 Android emulator and x86 simulation still in progress; no aggregate Full PASS.
+- Physical acceptance NOT TESTED; production NO-GO.
+
