@@ -34,3 +34,8 @@ Only `experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/runtime_pin_config_l
 - CORE retains authenticated register/poll, receipt and durable disposition authority. P0 #177 synchronous poll-before-sample and physical acceptance remain unresolved.
 
 **Classification:** host failure injection SIMULATED; focused hosted workflow CI VERIFIED; physical GPIO/relay/coin/power acceptance NOT TESTED; HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+
+
+## UTC06 addendum — decimal overflow failure injection
+
+The same Hardware-owned lab now checks that a rejected overflowing decimal string leaves the caller's output value unchanged. It also removes the parser's overflow guard as a negative mutation and requires the ASan/UBSan host harness to reject that unsafe parser on both ESP8266 and ESP32. This is SIMULATED / CI VERIFIED only; no firmware source or physical hardware behavior changed. The combined source+handover commit is the new exact-head evidence point; see PR #357 and the current branch HEAD for its SHA and Actions runs.

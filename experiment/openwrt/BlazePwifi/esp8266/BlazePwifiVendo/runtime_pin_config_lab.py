@@ -135,6 +135,8 @@ int main() {
     if (parseGpioNumber("0/", 16, value)) return 6;
     if (parseGpioNumber("17", 16, value)) return 7;
     if (parseGpioNumber("999999999999999999999999", 16, value)) return 8;
+    int unchanged=77;
+    if (parseGpioNumber("999999999999999999999999", 16, unchanged) || unchanged!=77) return 16;
     if (!parseGpioNumber("33", 33, value) || value!=33) return 9;
 """ + cases + r"""
     std::cout << "RUNTIME_GPIO_CONFIG_PASS """ + board + r"""\\n";
@@ -206,6 +208,12 @@ def verify_board(board: str, path: Path) -> None:
     digit_mutation = parse_fn.replace("if(*cursor<'0'||*cursor>'9') return false;", "if(false) return false;", 1)
     require(digit_mutation != parse_fn, f"{board}: digit-parser mutation anchor missing")
     compile_and_run(harness(digit_mutation, valid_fn, board), False, f"{board} nonnumeric-parser mutation")
+
+    overflow_guard = "if(parsed>maximum/10 || (parsed==maximum/10 && digit>maximum%10)) return false;"
+    overflow_mutation = parse_fn.replace(overflow_guard, "", 1)
+    require(overflow_mutation != parse_fn, f"{board}: decimal-overflow mutation anchor missing")
+    compile_and_run(harness(overflow_mutation, valid_fn, board), False, f"{board} decimal-overflow mutation")
+    print(f"RUNTIME_GPIO_MUTATION_REJECTED {board} decimal-overflow-guard-removed")
 
     if board == "ESP32":
         output_mutation = valid_fn.replace("relayPin>33", "relayPin>39", 1)

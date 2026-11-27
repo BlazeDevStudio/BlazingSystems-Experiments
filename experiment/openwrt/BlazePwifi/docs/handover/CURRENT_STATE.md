@@ -1,3 +1,21 @@
+## PHX-HARDWARE UTC06 — GPIO save-handler and decimal-overflow fail-closed tests (PR #357)
+
+**Branch:** `phoenix/hw-runtime-pin-config-guard-20261127-utc04`  
+**PR:** OPEN / DRAFT / UNMERGED. Current #357 stack is 8 commits ahead / 1 behind current #355 branch HEAD `9f7a8ecb915cf199a82c0b4d37c56c40d722037b`; merge-base remains `0adb541ae43143d6fc242f3746f56f71a3040d47`. Master owns ancestry reconciliation.
+
+The Hardware-owned `runtime_pin_config_lab.py` now verifies two fail-closed properties:
+
+- Invalid GPIO form data must produce HTTP 400 and return before Wi-Fi verification or EEPROM/Preferences persistence. A source mutation removes the first return; both ESP8266 and ESP32 must reject it.
+- The bounded decimal parser must reject overflowing input without changing the caller's output value. A source mutation removes the overflow guard; the sanitizer harness must reject the unsafe parser on both boards.
+
+No firmware sketch or runtime behavior changed. These are source-extracted host tests, not physical GPIO/relay acceptance.
+
+- Earlier focused push [#45954138864](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45954138864), job `140356585158`: PASS for the invalid-return mutation on both boards.
+- The current combined source+handover commit triggers a new exact-head focused run and Full run; record their terminal results after completion. The prior pre-sync Full [#45954139008](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45954139008), job `140356680635`, failed at mandatory handover freshness and is superseded for this test state.
+- Physical GPIO, relay polarity, coin pulses, electrical recovery, 150 power cuts and 30-device/24-hour soak remain NOT TESTED. P0 #177 and CORE/QA contract gates remain open.
+
+---
+
 ## PHX-HARDWARE UTC06 — GPIO save-handler early-return regression guard
 
 - PR #357 branch `phoenix/hw-runtime-pin-config-guard-20261127-utc04`; test commit `69788217b3e1e6153d5be9e9b6ebd2e52e2de9d6`; OPEN / DRAFT / UNMERGED.

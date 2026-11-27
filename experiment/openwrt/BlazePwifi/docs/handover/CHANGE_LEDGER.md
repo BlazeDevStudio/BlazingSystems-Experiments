@@ -3747,3 +3747,11 @@ PR #354 remains OPEN / DRAFT / UNMERGED. PRs #239/#254/#283 remain OPEN / DRAFT 
 - Focused push [#45954138864](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45954138864), exact-source job `140356585158`: PASS. Logs report `RUNTIME_GPIO_MUTATION_REJECTED` for the removed-return mutation on both boards, all existing GPIO mutations rejected, and `RUNTIME_GPIO_CONFIG_SIMULATED_ONLY=1` / `PHYSICAL_GPIO_OR_RELAY_ACCEPTANCE=0`.
 - Full push [#45954139008](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45954139008), validation job `140356680635`: failed the mandatory handover-freshness gate on pre-sync HEAD `69788217b3e1e6153d5be9e9b6ebd2e52e2de9d6`; target jobs were still running at last read. Re-run after this documentation sync; do not treat the pre-sync Full as a completed integration result.
 - SIMULATED / CI VERIFIED only. No physical GPIO, relay, coin, power-cut or electrical acceptance is claimed. P0 #177, CORE authenticated poll/receipt/disposition, QA semantic assertions, and Master stack reconciliation remain open.
+
+
+## 2026-11-27 — PHX-HARDWARE GPIO parser overflow failure injection (UTC06)
+
+- Extended `runtime_pin_config_lab.py` on PR #357: rejected overflowing decimal input must leave the output argument unchanged; removing the bounded decimal overflow guard must be rejected by the ASan/UBSan harness on ESP8266 and ESP32.
+- This is a host-only regression test. No firmware sketch, coin/relay behavior, shared API, financial code, QA-owned test or COE file changed.
+- The combined source+handover commit is the exact-head evidence point; focused and Full Actions were triggered by the source+documentation commit and are recorded in PR #357 after terminal completion.
+- SIMULATED / CI VERIFIED only; physical GPIO/relay/coin/power acceptance NOT TESTED; HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
