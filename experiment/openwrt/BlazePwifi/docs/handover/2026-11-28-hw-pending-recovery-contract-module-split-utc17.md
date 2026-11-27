@@ -36,3 +36,8 @@ No physical flash/reset, live coin or money, production migration, signer provis
 ## Next action
 
 Run the child PR's exact-head focused Hardware workflow; inspect the named jobs and verify the runner still executes both board harnesses and all 18 unsafe mutations. Then request QA review of the semantic assertions without modifying QA-owned tests.
+
+
+## UTC17 terminal exact-head evidence
+
+Exact source/test SHA: `f77869c4efdf34416526be67728c81197b00c25e`. Focused push #46040057882 job 140645199676 and PR #46040095413 job 140645324512 PASS; both boards report 15 scenarios, six ambiguous-preservation cases, and 18/18 unsafe source mutations rejected. Mbed source-contract #46040095422 job 140645325548 PASS; target builds were still running at checkpoint. The initial split omitted the runner board map and failed with `NameError: SKETCHES` in #46039904609 and #46039986287; commit f77869c restored it. Full push #46040057846 job 140645440782 and Full PR #46040095561 job 140645415590 failed the handover-freshness gate because the f77869c correction had not yet been recorded; this terminal record supplies that missing source/test provenance. A fresh Full run is required. No parent CI result is transferred. Physical tests remain NOT TESTED; HARDWARE ACCEPTED NO; PRODUCTION NO-GO.
