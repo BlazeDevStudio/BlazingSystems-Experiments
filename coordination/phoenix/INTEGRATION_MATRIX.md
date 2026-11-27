@@ -1,3 +1,25 @@
+## PHX-MASTER UTC17 — #364 source candidate vs COE #26 exact route map
+
+Source tree `ea765fb822e1c517db4e61c103b86d8eb2c66c92`: 2,430 entries, non-truncated. COE #26 destination `b382d233ff06c8791b1028bed3c617cc7b670d12`: 286 entries, non-truncated. The route-prefix comparison is an audit only, not a copy plan.
+
+| Route | Source blobs | Destination blobs | Exact | Divergent | Missing | Destination-only |
+|---|---:|---:|---:|---:|---:|---:|
+| CORE OpenWrt library | 20 | 20 | 14 | 6 | 0 | 0 |
+| CORE Vendo CGI | 1 | 1 | 0 | 1 | 0 | 0 |
+| RENTAL Android | 983 | 8 | 0 | 0 | 983 | 8 |
+| RENTAL standalone server | 12 | 4 | 0 | 1 | 11 | 3 |
+| PISONET SoftTimer | 44 | 47 | 16 | 9 | 19 | 22 |
+| HARDWARE ESP32 | 4 | 1 | 0 | 1 | 3 | 0 |
+| HARDWARE ESP8266 | 16 | 1 | 0 | 1 | 15 | 0 |
+| QA PisoWiFi tests | 151 | 19 | 2 | 2 | 147 | 15 |
+| RELEASE workflow reimplementation | 1 | 1 | 0 | 1 | 0 | 0 |
+
+The new source module `experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/pending_recovery_promotion_lab_contract.py` blob `883665eadccb0257c03cc5901183349cb8f199c3` has no route-derived counterpart under `Hardware/esp8266/BlazePwifiVendo/`. QA route counts include docs, fixtures and vendor files, not only executable tests.
+
+Four reviewed license/notice counterparts remain exact; four standard source notices lack mapped counterparts (root NOTICE.md, Android Launcher LICENSE, jsQR LICENSE, Tabler LICENSE). Android `assets/license.html` is also absent from destination. The manifest remains 11 routes / DRAFT_REVIEW_ONLY / Master target null; source_ref f4e8a891 is historical, not current main 6be5d19b. SOURCE_INTAKE/MIGRATION_MAP still pin historical source 6d4c9b48 and destination branch `feature/pisowifi-cleanup-stabilization`, while live PR #26 uses `integration/ecosystem-nonproprietary-candidate-20261111@b382d233`. All five candidate workflows CANCELLED. No staging or destination write.
+
+---
+
 ## PHX-MASTER UTC16 — exact #362 candidate and COE #26 source/destination matrix
 
 **Refs:** source candidate HARDWARE PR #362 at eeddfc37d24d20ebc14641dfe3ffa247bbbc1ebd; COE integration PR #26 at b382d233ff06c8791b1028bed3c617cc7b670d12. Both recursive trees were non-truncated.

@@ -1,3 +1,26 @@
+## PHX-MASTER UTC17 — current blockers and exact next actions
+
+**Disposition:** coordination-only audit; PR #288 OPEN / DRAFT / UNMERGED; COE #26 FROZEN; cleanup #266 OPEN / 0-of-7; P0 #177 OPEN; PRODUCTION NO-GO.
+
+1. HARDWARE #364 focused and Mbed CI pass, but Full fails at QA-owned config_revision parity. Current main has the field; active v0.6 branch does not. QA must preserve the real contract; CORE/HARDWARE must resolve branch/source authority.
+2. Active v0.6 still synchronously polls for up to 3,500 ms before the first coin sample on ESP8266 and ESP32. Issue #177's source pin is stale; current live branch is 2fbd2475. HARDWARE owns firmware, CORE/HARDWARE own poll/receipt/disposition, QA owns independent regression.
+3. Current main CGI register/ping and poll blocks still lack controller response_sig; member endpoint signatures are not poll authentication. CORE must publish the canonical authenticated event/response contract; QA must approve golden vectors; keep consumer deny-only.
+4. COE #26 has broad route-mapped missing/divergent blobs, absent new recovery lab module, incomplete test identity, missing license/NOTICE counterparts and stale source/destination pins. No staging is safe.
+5. Canonical private registry v11/newer corrections remain NOT_RECOVERED; no Drive connector is exposed. Older v3–v7 snapshots were not substituted.
+6. AGENTS-linked cloud policy and storage handover are now READ from renamed BlazeDevStudio/BlazingSystems; previous NOT_READ blocker is resolved. Private registry remains blocked.
+7. Master Python suite and verify_coordination.py NOT RUN; no exact-head Master workflow/status exists. GitHub connector source reads do not equal local test execution.
+8. Independent protected signing/anti-rollback witness, crash-atomic durable financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized release gates remain unverified.
+
+### Next exact actions
+
+- Registry custodian: restore canonical v11 and newer corrections through an authorized Drive connection.
+- CORE + HARDWARE: agree authenticated poll/receipt/disposition and active source-base authority.
+- QA: resolve config_revision and PAY-0745 semantics without adding decoy tokens or weakening fail-closed guards.
+- COE integration owner: reconcile source/destination refs, route blobs, test identities, license counterparts and rerun candidate CI only after review.
+- Repository admin: provide an ordinary non-Codex checkout or dedicated Master CI path.
+
+---
+
 ## PHX-MASTER UTC16 — current blockers and exact next actions
 
 **Disposition:** coordination-only audit; PR #288 OPEN / DRAFT / UNMERGED; COE #26 FROZEN; cleanup #266 OPEN / 0-of-7; P0 #177 OPEN; PRODUCTION NO-GO.

@@ -1,3 +1,13 @@
+## PHX-MASTER UTC17 — observed controller contract divergence (no schema change authorized)
+
+Current main `6be5d19b` includes `config_revision` in ESP8266/ESP32 poll handling, but active v0.6 `2fbd2475` does not. HARDWARE #364 Full CI fails at QA-owned `tests/controllers.sh:21` on this exact branch-parity difference. Do not resolve by adding a decoy field or weakening the assertion; CORE/HARDWARE must establish the authoritative source/base and QA must independently validate the approved semantics.
+
+Current main CGI `vendo` blob `2e3a1430...` has controller `register|ping` and `poll` blocks without `response_sig`; later signatures belong to member endpoints. They do not authenticate controller poll or coin disposition. CORE owns the canonical authenticated event/response contract and golden vectors; HARDWARE owns firmware implementation; QA owns independent source-linked validation. Until that contract is approved and tested, preserve deny-only behavior.
+
+The active v0.6 loop still performs synchronous 3,500 ms poll before first coin sampling on both ESP boards (ESP8266 354→357; ESP32 314→318). This remains P0 #177; no production admission is implied by host-lab CI.
+
+---
+
 ## PHX-MASTER UTC14 — active v0.6 poll-order and P0 source-pin reconciliation
 
 Live branch `blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859` was re-read. Issue #177 remains OPEN, but its body still pins `9df0a7e7cae31fc06d098d5a0ea7ae27f56a75ed`; treat that embedded source pin as stale until the issue owner refreshes it.

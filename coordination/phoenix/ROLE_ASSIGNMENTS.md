@@ -1,3 +1,26 @@
+## PHX-MASTER UTC17 — exact owner heads and CI
+
+No ownership changed. MASTER owns `coordination/phoenix/` only; CORE, RENTAL, PISONET, HARDWARE, QA and RELEASE source branches remain owner-reserved.
+
+| Role / PR | Exact current head | Exact-head CI / disposition |
+|---|---|---|
+| MASTER #288 | 0662a64e1fe450cf1517a910e058491bb7de7a58 (audit start) | No exact-head workflow run or combined status; current-main comparison 667 ahead / 1 behind, merge base f4e8a891. |
+| CORE #252 | c82705f2de865c89ab733b10efa84f26f56a5cc4 | Build #42698139210 PASS, scoped only. |
+| RENTAL #328 | 10fc200b6dbf470a95e679d3acc58aff4ab2a67f | API #45622918364, auth/installer #45622918551, APK #45622918340 PASS; shared build #45622918468 FAIL. |
+| PISONET #255 | d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | Windows synthetic #42462978704 PASS; native COM acceptance NOT TESTED. |
+| HARDWARE #364 | ea765fb822e1c517db4e61c103b86d8eb2c66c92 | Focused #46041398065 PASS; Mbed #46041397937 3/3 PASS; Full #46041397974 FAIL at QA-owned config_revision assertion. |
+| HARDWARE parent #362 | eeddfc37d24d20ebc14641dfe3ffa247bbbc1ebd | Focused/Mbed PASS; Full #46029353015 FAIL; Native #46029353001 FAIL at PAY-0745. |
+| QA #290 / #292 | 5c29d15994cee1279058f1eca12f2a3180704292 / 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | #290 Windows synthetic #43633486963 PASS; #292 no exact-head run. |
+| RELEASE #291 / #242 | bf339a76964a1abe2412fac45392fe06a8e66418 / 36c0d0bb3e58786359555b307bb784f720f023ce | No exact-head PR-triggered runs. |
+
+HARDWARE #364 is a cleanup-only child of #362; source/test SHA f77869c4, final docs head ea765fb8. Its focused recovery lab and Mbed matrix pass, but Full validation fails at tests/controllers.sh:21 because active v0.6 sketches lack config_revision present on current main. QA owns assertion semantics; HARDWARE/CORE own source-base reconciliation. No positive poll/auth token may be added as a test workaround.
+
+The automation inventory includes active `Blaze Hourly Production Development` explicitly assigned PHX-HARDWARE; no exact-title `Blaze Production Continuation` entry surfaced. CORE #252 was left untouched; no competing CORE work was started.
+
+All role PRs remain OPEN / DRAFT / UNMERGED. Owner CI is not Master test execution or physical acceptance.
+
+---
+
 ## PHX-MASTER UTC16 — exact role PR and CI heads
 
 No ownership changed. Master owns coordination/phoenix/ only. CORE, RENTAL, PISONET, HARDWARE, QA and RELEASE source branches remain owner-reserved.

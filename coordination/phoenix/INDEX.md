@@ -1,3 +1,15 @@
+## PHX-MASTER UTC17 — live exact-head checkpoint (2026-11-27T17:40Z)
+
+- [UTC17 exact-head, #364, P0 poll, COE #26 route and storage-policy audit](PHX_MASTER_UTC17_20261127_HW364_COE26_ROUTE_MATRIX_AND_ACCESS_RECONCILIATION.md).
+- Master branch / PR #288 start 0662a64e1fe450cf1517a910e058491bb7de7a58; current main 6be5d19b; active v0.6 2fbd2475; legacy v0.5.3 development aad3aade; COE main a6513ab4; COE #26 b382d233.
+- New HARDWARE #364 child of #362: focused/Mbed CI PASS; Full fails config_revision parity after all 13 firmware targets and Android pass. Source module split only; no firmware sketch changed.
+- P0 #177 remains OPEN: active v0.6 synchronous 3,500 ms poll precedes first coin sample on ESP8266 354→357 and ESP32 314→318. Issue pin is stale.
+- COE #26 remains FROZEN: exact route-mapped tree comparison at #364/#26 heads shows broad missing/divergent source paths; new recovery contract module is absent; test/license gaps and stale source/destination pins remain.
+- Current AGENTS-linked cloud policy and storage handover were retrieved from renamed BlazeDevStudio/BlazingSystems; canonical private registry v11/newer corrections remain NOT_RECOVERED.
+- Cleanup #266 OPEN / 0-of-7. No Master Python suite/verifier or Master Actions run. **PRODUCTION NO-GO.**
+
+---
+
 ## PHX-MASTER UTC16 — live exact-head checkpoint (2026-11-27T16:36:51Z)
 
 - [UTC16 exact-head, PR #362, P0 and COE #26 provenance audit](PHX_MASTER_UTC16_20261127_HW362_EXACT_TREE_PROVENANCE_AND_ROLE_CI_RECONCILIATION.md).

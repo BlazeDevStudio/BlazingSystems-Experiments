@@ -1,3 +1,12 @@
+## PHX-MASTER UTC17 — routing and artifact-policy revalidation
+
+- `OWNERSHIP_ROUTES.json` remains blob e4db324315a1b3543fec17a148fbf960170fcb29: schema v1, 11 routes, `DRAFT_REVIEW_ONLY`, PHX-MASTER target null. Its source_ref f4e8a891 is historical; current Experiments main is 6be5d19b. Do not silently refresh this pin or promote any route without registry-custodian and destination-owner review.
+- Current Experiments `AGENTS.md` blob d8777e3b58efc41caa5aa3c969c932aee9103d5f links the cloud policy and handover under the historical owner URL. The documents were successfully read from the renamed `BlazeDevStudio/BlazingSystems` repository: policy blob 5e503925750c4e511314e4b7624579d82f60aae2; storage handover blob a15f14cb3baf46424b820e1a921462794422f06b. This supersedes earlier notes that those public documents could not be fetched.
+- Canonical private `BLAZE_PROJECT_REGISTRY_v11_20261027.json` and newer corrections remain NOT_RECOVERED. Library search surfaced only v3–v7 registry snapshots and older/duplicate manifest and sync-ledger records; the policy's `00-MASTER-CONTROL` Library path was not found. No Google Drive connector is exposed. Do not substitute older records, expose private IDs/content, or create/modify Drive artifacts.
+- Registry custodian must restore authorized v11 plus current corrections and manifest/ledger provenance before any mirror or migration work. No Drive writes or sharing changes occurred.
+
+---
+
 ## PHX-MASTER UTC15 — routing and private artifact access
 
 OWNERSHIP_ROUTES.json remains unchanged at blob e4db324315a1b3543fec17a148fbf960170fcb29: 11 routes, DRAFT_REVIEW_ONLY, PHX-MASTER target null. It is not a copy/move command.
