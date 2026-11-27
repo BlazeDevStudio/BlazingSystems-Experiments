@@ -1,3 +1,15 @@
+## PHX-MASTER UTC23 — exact #367, COE #26 test-map and license reconciliation (2026-11-27T23:38Z)
+
+- #367 exact head `84eea3356474aeedf1f3fd6fc24dccd15984b5a9`: 2,438 entries / 1,892 blobs / 546 trees, non-truncated; 8 changed paths, zero deletions from #366 base. Focused #46079595997 and Mbed #46079596002 PASS; Full #46079596036 FAILS at `tests/controllers.sh:21` because the deny-only candidate omits `config_revision` while the QA-owned assertion still requires it. CI-0701 and all 14 target jobs pass.
+- Active v0.6 P0 #177 remains poll-before-first-sample: ESP8266 blob `12c4bb82`, 354→357; ESP32 blob `29f1125d`, 314→318; timeout 3,500 ms.
+- COE #26 pinned source tree `6d4c9b48`: 2,391 entries / 1,845 blobs; destination `b382d233`: 286 / 207; both non-truncated.
+- SOURCE_INTAKE runtime: 61/61 exact source/destination blob+mode matches; actual 46 identical / 15 derived, summary 47 / 14. Original tests 4/4 exact; derived tests 15/15 destination blobs+mode exact (11 NOT_RUN, 4 PENDING_CI_RUN).
+- MIGRATION_MAP derived table has 14 entries; SOURCE_INTAKE has 15. Missing map row is `tests/voucher_txn_journal.sh`, present in destination and SOURCE_INTAKE. New Master validator now checks derived-test map paths and blob identities as well as rootfs counters.
+- Eleven license/notice/marker artifacts exist under pinned BlazePwifi root; four exact destination counterparts, seven missing. Root Experiments NOTICE also lacks a COE root counterpart. PisoWiFi first-party LICENSE is exact.
+- Intake/map destination branch pin `feature/pisowifi-cleanup-stabilization` is stale; actual #26 branch is `integration/ecosystem-nonproprietary-candidate-20261111`. No staging or destination write.
+
+---
+
 ## PHX-MASTER UTC22 — exact #367 and COE #26 provenance refresh
 
 - #367 exact head `c473b9ad`: 2,438 tree entries / 1,892 blobs / 546 trees, non-truncated; 8 changed paths, no deleted paths from #366 base. Focused and Mbed pass; Full fails canonical handover freshness.

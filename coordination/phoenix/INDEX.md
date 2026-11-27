@@ -1,3 +1,9 @@
+## PHX-MASTER UTC23 — exact #367 Full result, COE #26 derived-test map gap and Master validator hardening (2026-11-27T23:38Z)
+
+[Full UTC23 audit report](PHX_MASTER_UTC23_20261127_HW367_CONTROLLER_PARITY_COE26_TESTMAP_AUDIT.md). #367 is tree-complete but Full fails at the QA-owned `config_revision` assertion after all 14 target jobs pass. COE #26 has 61/61 exact runtime rows, but SOURCE_INTAKE summary is 46/15 vs 47/14 and MIGRATION_MAP omits `voucher_txn_journal.sh`. Master hardened the derived-test map validator; no subsystem or COE destination files changed. P0 #177, cleanup #266, private registry access and production gates remain blocked.
+
+---
+
 ## PHX-MASTER UTC22 — restored #367 tree and exact COE intake reconciliation
 
 [Full UTC22 audit report](PHX_MASTER_UTC22_20261127_HW367_RESTORED_TREE_COE26_MANIFEST_RECOUNT.md). #367 is restored to 2,438 entries / 1,892 blobs, but Full fails at canonical handover freshness. COE #26's 61 runtime rows and 4 original test rows match exact pinned blobs/modes; summary count is 46 identical / 15 derived, and the derived-test map omits destination-only `voucher_txn_journal.sh`. P0 #177 and production gates remain open.

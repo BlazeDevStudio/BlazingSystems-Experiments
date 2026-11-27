@@ -4,7 +4,11 @@ from __future__ import annotations
 import json
 import unittest
 
-from verify_migration_map import parse_rootfs_entries, verify_documents
+from verify_migration_map import (
+    parse_derived_test_entries,
+    parse_rootfs_entries,
+    verify_documents,
+)
 
 
 SHA_A = "a" * 40
@@ -20,7 +24,15 @@ def manifest(total: int, identical: int, derived: int) -> str:
                 "recovered_rootfs_file_count": total,
                 "recovered_byte_identical_count": identical,
                 "locally_derived_files": derived,
-            }
+            },
+            "derived_tests": [
+                {
+                    "path": "tests/example.sh",
+                    "git_blob": SHA_A,
+                    "mode": "100755",
+                    "github_actions_status": "NOT_RUN",
+                }
+            ],
         }
     )
 
@@ -39,12 +51,23 @@ def migration_map(rows: list[tuple[str, str, str, str, str]]) -> str:
         "| " + " | ".join(f"{tick}{value}{tick}" if index < 4 else value for index, value in enumerate(row)) + " |"
         for row in rows
     )
-    lines.extend(["", "## Migrated tests", "", "| Test | Status |", "|---|---|", f"| {tick}tests/example.sh{tick} | derived |"])
+    lines.extend(
+        [
+            "",
+            "## New or separately derived fixtures (not copied from the original snapshot)",
+            "",
+            "| Destination file | Current recorded Git blob SHA | Status |",
+            "|---|---|---|",
+            f"| {tick}Pisowifi/tests/example.sh{tick} | {tick}{SHA_A}{tick} | locally derived; CI NOT_RUN |",
+            "",
+            "## Other provenance",
+        ]
+    )
     return "\n".join(lines)
 
 
 class MigrationMapVerificationTests(unittest.TestCase):
-    def test_matching_summary_passes(self) -> None:
+    def test_matching_summary_and_derived_test_map_pass(self) -> None:
         rows = [
             ("a.sh", "Pisowifi/a.sh", SHA_A, SHA_A, "copied unchanged; source retained"),
             ("b.sh", "Pisowifi/b.sh", SHA_B, SHA_C, "intentionally edited; source retained"),
@@ -89,7 +112,7 @@ class MigrationMapVerificationTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "missing section"):
             parse_rootfs_entries("# no migration table\n")
 
-    def test_incomplete_table_row_is_rejected(self) -> None:
+    def test_incomplete_rootfs_table_row_is_rejected(self) -> None:
         text = migration_map([("a.sh", "Pisowifi/a.sh", SHA_A, "", "copied unchanged")])
         with self.assertRaisesRegex(ValueError, "incomplete rootfs table row"):
             parse_rootfs_entries(text)
@@ -120,6 +143,54 @@ class MigrationMapVerificationTests(unittest.TestCase):
         rows = [("a.sh", "Pisowifi/a.sh", SHA_A, SHA_A, "copied unchanged; intentionally edited")]
         _, errors = verify_documents(manifest(1, 1, 0), migration_map(rows))
         self.assertTrue(any("ambiguous migration status" in error for error in errors), errors)
+
+    def test_missing_derived_test_row_is_reported(self) -> None:
+        rows = [("a.sh", "Pisowifi/a.sh", SHA_A, SHA_A, "copied unchanged")]
+        text = migration_map(rows).replace("Pisowifi/tests/example.sh", "Pisowifi/tests/other.sh")
+        _, errors = verify_documents(manifest(1, 1, 0), text)
+        self.assertTrue(any("missing derived-test entry: tests/example.sh" in error for error in errors))
+
+    def test_extra_derived_test_row_is_reported(self) -> None:
+        rows = [("a.sh", "Pisowifi/a.sh", SHA_A, SHA_A, "copied unchanged")]
+        text = migration_map(rows).replace("Pisowifi/tests/example.sh", "Pisowifi/tests/extra.sh")
+        _, errors = verify_documents(manifest(1, 1, 0), text)
+        self.assertTrue(any("unlisted derived-test entry: tests/extra.sh" in error for error in errors))
+
+    def test_derived_test_blob_mismatch_is_reported(self) -> None:
+        rows = [("a.sh", "Pisowifi/a.sh", SHA_A, SHA_A, "copied unchanged")]
+        text = migration_map(rows).replace(f"{SHA_A}{chr(96)} | locally derived", f"{SHA_B}{chr(96)} | locally derived")
+        _, errors = verify_documents(manifest(1, 1, 0), text)
+        self.assertTrue(any("derived-test blob mismatch for tests/example.sh" in error for error in errors))
+
+    def test_duplicate_derived_test_destination_is_rejected(self) -> None:
+        rows = [("a.sh", "Pisowifi/a.sh", SHA_A, SHA_A, "copied unchanged")]
+        text = migration_map(rows)
+        marker = f"| {chr(96)}Pisowifi/tests/example.sh{chr(96)} | {chr(96)}{SHA_A}{chr(96)} | locally derived; CI NOT_RUN |"
+        text = text.replace(marker, marker + "\n" + marker)
+        _, errors = verify_documents(manifest(1, 1, 0), text)
+        self.assertTrue(any("duplicate derived-test destination path" in error for error in errors))
+
+    def test_derived_test_destination_must_be_under_pisowifi(self) -> None:
+        rows = [("a.sh", "Pisowifi/a.sh", SHA_A, SHA_A, "copied unchanged")]
+        text = migration_map(rows).replace("Pisowifi/tests/example.sh", "Other/tests/example.sh")
+        _, errors = verify_documents(manifest(1, 1, 0), text)
+        self.assertTrue(any("derived-test destination must start with" in error for error in errors))
+
+    def test_duplicate_manifest_derived_test_path_is_rejected(self) -> None:
+        rows = [("a.sh", "Pisowifi/a.sh", SHA_A, SHA_A, "copied unchanged")]
+        data = json.loads(manifest(1, 1, 0))
+        data["derived_tests"].append(dict(data["derived_tests"][0]))
+        _, errors = verify_documents(json.dumps(data), migration_map(rows))
+        self.assertTrue(any("duplicate SOURCE_INTAKE derived-test path" in error for error in errors))
+
+    def test_derived_test_table_missing_is_reported(self) -> None:
+        rows = [("a.sh", "Pisowifi/a.sh", SHA_A, SHA_A, "copied unchanged")]
+        text = migration_map(rows).replace(
+            "## New or separately derived fixtures (not copied from the original snapshot)",
+            "## Missing derived fixtures",
+        )
+        _, errors = verify_documents(manifest(1, 1, 0), text)
+        self.assertTrue(any("missing section" in error and "derived fixtures" in error for error in errors))
 
 
 if __name__ == "__main__":

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Read-only consistency check for Phoenix SOURCE_INTAKE.json and MIGRATION_MAP.md.
 
-This checks the recorded Git blob identities in the migration table against the
-summary counters. It does not fetch Git objects or prove that the recorded
-identities match the live source/destination trees.
+Checks rootfs counters/blob classifications and completeness of the derived-test
+mapping. It does not fetch Git objects or prove that recorded identities match
+live source/destination trees.
 """
 from __future__ import annotations
 
@@ -15,6 +15,7 @@ from pathlib import Path
 
 _SHA1 = re.compile(r"^[0-9a-f]{40}$")
 _ROOTFS_SECTION = "## Migrated OpenWrt overlay files"
+_DERIVED_TEST_SECTION = "## New or separately derived fixtures (not copied from the original snapshot)"
 _KNOWN_STATUS = ("copied unchanged", "intentionally edited", "locally derived")
 
 
@@ -28,8 +29,27 @@ class RootfsEntry:
     line_number: int
 
 
+@dataclass(frozen=True)
+class DerivedTestEntry:
+    path: str
+    git_blob: str
+    status: str
+    line_number: int
+
+
 def _cell(value: str) -> str:
     return value.strip().strip(chr(96)).strip()
+
+
+def _safe_relative_path(path: object) -> bool:
+    return (
+        isinstance(path, str)
+        and bool(path)
+        and not path.startswith("/")
+        and "\\" not in path
+        and not any(ord(char) < 32 or ord(char) == 127 for char in path)
+        and not any(part in ("", ".", "..") for part in path.split("/"))
+    )
 
 
 def parse_rootfs_entries(migration_map: str) -> list[RootfsEntry]:
@@ -74,6 +94,54 @@ def parse_rootfs_entries(migration_map: str) -> list[RootfsEntry]:
     return entries
 
 
+def parse_derived_test_entries(migration_map: str) -> list[DerivedTestEntry]:
+    """Parse destination paths/blob IDs from the derived-fixture table."""
+    lines = migration_map.splitlines()
+    try:
+        start = next(i for i, line in enumerate(lines) if line.strip() == _DERIVED_TEST_SECTION)
+    except StopIteration as exc:
+        raise ValueError(f"missing section: {_DERIVED_TEST_SECTION}") from exc
+
+    end = next(
+        (i for i in range(start + 1, len(lines)) if lines[i].startswith("## ")),
+        len(lines),
+    )
+    entries: list[DerivedTestEntry] = []
+    seen_paths: set[str] = set()
+    for index in range(start + 1, end):
+        line = lines[index]
+        if not line.lstrip().startswith("|"):
+            continue
+        cells = [_cell(part) for part in line.strip().strip("|").split("|")]
+        if len(cells) != 3:
+            raise ValueError(
+                f"malformed derived-test table row at line {index + 1}: expected 3 columns, found {len(cells)}"
+            )
+        if cells[0].lower().startswith("destination file"):
+            continue
+        if all(re.fullmatch(r"[-:\s]+", value or " ") for value in cells):
+            continue
+        if not all(cells):
+            raise ValueError(f"incomplete derived-test table row at line {index + 1}")
+
+        prefix = "Pisowifi/"
+        if not cells[0].startswith(prefix):
+            raise ValueError(f"derived-test destination must start with {prefix!r} at line {index + 1}")
+        path = cells[0][len(prefix):]
+        if not _safe_relative_path(path):
+            raise ValueError(f"unsafe or invalid derived-test path at line {index + 1}")
+        if not _SHA1.fullmatch(cells[1]):
+            raise ValueError(f"invalid derived-test Git blob SHA-1 at line {index + 1}: {cells[1]!r}")
+        if path in seen_paths:
+            raise ValueError(f"duplicate derived-test destination path: {path}")
+        seen_paths.add(path)
+        entries.append(DerivedTestEntry(path, cells[1], cells[2], index + 1))
+
+    if not entries:
+        raise ValueError(f"no derived-test rows found in {_DERIVED_TEST_SECTION}")
+    return entries
+
+
 def verify_documents(manifest_text: str, migration_map: str) -> tuple[dict[str, int], list[str]]:
     """Return computed counts and all consistency errors without mutating inputs."""
     errors: list[str] = []
@@ -90,6 +158,47 @@ def verify_documents(manifest_text: str, migration_map: str) -> tuple[dict[str, 
         entries = parse_rootfs_entries(migration_map)
     except ValueError as exc:
         return {}, [str(exc)]
+
+    try:
+        mapped_derived_tests = parse_derived_test_entries(migration_map)
+    except ValueError as exc:
+        errors.append(str(exc))
+        mapped_derived_tests = []
+
+    manifest_derived_tests = manifest.get("derived_tests")
+    if not isinstance(manifest_derived_tests, list):
+        errors.append("SOURCE_INTAKE.json is missing an array-valued 'derived_tests'")
+        manifest_derived_tests = []
+
+    manifest_test_blobs: dict[str, str] = {}
+    for index, entry in enumerate(manifest_derived_tests):
+        if not isinstance(entry, dict):
+            errors.append(f"derived_tests[{index}] must be an object")
+            continue
+        path = entry.get("path")
+        blob = entry.get("git_blob")
+        if not _safe_relative_path(path):
+            errors.append(f"derived_tests[{index}] has an unsafe or invalid path")
+            continue
+        if not isinstance(blob, str) or not _SHA1.fullmatch(blob):
+            errors.append(f"derived_tests[{index}] has an invalid Git blob SHA-1")
+            continue
+        if path in manifest_test_blobs:
+            errors.append(f"duplicate SOURCE_INTAKE derived-test path: {path}")
+            continue
+        manifest_test_blobs[path] = blob
+
+    map_test_blobs = {entry.path: entry.git_blob for entry in mapped_derived_tests}
+    for path in sorted(manifest_test_blobs.keys() - map_test_blobs.keys()):
+        errors.append(f"MIGRATION_MAP.md is missing derived-test entry: {path}")
+    for path in sorted(map_test_blobs.keys() - manifest_test_blobs.keys()):
+        errors.append(f"MIGRATION_MAP.md has unlisted derived-test entry: {path}")
+    for path in sorted(manifest_test_blobs.keys() & map_test_blobs.keys()):
+        if manifest_test_blobs[path] != map_test_blobs[path]:
+            errors.append(
+                f"MIGRATION_MAP.md derived-test blob mismatch for {path}: "
+                f"manifest {manifest_test_blobs[path]}, map {map_test_blobs[path]}"
+            )
 
     seen_source: set[str] = set()
     seen_destination: set[str] = set()
@@ -156,7 +265,7 @@ def verify_documents(manifest_text: str, migration_map: str) -> tuple[dict[str, 
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Read-only check of SOURCE_INTAKE.json counters against MIGRATION_MAP.md rootfs blob records."
+        description="Read-only check of SOURCE_INTAKE.json counters, rootfs blob records, and derived-test map completeness."
     )
     parser.add_argument("manifest", type=Path, help="path to Pisowifi/SOURCE_INTAKE.json")
     parser.add_argument("migration_map", type=Path, help="path to Pisowifi/MIGRATION_MAP.md")
@@ -176,7 +285,7 @@ def main() -> int:
         print(f"ERROR: {error}")
     if errors:
         return 1
-    print("PASS: manifest summary agrees with the migration table's recorded Git blob identities.")
+    print("PASS: rootfs summary and derived-test map agree with the manifest's recorded identities.")
     return 0
 
 

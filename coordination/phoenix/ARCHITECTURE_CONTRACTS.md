@@ -1,3 +1,12 @@
+## PHX-MASTER UTC23 — controller trust boundary and pulse-loss contract (2026-11-27T23:38Z)
+
+- P0 #177 remains OPEN. Active v0.6 ESP8266 blob `12c4bb82` calls synchronous poll at line 354 before coin sample at 357; ESP32 blob `29f1125d` polls at 314 before sample at 318. Both retain a 3,500 ms timeout. A host reproduction is not physical pulse/relay acceptance.
+- Current main CGI blob `2e3a1430`: controller `register|ping` and `poll` response blocks lack `response_sig`; later member endpoint signatures do not authenticate controller poll/disposition.
+- HARDWARE #367 deny-only candidate intentionally omits `config_revision`; QA's shared controller test still requires the token. Resolve by changing QA assertion semantics to source-linked deny-only vectors, not by restoring untrusted controller config.
+- CORE owns authenticated controller identity/poll/receipt/disposition schema; HARDWARE owns firmware and relay; QA owns independent vectors. Master owns only cross-role contract coordination. No shared API/schema change is approved by this checkpoint.
+
+---
+
 ## PHX-MASTER UTC21 — live routing, registry, and automation hold (2026-11-27T21:42Z)
 
 - OWNERSHIP_ROUTES.json remains DRAFT_REVIEW_ONLY with 11 routes and PHX-MASTER target null. No owner or route changed.

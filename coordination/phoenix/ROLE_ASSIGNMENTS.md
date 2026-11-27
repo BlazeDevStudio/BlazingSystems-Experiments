@@ -1,3 +1,20 @@
+## PHX-MASTER UTC23 — live owner PRs and exact-head CI (2026-11-27T23:38Z)
+
+| Role | Exact PR head(s) | Exact-head evidence |
+|---|---|---|
+| MASTER #288 | audit-start `867a35a3a4ae167e273fa56926bb7dd51c6908f9`; live main `6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5` | OPEN / DRAFT / UNMERGED; current main comparison 683 ahead / 1 behind; Master Actions/statuses 0 |
+| CORE #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | Build #42698139210 SUCCESS (scoped); COE #45 shell/case-collision #44295049727/#44295049903 SUCCESS |
+| RENTAL #328 / #289 | `10fc200b6dbf470a95e679d3acc58aff4ab2a67f` / `68928774d0d7cf65adb26bc6b54199a3159d066c` | #328 API/auth/APK checks SUCCESS, shared build #45622918468 FAILURE; #289 build/native auth #43653329229/#43653329235 SUCCESS |
+| PISONET #255 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | Windows synthetic #42462978704 SUCCESS; native COM hardware acceptance NOT TESTED |
+| HARDWARE #367 | `84eea3356474aeedf1f3fd6fc24dccd15984b5a9` | Focused #46079595997 and Mbed #46079596002 SUCCESS; Full #46079596036 FAILURE at QA-owned `tests/controllers.sh:21` |
+| QA #290 / #292 | `5c29d15994cee1279058f1eca12f2a3180704292` / `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | #290 Windows synthetic #43633486963 SUCCESS; #292 no exact-head workflow |
+| RELEASE #291 / #242 | `bf339a76964a1abe2412fac45392fe06a8e66418` / `36c0d0bb3e58786359555b307bb784f720f023ce` | No exact-head runs/statuses; both mergeable=false |
+| COE #26 / #35 / #45 / #49 | `b382d233` / `bc57ba8e` / `9d76a134` / `aeb8ff11` | #26 five workflows CANCELLED; #35 case-collision PASS, ImageBuilder + Hardware/Shared FAIL; #45 shell + case-collision PASS; #49 bridge + case-collision PASS, Hardware/Shared FAIL |
+
+No ownership changed. CORE source remains owner-reserved; Master made no subsystem source edits. Cleanup #266 remains OPEN / 0-of-7. PRODUCTION NO-GO.
+
+---
+
 ## PHX-MASTER UTC22 — live role heads and exact CI
 
 | Role / PR | Exact head | Current evidence |

@@ -1,3 +1,16 @@
+## PHX-MASTER UTC23 — blockers and next owner actions (2026-11-27T23:38Z)
+
+- HARDWARE #367 is tree-complete at `84eea335`; Focused/Mbed and all 14 target jobs pass, but Full fails at QA-owned `tests/controllers.sh:21` because the deny-only sketches intentionally omit `config_revision`. QA must replace the stale presence assertion with source-linked deny-only tests; do not add a decoy field.
+- P0 #177 remains OPEN: active v0.6 polls synchronously before first coin sampling on ESP8266 354→357 and ESP32 314→318. Current main CGI register/ping and poll blocks do not authenticate controller responses with `response_sig`.
+- COE #26 remains FROZEN: 61/61 runtime rows and 4/4 original tests match pinned source/destination; actual summary 46/15 vs declared 47/14; 15 derived tests exist but MIGRATION_MAP omits voucher_txn_journal.sh; seven license counterparts are missing; branch pins are stale. No staging.
+- Master hardened `verify_migration_map.py` to detect derived-test table omissions and blob mismatches. This is manifest tooling only, not live Git-object proof.
+- Canonical private registry v11/newer corrections NOT RECOVERED; no Drive connector. Master exact-head Actions/statuses 0; repository Python suite and `verify_coordination.py` not run without a local checkout.
+- Cleanup #266 OPEN / 0-of-7. **PRODUCTION NO-GO**.
+
+Next: QA fix controller assertion; HARDWARE rerun Full and refresh handover; COE owner correct map/counters/pins/licenses; CORE/HARDWARE/QA resolve poll/auth contract; registry custodian/admin restore canonical Drive and Master execution access.
+
+---
+
 ## PHX-MASTER UTC22 — current blockers and next actions
 
 - HARDWARE #367's prior tree truncation is repaired: exact tree 2,438 entries / 1,892 blobs, no deleted paths from #366 base. Focused/Mbed pass; Full fails because canonical PROJECT_HANDOVER checkpoint remains `fb8ea5a` while newer source/workflow changes exist. HARDWARE must sync canonical handover and PR description, then rerun Full.
