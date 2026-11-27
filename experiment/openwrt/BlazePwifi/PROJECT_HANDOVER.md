@@ -7,7 +7,7 @@ Scope: host-lab modularization only; no production sketch or shared interface ch
 
 The output-enable sequence lab is split into a source-contract/mutation module and a C++ host-harness module. The entry-point command and existing 8/8 polarity scenarios plus 14/14 failure-injection cases are preserved.
 
-Physical GPIO/relay behavior remains NOT TESTED. HARDWARE ACCEPTED = NO. PRODUCTION READY = NO-GO.
+The CHANGE_LEDGER.md historical prefix was restored from the exact parent blob and verified byte-for-byte; one UTC19 record is appended. No prior ledger history was removed. Physical GPIO/relay behavior remains NOT TESTED. HARDWARE ACCEPTED = NO. PRODUCTION READY = NO-GO.
 
 ---
 ## PHX-HARDWARE UTC19 — poll transport outcome matrix (FINAL DOCS-HEAD CI VERIFIED; FULL INTEGRATION BLOCKED)
