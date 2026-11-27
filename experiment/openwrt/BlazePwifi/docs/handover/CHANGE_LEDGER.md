@@ -3465,3 +3465,11 @@ Application/source snapshot is still exact520; this note is metadata only.
 - Crypto-provider failures, invalid digest length/characters and an empty signed body still fail closed before HTTP submission. No coin, poll trust, relay or credit-admission behavior was changed.
 - The source-contract lab adds a negative mutation proving this compatibility patch does not introduce a new empty-key/empty-ID registration deny.
 - The new exact-source matrix on `414048cdc390c7ade2207661ca7e5009c413389e` was queued at checkpoint time; results are recorded in the UTC03 BLAZE-COMMS update when terminal. The prior docs-head Full run #45935932101 passed validation and all target-build jobs but was cancelled before simulation/release jobs completed after the subsequent source correction. It is not a Full integration PASS.
+
+## 2026-11-27 — PHX-HARDWARE Mbed TLS 3/4 and Full CI final evidence
+
+- Corrected firmware source/test SHA: `414048cdc390c7ade2207661ca7e5009c413389e`; current docs head at time of Full: `0cf729e3708f719b87b5006b1712b39a52a17eef`.
+- Exact-source Mbed TLS matrix push #45936317966 and PR #45936322663: source-contract, ESP32 core 3.3.13 and 4.0.0 all PASS. Exact docs-head matrix push #45936438399 and PR #45936443708: source-contract and both core versions all PASS. Each core's clean A/B images are byte-identical; no physical runtime is implied.
+- Docs-head Full PR #45936443886 completed SUCCESS: validation job 140300788918 PASS; 14/14 target/platform builds PASS; 9/9 v0.4 synthetic simulations PASS; update bundle job 140301744469 PASS. Production import/signing, production sign handoff, prerelease and release jobs were SKIPPED.
+- Docs-head storage preflight #45936443677 job 140300635005 PASS with `CHANGE_LEDGER_DELETED_LINES=0`, `CHANGE_LEDGER_APPEND_ONLY_PASS`, STORCHK-0674 physical-parent matrix PASS and `SIMULATED_ONLY=1`. Native synthetic journal gate #45936443771 PASS.
+- These are CI/SIMULATED results only. Physical acceptance, electrical pulse/recovery, protected anti-rollback signer/witness, v1-to-v2 migration, durable accounting/replay and independent QA/release acceptance remain outstanding. Production remains NO-GO.

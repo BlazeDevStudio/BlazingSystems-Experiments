@@ -864,3 +864,18 @@ Read terminal results for the four Mbed TLS matrix jobs and the refreshed Full r
 
 Read terminal exact-head matrix and Full results for the corrected source and updated handover; refresh the PR body and UTC03 BLAZE-COMMS checkpoint; request QA review.
 
+
+
+## PHX-HARDWARE UTC03 final verification — ESP32 Mbed TLS and Full CI
+
+- Corrected source/test commit: `414048cdc390c7ade2207661ca7e5009c413389e`. Current PR/docs head at final Full: `0cf729e3708f719b87b5006b1712b39a52a17eef`.
+- Mbed TLS source-head matrices: push [#45936317966](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45936317966) and PR [#45936322663](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45936322663), all source-contract / core 3.3.13 / core 4.0.0 jobs PASS. Eight unsafe source mutations are rejected. Corrected first-boot registration behavior is preserved; no empty-key/empty-ID guard was introduced.
+- Mbed TLS docs-head matrices: push [#45936438399](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45936438399) and PR [#45936443708](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45936443708), all source-contract / core 3.3.13 / core 4.0.0 jobs PASS. Core 3.3.13 clean A/B application SHA-256: `308f0f1f97038c1346b2a6737432c068cfbda20a15b1f6d3c44fdd68ef27f9c0`; core 4.0.0: `742d6729355ef365757d70db3e978c28a7be1be8e0f4e1d77f09fd5a47fc3944`. Both versions used staged source tree SHA-256 `d62d786c00f1845f857fafc1d1dce9d7a90e16ca3c130751a12fd388fd09a6df`; A/B images were byte-identical.
+- Full PR [#45936443886](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45936443886) completed SUCCESS on docs head `0cf729e`: mandatory validation job `140300788918` PASS; 14/14 target/platform build jobs PASS; 9/9 v0.4 synthetic simulation jobs PASS; update bundle `140301744469` PASS. Production import/signing, sign handoff, prerelease and release jobs were SKIPPED.
+- Storage preflight [#45936443677](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45936443677) job `140300635005` PASS: `CHANGE_LEDGER_DELETED_LINES=0`, `CHANGE_LEDGER_APPEND_ONLY_PASS`, STORCHK-0674 physical-parent matrix PASS, `SIMULATED_ONLY=1`. Native synthetic journal gate [#45936443771](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45936443771) PASS.
+- Evidence boundary: CI VERIFIED / SIMULATED ONLY. No real hardware acceptance, electrical pulse/recovery, 150 power cuts, 30-device/24-hour soak, protected signer/witness, financial migration, durable accounting/replay, or independent QA/release acceptance is claimed. Production remains NO-GO.
+
+## NEXT EXACT ACTION
+
+Request PHX-QA independent review of the Mbed TLS provider and ledger guard; PHX-MASTER refreshes stale #356 pins in PR #288; PHX-HARDWARE next resumes the unblocked hardware-owned target or waits for CORE's authenticated #177 contract before changing intake/poll behavior. Keep PR #356 DRAFT and unmerged.
+
