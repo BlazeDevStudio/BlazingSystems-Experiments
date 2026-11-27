@@ -243,6 +243,11 @@ def verify_deny_latch_monotonicity(name: str, source: str) -> None:
         ("coin-reference-alias", "bool &coinReference = coinEnabled;"),
         ("relay-reference-wrapper", "auto relayAlias = std::ref(relayEnabled);"),
         ("target-address-wrapper", "auto targetAlias = std::addressof(activeTarget);"),
+        ("decltype-auto-lvalue-alias", "decltype(auto) coinLvalueAlias = (coinEnabled);"),
+        ("controller-rvalue-move-alias", "auto&& controllerRvalueAlias = std::move(controllerEnabled);"),
+        ("relay-rvalue-static-cast-alias", "bool&& relayRvalueAlias = static_cast<bool&&>(relayEnabled);"),
+        ("led-lvalue-const-cast-alias", "bool& ledMutableAlias = const_cast<bool&>(ledEnabled);"),
+        ("insert-forward-alias", "auto&& insertForwardAlias = std::forward<bool&>(insertMode);"),
     )
     for label, statement in alias_mutations:
         mutated = source + f"\nvoid injected_alias_escape() {{ {statement} }}\n"
@@ -250,15 +255,16 @@ def verify_deny_latch_monotonicity(name: str, source: str) -> None:
 
     decoy_source = source + (
         "\nvoid injected_logical_and_read_only() { bool accepting = controllerEnabled && coinEnabled; }\n"
-        "\n// bool *decoy = &coinEnabled;\n"
-        'const char *aliasNote = "bool &decoy = relayEnabled; std::ref(activeTarget);";\n'
+        "\nvoid injected_local_reference_controls() { bool localFlag = true; auto&& localMove = std::move(localFlag); decltype(auto) localRef = (localFlag); }\n"
+        "\n// bool *decoy = &coinEnabled; auto&& ignored = std::move(controllerEnabled);\n"
+        'const char *aliasNote = "bool &decoy = relayEnabled; std::ref(activeTarget); std::forward<bool&>(insertMode); const_cast<bool&>(ledEnabled);";\n'
     )
     deny_latch_assignment_contract(decoy_source)
     print(f"DENY_LATCH_LOGICAL_AND_READ_ONLY_ACCEPTED {name}")
     print(f"DENY_LATCH_ALIAS_DECOYS_IGNORED {name}")
     print(f"DENY_LATCH_MONOTONIC_PASS {name}")
     print(f"DENY_LATCH_MUTATIONS_REJECTED {name} 7/7")
-    print(f"DENY_LATCH_ALIAS_MUTATIONS_REJECTED {name} 5/5")
+    print(f"DENY_LATCH_ALIAS_MUTATIONS_REJECTED {name} 10/10")
 
 def verify_board(name: str, path: Path):
     source = path.read_text(encoding="utf-8")

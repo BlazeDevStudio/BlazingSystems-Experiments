@@ -331,18 +331,35 @@ def deny_latch_assignment_contract(source: str) -> None:
         raise AssertionError(
             f"{address_escape.group('name')}: address escape can bypass the deny-latch assignment guard"
         )
+    reference_source = (
+        rf"(?:(?:std::)?(?:move|forward)\s*(?:<[^;()]*>)?\s*\(\s*"
+        rf"|(?:static_cast|const_cast)\s*<[^;()]*[&*][^;()]*>\s*\(\s*"
+        rf"|\(\s*)?"
+        rf"(?P<name>{protected_pattern})\b\s*\)?"
+    )
     reference_alias = re.search(
         rf"\b(?:const\s+|volatile\s+|const\s+volatile\s+)?"
         rf"(?:bool|String|auto|decltype\s*\([^)]*\))\s*&&?\s*"
-        rf"[A-Za-z_]\w*\s*=\s*(?P<name>{protected_pattern})\b",
+        rf"[A-Za-z_]\w*\s*=\s*{reference_source}",
         masked,
     )
     if reference_alias:
         raise AssertionError(
             f"{reference_alias.group('name')}: reference alias can bypass the deny-latch assignment guard"
         )
+    decltype_auto_alias = re.search(
+        rf"\bdecltype\s*\(\s*auto\s*\)\s*[A-Za-z_]\w*\s*=\s*"
+        rf"\(\s*(?P<name>{protected_pattern})\s*\)",
+        masked,
+    )
+    if decltype_auto_alias:
+        raise AssertionError(
+            f"{decltype_auto_alias.group('name')}: decltype(auto) reference alias can bypass the deny-latch assignment guard"
+        )
     reference_wrapper = re.search(
-        rf"\b(?:std::)?(?:ref|cref|addressof)\s*\(\s*(?P<name>{protected_pattern})\s*\)",
+        rf"(?:(?:std::)?(?:ref|cref|addressof|move|forward)\s*(?:<[^;()]*>)?\s*\(\s*"
+        rf"|(?:static_cast|const_cast)\s*<[^;()]*[&*][^;()]*>\s*\(\s*)"
+        rf"(?P<name>{protected_pattern})\s*\)",
         masked,
     )
     if reference_wrapper:
