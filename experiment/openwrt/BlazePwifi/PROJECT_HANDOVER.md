@@ -1600,3 +1600,15 @@ Both ESP8266 and ESP32 `loadPending()` now count `pending.dat`, `pending.new`, a
 CORE still owns authenticated controller poll, receipt/disposition and durable ledger authority; QA owns independent financial/pending semantics; MASTER owns integration sequencing. PR #362 is a child of #361 and must not be retargeted or rebased without Master. Cleanup #266 remains OPEN / 0-of-7; P0 #177 remains OPEN.
 
 **Evidence classification:** host recovery scenarios SIMULATED / CI VERIFIED only. Physical LittleFS, electrical, relay, power-cut and soak acceptance NOT TESTED. HARDWARE ACCEPTED = NO. PRODUCTION READY = NO-GO. No flash, reset, live coin/money, migration, merge, release or deployment.
+
+
+
+## PHX-HARDWARE UTC16 — pending-journal persistence I/O failure guard
+
+PR [#363](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/363) is OPEN / DRAFT / UNMERGED, stacked on #362. Source/test SHA \`aa49e7fce2739e33171d53ec61149685cf9b0c7a\` updates ESP8266 and ESP32 \`persistPendingSequence()\` to check stale-backup removal, canonical-to-backup rename, promotion, restore and final backup cleanup results; specific failure logs were added. \`pendingSequenceState\` is published only after the journal rotation completes.
+
+Test-first baseline [#46036796001](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46036796001), job \`140634121963\`, failed the new source contract on the old writer as expected. Corrected focused [#46037240744](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46037240744), job \`140635630378\`, PASS: 13 injected persistence scenarios per board, 6 unsafe mutations rejected per board; prior recovery lab 15 scenarios per board and 18 mutations rejected. ESP32 Mbed TLS matrix [#46037240677](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46037240677) 3/3 PASS (source contract, Arduino cores 3.3.13 and 4.0.0).
+
+Native synthetic [#46037240701](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46037240701), job \`140635630197\`, remains FAILED at QA-owned PAY-0745 literal \`if(any) return false;\` assertion; Hardware did not edit QA source. Full pre-sync [#46037240708](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46037240708), validation job \`140635887241\`, failed only the mandatory handover-freshness gate before product validation; rerun after this documentation sync.
+
+See [narrow UTC16 handover](docs/handover/2026-11-27-hw-pending-persist-io-failure-guard-utc16.md). Host fake-LittleFS tests are SIMULATED / CI VERIFIED only; physical LittleFS, electrical, 150 power cuts and 30-device/24-hour soak remain NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.

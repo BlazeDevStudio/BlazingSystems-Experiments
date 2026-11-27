@@ -1478,3 +1478,16 @@ Both ESP8266 and ESP32 `loadPending()` now count `pending.dat`, `pending.new`, a
 CORE still owns authenticated controller poll, receipt/disposition and durable ledger authority; QA owns independent financial/pending semantics; MASTER owns integration sequencing. PR #362 is a child of #361 and must not be retargeted or rebased without Master. Cleanup #266 remains OPEN / 0-of-7; P0 #177 remains OPEN.
 
 **Evidence classification:** host recovery scenarios SIMULATED / CI VERIFIED only. Physical LittleFS, electrical, relay, power-cut and soak acceptance NOT TESTED. HARDWARE ACCEPTED = NO. PRODUCTION READY = NO-GO. No flash, reset, live coin/money, migration, merge, release or deployment.
+
+
+
+## PHX-HARDWARE UTC16 — pending-journal persistence I/O failure guard
+
+- PR #363 OPEN / DRAFT / UNMERGED; child of #362 at base \`eeddfc37d24d20ebc14641dfe3ffa247bbbc1ebd\`.
+- Source/test SHA \`aa49e7fce2739e33171d53ec61149685cf9b0c7a\`; both ESP8266 and ESP32 \`persistPendingSequence()\` now abort on stale-backup removal, canonical rotation, promotion or final cleanup errors; restore is attempted only when canonical is absent. RAM sequence state advances only after cleanup succeeds.
+- Focused [#46037240744](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46037240744), job \`140635630378\`: PASS. New lab: 13 injected persistence scenarios per board; 12 unsafe mutations rejected total. Existing recovery lab: 15 scenarios per board; 18 mutations rejected total. Append-only ledger guard PASS.
+- ESP32 Mbed TLS [#46037240677](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46037240677): 3/3 PASS — source contract and Arduino cores 3.3.13 / 4.0.0.
+- Native [#46037240701](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46037240701), job \`140635630197\`: FAIL at QA-owned PAY-0745 literal assertion; no QA code changed.
+- Full pre-sync [#46037240708](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46037240708), validation job \`140635887241\`: failed mandatory handover freshness before product validation; rerun after documentation sync.
+- Physical LittleFS/electrical acceptance, 150 power cuts and 30-device/24-hour soak: NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+- Next: Master records #363 dependency; QA reviews semantics; CORE owns shared authenticated controller contract; Hardware keeps coin/relay denied.

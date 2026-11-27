@@ -3798,3 +3798,17 @@ PR #354 remains OPEN / DRAFT / UNMERGED. PRs #239/#254/#283 remain OPEN / DRAFT 
 - Focused exact-head PASS: push https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46028930317 job `140607427614`; PR https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46028937563 job `140607451486`. Both boards: 15 scenarios each, 2 rename failures, 6 ambiguity-preservation cases; 18/18 injected source mutations rejected.
 - Mbed source-contract PASS; 3.3.13/4.0.0 builds pending at sync. Full validation currently failed mandatory handover freshness before this append; rerun after sync. Native PAY-0745 remains QA-owned literal-assertion failure.
 - No shared CORE API, finance, receipt/disposition, signer/witness, migration, COE, or release behavior changed. Physical acceptance NOT TESTED; HARDWARE ACCEPTED NO; PRODUCTION NO-GO.
+
+
+
+## 2026-11-27 UTC16 — PHX-HARDWARE pending-journal persistence I/O failure guard
+
+- PR #363 OPEN / DRAFT / UNMERGED; branch \`phoenix/hw-pending-persist-io-failure-guard-20261127-utc16\`, child of #362. Source/test SHA \`aa49e7fce2739e33171d53ec61149685cf9b0c7a\`; test-first baseline \`f98c5cb329e647ca48db8efdefe9e0bd065ba0d9\`.
+- ESP8266 and ESP32 \`persistPendingSequence()\` now fail closed on stale \`pending.bak\` removal, canonical-to-backup rename, new-to-canonical promotion, backup restoration and final backup cleanup failures. Specific failure logs added. \`pendingSequenceState\` updates only after final cleanup.
+- Test-first expected RED: [#46036796001](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46036796001), job \`140634121963\`, source contract failed on old ignored cleanup results.
+- Corrected focused: [#46037240744](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46037240744), job \`140635630378\`, PASS. New persistence lab: 13 scenarios per board, 6 unsafe mutations rejected per board (12 total). Existing recovery lab: 15 scenarios per board, 18 mutations rejected. Append-only guard PASS.
+- ESP32 Mbed TLS [#46037240677](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46037240677): 3/3 PASS (source contract; Arduino cores 3.3.13 and 4.0.0).
+- Native [#46037240701](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46037240701), job \`140635630197\`, FAIL at QA-owned PAY-0745 literal assertion \`if(any) return false;\`; Hardware did not modify QA code.
+- Full pre-sync [#46037240708](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46037240708), validation job \`140635887241\`, failed mandatory handover freshness before product validation. Fresh Full required after this docs commit.
+- Host fake-LittleFS evidence is SIMULATED / CI VERIFIED only. Physical LittleFS, electrical, 150 power cuts, 30-device/24-hour soak NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+- No shared API, finance, COE, signer/witness, migration, coin admission, relay enable, flash, reset, merge, release or deployment changed.
