@@ -130,8 +130,8 @@ def harness(parse_fn: str, valid_fn: str, board: str) -> str:
     if (validRuntimePins(2,26,2)) return 13;
     if (validRuntimePins(6,26,2) || validRuntimePins(27,11,2) || validRuntimePins(27,26,10)) return 14;
     if (validRuntimePins(-1,26,2) || validRuntimePins(34,26,2) || validRuntimePins(27,34,2) || validRuntimePins(27,26,39)) return 15;
-    if (validRuntimePins(0,26,2) || validRuntimePins(2,26,2) || validRuntimePins(5,26,2) || validRuntimePins(12,26,2) || validRuntimePins(15,26,2)) return 17;
-    if (validRuntimePins(27,0,2) || validRuntimePins(27,2,2) || validRuntimePins(27,5,2) || validRuntimePins(27,12,2) || validRuntimePins(27,15,2)) return 18;
+    if (validRuntimePins(0,26,33) || validRuntimePins(2,26,33) || validRuntimePins(5,26,33) || validRuntimePins(12,26,33) || validRuntimePins(15,26,33)) return 17;
+    if (validRuntimePins(27,0,33) || validRuntimePins(27,2,33) || validRuntimePins(27,5,33) || validRuntimePins(27,12,33) || validRuntimePins(27,15,33)) return 18;
     if (validRuntimePins(27,26,0) || validRuntimePins(27,26,5) || validRuntimePins(27,26,12) || validRuntimePins(27,26,15)) return 19;
 """
     return r"""
