@@ -55,7 +55,7 @@ def assert_source_contract(source: str) -> None:
         raw, r"if\s*\(\s*candidateCount\s*>\s*1\s*\)", "multiple-journal-candidates"
     )
     require_deny_block(multiple_candidates, "multiple-journal-candidates")
-    first_candidate_read = masked.find('readPendingFile("/pending.dat"')
+    first_candidate_read = raw.find('readPendingFile("/pending.dat"')
     require(first_candidate_read >= 0 and multiple_end < first_candidate_read,
             "multiple-candidate denial must precede every journal read/promotion")
 
@@ -203,7 +203,7 @@ def main() -> None:
                 f"{board} C++ failure-injection harness did not complete")
         print(f"{board}: {output}")
 
-    print("PENDING_RECOVERY_PROMOTION_LAB_PASS boards=ESP8266,ESP32 mutations_rejected=16")
+    print("PENDING_RECOVERY_PROMOTION_LAB_PASS boards=ESP8266,ESP32 mutations_rejected=18")
 
 
 if __name__ == "__main__":
