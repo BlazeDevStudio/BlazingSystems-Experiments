@@ -314,6 +314,42 @@ def startup_storage_guard_locations(source: str):
 def deny_latch_assignment_contract(source: str) -> None:
     """Require deny-only runtime flags to have no post-startup re-enable writes."""
     masked = mask_non_code(source)
+
+    # Direct-assignment checks are bypassable if protected state escapes through
+    # a pointer, non-const reference, or reference wrapper. Keep these fields
+    # local to the deny helper until an independently reviewed authority exists.
+    protected_names = (
+        "controllerEnabled", "coinEnabled", "relayEnabled",
+        "ledEnabled", "insertMode", "activeTarget",
+    )
+    protected_pattern = "|".join(re.escape(name) for name in protected_names)
+    address_escape = re.search(
+        rf"&\s*(?P<name>{protected_pattern})\b",
+        masked,
+    )
+    if address_escape:
+        raise AssertionError(
+            f"{address_escape.group('name')}: address escape can bypass the deny-latch assignment guard"
+        )
+    reference_alias = re.search(
+        rf"\b(?:const\s+|volatile\s+|const\s+volatile\s+)?"
+        rf"(?:bool|String|auto|decltype\s*\([^)]*\))\s*&&?\s*"
+        rf"[A-Za-z_]\w*\s*=\s*(?P<name>{protected_pattern})\b",
+        masked,
+    )
+    if reference_alias:
+        raise AssertionError(
+            f"{reference_alias.group('name')}: reference alias can bypass the deny-latch assignment guard"
+        )
+    reference_wrapper = re.search(
+        rf"\b(?:std::)?(?:ref|cref|addressof)\s*\(\s*(?P<name>{protected_pattern})\s*\)",
+        masked,
+    )
+    if reference_wrapper:
+        raise AssertionError(
+            f"{reference_wrapper.group('name')}: reference/address wrapper can bypass the deny-latch assignment guard"
+        )
+
     deny_fn = extract_function(source, "void denyRemoteControl()")
     deny_start = source.find(deny_fn)
     if deny_start < 0:

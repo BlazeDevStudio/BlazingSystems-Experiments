@@ -237,8 +237,25 @@ def verify_deny_latch_monotonicity(name: str, source: str) -> None:
     if mutated_deny == deny_fn:
         raise AssertionError(f"{name}: deny-helper mutation anchor missing")
     expect_rejected("deny-helper-sets-relay-enabled", source.replace(deny_fn, mutated_deny, 1))
+    alias_mutations = (
+        ("controller-pointer-escape", "bool *controllerAlias = &controllerEnabled;"),
+        ("coin-reference-alias", "bool &coinAlias = coinEnabled;"),
+        ("relay-reference-wrapper", "auto relayAlias = std::ref(relayEnabled);"),
+        ("target-address-wrapper", "auto targetAlias = std::addressof(activeTarget);"),
+    )
+    for label, statement in alias_mutations:
+        mutated = source + f"\nvoid injected_alias_escape() {{ {statement} }}\n"
+        expect_rejected(label, mutated)
+
+    decoy_source = source + (
+        "\n// bool *decoy = &coinEnabled;\n"
+        'const char *aliasNote = "bool &decoy = relayEnabled; std::ref(activeTarget);";\n'
+    )
+    deny_latch_assignment_contract(decoy_source)
+    print(f"DENY_LATCH_ALIAS_DECOYS_IGNORED {name}")
     print(f"DENY_LATCH_MONOTONIC_PASS {name}")
     print(f"DENY_LATCH_MUTATIONS_REJECTED {name} 7/7")
+    print(f"DENY_LATCH_ALIAS_MUTATIONS_REJECTED {name} 4/4")
 
 def verify_board(name: str, path: Path):
     source = path.read_text(encoding="utf-8")
