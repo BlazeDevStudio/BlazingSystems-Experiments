@@ -13,6 +13,12 @@ from pending_recovery_promotion_lab_contract import (
 )
 
 
+BLAZEPWIFI = Path(__file__).resolve().parents[2]
+SKETCHES = {
+    "ESP8266": BLAZEPWIFI / "esp8266/BlazePwifiVendo/BlazePwifiVendo.ino",
+    "ESP32": BLAZEPWIFI / "esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino",
+}
+
 def cxx_harness(load_function: str) -> str:
     template_path = Path(__file__).with_name("pending_recovery_promotion_lab_harness.hpp")
     template = template_path.read_text(encoding="utf-8")
