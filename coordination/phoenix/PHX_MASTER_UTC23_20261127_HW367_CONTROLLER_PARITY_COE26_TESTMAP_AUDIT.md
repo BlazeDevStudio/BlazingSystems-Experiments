@@ -115,3 +115,8 @@ The prior UTC23 snapshot at #367 head `84eea335` is superseded by the new Hardwa
 
 This follow-up supersedes only the earlier #367 head/CI snapshot in this UTC23 report. It does not change ownership, approve the PR, or authorize hardware/production acceptance.
 
+
+
+## UTC23 local focused test result — 2026-11-27
+
+The isolated Python smoke harness for the new derived-test map parser ran seven cases covering exact match, missing/extra rows, blob mismatch, duplicate map path, unsafe path and invalid destination prefix: **7/7 PASS**. This was a focused harness mirroring the committed parser logic, not execution of the committed `test_verify_migration_map.py` module. That repository test module, the full Master Python suite and `verify_coordination.py` remain NOT RUN because no authenticated local checkout is available. No exact-head Master Actions/status exists.
