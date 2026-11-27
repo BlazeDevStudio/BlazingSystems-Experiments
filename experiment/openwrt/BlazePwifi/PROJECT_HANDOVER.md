@@ -1600,3 +1600,19 @@ Both ESP8266 and ESP32 `loadPending()` now count `pending.dat`, `pending.new`, a
 CORE still owns authenticated controller poll, receipt/disposition and durable ledger authority; QA owns independent financial/pending semantics; MASTER owns integration sequencing. PR #362 is a child of #361 and must not be retargeted or rebased without Master. Cleanup #266 remains OPEN / 0-of-7; P0 #177 remains OPEN.
 
 **Evidence classification:** host recovery scenarios SIMULATED / CI VERIFIED only. Physical LittleFS, electrical, relay, power-cut and soak acceptance NOT TESTED. HARDWARE ACCEPTED = NO. PRODUCTION READY = NO-GO. No flash, reset, live coin/money, migration, merge, release or deployment.
+
+
+## PHX-HARDWARE UTC17 — pending-recovery contract lab module split
+
+**PR:** pending creation as a DRAFT child of #362; parent #362 exact head `eeddfc37d24d20ebc14641dfe3ffa247bbbc1ebd`.  
+**Branch:** `phoenix/hw-pending-recovery-contract-module-split-20261128-utc17`  
+**Source/test commit:** `d4f65ab7f72fabc6160cf70609a9258f1f757120`  
+**Scope:** Hardware-owned host-lab cleanup only; no ESP32/ESP8266 sketch, shared API, controller contract, finance, QA assertion, migration, signer/witness, release workflow, or COE destination changed.
+
+The pending-recovery lab now separates source-contract assertions and unsafe-mutation helpers into `pending_recovery_promotion_lab_contract.py`. The runner retains board discovery, mutation-case orchestration, C++ harness assembly, compilation and execution. The existing C++ fixture remains in `pending_recovery_promotion_lab_harness.hpp`. This is a behavior-preserving module boundary intended to make the test contract independently readable and maintainable.
+
+The Hardware workflow now watches the new module and this narrow handover, and includes the new role branch in its push filter. The append-only `CHANGE_LEDGER.md` was intentionally left byte-identical to the #362 parent; its existing guard remains active.
+
+**Tests:** exact-head GitHub Actions are pending for this child; no result is claimed here. Parent #362 evidence is not transferred to this new SHA. Expected command remains `python3 experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/pending_recovery_promotion_lab.py`, which compiles and runs both board-extracted C++ recovery harnesses and rejects unsafe source mutations.
+
+**Acceptance:** SIMULATED / CI VERIFIED only after the child workflow passes. Physical LittleFS, electrical, relay, 150 power-cut and 30-device/24-hour soak tests remain NOT TESTED. HARDWARE ACCEPTED = NO. PRODUCTION READY = NO-GO. No flash, reset, coin/money, migration, merge, release or deployment.
