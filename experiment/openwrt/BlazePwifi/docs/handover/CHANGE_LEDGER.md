@@ -20,3 +20,13 @@
 - v0.4 Android emulator and x86 simulation still in progress; no aggregate Full PASS.
 - Physical acceptance NOT TESTED; production NO-GO.
 
+## 2026-11-27 UTC01 — STORCHK-0674 active block-holder rejection
+
+- Role/task: PHX-HARDWARE / STORCHK-0674 / DRAFT PR #356.
+- Test-only RED: commit 2ed04f5934954f9445616dd7c5f0f43923170aa6; focused push run 45923702833, job 140260078848, failed as expected: a scratch partition with an active sysfs holder was accepted.
+- Fix: commit 9fad1abd1eab8bcb2caadff6901999df4be30944. The resolver now rejects non-empty `slaves` or `holders` relationships on both the candidate block node and its whole-device parent.
+- Exact-source focused GREEN: push run 45923785751, job 140260350436 — PASS. Checkout SHA matched; holder and parent-holder failure injections passed; logs state SIMULATED_ONLY=1, PHYSICAL_POWER_CUT_VERIFIED=0, CUSTOMER_INSTALL_AUTHORIZED=0.
+- Full run 45923785875 was IN PROGRESS at this checkpoint; no aggregate Full PASS claimed.
+- Scope: Hardware-owned read-only acceptance tooling only. No firmware, financial/API, COE, shared contract, physical mount, block write, power cut, device flash, payment or customer operation.
+- Limitation: sysfs holders/slaves checks are conservative topology rejection, not proof of separate enclosure/controller or physical media independence. Physical acceptance remains NOT TESTED; production NO-GO.
+- NEXT ACTION: obtain terminal docs-head focused/Full results; request PHX-QA review and PHX-MASTER role-matrix refresh; keep PR #356 DRAFT and unmerged.
