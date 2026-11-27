@@ -240,8 +240,36 @@ def verify_board(name: str, path: Path):
         raise AssertionError(f"{name}: relay-off GPIO branch is not explicit")
 
     compile_and_run(apply_fn, deny_fn, True, f"{name} safe pre-poll state")
+    # The transport-failure path returns an empty body; the success-like path
+    # returns an untrusted positive payload. Both must leave all outputs denied.
     compile_blocking_poll_and_run(
-        apply_fn, deny_fn, poll_block, True, f"{name} actual blocking poll wait"
+        apply_fn, deny_fn, poll_block, True,
+        f"{name} empty poll response / transport failure",
+    )
+    positive_response = '{"ok":true,"insert":true,"target_nonce":"untrusted"}'
+    compile_blocking_poll_and_run(
+        apply_fn, deny_fn, poll_block, True,
+        f"{name} untrusted positive poll response ignored", positive_response,
+    )
+
+    # Failure injection: consuming a positive poll response and briefly enabling
+    # the relay before the post-poll deny must be caught by the write-history latch.
+    unsafe_response_consumer = poll_block.replace(
+        '(void)post("poll");',
+        'String response = post("poll");\\n'
+        '    if (response.find("\\\"insert\\\":true") != std::string::npos) {\\n'
+        '      controllerEnabled=true; coinEnabled=true; relayEnabled=true;\\n'
+        '      ledEnabled=true; insertMode=true; activeTarget="untrusted-target";\\n'
+        '      applyOutputs();\\n'
+        '    }',
+        1,
+    )
+    if unsafe_response_consumer == poll_block:
+        raise AssertionError(f"{name}: positive response-consumer mutation anchor missing")
+    compile_blocking_poll_and_run(
+        apply_fn, deny_fn, unsafe_response_consumer, False,
+        f"{name} positive response transient-actuation mutation",
+        positive_response,
     )
 
     # Failure injection: removing the pre-poll deny must leave an energized
