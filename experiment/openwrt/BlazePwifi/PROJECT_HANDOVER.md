@@ -1,3 +1,18 @@
+## PHX-HARDWARE UTC12 — exact controller assertion clarification — 2026-11-27T12:16Z
+
+### Exact Full-workflow failure, distinguished from cryptographic contract
+
+The #359 post-ledger Full run [#45996785121](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45996785121) is terminal **FAILURE**: the mandatory handover freshness and history-regression gates passed, then validation job `140498293398` exited 1 at `tests/controllers.sh`. The complete run inventory is 15 successful jobs, 1 failed validation job, and 13 skipped downstream/production jobs. Android and all 14 firmware target/platform jobs passed. ESP32 Mbed TLS [#45996785113](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45996785113) is 3/3 PASS; Poll [#45996785105](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45996785105) is PASS; Native [#45996785114](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45996785114) remains FAIL at QA-owned PAY-0745.
+
+The #360 docs-head Full [#45996488771](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45996488771) is terminal **FAILURE**. Its handover gate passed; validation job `140497154751` exited 1 at the same `tests/controllers.sh` step. Android and all 14 firmware target/platform jobs passed; production import/signing/publication/simulation stages were skipped. #360 Poll [#45996488529](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45996488529) PASS and Mbed [#45996488521](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45996488521) 3/3 PASS.
+
+**Exact assertion audit:** the controller test is blob `53a7af25fdee9a650e10e870c4204e0fb43239c6`. Its per-sketch grep sequence checks `cgi-bin/vendo`, `register`, `poll`, `coin`, `target`, `sig`, `pending`, Wi-Fi tokens, `applyRemoteConfig`, then `config_revision`. The exact #359 sketch blobs `25d9494ed5109286c5478605cf5b725fbeab6d9d` (ESP8266) and `d031b0b79b2a50b88318992c7c9312a042ca95a9` (ESP32), and #360 blobs `9f0f4829cf57a6a12f4d940b051f17035e0a1670` (ESP8266) and `fcf26a50cd3238941caf918a849c30ca66f4ce4b` (ESP32), contain the generic `sig` token but **do not contain `config_revision`**. Thus the first failing grep is `config_revision`, not the generic `sig` presence check. The script is a token-presence parity check; it does not cryptographically verify a poll response signature.
+
+This does **not** mean the controller authentication contract is complete: current main CGI still lacks the approved controller `response_sig` producer for register/poll/coin, while member endpoints have separate signatures. PHX-CORE owns the versioned domain-separated response/receipt contract; PHX-QA owns semantic assertion design. Hardware must not add a decoy `config_revision` token, ad-hoc signature, or positive consumer to silence validation. Keep deny-only.
+
+### Ownership and safety
+
+No firmware, shared API, QA-owned test, finance, signer, witness, migration, or COE source changed in this clarification. #359/#360 remain sibling DRAFTs. Physical coin/relay/electrical acceptance, 150 power cuts, and 30-device/24-hour soak remain NOT TESTED. **HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.**
 ## PHX-HARDWARE UTC12 — sibling #359/#360 handover reconciliation (2026-11-27T12:02:29Z)
 
 **Role:** PHX-HARDWARE · **Task:** Master UTC11 sibling-branch handover reconciliation · **Disposition:** documentation-only, both PRs remain OPEN / DRAFT / UNMERGED.
