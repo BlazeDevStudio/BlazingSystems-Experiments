@@ -841,6 +841,8 @@ bool validOutputPin(int pin){
 }
 
 bool runtimePinsSafe(int coinPin,int relayPin,int ledPin){
+  // ESP8266 ROM samples GPIO0/GPIO2/GPIO15 at reset; external coin, relay or LED circuits can change boot mode.
+  if(coinPin==0||coinPin==2||coinPin==15||relayPin==0||relayPin==2||relayPin==15||ledPin==0||ledPin==2||ledPin==15) return false;
   return validInputPullupPin(coinPin) && validOutputPin(relayPin) &&
          validOutputPin(ledPin) && coinPin!=relayPin &&
          coinPin!=ledPin && relayPin!=ledPin;
