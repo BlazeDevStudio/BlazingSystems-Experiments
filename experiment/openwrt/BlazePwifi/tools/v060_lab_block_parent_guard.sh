@@ -25,11 +25,15 @@ for id in "$SCRATCH" "$ROOT" "$OVERLAY" "$ROM" "$BOOT"; do
 done
 [ "$SCRATCH" != "-" ] || blocked 'scratch mount has no block identity'
 [ -n "$ROOT_FS" ] || blocked 'root filesystem type missing'
-has_slaves() {
-  [ -d "$1/slaves" ] || return 1
-  for child in "$1"/slaves/*; do
-    [ -e "$child" ] || [ -L "$child" ] || continue
-    return 0
+has_block_relations() {
+  # A block device with either slaves or holders participates in a stacked
+  # mapping. Its physical ancestry is not a safe standalone scratch identity.
+  for relation in slaves holders; do
+    [ -d "$1/$relation" ] || continue
+    for child in "$1/$relation"/*; do
+      [ -e "$child" ] || [ -L "$child" ] || continue
+      return 0
+    done
   done
   return 1
 }
@@ -47,7 +51,7 @@ resolve_parent() {
   [ -r "$resolved/dev" ] || return 1
   device_mm="$(cat "$resolved/dev" 2>/dev/null)" || return 1
   [ "$device_mm" = "$id" ] || return 1
-  if has_slaves "$resolved"; then return 1; fi
+  if has_block_relations "$resolved"; then return 1; fi
   if [ -f "$resolved/partition" ]; then
     parent="$(dirname "$resolved")"
     case "$parent" in
@@ -56,7 +60,7 @@ resolve_parent() {
       *) return 1 ;;
     esac
     [ -r "$parent/dev" ] || return 1
-    if has_slaves "$parent"; then return 1; fi
+    if has_block_relations "$parent"; then return 1; fi
     parent_mm="$(cat "$parent/dev" 2>/dev/null)" || return 1
     [ "$parent_mm" != "$id" ] || return 1
   else
