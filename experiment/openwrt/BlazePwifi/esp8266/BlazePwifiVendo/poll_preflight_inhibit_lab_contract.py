@@ -312,12 +312,13 @@ def startup_storage_guard_locations(source: str):
 
 
 def deny_latch_assignment_contract(source: str) -> None:
-    """Reject runtime writes and address/reference escapes from deny-only authority fields."""
+    """Reject runtime writes and pointer/reference/cast escapes from deny-only authority fields."""
     masked = mask_non_code(source)
 
     # Direct-assignment checks are bypassable if protected state escapes through
-    # a pointer, non-const reference, or reference wrapper. Keep these fields
-    # local to the deny helper until an independently reviewed authority exists.
+    # pointers, lvalue/rvalue references, decltype(auto), forwarding/move helpers,
+    # or reference/pointer casts. Keep these fields local to the deny helper
+    # until an independently reviewed authority exists.
     protected_names = (
         "controllerEnabled", "coinEnabled", "relayEnabled",
         "ledEnabled", "insertMode", "activeTarget",
@@ -364,7 +365,7 @@ def deny_latch_assignment_contract(source: str) -> None:
     )
     if reference_wrapper:
         raise AssertionError(
-            f"{reference_wrapper.group('name')}: reference/address wrapper can bypass the deny-latch assignment guard"
+            f"{reference_wrapper.group('name')}: reference/address/cast wrapper can bypass the deny-latch assignment guard"
         )
 
     deny_fn = extract_function(source, "void denyRemoteControl()")
