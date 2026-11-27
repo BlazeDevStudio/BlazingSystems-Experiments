@@ -49,6 +49,15 @@ def assert_source_contract(source: str) -> None:
             "canonical/fallback ambiguity must be detected")
     require('LittleFS.rename(chosen,"/pending.dat")' in raw,
             "fallback promotion must target the canonical journal")
+    require("candidateCount > 1" in masked,
+            "coexisting journal candidates must fail closed before candidate selection")
+    multiple_candidates, multiple_end = extract_if_block(
+        raw, r"if\s*\(\s*candidateCount\s*>\s*1\s*\)", "multiple-journal-candidates"
+    )
+    require_deny_block(multiple_candidates, "multiple-journal-candidates")
+    first_candidate_read = raw.find('readPendingFile("/pending.dat"')
+    require(first_candidate_read >= 0 and multiple_end < first_candidate_read,
+            "multiple-candidate denial must precede every journal read/promotion")
 
     no_candidate, _ = extract_if_block(
         raw, r"if\s*\(\s*!\s*chosen\s*\)", "no-valid-candidate"
@@ -152,6 +161,10 @@ def main() -> None:
                         "if(false)"),
         )
         expect_rejected(
+            f"{board}-multiple-candidates-not-denied",
+            mutate_load(source, "if(candidateCount > 1){", "if(candidateCount > 2){"),
+        )
+        expect_rejected(
             f"{board}-rename-result-ignored",
             mutate_load(source, 'if(!LittleFS.rename(chosen,"/pending.dat"))',
                         'if(LittleFS.rename(chosen,"/pending.dat"))'),
@@ -186,11 +199,11 @@ def main() -> None:
         )
 
         output = compile_and_run(cxx_harness(load), board.lower())
-        require("PENDING_RECOVERY_PROMOTION_PASS scenarios=11" in output,
+        require("PENDING_RECOVERY_PROMOTION_PASS scenarios=15" in output,
                 f"{board} C++ failure-injection harness did not complete")
         print(f"{board}: {output}")
 
-    print("PENDING_RECOVERY_PROMOTION_LAB_PASS boards=ESP8266,ESP32 mutations_rejected=16")
+    print("PENDING_RECOVERY_PROMOTION_LAB_PASS boards=ESP8266,ESP32 mutations_rejected=18")
 
 
 if __name__ == "__main__":

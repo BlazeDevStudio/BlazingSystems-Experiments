@@ -1443,3 +1443,38 @@ The actual host-fixture correction at `4a85070a1f6a1caa417570a91dcdf355ff072fcc`
 - Parent #359 Native [#45997708911](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45997708911) remains failed at QA-owned PAY-0745. No Native run was triggered for this test-harness-only increment.
 
 **Scope:** host-test fixture only; no production sketch, shared API, QA-owned test, finance, signer/witness, migration, COE source, flash, reset, release or deployment changed. Physical LittleFS/electrical acceptance, 150 power cuts and 30-device/24-hour soak remain NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+
+
+## PHX-HARDWARE UTC15 — pending journal candidate collision guard
+
+**PR:** [#362](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/362), OPEN / DRAFT / UNMERGED; stacked on #361 → #359.  
+**Branch:** `phoenix/hw-pending-candidate-collision-guard-20261127-utc15`  
+**Firmware/test commit:** `a45b2491f312f1d66e70f8caef5b55f49dec60bb`  
+**Harness assertion correction:** `2768bf701945401aa6efed9c7c2573ed08b2b8cb`  
+**Workflow synchronization / current branch HEAD:** `7536b6568c186a35bcbde0cddff1c6774bfe6c6d`
+
+### Proven defect and correction
+
+`persistPendingSequence()` writes and flushes `/pending.new` before renaming the previous `/pending.dat` to `/pending.bak`. A power cut in that interval can leave a valid older canonical file beside a valid newer fallback. The old loader preferred `/pending.dat` and ignored the fallback, so it could publish an older sequence and fail to recover the newer pending reservation.
+
+Both ESP8266 and ESP32 `loadPending()` now count `pending.dat`, `pending.new`, and `pending.bak` before reading any candidate. If more than one exists, the loader sets `fsReady=false`, latches `pendingReady=true`, returns false, and preserves every file. A single candidate retains the existing validation/promotion path. No receipt, replay, finance, coin admission, relay enable, or pending-clear path was added.
+
+### Exact focused evidence
+
+- Push [#46028930317](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46028930317), job `140607427614`: **PASS** at exact head `7536b6568c186a35bcbde0cddff1c6774bfe6c6d`.
+- PR [#46028937563](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46028937563), job `140607451486`: **PASS** at the same head.
+- Each board: `PENDING_RECOVERY_PROMOTION_PASS scenarios=15 rename_failures=2 ambiguous_preservation=6`.
+- Both boards: nine unsafe source mutations rejected; total `mutations_rejected=18`.
+- The first focused attempt [#46028536467](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46028536467) failed in the new test's ordering assertion because it searched the comment/literal-masked buffer for a call containing a string literal. Commit `2768bf7` corrected that assertion to search the original source text; the exact-head focused reruns above pass.
+
+### Other exact-head CI / inherited blockers
+
+- Mbed matrix push [#46028930281](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46028930281): source-contract job `140607427755` PASS; Arduino core 3.3.13 and 4.0.0 target builds were still running at handover sync.
+- Full PR [#46028937549](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46028937549): validation job `140607702104` failed only the mandatory handover-freshness gate because this documentation sync had not yet landed; target jobs were still running. A post-sync Full rerun is required.
+- Native [#46028937565](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46028937565), job `140607452031`: failed QA-owned PAY-0745 literal assertion expecting `if(any) return false;`; the firmware uses an explicit fail-closed block. QA must reconcile the assertion semantically; Hardware did not weaken the source guard.
+
+### Governance / acceptance
+
+CORE still owns authenticated controller poll, receipt/disposition and durable ledger authority; QA owns independent financial/pending semantics; MASTER owns integration sequencing. PR #362 is a child of #361 and must not be retargeted or rebased without Master. Cleanup #266 remains OPEN / 0-of-7; P0 #177 remains OPEN.
+
+**Evidence classification:** host recovery scenarios SIMULATED / CI VERIFIED only. Physical LittleFS, electrical, relay, power-cut and soak acceptance NOT TESTED. HARDWARE ACCEPTED = NO. PRODUCTION READY = NO-GO. No flash, reset, live coin/money, migration, merge, release or deployment.
