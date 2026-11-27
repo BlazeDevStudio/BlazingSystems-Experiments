@@ -16,7 +16,7 @@ The existing output_enable_sequence_lab.py mixed source extraction/orchestration
 
 The entry point continues to extract the actual production writeLogical() and configureRuntimePins() functions from both sketches. The same four independent relay/LED polarity combinations, old-pin shutdown checks, pre-OUTPUT OFF preload checks, post-OUTPUT OFF confirmation, and 14 unsafe mutations remain the acceptance contract.
 
-The existing Hardware workflow now watches both modules and the new role branch. The original lab command remains unchanged.
+The existing Hardware workflow now watches both modules and the new role branch. The original lab command remains unchanged. The historical CHANGE_LEDGER.md prefix is preserved byte-for-byte from the parent; one UTC19 record is appended.
 
 ## Evidence boundary
 
