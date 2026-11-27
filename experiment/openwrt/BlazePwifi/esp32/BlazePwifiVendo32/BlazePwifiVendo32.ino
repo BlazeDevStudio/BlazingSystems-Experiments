@@ -129,13 +129,43 @@ bool persistPendingSequence(const BpPendingSequence &state){
   File f=LittleFS.open("/pending.new","w"); if(!f) return false;
   size_t n=f.write((const uint8_t*)&state,sizeof(state)); f.flush(); f.close();
   if(n!=sizeof(state)){ LittleFS.remove("/pending.new"); return false; }
-  LittleFS.remove("/pending.bak");
-  if(LittleFS.exists("/pending.dat")) LittleFS.rename("/pending.dat","/pending.bak");
-  if(!LittleFS.rename("/pending.new","/pending.dat")){
-    if(LittleFS.exists("/pending.bak")) LittleFS.rename("/pending.bak","/pending.dat");
+
+  BpPendingSequence verified{};
+  bool legacy=false;
+  if(!readPendingFile("/pending.new", verified, legacy)||legacy||
+     verified.magic!=state.magic||
+     verified.version!=state.version||
+     verified.reserved!=state.reserved||
+     verified.acked_sequence!=state.acked_sequence||
+     verified.sequence!=state.sequence||
+     verified.pulses!=state.pulses||
+     memcmp(verified.nonce,state.nonce,sizeof(state.nonce))!=0||
+     memcmp(verified.target,state.target,sizeof(state.target))!=0||
+     verified.checksum!=state.checksum){
+    Serial.println("CRITICAL: pending journal readback mismatch; preserving candidates.");
     return false;
   }
-  LittleFS.remove("/pending.bak");
+
+  if(LittleFS.exists("/pending.bak") && !LittleFS.remove("/pending.bak")){
+    Serial.println("CRITICAL: stale pending backup removal failed; preserving journal candidates.");
+    return false;
+  }
+  if(LittleFS.exists("/pending.dat") && !LittleFS.rename("/pending.dat","/pending.bak")){
+    Serial.println("CRITICAL: canonical pending journal rotation failed; preserving candidates.");
+    return false;
+  }
+  if(!LittleFS.rename("/pending.new","/pending.dat")){
+    if(!LittleFS.exists("/pending.dat") && LittleFS.exists("/pending.bak") &&
+       !LittleFS.rename("/pending.bak","/pending.dat")){
+      Serial.println("CRITICAL: pending backup restore failed; preserving journal candidates.");
+    }
+    Serial.println("CRITICAL: pending journal promotion failed; preserving candidates.");
+    return false;
+  }
+  if(LittleFS.exists("/pending.bak") && !LittleFS.remove("/pending.bak")){
+    Serial.println("CRITICAL: stale pending backup cleanup failed; denying intake.");
+    return false;
+  }
   pendingSequenceState=state;
   return true;
 }

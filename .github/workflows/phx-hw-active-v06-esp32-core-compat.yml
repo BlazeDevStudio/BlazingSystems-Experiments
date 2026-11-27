@@ -5,6 +5,7 @@ on:
     branches:
       - phoenix/hw-active-v06-poll-intake-deny-20261126-utc05
       - phoenix/hw-pending-candidate-collision-guard-20261127-utc15
+      - phoenix/hw-pending-persist-io-failure-guard-20261127-utc16
     paths:
       - 'experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino'
       - 'experiment/openwrt/BlazePwifi/tools/package-vendo-source.py'

@@ -3798,3 +3798,43 @@ PR #354 remains OPEN / DRAFT / UNMERGED. PRs #239/#254/#283 remain OPEN / DRAFT 
 - Focused exact-head PASS: push https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46028930317 job `140607427614`; PR https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46028937563 job `140607451486`. Both boards: 15 scenarios each, 2 rename failures, 6 ambiguity-preservation cases; 18/18 injected source mutations rejected.
 - Mbed source-contract PASS; 3.3.13/4.0.0 builds pending at sync. Full validation currently failed mandatory handover freshness before this append; rerun after sync. Native PAY-0745 remains QA-owned literal-assertion failure.
 - No shared CORE API, finance, receipt/disposition, signer/witness, migration, COE, or release behavior changed. Physical acceptance NOT TESTED; HARDWARE ACCEPTED NO; PRODUCTION NO-GO.
+
+
+
+## 2026-11-27 UTC16 — PHX-HARDWARE pending-journal persistence I/O failure guard
+
+- PR #363 OPEN / DRAFT / UNMERGED; branch \`phoenix/hw-pending-persist-io-failure-guard-20261127-utc16\`, child of #362. Source/test SHA \`aa49e7fce2739e33171d53ec61149685cf9b0c7a\`; test-first baseline \`f98c5cb329e647ca48db8efdefe9e0bd065ba0d9\`.
+- ESP8266 and ESP32 \`persistPendingSequence()\` now fail closed on stale \`pending.bak\` removal, canonical-to-backup rename, new-to-canonical promotion, backup restoration and final backup cleanup failures. Specific failure logs added. \`pendingSequenceState\` updates only after final cleanup.
+- Test-first expected RED: [#46036796001](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46036796001), job \`140634121963\`, source contract failed on old ignored cleanup results.
+- Corrected focused: [#46037240744](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46037240744), job \`140635630378\`, PASS. New persistence lab: 13 scenarios per board, 6 unsafe mutations rejected per board (12 total). Existing recovery lab: 15 scenarios per board, 18 mutations rejected. Append-only guard PASS.
+- ESP32 Mbed TLS [#46037240677](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46037240677): 3/3 PASS (source contract; Arduino cores 3.3.13 and 4.0.0).
+- Native [#46037240701](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46037240701), job \`140635630197\`, FAIL at QA-owned PAY-0745 literal assertion \`if(any) return false;\`; Hardware did not modify QA code.
+- Full pre-sync [#46037240708](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46037240708), validation job \`140635887241\`, failed mandatory handover freshness before product validation. Fresh Full required after this docs commit.
+- Host fake-LittleFS evidence is SIMULATED / CI VERIFIED only. Physical LittleFS, electrical, 150 power cuts, 30-device/24-hour soak NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+- No shared API, finance, COE, signer/witness, migration, coin admission, relay enable, flash, reset, merge, release or deployment changed.
+
+
+
+## 2026-11-27 UTC16 terminal CI and provenance reconciliation — PHX-HARDWARE PR #363
+
+- Docs HEAD \`af8530560a37000330cecf06b26cbce507cd45a7\`; source/test \`aa49e7fce2739e33171d53ec61149685cf9b0c7a\`; PR #363 OPEN / DRAFT / UNMERGED, child of #362.
+- Focused #46037755988 job 140637379711 PASS: pending persistence 13 scenarios per board, 12 unsafe mutations rejected; recovery 15 scenarios per board, 18 unsafe mutations rejected; append-only ledger guard PASS.
+- Mbed #46037755964 3/3 PASS: source contract 140637380677; core 3.3.13 job 140637380652; core 4.0.0 job 140637380259.
+- Full #46037755975 validation job 140637596747 FAIL at tests/controllers.sh:21 because config_revision is absent from both sketches. All 13 firmware target jobs and Android PASS; update bundle/simulations/signing/candidate/publication SKIPPED.
+- Native #46037756244 job 140637381087 FAIL at QA-owned tests/v060_vendo_sequence_contract.py:18 literal if(any) return false; assertion. No QA source changed.
+- Test-first RED #46036796001 job 140634121963 failed the new source-contract assertion on the old writer as expected; corrected source/test SHA is aa49e7fce2739e33171d53ec61149685cf9b0c7a.
+- AGENTS-linked cloud policy and storage handover were read at current owner path BlazeDevStudio/BlazingSystems (blobs 5e503925750c4e511314e4b7624579d82f60aae2 and a15f14cb3baf46424b820e1a921462794422f06b). Private registry v11 remains NOT RECOVERED; Library v7 not substituted; no Drive connector or upload.
+- Master #288 head 0662a64e1fe450cf1517a910e058491bb7de7a58 has not yet listed #363 in role/integration matrices. Master owns the update. Cleanup #266 remains 0/7. Active #177 poll-before-first-sample remains unresolved; this PR does not enable coin/relay.
+- Physical LittleFS/electrical acceptance, 150 power cuts and 30-device/24-hour soak NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+
+## 2026-11-28 — PHX-HARDWARE UTC17 pending-journal readback verification
+
+- Role: PHX-HARDWARE; issue #177; draft PR #363; branch `phoenix/hw-pending-persist-io-failure-guard-20261127-utc16`; parent #362 at `eeddfc37d24d20ebc14641dfe3ffa247bbbc1ebd`.
+- Source/test SHA: `cca859a859c748a3a06653bbe217af7d81749eba`. Both ESP8266 and ESP32 now read back `/pending.new` through `readPendingFile()` and compare all persisted fields before backup/canonical rotation. Failed open, short read, corrupt bytes, legacy format or field mismatch aborts before rotation and RAM state publication.
+- Test-first RED: #46044749729 job 140661084265 failed with harness exit 14 on full-length corrupted write.
+- Focused push #46044948992 job 140661750430 PASS; focused PR #46044956444 job 140661774727 PASS. Each board: 17 persistence scenarios PASS; 18/18 unsafe mutations rejected.
+- Mbed #46044956381: source contract 140662066528, core 3.3.13 job 140662066496 and core 4.0.0 job 140662066238 PASS (3/3).
+- Full source-head #46044956380: handover freshness failed before validation; ESP8266, ESP32, Android and 11 firmware targets passed; downstream validation/simulation/update jobs skipped. Docs-head Full rerun required.
+- Native #46044956397 job 140661775342 remains failed at QA-owned PAY-0745. No QA source changed.
+- This is SIMULATED / CI VERIFIED filesystem readback, not power-loss durability or hardware acceptance. Physical LittleFS/electrical tests, 150 power cuts and 30-device/24-hour soak NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+- No positive coin path, relay enable, finance, shared API, migration, signer/witness, COE, device flash/reset, live money, merge or deployment.
