@@ -5,7 +5,7 @@
 - [UTC11 role ownership and exact-head CI](ROLE_ASSIGNMENTS.md) — current owner PRs, evidence, and next owner actions.
 - [UTC11 routing hold](REPOSITORY_ROUTING.md) — manifest status, source/destination pin mismatch, and no-migration disposition.
 
-Master branch at start: `db7e4684636db9bf097cee737dcc8a484812c168`; Experiments main `6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5`; development `aad3aade72c1156eecba1fed30907c6d0283b2c5`; COE main `a6513ab4412b4c014eee2863e45cbe32d06be5`; COE PR #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`.
+Master branch at start: `db7e4684636db9bf097cee737dcc8a484812c168`; Experiments main `6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5`; development `aad3aade72c1156eecba1fed30907c6d0283b2c5`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE PR #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`.
 
 PR #288 remains OPEN / DRAFT / UNMERGED; 657 ahead / 1 behind main; all 251 changed paths remain coordination/phoenix-only. COE #26 FROZEN; cleanup #266 OPEN / 0-of-7; P0 #177 OPEN; PRODUCTION NO-GO.
 
