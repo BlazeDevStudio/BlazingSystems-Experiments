@@ -3889,3 +3889,27 @@ This is the required documentation-first IN-PROGRESS record. No source/test resu
 - Mbed #46056036039 3/3 PASS: source contract `140698947089`, core 3.3.13 `140698947145`, core 4.0.0 `140698946770`.
 - Full #46056036335 controller parity job `140698695827` FAIL; handover freshness/CI-0701 PASS; all 13 firmware targets and Android PASS; downstream simulation/update/signing/publication skipped.
 - Active v0.6 branch unchanged; P0 #177 unresolved. Physical relay polarity, pulse retention, electrical recovery, 150 power cuts and 30-device/24-hour soak NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+
+
+## PHX-HW-20261127T19Z-OUTPUT-SEQUENCE-LAB-MODULE-SPLIT
+
+- Role: PHX-HARDWARE; tracking: cleanup-first #266 / Hardware #177 (no ownership transfer).
+- Branch: phoenix/hw-output-enable-lab-modules-20261128-utc19; parent DRAFT #365 at e65b0b895af9c3fc5e5632f704cb67b347e69725.
+- Source/test commit: ff73702adf6fb958c9f21ebe9a68c908ee829ea4.
+- Change: split output-enable sequence lab into source-contract/mutation helpers and a C++ host harness; retain the original entry-point command and all existing cases.
+- Workflow: .github/workflows/phx-hw-active-v06-poll-intake-deny.yml watches both new modules and this role branch.
+- Test status at this commit: NOT RUN on the new exact SHA; PR-triggered CI required. Parent #365 evidence is not transferred.
+- Physical GPIO/relay/polarity, coin pulse, power-cut and soak acceptance: NOT TESTED. HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
+- No production sketch, API, finance, QA-owned test, COE destination, secret, migration, signer, flash, reset, merge or deployment changed.
+- Updated UTC: 2026-11-27T19:31:19Z.
+
+## PHX-HW-20261127T19Z-OUTPUT-SEQUENCE-LAB-MODULE-SPLIT-CI-EVIDENCE
+
+- Role: PHX-HARDWARE; PR #366 DRAFT child of #365; branch: phoenix/hw-output-enable-lab-modules-20261128-utc19.
+- Source/test SHA: ff73702adf6fb958c9f21ebe9a68c908ee829ea4; evidence docs head: 9012440c1b80bf0b85d4399e7d37563e75014c62.
+- Focused run #46058803158 job 140707756468 PASS: 8/8 polarity scenarios, 14/14 mutations rejected; append-only ledger guard and existing hardware labs PASS.
+- Mbed run #46058803171 PASS 3/3: source contract 140708321000; core 3.3.13 140708321364; core 4.0.0 140708321346. A/B build hashes match within each core.
+- Full run #46058803255: CI-0701 140707777619 PASS; controller protocol parity 140707834236 FAIL; ESP8266 140707834283, ESP32 140707834337, Android 140707834353, and 11 OpenWrt firmware target jobs PASS; downstream update/simulation/signing/publication skipped.
+- This PR is a host-lab maintainability refactor only; no production sketch or shared API changed. Physical GPIO/relay, pulse retention, 150 power cuts and 30-device/24-hour soak NOT TESTED; HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
+- CHANGE_LEDGER parent prefix preserved byte-for-byte; focused append-only guard reports base_bytes=1132798 appended_bytes=43445.
+- Updated UTC: 2026-11-27T19:31:19Z.

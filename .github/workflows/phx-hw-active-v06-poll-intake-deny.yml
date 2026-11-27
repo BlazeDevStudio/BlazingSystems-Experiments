@@ -7,6 +7,7 @@ on:
       - phoenix/hw-pending-recovery-promotion-guard-20261127-utc10
       - phoenix/hw-pending-candidate-collision-guard-20261127-utc15
       - phoenix/hw-pending-recovery-contract-module-split-20261128-utc17
+      - phoenix/hw-output-enable-lab-modules-20261128-utc19
     paths:
       - 'experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino'
       - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/BlazePwifiVendo.ino'
@@ -17,6 +18,8 @@ on:
       - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/remote_config_deny_lab.py'
       - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/controller_request_auth_guard_lab.py'
       - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/output_enable_sequence_lab.py'
+      - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/output_enable_sequence_lab_contract.py'
+      - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/output_enable_sequence_lab_harness.py'
       - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/config_storage_integrity_lab.py'
       - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/config_persistence_write_result_lab.py'
       - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/pending_recovery_promotion_lab.py'
@@ -43,6 +46,8 @@ on:
       - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/remote_config_deny_lab.py'
       - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/controller_request_auth_guard_lab.py'
       - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/output_enable_sequence_lab.py'
+      - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/output_enable_sequence_lab_contract.py'
+      - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/output_enable_sequence_lab_harness.py'
       - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/config_storage_integrity_lab.py'
       - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/config_persistence_write_result_lab.py'
       - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/pending_recovery_promotion_lab.py'
