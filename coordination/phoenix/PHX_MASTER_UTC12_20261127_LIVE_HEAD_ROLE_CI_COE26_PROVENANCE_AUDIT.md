@@ -5,6 +5,12 @@
 **Execution:** connected GitHub API and repository tree/blob readback; no Codex; no authenticated local checkout; no Google Drive connector exposed.  
 **Disposition:** coordination-only; PR #288 OPEN / DRAFT / UNMERGED; COE #26 FROZEN; cleanup #266 OPEN / 0-of-7; P0 #177 OPEN; **PRODUCTION NO-GO**.
 
+## History integrity correction
+
+The first documentation commit, cfb1a86ba78b0cb71c6bd913dfddf430ac72e7c3, was accidentally created without the original base tree and briefly exposed an incomplete tree containing only the new coordination paths. It was immediately followed by restoration commit 56b5d13e1d9852fb58c726edab968bf3b22b522a, which rebuilt from the original parent tree 9c34673a0374c2538ed762882c831bb9169750df and reapplied the seven intended coordination-file changes.
+
+Direct blob-tree comparison from pre-update parent abdc32e0989c6a88ac8daa01b1b13b503f8bf037 to the restored state verified the full repository tree (2,594 entries) and exactly seven file changes: six coordination documents modified and this audit report added; zero non-coordination files changed. No force-push or history rewrite was used. The intermediate commit remains in history, but it is not the current branch tree. The current branch was verified at 56b5d13e1d9852fb58c726edab968bf3b22b522a before this correction note.
+
 ## 1. Live repository refs and Master PR
 
 - Experiments default branch: main at 6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5.
