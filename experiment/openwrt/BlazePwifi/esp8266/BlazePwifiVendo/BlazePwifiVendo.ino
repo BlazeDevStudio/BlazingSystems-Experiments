@@ -35,6 +35,26 @@ struct Config {
 
 Config cfg;
 
+bool parseGpioNumber(const char *text,int maximum,int &value){
+  if(!text || !*text) return false;
+  int parsed=0;
+  for(const char *cursor=text;*cursor;++cursor){
+    if(*cursor<'0'||*cursor>'9') return false;
+    int digit=*cursor-'0';
+    if(parsed>maximum/10 || (parsed==maximum/10 && digit>maximum%10)) return false;
+    parsed=parsed*10+digit;
+  }
+  value=parsed;
+  return true;
+}
+
+bool validRuntimePins(int coinPin,int relayPin,int ledPin){
+  if(coinPin<0||coinPin>16||relayPin<0||relayPin>16||ledPin<0||ledPin>16) return false;
+  if((coinPin>=6&&coinPin<=11)||(relayPin>=6&&relayPin<=11)||(ledPin>=6&&ledPin<=11)) return false;
+  return coinPin!=relayPin && coinPin!=ledPin && relayPin!=ledPin;
+}
+
+
 ESP8266WebServer web(80);
 const uint32_t MAGIC_V1=0x42505731;
 const uint32_t MAGIC=0x42505732;
@@ -334,6 +354,14 @@ void setupPortal(){
   });
 
   web.on("/save",HTTP_POST,[](){
+    int coinPin=0,ledPin=0,relayPin=0;
+    if(!parseGpioNumber(web.arg("coin").c_str(),16,coinPin) ||
+       !parseGpioNumber(web.arg("led").c_str(),16,ledPin) ||
+       !parseGpioNumber(web.arg("relay").c_str(),16,relayPin) ||
+       !validRuntimePins(coinPin,relayPin,ledPin)){
+      web.send(400,"text/plain","GPIO assignments invalid, overlapping, or flash-reserved; settings were NOT saved.");
+      return;
+    }
     String newSsid=web.arg("s"),newPass=web.arg("p").length()?web.arg("p"):String(cfg.pass);
     if(!verifyWifi(newSsid,newPass)){
       web.send(400,"text/plain","Wi-Fi verification failed. Settings were NOT saved. Setup mode remains active.");
@@ -341,7 +369,7 @@ void setupPortal(){
     }
     strlcpy(cfg.ssid,newSsid.c_str(),sizeof(cfg.ssid));strlcpy(cfg.pass,newPass.c_str(),sizeof(cfg.pass));
     strlcpy(cfg.server,web.arg("server").c_str(),sizeof(cfg.server));if(web.arg("k").length())strlcpy(cfg.key,web.arg("k").c_str(),sizeof(cfg.key));strlcpy(cfg.id,web.arg("id").c_str(),sizeof(cfg.id));
-    cfg.coinPin=web.arg("coin").toInt();cfg.insertLedPin=web.arg("led").toInt();cfg.relayPin=web.arg("relay").toInt();
+    cfg.coinPin=coinPin;cfg.insertLedPin=ledPin;cfg.relayPin=relayPin;
     if(!saveCfg()){
       denyRemoteControl();
       web.send(500,"text/plain","EEPROM commit failed; settings were not confirmed. Setup mode remains active.");
@@ -379,6 +407,10 @@ bool clearPending(bool committed){
 
 void setup(){
   Serial.begin(115200); loadCfg();
+  if(!validRuntimePins(cfg.coinPin,cfg.relayPin,cfg.insertLedPin)){
+    Serial.println("CRITICAL: invalid Vendo GPIO tuple; using board defaults while coin/relay remain denied.");
+    cfg.coinPin=4;cfg.insertLedPin=14;cfg.relayPin=5;cfg.coinActiveLow=1;
+  }
   runCoinPin=cfg.coinPin;runLedPin=cfg.insertLedPin;runRelayPin=cfg.relayPin;runCoinActiveLow=cfg.coinActiveLow;
   configureRuntimePins(runCoinPin,runRelayPin,runLedPin);
   denyRemoteControl();

@@ -48,9 +48,9 @@ def assert_source_contract(board: str, source: str) -> tuple[str, str]:
         coin_max, output_max = 16, 16
         defaults = ("cfg.coinPin=4;", "cfg.insertLedPin=14;", "cfg.relayPin=5;")
     else:
-        require("coinPin>39" in valid_code and "relayPin>33" in valid_code and "ledPin>33" in valid_code,
-                "ESP32: coin input must be 0..39 and output pins 0..33")
-        coin_max, output_max = 39, 33
+        require("coinPin>33" in valid_code and "relayPin>33" in valid_code and "ledPin>33" in valid_code,
+                "ESP32: GPIO roles must use pull-up-capable/output-capable GPIO 0..33")
+        coin_max, output_max = 33, 33
         defaults = ("cfg.coinPin=27;", "cfg.insertLedPin=2;", "cfg.relayPin=26;")
 
     setup = mask_non_code(extract_function(source, "void setup()"))
@@ -108,8 +108,7 @@ def harness(parse_fn: str, valid_fn: str, board: str) -> str:
     if (validRuntimePins(27,26,26)) return 12;
     if (validRuntimePins(2,26,2)) return 13;
     if (validRuntimePins(6,26,2) || validRuntimePins(27,11,2) || validRuntimePins(27,26,10)) return 14;
-    if (validRuntimePins(-1,26,2) || validRuntimePins(40,26,2) || validRuntimePins(27,34,2) || validRuntimePins(27,26,39)) return 15;
-    if (!validRuntimePins(34,26,2) || !validRuntimePins(39,26,2)) return 16;
+    if (validRuntimePins(-1,26,2) || validRuntimePins(34,26,2) || validRuntimePins(27,34,2) || validRuntimePins(27,26,39)) return 15;
 """
     return r"""
 #include <iostream>
