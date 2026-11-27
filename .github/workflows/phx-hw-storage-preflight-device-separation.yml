@@ -57,7 +57,7 @@ jobs:
           fi
           git cat-file -e "$base:$ledger"
           deleted="$(git diff --numstat "$base" HEAD -- "$ledger" | awk '{ total += $2 } END { print total + 0 }')"
-          printf 'CHANGE_LEDGER_DELETED_LINES=%s\\n' "$deleted"
+          printf 'CHANGE_LEDGER_DELETED_LINES=%s\n' "$deleted"
           if [[ "$deleted" -ne 0 ]]; then
             echo 'CHANGE_LEDGER_APPEND_ONLY_FAIL' >&2
             exit 1
