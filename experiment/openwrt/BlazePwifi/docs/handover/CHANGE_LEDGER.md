@@ -3787,3 +3787,14 @@ PR #354 remains OPEN / DRAFT / UNMERGED. PRs #239/#254/#283 remain OPEN / DRAFT 
 - The first docs sync commit `f1a4e360` was caught by focused guard #46017446457 after the oversized ledger read returned empty content. The full ledger was restored from original blob `19778170a05b3a71194ee29b23176ac398f28a29`; it begins with the complete #354 base blob `b950f7be47f79d71e6cb8b721801c1bae128df45`. The terminal focused run now confirms byte-level prefix preservation and append-only growth.
 - Parent #359 Native #45997708911 remains FAIL at QA-owned PAY-0745. This test-only increment did not alter that contract.
 - SIMULATED / CI VERIFIED only; physical acceptance NOT TESTED; HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+
+
+## 2026-11-27 — PHX-HARDWARE UTC15 pending journal candidate collision guard
+
+- PR #362: https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/362 (OPEN / DRAFT / UNMERGED; child of #361 → #359).
+- Branch: `phoenix/hw-pending-candidate-collision-guard-20261127-utc15`.
+- Firmware/test commit: `a45b2491f312f1d66e70f8caef5b55f49dec60bb`; harness assertion correction: `2768bf701945401aa6efed9c7c2573ed08b2b8cb`; workflow/current branch head: `7536b6568c186a35bcbde0cddff1c6774bfe6c6d`.
+- Fix: ESP8266/ESP32 pending recovery now fails closed before reading if more than one of `/pending.dat`, `/pending.new`, `/pending.bak` exists, preserving every candidate and publishing no RAM identity.
+- Focused exact-head PASS: push https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46028930317 job `140607427614`; PR https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46028937563 job `140607451486`. Both boards: 15 scenarios each, 2 rename failures, 6 ambiguity-preservation cases; 18/18 injected source mutations rejected.
+- Mbed source-contract PASS; 3.3.13/4.0.0 builds pending at sync. Full validation currently failed mandatory handover freshness before this append; rerun after sync. Native PAY-0745 remains QA-owned literal-assertion failure.
+- No shared CORE API, finance, receipt/disposition, signer/witness, migration, COE, or release behavior changed. Physical acceptance NOT TESTED; HARDWARE ACCEPTED NO; PRODUCTION NO-GO.
