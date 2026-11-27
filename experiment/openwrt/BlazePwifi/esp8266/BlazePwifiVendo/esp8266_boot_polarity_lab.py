@@ -113,6 +113,7 @@ def verify_boot_output_before_littlefs(source: str) -> None:
 def main() -> None:
     source = SOURCE.read_text(encoding="utf-8")
     verify_boot_output_before_littlefs(source)
+    verify_bootstrap_gpio_guard(source)
 
     # These checks intentionally fail on the pre-implementation source.
     for token, message in (
