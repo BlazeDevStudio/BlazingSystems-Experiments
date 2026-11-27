@@ -63,6 +63,26 @@ def assert_source_contract(source: str) -> str:
     require(short_write_pos > flush_pos and first_backup_cleanup > short_write_pos,
             "short-write refusal must precede every backup mutation")
 
+    readback_call = 'readPendingFile("/pending.new", verified, legacy)'
+    readback_pos = function.find(readback_call)
+    require(readback_pos > short_write_pos and readback_pos < first_backup_cleanup,
+            "the closed new journal must be read back before any existing candidate is rotated")
+    require(function.count(readback_call) == 1,
+            "exactly one validated readback of the new journal is required")
+    require("||legacy||" in function,
+            "a legacy-format readback must not be accepted as the new v2 record")
+    for field in ("magic", "version", "reserved", "acked_sequence", "sequence", "pulses", "checksum"):
+        require(f"verified.{field}!=state.{field}" in function,
+                f"readback must match the original {field}")
+    require("memcmp(verified.nonce,state.nonce,sizeof(state.nonce))!=0" in function,
+            "readback nonce must match the intended pending event")
+    require("memcmp(verified.target,state.target,sizeof(state.target))!=0" in function,
+            "readback target must match the intended pending event")
+    readback_log = function.find('Serial.println("CRITICAL: pending journal readback mismatch; preserving candidates.");')
+    require(readback_log > readback_pos and
+            function.find("return false;", readback_log) < first_backup_cleanup,
+            "readback mismatch must abort before canonical/backup rotation")
+
     state_pos = function.find("pendingSequenceState=state;")
     last_backup_cleanup = function.rfind('LittleFS.remove("/pending.bak")')
     return_true_pos = function.rfind("return true;")
@@ -175,13 +195,28 @@ def main() -> None:
             mutate_function(source, final_cleanup,
                             '  pendingSequenceState=state;\n'+final_cleanup),
         )
+        expect_rejected(
+            f"{board}-readback-uses-canonical-instead-of-new",
+            mutate_function(source,
+                            'readPendingFile("/pending.new", verified, legacy)',
+                            'readPendingFile("/pending.dat", verified, legacy)'),
+        )
+        expect_rejected(
+            f"{board}-readback-sequence-comparison-inverted",
+            mutate_function(source, "verified.sequence!=state.sequence",
+                            "verified.sequence==state.sequence"),
+        )
+        expect_rejected(
+            f"{board}-legacy-readback-accepted",
+            mutate_function(source, "||legacy||", "||false||"),
+        )
 
         output = compile_and_run(function, board.lower())
         require("PENDING_PERSIST_FAILURE_PASS scenarios=17" in output,
                 f"{board} persistence failure-injection harness did not complete")
         print(f"{board}: {output}")
 
-    print("PENDING_PERSIST_FAILURE_LAB_PASS boards=ESP8266,ESP32 mutations_rejected=12")
+    print("PENDING_PERSIST_FAILURE_LAB_PASS boards=ESP8266,ESP32 mutations_rejected=18")
 
 
 if __name__ == "__main__":

@@ -130,6 +130,22 @@ bool persistPendingSequence(const BpPendingSequence &state){
   size_t n=f.write((const uint8_t*)&state,sizeof(state)); f.flush(); f.close();
   if(n!=sizeof(state)){ LittleFS.remove("/pending.new"); return false; }
 
+  BpPendingSequence verified{};
+  bool legacy=false;
+  if(!readPendingFile("/pending.new", verified, legacy)||legacy||
+     verified.magic!=state.magic||
+     verified.version!=state.version||
+     verified.reserved!=state.reserved||
+     verified.acked_sequence!=state.acked_sequence||
+     verified.sequence!=state.sequence||
+     verified.pulses!=state.pulses||
+     memcmp(verified.nonce,state.nonce,sizeof(state.nonce))!=0||
+     memcmp(verified.target,state.target,sizeof(state.target))!=0||
+     verified.checksum!=state.checksum){
+    Serial.println("CRITICAL: pending journal readback mismatch; preserving candidates.");
+    return false;
+  }
+
   if(LittleFS.exists("/pending.bak") && !LittleFS.remove("/pending.bak")){
     Serial.println("CRITICAL: stale pending backup removal failed; preserving journal candidates.");
     return false;
