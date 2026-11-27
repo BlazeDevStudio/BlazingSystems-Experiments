@@ -6371,3 +6371,35 @@ Four exact license/notice counterparts were verified; four counterpart paths are
 ### CI and disposition
 
 COE #26 exact-head PR workflows: #43096752609, #43096752632, #43096752800, #43096752563 and #43096752557 — all QUEUED, zero jobs/check-runs. **FROZEN.** No staging, copy, move, overwrite, cherry-pick, rebase or destination write was performed. COE owner must reconcile pins, firmware blobs, test import, licenses and stale audit claims before any file-level proposal.
+
+---
+
+## UTC09 cross-repository exact-tree and migration-intake refresh — 2026-11-27
+
+Read-only tree comparison used Experiments #357 head a37a55dc9b9d6b51dad3383f2ad808548e57ba7c, historical pinned source 6d4c9b487af4d768c4d7627654d119417fcc6e00, and COE #26 candidate b382d233ff06c8791b1028bed3c617cc7b670d12. All three recursive trees were complete and non-truncated. Experiments #357 tree: 2,428 entries; COE #26 tree: 286 entries.
+
+| Area | Experiments source | COE #26 destination | Exact comparison |
+|---|---:|---:|---|
+| ESP32 board tree | 4 files | 1 file | 0 identical; 1 divergent sketch; 3 source-only files |
+| ESP8266 board tree | 14 files | 1 file | 0 identical; 1 divergent sketch; 13 source-only files |
+| Board-local Python labs/helpers | 12 files | 0 files | All 12 absent at destination |
+| OpenWrt rootfs overlay | 61 files | 62 files | 46 identical; 15 divergent; 1 destination-only file (blaze-appliance-diag) |
+| Tests | 151 files | 19 files | 2 identical; 2 divergent; 147 source-only; 15 destination-only |
+
+The current ESP32 sketch blob differs (source 321800051fac00828aa8830668c0c4f7e58c6e50; destination 3cc7ec54b476943dc04a8d1af5e2df5fe054e422). The current ESP8266 sketch blob differs (source 96fa83d9ae5404eefbad425e5b032db962fa45a4; destination c8be98f72596681e36a3ad1f8939bf8046c96887). Neither board sketch is byte-identical at the candidate SHA.
+
+### Pinned intake row and test-map reconciliation
+
+COE candidate SOURCE_INTAKE.json blob 1b9018ff944f7f673934d0fc2a97e0a0090d3f5f pins source commit 6d4c9b487af4d768c4d7627654d119417fcc6e00. All 61 runtime rows resolve to the exact source blob, destination blob and Git mode recorded by the manifest. Actual row statuses are 46 byte-identical and 15 derived_cleanup_review_required_real_router_test; the summary still declares 47 identical and 14 derived. The manifest's release_authorized, hardware_tested and full_ci_tested flags are all false.
+
+The same intake lists 4 original test files and 15 derived tests. MIGRATION_MAP.md blob b54fc15d83bc2269de03db8aadd0e76259fd13d9 contains 18 test rows (4 original + 14 derived), omits voucher_txn_journal.sh, and records stale hashes for run_focus.sh (map fa1f4f2c; intake 2b7b861e) and member_txn_journal.sh (map 01dc9c65; intake d04df3c6). The two original tests that remain byte-identical are portal.sh and security.sh; config.sh and integration.sh are edited.
+
+The intake and map still identify the destination branch as feature/pisowifi-cleanup-stabilization, while live PR #26 uses integration/ecosystem-nonproprietary-candidate-20261111 at b382d233. This branch-pin mismatch must be reconciled by the COE integration owner before any move or admission.
+
+### License and notice identity
+
+Four reviewed counterparts are exact: PisoWiFi product LICENSE, QRCode LICENSE, TailAdmin LICENSE and TailAdmin NOTICE. Four source notices are absent from the candidate destination mapping: repository NOTICE.md, Tabler LICENSE, Android Launcher LICENSE and jsqr LICENSE. This is path/blob identity evidence only, not a legal approval.
+
+The candidate's HARDWARE_FIRMWARE_AUDIT.md says the two controller sketches have not been copied, but the current COE #26 tree contains one divergent sketch under each board directory. The PR description's P0-1-resolved claim is not accepted as evidence: exact source/destination blobs diverge, the required source tests are incomplete at destination, and no exact-head candidate CI ran.
+
+COE #26 remains OPEN / DRAFT / FROZEN. Its five current workflow runs (BlazeRental Standalone CI, BlazeHardware & Shared Contracts CI, Pisowifi OpenWrt Overlay & Shell Suite, case-collision guard, and BlazePisonet SoftTimer Windows synthetic CI) are all CANCELLED; each has zero jobs and the candidate commit has zero combined commit statuses. No staging, copy, move, overwrite, rebase, cherry-pick or retarget was performed.

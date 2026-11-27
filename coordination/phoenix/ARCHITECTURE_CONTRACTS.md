@@ -2425,3 +2425,13 @@ HARDWARE-owned draft PR #356 current docs/PR head is `5c0f58db6a2df74390ca00d946
 - Final docs-head Full #45923906088 — FAILURE. ESP32 build job 140260850690 fails because `mbedtls/sha256.h` is unavailable; validation job 140260850694 also fails. 12/13 firmware/platform jobs and Android pass; downstream simulation, update, candidate, signing and publication jobs are skipped.
 
 This establishes only a synthetic topology guard. It does not prove separate enclosure/controller, physical media independence, disposability, actual mount safety, flash durability or power-cut behavior. Physical issue #34 remains NOT TESTED; no mount, block write, power cut, flash or customer install was performed.
+
+---
+
+## UTC09 interface-boundary refresh — 2026-11-27
+
+P0 #177 remains OPEN. The active v0.6 audit foundation is 2fbd2475e9f54878c316fa7cea2f228386b0e859; its synchronous poll-before-first-coin-sample behavior remains unresolved. Hardware owns local edge capture, strap-safe GPIO validation and deny/inhibit behavior. CORE owns the authenticated register/poll response, receipt identity and pending disposition contract. QA owns independent semantic and controller-parity assertions. MASTER owns only the cross-role interface contract and evidence matrix.
+
+Hardware #358 adds an ESP8266 boot-strap GPIO guard and a corrected test fixture. It does not implement the CORE poll-response signature, receipt/disposition semantics, or resolve P0 #177. Its Full CI still fails at the missing poll-signature contract. Related #357 Full validation and Native synthetic journal gates remain failed at QA/CORE-owned parity assertions. Do not invent config_revision or response_sig fields, and do not add an unsafe clearPending callsite merely to satisfy a literal assertion. Keep coin and relay admission deny-only until CORE and QA publish and independently verify the semantic contract.
+
+No physical GPIO/relay/coin test, power-cut test, 30-device/24-hour soak, protected signer/anti-rollback witness, or production financial migration was executed or approved in this refresh.

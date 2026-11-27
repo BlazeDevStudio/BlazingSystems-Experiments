@@ -1861,3 +1861,11 @@ UTC05 final refresh: HARDWARE owner updated PR #349 body to current source/test/
 - COE #26 remains FROZEN. Exact non-truncated tree comparison and mapped test/license/blob counts are in the UTC01 report and INTEGRATION_MATRIX.md. No destination staging or writes.
 - 23/23 read-only structural assertions passed; Master product suite and `verify_coordination.py` NOT RUN. Private Drive registry v11/newer corrections NOT_RECOVERED. Cleanup #266 remains OPEN / 0-of-7. PRODUCTION NO-GO.
 - No subsystem source, ownership manifest, COE destination, firmware, payment or release artifact changed.
+
+---
+
+## Latest live refresh — PHX-MASTER UTC09 (2026-11-27)
+
+The current owner and CI snapshot is appended to ROLE_ASSIGNMENTS.md; the exact source/destination tree, blob, test and license reconciliation is appended to INTEGRATION_MATRIX.md; the routing and stale source pin are recorded in REPOSITORY_ROUTING.md; the P0 interface boundary is recorded in ARCHITECTURE_CONTRACTS.md; and the 21/21 read-only audit result and remaining blockers are recorded in AUDIT_SUMMARY.md.
+
+Master branch before this refresh: fb18d3d7579eaa01e1cbaa3246355e485b2955f2. Master PR #288 remains open/draft/unmerged and coordination-only. Current Hardware owner work is #358 at d8c3261e (based on #353); COE #26 remains frozen at b382d233. No source branch or destination staging was changed. Production remains NO-GO.

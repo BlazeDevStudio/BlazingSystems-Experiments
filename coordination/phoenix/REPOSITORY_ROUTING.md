@@ -2259,3 +2259,15 @@ HARDWARE PR #356 changes only Hardware-owned source/lab/tooling and handover pat
 No current manifest route maps these `tools/` or issue #34 storage-preflight test paths to COE. Keep them in Experiments under Hardware ownership; do not invent a `Hardware/tools/` or `Hardware/tests/` destination route. Any future route requires COE owner path selection, exact blob/mode/license review, import completeness and exact-head CI before staging.
 
 COE #26 remains branch `integration/ecosystem-nonproprietary-candidate-20261111@b382d233ff06c8791b1028bed3c617cc7b670d12`, DRAFT / FROZEN. Its intake/map still pin the historical `6d4c9b48` source and `feature/pisowifi-cleanup-stabilization` destination branch; current source and destination heads differ. No route promotion or migration is authorized.
+
+---
+
+## UTC09 live routing and stack refresh — 2026-11-27
+
+The machine routing manifest remains blob e4db324315a1b3543fec17a148fbf960170fcb29, status DRAFT_REVIEW_ONLY, with 11 routes. PHX-MASTER remains coordination-only with target null. Its source_ref is still historical Experiments main f4e8a891aed8af86d5fd315d28750a0ac3a7372b, while live Experiments main is 6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5. COE candidate pin remains b382d233ff06c8791b1028bed3c617cc7b670d12. Do not treat the stale source_ref as current migration authority and do not change the manifest without registry-custodian review.
+
+Live branch heads: Experiments main 6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5; blazepwifi-v0.5.3-development aad3aade72c1156eecba1fed30907c6d0283b2c5; phoenix/master-coordination before this refresh fb18d3d7579eaa01e1cbaa3246355e485b2955f2; COE main a6513ab4412b4c014eee2863e45cbe32d06cb243 (3-entry scaffold).
+
+Master PR #288 remains OPEN / DRAFT / UNMERGED. Its recorded base is main@f4e8a891; live main is 6be5d19b. GitHub compare reports 655 commits ahead / 1 behind, merge base f4e8a891. All 250 existing PR paths are under coordination/phoenix/. No rebase or merge was performed.
+
+Hardware owner stack: #358 head d8c3261e is based on #353 head f527b33c, preserving #353 → #352 → #349 ancestry; #357 head a37a55dc is based on #355 head 9f7a8ecb, which is based on #354; #356 remains separate. PHX-MASTER did not touch these source branches. CORE, RENTAL, PISONET, HARDWARE, QA and RELEASE source ownership remains with their assigned owners.

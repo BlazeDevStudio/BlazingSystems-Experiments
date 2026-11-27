@@ -5073,3 +5073,23 @@ Master #288 starts at 0730fff529d62ae2b6c436e14cfd520025291f6c; no Master PR-tri
 | COE integration #26 | `b382d233ff06c8791b1028bed3c617cc7b670d12` | Five workflows queued, zero jobs/check-runs; FROZEN. |
 
 **Ownership boundary:** PHX-MASTER changed no subsystem source. CORE remains reserved to its separate continuation. #356 is HARDWARE-owned read-only storage-preflight tooling; it has no destination route in the current 11-route ownership manifest. Do not add a route or copy these tools into COE without owner-approved path mapping. #266 remains OPEN / 0-of-7.
+
+---
+
+## UTC09 live owner-head refresh — 2026-11-27
+
+This is an additive current-state pin. Earlier checkpoints remain historical. No role ownership or source-branch authority changes are implied.
+
+| Role | Current owner PR / exact head | Exact-head CI evidence | Current disposition |
+|---|---|---|---|
+| PHX-CORE | #252 — c82705f2de865c89ab733b10efa84f26f56a5cc4 | Build #42698139210 PASS | Separate CORE owner automation remains active; MASTER did not modify CORE. |
+| PHX-RENTAL | #328 — 10fc200b6dbf470a95e679d3acc58aff4ab2a67f | API21 emulator #45622918364 PASS; native-auth installer #45622918551 PASS; APK identity #45622918340 PASS; shared build #45622918468 FAIL | DRAFT; shared build blocker remains. |
+| PHX-PISONET | #255 — d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | Windows synthetic release #42462978704 PASS | DRAFT; synthetic result is not hardware acceptance. |
+| PHX-HARDWARE | Active #358 — docs/PR head d8c3261e9b8aac2637c4395e5c92285bf7d8df53; source/test af3ed03db1c07a950ad27adc3e18f27a1afc1ec6; base #353 f527b33c9e391a9a66490388d96f06d6c8761dfa | Relay #45976531381 PASS; Quarantine #45976531391 PASS; Full #45976531386 FAIL at missing CORE poll-signature contract | OPEN / DRAFT / UNMERGED; pin guard and fixture only; coin/relay admission remains deny-only. |
+| PHX-HARDWARE | Related #357 — docs/PR head a37a55dc9b9d6b51dad3383f2ad808548e57ba7c; source/test 32f63aa335714d63fba8bae406a102a8d5d191e9; base #355 9f7a8ecb915cf199a82c0b4d37c56c40d722037b | Poll #45974563611 PASS; Mbed TLS #45974563443 PASS; Full #45974563563 FAIL; Native #45974563682 FAIL | OPEN / DRAFT / UNMERGED; no Master changes to the branch. |
+| PHX-HARDWARE | Related #355 — 9f7a8ecb915cf199a82c0b4d37c56c40d722037b | Poll #45948626013 PASS; Mbed TLS #45948625942 PASS; Full #45948625969 FAIL; Native #45948626003 FAIL | OPEN / DRAFT / UNMERGED; remains parent of #357 through #354. |
+| PHX-HARDWARE | Related #356 — 0ea32d31ed5c902b2187d98c181aab14bc9fdeae | Storage preflight #45940999149 PASS; Mbed TLS #45940999085 PASS; Full #45940999134 PASS (26 passed / 0 failed / 4 production stages skipped); Native #45940999113 PASS | OPEN / DRAFT / UNMERGED; simulated preflight only. |
+| PHX-QA | #290 — 5c29d15994cee1279058f1eca12f2a3180704292; #292 — 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | #290 Windows #43633486963 PASS; #292 has zero exact-head workflow runs and zero commit statuses | OPEN / DRAFT; no QA gate inferred from the older PR. |
+| PHX-RELEASE | #291 — bf339a76964a1abe2412fac45392fe06a8e66418 | Zero exact-head workflow runs/statuses | OPEN / DRAFT; no release authorization inferred. |
+
+The Hardware stacks remain separate: #358 is based on #353; #357 is based on #355; #355 is based on #354; #356 is an independent storage-preflight line. Preserve #353 → #352 → #349 ancestry and do not restack another role's branch. All listed PRs remain unmerged.
