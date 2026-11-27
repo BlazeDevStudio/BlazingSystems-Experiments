@@ -3776,3 +3776,14 @@ PR #354 remains OPEN / DRAFT / UNMERGED. PRs #239/#254/#283 remain OPEN / DRAFT 
 - Source/test focused [#46016953274](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46016953274), job `140566402392`: PASS. Mbed [#46016953049](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46016953049): 3/3 PASS (source contract, Arduino core 3.3.13 and 4.0.0).
 - Pre-sync Full [#46016953164](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46016953164): terminal FAILURE at the mandatory handover freshness gate; 13 jobs succeeded, 6 skipped, 9 cancelled, and 1 validation job failed. No Full PASS or complete target matrix is claimed.
 - No firmware sketch, shared API, QA-owned test, financial state, signer/witness, migration, COE destination, or release operation changed. Physical acceptance NOT TESTED; HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+
+
+## 2026-11-27 — PHX-HARDWARE UTC14 terminal docs-head CI and ledger restoration proof
+
+- PR #361 docs/evidence head tested: `8b687a0407d8b53e8ae7213c7db05c7d89778501`; source/test SHA: `4a85070a1f6a1caa417570a91dcdf355ff072fcc`; parent #359 `47357aab2ff7910b38ca538a46dfa01bdbca01e8`.
+- Exact focused [#46017755525](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46017755525), job 140569149552: PASS; append-only guard `base_bytes=1132798 appended_bytes=24007`; 11 pending-recovery scenarios per board; rename-failure and ambiguous-preservation cases passed; emitted mutation probes passed.
+- Exact Mbed [#46017755424](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46017755424): 3/3 PASS (source contract, core 3.3.13 and core 4.0.0).
+- Exact Full [#46017755412](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46017755412): FAIL at `tests/controllers.sh:21` (`config_revision` token parity) in validation job 140569371672; CI-0701 PASS; 13/13 firmware target jobs and Android PASS; 13 downstream jobs SKIPPED.
+- The first docs sync commit `f1a4e360` was caught by focused guard #46017446457 after the oversized ledger read returned empty content. The full ledger was restored from original blob `19778170a05b3a71194ee29b23176ac398f28a29`; it begins with the complete #354 base blob `b950f7be47f79d71e6cb8b721801c1bae128df45`. The terminal focused run now confirms byte-level prefix preservation and append-only growth.
+- Parent #359 Native #45997708911 remains FAIL at QA-owned PAY-0745. This test-only increment did not alter that contract.
+- SIMULATED / CI VERIFIED only; physical acceptance NOT TESTED; HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
