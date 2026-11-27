@@ -225,11 +225,11 @@ def verify_deny_latch_monotonicity(name: str, source: str) -> None:
         raise AssertionError(f"{name}: unsafe deny-latch mutation survived: {label}")
 
     for flag in ("controllerEnabled", "coinEnabled", "relayEnabled", "ledEnabled", "insertMode"):
-        mutated = source.replace("delay(2);", f"{flag}=true;\\n    delay(2);", 1)
+        mutated = source.replace("delay(2);", f"{flag}=true;\n    delay(2);", 1)
         expect_rejected(f"{flag}-re-enable-outside-deny", mutated)
 
     mutated = source.replace(
-        "delay(2);", 'activeTarget = "stale-target";\\n    delay(2);', 1
+        "delay(2);", 'activeTarget = "stale-target";\n    delay(2);', 1
     )
     expect_rejected("stale-target-restore-outside-deny", mutated)
 
