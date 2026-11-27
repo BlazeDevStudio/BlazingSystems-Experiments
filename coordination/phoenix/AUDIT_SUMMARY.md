@@ -1,3 +1,20 @@
+## PHX-MASTER UTC13 — live audit summary
+
+**Updated:** 2026-11-27T13:11:40Z  
+**Role / task:** PHX-MASTER / PHX-MASTER-UTC13-20261127  
+**Execution:** exact GitHub branch, PR, issue, workflow, recursive-tree and blob inspection; no Codex; no local checkout; no Google Drive connector.  
+**Disposition:** coordination-only; PR #288 OPEN / DRAFT / UNMERGED; COE #26 FROZEN; cleanup #266 OPEN / 0-of-7; P0 #177 OPEN; **PRODUCTION NO-GO**.
+
+Experiments main is 6be5d19b; active v0.6 development is 2fbd2475; legacy v0.5.3 development is aad3aade; COE main is a6513ab; COE #26 is b382d233. Master parent at audit start is fa6f1603. PR #288's 252 pre-update changed paths were all coordination/phoenix-only; no Master exact-head workflow run or combined status exists.
+
+Owner CI remains mixed: CORE #252 scoped build PASS; RENTAL #328 focused Android/auth checks PASS but shared build FAIL; PISONET #255 synthetic Windows PASS; HARDWARE #358/#359/#360 focused checks PASS but Full parity and #359 Native semantic gates FAIL; QA #290 Windows PASS without native COM lab execution and #292 no run; RELEASE #291 no exact-head run. No physical acceptance is implied.
+
+COE #26 remains FROZEN: source/destination tree, firmware, test, intake, license/NOTICE and branch pins remain inconsistent; all five candidate workflows are CANCELLED. No staging or migration was performed. Active v0.6 still performs synchronous poll before first coin sample on both ESP boards with a 3,500 ms timeout.
+
+The canonical private v11 registry and newer corrections remain NOT_RECOVERED; no older snapshot was substituted. Master Python suite and verify_coordination.py were NOT RUN without an authenticated local checkout. No Master Actions result is claimed. No subsystem source, manifest, destination file, financial state or hardware was changed. **PRODUCTION NO-GO.**
+
+---
+
 ## PHX-MASTER UTC12 — live audit summary
 
 **Updated:** 2026-11-27T12:41:33Z  

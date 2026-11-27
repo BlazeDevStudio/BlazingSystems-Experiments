@@ -1,3 +1,23 @@
+## PHX-MASTER UTC13 — 2026-11-27 live role PR and exact-head CI reconciliation
+
+No ownership changed. CORE, RENTAL, PISONET, HARDWARE, QA and RELEASE source branches remain with their assigned owners. CORE remains reserved to the separate active continuation. PHX-MASTER changed only coordination/phoenix/.
+
+| Role / PR | Exact current head | Exact-head CI | Owner action / boundary |
+|---|---|---|---|
+| PHX-MASTER #288 | fa6f16038e535fbca36d4906bebe3d79632370e4 at audit start | No workflow runs or combined statuses; pre-update 252 paths, all coordination-only. | Coordination/architecture/provenance only; no rebase or merge. |
+| PHX-CORE #252 | c82705f2de865c89ab733b10efa84f26f56a5cc4 | Build #42698139210 PASS (scoped only). | CORE remains owner-reserved; no MASTER source work. |
+| PHX-RENTAL #328 | 10fc200b6dbf470a95e679d3acc58aff4ab2a67f | API21/23 #45622918364, auth/installer #45622918551 and APK identity #45622918340 PASS; shared build #45622918468 FAIL. | RENTAL owns shared build/handover correction. |
+| PHX-PISONET #255 | d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | Windows synthetic #42462978704 PASS. | Native COM/device acceptance NOT TESTED. |
+| PHX-HARDWARE #358 | fc8b429b9c73a6fee0b0732f6d82b2c5c550e75c | Relay #46001496577 and Quarantine #46001496578 PASS; Full #46001496571 FAIL at Controller protocol parity. | HARDWARE owns firmware/fixture; QA/CORE own semantic contract. |
+| PHX-HARDWARE #359 | 47357aab2ff7910b38ca538a46dfa01bdbca01e8 | Poll #45997708842 and Mbed #45997708753 PASS; Full #45997708895 FAIL at Controller protocol parity; Native #45997708911 FAIL at PAY-0745. | HARDWARE owns recovery source; QA/CORE own disposition semantics. |
+| PHX-HARDWARE #360 | b1a709c2281f958ed295139523a52817af4459fd | Poll #45997731187 and Mbed #45997731166 PASS; Full #45997731177 FAIL at Controller protocol parity. | HARDWARE owns no-actuation outcome matrix; does not resolve P0 #177. |
+| PHX-QA #290 / #292 | 5c29d15994cee1279058f1eca12f2a3180704292 / 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | #290 Windows synthetic #43633486963 PASS but does not invoke native COM lab; #292 has zero PR-triggered runs. | QA must independently verify current semantic contract. |
+| PHX-RELEASE #291 | bf339a76964a1abe2412fac45392fe06a8e66418 | Zero exact-head PR-triggered runs. | RELEASE owns signing/publisher evidence. |
+
+All listed role PRs remain OPEN / DRAFT / UNMERGED. Owner CI is not Master test execution or hardware acceptance.
+
+---
+
 ## PHX-MASTER UTC12 — 2026-11-27 live role PR and exact-head CI reconciliation
 
 No ownership changed. CORE, RENTAL, PISONET, HARDWARE, QA and RELEASE source branches remain with their assigned owners. PHX-MASTER did not modify subsystem source or COE destination files.

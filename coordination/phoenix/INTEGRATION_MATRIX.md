@@ -1,3 +1,21 @@
+## PHX-MASTER UTC13 — exact #358 source versus COE #26 destination revalidation
+
+Complete, non-truncated recursive trees were re-read at immutable commits: source #358 fc8b429b9c73a6fee0b0732f6d82b2c5c550e75c (tree 64ee06a5d2a858b7b2728c1fe44b458d1913a1a6; 2,575 entries / 1,996 blobs) and destination #26 b382d233ff06c8791b1028bed3c617cc7b670d12 (tree 8a7d4cf81d7227118b876c1138dd2da12345fefa; 286 entries / 207 blobs).
+
+| Route | Source / destination | Identical | Divergent | Source-only | Destination-only |
+|---|---:|---:|---:|---:|---:|
+| PisoWiFi tests | 47 / 19 | 1 | 3 | 43 | 15 |
+
+Both board sketches diverge: ESP32 source 8154297e30e72d82692987ed5690983df4955aea vs destination 3cc7ec54b476943dc04a8d1af5e2df5fe054e422; ESP8266 source 64faba024f0edd6b88b5331ce043745f74a8b3e2 vs destination c8be98f72596681e36a3ad1f8939bf8046c96887.
+
+After deduplicating the source's repeated QRCode license blob, 8 unique product LICENSE/NOTICE artifacts are present in source and 4 in destination; 4 exact counterparts exist and 4 unique source artifacts lack counterparts (root NOTICE.md, Tabler LICENSE, Android Launcher LICENSE and Android assets/license.html). This is not legal approval.
+
+SOURCE_INTAKE runtime rows: 61; declared 47 identical / 14 derived, actual 46 / 15. SOURCE_INTAKE lists 15 derived tests; MIGRATION_MAP contains 14 derived-test rows and omits voucher_txn_journal.sh. run_focus.sh and member_txn_journal.sh blob pins differ between the two files. The destination HARDWARE_FIRMWARE_AUDIT.md claim that sketches were not copied conflicts with the exact tree, which contains divergent ESP32 and ESP8266 sketches.
+
+The route manifest remains DRAFT_REVIEW_ONLY with PHX-MASTER target null. SOURCE_INTAKE/MIGRATION_MAP pins a historical source and a destination branch different from live PR #26. All five candidate workflows are CANCELLED. No staging or destination write occurred; keep #26 FROZEN.
+
+---
+
 ## PHX-MASTER UTC12 — exact source candidate versus COE #26 destination
 
 All recursive trees are complete and non-truncated. Hardware #358 source candidate fc8b429b9c73a6fee0b0732f6d82b2c5c550e75c has 2,575 entries / 1,996 blobs; COE #26 destination b382d233ff06c8791b1028bed3c617cc7b670d12 has 286 entries / 207 blobs.

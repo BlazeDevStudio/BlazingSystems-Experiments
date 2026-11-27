@@ -1,3 +1,13 @@
+## Latest live refresh — PHX-MASTER UTC13 (2026-11-27T13:11Z)
+
+- [UTC13 full exact-head, role CI and COE provenance revalidation](PHX_MASTER_UTC13_20261127_LIVE_HEAD_ROLE_CI_COE26_PROVENANCE_AUDIT.md).
+- [UTC13 role PR and exact-head CI matrix](ROLE_ASSIGNMENTS.md); [UTC13 source/destination tree and test/license matrix](INTEGRATION_MATRIX.md); [UTC13 blockers and execution limits](AUDIT_SUMMARY.md).
+- Live refs: Experiments main 6be5d19b; active v0.6 development 2fbd2475; legacy v0.5.3 development aad3aade; Master parent fa6f1603; COE main a6513ab; COE #26 b382d233.
+- PR #288 remains OPEN / DRAFT / UNMERGED; its pre-update head was fa6f1603, with 252 changed paths all under coordination/phoenix/. Master exact-head runs/statuses are empty.
+- COE #26 remains FROZEN; cleanup #266 OPEN / 0-of-7; P0 #177 OPEN; **PRODUCTION NO-GO**.
+
+---
+
 ## Latest live refresh — PHX-MASTER UTC12 (2026-11-27T12:41:33Z)
 
 - [UTC12 full exact-head, role CI and COE provenance audit](PHX_MASTER_UTC12_20261127_LIVE_HEAD_ROLE_CI_COE26_PROVENANCE_AUDIT.md).
