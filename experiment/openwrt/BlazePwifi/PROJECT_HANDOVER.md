@@ -1,3 +1,21 @@
+# BlazePwifi — CURRENT STATUS (2026-11-28 UTC17)
+
+**Role:** PHX-HARDWARE. **Current work:** [DRAFT PR #364](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/364), child of #362 → #361 → #359 → #355 → #354.  
+**Branch:** `phoenix/hw-pending-recovery-contract-module-split-20261128-utc17`  
+**Exact source/test SHA:** `f77869c4efdf34416526be67728c81197b00c25e`  
+**Documentation head before this checkpoint:** `933b2357cbd9ff43248d96238c1512de6e2da855`  
+**Scope:** host-lab modularization only; no ESP8266/ESP32 production sketch or runtime behavior changed.
+
+**Focused CI:** push #46040057882 job 140645199676 PASS; PR #46040095413 job 140645324512 PASS. Both boards: 15 recovery scenarios, six ambiguous-preservation cases, 18/18 unsafe mutations rejected. Mbed #46040095422: source-contract + core 3.3.13 + 4.0.0 PASS (3/3).
+
+**Full CI:** prior Full validation failed the mandatory handover gate because the source correction had not yet been appended to `CHANGE_LEDGER.md`. This checkpoint appends the exact source/test SHA and failed-attempt history; a fresh post-ledger Full run is required. Parent controller-parity and QA-owned Native failures are not transferred to this child.
+
+**Release state:** physical LittleFS/electrical/relay acceptance, 150 power cuts, 30-device/24-hour soak, protected anti-rollback witness, durable accounting/replay, v1→v2 migration and independent QA/release acceptance remain NOT TESTED / NOT ACCEPTED. HARDWARE ACCEPTED = NO. PRODUCTION READY = NO-GO. No flash, reset, live money, migration, merge, release or deployment.
+
+**Process note:** the required pre-change `IN PROGRESS` marker in `CURRENT_STATE.md` was not created before the first source commit. This checkpoint records that sequencing miss retrospectively; future activations must write the in-progress record before source edits.
+
+---
+
 
 
 ## PHX-HARDWARE UTC13 — post-sync exact-head terminal CI
