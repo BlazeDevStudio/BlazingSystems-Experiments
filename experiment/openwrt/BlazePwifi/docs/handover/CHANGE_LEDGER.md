@@ -3828,3 +3828,19 @@ No shared API, QA-owned test, financial code, migration, signer, witness, COE de
 ### Next exact action
 
 Complete the post-handover exact-head Full and Native reads. PHX-QA/PHX-CORE still own the Controller protocol and pending-disposition contract blockers; PHX-MASTER owns the integration matrix. Hardware retains #357 DRAFT/unmerged.
+
+## 2026-11-27 17:21 Asia/Manila — PHX-HARDWARE ESP32 strapping GPIO role guard
+
+- **ID / scope:** PHX-HW-ESP32-STRAP-UTC09; Hardware-owned ESP32 Vendo runtime GPIO role validation on PR #357.
+- **status:** `validated` for focused source-extracted policy/mutation tests and ESP32 build matrix; overall integration remains `blocked` by pre-sync handover freshness and QA-owned PAY-0745 assertion. **priority:** P1 board boot/electrical safety.
+- **branch:** `phoenix/hw-runtime-pin-config-guard-20261127-utc04`; PR #357 OPEN / DRAFT / UNMERGED; base #355 `9f7a8ecb915cf199a82c0b4d37c56c40d722037b`.
+- **source commits:** `cd5b0cc0e2d721e59916f63c7ebf95a21c9cb2db` (ESP32 guard + first matrix); `32f63aa335714d63fba8bae406a102a8d5d191e9` (independent non-overlapping role cases + precise GPIO2 LED exception comment). Preflight `CURRENT_STATE` commit: `3208276216640687acd7ba5f7210c083c51e34b4`.
+- **paths:** `experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino`; `experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/runtime_pin_config_lab.py`; canonical handovers and new narrow UTC09 record.
+- **why:** ESP32 GPIO0/2/5/12/15 are documented strapping pins. Reject all five for coin/relay; reject 0/5/12/15 for LED; retain GPIO2 only for the LED role to preserve the current default tuple 27/26/2. GPIO2 external circuit/board revision remains unmeasured.
+- **tests:** focused PR #45972810167 job 140417125204 PASS; focused push #45972801632 job 140417096963 PASS; ESP32 Mbed TLS #45972810179 jobs 140417258436/140417257943/140417258338 PASS 3/3. Mutation removing the strap guard rejected; each strap role tested independently.
+- **Full:** #45972810260 at source/test SHA 32f63aa — 14/14 target/platform builds PASS; validation failed at `handover_gate.sh` freshness because the final source evidence had not yet been synchronized. This is pre-sync evidence, not a terminal Full pass.
+- **Native:** #45972810157 job 140417125670 FAIL at QA-owned `tests/v060_vendo_sequence_contract.py:20` requiring `clearPending(true/false)` callsites; preceding sequence shell contract passed. No unsafe callsite added.
+- **reversibility:** revert the two source/test commits on the draft branch; no mainline/production change, flash, reset, migration or persisted device config operation.
+- **blockers:** post-sync Full rerun; QA-owned pending disposition assertion; CORE authenticated register/poll/receipt/disposition contract; physical GPIO/relay/coin/power acceptance; 150 power cuts; 30-device/24-hour soak; protected signer/witness; v1→v2 durable accounting/replay; independent QA/release approval.
+- **NEXT ACTION:** rerun Full on the final documentation-synchronized PR HEAD and preserve all deny-only behavior.
+

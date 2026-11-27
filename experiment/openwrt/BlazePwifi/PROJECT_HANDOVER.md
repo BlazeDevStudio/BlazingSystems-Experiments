@@ -1,3 +1,44 @@
+## PHX-HARDWARE UTC09 — ESP32 strapping GPIO role guard (SCOPED CI VERIFIED; INTEGRATION BLOCKED)
+
+**Task:** bounded Hardware-owned extension of PR #357; no new branch or PR.
+**Branch:** `phoenix/hw-runtime-pin-config-guard-20261127-utc04`
+**PR:** [#357](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/357), OPEN / DRAFT / UNMERGED.
+**PR base:** `phoenix/hw-poll-preflight-lab-modules-20261127-utc18` at `9f7a8ecb915cf199a82c0b4d37c56c40d722037b`.
+**Source/test SHA:** `32f63aa335714d63fba8bae406a102a8d5d191e9` (initial implementation `cd5b0cc0e2d721e59916f63c7ebf95a21c9cb2db`; preflight `3208276216640687acd7ba5f7210c083c51e34b4`).
+
+### Defect and bounded correction
+
+The ESP32 `validRuntimePins()` previously rejected out-of-range, flash-reserved and overlapping assignments but accepted ESP32 strapping pins for coin/relay/LED roles. The source now rejects GPIO0/GPIO2/GPIO5/GPIO12/GPIO15 for coin and relay, and GPIO0/GPIO5/GPIO12/GPIO15 for LED. The existing default `(coin=27, relay=26, LED=2)` remains valid; GPIO2 is retained only for the LED role to preserve the existing default mapping.
+
+GPIO2 remains an explicit electrical caveat: Espressif documents GPIO2 as a strapping pin and requires it low/floating for serial-download boot. Its current LED circuit and exact board revision have not been measured. The software exception is not physical acceptance. References: [ESP32 boot-mode selection](https://docs.espressif.com/projects/esptool/en/latest/esp32/advanced-topics/boot-mode-selection.html) and [ESP32 DevKitC strapping pins](https://docs.espressif.com/projects/arduino-esp32/en/latest/boards/ESP32-DevKitC-1.html).
+
+The source-extracted `runtime_pin_config_lab.py` now tests each strap pin independently for coin/relay and non-default LED roles, preserves the existing GPIO2 LED default, and removes the complete strap guard as a negative mutation. Coin/relay admission remains denied; no authenticated response consumer or pending-clear behavior was added.
+
+### Exact-head evidence at source/test SHA
+
+- Focused PR [#45972810167](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45972810167), job `140417125204`: **PASS**. ESP8266 and ESP32 policy harnesses pass; `RUNTIME_GPIO_MUTATION_REJECTED ESP32 boot-strap-guard-removed`; `RUNTIME_GPIO_FAILURE_INJECTION_PASS ESP32`; `RUNTIME_GPIO_CONFIG_SIMULATED_ONLY=1`; physical GPIO/relay acceptance explicitly 0.
+- Focused push [#45972801632](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45972801632), job `140417096963`: **PASS**.
+- ESP32 Mbed TLS matrix [#45972810179](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45972810179): **3/3 PASS** (source contract, Arduino core 3.3.13, core 4.0.0). Exact staged source-tree SHA-256 `406f60258b9eac7c649cda02f2244cdd4f26195a5bb532dcd59e55fd7d978564`; reproducible core 3.3.13 image SHA-256 `035af403490e3810fd1dcacc2be4cbd1b159c2fd235be34e7b2dbbd6ad76af4f`; core 4.0.0 image SHA-256 `a49883bd380e37e5c1c997f96e6657c06f30d5285dbae89d865ed854b25a20ba` (clean A/B outputs match within each core).
+- Pre-sync Full [#45972810260](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45972810260): all 14/14 target/platform build jobs **PASS**, but overall validation **FAIL** at the mandatory handover-freshness gate because this source change had not yet been synchronized into `PROJECT_HANDOVER.md`. This run is explicitly pre-sync and is not terminal integration evidence.
+- Native [#45972810157](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45972810157), job `140417125670`: **FAIL** at QA-owned `tests/v060_vendo_sequence_contract.py:20`, which requires literal `clearPending(true/false)` callsites after the preceding pending-sequence shell contract passes. Hardware did not add an unsafe clear workaround.
+
+### Ownership, scope and release status
+
+Only the ESP32 Vendo sketch and Hardware-owned GPIO regression lab changed in the source/test commits. No shared API, CORE financial/receipt code, QA-owned test, signer, witness, migration, COE destination, release workflow or production configuration changed. PR #357 remains draft/unmerged.
+
+Active v0.6 P0 #177 remains unresolved on the unmerged development base; PR #354 is deny-only and does not authorize positive coin admission. CORE still owns authenticated register/poll/receipt/disposition; QA owns independent semantic assertions; MASTER owns integration matrix and stack.
+
+Physical GPIO strap levels, relay contacts, coin pulse, brownout recovery, 150 power cuts, 30-device/24-hour soak remain **NOT TESTED**. Protected anti-rollback signer/witness, durable accounting/replay, v1-to-v2 migration and independent QA/release signoff remain **NOT ACCEPTED**. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+
+Google Drive registry `BLAZE_PROJECT_REGISTRY_v11_20261027.json` was not available through the connected tools in this activation. Older v4-v7 registry snapshots were not substituted.
+
+### Next exact action
+
+Run the Full BlazePwifi workflow again on the final documentation-synchronized PR HEAD; then reconcile any remaining QA-owned controller/pending-disposition assertions without relaxing the deny-only safety boundary.
+
+---
+
+
 ## PHX-HARDWARE UTC07 — ESP8266 boot-strap GPIO role rejection (2026-11-27)
 
 **Task:** PR #357, Hardware-owned runtime GPIO validation hardening  
