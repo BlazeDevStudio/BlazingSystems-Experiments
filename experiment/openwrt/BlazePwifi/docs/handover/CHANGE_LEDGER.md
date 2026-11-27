@@ -4031,3 +4031,20 @@ Private \`BLAZE_PROJECT_REGISTRY_v11_20261027.json\` remains NOT RECOVERED; no s
 - **Safety:** no production sketch, shared CORE API, QA assertion, finance, signer, witness, migration, release setting, COE destination or Master-owned matrix changed. No physical flashing, reset, live-money test, production migration, signing, merge, tag or deployment.
 - **Next exact action:** PHX-QA/CORE reconcile controller parity without inserting an unauthenticated `config_revision`; PHX-MASTER refresh #367 role/integration matrix; PHX-HARDWARE revalidate exact head after those reviews. P0 #177 and all physical/financial release gates remain open.
 - **Sequencing deviation:** the pre-change IN_PROGRESS marker was not committed before the initial source/test correction; this is disclosed, not backdated.
+
+## 2026-11-27 — PHX-HARDWARE UTC23 — deny-latch rvalue/decltype reference-escape coverage
+
+- **ID:** PHX-HW-PR367-RVALUE-DECLTYPE-20261127T23
+- **Local time:** 2026-11-28 07:34:21 Asia/Manila; **UTC:** 2026-11-27T23:34:21Z
+- **Scope / priority / status:** Hardware-owned deny-latch source-contract and failure-injection lab; P1; `committed_untested` (isolated regex smoke passed; repository lab and exact-head CI not run).
+- **Repository / branch / PR:** `BlazeDevStudio/BlazingSystems-Experiments`; `phoenix/hw-deny-latch-monotonicity-20261127-utc21`; PR #367 OPEN / DRAFT / UNMERGED; base #366 `07fef4e8e1055c06cf5e5c3a0d3829c52be31cc9`.
+- **Source/test commit:** `1922dcba792aad40e576583db43de0d066522bf6`; **clarifying commit:** `d3fc76d76b97e8586837aaf70bb35fe602acc5d0`.
+- **Paths:** `poll_preflight_inhibit_lab_contract.py`; `poll_preflight_inhibit_lab_cases.py`; canonical handovers and this narrow UTC23 handover.
+- **Why:** the previous deny-latch guard missed `decltype(auto)` parenthesized lvalue deduction, `std::move`/`std::forward` rvalue-reference wrappers, and `static_cast`/`const_cast` reference/pointer wrappers. These are syntactic escape routes around a direct-assignment-only scan.
+- **Change:** expanded source-contract checks; added five new alias mutations per board; expanded alias matrix from 5/5 to 10/10 per board; retained positive controls for logical AND and unrelated local reference/move expressions.
+- **Tests:** isolated Python regex smoke 10/10 unsafe aliases rejected; 3/3 positive controls accepted; new regex block AST parse PASS. Full repository Python lab NOT RUN. GitHub Actions at exact source/test SHA NOT RUN (no run returned; no dispatch action exposed). Prior Focused/Mbed/Full evidence is not transferred.
+- **Safety:** no production sketch or shared API changed; no flash, reset, live coin, finance, migration, signer, witness, release, merge or deployment. Physical acceptance NOT TESTED.
+- **Blockers:** QA review; Master #367 matrix refresh; CORE authenticated controller contract; active v0.6 P0 #177; private registry v11 unavailable; physical 150 power cuts / 30-device 24-hour soak / electrical recovery; accounting/replay and v1-to-v2 migration.
+- **Rollback:** forward revert of `1922dcba...`; no force-push.
+- **NEXT ACTION:** obtain exact-head Focused/Mbed/Full CI at `1922dcba...` or synchronized docs head through an approved repository workflow trigger; if unavailable, request repository administration. Keep PR #367 DRAFT and preserve deny-only behavior.
+- **Sequencing deviation:** pre-change IN_PROGRESS marker was not committed before the source edit; disclosed in the current-state handover, not backdated.
