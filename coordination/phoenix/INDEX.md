@@ -1,3 +1,9 @@
+### UTC14 access limitation
+
+The root AGENTS.md links the cloud artifact policy and recovery handover in legacy `BlazingSystems/BlazingSystems`; both linked files could not be fetched and were not found by current organization code search. Treat them as NOT READ / BLOCKED until the repository admin restores the canonical docs. No Drive artifacts were created or modified.
+
+---
+
 ## Latest live refresh — PHX-MASTER UTC14 (2026-11-27T14:57:39Z)
 
 - [UTC14 live exact-head, owner CI, P0 and COE #26 provenance audit](PHX_MASTER_UTC14_20261127_HW361_COE26_PROVENANCE_AND_REGISTRY_AUDIT.md).

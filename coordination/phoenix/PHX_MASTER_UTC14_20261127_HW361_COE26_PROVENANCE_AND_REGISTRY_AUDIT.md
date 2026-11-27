@@ -100,6 +100,12 @@ The canonical private Drive `BLAZE_PROJECT_REGISTRY_v11_20261027.json` and newer
 
 No authenticated local checkout was available for the Master Python suite or `verify_coordination.py`; no Master exact-head CI run exists. The tree and manifest comparisons above are source/tree inspections plus a bounded structural audit, not executions of the repository test suite. No tests were fabricated or reported as run.
 
+
+
+### AGENTS.md linked cloud policy and recovery handover — not accessible
+
+The current root `AGENTS.md` requires reading `BLAZE_CLOUD_ARTIFACT_POLICY.md` and `BLAZE_CLOUD_STORAGE_HANDOVER.md` from the legacy `BlazingSystems/BlazingSystems` repository. GitHub fetch of both linked files returned HTTP 400 (no file SHA/metadata), and organization code search surfaced only the AGENTS.md references, not either document. These two required documents are therefore **NOT READ / BLOCKED**, not assumed absent from the owner's private storage. No Drive artifact, folder, binary or registry was created or modified. Human action: repository admin should restore the canonical links or provide the current policy and verified handover through an authorized repository/Drive connection.
+
 ## 6. Exact next human actions
 
 1. **QA:** review `tests/controllers.sh:21` against the current deny-only controller contract. Replace or formally retire the stale `config_revision` token-presence assertion only with an approved semantic contract; do not add a decoy token. Run independent tests at the exact current source SHA.

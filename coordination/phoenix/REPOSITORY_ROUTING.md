@@ -1,3 +1,9 @@
+### UTC14 cloud-policy dependency
+
+Root AGENTS.md links the cloud artifact policy and verified recovery handover in legacy `BlazingSystems/BlazingSystems`; both could not be fetched and were not found by current organization code search. Do not infer their contents. Repository admin must restore the links or provide current documents. No Drive artifact was created or modified.
+
+---
+
 ## PHX-MASTER UTC14 — migration routing hold (2026-11-27T14:57:39Z)
 
 - `OWNERSHIP_ROUTES.json` remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`, schema v1, 11 routes, `DRAFT_REVIEW_ONLY`; PHX-MASTER target remains null. No owner or route changed.

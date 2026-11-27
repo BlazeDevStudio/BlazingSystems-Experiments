@@ -1,3 +1,9 @@
+### UTC14 additional documentation blocker
+
+The cloud artifact policy and verified recovery handover linked by root AGENTS.md in legacy `BlazingSystems/BlazingSystems` could not be fetched (HTTP 400/no file metadata) and were not found by current organization code search. They remain NOT READ / BLOCKED. Repository admin must restore the canonical docs or provide the current versions. No Drive artifact was created or modified.
+
+---
+
 ## PHX-MASTER UTC14 — current release gate and blockers (2026-11-27T14:57:39Z)
 
 **Disposition:** MASTER coordination audit completed; integration remains BLOCKED; PR #288 OPEN / DRAFT / UNMERGED; COE #26 FROZEN; cleanup #266 OPEN / 0-of-7; P0 #177 OPEN; PRODUCTION NO-GO.
