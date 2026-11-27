@@ -1529,3 +1529,15 @@ PR #354 remains OPEN / DRAFT / UNMERGED. PRs #239/#254/#283 remain OPEN / DRAFT 
 - **Evidence limit:** host/source-extracted SIMULATED / CI VERIFIED only. Physical GPIO/relay voltage and contact transient, coin acceptor, LittleFS power-loss, electrical recovery, 150 power cuts, and 30-device/24-hour soak remain NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
 - **Narrow handover:** [2026-11-26-hw-output-enable-active-write-guards-utc10.md](docs/handover/2026-11-26-hw-output-enable-active-write-guards-utc10.md).
 - **Next exact action:** PHX-QA reconciles deny-only/pending-evidence assertions; PHX-CORE publishes the authenticated register/poll and receipt/disposition contract; PHX-MASTER refreshes #354 exact-head pins. No positive coin/relay consumer is authorized.
+
+
+## PHX-HARDWARE UTC20 — ESP8266 GPIO16 coin-input capability guard
+
+- Reused the existing Hardware-owned DRAFT PR #357; branch `phoenix/hw-runtime-pin-config-guard-20261127-utc04`.
+- Source/test commit: `750af995e28d7977dcac8ea4cc800f71c71d27d8`.
+- Corrected a board-capability mismatch: the sketch configures coin input with `INPUT_PULLUP`, while ESP8266 GPIO16 supports INPUT/OUTPUT/INPUT_PULLDOWN_16, not INPUT_PULLUP.
+- The ESP8266 runtime validator now rejects GPIO16 only for the coin-input role; relay and LED output use remain allowed. Default tuple 4/14/5 is unchanged.
+- `runtime_pin_config_lab.py` now tests coin GPIO16 denial, relay/LED GPIO16 acceptance, and rejection of a mutation removing the guard.
+- Official core reference: https://arduino-esp8266.readthedocs.io/en/latest/reference.html
+- Exact-head CI: pending documentation-head workflow. Physical GPIO/electrical acceptance: NOT TESTED.
+- No ESP32, CORE API, QA assertion, financial state, COE source, migration, or production path changed.

@@ -3857,3 +3857,14 @@ Complete the post-handover exact-head Full and Native reads. PHX-QA/PHX-CORE sti
 - **release status:** HARDWARE ACCEPTED NO; PRODUCTION READY NO-GO. Physical GPIO/relay/coin, 150 power cuts, 30-device/24-hour soak, electrical recovery, signer/witness, durable accounting/replay, v1→v2 migration and independent QA/release acceptance remain untested/unaccepted.
 - **NEXT ACTION:** PHX-QA/PHX-CORE reconcile `config_revision` and PAY-0745 semantics against the deny-only controller contract; Hardware must not invent response fields or pending-clear callsites.
 
+
+
+## 2026-11-27 — PHX-HARDWARE ESP8266 GPIO16 coin-input capability guard
+
+- **BRANCH:** `phoenix/hw-runtime-pin-config-guard-20261127-utc04` (existing DRAFT PR #357; no new overlapping PR).
+- **SOURCE/TEST COMMIT:** `750af995e28d7977dcac8ea4cc800f71c71d27d8`.
+- **SCOPE:** ESP8266 Vendo sketch and Hardware-owned `runtime_pin_config_lab.py`.
+- **CHANGE:** reject GPIO16 only for the coin-input role because the firmware configures `INPUT_PULLUP`; preserve GPIO16 relay/LED output roles and default tuple 4/14/5.
+- **REGRESSION:** coin16 deny, relay16/LED16 allow, source pull-up assumption check, and mutation removing the guard.
+- **EVIDENCE:** official ESP8266 Arduino Core reference https://arduino-esp8266.readthedocs.io/en/latest/reference.html. Exact-head Actions pending.
+- **LIMITS:** host simulation only; physical GPIO, external pull-up, relay, coin pulse and power-cut acceptance NOT TESTED. No production admission enabled.

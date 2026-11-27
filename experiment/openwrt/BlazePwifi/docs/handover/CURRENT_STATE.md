@@ -1521,3 +1521,8 @@ PR #354 remains OPEN / DRAFT / UNMERGED. PRs #239/#254/#283 remain OPEN / DRAFT 
 - See [narrow handover](2026-11-26-hw-output-enable-active-write-guards-utc10.md).
 
 Final evidence-sync note (source/test SHA `6b4f7a873dd72663c00c4e08f23131d58e662584`; docs commit `ad46e16741e6f0fd8a81f08a3261480d010537b9`): the post-sync Full run `45887618795` proved the mandatory handover freshness gate passes, then stopped at QA-owned `tests/controllers.sh:21` for the absent `config_revision` token. Its target jobs were still finishing at last read; exact source/test target builds already passed in `45886742357`. This update is the final Hardware documentation sync for this activation; no more branch changes are planned while the new exact-head PR workflows run.
+
+
+## PHX-HARDWARE UTC20 — GPIO16 coin-input capability guard (CI pending)
+
+PR #357 remains DRAFT / UNMERGED. Source/test commit `750af995e28d7977dcac8ea4cc800f71c71d27d8` rejects ESP8266 GPIO16 as the coin-input role because the sketch uses `INPUT_PULLUP`, which the ESP8266 Arduino Core does not list for GPIO16. GPIO16 remains permitted for relay/LED output roles. The source-extracted lab covers both denial and output-role preservation and injects removal of the guard. Exact-head CI is pending; physical GPIO and electrical acceptance remain NOT TESTED.
