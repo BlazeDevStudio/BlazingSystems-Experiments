@@ -1,3 +1,31 @@
+## PHX-MASTER UTC04 — cross-role ledger and coin-intake contracts (2026-11-27T04Z)
+
+### Canonical ledger preservation — invariant retained
+
+Canonical CHANGE_LEDGER history is append-only. Every candidate must preserve the exact base bytes as a prefix; only a newline-separated suffix may be appended. Corrections are dated append-only entries citing the affected prior entry/blob. Historical deletion, middle edits, prepends or reordering are hard blockers.
+
+- #355 has now restored the exact #354 base prefix (3,621 → 3,730 records); its branch-local byte-prefix guard passes at docs head `0adb541a`.
+- #356 independently preserves its v0.6 base prefix (3,390 → 3,476 records); its branch-local guard passes at docs head `e5329644`.
+- These are two branch-local protections, not a shared repository-wide gate. The current `tests/handover_gate.sh` checks that dated entries exist and that handover records are fresh; it does not compare the candidate ledger to the exact base bytes.
+- **Owner action:** PHX-RELEASE implements the shared exact-base prefix check; PHX-QA adds independent RED/GREEN tests for truncation, middle edits, prepend, empty base and malformed append boundary. Hardware retains its own ledger and handover.
+
+### Coin input / authenticated poll — P0 remains open
+
+A blocking network poll must not leave an energized coin acceptor unobserved. The implementation must either (a) locally inhibit coin acceptance before any blocking poll and keep it fail-closed until an authenticated, contract-valid response is accepted, or (b) use nonblocking transport plus edge capture backed by a durable journal. Interrupt-only RAM counting is not durable credit. No coin may be acknowledged/credited until the durable receipt/disposition contract is satisfied.
+
+Current #355 source still performs synchronous `post("poll")` before sampling:
+- ESP8266: poll line 403; first `digitalRead(runCoinPin)` line 408.
+- ESP32: poll line 410; first `digitalRead(runCoinPin)` line 415.
+Both have a 3,500 ms HTTP timeout. `denyRemoteControl()` brackets the call and the response is discarded, but this does not by itself prove the coin relay is inhibited during the wait. Issue #177 remains P0 and host-simulated only.
+
+**Ownership:** HARDWARE owns local intake/pulse-capture firmware; CORE owns authenticated poll, receipt and durable pending-disposition authority; QA independently tests the exact same source SHA; MASTER owns this cross-role contract. Do not add unsigned response enable or active pending-clear calls merely to satisfy an inherited assertion. The #355 Full/Native failure at `v060_vendo_sequence_contract.py:20` requires CORE/QA contract reconciliation.
+
+### Storage preflight evidence boundary
+
+#356 STORCHK-0674 and physical-parent matrices are synthetic sysfs/mountinfo checks only. They reject root/overlay/boot reuse, sibling partitions on the same parent, whole-disk reuse, missing identity and holder ambiguity. The exact Full workflow passed CI, but this is not physical media independence, a real mount/write, a power cut, flash durability or device acceptance. Physical acceptance remains NOT TESTED.
+
+---
+
 ## PHX-MASTER UTC02 — cross-role canonical ledger preservation invariant (2026-11-27T02:34Z)
 
 Canonical CHANGE_LEDGER.md history is append-only. A PR that touches the canonical ledger must preserve the exact base content as a byte-identical prefix and may only append new entries. Historical corrections must be added as dated correction entries that cite the affected prior entry/blob; they must not replace, truncate, reorder or silently rewrite prior records. A deliberate non-append rewrite is a hard review blocker unless the owner supplies an independently verified archival snapshot and an explicit, separately reviewed migration plan.

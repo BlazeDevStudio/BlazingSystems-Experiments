@@ -1,3 +1,33 @@
+## PHX-MASTER UTC04 — exact-head CI and migration matrix (2026-11-27T04Z)
+
+| Evidence | Exact source | Exact destination / run | Result |
+|---|---|---|---|
+| Complete recursive trees | Experiments #355 `0adb541a`: 2,421 entries | COE #26 `b382d233`: 286 entries | Both complete/non-truncated; not equivalent |
+| ESP32 route | 4 files | 1 file | 0 identical, 1 divergent, 3 source-only |
+| ESP8266 route | 13 files | 1 file | 0 identical, 1 divergent, 12 source-only |
+| PisoWiFi tests | 151 source files | 19 destination files | 2 identical, 2 divergent, 147 source-only, 15 destination-only |
+| ESP32 firmware | `fcf26a50cd3238941caf918a849c30ca66f4ce4b` | `3cc7ec54b476943dc04a8d1af5e2df5fe054e422` | DIFFERENT |
+| ESP8266 firmware | `9f0f4829cf57a6a12f4d940b051f17035e0a1670` | `c8be98f72596681e36a3ad1f8939bf8046c96887` | DIFFERENT |
+| SOURCE_INTAKE runtime | 61 rows; actual 46 identical / 15 derived | Declared summary 47 / 14 | INCONSISTENT |
+| Derived tests | 15 entries | `github_actions_status=NOT_RUN` on all 15 | NOT VERIFIED |
+| License/NOTICE | 12 source-side paths | 4 exact destination counterparts; 8 path counterparts absent | OWNER/LEGAL REVIEW |
+| #355 CHANGE_LEDGER | Base #354 blob `b950f7be`, 3,621 records | Head blob `44bb5bf3`, 3,730 records | Exact base prefix restored; guard PASS |
+| #356 CHANGE_LEDGER | v0.6 base blob `f16d5774`, 3,390 records | Head blob `242090e4`, 3,476 records | Exact base prefix preserved |
+| #355 Full / Native | Head `0adb541a` | #45930541357 / #45930541359 | FAIL / FAIL on QA-owned active-clear assertion |
+| #356 focused / Full | Docs head `e5329644`, source-test `414048cd` | #45937189029, #45937189069, #45937188993, #45937188987 | PASS / PASS / 3-of-3 PASS / Full SUCCESS 26 pass + 4 expected skips |
+| COE #26 Actions | Candidate head `b382d233` | #43096752609, #43096752632, #43096752800, #43096752563, #43096752557 | 5 QUEUED; zero jobs/check-runs |
+
+### Exact Hardware and P0 evidence
+
+- #355 ledger append-only guard [#45930534069](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45930534069) PASS; poll deny [#45930541259](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45930541259) PASS; Mbed [#45930541401](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45930541401) PASS.
+- #355 Full validation fails at `v060_vendo_sequence_contract.py:20`, which asserts active `clearPending(true/false)` callsites; Native fails on the same contract. Do not add unsafe clear operations.
+- #356 storage preflight [#45937189029](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45937189029), Native [#45937189069](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45937189069), Mbed [#45937188993](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45937188993) and Full [#45937188987](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45937188987) are terminal PASS. Full skips production import/signing/publication.
+- Current #355 source still calls synchronous `post("poll")` before coin input sampling: ESP8266 403→408; ESP32 410→415. Issue #177 remains P0; physical coin/electrical acceptance NOT TESTED.
+
+No migration staging, copying, moving, overwriting, cherry-picking or route promotion was performed. COE #26 remains FROZEN.
+
+---
+
 ## PHX-MASTER UTC02 — exact-tree migration and CI matrix (2026-11-27T02:34Z)
 
 | Evidence | Exact source | Exact destination / run | Result |

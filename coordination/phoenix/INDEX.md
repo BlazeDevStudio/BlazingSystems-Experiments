@@ -1,3 +1,15 @@
+## PHX-MASTER UTC04 — #355 ledger restored, #356 exact-head Full PASS, P0 poll and COE #26 (2026-11-27T04Z)
+
+- [UTC04 full audit](./PHX_MASTER_UTC04_20261127_HW355_LEDGER_RESTORED_HW356_FULL_CI_COE26_PROVENANCE_AUDIT.md).
+- Live refs: Experiments main `6be5d19b`; v0.5.3 development `aad3aade`; active v0.6 `2fbd2475`; Master start `30b81c65`; COE main `a6513ab4`; COE #26 `b382d233`.
+- #355 at `0adb541a` restores exact #354 CHANGE_LEDGER base prefix (3,621 → 3,730 records); guard #45930534069 PASS. Poll/Mbed PASS; Full #45930541357 and Native #45930541359 fail on QA-owned pending-clear assertions.
+- #356 docs `e5329644` / source-test `414048cd`: preflight, native synthetic and Mbed PASS; Full #45937188987 terminal SUCCESS (26 pass / 4 production skips). Physical acceptance NOT TESTED; canonical handover and PR body need final run synchronization.
+- P0 #177 persists: #355 ESP8266 poll 403 → coin sample 408; ESP32 poll 410 → sample 415. Blocking 3.5s HTTP precedes coin sampling.
+- COE #26 FROZEN: trees 2,421 / 286; tests 151 / 19 (2 exact, 2 divergent, 147 source-only, 15 destination-only); firmware blobs differ; intake actual 46/15 vs declared 47/14; 15 derived tests NOT_RUN; 5 workflows queued.
+- Manifest remains 11 routes / DRAFT_REVIEW_ONLY / PHX-MASTER target null. Cleanup #266 OPEN / 0-of-7. Private Drive v11/newer corrections NOT_RECOVERED. Master product suite NOT RUN. PRODUCTION NO-GO.
+
+---
+
 ## PHX-MASTER UTC02 — exact-head #356, append-only ledger, P0 poll and COE #26 provenance (2026-11-27T02:34Z)
 
 - [UTC02 full audit](PHX_MASTER_UTC02_20261127_HW356_LEDGER_PRESERVATION_COE26_EXACT_TREE_AUDIT.md).

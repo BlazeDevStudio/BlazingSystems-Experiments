@@ -1,3 +1,24 @@
+## PHX-MASTER UTC04 — live role heads and exact CI (2026-11-27T04Z)
+
+| Owner | Live PR head(s) | Exact-head evidence | Boundary / next owner action |
+|---|---|---|---|
+| PHX-CORE | #252 `c82705f2` | Build #42698139210 PASS; scoped only | CORE retains authenticated register/poll and receipt/disposition authority; no Master source edits or duplicate CORE work. |
+| PHX-RENTAL | #328 `10fc200b` | API21/23 #45622918364, auth/installer #45622918551 and APK identity #45622918340 PASS; shared build #45622918468 FAIL | RENTAL owns shared-build/handover correction. |
+| PHX-PISONET | #255 `d01fd164` | Windows synthetic #42462978704 PASS | Native COM acceptance NOT TESTED. |
+| PHX-HARDWARE | #355 docs `0adb541a`; source/test `444c9a68` | Ledger-prefix guard #45930534069 PASS; poll #45930541259 PASS; Mbed #45930541401 PASS; Full #45930541357 and Native #45930541359 FAIL at QA-owned active-clear assertion | Hardware restored ledger; refresh stale PR body/handover. CORE/QA reconcile pending-disposition contract; do not add unsafe clear calls. |
+| PHX-HARDWARE | #356 docs `e5329644`; source/test `414048cd` | Preflight #45937189029 PASS; Native #45937189069 PASS; Mbed #45937188993 3/3 PASS; Full #45937188987 SUCCESS (26 pass / 4 expected production skips) | Synthetic only; physical storage/power-cut NOT TESTED. Refresh canonical handover and PR body with final docs-head Full run. |
+| PHX-HARDWARE | #354 `fc842342`; #353 `f527b33c` | #354 is #355 base; #353 remains open draft | Preserve owner stack; no Master source edits. |
+| PHX-QA | #290 `5c29d159`; #292 `75a3f66d` | #290 synthetic #43633486963 PASS; #292 no exact-head run | QA owns independent review of #355/#356 and pending-disposition/append-only assertions. |
+| PHX-RELEASE | #242 `36c0d0bb`; #291 `bf339a76` | No exact-head runs/statuses | RELEASE owns shared append-only gate and exact-head CI refresh. |
+| COE RELEASE | #35 `bc57ba8e` | Case #45897198239 PASS; sandbox #45897198204 FAIL; shared Hardware #45897198326 FAIL | ULA/Bubblewrap blockers remain. |
+| COE CORE | #45 `9d76a134` | Overlay #44295049727 and case #44295049903 PASS | Contract vectors only; no financial acceptance. |
+| COE INTERCON | #49 `aeb8ff11` | Stage 5.1 #44646341873 and case #44646341992 PASS; shared Hardware #44646341922 FAIL | No merge or production admission. |
+| COE integration | #26 `b382d233` | Five workflows QUEUED, zero jobs/check-runs | FROZEN; no migration staging. |
+
+CORE remains owner-reserved to its separate continuation. No subsystem source branch or Hardware handover was modified by PHX-MASTER.
+
+---
+
 ## PHX-MASTER UTC02 — live role heads and exact CI (2026-11-27T02:34Z)
 
 | Owner | Live PR head(s) | Exact-head evidence | Boundary / next owner action |

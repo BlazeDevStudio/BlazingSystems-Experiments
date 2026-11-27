@@ -1,3 +1,18 @@
+## PHX-MASTER UTC04 — decision and blockers (2026-11-27T04Z)
+
+**PR #288 OPEN / DRAFT / UNMERGED. COE #26 FROZEN. Cleanup #266 OPEN / 0-of-7. PRODUCTION NO-GO.**
+
+- **P0 #177 OPEN:** current #355 ESP8266 poll 403 precedes coin sample 408; ESP32 poll 410 precedes sample 415. A 3.5s blocking poll can still span a coin pulse. Host reproduction is simulated; physical coin/relay acceptance NOT TESTED.
+- **P1 #355 ledger integrity FIXED-WITH-EVIDENCE:** exact #354 base prefix restored, 3,621 → 3,730 records; append-only guard #45930534069 PASS. Full/Native still fail at QA-owned pending-clear assertion; do not add unsafe calls.
+- **#356 storage preflight CI VERIFIED / SIMULATED:** exact docs-head Full #45937188987 SUCCESS (26 pass / 4 expected production skips); focused preflight, native synthetic and Mbed 3/4 pass. Physical storage and power-cut acceptance NOT TESTED. Canonical handover/PR body require final exact-head run synchronization.
+- **COE #26 FROZEN:** trees 2,421/286; tests 151/19 (2 exact, 2 divergent, 147 source-only, 15 destination-only); both firmware blobs differ; intake 46/15 vs declared 47/14; 15 derived tests NOT_RUN; eight source license/notice path counterparts absent; five workflows queued with zero jobs.
+- **Role CI:** CORE scoped build PASS; RENTAL focused API/auth/APK checks PASS but shared build FAIL; PISONET Windows synthetic PASS; QA #290 synthetic PASS/#292 no run; RELEASE #242/#291 no exact-head runs; COE #35 sandbox/shared Hardware FAIL; COE #45 overlay/case PASS; COE #49 stage/case PASS/shared Hardware FAIL.
+- **Master:** 27/27 read-only structural assertions PASS; exact-head Master Actions zero; Python suite and `verify_coordination.py` NOT RUN.
+- **Private registry:** v11 and newer corrections NOT_RECOVERED; no Drive connector action exposed, no older snapshot substituted. No private contents disclosed.
+- No subsystem source, ownership route, COE destination, firmware, payment or release artifact changed.
+
+---
+
 ## PHX-MASTER UTC02 — decision and blockers (2026-11-27T02:34Z)
 
 **PR #288 OPEN / DRAFT / UNMERGED. COE #26 FROZEN. Cleanup #266 OPEN / 0-of-7. PRODUCTION NO-GO.**

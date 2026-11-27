@@ -1,3 +1,16 @@
+## PHX-MASTER UTC04 — exact source/destination pins and route hold (2026-11-27T04Z)
+
+- Manifest blob `e4db324315a1b3543fec17a148fbf960170fcb29`, 11 routes, `DRAFT_REVIEW_ONLY`; PHX-MASTER target remains null. No route or ownership changed.
+- Current Hardware #355 source is `0adb541ae43143d6fc242f3746f56f71a3040d47`; COE #26 remains `b382d233ff06c8791b1028bed3c617cc7b670d12`. Complete trees are 2,421 / 286 entries, neither truncated.
+- Board routes: ESP32 4/1 (0 identical, 1 divergent, 3 source-only); ESP8266 13/1 (0 identical, 1 divergent, 12 source-only). Test route 151/19 (2 identical, 2 divergent, 147 source-only, 15 destination-only).
+- Both firmware blobs differ. SOURCE_INTAKE remains pinned to historical source `6d4c9b48`; it records 61 runtime rows actual 46/15 vs declared 47/14, and 15 derived tests all NOT_RUN.
+- SOURCE_INTAKE/MIGRATION_MAP point to `feature/pisowifi-cleanup-stabilization@331e14bc`; live PR #26 points to `integration/ecosystem-nonproprietary-candidate-20261111@b382d233`. These branch pins disagree.
+- Four license/NOTICE counterparts are exact; eight source-side license/notice paths have no exact destination path counterpart. Two unmatched QRCode paths share content already present elsewhere, but no path mapping exists. Root NOTICE requires legal review.
+- #356 Hardware storage-preflight tools are not mapped by the 11-route manifest. The PHX-QA tests route does not automatically authorize moving Hardware-owned tests.
+- COE #26 has five queued workflows, zero jobs/check-runs. Do not stage, copy, move, overwrite, cherry-pick or propose any route until the COE owner reconciles source SHA, destination branch/head, blobs, test identities, licenses and terminal exact-head CI.
+
+---
+
 ## PHX-MASTER UTC02 — exact source/destination pins and route hold (2026-11-27T02:34Z)
 
 The current OWNERSHIP_ROUTES.json blob remains e4db324315a1b3543fec17a148fbf960170fcb29, schema phoenix/ownership-routes/v1, 11 routes, DRAFT_REVIEW_ONLY; PHX-MASTER remains coordination-only with target null. No route or ownership assignment was changed.
