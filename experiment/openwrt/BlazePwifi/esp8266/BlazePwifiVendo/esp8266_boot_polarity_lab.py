@@ -110,6 +110,78 @@ def verify_boot_output_before_littlefs(source: str) -> None:
     print("GPIO_OFF_BEFORE_LITTLEFS_MOUNT_PASS board=ESP8266")
 
 
+
+def verify_bootstrap_gpio_guard(source: str) -> None:
+    """Compile the production GPIO tuple validator and reject ROM strap pins."""
+    input_functions = extract_functions(source, "validInputPullupPin")
+    output_functions = extract_functions(source, "validOutputPin")
+    runtime_functions = extract_functions(source, "runtimePinsSafe")
+    require(len(input_functions) == 1, "expected one validInputPullupPin implementation")
+    require(len(output_functions) == 1, "expected one validOutputPin implementation")
+    require(len(runtime_functions) == 1, "expected one runtimePinsSafe implementation")
+
+    probe_main = r"""
+int main() {
+  if(!runtimePinsSafe(4,5,14)) return 1;
+  if(runtimePinsSafe(0,5,14)) return 10;
+  if(runtimePinsSafe(2,5,14)) return 11;
+  if(runtimePinsSafe(15,5,14)) return 12;
+  if(runtimePinsSafe(4,0,14)) return 13;
+  if(runtimePinsSafe(4,2,14)) return 14;
+  if(runtimePinsSafe(4,15,14)) return 15;
+  if(runtimePinsSafe(4,5,0)) return 16;
+  if(runtimePinsSafe(4,5,2)) return 17;
+  if(runtimePinsSafe(4,5,15)) return 18;
+  return 0;
+}
+"""
+
+    def run_probe(runtime_function: str, expect_success: bool, label: str) -> None:
+        code = "\n".join((
+            input_functions[0],
+            output_functions[0],
+            runtime_function,
+            probe_main,
+        ))
+        with tempfile.TemporaryDirectory(prefix="phx-esp8266-strap-gpio-") as folder:
+            cpp_path = Path(folder) / "strap_gpio.cpp"
+            exe_path = Path(folder) / "strap_gpio"
+            cpp_path.write_text(code, encoding="utf-8")
+            built = subprocess.run(
+                ["g++", "-std=c++11", "-Wall", "-Wextra", "-Werror",
+                 str(cpp_path), "-o", str(exe_path)],
+                capture_output=True, text=True, timeout=30,
+            )
+            require(built.returncode == 0,
+                    label + " compile failed:\n" + built.stderr[-3000:])
+            result = subprocess.run(
+                [str(exe_path)], capture_output=True, text=True, timeout=10,
+            )
+            if expect_success:
+                require(result.returncode == 0,
+                        label + " accepted an ESP8266 boot-strap GPIO role; exit=" +
+                        str(result.returncode))
+            else:
+                require(result.returncode != 0,
+                        label + " mutation unexpectedly survived the nine-role matrix")
+
+    runtime_function = runtime_functions[0]
+    run_probe(runtime_function, True, "ESP8266 boot-strap GPIO policy")
+
+    strap_guard = (
+        "if(coinPin==0||coinPin==2||coinPin==15||"
+        "relayPin==0||relayPin==2||relayPin==15||"
+        "ledPin==0||ledPin==2||ledPin==15) return false;"
+    )
+    require(strap_guard in runtime_function,
+            "runtime GPIO validator must reject GPIO0/GPIO2/GPIO15 for coin, relay and LED")
+    mutated_runtime = runtime_function.replace(strap_guard, "", 1)
+    require(mutated_runtime != runtime_function,
+            "boot-strap guard mutation anchor was not unique")
+    run_probe(mutated_runtime, False, "ESP8266 boot-strap guard removal")
+    print("ESP8266_BOOTSTRAP_GPIO_POLICY_PASS 10/10")
+    print("ESP8266_BOOTSTRAP_GPIO_GUARD_MUTATION_REJECTED")
+
 def main() -> None:
     source = SOURCE.read_text(encoding="utf-8")
     verify_boot_output_before_littlefs(source)
