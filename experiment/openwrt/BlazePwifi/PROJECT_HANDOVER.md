@@ -1,3 +1,47 @@
+## PHX-HARDWARE UTC12 — sibling #359/#360 handover reconciliation (2026-11-27T12:02:29Z)
+
+**Role:** PHX-HARDWARE · **Task:** Master UTC11 sibling-branch handover reconciliation · **Disposition:** documentation-only, both PRs remain OPEN / DRAFT / UNMERGED.
+
+PHX-MASTER's UTC11 checkpoint assigned Hardware to reconcile the only two changed-path overlaps between sibling PRs #359 and #360, then rerun #359 Full after the canonical handovers were synchronized. This update is prepended to both shared handover files on both branches. It preserves every prior byte after the new section; no source/test, CHANGE_LEDGER, API, finance, migration, signer, witness, or COE path is changed.
+
+### Exact branch and source identities before this documentation sync
+
+| PR | Branch | Head before sync | Exact source/test SHA | Parent |
+|---|---|---|---|---|
+| #359 — pending-journal recovery promotion guard | `phoenix/hw-pending-recovery-promotion-guard-20261127-utc10` | `250facfabc96147b779c9998348cd665e7a621b7` | `bdad70fa77f51421cb7a6f01d89bd2b7ea9bdc3f` | #355 `9f7a8ecb915cf199a82c0b4d37c56c40d722037b` |
+| #360 — poll response outcome matrix | `phoenix/hw-poll-response-outcome-matrix-20261127-utc11` | `73610a977bd91a389acedd5a62412da973562ee9` | `04ac3330c0123e581bf4f195ff5f1a5089b82ffb` | #355 `9f7a8ecb915cf199a82c0b4d37c56c40d722037b` |
+
+Both branches are siblings based on the same #355 head. Their exact changed-path intersection is only:
+- `experiment/openwrt/BlazePwifi/PROJECT_HANDOVER.md`
+- `experiment/openwrt/BlazePwifi/docs/handover/CURRENT_STATE.md`
+
+Their source/test paths are disjoint. #359 owns the two pending-journal firmware sketches and its source-extracted recovery lab. #360 owns only the poll-response host harness/cases; it changes no production sketch. Do not treat either branch as containing the other's changes or as a combined candidate.
+
+### #359 — pending-journal recovery promotion guard
+
+- Focused exact source/test [#45986402635](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45986402635), job `140463042542`: **PASS** at `bdad70fa77f51421cb7a6f01d89bd2b7ea9bdc3f`. Eleven source-extracted scenarios per board; 16 unsafe source mutations rejected across ESP8266/ESP32.
+- PR Poll [#45986932616](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45986932616), job `140464840614`: **PASS** at pre-sync PR head `250facf`.
+- ESP32 Mbed TLS [#45986932989](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45986932989): **3/3 PASS** (source contract, Arduino core 3.3.13 and 4.0.0).
+- Full [#45986932765](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45986932765), validation job `140464952158`: **FAIL** at the mandatory handover freshness gate. Log says source/workflow changes are newer than `CHANGE_LEDGER.md`; the post-sync exact-head Full rerun is required. ESP8266, ESP32, Android and all 14 firmware target/platform jobs completed PASS; production import/signing/publication/simulation stages were skipped.
+- Native [#45986932774](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45986932774), job `140464842407`: **FAIL** at QA-owned `v060_vendo_sequence_contract.py:18`, which requires the literal `if(any) return false;` token for corrupt persisted state. The preceding pending-sequence shell test passes. This is a semantic assertion review request for PHX-QA; Hardware must not change safe firmware behavior merely to satisfy a literal token check.
+
+### #360 — poll response outcome matrix
+
+- Focused exact source/test [#45989512681](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45989512681), job `140473488721`: **PASS** at `04ac3330c0123e581bf4f195ff5f1a5089b82ffb`.
+- PR Poll [#45990550066](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45990550066), job `140476969751`: **PASS** at pre-sync PR head `73610a9`.
+- ESP32 Mbed TLS [#45990550109](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45990550109): **3/3 PASS** (source contract, Arduino core 3.3.13 and 4.0.0).
+- Full [#45990550104](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45990550104), validation job `140477071325`: **FAIL** at `tests/controllers.sh` / Controller protocol parity (Master's UTC11 matrix records missing poll-signature check). The mandatory handover freshness gate passed. Android and all 14 firmware target/platform jobs passed; production import/signing/publication/simulation stages were skipped.
+- The harness covers empty and untrusted-positive response bodies and rejects a transient relay/LED enable mutation. It does not authorize a response consumer, positive coin admission, relay re-enable, pending clear, or receipt/disposition.
+
+### Integration boundary and next action
+
+1. This documentation-only reconciliation does not rebase, retarget, cherry-pick, merge, or combine #359/#360; it leaves both source/test trees unchanged.
+2. Rerun #359 Full on the post-sync documentation head and record terminal job results. Do not claim the pre-sync Full failure is repaired until the new run is terminal.
+3. PHX-QA owns independent review of the PAY-0745 corrupt-state assertion and the poll-response regression semantics.
+4. PHX-CORE owns the authenticated register/poll and event-bound receipt/disposition contract. No signature, positive poll consumer, coin admission or pending-clear behavior is invented here.
+5. Active v0.6 P0 #177 remains unresolved: synchronous poll precedes the first coin sample on both boards. The sibling PRs do not constitute a physical pulse-loss fix.
+
+**Evidence classification:** host/SIMULATED and CI VERIFIED only. Physical LittleFS recovery, coin pulse, relay voltage/contact behavior, electrical recovery, 150 power cuts and 30-device/24-hour soak remain NOT TESTED. **HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.**
 ## PHX-HARDWARE UTC05 — #355 exact-head CI reconciliation
 
 **PR:** [#355](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/355) — OPEN / DRAFT / UNMERGED  
