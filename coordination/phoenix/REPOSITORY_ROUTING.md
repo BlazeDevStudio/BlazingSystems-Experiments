@@ -1,3 +1,15 @@
+## PHX-MASTER UTC07 — exact source/destination pins and migration hold (2026-11-27T07:41Z)
+
+- Manifest blob `e4db324315a1b3543fec17a148fbf960170fcb29`, 11 routes, `DRAFT_REVIEW_ONLY`; PHX-MASTER target remains null.
+- Source intake pin: Experiments `6d4c9b487af4d768c4d7627654d119417fcc6e00`. Its named destination branch currently points to COE `feature/pisowifi-cleanup-stabilization@331e14bc63e163148f09813da0fdbf4d13581a19`.
+- Live COE PR #26 instead targets `integration/ecosystem-nonproprietary-candidate-20261111@b382d233ff06c8791b1028bed3c617cc7b670d12`, base main `a6513ab4412b4c014eee2863e45cbe32d06cb243`.
+- Feature-branch intake blob `fdd9c1e` says 54 identical / 7 derived and 11 derived tests NOT_RUN. PR #26 intake blob `1b9018ff` says 47/14, while exact comparison is 46/15; its 15 derived tests are 11 NOT_RUN / 4 PENDING_CI_RUN.
+- Feature vs PR #26 `Pisowifi/`: 91 vs 95 entries; 18 shared paths differ, five are PR-only and one feature-only. Current #355 vs #26 board routes: ESP32 4/1 (0 exact, 1 divergent, 3 source-only); ESP8266 13/1 (0 exact, 1 divergent, 12 source-only). Tests 151/19 (2 exact, 2 divergent, 147 source-only, 15 destination-only).
+- PisoWiFi project has nine source LICENSE/NOTICE paths and four exact destination counterparts; five path counterparts are absent. COE root NOTICE is absent. The PR description's licensing-resolved claim is unverified.
+- #26 five workflows are CANCELLED with zero jobs/check-runs. No staging, copy, move, overwrite, cherry-pick or route promotion.
+
+---
+
 ## PHX-MASTER UTC04 — exact source/destination pins and route hold (2026-11-27T04Z)
 
 - Manifest blob `e4db324315a1b3543fec17a148fbf960170fcb29`, 11 routes, `DRAFT_REVIEW_ONLY`; PHX-MASTER target remains null. No route or ownership changed.

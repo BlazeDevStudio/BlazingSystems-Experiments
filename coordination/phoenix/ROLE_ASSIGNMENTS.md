@@ -1,3 +1,24 @@
+## PHX-MASTER UTC07 — live role heads and exact CI (2026-11-27T07:41Z)
+
+| Owner | Live PR head(s) | Exact-head evidence | Boundary / next owner action |
+|---|---|---|---|
+| PHX-CORE | #252 `c82705f2` | Build #42698139210 SUCCESS (scoped) | CORE remains separately owned; MASTER did not edit CORE source. |
+| PHX-RENTAL | #328 `10fc200b` | API21/23 #45622918364, auth/installer #45622918551, APK identity #45622918340 PASS; Build #45622918468 FAIL | RENTAL owns build/handover correction. |
+| PHX-PISONET | #255 `d01fd164` | Windows synthetic #42462978704 PASS | Native COM physical acceptance NOT TESTED. |
+| PHX-HARDWARE | #355 `9f7a8ecb`; source/test `444c9a68` | Poll #45948626013 PASS; Mbed #45948625942 PASS; Full #45948625969 FAIL; Native #45948626003 FAIL | HARDWARE owns firmware/handover; CORE/QA reconcile pending disposition without unsafe clear calls. |
+| PHX-HARDWARE | #356 docs `0ea32d31`; source/test `414048cd` | Preflight #45940999149, Mbed #45940999085, Native #45940999113, Full #45940999134 PASS | CI VERIFIED / SIMULATED only; physical storage/power-cut acceptance NOT TESTED. |
+| PHX-HARDWARE | #357 `2476b2cd`, base #355 `9f7a8ecb` | Full #45958868784 FAIL at Controller protocol parity; Native #45958868726 FAIL at PAY-0745 literal clearPending assertion; Poll #45958868771 and Mbed #45958868755 PASS | PR body has conflicting head fields; HARDWARE refreshes own metadata; QA/CORE own semantic contract. |
+| PHX-QA | #290 `5c29d159`; #292 `75a3f66d` | #290 Windows synthetic #43633486963 PASS; #292 no PR-triggered run | QA revalidates #292 against current Master. |
+| PHX-RELEASE | #242 `36c0d0bb`; #291 `bf339a76` | No exact-head PR workflow runs returned | RELEASE owns signing/publisher gates; none accepted. |
+| COE RELEASE | #35 `bc57ba8e` | Case #45897198239 PASS; Sandbox #45897198204 and shared Hardware #45897198326 FAIL | COE RELEASE owns sandbox/shared-Hardware correction. |
+| COE CORE | #45 `9d76a134` | Overlay #44295049727 and case #44295049903 PASS | Synthetic contract vectors only. |
+| COE INTERCON | #49 `aeb8ff11` | Stage 5.1 #44646341873 and case #44646341992 PASS; shared Hardware #44646341922 FAIL | Separate lab candidate; not canonical financial authority. |
+| COE integration | #26 `b382d233` | Five workflows CANCELLED; zero check-runs/statuses | FROZEN; reconcile branch/intake drift, tests, licences and CI before any staging. |
+
+CORE source ownership remains reserved to the separate production-continuation owner. No CORE source or duplicate CORE task was started.
+
+---
+
 ## PHX-MASTER UTC05 — live role heads and exact CI (2026-11-27T05Z)
 
 | Owner | Live PR head(s) | Exact-head evidence | Boundary / next owner action |

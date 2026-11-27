@@ -1,3 +1,20 @@
+## PHX-MASTER UTC07 — exact-head Hardware and COE matrix (2026-11-27T07:41Z)
+
+| Evidence | Exact source | Exact run / destination | Result |
+|---|---|---|---|
+| Active v0.6 ESP8266 | `2fbd2475`, blob `12c4bb82` | Poll 354; first coin sample 357; timeout 3,500 ms | P0 order remains |
+| Active v0.6 ESP32 | `2fbd2475`, blob `29f1125d` | Poll 314; first coin sample 318; timeout 3,500 ms | P0 order remains |
+| Hardware #355 | `9f7a8ecb` | Poll #45948626013 / Mbed #45948625942 / Full #45948625969 / Native #45948626003 | PASS / PASS / FAIL / FAIL |
+| Hardware #356 | `0ea32d31`, source/test `414048cd` | Preflight #45940999149 / Mbed #45940999085 / Native #45940999113 / Full #45940999134 | PASS / PASS / PASS / PASS |
+| Hardware #357 | `2476b2cd`, base `9f7a8ecb` | Full #45958868784 / Native #45958868726 / Poll #45958868771 / Mbed #45958868755 | FAIL / FAIL / PASS / PASS |
+| COE #26 | `b382d233` | #43096752609 / #43096752632 / #43096752800 / #43096752563 / #43096752557 | 5 CANCELLED; zero check-runs |
+
+The #357 Native log explicitly fails on literal `clearPending(true/false)` source presence after the synthetic journal steps pass. Do not add a callsite to satisfy the grep. The Full validation fails at Controller protocol parity; all Android, ESP8266, ESP32 and 11 OpenWrt target jobs pass.
+
+COE #26 intake branch and PR destination branch are distinct. The 61-row intake has a newer feature-branch snapshot (54/7) and an older PR snapshot (actual 46/15 vs declared 47/14). Tests and licence paths remain incomplete; no migration is authorized.
+
+---
+
 ## PHX-MASTER UTC05 — exact-head Hardware and COE integration matrix (2026-11-27T05Z)
 
 | Evidence | Exact source | Exact run / destination | Result |

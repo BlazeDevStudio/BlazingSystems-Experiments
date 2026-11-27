@@ -1,3 +1,15 @@
+## PHX-MASTER UTC07 — #357 exact-head CI and COE #26 intake-branch drift (2026-11-27T07:41Z)
+
+- [UTC07 exact-provenance audit](./PHX_MASTER_UTC07_20261127_HW357_COE26_EXACT_PROVENANCE_AUDIT.md).
+- Live refs: Experiments main `6be5d19b`; development `aad3aade`; active v0.6 `2fbd2475`; Master at start `15653103e01bd34239fe0134b801826d2db0c9e7`; COE main `a6513ab4`; COE #26 `b382d233`.
+- #357 current PR metadata head is `2476b2cd`; body still has a conflicting top-level restack SHA `69ef1b49`. Full #45958868784 and Native #45958868726 fail; Poll #45958868771 and Mbed #45958868755 pass. QA/CORE own the semantic pending-disposition correction; Hardware owns firmware and PR handover.
+- #177 active v0.6 source at `2fbd2475` still has synchronous poll before first coin sample: ESP8266 354→357, ESP32 314→318, 3,500 ms timeout. Issue body source pin `9df0a7e7` is stale.
+- COE #26 intake branch `feature/pisowifi-cleanup-stabilization@331e14bc` has newer intake blob `fdd9c1e` (54 identical / 7 derived, 11 derived tests NOT_RUN); live PR #26 still carries older blob `1b9018ff` (actual 46 / 15 vs declared 47 / 14, 15 derived tests). The two Pisowifi trees differ on 18 shared paths, five candidate-only and one feature-only. Five PR #26 workflows are CANCELLED; no check-runs.
+- Current #355/#26 firmware/test blobs remain divergent; five PisoWiFi license paths lack exact destination counterparts and repository-root NOTICE is absent. No staging or migration.
+- Cleanup #266 OPEN / 0-of-7; manifest remains 11 routes / DRAFT_REVIEW_ONLY / Master target null; private registry v11/newer corrections NOT_RECOVERED. PRODUCTION NO-GO.
+
+---
+
 ## PHX-MASTER UTC06 — #355/#357 stack drift, cancelled COE CI and exact migration re-audit (2026-11-27T06Z)
 
 - [UTC06 full audit](./PHX_MASTER_UTC06_20261127_HW355_STACK_DRIFT_COE26_CANCELLED_CI_EXACT_TREE_AUDIT.md).

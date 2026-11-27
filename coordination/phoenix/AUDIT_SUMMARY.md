@@ -1,3 +1,18 @@
+## PHX-MASTER UTC07 — decision and blockers (2026-11-27T07:41Z)
+
+**PR #288 OPEN / DRAFT / UNMERGED. COE #26 FROZEN. Cleanup #266 OPEN / 0-of-7. PRODUCTION NO-GO.**
+
+- **P0 #177 OPEN:** active v0.6 `2fbd2475` still polls before coin sampling on both ESP boards; exact blobs/lines are recorded in the UTC07 report. Issue body source pin is stale.
+- **#357 current exact head `2476b2cd`:** Full and Native FAIL; Poll and Mbed PASS. PR body top-level restack SHA conflicts with live docs head. HARDWARE refreshes its own handover; QA/CORE own semantic pending disposition.
+- **#355:** Poll/Mbed PASS, Full/Native FAIL. **#356:** preflight, Mbed, Native and Full PASS at `0ea32d31`, simulated only.
+- **COE #26:** candidate `b382d233` remains frozen; it uses older SOURCE_INTAKE `1b9018ff` (actual 46/15 vs declared 47/14) while named feature branch `331e14bc` has newer `fdd9c1e` (54/7). Feature vs PR `Pisowifi/` differs on 18 shared paths. Test identities and five license paths remain unresolved; five workflows are CANCELLED.
+- **Other roles:** CORE #252 scoped build PASS; RENTAL #328 build FAIL but three focused checks PASS; PISONET #255 Windows synthetic PASS; QA #290 PASS/#292 no run; RELEASE #242/#291 no exact-head runs; COE #35 sandbox/shared Hardware FAIL; #45 focused PASS; #49 stage/case PASS/shared Hardware FAIL.
+- **Master tests:** local Git checkout blocked by github.com DNS; Python suite and `verify_coordination.py` NOT RUN. No Master Actions run claimed.
+- **Private registry:** v11/newer corrections not found in Library; no Google Drive connector action is exposed. No older registry substituted and no private content published.
+- No subsystem source, ownership route, COE destination, firmware, payment, signer, secret, release artifact or physical device was modified.
+
+---
+
 ## PHX-MASTER UTC05 — decision and blockers (2026-11-27T05Z)
 
 **PR #288 OPEN / DRAFT / UNMERGED. COE #26 FROZEN. Cleanup #266 OPEN / 0-of-7. PRODUCTION NO-GO.**

@@ -1,3 +1,16 @@
+## PHX-MASTER UTC07 — pending disposition and poll-intake guard (2026-11-27T07:41Z)
+
+The current #357 exact-head Native failure at [#45958868726](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45958868726) is a source-presence assertion for `clearPending(true)` and `clearPending(false)`, not proof that an authenticated disposition is absent or that a callsite would be safe. Preserve the existing semantic contract:
+
+1. Missing, unsigned, malformed, stale, replayed or otherwise untrusted poll responses keep admission denied and preserve pending evidence.
+2. Positive disposition requires a CORE-owned authenticated receipt bound to device/event/sequence and approved epoch/nonce identity.
+3. Clear one pending event only after authenticated disposition acceptance, durable state commit and exact readback/sequence reconciliation; write/readback/crash ambiguity preserves deny hold and evidence.
+4. QA tests the state transition, replay/idempotency and failure recovery at the same exact source SHA; never infer correctness from a literal function-call string.
+
+Active v0.6 still blocks in `post("poll")` before the first coin sample: ESP8266 blob `12c4bb82`, lines 354→357; ESP32 blob `29f1125d`, lines 314→318; 3,500 ms timeout. Issue #177 remains P0. HARDWARE owns local intake protection/nonblocking capture; CORE owns authenticated receipt/disposition and durable authority; QA owns independent tests; MASTER owns the interface contract.
+
+---
+
 ## PHX-MASTER UTC05 — pending disposition is a semantic contract, not a callsite grep (2026-11-27T05Z)
 
 The current #355/#357 deny-only candidate must not be modified to satisfy a test that merely requires literal `clearPending(true)` and `clearPending(false)` callsites. The #357 Native run #45939854159 logs `Vendo pending sequence contract passed`, then fails at `v060_vendo_sequence_contract.py:20` on that string-presence assertion. A syntactic clear call can erase unresolved evidence without proving authority or durability.
