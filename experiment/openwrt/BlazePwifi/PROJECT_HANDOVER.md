@@ -1,3 +1,41 @@
+# CURRENT STATUS — 2026-11-27T23:48:26Z — #367 focused deny-latch + Mbed CI verified; Full controller parity blocked
+
+## PHX-HARDWARE UTC23 CI follow-up — exact source and docs-head Focused/Mbed PASS; Full parity blocked
+
+**Recorded:** 2026-11-27T23:48:26Z (2026-11-28 07:48:26 Asia/Manila)  
+**Role:** PHX-HARDWARE  
+**Repository / branch:** `BlazeDevStudio/BlazingSystems-Experiments` / `phoenix/hw-deny-latch-monotonicity-20261127-utc21`  
+**PR #367:** OPEN / DRAFT / UNMERGED; base #366 `07fef4e8e1055c06cf5e5c3a0d3829c52be31cc9`  
+**Source/test SHA:** `1922dcba792aad40e576583db43de0d066522bf6`  
+**Docs head with exact Focused/Mbed/Full runs:** `4a78354c985abe26e02ac9574d70b45b6cf3f113`  
+**Current source status:** CI VERIFIED (focused deny-latch contract + Mbed matrix); Full integration BLOCKED.
+
+### Exact-source evidence
+
+- Focused [#46083988151](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46083988151), job `140789185854`, head `1922dcba...`: **PASS**. Job log confirms both ESP8266 and ESP32 reject 7/7 direct deny mutations and 10/10 pointer/reference/decltype/move/forward/cast alias mutations; logical-AND positive control and comment/string decoys accepted; poll transport matrix 20 cases per board.
+- Mbed [#46083988148](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46083988148), head `1922dcba...`: **3/3 PASS** — source-contract `140789186405`, ESP32 core 3.3.13 `140789186261`, ESP32 core 4.0.0 `140789186428`.
+- Focused [#46084256327](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46084256327), job `140790012861`, head `4a78354c...`: **PASS**, same 10/10 alias matrix per board.
+- Mbed [#46084256398](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46084256398), head `4a78354c...`: **3/3 PASS** — source-contract `140790018452`, core 3.3.13 `140790018772`, core 4.0.0 `140790018749`.
+
+### Full integration result
+
+- Source-head Full [#46083988182](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46083988182), head `1922dcba...`: CANCELLED after validation failed the handover freshness gate; not a full pass.
+- Docs-head Full [#46084256341](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46084256341), head `4a78354c...`: overall workflow still IN_PROGRESS at this checkpoint; validation job `140790134787` is **FAILURE** at `tests/controllers.sh`. Exact source check confirms that script requires `config_revision` in both sketches; the deny-only candidate sketches omit it while current main sketches contain it. Do not insert an unauthenticated placeholder or edit QA-owned assertions.
+- At last job read, 13 target/platform jobs PASS and `firmware (orangepi_pc)` remains IN_PROGRESS. Downstream simulation, update-bundle, signing and publication stages are skipped after validation failure.
+
+### Interpretation
+
+The new deny-latch alias tests are now actually executed by the Hardware-owned `phx-hw-active-v06-poll-intake-deny.yml` workflow; exact job logs show the 10/10 per-board results. This is host/source-contract and target-build evidence only. It does not prove arbitrary C++ memory safety, physical pulse capture, relay polarity/retention or power-loss behavior.
+
+P0 #177 remains unresolved. CORE authenticated register/poll/receipt authority and QA controller parity remain blockers. Coin and relay admission remain denied. HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
+
+**Supersession note:** this CI follow-up supersedes the initial UTC23 handover statement that no exact-head workflow had yet appeared; it does not erase the earlier timestamped observation.
+
+
+**Authoritative narrow handover:** [UTC23 deny-latch rvalue/decltype reference-escape](docs/handover/2026-11-28-hw-deny-latch-rvalue-reference-escape-utc23.md)
+
+---
+
 # CURRENT STATUS — 2026-11-27T23:34:21Z — deny-latch rvalue/decltype alias guard committed; exact CI NOT RUN
 
 ## PHX-HARDWARE UTC23 — deny-latch rvalue/decltype reference-escape coverage

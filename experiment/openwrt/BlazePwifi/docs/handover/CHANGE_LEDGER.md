@@ -4048,3 +4048,20 @@ Private \`BLAZE_PROJECT_REGISTRY_v11_20261027.json\` remains NOT RECOVERED; no s
 - **Rollback:** forward revert of `1922dcba...`; no force-push.
 - **NEXT ACTION:** obtain exact-head Focused/Mbed/Full CI at `1922dcba...` or synchronized docs head through an approved repository workflow trigger; if unavailable, request repository administration. Keep PR #367 DRAFT and preserve deny-only behavior.
 - **Sequencing deviation:** pre-change IN_PROGRESS marker was not committed before the source edit; disclosed in the current-state handover, not backdated.
+
+## 2026-11-27 — PHX-HARDWARE UTC23 — exact-head deny-latch CI evidence and Full blocker
+
+- **ID:** PHX-HW-PR367-CI-VERIFIED-20261127T23
+- **Local time:** 2026-11-28 07:48:26 Asia/Manila; **UTC:** 2026-11-27T23:48:26Z
+- **Scope / priority / status:** Hardware-owned deny-latch source contract and exact-head CI; P1; `validated` for focused source-contract and Mbed matrix only; Full integration remains `blocked`.
+- **Repository / branch / PR:** `BlazeDevStudio/BlazingSystems-Experiments`; `phoenix/hw-deny-latch-monotonicity-20261127-utc21`; PR #367 OPEN / DRAFT / UNMERGED.
+- **Source/test SHA:** `1922dcba792aad40e576583db43de0d066522bf6`; **docs head tested:** `4a78354c985abe26e02ac9574d70b45b6cf3f113`.
+- **Focused source-head:** [#46083988151](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46083988151), job `140789185854`, PASS. Logs show 7/7 direct mutations and 10/10 alias mutations rejected per board, logical-AND and comment/string decoys accepted, poll transport 20 cases per board.
+- **Mbed source-head:** [#46083988148](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46083988148), 3/3 PASS: source-contract `140789186405`, core 3.3.13 `140789186261`, core 4.0.0 `140789186428`.
+- **Focused docs-head:** [#46084256327](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46084256327), job `140790012861`, PASS with the same 10/10 alias results per board.
+- **Mbed docs-head:** [#46084256398](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46084256398), 3/3 PASS: source-contract `140790018452`, core 3.3.13 `140790018772`, core 4.0.0 `140790018749`.
+- **Full:** source-head [#46083988182](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46083988182) cancelled after handover-freshness failure; docs-head [#46084256341](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46084256341) validation job `140790134787` fails at `tests/controllers.sh` because candidate sketches omit `config_revision` while main sketches contain it. At checkpoint 13 target jobs PASS, `firmware (orangepi_pc)` IN_PROGRESS; downstream stages skipped.
+- **Interpretation:** focused lab and Mbed evidence are exact-SHA CI verification, not hardware acceptance. Full controller parity remains QA/CORE-owned. No production sketch or shared API changed.
+- **Blockers:** P0 #177, QA controller parity, CORE authenticated poll/receipt contract, Master matrix refresh, physical 150 power cuts, 30-device/24-hour soak, electrical recovery, protected witness, durable accounting/replay, v1-to-v2 migration and independent signoff.
+- **NEXT ACTION:** QA/CORE resolve controller parity without weakening deny-default; Master updates the role matrix; Hardware rechecks terminal Full status and exact current docs-head runs. Keep PR #367 DRAFT.
+- **Supersession:** this entry supersedes the initial UTC23 observation that no exact-head run had appeared; the earlier observation is retained.
