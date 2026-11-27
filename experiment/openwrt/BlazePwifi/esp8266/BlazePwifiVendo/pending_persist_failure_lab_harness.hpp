@@ -54,6 +54,10 @@ struct FakeLittleFS {
     bool failRenameNewToDat = false;
     bool failRestoreBackup = false;
     bool failFinalBackupRemove = false;
+    bool corruptFullWrite = false;
+    bool failReadbackOpen = false;
+    bool failReadbackShort = false;
+    bool corruptReadback = false;
 
     int openCalls = 0;
     int writeCalls = 0;
@@ -83,6 +87,9 @@ struct FakeLittleFS {
         if (std::strcmp(path, "/pending.new") != 0 || !fresh) return 0;
         const size_t written = failShortWrite && size > 0 ? size - 1 : size;
         freshBytes.assign(reinterpret_cast<const char *>(data), written);
+        if (corruptFullWrite && written == size && !freshBytes.empty()) {
+            freshBytes[0] = static_cast<char>(freshBytes[0] ^ 0x01);
+        }
         return written;
     }
 
@@ -167,6 +174,16 @@ bool fsReady = true;
 BpPendingSequence pendingSequenceState{
     0x42505632UL, 2, 0, 0, 1, 1, "AAAAAAAAAAAAAAAA", "00000001", 0
 };
+
+bool readPendingFile(const char *path, BpPendingSequence &state, bool &legacy) {
+    if (std::strcmp(path, "/pending.new") != 0 || !LittleFS.fresh ||
+        LittleFS.failReadbackOpen || LittleFS.failReadbackShort ||
+        LittleFS.freshBytes.size() != sizeof(state)) return false;
+    std::memcpy(&state, LittleFS.freshBytes.data(), sizeof(state));
+    if (LittleFS.corruptReadback) ++state.sequence;
+    legacy = false;
+    return bp_pending_sequence_valid(&state);
+}
 
 /*__PERSIST_PENDING_SEQUENCE_FUNCTION__*/
 
@@ -306,6 +323,38 @@ int main() {
     LittleFS.backupBytes = "old-backup";
     if (!persistPendingSequence(next) || !promotedStateMatches(next) ||
         LittleFS.removeCalls != 1 || LittleFS.renameCalls != 1) return 13;
+    ++scenarios;
+
+    resetState();
+    LittleFS.dat = true;
+    LittleFS.datBytes = "old-canonical";
+    LittleFS.corruptFullWrite = true;
+    if (persistPendingSequence(next) || !LittleFS.dat || !LittleFS.fresh ||
+        LittleFS.renameCalls != 0 || !oldRamStateUnchanged()) return 14;
+    ++scenarios;
+
+    resetState();
+    LittleFS.dat = true;
+    LittleFS.datBytes = "old-canonical";
+    LittleFS.failReadbackOpen = true;
+    if (persistPendingSequence(next) || !LittleFS.dat || !LittleFS.fresh ||
+        LittleFS.renameCalls != 0 || !oldRamStateUnchanged()) return 15;
+    ++scenarios;
+
+    resetState();
+    LittleFS.dat = true;
+    LittleFS.datBytes = "old-canonical";
+    LittleFS.failReadbackShort = true;
+    if (persistPendingSequence(next) || !LittleFS.dat || !LittleFS.fresh ||
+        LittleFS.renameCalls != 0 || !oldRamStateUnchanged()) return 16;
+    ++scenarios;
+
+    resetState();
+    LittleFS.dat = true;
+    LittleFS.datBytes = "old-canonical";
+    LittleFS.corruptReadback = true;
+    if (persistPendingSequence(next) || !LittleFS.dat || !LittleFS.fresh ||
+        LittleFS.renameCalls != 0 || !oldRamStateUnchanged()) return 17;
     ++scenarios;
 
     std::cout << "PENDING_PERSIST_FAILURE_PASS scenarios=" << scenarios << "\n";

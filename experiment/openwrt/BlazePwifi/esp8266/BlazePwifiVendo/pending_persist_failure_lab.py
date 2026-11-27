@@ -177,7 +177,7 @@ def main() -> None:
         )
 
         output = compile_and_run(function, board.lower())
-        require("PENDING_PERSIST_FAILURE_PASS scenarios=13" in output,
+        require("PENDING_PERSIST_FAILURE_PASS scenarios=17" in output,
                 f"{board} persistence failure-injection harness did not complete")
         print(f"{board}: {output}")
 
