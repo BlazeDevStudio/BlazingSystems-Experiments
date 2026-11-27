@@ -85,8 +85,10 @@ def validate_source(source):
     digest_call = signed.find("String digest=hexDigest(base);")
     digest_guard = signed.find("if(!validSha256Hex(digest)) return String();")
     request_return = signed.find("return \"action=\"")
-    require(0 <= key_guard < digest_call < digest_guard < request_return,
-            "signedBody must reject missing key/id and invalid digest before request construction")
+    require(0 <= digest_call < digest_guard < request_return,
+            "signedBody must validate the digest before request construction")
+    require("cfg.key.isEmpty()" not in signed and "cfg.id.isEmpty()" not in signed,
+            "Mbed TLS compatibility patch must preserve existing first-boot register request behavior")
 
     post = function_body(source, "String post(const String &action")
     body_call = post.find("String body=signedBody(")
@@ -122,6 +124,9 @@ def main():
             "if(status!=0) return String();", "/* unchecked */", 1)),
         ("missing-invalid-digest-deny", source.replace(
             "if(!validSha256Hex(digest)) return String();", "/* unchecked */", 1)),
+        ("new-empty-key-bootstrap-deny", source.replace(
+            "String n=forcedNonce.length()?forcedNonce:freshNonce();",
+            "if(cfg.key.isEmpty() || cfg.id.isEmpty()) return String();\\n  String n=forcedNonce.length()?forcedNonce:freshNonce();", 1)),
         ("missing-empty-body-deny", source.replace(
             'if(!body.length()) return "";', "/* unchecked */", 1)),
         ("missing-unsupported-version-deny", source.replace(

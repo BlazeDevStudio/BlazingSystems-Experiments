@@ -249,7 +249,6 @@ void applyRemoteConfig(const String &r){
 }
 
 String signedBody(const String &action,const String &pulses,const String &target,const String &forcedNonce=""){
-  if(cfg.key.isEmpty() || cfg.id.isEmpty()) return String();
   String n=forcedNonce.length()?forcedNonce:freshNonce();
   String base=cfg.key+"|"+action+"|"+cfg.id+"|"+n+"|"+pulses+"|"+target+"|"+cfg.key;
   String digest=hexDigest(base);
