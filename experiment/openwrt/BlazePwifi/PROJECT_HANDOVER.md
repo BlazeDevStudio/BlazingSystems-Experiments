@@ -1,3 +1,41 @@
+## PHX-HARDWARE UTC04 — board GPIO configuration guard (PR #357)
+
+**Repository:** \`BlazeDevStudio/BlazingSystems-Experiments\`  
+**Branch:** \`phoenix/hw-runtime-pin-config-guard-20261127-utc04\`  
+**Stack:** PR #357 → PR #355 → PR #354; all remain DRAFT / unmerged.  
+**Source/test SHA:** \`ede3acab5dd8f3aefc1a3d3d2780c00fb8bc3c04\`.
+
+### Scope and implementation
+
+This isolated Hardware-owned change hardens local setup configuration without touching the shared controller protocol:
+
+- Both ESP8266 and ESP32 sketches now parse GPIO form values as bounded decimal strings rather than permissive \`String::toInt()\`.
+- Both sketches reject flash-reserved GPIO 6–11 and duplicate coin/relay/LED assignments.
+- ESP8266 enforces GPIO 0–16; ESP32 enforces GPIO 0–33 for the coin input and both outputs, excluding input-only GPIO 34–39 because this firmware configures the coin input with \`INPUT_PULLUP\`.
+- Invalid persisted pin tuples are replaced in RAM with the documented board defaults before any runtime pin configuration. ESP32 additionally sets \`configStoreValid=false\`, preventing station registration and polling until the owner saves a valid tuple.
+- Both setup save handlers validate all pin values before Wi-Fi verification and before EEPROM/Preferences persistence. Invalid form data returns HTTP 400 and is not saved.
+- The stored bytes are not rewritten during startup fallback. Existing SSID, credentials, server, device identity, pending journal and other settings are preserved.
+
+### Test-first and exact evidence
+
+- Test-only RED: commit \`60fa25b3cb6830666bb0d3f8e2fc21831e7ab95e\`; [run #45938629972](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45938629972), job \`140307550045\`, expected failure because the firmware helper was absent.
+- Focused exact-source GREEN: [push #45939247440](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45939247440), job \`140309505531\`, PASS; [PR #45939251952](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45939251952), job \`140309520133\`, PASS.
+- The focused log reports \`RUNTIME_GPIO_POLICY_PASS ESP8266\`, \`RUNTIME_GPIO_POLICY_PASS ESP32\`, duplicate/flash/input-only mutation rejection, and \`RUNTIME_GPIO_CONFIG_SIMULATED_ONLY=1\`.
+- ESP32 Mbed TLS 3/4 clean-build matrix [#45939251950](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45939251950): source-contract and both target builds PASS.
+- Full build [#45939247661](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45939247661): ESP8266 and ESP32 target jobs PASS at the exact source/test SHA. Its validation job failed at the mandatory handover freshness gate before this documentation sync; rerun after this commit.
+- Native synthetic journal [#45939251963](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45939251963) remains blocked by QA-owned PAY-0745; no Hardware workaround was added.
+
+### Boundaries and unresolved gates
+
+- The new guard checks basic GPIO ranges, flash-reserved pins and role collisions. Board-specific strap resistor, pull-up, voltage, relay-contact and wiring acceptance still requires noncustomer hardware testing.
+- No physical flashing, device reset, relay actuation, coin acceptance, live money, production migration, deployment, release signing or tagging occurred.
+- P0 #177 remains OPEN. This task does not solve synchronous poll-before-sample pulse loss or establish an authenticated controller response contract. The deny-only candidate remains fail-closed.
+- Financial #31/#32, safety #34, witness #43, cleanup-first #266, and independent QA/release acceptance remain open.
+- COE #26 remains frozen; no firmware or test migration was performed.
+- Google Drive v11 registry remains unavailable in the connected search context.
+
+**Next:** post-sync Full CI; independent QA review of #357; Master refreshes the live role matrix; CORE continues to own the authenticated poll/receipt/disposition contract.
+
 ## PHX-HARDWARE UTC02 — #355 historical ledger preservation repair
 
 **PR #355:** OPEN / DRAFT / UNMERGED · **Branch:** `phoenix/hw-poll-preflight-lab-modules-20261127-utc18` · **Base #354:** `fc842342596786e072630179acfbbc4feeb2ba02`  

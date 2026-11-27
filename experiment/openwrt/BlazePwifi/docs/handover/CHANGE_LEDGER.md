@@ -3727,3 +3727,13 @@ PR #354 remains OPEN / DRAFT / UNMERGED. PRs #239/#254/#283 remain OPEN / DRAFT 
 - Focused [#45930312768](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45930312768), job `140281160286`: PASS. Exact checkout SHA matched; append-only guard reported `base_bytes=1132798 appended_bytes=13736`; seven tests PASS; all existing Hardware focused labs PASS.
 - Full [#45930312762](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45930312762): CI-0701 PASS; validation failed only at the mandatory handover freshness gate because the newly added guard/test paths were not yet recorded in PROJECT_HANDOVER. This UTC02 synchronization records them; rerun Full at the resulting docs head.
 - No firmware, financial state, shared API, QA/CORE source or COE destination changed. Physical acceptance NOT TESTED; HARDWARE ACCEPTED NO; PRODUCTION NO-GO.
+
+
+## 2026-11-27 — PHX-HARDWARE runtime GPIO configuration guard
+
+- Branch \`phoenix/hw-runtime-pin-config-guard-20261127-utc04\`; DRAFT PR #357 stacked on #355 at base \`0adb541ae43143d6fc242f3746f56f71a3040d47\`.
+- Source/test commit \`ede3acab5dd8f3aefc1a3d3d2780c00fb8bc3c04\`.
+- Added strict bounded decimal GPIO parsing, board-aware GPIO range checks, flash-pin exclusion and distinct coin/relay/LED roles to both Vendo sketches. Invalid stored tuples fall back before pin setup; ESP32 station/poll remains disabled until corrected configuration is saved.
+- Added source-extracted C++ sanitizer and failure-injection lab \`runtime_pin_config_lab.py\`; test-only RED #45938629972; focused push #45939247440 and PR #45939251952 PASS.
+- Mbed TLS 3.3.13/4.0.0 matrix #45939251950 PASS; Full #45939247661 ESP8266/ESP32 target jobs PASS. Full validation needs post-handover rerun; Native #45939251963 remains blocked by QA-owned PAY-0745.
+- SIMULATED / CI VERIFIED only. Physical GPIO/relay/coin/power acceptance NOT TESTED. No positive coin admission, journal disposition, financial or production behavior enabled.

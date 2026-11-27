@@ -1,3 +1,23 @@
+## PHX-HARDWARE UTC04 — board GPIO configuration guard (PR #357)
+
+- Repository: \`BlazeDevStudio/BlazingSystems-Experiments\`.
+- Branch: \`phoenix/hw-runtime-pin-config-guard-20261127-utc04\`; stacked DRAFT PR #357 targets #355 branch \`phoenix/hw-poll-preflight-lab-modules-20261127-utc18\` at base SHA \`0adb541ae43143d6fc242f3746f56f71a3040d47\`.
+- Source/test SHA: \`ede3acab5dd8f3aefc1a3d3d2780c00fb8bc3c04\`. PR #357 remains OPEN / DRAFT / UNMERGED.
+- Added strict decimal GPIO parsing and board-aware role validation to both Vendo sketches. The guard rejects malformed/out-of-range values, flash GPIO 6–11, output pins above ESP32 GPIO33, and coin/relay/LED pin collisions. Invalid persisted tuples fall back to board defaults before runtime pin configuration; ESP32 also leaves station/poll disabled until a valid configuration is saved. Setup handlers validate all three GPIOs before Wi-Fi verification and EEPROM/Preferences writes.
+- Added \`runtime_pin_config_lab.py\`: source-extracted C++11 sanitizer harness, positive board matrices, and injected duplicate-role, flash-pin, non-decimal-input and ESP32 input-only/output-role mutations. This is SIMULATED / CI VERIFIED, not electrical evidence.
+- Expected RED: [#45938629972](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45938629972), job \`140307550045\`, failed because the helper did not yet exist.
+- Focused source/test GREEN: [push #45939247440](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45939247440), job \`140309505531\`, PASS; [PR #45939251952](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45939251952), job \`140309520133\`, PASS.
+- Mbed TLS matrix [#45939251950](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45939251950): source-contract, ESP32 core 3.3.13 and 4.0.0 all PASS.
+- Full build [#45939247661](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45939247661): ESP8266 job \`140309655278\` PASS and ESP32 job \`140309655084\` PASS. Overall validation failed before this documentation sync at the mandatory handover freshness gate; a post-sync Full run is required.
+- Native synthetic gate [#45939251963](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45939251963), job \`140309520462\`, remains FAIL at QA-owned \`PAY-0745 durable Vendo pending sequence and corruption contract\`. Hardware did not add unsafe pending-clear calls or alter the shared contract.
+- The first compile attempt exposed Arduino prototype ordering on ESP8266; helpers were moved after \`LegacyPendingRecord\` in commit \`ede3acab\`. Both final board target builds pass at the exact source/test SHA.
+- Physical GPIO levels, board strapping/pull-up behavior, relay contacts, pulse timing, power loss, 150 power cuts and 30-device/24-hour soak remain NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+- P0 #177 remains open. This PR does not change poll authentication, pulse admission, pending disposition, finance, replay, witness or COE. CORE still owns the authenticated poll/receipt/disposition contract.
+- Master #288 is now at \`f426d567c5dfdd94ec1be464b0a9fd619e0e02e8\`; its UTC04 assignment table has not yet listed #357. Master/QA review requested.
+- Private Google Drive registry v11 was searched but not retrieved. Do not substitute an older registry.
+- Next exact action: finish post-documentation Full CI, request independent QA review of #357, and have Master refresh the role/integration matrix to include #357 without changing ownership of #355/#356.
+
+
 ## PHX-HARDWARE UTC02 — current exact state: #355 ledger preservation
 
 - PR #355 remains OPEN / DRAFT / UNMERGED on `phoenix/hw-poll-preflight-lab-modules-20261127-utc18`, stacked on #354 at `fc842342596786e072630179acfbbc4feeb2ba02`.
