@@ -1,3 +1,32 @@
+## PHX-MASTER UTC02 — exact-tree migration and CI matrix (2026-11-27T02:34Z)
+
+| Evidence | Exact source | Exact destination / run | Result |
+|---|---|---|---|
+| Complete recursive trees | Experiments #355 fa33bd18: 2,418 entries | COE #26 b382d233: 286 entries | Both trees non-truncated; not equivalent |
+| ESP32 route | 4 files under experiment/openwrt/BlazePwifi/esp32 | 1 file under Hardware/esp32 | 0 identical, 1 divergent, 3 source-only |
+| ESP8266 route | 13 files under experiment/openwrt/BlazePwifi/esp8266 | 1 file under Hardware/esp8266 | 0 identical, 1 divergent, 12 source-only |
+| PisoWiFi tests | 150 source tests | 19 destination tests | 2 identical, 2 divergent, 146 source-only, 15 destination-only |
+| ESP32 firmware | source blob fcf26a50cd3238941caf918a849c30ca66f4ce4b | destination blob 3cc7ec54b476943dc04a8d1af5e2df5fe054e422 | DIFFERENT |
+| ESP8266 firmware | source blob 9f0f4829cf57a6a12f4d940b051f17035e0a1670 | destination blob c8be98f72596681e36a3ad1f8939bf8046c96887 | DIFFERENT |
+| SOURCE_INTAKE | blob 1b9018ff944f7f673934d0fc2a97e0a0090d3f5f; 61 runtime rows | actual 46 byte-identical / 15 derived; summary 47 / 14 | INCONSISTENT |
+| Derived tests | 15 destination-only identities | 11 NOT_RUN / 4 PENDING_CI_RUN; no hardware evidence | NOT VERIFIED |
+| License/NOTICE | Project LICENSE, QRCode LICENSE, TailAdmin LICENSE and NOTICE | Exact destination counterparts | 4 BYTE-IDENTICAL |
+| Missing license/NOTICE | Root NOTICE, Tabler LICENSE, jsQR LICENSE, BlazeRentalLauncher LICENSE | No exact mapped counterparts | 4 MISSING; Launcher assets/license.html also absent |
+| Hardware firmware audit | blob 86c06e75, dated 2026-11-11; old source blobs 117c6e93 / bfb94920 | Destination currently contains two divergent sketches | Audit statement “not copied” conflicts with candidate tree |
+| COE #26 Actions | head b382d233 | #43096752609, #43096752632, #43096752800, #43096752563, #43096752557 | 5 QUEUED, zero jobs/check-runs |
+
+SOURCE_INTAKE flags release_authorized=false, hardware_tested=false, full_ci_tested=false and source_admission_complete=false. No migration staging or destination write was performed.
+
+### Current Hardware #356 exact-head CI
+
+- Docs/PR head 8ce12c96; source/test head 46e93bb1; base v0.6 2fbd2475.
+- Focused exact-source PR #45926090112 PASS.
+- Full PR #45926090166 terminal FAILURE at ESP32 compile: BlazePwifiVendo32.ino:6 cannot find mbedtls/sha256.h under Arduino ESP32 core 4.0.0.
+- Validation job PASS 135/135; ESP8266, Android, 11 OpenWrt targets, seven non-ESP simulations and update bundle PASS. Production import/signing/release skipped.
+- All storage/holder checks are synthetic read-only sysfs/mountinfo evidence. PHYSICAL_POWER_CUT_VERIFIED=0; customer installation unauthorized.
+
+---
+
 ## PHX-MASTER UTC23 — exact migration and CI matrix (2026-11-26T23:39Z)
 
 | Evidence | Exact source | Exact destination / run | Result |

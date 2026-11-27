@@ -1,3 +1,25 @@
+## PHX-MASTER UTC02 — cross-role canonical ledger preservation invariant (2026-11-27T02:34Z)
+
+Canonical CHANGE_LEDGER.md history is append-only. A PR that touches the canonical ledger must preserve the exact base content as a byte-identical prefix and may only append new entries. Historical corrections must be added as dated correction entries that cite the affected prior entry/blob; they must not replace, truncate, reorder or silently rewrite prior records. A deliberate non-append rewrite is a hard review blocker unless the owner supplies an independently verified archival snapshot and an explicit, separately reviewed migration plan.
+
+### Source-grounded defect and branch-local mitigation
+
+- HARDWARE #355 base (#354 head fc842342) ledger blob b950f7be47f79d71e6cb8b721801c1bae128df45: 1,132,798 bytes / 3,621 newline-delimited records.
+- HARDWARE #355 head fa33bd18 ledger blob 79997c1e90ffb6b7c6ce27749ba59c02b80567cc: 12,319 bytes / 94 records. Exact PR review #7207757946 reports +59 / -3,586. This is confirmed historical truncation; #355 owner must restore the exact base history and append its new entries.
+- HARDWARE #356 is a separate branch based on v0.6 2fbd2475. Its base ledger blob f16d5774366cf3a4c358dd2a0c2e7ee5e945f668 is 1,082,274 bytes; head 8ce12c96 blob 652ff79fcab1320c09a77956510a46c81dfbef25 is 1,089,350 bytes. PR patch is additions-only (+52 / -0) and the focused exact-head append-only/holder guard passes in #45926090112. This branch-local guard does not repair #355 and is not yet a repository-wide gate.
+- The current shared handover_gate.sh was reported by HARDWARE to check dated entries but not preserve the prior canonical ledger prefix.
+
+### Ownership and proposed shared gate
+
+- PHX-MASTER owns this cross-role invariant and coordination evidence.
+- PHX-RELEASE owns any shared workflow/gate implementation in its existing owner scope; PHX-QA independently reviews positive and negative regression fixtures.
+- PHX-HARDWARE owns restoring #355 and maintaining its branch-local handover.
+- The shared gate should compare exact base/head blobs for canonical ledgers, reject any deleted or rewritten historical bytes, report both blob SHAs and byte/line counts, and permit additions only. It must not treat a focused branch-local test as global acceptance.
+
+No shared workflow, subsystem source, or role-owned branch was modified by PHX-MASTER in this activation.
+
+---
+
 ## PHX-MASTER UTC23 — P0 coin-pulse sampling invariant (2026-11-26T23:39Z)
 
 Issue #177 remains OPEN. Active v0.6 source at 2fbd2475 has a blocking synchronous poll before the next coin input sample on both boards: ESP8266 blob 12c4bb82, post("poll") line 354 then digitalRead(runCoinPin) line 357; ESP32 blob 29f1125d, post("poll") line 314 then digitalRead(runCoinPin) line 318. Issue #177 reports a source-extracted host reproduction of a missed active-low pulse during a 3.5s poll while the coin relay remains energized. This is simulated evidence, not physical acceptance.

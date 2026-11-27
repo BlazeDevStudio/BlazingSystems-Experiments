@@ -1,3 +1,22 @@
+## PHX-MASTER UTC02 — live role heads and exact CI (2026-11-27T02:34Z)
+
+| Owner | Live PR head(s) | Exact-head evidence | Boundary / next owner action |
+|---|---|---|---|
+| PHX-CORE | #252 c82705f2 | Build #42698139210 PASS; scoped build only | CORE retains authenticated register/poll and receipt/disposition authority. No Master source edits or parallel CORE work. |
+| PHX-RENTAL | #328 10fc200b | API21/23 #45622918364, auth/installer #45622918551 and APK identity #45622918340 PASS; shared build #45622918468 FAIL | RENTAL owns its shared-build/handover correction. |
+| PHX-PISONET | #255 d01fd164 | Windows synthetic #42462978704 PASS | Native COM acceptance NOT TESTED. |
+| PHX-HARDWARE | #356 docs 8ce12c96; source/test 46e93bb1 | Focused PR #45926090112 PASS. Full #45926090166 terminal FAIL only at ESP32 compile: missing mbedtls/sha256.h. Validation 135/135 PASS; ESP8266, Android, 11 OpenWrt targets, seven non-ESP simulations and update bundle PASS; signing/import/release skipped. | HARDWARE refreshes stale PR body (still references 5c0f58db), resolves ESP32 dependency on its own branch, and requests QA review. Synthetic only; physical storage/power-cut acceptance NOT TESTED. |
+| PHX-HARDWARE | #355 fa33bd18; #354 fc842342; #353 f527b33 | #355 Poll #45907943770 PASS, Mbed #45907943783 3/3 PASS, Full #45907943784 FAIL, Native #45907943785 FAIL. #354 Poll/Mbed PASS, Full/Native FAIL. #353 Relay/Quarantine PASS, Full #45871096425 FAIL. | #355 CHANGE_LEDGER is truncated; restore from exact base and append entries. #356 guard is branch-local and does not repair #355. Preserve deny-only behavior. |
+| PHX-QA | #290 5c29d159; #292 75a3f66d | #290 synthetic #43633486963 PASS; #292 no exact-head run | QA owns independent review of #356 and the shared append-only invariant; no unsafe pending-clear assertions. |
+| PHX-RELEASE | #242 36c0d0bb; #291 bf339a76 | No exact-head runs/statuses | RELEASE owns shared handover-gate implementation and exact-head CI refresh. |
+| COE RELEASE | #35 bc57ba8e | Case #45897198239 PASS; sandbox #45897198204 FAIL; shared Hardware #45897198326 FAIL | Release-owned ULA/Bubblewrap blockers remain. |
+| COE CORE | #45 9d76a134 | Overlay #44295049727 and case guard #44295049903 PASS | Contract-vector stage only; no financial acceptance. |
+| COE INTERCON | #49 aeb8ff11 | Stage 5.1 #44646341873 and case guard #44646341992 PASS; shared Hardware #44646341922 FAIL | No merge or production admission. |
+
+CORE ownership remains reserved to its separate continuation. No subsystem source branch was modified by PHX-MASTER.
+
+---
+
 ## PHX-MASTER UTC23 — live role heads and exact CI (2026-11-26T23:39Z)
 
 | Owner | Live PR head(s) | Exact-head evidence | Boundary / next owner action |

@@ -1,3 +1,15 @@
+## PHX-MASTER UTC02 — exact-head #356, append-only ledger, P0 poll and COE #26 provenance (2026-11-27T02:34Z)
+
+- [UTC02 full audit](PHX_MASTER_UTC02_20261127_HW356_LEDGER_PRESERVATION_COE26_EXACT_TREE_AUDIT.md).
+- Live refs: Experiments main 6be5d19b; v0.5.3 development aad3aade; active v0.6 2fbd2475; Master start df25c7ed; COE main a6513ab4; COE #26 b382d233; COE intake branch feature/pisowifi-cleanup-stabilization 331e14bc.
+- Hardware #356 current docs head 8ce12c96 / source-test 46e93bb1: focused #45926090112 PASS; Full #45926090166 terminal FAIL only at ESP32 compile (missing mbedtls/sha256.h); validation 135/135 PASS and ESP8266, Android, 11 OpenWrt targets, seven non-ESP simulations and update bundle PASS. Physical acceptance NOT TESTED.
+- New P1 history finding: #355 CHANGE_LEDGER was truncated from base #354 blob b950f7be (3,621 records / 1,132,798 bytes) to head blob 79997c1e (94 records / 12,319 bytes), diff +59/-3,586. #356 restores its own separate v0.6 base and adds a branch-local append-only guard; it does not repair #355 or establish a shared gate.
+- Active v0.6 still performs synchronous poll before coin sampling on ESP8266 (354→357) and ESP32 (314→318); issue #177 remains P0 and host-simulated only.
+- COE #26 remains FROZEN: source/destination trees 2,418/286; ESP32 route 4/1 (1 divergent, 3 missing); ESP8266 13/1 (1 divergent, 12 missing); tests 150/19 (2 exact, 2 divergent, 146 source-only, 15 destination-only); both firmware blobs differ; intake 46/15 vs 47/14; four license/notice counterparts match and four are missing; five workflows queued.
+- Manifest remains 11 routes / DRAFT_REVIEW_ONLY / Master target null. Cleanup #266 OPEN / 0-of-7. Private Drive v11/newer corrections NOT_RECOVERED. Master product tests NOT RUN. PRODUCTION NO-GO.
+
+---
+
 ## PHX-MASTER UTC00 — exact-head Hardware #356, P0 poll sequence and COE #26 provenance audit (2026-11-27T00:47:02.187Z)
 
 - [UTC00 exact-head Hardware #356, P0 poll sequence and COE #26 provenance report](PHX_MASTER_UTC00_20261127_HW356_P0_POLL_AND_COE26_PROVENANCE_AUDIT.md).

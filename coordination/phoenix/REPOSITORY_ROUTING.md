@@ -1,3 +1,18 @@
+## PHX-MASTER UTC02 — exact source/destination pins and route hold (2026-11-27T02:34Z)
+
+The current OWNERSHIP_ROUTES.json blob remains e4db324315a1b3543fec17a148fbf960170fcb29, schema phoenix/ownership-routes/v1, 11 routes, DRAFT_REVIEW_ONLY; PHX-MASTER remains coordination-only with target null. No route or ownership assignment was changed.
+
+COE #26 has three distinct provenance pins that are not reconciled:
+- MIGRATION_MAP.md and SOURCE_INTAKE.json source commit: 6d4c9b487af4d768c4d7627654d119417fcc6e00.
+- SOURCE_INTAKE destination branch: feature/pisowifi-cleanup-stabilization; current branch head 331e14bc63e163148f09813da0fdbf4d13581a19; recorded verified_source_head_before_manifest cf59b41e5273bcc42acf59a7971481670e4b2611.
+- Live PR #26 branch: integration/ecosystem-nonproprietary-candidate-20261111 at b382d233ff06c8791b1028bed3c617cc7b670d12, base main at a6513ab4412b4c014eee2863e45cbe32d06cb243.
+
+Current Hardware source for the mapped board/test review is #355 at fa33bd1841494e0c271f99b18fbe244546ebd0b9. Exact recursive trees are complete/non-truncated: source 2,418 entries; destination 286. The source/destination firmware, test and license comparison is recorded in the UTC02 audit.
+
+Do not stage, copy, move, overwrite, cherry-pick or propose any route until the COE integration owner reconciles the exact source SHA, destination branch/head, file-by-file blobs, tests, licences and terminal exact-head CI. The broad Rental parent remains manual-file-mapping-only and copy_permitted=false. Private Drive v11/newer corrections remain NOT_RECOVERED; no older registry is substituted.
+
+---
+
 ## PHX-MASTER UTC23 — route provenance re-read (2026-11-26T23:39Z)
 
 Current manifest blob e4db324315a1b3543fec17a148fbf960170fcb29 remains schema phoenix/ownership-routes/v1, 11 routes, DRAFT_REVIEW_ONLY. PHX-MASTER remains coordination-only with target null. The manifest source_ref f4e8a891 is historical; current Experiments main is 6be5d19b. COE destination candidate remains PR #26 at b382d233ff06c8791b1028bed3c617cc7b670d12.

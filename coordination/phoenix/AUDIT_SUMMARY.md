@@ -1,3 +1,27 @@
+## PHX-MASTER UTC02 — decision and blockers (2026-11-27T02:34Z)
+
+**PR #288 OPEN / DRAFT / UNMERGED. COE #26 FROZEN. Cleanup #266 OPEN / 0-of-7. PRODUCTION NO-GO.**
+
+- **P0 issue #177:** active v0.6 at 2fbd2475 still calls synchronous poll before coin sampling on ESP8266 (354→357) and ESP32 (314→318). Host reproduction is simulated; physical coin/electrical acceptance NOT TESTED.
+- **P1 history integrity:** #355 CHANGE_LEDGER shrank from #354 base blob b950f7be (3,621 records / 1,132,798 bytes) to #355 head 79997c1e (94 records / 12,319 bytes), diff +59/-3,586. #356's separate branch restores its own base and passes a branch-local append-only guard; it does not repair #355 or create a shared gate.
+- **HARDWARE #356:** focused #45926090112 PASS; Full #45926090166 fails ESP32 include mbedtls/sha256.h; validation 135/135 PASS. No physical storage acceptance.
+- **COE #26:** source/destination trees 2,418/286; board firmware blobs differ; tests 150/19 with only two exact identities; intake 46/15 vs 47/14; four license/NOTICE counterparts missing; five workflows queued with zero jobs.
+- Ownership manifest remains 11 routes / DRAFT_REVIEW_ONLY / Master destination null. No staging, copy, move or overwrite.
+- 16/16 read-only structural assertions PASS. Master Python suite and verify_coordination.py NOT RUN; no exact-head Master Actions.
+- Branch metadata reports protected=false for Experiments main, v0.5.3 development, active v0.6, Master coordination, COE main and COE #26 branch.
+- Private Drive BLAZE_PROJECT_REGISTRY_v11_20261027.json and newer corrections NOT_RECOVERED. The Library search surfaced only older v3/v4/v5/v6/v7 snapshots; no general Google Drive file connector is exposed. No substitute or private content was published.
+
+### Next owner actions
+
+1. PHX-RELEASE + PHX-QA review and implement a shared append-only ledger/handover gate on their owned workflow/QA paths.
+2. PHX-HARDWARE restores #355's complete CHANGE_LEDGER from its exact base, appends #355 entries, refreshes its handover, and resolves the ESP32 dependency on its own branch.
+3. PHX-CORE + PHX-HARDWARE + PHX-QA resolve #177 with safe local intake inhibition/nonblocking capture and authenticated receipt/disposition; do not add unsigned re-enable or unsafe pending-clear calls.
+4. COE integration owner reconciles #26 source/destination branch pins, exact firmware/test/license blobs, contradictory firmware audit and queued CI before any staging.
+5. Registry custodian supplies v11 and newer corrections through authorized private Drive access.
+6. MASTER runs its repository suite when an authenticated checkout or Master CI execution path is available.
+
+---
+
 ## PHX-MASTER UTC23 — decision and blockers (2026-11-26T23:39Z)
 
 **PR #288 OPEN / DRAFT / UNMERGED. COE #26 FROZEN. Cleanup #266 OPEN / 0-of-7. PRODUCTION NO-GO.**
