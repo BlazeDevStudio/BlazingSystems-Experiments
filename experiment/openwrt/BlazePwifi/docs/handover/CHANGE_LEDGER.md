@@ -3729,6 +3729,12 @@ PR #354 remains OPEN / DRAFT / UNMERGED. PRs #239/#254/#283 remain OPEN / DRAFT 
 - No firmware, financial state, shared API, QA/CORE source or COE destination changed. Physical acceptance NOT TESTED; HARDWARE ACCEPTED NO; PRODUCTION NO-GO.
 
 
+## PHX-HARDWARE UTC05 — #355 exact-head CI reconciliation (2026-11-27)
+- PR #355 remains OPEN / DRAFT / UNMERGED on `phoenix/hw-poll-preflight-lab-modules-20261127-utc18`, stacked on #354 at `fc842342596786e072630179acfbbc4feeb2ba02`. Exact pre-refresh docs HEAD `0adb541ae43143d6fc242f3746f56f71a3040d47`; source/test commit `444c9a68a0da5a1e2c89839afee9705bf37219f2`.
+- Focused PR #45930541259 / job 140281893321 PASS. Exact log: `CHANGE_LEDGER_APPEND_ONLY_PASS base_bytes=1132798 appended_bytes=14745`; all seven guard tests PASS; ESP8266 and ESP32 blocking-poll harnesses report 3500 ms wait, 80 pulse ticks, zero samples during wait, zero accepted pulses, and four independent polarity combinations. Startup storage ordering, register/remote-config deny, request-auth, output polarity and config persistence failure labs pass.
+- Mbed TLS #45930541401 is 3/3 PASS. Full #45930541357 fails at QA-owned `tests/controllers.sh:21` (`config_revision` assertion); all 14 target/platform jobs and Android pass. Native #45930541359 fails at QA-owned `tests/v060_vendo_sequence_contract.py:20` (active `clearPending(true/false)` callsite assertion). No unsafe response consumer or pending-clear callsite was added.
+- #354/#355 remains deny-only and preserves pending evidence. CORE's authenticated poll/receipt/disposition contract and QA's independent assertion reconciliation are required before positive admission/disposition.
+- SIMULATED / CI VERIFIED only; physical GPIO/relay/electrical recovery, 150 power cuts and 30-device/24-hour soak NOT TESTED. HARDWARE ACCEPTED NO; PRODUCTION NO-GO.
 ## 2026-11-27 — PHX-HARDWARE runtime GPIO configuration guard
 
 - Branch \`phoenix/hw-runtime-pin-config-guard-20261127-utc04\`; DRAFT PR #357 stacked on #355 at base \`0adb541ae43143d6fc242f3746f56f71a3040d47\`.
@@ -3763,3 +3769,11 @@ PR #354 remains OPEN / DRAFT / UNMERGED. PRs #239/#254/#283 remain OPEN / DRAFT 
 - Corrected the mutation to retain a harmless `maximum` reference while disabling the guard; added a positive check that rejected overflow leaves the output value unchanged.
 - Focused rerun is required for valid mutation evidence. Full #45955085639 separately failed QA-owned Controller protocol parity; its target jobs were not yet terminal at last read.
 - No firmware/runtime behavior changed. Physical acceptance NOT TESTED; HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+
+
+## 2026-11-27 — PHX-HARDWARE PR #357 restack onto current #355 (UTC07)
+
+- Preserved the full current #355 CHANGE_LEDGER as an exact byte prefix, then appended the #357-only suffix from its prior branch history.
+- Current #355 prefix bytes: 1147637; appended #357 historical bytes: 4309.
+- Restacked #357 with first parent 79470fb6cfa1daf274c33d2100ad19eabd5b39fd and second parent 9f7a8ecb915cf199a82c0b4d37c56c40d722037b; no force-push and no #355 mutation.
+- No existing ledger bytes were deleted or rewritten. Physical acceptance remains NOT TESTED; production remains NO-GO.
