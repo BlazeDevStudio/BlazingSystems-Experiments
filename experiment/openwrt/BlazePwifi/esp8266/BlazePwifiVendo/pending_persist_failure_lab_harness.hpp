@@ -5,14 +5,20 @@
 #include <string>
 
 struct BpPendingSequence {
-    uint32_t sequence;
+    uint32_t magic;
+    uint16_t version;
+    uint16_t reserved;
+    uint64_t acked_sequence;
+    uint64_t sequence;
     uint8_t pulses;
     char nonce[17];
     char target[33];
+    uint32_t checksum;
 };
 
+bool pendingSequenceValid = true;
 bool bp_pending_sequence_valid(const BpPendingSequence *state) {
-    return state && state->sequence > 0 && state->pulses > 0 && state->pulses <= 20;
+    return pendingSequenceValid && state != nullptr;
 }
 
 struct FakeLittleFS;
@@ -22,12 +28,10 @@ public:
     File() = default;
     File(FakeLittleFS *fs, const char *path, bool valid)
         : fs_(fs), path_(path ? path : ""), valid_(valid) {}
-
     explicit operator bool() const { return valid_; }
     size_t write(const uint8_t *data, size_t size);
     void flush();
     void close();
-
 private:
     FakeLittleFS *fs_ = nullptr;
     std::string path_;
@@ -152,15 +156,24 @@ void File::close() {
     if (valid_ && fs_) fs_->closeFile(path_.c_str());
 }
 
+struct FakeSerial {
+    int calls = 0;
+    std::string last;
+    void println(const char *message) { ++calls; last = message ? message : ""; }
+} Serial;
+
 FakeLittleFS LittleFS;
 bool fsReady = true;
-BpPendingSequence pendingSequenceState{1, 1, "AAAAAAAAAAAAAAAA", "00000001"};
+BpPendingSequence pendingSequenceState{
+    0x42505632UL, 2, 0, 0, 1, 1, "AAAAAAAAAAAAAAAA", "00000001", 0
+};
 
 /*__PERSIST_PENDING_SEQUENCE_FUNCTION__*/
 
 static BpPendingSequence nextState() {
-    BpPendingSequence state{2, 4, "BBBBBBBBBBBBBBBB", "00000002"};
-    return state;
+    return BpPendingSequence{
+        0x42505632UL, 2, 0, 1, 2, 4, "BBBBBBBBBBBBBBBB", "00000002", 0
+    };
 }
 
 static bool oldRamStateUnchanged() {
@@ -171,8 +184,12 @@ static bool oldRamStateUnchanged() {
 
 static void resetState() {
     LittleFS = FakeLittleFS{};
+    Serial = FakeSerial{};
     fsReady = true;
-    pendingSequenceState = BpPendingSequence{1, 1, "AAAAAAAAAAAAAAAA", "00000001"};
+    pendingSequenceValid = true;
+    pendingSequenceState = BpPendingSequence{
+        0x42505632UL, 2, 0, 0, 1, 1, "AAAAAAAAAAAAAAAA", "00000001", 0
+    };
 }
 
 static bool promotedStateMatches(const BpPendingSequence &state) {
@@ -208,11 +225,10 @@ int main() {
     ++scenarios;
 
     resetState();
-    next.sequence = 0;
+    pendingSequenceValid = false;
     if (persistPendingSequence(next) || LittleFS.openCalls != 0 ||
         !oldRamStateUnchanged()) return 4;
     ++scenarios;
-    next = nextState();
 
     resetState();
     fsReady = false;
@@ -245,7 +261,7 @@ int main() {
     LittleFS.failRemoveBackup = true;
     if (persistPendingSequence(next) || !LittleFS.dat || !LittleFS.fresh ||
         !LittleFS.backup || LittleFS.renameCalls != 0 ||
-        !oldRamStateUnchanged()) return 8;
+        Serial.calls != 1 || !oldRamStateUnchanged()) return 8;
     ++scenarios;
 
     resetState();
@@ -254,7 +270,7 @@ int main() {
     LittleFS.failRenameDatToBackup = true;
     if (persistPendingSequence(next) || !LittleFS.dat || !LittleFS.fresh ||
         LittleFS.backup || LittleFS.renameCalls != 1 ||
-        !oldRamStateUnchanged()) return 9;
+        Serial.calls != 1 || !oldRamStateUnchanged()) return 9;
     ++scenarios;
 
     resetState();
@@ -263,7 +279,7 @@ int main() {
     LittleFS.failRenameNewToDat = true;
     if (persistPendingSequence(next) || !LittleFS.dat || !LittleFS.fresh ||
         LittleFS.backup || LittleFS.renameCalls != 3 ||
-        !oldRamStateUnchanged()) return 10;
+        Serial.calls != 1 || !oldRamStateUnchanged()) return 10;
     ++scenarios;
 
     resetState();
@@ -273,7 +289,7 @@ int main() {
     LittleFS.failRestoreBackup = true;
     if (persistPendingSequence(next) || LittleFS.dat || !LittleFS.fresh ||
         !LittleFS.backup || LittleFS.renameCalls != 3 ||
-        !oldRamStateUnchanged()) return 11;
+        Serial.calls != 2 || !oldRamStateUnchanged()) return 11;
     ++scenarios;
 
     resetState();
@@ -282,7 +298,7 @@ int main() {
     LittleFS.failFinalBackupRemove = true;
     if (persistPendingSequence(next) || !LittleFS.dat || LittleFS.fresh ||
         !LittleFS.backup || LittleFS.renameCalls != 2 ||
-        !oldRamStateUnchanged()) return 12;
+        Serial.calls != 1 || !oldRamStateUnchanged()) return 12;
     ++scenarios;
 
     resetState();

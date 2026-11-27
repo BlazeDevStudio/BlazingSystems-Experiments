@@ -24,24 +24,35 @@ def assert_source_contract(source: str) -> str:
 
     backup_remove_guard = re.compile(
         r'if\s*\(\s*LittleFS\.exists\(\s*"/pending\.bak"\s*\)\s*&&\s*'
-        r'!LittleFS\.remove\(\s*"/pending\.bak"\s*\)\s*\)\s*return\s+false\s*;'
+        r'!LittleFS\.remove\(\s*"/pending\.bak"\s*\)\s*\)\s*\{\s*'
+        r'Serial\.println\(\s*"[^"]+"\s*\)\s*;\s*return\s+false\s*;\s*\}'
     )
     require(len(backup_remove_guard.findall(function)) == 2,
-            "both stale-backup and post-promotion cleanup failures must abort")
+            "both stale-backup and post-promotion cleanup failures must log and abort")
 
     dat_backup_guard = re.compile(
         r'if\s*\(\s*LittleFS\.exists\(\s*"/pending\.dat"\s*\)\s*&&\s*'
         r'!LittleFS\.rename\(\s*"/pending\.dat"\s*,\s*"/pending\.bak"\s*\)\s*'
-        r'\)\s*return\s+false\s*;'
+        r'\)\s*\{\s*Serial\.println\(\s*"[^"]+"\s*\)\s*;\s*'
+        r'return\s+false\s*;\s*\}'
     )
     require(dat_backup_guard.search(function) is not None,
-            "canonical-to-backup rename failure must abort before promotion")
+            "canonical-to-backup rename failure must log and abort before promotion")
 
     promote_guard = re.compile(
         r'if\s*\(\s*!LittleFS\.rename\(\s*"/pending\.new"\s*,\s*"/pending\.dat"\s*\)\s*\)'
     )
     require(promote_guard.search(function) is not None,
             "new journal promotion result must be checked")
+
+    restore_guard = re.compile(
+        r'if\s*\(\s*!LittleFS\.exists\(\s*"/pending\.dat"\s*\)\s*&&\s*'
+        r'LittleFS\.exists\(\s*"/pending\.bak"\s*\)\s*&&\s*'
+        r'!LittleFS\.rename\(\s*"/pending\.bak"\s*,\s*"/pending\.dat"\s*\)\s*\)\s*\{\s*'
+        r'Serial\.println\(\s*"[^"]+"\s*\)\s*;\s*\}'
+    )
+    require(restore_guard.search(function) is not None,
+            "backup restore failure must be visible and must not publish RAM state")
 
     write_pos = function.find("f.write(")
     flush_pos = function.find("f.flush()")
@@ -59,7 +70,6 @@ def assert_source_contract(source: str) -> str:
             "RAM authority must not advance before backup cleanup succeeds")
     require(return_true_pos > state_pos,
             "success must be returned only after RAM authority is updated")
-
     require(function.count('LittleFS.remove("/pending.bak")') == 2,
             "no unguarded backup deletion may remain")
     return function
@@ -108,43 +118,62 @@ def compile_and_run(function: str, label: str) -> str:
 
 
 def main() -> None:
+    stale_cleanup = (
+        '  if(LittleFS.exists("/pending.bak") && !LittleFS.remove("/pending.bak")){\n'
+        '    Serial.println("CRITICAL: stale pending backup removal failed; preserving journal candidates.");\n'
+        '    return false;\n'
+        '  }'
+    )
+    final_cleanup = (
+        '  if(LittleFS.exists("/pending.bak") && !LittleFS.remove("/pending.bak")){\n'
+        '    Serial.println("CRITICAL: stale pending backup cleanup failed; denying intake.");\n'
+        '    return false;\n'
+        '  }'
+    )
+    dat_rotation = (
+        '  if(LittleFS.exists("/pending.dat") && !LittleFS.rename("/pending.dat","/pending.bak")){\n'
+        '    Serial.println("CRITICAL: canonical pending journal rotation failed; preserving candidates.");\n'
+        '    return false;\n'
+        '  }'
+    )
+    promotion = 'if(!LittleFS.rename("/pending.new","/pending.dat"))'
+    restore = (
+        '    if(!LittleFS.exists("/pending.dat") && LittleFS.exists("/pending.bak") &&\n'
+        '       !LittleFS.rename("/pending.bak","/pending.dat")){\n'
+        '      Serial.println("CRITICAL: pending backup restore failed; preserving journal candidates.");\n'
+        '    }'
+    )
+
     for board, sketch in SKETCHES.items():
         source = sketch.read_text(encoding="utf-8")
         function = assert_source_contract(source)
 
-        first_backup_guard = (
-            'if(LittleFS.exists("/pending.bak") && '
-            '!LittleFS.remove("/pending.bak")) return false;'
-        )
         expect_rejected(
             f"{board}-stale-backup-remove-result-ignored",
-            mutate_function(source, first_backup_guard, 'LittleFS.remove("/pending.bak");'),
-        )
-        dat_backup_guard = (
-            'if(LittleFS.exists("/pending.dat") && '
-            '!LittleFS.rename("/pending.dat","/pending.bak")) return false;'
+            mutate_function(source, stale_cleanup, '  LittleFS.remove("/pending.bak");'),
         )
         expect_rejected(
             f"{board}-canonical-backup-rename-result-ignored",
-            mutate_function(source, dat_backup_guard,
-                            'LittleFS.rename("/pending.dat","/pending.bak");'),
+            mutate_function(source, dat_rotation, '  LittleFS.rename("/pending.dat","/pending.bak");'),
         )
         expect_rejected(
             f"{board}-promotion-result-inverted",
-            mutate_function(source,
-                            'if(!LittleFS.rename("/pending.new","/pending.dat"))',
-                            'if(LittleFS.rename("/pending.new","/pending.dat"))'),
+            mutate_function(source, promotion, 'if(LittleFS.rename("/pending.new","/pending.dat"))'),
         )
         expect_rejected(
             f"{board}-backup-cleanup-result-ignored",
-            mutate_function(source, first_backup_guard, 'LittleFS.remove("/pending.bak");', 2),
+            mutate_function(source, final_cleanup, '  LittleFS.remove("/pending.bak");'),
+        )
+        expect_rejected(
+            f"{board}-backup-restore-result-inverted",
+            mutate_function(source, restore, restore.replace(
+                '!LittleFS.rename("/pending.bak","/pending.dat")',
+                'LittleFS.rename("/pending.bak","/pending.dat")')),
         )
         expect_rejected(
             f"{board}-ram-state-published-before-cleanup",
-            mutate_function(source,
-                            'if(LittleFS.exists("/pending.bak") && !LittleFS.remove("/pending.bak")) return false;',
-                            'pendingSequenceState=state;\\n  if(LittleFS.exists("/pending.bak") && !LittleFS.remove("/pending.bak")) return false;',
-                            2),
+            mutate_function(source, final_cleanup,
+                            '  pendingSequenceState=state;\n'+final_cleanup),
         )
 
         output = compile_and_run(function, board.lower())
@@ -152,7 +181,7 @@ def main() -> None:
                 f"{board} persistence failure-injection harness did not complete")
         print(f"{board}: {output}")
 
-    print("PENDING_PERSIST_FAILURE_LAB_PASS boards=ESP8266,ESP32 mutations_rejected=10")
+    print("PENDING_PERSIST_FAILURE_LAB_PASS boards=ESP8266,ESP32 mutations_rejected=12")
 
 
 if __name__ == "__main__":
