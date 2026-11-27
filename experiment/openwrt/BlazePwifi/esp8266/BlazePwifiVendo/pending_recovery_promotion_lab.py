@@ -43,6 +43,12 @@ def assert_source_contract(source: str) -> None:
             "recovery must not delete an existing canonical journal")
     require("pendingSequenceState=r;" in masked,
             "valid recovered state must be published after promotion succeeds")
+    require('strcmp(chosen,"/pending.dat")!=0' in raw,
+            "fallback selection must be explicit")
+    require('LittleFS.exists("/pending.dat")' in raw,
+            "canonical/fallback ambiguity must be detected")
+    require('LittleFS.rename(chosen,"/pending.dat")' in raw,
+            "fallback promotion must target the canonical journal")
 
     no_candidate, _ = extract_if_block(
         raw, r"if\s*\(\s*!\s*chosen\s*\)", "no-valid-candidate"
@@ -64,19 +70,19 @@ def assert_source_contract(source: str) -> None:
 
     promote, promote_end = extract_if_block(
         raw,
-        r"if\s*\(\s*strcmp\s*\(\s*chosen\s*,\s*\"/pending\.dat\"\s*\)\s*!=\s*0\s*\)",
+        r"if\s*\(\s*strcmp\s*\(\s*chosen",
         "fallback-promotion",
     )
     conflict, _ = extract_if_block(
         promote,
-        r"if\s*\(\s*LittleFS\.exists\s*\(\s*\"/pending\.dat\"\s*\)\s*\)",
+        r"if\s*\(\s*LittleFS\.exists\s*\(",
         "canonical-fallback-conflict",
     )
     require_deny_block(conflict, "canonical-fallback-conflict")
 
     rename_failure, _ = extract_if_block(
         promote,
-        r"if\s*\(\s*!\s*LittleFS\.rename\s*\(\s*chosen\s*,\s*\"/pending\.dat\"\s*\)\s*\)",
+        r"if\s*\(\s*!\s*LittleFS\.rename\s*\(",
         "fallback-rename-result",
     )
     require_deny_block(rename_failure, "fallback-rename-result")
