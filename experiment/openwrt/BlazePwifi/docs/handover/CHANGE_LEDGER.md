@@ -3838,3 +3838,12 @@ PR #354 remains OPEN / DRAFT / UNMERGED. PRs #239/#254/#283 remain OPEN / DRAFT 
 - **Status:** SIMULATED / CI VERIFIED only. No production sketch, API, finance or release source changed. Physical acceptor/relay pulse retention remains NOT TESTED; pre-poll in-flight denial does not prove coin retention. P0 #177 remains OPEN and production NO-GO.
 - **Next:** independent QA review of the exact boundary vectors; CORE contract and physical electrical acceptance remain prerequisites. PR #365 stays DRAFT / UNMERGED.
 
+
+## 2026-11-27 UTC18 — PHX-HARDWARE terminal poll-boundary CI reconciliation (PR #365)
+
+- **Tested docs/PR head:** `b94f16a08d85baf980eb471222b8479f491299a2`; **source/test SHA:** `f38e86b683bbf1e77cdb63e3071630a5b3aedb2c`; **branch:** `phoenix/hw-poll-boundary-pulse-matrix-20261128-utc18`.
+- **Focused:** run #46052478993 job `140686930242` PASS; six pulse windows x four independent relay/LED polarity combinations per board; both boards report zero accepted pulses, no samples during the blocking wait, and untrusted poll response ignored.
+- **Mbed TLS:** run #46052478997 source contract `140686931241`, core 3.3.13 `140686930962`, core 4.0.0 `140686931234`: 3/3 PASS.
+- **Full:** run #46052478996 CI-0701 PASS; validation job `140687123327` FAIL at QA-owned `tests/controllers.sh:21` (`config_revision` parity); ESP8266, ESP32, Android and 13/13 firmware target jobs PASS; downstream update/simulation/signing/candidate/publication skipped. Native PAY-0745 NOT RUN on #365.
+- **Scope correction:** active v0.6 branch `2fbd2475e9f54878c316fa7cea2f228386b0e859` remains unchanged; #365 is a test-only child of the unmerged deny-only candidate stack and does not resolve P0 #177. Physical pulse retention remains NOT TESTED. Production NO-GO.
+

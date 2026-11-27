@@ -2,18 +2,21 @@
 
 **Role:** PHX-HARDWARE. **Current work:** [DRAFT PR #365](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/365), child of #364 → #362 → #361 → #359 → #355 → #354.  
 **Branch:** `phoenix/hw-poll-boundary-pulse-matrix-20261128-utc18`  
-**Exact source/test SHA:** `f38e86b683bbf1e77cdb63e3071630a5b3aedb2c`  
-**Scope:** host poll-inhibit harness only; no ESP8266/ESP32 production sketch, controller API, finance path or release behavior changed.
+**Source/test SHA:** `f38e86b683bbf1e77cdb63e3071630a5b3aedb2c`  
+**Tested docs/PR head:** `b94f16a08d85baf980eb471222b8479f491299a2`  
+**Scope:** host poll-inhibit harness only; no production ESP8266/ESP32 sketch or shared API changed.
 
-**Change:** the source-extracted 3,500 ms blocking-poll harness now tests six 80 ms pulse windows: already active at pre-poll deny (-40..40 ms), poll start (0..80), middle (1600..1680), ends at return (3420..3500), crosses return (3460..3540), and starts at return (3500..3580). Each window runs across four independent relay/LED polarity combinations: 24 cases per board, 48 total. The poll stub returns a non-empty deliberately untrusted `insert=true` response. The harness keeps a pulse active at poll return for the post-poll sample instead of forcing it inactive.
+**Focused CI:** [#46052478993](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46052478993), exact job `140686930242`, **PASS**. The 3,500 ms blocking-poll harness now sweeps six 80 ms pulse windows (-40..40, 0..80, 1600..1680, 3420..3500, 3460..3540, 3500..3580 ms) across four independent relay/LED polarity combinations: 24 cases per board, 48 total. Both boards report `accepted=0`, no GPIO sampling during the blocking wait, pre-poll in-flight deny, pulse retained for the first post-poll sample when it crosses return, and an untrusted non-empty `insert=true` response ignored. Existing poll/control-flow mutation checks and pending-recovery tests pass.
 
-**Focused CI:** PR run [#46052209034](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46052209034), exact job `140686051553`, **PASS** at `f38e86b683bbf1e77cdb63e3071630a5b3aedb2c`. Both boards emitted `BLOCKING_POLL_WAIT_PASS` with `pulse_cases=6`, `polarity_combinations=4`, `pre_poll_inflight=1`, `cross_return=1`, `at_return=1`, `untrusted_response_ignored=1`, `accepted=0`. Existing poll/register deny, relay polarity, config-write and pending-recovery regressions also passed. 18 pending-recovery mutations remain rejected per the inherited lab.
+**Mbed TLS:** [#46052478997](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46052478997), source-contract job `140686931241`, Arduino core 3.3.13 job `140686930962`, and core 4.0.0 job `140686931234`: **3/3 PASS**.
 
-**Full build:** PR run [#46052209068](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46052209068) was still executing target jobs when this checkpoint was written; no terminal result is claimed here.
+**Full build:** [#46052478996](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46052478996): CI-0701 docs-only proof PASS; validation job `140687123327` **FAIL** at QA-owned `tests/controllers.sh:21` (`grep -q 'config_revision'`), because the inherited v0.6 candidate sketches do not carry the current-main `config_revision` field. ESP8266, ESP32, Android and all 13 firmware target jobs PASS. Update-bundle, simulation, signing, candidate and publication jobs were skipped after validation failure. Native PAY-0745 was NOT RUN on #365.
 
-**P0 #177 boundary:** this is SIMULATED evidence only. The pre-poll in-flight pulse case confirms the deny latch is applied while the input is active; it does **not** prove the physical acceptor retains a coin if the enable/relay is inhibited mid-pulse. Physical acceptor/relay polarity, pulse retention, power cuts and hardware recovery remain NOT TESTED. Keep coin/relay denied; do not re-enable positive admission.
+**Critical scope correction:** active `blazepwifi-v0.6.0-audit-foundation` remains at `2fbd2475e9f54878c316fa7cea2f228386b0e859` and was not modified. PR #365 is a test-only child of the still-unmerged deny-only candidate stack (#354 → #355 → #359 → #361 → #362 → #364); it does not mitigate the active branch's poll-before-first-sample race. Do not describe this as a P0 #177 fix.
 
-**Release state:** HARDWARE ACCEPTED = NO. PRODUCTION READY = NO-GO. CORE authenticated register/poll and receipt/disposition contract, independent QA, physical electrical acceptance, 150 power cuts, 30-device/24-hour soak, protected anti-rollback witness, durable accounting/replay and v1→v2 migration remain outstanding.
+**P0 #177:** OPEN. The pre-poll in-flight pulse case proves the candidate deny latch is applied while the input is active; it does not prove a physical acceptor retains a coin when inhibited mid-pulse. Physical relay polarity, pulse retention, electrical recovery, 150 power cuts and 30-device/24-hour soak remain NOT TESTED. Keep coin/relay admission denied.
+
+**Release state:** SIMULATED / CI VERIFIED (scoped only). HARDWARE ACCEPTED = NO. PRODUCTION READY = NO-GO. CORE authenticated register/poll and receipt/disposition contract, independent QA, protected anti-rollback witness, durable accounting/replay, v1→v2 migration and owner-approved release acceptance remain outstanding.
 
 **Role:** PHX-HARDWARE. **Current work:** [DRAFT PR #364](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/364), child of #362 → #361 → #359 → #355 → #354.  
 **Branch:** `phoenix/hw-pending-recovery-contract-module-split-20261128-utc17`  
