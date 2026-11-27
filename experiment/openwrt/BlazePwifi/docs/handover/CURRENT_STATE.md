@@ -1,3 +1,36 @@
+## PHX-HARDWARE UTC09 — ESP32 strapping GPIO role guard (IN PROGRESS)
+
+**Task:** extend the existing PR #357 board-specific runtime GPIO validator; no new PR or branch.
+**Branch:** `phoenix/hw-runtime-pin-config-guard-20261127-utc04`
+**Base/current HEAD before work:** `2b5130d5cba54acf354ffdbdbe04127d6a61113f`
+**PR:** [#357](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/357), OPEN / DRAFT / UNMERGED.
+
+### Intent and affected surfaces
+
+- `experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino`: reject ESP32 strapping pins for coin and relay roles; reject GPIO0/GPIO5/GPIO12/GPIO15 for LED while retaining the existing GPIO2 LED default only.
+- `experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/runtime_pin_config_lab.py`: add source-linked ESP32 role cases and a guard-removal mutation.
+- Canonical Hardware handovers and append-only ledger: synchronize after exact-head CI.
+
+### Hazard / compatibility boundary
+
+ESP32 GPIO0, GPIO2, GPIO5, GPIO12 and GPIO15 are documented strapping pins. External circuitry can affect reset-time boot/flash-voltage selection. The existing default tuple is coin GPIO27, relay GPIO26, LED GPIO2. Preserve GPIO2 only for the current LED default to avoid an unreviewed default remap; this is a narrow software exception, **not** proof that the board's LED circuit is electrically safe during reset. Physical board identity, pull levels, relay contacts and boot behavior remain unqualified. Coin and relay admission remain denied.
+
+### Success / failure proof
+
+- Source-extracted harness accepts the existing `(27,26,2)` default tuple.
+- Harness rejects GPIO0/2/5/12/15 for coin and relay roles and GPIO0/5/12/15 for LED.
+- Removing the ESP32 strap guard is a negative mutation that must fail the harness.
+- Exact-head focused GitHub Actions must pass; Full/Native results are recorded separately and must not be relabeled as passed if QA/CORE assertions remain blocked.
+
+### Rollback and coordination
+
+Rollback is a normal revert of this bounded ESP32 validator/test change on the PR branch; no mainline, firmware flash, reset, persisted config rewrite, API/schema, QA-owned test, finance, signer, witness or COE file is touched. No shared-interface change is proposed. PHX-CORE retains authenticated poll/receipt/disposition; PHX-QA retains independent semantic assertions; PHX-MASTER retains stack/release authority.
+
+**Status:** IN_PROGRESS — source not yet changed; no test result claimed.
+**NEXT EXACT ACTION:** add the ESP32 role-specific strapping-pin guard and failure-injection cases, then run the exact-head Hardware workflow.
+
+---
+
 ## PHX-HARDWARE UTC07 — ESP8266 boot-strap GPIO role rejection (2026-11-27)
 
 **Task:** PR #357, Hardware-owned runtime GPIO validation hardening  
