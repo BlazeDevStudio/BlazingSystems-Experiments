@@ -312,7 +312,7 @@ def startup_storage_guard_locations(source: str):
 
 
 def deny_latch_assignment_contract(source: str) -> None:
-    """Require deny-only runtime flags to have no post-startup re-enable writes."""
+    """Reject runtime writes and address/reference escapes from deny-only authority fields."""
     masked = mask_non_code(source)
 
     # Direct-assignment checks are bypassable if protected state escapes through
