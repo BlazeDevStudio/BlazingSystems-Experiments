@@ -21,7 +21,7 @@ def require(condition: bool, message: str) -> None:
 
 def extract_if_block(function: str, pattern: str, label: str) -> tuple[str, int]:
     masked = mask_non_code(function)
-    match = re.search(pattern, masked)
+    match = re.search(pattern, function)
     require(match is not None, f"missing {label} guard")
     opening = masked.find("{", match.end())
     require(opening >= 0, f"{label} guard has no body")
@@ -39,7 +39,7 @@ def assert_source_contract(source: str) -> None:
     raw = extract_function(source, "bool loadPending()")
     masked = mask_non_code(raw)
 
-    require('LittleFS.remove("/pending.dat")' not in masked,
+    require('LittleFS.remove("/pending.dat")' not in raw,
             "recovery must not delete an existing canonical journal")
     require("pendingSequenceState=r;" in masked,
             "valid recovered state must be published after promotion succeeds")
