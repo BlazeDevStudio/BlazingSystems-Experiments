@@ -1,3 +1,13 @@
+## PHX-MASTER UTC22 — current blockers and next actions
+
+- HARDWARE #367's prior tree truncation is repaired: exact tree 2,438 entries / 1,892 blobs, no deleted paths from #366 base. Focused/Mbed pass; Full fails because canonical PROJECT_HANDOVER checkpoint remains `fb8ea5a` while newer source/workflow changes exist. HARDWARE must sync canonical handover and PR description, then rerun Full.
+- P0 #177 remains OPEN: ESP8266 poll line 354 before first sample 357; ESP32 line 314 before sample 318. Current main controller register/ping and poll responses lack `response_sig`. CORE/HARDWARE/QA retain ownership.
+- COE #26 remains FROZEN: runtime manifest summary wrong by one (46 identical / 15 derived), map omits destination-only `voucher_txn_journal.sh`, branch pins stale, 11 derived tests NOT_RUN and 4 PENDING_CI_RUN. No staging.
+- Canonical private registry unavailable; no Drive connector. Master Python suite and verify_coordination.py NOT RUN; no exact-head Master CI.
+- Cleanup #266 remains OPEN / 0-of-7. PRODUCTION NO-GO; no financial, signing, release or physical acceptance.
+
+---
+
 ## PHX-MASTER UTC21 — architecture and fail-closed blockers (2026-11-27T21:42Z)
 
 - P0 #177 remains OPEN. Active v0.6 ESP8266 blob 12c4bb82 polls synchronously at line 354 before the first coin sample at line 357; ESP32 blob 29f1125d polls at line 314 before sampling at line 318. Both use a 3,500 ms timeout.
