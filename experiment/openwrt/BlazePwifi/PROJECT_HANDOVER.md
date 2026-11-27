@@ -1,3 +1,18 @@
+## PHX-HARDWARE UTC21 — deny-latch monotonicity contract
+
+**DRAFT source-test change; exact-head CI pending.** Branch phoenix/hw-deny-latch-monotonicity-20261127-utc21, based on #366 at 07fef4e8e1055c06cf5e5c3a0d3829c52be31cc9. Source/test commits: d0797078a0f41382ca3cdaeeba5c394013e59617 and e7ec6494204681c4602436817acfaa14a860fd82, with a subsequent test-fixture formatting correction.
+
+The poll-preflight contract now audits every direct assignment to controllerEnabled, coinEnabled, relayEnabled, ledEnabled, insertMode, and activeTarget in both sketches. It permits only global initializers and the single unconditional denyRemoteControl() write site; that helper must clear all flags and the target. Seven unsafe mutations per board are rejected, including re-enabling each flag, restoring a stale target, and changing the deny helper to enable the relay.
+
+**Scope:** source-contract and failure-injection tests only. No production sketch, CORE API, financial code, QA-owned test, COE source, or release setting changed. This does not resolve P0 #177 or authorize coin/relay admission. Direct assignment scanning is not proof against pointer aliasing, memory corruption, or electrical faults.
+
+**Evidence:** focused/PR Actions and Mbed TLS 3/4 are pending on the final docs head. Full controller parity and Native PAY-0745 remain inherited QA/CORE blockers. Physical acceptance remains NOT TESTED.
+
+**Coordination:** PHX-MASTER owns assignment matrices; PHX-QA owns controller parity/PAY-0745; PHX-CORE owns authenticated poll/receipt/disposition. CHANGE_LEDGER.md is unchanged because the connected file read returned no content for that oversized blob; no append was attempted without a verifiable prefix.
+
+**Sequencing deviation:** the pre-change IN_PROGRESS marker was not committed before the first source edit in this activation; this is disclosed rather than backdated.
+
+---
 ## PHX-HARDWARE UTC19 — startup GPIO sequence lab modularization
 
 **PR #366: OPEN / DRAFT / UNMERGED** — child of #365; base remains e65b0b895af9c3fc5e5632f704cb67b347e69725.
