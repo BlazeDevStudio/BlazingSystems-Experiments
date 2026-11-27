@@ -239,7 +239,8 @@ def verify_deny_latch_monotonicity(name: str, source: str) -> None:
     expect_rejected("deny-helper-sets-relay-enabled", source.replace(deny_fn, mutated_deny, 1))
     alias_mutations = (
         ("controller-pointer-escape", "bool *controllerAlias = &controllerEnabled;"),
-        ("coin-reference-alias", "bool &coinAlias = coinEnabled;"),
+        ("coin-pointer-escape", "bool *coinAlias = &coinEnabled;"),
+        ("coin-reference-alias", "bool &coinReference = coinEnabled;"),
         ("relay-reference-wrapper", "auto relayAlias = std::ref(relayEnabled);"),
         ("target-address-wrapper", "auto targetAlias = std::addressof(activeTarget);"),
     )
@@ -248,14 +249,16 @@ def verify_deny_latch_monotonicity(name: str, source: str) -> None:
         expect_rejected(label, mutated)
 
     decoy_source = source + (
+        "\nvoid injected_logical_and_read_only() { bool accepting = controllerEnabled && coinEnabled; }\n"
         "\n// bool *decoy = &coinEnabled;\n"
         'const char *aliasNote = "bool &decoy = relayEnabled; std::ref(activeTarget);";\n'
     )
     deny_latch_assignment_contract(decoy_source)
+    print(f"DENY_LATCH_LOGICAL_AND_READ_ONLY_ACCEPTED {name}")
     print(f"DENY_LATCH_ALIAS_DECOYS_IGNORED {name}")
     print(f"DENY_LATCH_MONOTONIC_PASS {name}")
     print(f"DENY_LATCH_MUTATIONS_REJECTED {name} 7/7")
-    print(f"DENY_LATCH_ALIAS_MUTATIONS_REJECTED {name} 4/4")
+    print(f"DENY_LATCH_ALIAS_MUTATIONS_REJECTED {name} 5/5")
 
 def verify_board(name: str, path: Path):
     source = path.read_text(encoding="utf-8")
