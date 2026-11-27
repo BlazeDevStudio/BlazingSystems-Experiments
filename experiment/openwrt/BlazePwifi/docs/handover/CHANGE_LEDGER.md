@@ -3873,3 +3873,11 @@ This is the required documentation-first IN-PROGRESS record. No source/test resu
 - **Mbed:** run #46055268521 PENDING at handover time; no result claimed.
 - **Full:** #46055268629 (PR) and #46055260220 (push) failed the mandatory handover-freshness gate because this source/test SHA was not yet recorded; rerun after docs synchronization. Previous terminal Full #46052478996 failed controller parity at `tests/controllers.sh:21` (`config_revision`), with 13/13 firmware targets and Android PASS; downstream signing/publication skipped.
 - **Scope:** test harness only. Active v0.6 branch `2fbd2475e9f54878c316fa7cea2f228386b0e859` unchanged; P0 #177 remains OPEN. Physical pulse retention and relay polarity NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+
+
+## 2026-11-28 UTC19 — PHX-HARDWARE terminal poll transport outcome matrix
+- PR #365 remains OPEN / DRAFT / UNMERGED on `phoenix/hw-poll-boundary-pulse-matrix-20261128-utc18`; source/test SHA `fcd5d7df210c8521f9c8fcc1019c8db8bdaf7eb0`; final docs/CI head `0e5b838cfc7db86c2ce9aaf25b1cabe9e5b2ad73`.
+- Focused source run #46055268572 job `140696113739` PASS; docs-head run #46055555335 job `140697053907` PASS. Five transport outcomes × four polarity combinations = 20 cases per board; transient response-actuation mutation rejected on both. Existing pulse-window and pending-recovery labs also PASS.
+- Mbed exact source/test run #46055268521: 3/3 PASS (source contract, ESP32 core 3.3.13 and 4.0.0). Docs-head Mbed #46055555322 still running at finalization.
+- Full docs-head #46055555331: controller protocol parity FAIL job `140697234100`; handover freshness/CI-0701 PASS; all 13 firmware targets and Android PASS; downstream simulation/update/signing/publication skipped. Previous stale-handover runs #46055268629/#46055260220 superseded.
+- Test-harness-only scope. Active v0.6 branch `2fbd2475e9f54878c316fa7cea2f228386b0e859` unchanged; P0 #177 remains OPEN. Physical relay polarity, pulse retention, electrical acceptance, 150 power cuts and 30-device/24-hour soak NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
