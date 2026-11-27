@@ -69,6 +69,12 @@ END {
   print "scratch_mount=" scratch
   print "actual_fixture_mount=" want
   print "protected_mount_identities_checked=root,overlay,rom,boot"
+  print "root_device=" root_device
+  print "root_fs=" root_fs
+  print "overlay_device=" overlay_device
+  print "rom_device=" rom_device
+  print "boot_device=" boot_device
+  print "scratch_device=" scratch_device
   print "physical_powercut_verified=0"
   print "customer_install_authorized=0"
 }

@@ -6,11 +6,15 @@ on:
     paths:
       - 'experiment/openwrt/BlazePwifi/tests/v060_lab_storage_preflight.sh'
       - 'experiment/openwrt/BlazePwifi/tools/v060_lab_mountinfo_guard.awk'
+      - 'experiment/openwrt/BlazePwifi/tools/v060_lab_block_parent_guard.sh'
+      - 'experiment/openwrt/BlazePwifi/tools/v060_lab_storage_preflight.sh'
       - '.github/workflows/phx-hw-storage-preflight-device-separation.yml'
   pull_request:
     paths:
       - 'experiment/openwrt/BlazePwifi/tests/v060_lab_storage_preflight.sh'
       - 'experiment/openwrt/BlazePwifi/tools/v060_lab_mountinfo_guard.awk'
+      - 'experiment/openwrt/BlazePwifi/tools/v060_lab_block_parent_guard.sh'
+      - 'experiment/openwrt/BlazePwifi/tools/v060_lab_storage_preflight.sh'
       - '.github/workflows/phx-hw-storage-preflight-device-separation.yml'
       - 'experiment/openwrt/BlazePwifi/docs/handover/2026-11-27-hw-storage-preflight-device-separation-utc23.md'
   workflow_dispatch:

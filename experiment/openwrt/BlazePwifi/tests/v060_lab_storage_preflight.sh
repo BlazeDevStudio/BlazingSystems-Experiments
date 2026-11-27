@@ -26,6 +26,12 @@ check_ok() {
   }
   grep -Fqx 'physical_powercut_verified=0' "$TEMP/out"
   grep -Fqx 'customer_install_authorized=0' "$TEMP/out"
+  grep -Fqx 'root_device=8:1' "$TEMP/out"
+  grep -Fqx 'root_fs=ext4' "$TEMP/out"
+  grep -Fqx 'overlay_device=8:2' "$TEMP/out"
+  grep -Fqx 'rom_device=31:0' "$TEMP/out"
+  grep -Fqx 'boot_device=8:3' "$TEMP/out"
+  grep -Fqx 'scratch_device=8:17' "$TEMP/out"
 }
 check_bad() {
   if awk -v want="$WANT" -v scratch="$SCRATCH" -v source="$SOURCE" -f "$AWK" "$1" > "$TEMP/out" 2>"$TEMP/err"; then
@@ -126,6 +132,8 @@ ln -s ../../../../pci/block/sda/sda1 "$SYSFS/devices/virtual/block/dm-0/slaves/s
 ln -s ../../devices/virtual/block/dm-0 "$SYSFS/dev/block/253:0"
 [ -s "$PARENT_GUARD" ] || { echo 'missing STORCHK-0674 physical-parent guard' >&2; exit 1; }
 sh -n "$PARENT_GUARD"
+grep -Fq 'v060_lab_block_parent_guard.sh' "$WRAP"
+grep -Fq ' /sys "$SCRATCH_DEVICE"' "$WRAP"
 check_parent_ok() {
   scratch_mm="$1"; root_mm="$2"; overlay_mm="$3"; rom_mm="$4"; boot_mm="$5"; root_fs="$6"; label="$7"
   sh "$PARENT_GUARD" "$SYSFS" "$scratch_mm" "$root_mm" "$overlay_mm" "$rom_mm" "$boot_mm" "$root_fs" > "$TEMP/parent-out" 2> "$TEMP/parent-err" || {
@@ -144,11 +152,12 @@ check_parent_bad() {
   }
   [ ! -s "$TEMP/parent-out" ] || { echo "unsafe physical-parent layout emitted success: $label" >&2; exit 1; }
 }
-check_parent_ok 8:49 8:1 8:17 31:0 8:33 ext4 'separate physical scratch disk'
+check_parent_ok 8:49 8:1 8:17 31:0 8:33 ext4 'separate physical scratch partition'
 check_parent_bad 8:2 8:1 8:17 31:0 8:33 ext4 'scratch sibling partition shares root disk'
 check_parent_bad 8:18 8:1 8:17 31:0 8:33 ext4 'scratch sibling partition shares overlay disk'
 check_parent_bad 8:34 8:1 8:17 31:0 8:33 ext4 'scratch sibling partition shares boot disk'
 check_parent_bad 8:0 8:1 8:17 31:0 8:33 ext4 'scratch is the same whole disk as root'
+check_parent_bad 8:48 8:1 8:17 31:0 8:33 ext4 'scratch whole disk is not an explicitly identified partition'
 check_parent_bad 253:0 8:1 8:17 31:0 8:33 ext4 'device-mapper topology is unsupported'
 check_parent_bad 8:99 8:1 8:17 31:0 8:33 ext4 'scratch sysfs identity is missing'
 check_parent_ok 8:49 0:42 8:17 31:0 8:33 overlay 'overlay root is checked through its upper storage'
