@@ -75,6 +75,8 @@ bool parseGpioNumber(const char *text,int maximum,int &value){
 bool validRuntimePins(int coinPin,int relayPin,int ledPin){
   if(coinPin<0||coinPin>16||relayPin<0||relayPin>16||ledPin<0||ledPin>16) return false;
   if((coinPin>=6&&coinPin<=11)||(relayPin>=6&&relayPin<=11)||(ledPin>=6&&ledPin<=11)) return false;
+  // GPIO16 has no INPUT_PULLUP; the coin input is configured with INPUT_PULLUP.
+  if(coinPin==16) return false;
   // ESP8266 ROM samples GPIO0/GPIO2/GPIO15 at reset; external coin, relay, or LED circuits can alter boot mode.
   if(coinPin==0||coinPin==2||coinPin==15||relayPin==0||relayPin==2||relayPin==15||ledPin==0||ledPin==2||ledPin==15) return false;
   return coinPin!=relayPin && coinPin!=ledPin && relayPin!=ledPin;

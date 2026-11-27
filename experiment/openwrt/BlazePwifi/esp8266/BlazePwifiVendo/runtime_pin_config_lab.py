@@ -55,6 +55,11 @@ def assert_source_contract(board: str, source: str) -> tuple[str, str]:
         strap_guard = "coinPin==0||coinPin==2||coinPin==15||relayPin==0||relayPin==2||relayPin==15||ledPin==0||ledPin==2||ledPin==15"
         require(strap_guard in valid_code,
                 "ESP8266: ROM boot-strap GPIO0/GPIO2/GPIO15 must not be assigned to runtime roles")
+        require("coinPin==16" in valid_code,
+                "ESP8266: coin GPIO16 must be rejected because INPUT_PULLUP is unavailable")
+        configure = mask_non_code(extract_function(source, "void configureRuntimePins("))
+        require("pinMode(runCoinPin,INPUT_PULLUP)" in "".join(configure.split()),
+                "ESP8266: coin-input pull-up assumption changed; revisit GPIO16 capability guard")
         coin_max, output_max = 16, 16
         defaults = ("cfg.coinPin=4;", "cfg.insertLedPin=14;", "cfg.relayPin=5;")
     else:
@@ -121,6 +126,9 @@ def harness(parse_fn: str, valid_fn: str, board: str) -> str:
     if (validRuntimePins(0,5,14) || validRuntimePins(2,5,14) || validRuntimePins(15,5,14)) return 17;
     if (validRuntimePins(4,0,14) || validRuntimePins(4,2,14) || validRuntimePins(4,15,14)) return 18;
     if (validRuntimePins(4,5,0) || validRuntimePins(4,5,2) || validRuntimePins(4,5,15)) return 19;
+    if (validRuntimePins(16,5,14)) return 20;
+    if (!validRuntimePins(4,16,14)) return 21;
+    if (!validRuntimePins(4,5,16)) return 22;
 """
     else:
         cases = r"""
@@ -222,6 +230,10 @@ def verify_board(board: str, path: Path) -> None:
         strap_mutation = valid_fn.replace(strap_guard, "", 1)
         require(strap_mutation != valid_fn, "ESP8266: boot-strap mutation anchor missing")
         expect_rejected(parse_fn, valid_fn, board, "boot-strap-guard-removed", strap_mutation)
+        pullup_mutation = valid_fn.replace("if(coinPin==16) return false;", "", 1)
+        require(pullup_mutation != valid_fn, "ESP8266: GPIO16 INPUT_PULLUP mutation anchor missing")
+        expect_rejected(parse_fn, valid_fn, board, "GPIO16-INPUT_PULLUP-guard-removed", pullup_mutation)
+        print("RUNTIME_GPIO_CAPABILITY_PASS ESP8266 coin16=DENY relay16=ALLOW led16=ALLOW")
 
     digit_mutation = parse_fn.replace("if(*cursor<'0'||*cursor>'9') return false;", "if(false) return false;", 1)
     require(digit_mutation != parse_fn, f"{board}: digit-parser mutation anchor missing")
