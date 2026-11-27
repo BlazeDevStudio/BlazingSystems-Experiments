@@ -1,3 +1,15 @@
+## PHX-MASTER UTC06 — #355/#357 stack drift, cancelled COE CI and exact migration re-audit (2026-11-27T06Z)
+
+- [UTC06 full audit](./PHX_MASTER_UTC06_20261127_HW355_STACK_DRIFT_COE26_CANCELLED_CI_EXACT_TREE_AUDIT.md).
+- Live refs: Experiments main `6be5d19b`; development `aad3aade72c1156eecba1fed30907c6d0283b2c5`; active v0.6 `2fbd2475`; Master at start `0f533470`; COE main `a6513ab4`; COE #26 `b382d233`.
+- #355 docs HEAD advanced to `9f7a8ecb` (source/test `444c9a68`): poll/Mbed PASS, Full/Native FAIL at QA-owned controller/pending-disposition assertions. #357 remains based on prior #355 `0adb541a`; live parent ref is now `9f7a8ecb`.
+- #356 remains separate: exact docs-head Full/Native/preflight/Mbed PASS, simulated only.
+- COE #26's five workflows are now CANCELLED, not queued; zero check-runs/statuses. Exact trees are 2,422 source / 286 destination; intake 61 rows are 46 identical / 15 derived vs declared 47 / 14; six license/notice paths remain unmatched. No staging or migration.
+- P0 #177 remains open on active v0.6: synchronous poll still precedes first coin sample on both boards.
+- Manifest remains 11 routes / DRAFT_REVIEW_ONLY / PHX-MASTER target null. Private Drive registry v11/newer corrections NOT_RECOVERED. PRODUCTION NO-GO.
+
+---
+
 ## PHX-MASTER UTC05 — #357 pending-disposition test mismatch, active v0.6 pulse order and COE #26 (2026-11-27T05Z)
 
 - [UTC05 full audit](./PHX_MASTER_UTC05_20261127_HW357_PENDING_DISPOSITION_COE26_EXACT_HEAD_AUDIT.md).
