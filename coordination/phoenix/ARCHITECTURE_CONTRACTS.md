@@ -1,3 +1,34 @@
+## PHX-MASTER UTC20 — deny-only candidate semantics vs stale config_revision parity assertion (2026-11-27T20:39Z)
+
+The exact source comparison corrects the previous broad description of the Full CI failure.
+
+### Source identities
+
+| Source ref | ESP8266 blob | ESP32 blob | config_revision |
+|---|---|---|---|
+| Experiments main 6be5d19b | bfb94920eb0a189ca01d52e5443954fa133f5423 | 117c6e937e8f12f3890ace2ae23b3a23ff1c3df0 | Present (ESP8266 line 209; ESP32 line 168) |
+| Active v0.6 2fbd2475 | 12c4bb82b6fddafe813674a0b5f692c1d3634073 | 29f1125d52ff474a0d028ad41f7af201be1f0f9d | Present (ESP8266 line 238; ESP32 line 201) |
+| HARDWARE #354 candidate fc842342 | b45eb2d0bebfc0088e1c9f506c5e94c59cf054d9 | 3edbe38da543ef118b287f3e04c1601692cfa99f | Absent on both |
+| HARDWARE #366 candidate 07fef4e8 | 7527dbff41b7f21bdc3d3ed9ee3db1c0d21eb07b | a673e323e1c160cbfe03949d13a9e01b47386596 | Absent on both |
+
+The #366 stack is 228 commits ahead / 0 behind active v0.6, with merge base 2fbd2475e9f54878c316fa7cea2f228386b0e859. The stack changes both sketches to keep controller register/poll responses outside the trusted configuration path and discard the poll response pending an approved authenticated contract. This is a fail-closed candidate behavior, not evidence that the field disappeared from current main or the active-v0.6 base.
+
+### Why Full CI fails
+
+The shared tests/controllers.sh blob is 53a7af25fdee9a650e10e870c4204e0fb43239c6. Its line 21 still runs grep -q 'config_revision' against both sketches. Exact Full runs #45864684497 (#354) and #46059524022 (#366) fail Controller protocol parity at that assertion. The candidate sketches intentionally omit the field. The PR #366 body calls this an inherited current-main/v0.6 mismatch; the exact blobs show the more precise cause is an unchanged QA assertion against the deny-only candidate stack.
+
+Do not add a decoy config_revision string, restore untrusted remote config consumption, or weaken default-deny. PHX-QA owns a source-linked assertion that proves the candidate rejects/discards unsigned controller fields and preserves relay/coin admission denial. PHX-CORE owns the canonical authenticated register/poll/receipt/disposition contract and golden vectors. PHX-HARDWARE owns candidate firmware and host labs. PHX-MASTER owns only this cross-role contract record.
+
+### P0 boundary remains
+
+The active development branch blazepwifi-v0.6.0-audit-foundation @ 2fbd2475e9f54878c316fa7cea2f228386b0e859 still performs synchronous post("poll") before the first digitalRead(runCoinPin): ESP8266 lines 354→357; ESP32 lines 314→318. The 3,500 ms timeout remains. Issue #177 is OPEN; its embedded source pin 9df0a7e7 is stale.
+
+The separate #354 candidate remains OPEN / DRAFT / UNMERGED. Its Full run #45864684497 fails Controller parity; Native run #45864684295 fails PAY-0745. Host CI and source inspection do not prove physical coin-acceptor relay-off polarity, pulse retention, durable flash recovery, 150 power cuts or 30-device/24-hour soak.
+
+Current main CGI producer blob 2e3a1430d08cc6606429a042df3b5848f53c7267 still has no controller response_sig in register|ping or poll response blocks; member endpoint signatures do not authenticate controller poll/disposition. Keep controller admission deny-only until CORE contract and independent QA review are complete.
+
+---
+
 ## PHX-MASTER UTC19 — poll transport outcomes do not clear P0 or authorize coin admission
 
 HARDWARE #365 is a test-harness-only child of #364. Its source/test SHA is `fcd5d7df210c8521f9c8fcc1019c8db8bdaf7eb0`; evidence docs head `6e5e126199368cbe78f9d46dd6c702c883cfa5cb`; current PR head `e65b0b895af9c3fc5e5632f704cb67b347e69725`. It adds five transport outcomes × four relay/LED polarity combinations (20 cases per board / 40 total): immediate begin failure, empty timeout, malformed body, server-error body and untrusted positive `insert=true`. The same host harness also models six blocking-poll pulse windows × four polarity combinations (24 cases per board / 48 total; `accepted=0`). The transient response-consumption/re-enable mutation is rejected on both boards. No production ESP sketch or CORE API changed.

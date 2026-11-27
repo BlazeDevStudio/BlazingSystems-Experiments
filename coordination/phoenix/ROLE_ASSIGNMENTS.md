@@ -1,3 +1,32 @@
+## PHX-MASTER UTC20 — exact owner heads and deny-only parity reclassification (2026-11-27T20:39Z)
+
+No ownership changed. PHX-MASTER owns coordination/phoenix only. Audit-start Master branch HEAD was 90292a7a280c21dee29eebca7e76186bd4c02034; current main is 6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5. The live compare is 673 commits ahead / 1 behind, merge base f4e8a891aed8af86d5fd315d28750a0ac3a7372b. PR #288 had 259 changed paths, all under coordination/phoenix; no exact-head Master Actions run or combined status was returned.
+
+| Role / PR | Exact head | Current exact-head evidence |
+|---|---|---|
+| MASTER #288 | audit start 90292a7a280c21dee29eebca7e76186bd4c02034 | OPEN / DRAFT / UNMERGED; no exact-head workflow run or combined status |
+| CORE #252 | c82705f2de865c89ab733b10efa84f26f56a5cc4 | Build #42698139210 PASS (scoped only); CORE source untouched |
+| RENTAL #328 | 10fc200b6dbf470a95e679d3acc58aff4ab2a67f | API #45622918364, auth/installer #45622918551, APK #45622918340 PASS; shared build #45622918468 FAIL |
+| PISONET #255 | d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | Windows synthetic #42462978704 PASS; native COM acceptance NOT TESTED |
+| HARDWARE #359 | 47357aab2ff7910b38ca538a46dfa01bdbca01e8 | Poll-intake #45997708842 and Mbed #45997708753 PASS; Full #45997708895 and Native #45997708911 FAIL |
+| HARDWARE #361 | 8a1999ccdcab02445ef93c153316e519d9476210 | Focused #46018576706 and Mbed #46018576254 PASS; Full #46018576372 FAIL |
+| HARDWARE #362 | eeddfc37d24d20ebc14641dfe3ffa247bbbc1ebd | Focused #46029353181 and Mbed #46029353094 PASS; Full #46029353015 and Native #46029353001 FAIL |
+| HARDWARE #364 | ea765fb822e1c517db4e61c103b86d8eb2c66c92 | Focused #46041398065 and Mbed #46041397937 PASS; Full #46041397974 FAIL |
+| HARDWARE #365 | e65b0b895af9c3fc5e5632f704cb67b347e69725 | Focused #46056656161 and Mbed #46056656203 PASS; Full #46056656151 FAIL |
+| HARDWARE #366 | 07fef4e8e1055c06cf5e5c3a0d3829c52be31cc9 | Focused #46059524018 PASS (8/8 polarity cases, 14/14 mutations rejected); Mbed #46059523991 3/3 PASS; Full #46059524022 FAIL at Controller protocol parity / tests/controllers.sh:21 |
+| HARDWARE #354 (separate active-v0.6 deny candidate) | fc842342596786e072630179acfbbc4feeb2ba02 | Focused #45864684458 PASS; Mbed #45864684325 3/3 PASS; Full #45864684497 FAIL at Controller protocol parity; Native #45864684295 FAIL at PAY-0745 |
+| QA #290 / #292 | 5c29d15994cee1279058f1eca12f2a3180704292 / 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | #290 Windows synthetic #43633486963 PASS; #292 no exact-head workflow |
+| RELEASE #291 / #242 | bf339a76964a1abe2412fac45392fe06a8e66418 / 36c0d0bb3e58786359555b307bb784f720f023ce | No exact-head workflow runs returned |
+| COE integration #26 | b382d233ff06c8791b1028bed3c617cc7b670d12 | Five candidate workflows CANCELLED; no combined status |
+
+HARDWARE #366 is a child of #365; the current stack is #359 → #361 → #362 → #364 → #365 → #366. It is a host-lab modularization, not a production sketch or API change. Its source/test SHA is ff73702adf6fb958c9f21ebe9a68c908ee829ea4.
+
+**Controller-parity correction:** the current main and active-v0.6 source both contain config_revision; the #354 and #366 deny-only candidate sketches intentionally omit it. The unchanged QA controller script still greps for config_revision at line 21. Full CI therefore fails because the assertion does not match the deny-only candidate contract. QA owns replacing this with a source-linked deny-only assertion; do not reintroduce an untrusted config_revision field or a decoy token.
+
+Cleanup #266 remains OPEN / 0-of-7. P0 #177 remains OPEN. No subsystem ownership, worker PR, or production gate was changed.
+
+---
+
 ## PHX-MASTER UTC19 — exact role heads and CI (2026-11-27T19:38Z)
 
 No ownership changed. MASTER owns `coordination/phoenix/` only; all subsystem source branches remain owner-reserved.

@@ -1,3 +1,46 @@
+## PHX-MASTER UTC20 — exact #366 source tree vs COE #26 route, test and license provenance (2026-11-27T20:39Z)
+
+Exact recursive Git trees were retrieved for source PR #366 and destination PR #26; neither tree was truncated.
+
+- Source: BlazeDevStudio/BlazingSystems-Experiments @ 07fef4e8e1055c06cf5e5c3a0d3829c52be31cc9; tree 4f0552d1926d134ff48be9b0c2dce512af69702e; 2,435 entries / 1,889 blobs.
+- Destination: BlazeDevStudio/CoinOperatedEcosystem @ b382d233ff06c8791b1028bed3c617cc7b670d12; tree 8a7d4cf81d7227118b876c1138dd2da12345fefa; 286 entries / 207 blobs.
+
+| Route | Source blobs | Destination blobs | Exact | Divergent | Source-only | Destination-only |
+|---|---:|---:|---:|---:|---:|---:|
+| CORE OpenWrt library | 20 | 20 | 14 | 6 | 0 | 0 |
+| CORE Vendo CGI | 1 | 1 | 0 | 1 | 0 | 0 |
+| RENTAL Android | 983 | 8 | 0 | 0 | 983 | 8 |
+| RENTAL standalone server | 12 | 4 | 0 | 1 | 11 | 3 |
+| PISONET SoftTimer | 44 | 47 | 16 | 9 | 19 | 22 |
+| HARDWARE ESP32 | 4 | 1 | 0 | 1 | 3 | 0 |
+| HARDWARE ESP8266 | 18 | 1 | 0 | 1 | 17 | 0 |
+| QA PisoWiFi tests | 151 | 19 | 2 | 2 | 147 | 15 |
+| RELEASE workflow reimplementation | 1 | 1 | 0 | 1 | 0 | 0 |
+
+### Exact firmware and new lab identities
+
+- ESP32 source sketch blob a673e323e1c160cbfe03949d13a9e01b47386596 differs from destination Hardware/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino blob 3cc7ec54b476943dc04a8d1af5e2df5fe054e422.
+- ESP8266 source sketch blob 7527dbff41b7f21bdc3d3ed9ee3db1c0d21eb07b differs from destination Hardware/esp8266/BlazePwifiVendo/BlazePwifiVendo.ino blob c8be98f72596681e36a3ad1f8939bf8046c96887.
+- #366 adds output_enable_sequence_lab_contract.py blob 85f521d3ed2b542d6c5968fa795fb902d1d5cb81 and output_enable_sequence_lab_harness.py blob 93cb0502b73429299c9f1d12b017e58b4d96f6fb; neither has a destination counterpart. The runner output_enable_sequence_lab.py is blob 80ae94cfbb40bba30b8e53d4a6f2abf22fa782a5. These are source-only host-test modules, not firmware acceptance.
+
+### Test identity and manifest audit
+
+- Source test tree: 151 blobs; destination test tree: 19 blobs.
+- Source executable/test code: 145 files; exact path+blob matches 2 (portal.sh, security.sh); divergent 2 (config.sh, integration.sh); source-only 141.
+- Destination-only test files: 15. voucher_txn_journal.sh is destination-only; no matching source path exists in the source test tree and it is absent from MIGRATION_MAP.md.
+- SOURCE_INTAKE.json is schema 8, blob 1b9018ff944f7f673934d0fc2a97e0a0090d3f5f. Its 61 runtime rows actually count 46 byte_identical / 15 derived, while its summary claims 47 / 14.
+- SOURCE_INTAKE.derived_tests has 15 rows; MIGRATION_MAP.md blob b54fc15d83bc2269de03db8aadd0e76259fd13d9 lists 14 derived test rows (plus four original test rows), omitting voucher_txn_journal.sh.
+- SOURCE_INTAKE pins source commit 6d4c9b487af4d768c4d7627654d119417fcc6e00 and destination branch feature/pisowifi-cleanup-stabilization. Live PR #26 instead uses integration/ecosystem-nonproprietary-candidate-20261111 @ b382d233ff06c8791b1028bed3c617cc7b670d12.
+- HARDWARE_FIRMWARE_AUDIT.md blob 86c06e7574761465b80482430296eb712d985367 says both sketches were not copied, but the exact destination tree contains one divergent sketch under each board route.
+
+### License / NOTICE provenance
+
+Ten source license/notice artifacts were found; four have exact mapped-path counterparts and six mapped-path counterparts are absent: root NOTICE.md, BlazeRentalLauncher/LICENSE, BlazeRentalLauncher/assets/license.html, tests/vendor/jsqr-1.4.0/LICENSE, ui/vendor/qrcode/LICENSE and ui/vendor/tabler/LICENSE. A same-blob qrcode license elsewhere does not repair a missing path/provenance mapping.
+
+All five PR #26 candidate workflows remain CANCELLED. Intake flags release_authorized, hardware_tested and full_ci_tested false. COE #26 remains FROZEN. No staging, copy, move, overwrite, cherry-pick, rebase, retarget or destination write occurred.
+
+---
+
 ## PHX-MASTER UTC19 — #365 source candidate vs COE #26 exact route map
 
 Source tree #365 `e65b0b895af9c3fc5e5632f704cb67b347e69725`: 2,432 entries / 1,886 blobs, non-truncated. Destination PR #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`: 286 entries / 207 blobs, non-truncated. This is path-prefix/blob-mode provenance only, not a copy plan.
