@@ -1,3 +1,19 @@
+## PHX-MASTER UTC22 — live role heads and exact CI
+
+| Role / PR | Exact head | Current evidence |
+|---|---|---|
+| MASTER #288 | audit-start `25b1cce3718a96c019d7e0ebd4181fbd0cc62b9b`; OPEN / DRAFT / UNMERGED | 261 coordination-only paths; no exact-head Master Actions/status |
+| CORE #252 | `c82705f2` | Build #42698139210 PASS, scoped |
+| RENTAL #328 | `10fc200b` | API/auth/APK identity focused runs PASS; shared build #45622918468 FAIL |
+| PISONET #255 | `d01fd164` | Windows synthetic #42462978704 PASS; native COM NOT TESTED |
+| HARDWARE #367 | `c473b9ad` | Poll-intake #46078501079 PASS; Mbed #46078500994 3/3 PASS; Full #46078501073 FAIL at handover freshness |
+| QA #290 / #292 | `5c29d159` / `75a3f66d` | #290 Windows synthetic #43633486963 PASS; #292 no exact-head workflow |
+| RELEASE #291 | `bf339a76` | No exact-head workflow; mergeable=false |
+
+No ownership changed. Master did not edit subsystem branches.
+
+---
+
 ## PHX-MASTER UTC21 — exact role heads and CI revalidation (2026-11-27T21:42Z)
 
 No ownership changed. Master owns coordination/phoenix only.
