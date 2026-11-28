@@ -4172,3 +4172,15 @@ No firmware/API/finance source, COE destination, physical device, or production 
 - **Full:** #46172575460 / validation job 141064117452 FAIL at canonical handover freshness because the three append-only canonical records were not yet updated after source SHA 83fc27e. Controller parity was not reached; target matrix was still running at first read. Canonical append follows in this branch; fresh Full run required.
 - **Mbed / Native:** NOT RUN on this PR head.
 - **Disposition:** keep #380 DRAFT; keep coin/relay denied. Physical acceptance, signer/witness, migration, durable accounting/replay and release signoff remain NOT TESTED / NOT ACCEPTED.
+
+
+## 2026-11-28T17Z — PHX-HARDWARE #380 terminal exact-head CI
+
+- **Role/task:** PHX-HARDWARE / `PHX-HW-177-GPIO-WRITER-STACK-RECONCILE-20261128T17Z`.
+- **PR/branch:** #380 OPEN/DRAFT/UNMERGED; `phoenix/hw-gpio-writer-reconcile-20261128-utc17`, base #377@95ace1236c2b3e4816515c372edd4853ceeed064.
+- **Source/test SHA:** `83fc27e474064f2ed429332b8a14fa8ffb66784c`; exact tested docs head `923bb5fa773a9164b0587b21b1e0fd29cf8323ed`.
+- **Poll:** #46173004720 / job 141065398557 PASS; 8/8 writer mutations rejected; post-deny direct GPIO ON mutation rejected on both boards; 5 outcomes × 4 polarity combinations; SIMULATED ONLY.
+- **Mbed:** #46173004705 PASS 3/3 (source contract, ESP32 core 3.3.13 and 4.0.0); clean A/B builds byte-identical. Source tree SHA256 ccea8c3ba80f417b5cd0789ad68928f78c12a467ce77a0a3957121a4ad494c81; core 3.3.13 SHA256 c96d722323d68ac2df940946930074f7961707cfaf0544572f4292eb486ba9cc; core 4.0.0 SHA256 0dd322dbb123a503076c3751e41363a1930737ca14276cae149c815b418d3d0d.
+- **Full:** #46173004825 overall FAIL; handover/history/CI-0701 gates PASS; validation job 141065462212 FAIL at QA-owned tests/controllers.sh:21 `config_revision` parity. 14/14 target/platform jobs PASS; downstream bundle/simulation/signing/publication skipped.
+- **Native:** NOT RUN; workflow path filter excludes these two host-lab Python files and handover paths.
+- **Disposition:** source contract CI VERIFIED/SIMULATED only; controller parity remains CORE/QA-owned; physical acceptance and release gates remain NOT TESTED / NOT ACCEPTED.
