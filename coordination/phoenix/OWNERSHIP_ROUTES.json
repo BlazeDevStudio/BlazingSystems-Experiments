@@ -1,0 +1,80 @@
+{
+  "schema": "phoenix/ownership-routes/v1",
+  "source_repository": "BlazeDevStudio/BlazingSystems-Experiments",
+  "source_ref": "f4e8a891aed8af86d5fd315d28750a0ac3a7372b",
+  "destination_repository": "BlazeDevStudio/CoinOperatedEcosystem",
+  "destination_candidate_pr": 26,
+  "destination_candidate_sha": "b382d233ff06c8791b1028bed3c617cc7b670d12",
+  "status": "DRAFT_REVIEW_ONLY",
+  "notes": "Representative non-overlapping source ownership and intended destination paths, NOT a completed or byte-identity migration. Target paths belong to draft PR #26; target main remains structure-only. Check provenance, functionality, branch HEAD and licenses before any integration. Broad parent target prefixes marked manual-file-mapping-required are not copy-safe or evidence of integration. Two destination prefix overlaps are intentionally blocked pending file-by-file review.",
+  "routes": [
+    {
+      "role": "PHX-MASTER",
+      "source": "coordination/phoenix/",
+      "target": null,
+      "kind": "coordination-only"
+    },
+    {
+      "role": "PHX-CORE",
+      "source": "experiment/openwrt/BlazePwifi/openwrt/rootfs/usr/lib/blazepwifi/",
+      "target": "Pisowifi/openwrt/rootfs/usr/lib/blazepwifi/",
+      "kind": "selective-review"
+    },
+    {
+      "role": "PHX-CORE",
+      "source": "experiment/openwrt/BlazePwifi/openwrt/rootfs/www/blazepwifi/cgi-bin/vendo",
+      "target": "Pisowifi/openwrt/rootfs/www/blazepwifi/cgi-bin/vendo",
+      "kind": "selective-review"
+    },
+    {
+      "role": "PHX-RENTAL",
+      "source": "experiment/openwrt/BlazePwifi/android/",
+      "target": "Rental/android/",
+      "kind": "selective-review"
+    },
+    {
+      "role": "PHX-RENTAL",
+      "source": "experiment/openwrt/BlazePwifi/profiles/standalone-rental/",
+      "target": "Rental/",
+      "kind": "manual-file-mapping-required",
+      "copy_permitted": false,
+      "review_reason": "Broad Rental/ destination contains separate independently owned subtree routes Rental/android/ and Rental/openwrt/. This is a reference-only routing candidate, not a recursive copy plan; resolve per-file path+blob provenance and owner review before any migration."
+    },
+    {
+      "role": "PHX-RENTAL",
+      "source": "experiment/openwrt/Rental-Server-Standalone/",
+      "target": "Rental/openwrt/",
+      "kind": "selective-review"
+    },
+    {
+      "role": "PHX-PISONET",
+      "source": "experiment/windows/BlazePisonet-SoftTimer/",
+      "target": "Pisonet/SoftTimer/",
+      "kind": "selective-review"
+    },
+    {
+      "role": "PHX-HARDWARE",
+      "source": "experiment/openwrt/BlazePwifi/esp32/",
+      "target": "Hardware/esp32/",
+      "kind": "selective-review"
+    },
+    {
+      "role": "PHX-HARDWARE",
+      "source": "experiment/openwrt/BlazePwifi/esp8266/",
+      "target": "Hardware/esp8266/",
+      "kind": "selective-review"
+    },
+    {
+      "role": "PHX-QA",
+      "source": "experiment/openwrt/BlazePwifi/tests/",
+      "target": "Pisowifi/tests/",
+      "kind": "selective-review"
+    },
+    {
+      "role": "PHX-RELEASE",
+      "source": ".github/workflows/blazepwifi-build.yml",
+      "target": ".github/workflows/pisowifi-ci.yml",
+      "kind": "reimplementation-review"
+    }
+  ]
+}
