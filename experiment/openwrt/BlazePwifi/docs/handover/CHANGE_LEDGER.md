@@ -3514,3 +3514,36 @@ Application/source snapshot is still exact520; this note is metadata only.
 - Focused run #46157057143 job 141015924749 failed at the harness step because an escaped-slash `sed` address was parsed as a label; the existing mountinfo and physical-parent matrix passed before that step. This was a harness syntax defect, not a parser false-acceptance result.
 - Local corrected script passed: writable positive control accepted; read-only target/scratch superblocks and mount flags plus `rwx`, `notrw`, and missing-`rw` options rejected with no success output. Hosted exact-head run pending.
 - SIMULATED / CI only; no physical operation. Historical ledger prefix preserved byte-for-byte; this record is append-only. Production NO-GO.
+
+
+## PHX-HARDWARE UTC16 — #376/#377 independent-stack reconciliation (2026-11-28T16:03:49Z)
+
+**Canonical sequencing decision:** keep the two Hardware drafts independent; do not merge, cherry-pick, or rebase one onto the other.
+
+- **Storage preflight:** PR #376, `phoenix/hw-storage-superblock-rw-guard-20261128-utc14`, exact source/docs head `22ff6eb054b9578daf74a30d5c04d51fd754917e`, child of #356 at `0ea32d31ed5c902b2187d98c181aab14bc9fdeae`. Scope is read-only STORCHK-0674 mountinfo/superblock preflight and its Hardware-owned synthetic guard.
+- **Poll/firmware candidate:** PR #377, `phoenix/hw-poll-deny-wrapper-child-20261128-utc15`, exact head `95e54790ab986dab3c1b3723ea9603a3d125c0d6`, child of #374 at `cfb19ed5df920bf5fa7e33e08dc73a25f8b14db9`, with #375 preserved as the second parent at `94b1231c631eb32da0f019604ce00a4a0851a471`. This remains deny-only and is not integrated into active v0.6.
+- The three shared handovers (`PROJECT_HANDOVER.md`, `docs/handover/CURRENT_STATE.md`, `docs/handover/CHANGE_LEDGER.md`) are append-only. This record cross-references both branches; neither branch is promoted to main or to the active v0.6 branch. Master retains integration/merge authority.
+
+### PR #376 exact-head evidence (source/test head 22ff6eb)
+
+- Focused STORCHK [#46157303529](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46157303529), job `141016684329`: **PASS**. Writable positive control accepted; read-only target/scratch superblocks, malformed/missing `rw` tokens, and read-only mount options rejected.
+- Mbed TLS [#46157303545](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46157303545): **3/3 PASS** — source contract `141016798875`, ESP32 core 3.3.13 `141016799074`, core 4.0.0 `141016799081`.
+- Full [#46157303505](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46157303505): **SUCCESS**. Validation `141016811425` PASS; all 14 target/platform jobs PASS (13 firmware targets plus Android); all 9 v0.4 simulation jobs PASS; update bundle `141017868047` PASS. Production import, sign handoff, prerelease and release publication were skipped.
+- Full handover artifact: [15267944217](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46157303505/artifacts/15267944217). Mbed artifacts: [core 3.3.13 / 15268775146](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46157303545/artifacts/15268775146), [core 4.0.0 / 15268525760](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46157303545/artifacts/15268525760).
+- The focused log explicitly records `SIMULATED_ONLY=1`, `PHYSICAL_POWER_CUT_VERIFIED=0`, and `CUSTOMER_INSTALL_AUTHORIZED=0`. This is CI verification of a read-only parser/preflight, not physical storage or power-cut acceptance.
+
+### PR #377 exact-head evidence (head 95e54790)
+
+- Poll [#46158944089](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46158944089), job `141021690629`: PASS, simulated-only.
+- Mbed [#46158944181](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46158944181): 3/3 PASS.
+- Native [#46158944131](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46158944131): FAIL at QA-owned PAY-0745 literal corrupt-state assertion.
+- Full [#46158944182](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46158944182): handover gates PASS and 14/14 target/platform jobs PASS; validation FAIL at QA-owned controller parity (`config_revision`). Candidate/sign/publish stages skipped.
+
+### Disposition and next exact actions
+
+- #376 remains a separate read-only preflight draft; its green Full result is not hardware acceptance.
+- #377 remains the canonical deny-only poll candidate; it does not fix active v0.6 poll-before-first-sample and does not enable coin/relay admission.
+- PHX-QA owns PAY-0745 and controller-parity semantic assertions; PHX-CORE owns authenticated register/poll/receipt/disposition contracts; PHX-MASTER owns role/integration pins and merge authority.
+- P0 #177 remains OPEN. Physical acceptor/relay polarity, EEPROM/NVS brown-out, 150 power cuts, 30-device/24-hour soak and electrical pulse/recovery remain NOT TESTED. Protected signer/witness, v1-to-v2 migration, durable accounting/replay and independent QA/release signoff remain NOT ACCEPTED.
+- No firmware source, shared API, finance, signer, witness, migration, COE destination, physical device, or production state was changed in this reconciliation. Both PRs remain OPEN / DRAFT / UNMERGED.
+
