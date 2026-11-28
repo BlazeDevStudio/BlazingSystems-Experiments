@@ -4107,3 +4107,13 @@ This is the required documentation-first IN-PROGRESS record. No source/test resu
 - Keep coin/relay denied; HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
 - Updated UTC: 2026-11-28T12:42:00Z.
 
+
+## PHX-HW-20261128T12Z-EEPROM-CONNECTSTA-POLL-CI-UPDATE
+
+- Source/test SHA \`4da5e7a8b8911538f2d3905e559f983b773e703d\`; exact Poll checkout \`bb0ccc269d105bb0b70ad5a1bd42e2089c3f844d\`; PR #374 remains OPEN/DRAFT/UNMERGED.
+- Poll #46146914426 / job 140984874139 PASS. Log confirms exact checkout ref, 4/4 connectSta runtime scenarios, 2/2 injected guard mutations rejected at exits 10/20, existing 17/17 EEPROM config mutations, loadCfg runtime and pending recovery 15 scenarios per board.
+- Native Synthetic #46146914476 / job 140984876253 FAIL at QA-owned \`tests/v060_vendo_sequence_contract.py\` corrupt-persisted-state assertion.
+- Mbed #46146914481 source-contract job 140985013035 PASS; core 3.3.13 and 4.0.0 jobs in progress at read. Full #46146914480 pending; no Full result claimed.
+- Poll CI VERIFIED only; native fail, Mbed partial, Full pending. No production sketch or physical device changed. Hardware acceptance NOT TESTED; PRODUCTION NO-GO.
+- Updated UTC: 2026-11-28T12:56:00Z.
+
