@@ -4025,3 +4025,18 @@ This is the required documentation-first IN-PROGRESS record. No source/test resu
 - Safety: no production .ino modified in this activation; no CORE/QA shared contract, finance, receipt/disposition, signer/witness, COE, device or deployment changed. Host simulations are not physical acceptance. Brown-out, 150 power cuts, 30-device/24-hour soak and electrical pulse/recovery remain NOT TESTED. HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
 - Rollback: revert/close only child PR #374; preserve parent #373 and earlier stack.
 - NEXT ACTION: rerun exact-head Mbed and Full after docs sync; request PHX-QA disposition of the stale corruption-state assertion; keep coin/relay admission denied.
+
+## PHX-HARDWARE UTC08 terminal — 2026-11-28 17:10 Asia/Manila — EEPROM checked-store persistence contract (#374)
+
+- ID: PHX-HW-EEPROM-STORE-TEST-CONTRACT-20261128T09Z.
+- Scope: Hardware-owned ESP8266 checked EEPROM persistence lab; cleanup-first #266; child PR #374.
+- Status: validated for the scoped Hardware test-contract change; overall PR remains blocked; priority P1.
+- Source/test commit: 3934cf40f1a2999ba66df2fb4e9ff2f0a1081e51. Final docs/head: 26ee6b5a1f5b7de024ea04a602d8299812c5c384.
+- Focused exact docs-head push #46129051057 job 140929984400 PASS; PR #46129056177 job 140930000532 PASS. Append-only guard: base 1,132,798 bytes; appended 62,065 bytes. New EEPROM begin-failure/no-write, commit-failure propagation, commit success/ready reuse, existing EEPROM failure matrix 17/17 and config write-result lab PASS.
+- Mbed #46129056171 3/3 PASS: source contract 140930000947, core 3.3.13 140930000945, core 4.0.0 140930000750.
+- Full #46129056271 terminal FAIL at QA-owned tests/controllers.sh line 21 config_revision presence assertion (validation job 140930061660); HND-0700 and CI-0701 passed; all 14/14 target/platform builds including Android passed; downstream update/simulation/signing/publication skipped.
+- Native Synthetic #46129056215 job 140930001011 terminal FAIL at QA-owned tests/v060_vendo_sequence_contract.py line 18 literal if(any) return false; assertion. The source's loadPending() has semantic fail-closed handling: candidate present but no valid candidate -> fsReady=false, pendingReady=true, preserve files, return false. Hardware did not modify QA tests or add decoy text.
+- The three changed test files are Hardware-owned. No production .ino changed in this activation; previous CheckedEEPROMClass firmware commit e832194501c6b93746b06fd0afca61149d34c3e1 is compile-validated by the ESP8266 Full target only. Physical EEPROM/NVS brown-out remains NOT TESTED.
+- The earlier source-before-CURRENT_STATE sequencing deviation remains disclosed; no history was backdated or removed.
+- Rollback: close/revert only child PR #374; preserve #373 and parent stack.
+- NEXT ACTION: QA fixes/supersedes its two assertions on the QA branch; Master refreshes the #374 role/integration pins to docs head 26ee6b5a; Hardware keeps coin/relay admission denied.
