@@ -2732,3 +2732,18 @@ P0 #177 remains OPEN. The active v0.6 audit foundation is 2fbd2475e9f54878c316fa
 Hardware #358 adds an ESP8266 boot-strap GPIO guard and a corrected test fixture. It does not implement the CORE poll-response signature, receipt/disposition semantics, or resolve P0 #177. Its Full CI still fails at the missing poll-signature contract. Related #357 Full validation and Native synthetic journal gates remain failed at QA/CORE-owned parity assertions. Do not invent config_revision or response_sig fields, and do not add an unsafe clearPending callsite merely to satisfy a literal assertion. Keep coin and relay admission deny-only until CORE and QA publish and independently verify the semantic contract.
 
 No physical GPIO/relay/coin test, power-cut test, 30-device/24-hour soak, protected signer/anti-rollback witness, or production financial migration was executed or approved in this refresh.
+
+---
+
+
+## 7.26 Controller configuration and coin-pulse admission remain deny-only — UTC19 revalidation
+
+CORE owns the authenticated controller/configuration and event-bound receipt producer contract. HARDWARE owns firmware consumer, GPIO writer and local intake-inhibit behavior. QA owns independent semantic default-deny and controller-parity assertions. PHX-MASTER owns only this cross-role contract and evidence matrix.
+
+Current HARDWARE #380 head 5297760322c3752878087d38b784ee8c715db6f2 is documentation-only over source/test SHA 83fc27e474064f2ed429332b8a14fa8ffb66784c. Poll and Mbed exact-head workflows pass, but Full fails Controller protocol parity after 14/14 target/platform jobs pass. This is not an accepted producer/consumer contract.
+
+CORE COE PR #45 adds synthetic HMAC receipt vectors, but its own ledger records durable epoch/sequence authority and independent financial durability/witness as BLOCKED. A vector verifier is not durable paid-state authority.
+
+Active v0.6 branch 2fbd2475 still calls synchronous post(poll) before the first coin sample: ESP8266 lines 354/357 and ESP32 lines 314/318. Issue #177 body still pins 9df0a7e7 and needs an owner refresh. No physical pulse, relay, power-cut or coin-slot test was performed.
+
+Do not add decoy config_revision/response_sig fields, enable positive admission, or satisfy literal tests by unsafe clearPending behavior. Coin and relay admission remain denied until CORE contract approval, HARDWARE implementation and independent QA verification converge on the same exact source SHA.

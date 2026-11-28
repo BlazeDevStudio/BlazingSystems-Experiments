@@ -7143,3 +7143,21 @@ Four reviewed counterparts are exact: PisoWiFi product LICENSE, QRCode LICENSE, 
 The candidate's HARDWARE_FIRMWARE_AUDIT.md says the two controller sketches have not been copied, but the current COE #26 tree contains one divergent sketch under each board directory. The PR description's P0-1-resolved claim is not accepted as evidence: exact source/destination blobs diverge, the required source tests are incomplete at destination, and no exact-head candidate CI ran.
 
 COE #26 remains OPEN / DRAFT / FROZEN. Its five current workflow runs (BlazeRental Standalone CI, BlazeHardware & Shared Contracts CI, Pisowifi OpenWrt Overlay & Shell Suite, case-collision guard, and BlazePisonet SoftTimer Windows synthetic CI) are all CANCELLED; each has zero jobs and the candidate commit has zero combined commit statuses. No staging, copy, move, overwrite, rebase, cherry-pick or retarget was performed.
+
+---
+
+
+## PHX-MASTER UTC19 — #380 current exact-head and COE #26 provenance refresh
+
+HARDWARE #380 remains OPEN/DRAFT/UNMERGED on #377@95ace123. Current docs head 5297760322c3752878087d38b784ee8c715db6f2 has source/test SHA 83fc27e474064f2ed429332b8a14fa8ffb66784c. Compare from a4ec0383 shows one added handover note only; no source/test delta.
+
+- Poll #46182701890 PASS.
+- Mbed #46182701872 3/3 PASS.
+- Full #46182701931 FAIL at QA-owned Controller protocol parity after 14/14 target/platform jobs PASS; update bundle, simulations, signing and publication skipped.
+- Native Synthetic Journal NOT RUN by path filter.
+
+#378 and #379 remain open/unmerged for history; #376 remains separate. The #380 canonical child decision stands, but no merge or hardware acceptance is implied.
+
+COE #26 remains OPEN/DRAFT/FROZEN at b382d233 on COE main a6513ab. All five candidate workflows are CANCELLED. Prior exact-tree audit remains valid at unchanged refs: 61/61 runtime blob+mode matches; 46 identical / 15 derived vs stale 47/14 summary; original tests 4/4 exact; derived tests 15/15 exact but map only 14/15 and omits voucher_txn_journal.sh; two migration-map hashes stale; four in-scope PisoWiFi legal artifacts exact. Candidate branch pin remains stale relative to live PR #26 branch. No staging/copy/move/write.
+
+COE #45 CORE receipt vectors are contract-only; #35 and #44 release/ULA work still lack complete site-prefix and sandbox evidence; #49 Stage 5.1 remains lab-only with Shared Contracts failure. See the UTC19 audit report for exact run links.

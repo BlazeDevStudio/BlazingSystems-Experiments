@@ -5769,3 +5769,33 @@ This is an additive current-state pin. Earlier checkpoints remain historical. No
 | PHX-RELEASE | #291 — bf339a76964a1abe2412fac45392fe06a8e66418 | Zero exact-head workflow runs/statuses | OPEN / DRAFT; no release authorization inferred. |
 
 The Hardware stacks remain separate: #358 is based on #353; #357 is based on #355; #355 is based on #354; #356 is an independent storage-preflight line. Preserve #353 → #352 → #349 ancestry and do not restack another role's branch. All listed PRs remain unmerged.
+
+---
+
+
+## PHX-MASTER UTC19 live role/head and CI refresh — 2026-11-28T19:41:55Z
+
+Live refs: Experiments main 6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5; development blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5; active v0.6 audit foundation 2fbd2475e9f54878c316fa7cea2f228386b0e859; Master start aa3d8a3214311fef8a3705e41b5e0aeac47e75f1; COE main a6513ab4412b4c014eee2863e45cbe32d06cb243; COE #26 b382d233ff06c8791b1028bed3c617cc7b670d12.
+
+| Role / PR | Exact head | Exact-head evidence / current disposition |
+|---|---|---|
+| PHX-CORE #252 | c82705f2de865c89ab733b10efa84f26f56a5cc4 | Build PASS; CORE remains separate-owner scope. |
+| PHX-RENTAL #289 | 68928774d0d7cf65adb26bc6b54199a3159d066c | Build and native auth PASS. |
+| PHX-RENTAL #328 | 10fc200b6dbf470a95e679d3acc58aff4ab2a67f | Shared build FAIL; API21 smoke, native auth/installer recovery and APK identity PASS. |
+| PHX-PISONET #255 | d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | Windows synthetic release PASS; not hardware acceptance. |
+| PHX-QA #290 | 5c29d15994cee1279058f1eca12f2a3180704292 | Windows synthetic PASS. |
+| PHX-QA #292 | 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | No exact-head workflow; no QA gate inferred. |
+| PHX-RELEASE #291 | bf339a76964a1abe2412fac45392fe06a8e66418 | No exact-head workflow; non-mergeable. |
+| PHX-HARDWARE #376 | 0f5968b232f411943c4be3a4d4911a0da4f83fff | Poll/Mbed/Full PASS; signing/publication skipped. |
+| PHX-HARDWARE #377 | 95ace1236c2b3e4816515c372edd4853ceeed064 | Poll/Mbed PASS; Native PAY-0745 and Full Controller parity FAIL. |
+| PHX-HARDWARE #378 | 3f67ba41dc3e087f868d3c57f6604e69f7a0e17b | Poll/Mbed PASS; Full CANCELLED; Native not run. |
+| PHX-HARDWARE #379 | 5ac75dbb53bc36abc161fb276b6e7e80534e9b28 | Poll/Mbed PASS; Full Controller parity FAIL. |
+| PHX-HARDWARE #380 | 5297760322c3752878087d38b784ee8c715db6f2 | Current docs-only head; Poll/Mbed PASS, Full Controller parity FAIL, Native not run by path filter. Canonical DRAFT child of #377. |
+
+COE role candidates: CORE #45@9d76a134 Overlay/Shell and case-collision PASS but durable ledger authority BLOCKED; RELEASE #35@bc57ba8e case-collision PASS, sandbox FAIL (Bubblewrap unavailable), Shared Contracts FAIL (no approved site ULA /48); RELEASE #44@582fd5d5 case-collision and Shared Contracts PASS, sandbox FAIL, non-mergeable; INTERCON #49@aeb8ff11 Stage 5.1 and case-collision PASS, Shared Contracts FAIL. All remain drafts; no production acceptance.
+
+COE #35 PR body still cites older head e1ad4fad, while live API head is bc57ba8e. Its owner must refresh the body/handover.
+
+Automation inventory: Phoenix Master Hourly Development and Blaze Hourly Production Development are enabled. The exact label Blaze Production Continuation was not visible. CORE was left read-only; no competing CORE worker or branch activity was started.
+
+Branch API metadata reports protected=false and required-check enforcement off for Experiments main, development, Master coordination and COE main. Repository-admin action is required.

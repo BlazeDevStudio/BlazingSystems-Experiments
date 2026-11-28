@@ -2576,3 +2576,18 @@ Live branch heads: Experiments main 6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5; bl
 Master PR #288 remains OPEN / DRAFT / UNMERGED. Its recorded base is main@f4e8a891; live main is 6be5d19b. GitHub compare reports 655 commits ahead / 1 behind, merge base f4e8a891. All 250 existing PR paths are under coordination/phoenix/. No rebase or merge was performed.
 
 Hardware owner stack: #358 head d8c3261e is based on #353 head f527b33c, preserving #353 → #352 → #349 ancestry; #357 head a37a55dc is based on #355 head 9f7a8ecb, which is based on #354; #356 remains separate. PHX-MASTER did not touch these source branches. CORE, RENTAL, PISONET, HARDWARE, QA and RELEASE source ownership remains with their assigned owners.
+
+---
+
+
+## PHX-MASTER UTC19 live branch and destination pin reconciliation — 2026-11-28
+
+Live refs: Experiments main 6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5; development aad3aade72c1156eecba1fed30907c6d0283b2c5; Master aa3d8a3214311fef8a3705e41b5e0aeac47e75f1; active v0.6 2fbd2475e9f54878c316fa7cea2f228386b0e859; COE main a6513ab4412b4c014eee2863e45cbe32d06cb243; COE #26 b382d233ff06c8791b1028bed3c617cc7b670d12.
+
+OWNERSHIP_ROUTES.json remains blob e4db324315a1b3543fec17a148fbf960170fcb29, 11 routes, DRAFT_REVIEW_ONLY. PHX-MASTER owns only coordination/phoenix/ and target is null. Its source_ref f4e8a891 is historical, not current main. Destination candidate pin remains #26@b382d233. The manifest was not edited or promoted because canonical private registry v11/newer corrections are unavailable.
+
+COE #26 live head branch is integration/ecosystem-nonproprietary-candidate-20261111, while SOURCE_INTAKE and MIGRATION_MAP still name feature/pisowifi-cleanup-stabilization. The mismatch is owner action; do not retarget or copy.
+
+CONTROL PLANE #172 body still states Experiments main f4e8a891 although the live main branch API returns 6be5d19b. P0 #177 body still states active source 9df0a7e7 although live active branch is 2fbd2475. These are stale coordination pins; route refresh requests to the owning maintainers rather than rewriting their issues.
+
+Branch API metadata reports protected=false and required-check enforcement off for Experiments main, development, Master coordination and COE main. Repository administrator must enable and verify protection. No source path, route, owner or destination permission changed.

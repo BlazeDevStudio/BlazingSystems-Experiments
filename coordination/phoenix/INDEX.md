@@ -2251,3 +2251,14 @@ Master branch before this refresh: fb18d3d7579eaa01e1cbaa3246355e485b2955f2. Mas
 - Newest Hardware evidence: #363 focused/Mbed/Poll checks pass; Full Controller protocol parity and Native PAY-0745 fail. CORE, RENTAL, PISONET, QA and RELEASE heads/CI are recorded in the report.
 - COE #26 remains FROZEN after exact non-truncated source/destination route, blob, test and license comparison. No staging or destination write.
 - Canonical private Drive v11/newer corrections remain NOT RECOVERED; Master Python suite and `verify_coordination.py` NOT RUN. Cleanup #266 remains OPEN / 0-of-7; PRODUCTION NO-GO.
+
+---
+
+
+## PHX-MASTER UTC19 — 2026-11-28 current-head and role-CI revalidation
+
+- [UTC19 current-head, #380 CI, role PR, COE #26 and routing audit](PHX_MASTER_UTC19_20261128_HW380_CURRENT_HEAD_ROLE_CI_COE26_REVALIDATION.md).
+- Master start head aa3d8a3214311fef8a3705e41b5e0aeac47e75f1; Experiments main 6be5d19b; development aad3aade; active v0.6 2fbd2475; COE main a6513ab4; COE #26 b382d233.
+- HARDWARE #380 current docs head 52977603 is a one-file docs-only successor to a4ec0383; source/test SHA 83fc27e4 unchanged. Poll and Mbed PASS; Full Controller parity FAIL after 14/14 target/platform jobs; Native not run by path filter.
+- COE #26 remains FROZEN with five cancelled workflows. Prior exact provenance remains 61/61 runtime blobs/modes, 46/15 actual vs 47/14 summary, missing voucher map row and two stale hashes; no destination write.
+- Private Drive registry v11/newer corrections NOT RECOVERED; no Drive connector. Master tests and Master CI NOT RUN. Cleanup #266 OPEN / 0-of-7. PRODUCTION NO-GO.
