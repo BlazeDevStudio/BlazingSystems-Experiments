@@ -1,3 +1,21 @@
+## PHX-MASTER UTC11 role refresh — exact owner heads and CI
+
+| Owner / PR | Exact head | Exact-head evidence / disposition |
+|---|---|---|
+| CORE #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | Build #42698139210 PASS; CORE source untouched. |
+| RENTAL #289 | `68928774d0d7cf65adb26bc6b54199a3159d066c` | Build #43653329229 and native auth #43653329235 PASS. |
+| RENTAL #328 | `10fc200b6dbf470a95e679d3acc58aff4ab2a67f` | Build #45622918468 FAIL; API21/23, native auth and APK identity checks PASS. |
+| PISONET #255 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | Windows synthetic #42462978704 PASS; native COM NOT TESTED. |
+| QA #290 | `5c29d15994cee1279058f1eca12f2a3180704292` | Windows synthetic #43633486963 PASS; not native acceptance. |
+| QA #292 | `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | No exact-head workflow run. |
+| RELEASE #291 | `bf339a76964a1abe2412fac45392fe06a8e66418` | No exact-head workflow run. |
+| HARDWARE #373 | `3783654a3c9862598bbb714268c536fb8b34578b` | Poll #46118310162 and Mbed #46118310195 PASS; Full #46118310135 FAIL at QA controller parity. |
+| HARDWARE #374 | `84c980e85ff9c1553ea63c5d297665269e0cd371` | Poll push #46140521515 and PR #46140525342 PASS; Native #46140525305 FAIL at QA-owned literal assertion; Full #46140525393 exact-head FAIL at Controller protocol parity after 14/14 target/platform jobs PASS. Mbed #46140109953 is 3/3 PASS only on adjacent docs head `659249d`; no final-head Mbed run. Source/test SHA `d21e797c3f08929c8e751b53f7af1314a65ffa87`. |
+
+**Owner action:** PR #374's current description still says Full exact final head NOT RUN; HARDWARE must reconcile its own handover/PR body with #46140525393. QA owns the literal PAY-0745 and controller parity assertions. CORE remains read-only to Master.
+
+---
+
 ## PHX-MASTER UTC10 role refresh — PHX-MASTER-20261128T10Z-HW374-COE26-ROLE-CI-ROUTES (2026-11-28T10:40:48Z)
 
 | Owner / PR | Exact head | Exact-head evidence |

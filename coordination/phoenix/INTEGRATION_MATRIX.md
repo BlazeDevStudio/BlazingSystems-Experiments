@@ -1,3 +1,14 @@
+## PHX-MASTER UTC11 integration refresh — exact source/test and destination state
+
+- Experiments main `6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5`; development `blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5`; Master audit-start `phoenix/master-coordination@b15f30f773e0b3d34888bd90c166d1ddc53b2ffd`.
+- Master PR #288: OPEN / DRAFT / UNMERGED, 272 pre-run changed paths, all under `coordination/phoenix/`; compare current main 712 ahead / 1 behind; no Master workflow runs.
+- COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; PR #26 candidate `b382d233ff06c8791b1028bed3c617cc7b670d12`, 205 changed files, all five exact-candidate workflows CANCELLED.
+- Exact COE blobs: SOURCE_INTAKE `1b9018ff944f7f673934d0fc2a97e0a0090d3f5f`; MIGRATION_MAP `b54fc15d83bc2269de03db8aadd0e76259fd13d9`. Runtime actual 46 identical / 15 derived vs declared 47/14; 15 derived tests vs 14 map entries; `voucher_txn_journal.sh` is the omitted map row. Original test tree has 149 files; destination tests directory has 19 files. SOURCE_INTAKE's destination pin remains stale (`feature/pisowifi-cleanup-stabilization` vs live #26 integration branch).
+- No destination staging/write. The candidate remains frozen until intake counts, exact test mapping/identity, license counterparts, destination branch pin and CI are reconciled by the COE owner.
+- Current #374 exact-head CI and QA-owned blockers are recorded in ROLE_ASSIGNMENTS.md and the UTC11 report. Cleanup #266 0/7; P0 #177 OPEN. **PRODUCTION NO-GO.**
+
+---
+
 ## PHX-MASTER UTC10 integration refresh — PHX-MASTER-20261128T10Z-HW374-COE26-ROLE-CI-ROUTES (2026-11-28T10:40:48Z)
 
 - Live refs: Experiments main `6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5`, development `aad3aade72c1156eecba1fed30907c6d0283b2c5`, comparison-only v0.6 `2fbd2475e9f54878c316fa7cea2f228386b0e859`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`.

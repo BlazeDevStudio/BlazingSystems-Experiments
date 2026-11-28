@@ -1,3 +1,13 @@
+## PHX-MASTER UTC11 — exact final-head and migration-provenance refresh
+
+- Audit-start Master `phoenix/master-coordination@b15f30f773e0b3d34888bd90c166d1ddc53b2ffd`; current Experiments main `6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5`, development `aad3aade72c1156eecba1fed30907c6d0283b2c5`, COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`.
+- #374 advanced to `84c980e85ff9c1553ea63c5d297665269e0cd371`: Poll push/PR PASS; Native QA literal assertion FAIL; Full exact-head #46140525393 FAIL at Controller protocol parity after 14/14 target/platform jobs PASS; Mbed PASS is only on adjacent docs head `659249d`.
+- COE #26 remains FROZEN at `b382d233ff06c8791b1028bed3c617cc7b670d12`: actual intake 46 identical / 15 derived vs declared 47/14; 15 derived tests vs 14 map rows; voucher journal mapping missing; source tests 149 files vs 19 destination tests; five workflows CANCELLED.
+- Ownership manifest remains 11 routes / `DRAFT_REVIEW_ONLY` / PHX-MASTER target null; bounded route checks 5/5 PASS. Cleanup #266 0/7; private registry v11/newer corrections NOT_RECOVERED; Master suite NOT RUN. **PRODUCTION NO-GO.**
+- [Full UTC11 report](PHX_MASTER_UTC11_20261128_HW374_FINAL_HEAD_COE26_IMPORT_AUDIT.md).
+
+---
+
 ## PHX-MASTER UTC10 live checkpoint — PHX-MASTER-20261128T10Z-HW374-COE26-ROLE-CI-ROUTES (2026-11-28T10:40:48Z)
 
 - Master branch `phoenix/master-coordination@c7798bf63d7f545b98bbbb7c8db68d57f0f36559`; PR #288 OPEN / DRAFT / UNMERGED, base `main@f4e8a891aed8af86d5fd315d28750a0ac3a7372b`, 707 ahead / 1 behind, 271 changed paths all under `coordination/phoenix/`, no Master CI runs.
