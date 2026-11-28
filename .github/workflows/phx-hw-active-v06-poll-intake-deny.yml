@@ -9,6 +9,7 @@ on:
       - phoenix/hw-pending-recovery-contract-module-split-20261128-utc17
       - phoenix/hw-output-enable-lab-modules-20261128-utc19
       - phoenix/hw-config-persistence-lab-modules-20261128-utc03
+      - phoenix/hw-config-storage-integrity-modules-20261128-utc04
     paths:
       - 'experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino'
       - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/BlazePwifiVendo.ino'
@@ -22,6 +23,8 @@ on:
       - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/output_enable_sequence_lab_contract.py'
       - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/output_enable_sequence_lab_harness.py'
       - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/config_storage_integrity_lab.py'
+      - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/config_storage_integrity_lab_contract.py'
+      - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/config_storage_integrity_lab_harness.py'
       - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/config_persistence_write_result_lab.py'
       - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/config_persistence_write_result_lab_contract.py'
       - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/config_persistence_write_result_lab_harness.py'
@@ -52,6 +55,8 @@ on:
       - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/output_enable_sequence_lab_contract.py'
       - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/output_enable_sequence_lab_harness.py'
       - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/config_storage_integrity_lab.py'
+      - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/config_storage_integrity_lab_contract.py'
+      - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/config_storage_integrity_lab_harness.py'
       - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/config_persistence_write_result_lab.py'
       - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/config_persistence_write_result_lab_contract.py'
       - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/config_persistence_write_result_lab_harness.py'
