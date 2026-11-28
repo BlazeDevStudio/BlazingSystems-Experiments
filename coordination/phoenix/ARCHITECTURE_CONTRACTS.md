@@ -1,3 +1,12 @@
+## PHX-MASTER UTC12 cross-role contract and P0 poll-order revalidation
+
+- Contract ownership remains: CORE owns authenticated controller register/poll/receipt/disposition and financial authority; HARDWARE owns firmware intake, relay and persistence behavior; QA owns independent semantic/default-deny tests; RELEASE owns signing/build admission; MASTER owns cross-role contracts, provenance and release-gate coordination only. No shared schema or subsystem source changed.
+- Active v0.6 `blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859` still performs a blocking poll before sampling coin input: ESP8266 timeout line 263, poll line 354, first sample line 357; ESP32 timeout line 230, poll line 314, first sample line 318. Issue #177's embedded source pin `9df0a7e7` is stale. The #374 deny-only candidate is not a fix for active v0.6 pulse retention and does not establish physical acceptance.
+- #374 exact-head CI: Poll PASS, Mbed 3/3 PASS on final head, Native FAIL at QA-owned literal PAY-0745 assertion, Full FAIL at QA-owned Controller protocol parity after 14/14 target/platform builds PASS. Treat the source-shape assertion as a test-contract mismatch to be resolved by QA; do not add decoy tokens or change QA-owned tests from Master.
+- No proof of protected independent signing/anti-rollback witness, crash-atomic durable paid state, reversible migration, native hardware acceptance, 150 real power cuts or 30-device/24-hour soak was supplied in this run. Keep production financial admission denied.
+
+---
+
 ## PHX-MASTER UTC09 checked-EEPROM/controller boundary — PHX-MASTER-20261128T09Z-HW374-COE26-EXACT-HEAD-PROVENANCE (2026-11-28T10:01:48.418Z)
 
 - HARDWARE #374 current head `44334e37ad516815b3fa5f2c478a057d31327e3b` remains an unmerged deny-only candidate. Latest commit only wires the checked-EEPROM host lab into the existing runner; no shared CORE API or controller schema changed.

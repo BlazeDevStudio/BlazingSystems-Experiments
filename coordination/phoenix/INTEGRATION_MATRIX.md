@@ -1,3 +1,21 @@
+## PHX-MASTER UTC12 integration refresh — exact candidate and source/test provenance
+
+- Experiments `main@6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5`; development `blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5`; active v0.6 `2fbd2475e9f54878c316fa7cea2f228386b0e859`; Master audit-start `phoenix/master-coordination@d5d6e66c4cecfc3a6c67845f9c7eeec9ce1b491f`.
+- Master PR #288 OPEN/DRAFT/UNMERGED, 713 ahead / 1 behind, 273 changed paths all under `coordination/phoenix/`; no Master workflow run. Merge base `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`.
+- COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; PR #26 candidate `integration/ecosystem-nonproprietary-candidate-20261111@b382d233ff06c8791b1028bed3c617cc7b670d12`, 205 changed files; all five exact-candidate workflows CANCELLED.
+
+### Exact #26 candidate reconciliation
+
+- Complete recursive source tree at pinned `6d4c9b487af4d768c4d7627654d119417fcc6e00`: 2,391 entries. Complete candidate tree at `b382d233`: 286 entries.
+- SOURCE_INTAKE blob `1b9018ff944f7f673934d0fc2a97e0a0090d3f5f`, schema v8: 61 runtime rows; all 61/61 source and destination blob+mode values match the manifest. Actual comparison: 46 byte-identical / 15 derived; summary still says 47/14.
+- Original source test directory: 149 files; candidate `Pisowifi/tests/`: 19 files. SOURCE_INTAKE lists 4 original test rows and 15 derived tests; MIGRATION_MAP blob `b54fc15d83bc2269de03db8aadd0e76259fd13d9` has 14 derived rows and omits `voucher_txn_journal.sh` (candidate blob `4277a56af800b930135745bb942d62b6d580cb99`).
+- Stale map hashes: `run_focus.sh` map `fa1f4f2c6393504499d50659d8bf980caf7ff85b` vs candidate `2b7b861ec63cf811d18d0e63b11a65efd1bec0e9`; `member_txn_journal.sh` map `01dc9c65ae9d74eaafb403d47aebcd20edd14390` vs candidate `d04df3c6f3ada60b9fda8c8c04230dd31e37019a`.
+- Project-scoped license/notice inventory: 11 source artifacts, 4 destination counterparts; 7 missing (Android launcher LICENSE/MODULE_LICENSE_APACHE2/license.html; R281 rental qrcode-LICENSE; jsqr LICENSE; UI qrcode LICENSE; UI tabler LICENSE). No destination copy was made.
+- SOURCE_INTAKE destination branch pin `feature/pisowifi-cleanup-stabilization` remains stale vs live PR #26 branch `integration/ecosystem-nonproprietary-candidate-20261111`. Five workflows #43096752563, #43096752800, #43096752557, #43096752609 and #43096752632 are CANCELLED; no candidate CI PASS.
+- No staging or destination write. Preserve source and destination history until COE owner reconciles counts, tests, hashes, licences, branch pin and CI.
+
+---
+
 ## PHX-MASTER UTC11 integration refresh — exact source/test and destination state
 
 - Experiments main `6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5`; development `blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5`; Master audit-start `phoenix/master-coordination@b15f30f773e0b3d34888bd90c166d1ddc53b2ffd`.

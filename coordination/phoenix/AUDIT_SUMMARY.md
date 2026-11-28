@@ -1,3 +1,66 @@
+## PHX-MASTER UTC12 — exact-head role CI, COE import provenance, and P0 poll-order revalidation
+
+**Observed:** 2026-11-28T12:13:19Z  
+**Task:** `PHX-MASTER-20261128T12Z-HW374-COE26-EXACT-HEAD-P0-RECHECK`  
+**Role / branch:** PHX-MASTER · `phoenix/master-coordination`  
+**Audit-start HEAD:** `d5d6e66c4cecfc3a6c67845f9c7eeec9ce1b491f` · **Scope:** `coordination/phoenix/` only  
+**Disposition:** BLOCKED / PRODUCTION NO-GO
+
+### Live control plane and branch pins
+
+- [CONTROL PLANE #172](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/172) is OPEN. The latest existing Master event before this run was UTC10; no UTC11/UTC12 Master event was present, so this is the unique UTC12 checkpoint.
+- [Cleanup-first #266](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/266) remains OPEN with 0/7 tracks checked. [P0 pulse-loss #177](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/177) remains OPEN.
+- Experiments `main@6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5`; `blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5`; active `blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859`.
+- Master PR [#288](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/288) remains OPEN / DRAFT / UNMERGED. Compare `main...phoenix/master-coordination`: 713 ahead / 1 behind, merge base `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`. It has 273 changed paths, all under `coordination/phoenix/`; no Master workflow run or combined status was returned.
+- COE `main@a6513ab4412b4c014eee2863e45cbe32d06cb243`; integration [PR #26](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/pull/26) remains OPEN / DRAFT / FROZEN at `b382d233ff06c8791b1028bed3c617cc7b670d12`, branch `integration/ecosystem-nonproprietary-candidate-20261111`.
+
+### Owner PRs and exact-head CI
+
+| Owner / PR | Exact head | Verified exact-head evidence |
+|---|---|---|
+| CORE #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | [Build #42698139210](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42698139210) PASS. CORE source remains read-only to Master. |
+| RENTAL #289 | `68928774d0d7cf65adb26bc6b54199a3159d066c` | [Build #43653329229](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329229) and [native auth #43653329235](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329235) PASS. |
+| RENTAL #328 | `10fc200b6dbf470a95e679d3acc58aff4ab2a67f` | [Build #45622918468](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45622918468) FAIL: ESP32 compile cannot find `mbedtls/sha256.h`; validation also fails mandatory handover freshness. [API21/23 smoke #45622918364](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45622918364), [native auth #45622918551](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45622918551), and [APK identity #45622918340](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45622918340) PASS. |
+| PISONET #255 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | [Windows synthetic #42462978704](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42462978704) PASS; native COM acceptance NOT TESTED. |
+| QA #290 | `5c29d15994cee1279058f1eca12f2a3180704292` | [Windows synthetic #43633486963](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43633486963) PASS; not native acceptance. |
+| QA #292 | `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | No exact-head workflow run. |
+| RELEASE #291 | `bf339a76964a1abe2412fac45392fe06a8e66418` | No exact-head workflow run. |
+| HARDWARE #373 | `3783654a3c9862598bbb714268c536fb8b34578b` | [Poll #46118310162](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46118310162) and [Mbed #46118310195](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46118310195) PASS; [Full #46118310135](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46118310135) FAIL at QA-owned Controller protocol parity. |
+| HARDWARE #374 | `84c980e85ff9c1553ea63c5d297665269e0cd371` | [Poll #46140525342](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46140525342) PASS; **[Mbed #46140525300](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46140525300) 3/3 PASS on this exact head**; [Native #46140525305](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46140525305) FAIL at QA-owned PAY-0745 literal source assertion; [Full #46140525393](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46140525393) FAIL at Controller protocol parity after 14/14 target/platform jobs, including Android, PASS. |
+
+**Correction to UTC11:** the statement that #374's Mbed result existed only on an adjacent docs head is superseded. The current exact-head workflow list contains #46140525300, and its three jobs (source contract, core 4.0.0, core 3.3.13) all completed SUCCESS. The #374 PR description itself is still stale: its latest body section references older UTC08 runs and does not report current Full #46140525393 or Mbed #46140525300. HARDWARE owns that PR/handover update; Master did not edit Hardware-owned files.
+
+Native #46140525305 fails at `tests/v060_vendo_sequence_contract.py:18` because the test requires the literal `if(any) return false;`; the assertion reports `BlazePwifiVendo.ino: corrupt persisted state must halt startup`. This is a QA-owned source-shape assertion, not by itself proof that the semantic corrupt-state behavior is unsafe. QA owns the test path and should replace the literal check with source-linked semantic vectors; do not add a decoy token or change another role's test.
+
+### Active v0.6 P0 poll-order recheck
+
+Issue #177's body still pins stale source `9df0a7e7`. The current active branch is `2fbd2475e9f54878c316fa7cea2f228386b0e859`. Exact source inspection confirms the blocking sequence remains:
+- ESP8266 blob `12c4bb82b6fddafe813674a0b5f692c1d3634073`: `h.setTimeout(3500)` line 263, synchronous `post("poll")` line 354, first `digitalRead(runCoinPin)` line 357.
+- ESP32 blob `29f1125d52ff474a0d028ad41f7af201be1f0f9d`: `h.setTimeout(3500)` line 230, synchronous `post("poll")` line 314, first `digitalRead(runCoinPin)` line 318.
+
+The #374 deny-only candidate does not repair active v0.6 poll-before-sample ordering and does not prove physical pulse retention. Keep admission denied; no physical reproduction was run.
+
+### COE #26 exact migration provenance
+
+- Both recursive trees were complete (not truncated): pinned source commit `6d4c9b487af4d768c4d7627654d119417fcc6e00` has 2,391 tree entries; candidate `b382d233` has 286.
+- `Pisowifi/SOURCE_INTAKE.json` blob `1b9018ff944f7f673934d0fc2a97e0a0090d3f5f`, schema v8: 61 runtime rows. All **61/61** source and destination blob+mode pairs match their manifest rows, but actual content comparison is **46 identical / 15 derived** while the summary still claims **47 / 14**.
+- Source tests: **149** files; candidate `Pisowifi/tests/`: **19** files. SOURCE_INTAKE has 4 original-test rows and 15 derived-test entries; `MIGRATION_MAP.md` blob `b54fc15d83bc2269de03db8aadd0e76259fd13d9` lists only 14 derived rows and omits `voucher_txn_journal.sh` (present at candidate blob `4277a56af800b930135745bb942d62b6d580cb99`).
+- Two map hashes remain stale: `run_focus.sh` map `fa1f4f2c6393504499d50659d8bf980caf7ff85b` vs candidate `2b7b861ec63cf811d18d0e63b11a65efd1bec0e9`; `member_txn_journal.sh` map `01dc9c65ae9d74eaafb403d47aebcd20edd14390` vs candidate `d04df3c6f3ada60b9fda8c8c04230dd31e37019a`.
+- Exact path inventory finds 11 project-scoped source license/notice artifacts and 4 destination counterparts; 7 remain absent: Android `BlazeRentalLauncher/LICENSE`, `MODULE_LICENSE_APACHE2`, and `assets/license.html`; R281 rental `vendor/qrcode-LICENSE`; `tests/vendor/jsqr-1.4.0/LICENSE`; `ui/vendor/qrcode/LICENSE`; and `ui/vendor/tabler/LICENSE`.
+- SOURCE_INTAKE still pins destination branch `feature/pisowifi-cleanup-stabilization`, not live PR #26's `integration/ecosystem-nonproprietary-candidate-20261111`. All five candidate workflows remain CANCELLED: [#43096752563](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/43096752563), [#43096752800](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/43096752800), [#43096752557](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/43096752557), [#43096752609](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/43096752609), [#43096752632](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/43096752632). No destination CI pass is established.
+- No destination staging, write, move, or migration proposal occurred. Preserve both historical source and destination pins until the COE owner reconciles them.
+
+### Ownership, registry, tests and next actions
+
+- `OWNERSHIP_ROUTES.json` remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`: 11 routes, `DRAFT_REVIEW_ONLY`, PHX-MASTER target null. Five bounded static assertions PASS (schema, count, Master target, Rental manual-only/copy-disabled, and overlap guard). This is not a repository test suite.
+- Canonical private Drive `BLAZE_PROJECT_REGISTRY_v11_20261027.json` and newer corrections were not available: no Google Drive connector/action is exposed, and the exact v11 file was not found in the Library. Older v3–v7 Library copies were not substituted; no private registry data or IDs were disclosed. No new artifact or folder was created.
+- Master Python suite, `verify_coordination.py`, local native/shell tests and Master CI were NOT RUN; this runtime has no authenticated non-Codex checkout. The GitHub source/tree inspections, static manifest assertions and owner CI reads above are distinct evidence classes.
+- Next: HARDWARE updates its own #374 handover/description with current exact-head Full and Mbed results; QA replaces literal PAY-0745/controller parity checks with semantic vectors and reruns Native/Full; COE owner reconciles intake counts, test map/hashes, licenses and branch pin before any staging; registry custodian restores the canonical private registry through approved Drive access; repository admin supplies an authenticated non-Codex checkout. CORE remains with its separate owner and is untouched by Master.
+
+**PRODUCTION NO-GO.** Independent protected signing/anti-rollback witness, crash-atomic durable financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized release gates remain mandatory. No merge, release, signing, secret provisioning, hardware flash, physical test, real payment operation, financial migration or customer cutover occurred.
+
+---
+
 ## PHX-MASTER UTC11 disposition — BLOCKED / PRODUCTION NO-GO
 
 - Master coordination audit updated on the existing draft PR #288 only; no subsystem source or COE destination path changed.

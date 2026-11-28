@@ -1,3 +1,16 @@
+## PHX-MASTER UTC12 — live exact-head and provenance refresh (2026-11-28T12:13:19Z)
+
+Task: `PHX-MASTER-20261128T12Z-HW374-COE26-EXACT-HEAD-P0-RECHECK`. Audit-start `phoenix/master-coordination@d5d6e66c4cecfc3a6c67845f9c7eeec9ce1b491f`; Experiments main `6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5`, development `aad3aade72c1156eecba1fed30907c6d0283b2c5`, active v0.6 `2fbd2475e9f54878c316fa7cea2f228386b0e859`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`. PR #288 is OPEN/DRAFT/UNMERGED, 713 ahead / 1 behind main, with 273 changed paths all under `coordination/phoenix/`; no Master CI run was returned.
+
+- #374 exact-head correction: Mbed #46140525300 is 3/3 PASS on `84c980e`; Poll #46140525342 PASS; Native #46140525305 FAIL at QA literal PAY-0745 assertion; Full #46140525393 FAIL at Controller protocol parity after 14/14 target/platform jobs pass.
+- COE #26 remains FROZEN: 61/61 runtime manifest blob+mode rows match; actual 46 identical / 15 derived vs summary 47/14; source tests 149 vs destination 19; 15 derived tests vs 14 map rows; voucher row missing; two stale map hashes; 7/11 project license/notice paths missing; five candidate workflows CANCELLED.
+- Active v0.6 still polls synchronously before first coin sample on both ESP8266 and ESP32; P0 #177 remains OPEN. Cleanup #266 remains 0/7. Private Drive registry v11/newer corrections NOT_RECOVERED.
+- Ownership routes remain 11 / DRAFT_REVIEW_ONLY / Master target null; static route assertions 5/5 PASS. No staging, source migration or subsystem edit. **PRODUCTION NO-GO.**
+
+[UTC12 evidence and exact-head links](AUDIT_SUMMARY.md) · [role/CI matrix](ROLE_ASSIGNMENTS.md) · [integration provenance](INTEGRATION_MATRIX.md).
+
+---
+
 ## PHX-MASTER UTC11 — exact final-head and migration-provenance refresh
 
 - Audit-start Master `phoenix/master-coordination@b15f30f773e0b3d34888bd90c166d1ddc53b2ffd`; current Experiments main `6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5`, development `aad3aade72c1156eecba1fed30907c6d0283b2c5`, COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`.
