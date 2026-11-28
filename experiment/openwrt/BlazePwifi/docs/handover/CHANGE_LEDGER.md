@@ -4130,3 +4130,36 @@ This is the required documentation-first IN-PROGRESS record. No source/test resu
 - **Acceptance:** Host simulation / CI only. Physical acceptor and relay terminal polarity, pulse retention, EEPROM/NVS brown-out, 150 power cuts, 30-device/24-hour soak and electrical pulse/recovery remain NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
 - **Updated UTC:** 2026-11-28T15:15:42.929Z.
 
+
+
+## 2026-11-28 — PHX-HW-20261128T15Z-POSTDENY-DIRECT-GPIO-ESCAPE
+
+- **UTC:** 2026-11-28T15:36:06Z.
+- **Role / task / status:** PHX-HARDWARE / #177 / IN_PROGRESS.
+- **Parent:** #377 exact head `95e54790ab986dab3c1b3723ea9603a3d125c0d6`; new isolated branch `phoenix/hw-postdeny-gpio-escape-guard-20261128-utc15`.
+- **Scope:** one Hardware-owned source-extracted regression in `poll_preflight_inhibit_lab_cases.py`; no production sketch or shared interface change.
+- **Reason:** add a failure injection for a direct relay GPIO ON write after the final post-poll deny, distinct from the existing positive-response mutation that re-enables outputs before that deny.
+- **Expected marker:** `POST_POLL_DENY_DIRECT_GPIO_REENABLE_MUTATION_REJECTED` on ESP8266 and ESP32 fixtures. CI not yet run; no pass/fail claim.
+- **Acceptance:** SIMULATED / CI only. Physical relay/acceptor, EEPROM/NVS brown-out, 150 power cuts, 30-device/24-hour soak and electrical pulse/recovery remain NOT TESTED. HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
+
+
+## 2026-11-28 — PHX-HW-20261128T15Z-POSTDENY-DIRECT-GPIO-ESCAPE (source/test result)
+
+- **UTC:** 2026-11-28T15:54:00Z; **role:** PHX-HARDWARE; **PR:** #378 OPEN / DRAFT / UNMERGED; **branch:** `phoenix/hw-postdeny-gpio-escape-guard-20261128-utc15`.
+- **Source/test SHA:** `6c22c7ebef3eaa9082735511f4cf3e525731085c`; only `poll_preflight_inhibit_lab_cases.py` changed after the IN PROGRESS record.
+- **Change:** direct relay GPIO ON mutation after final post-poll deny, before `lastPoll`, is injected and required to fail through the write-history latch on both board fixtures.
+- **Poll:** #46161956366 / job 141031014911 PASS at exact source/test SHA; both board markers emitted; five transport outcomes × four polarities; 8/8 output scenarios; 14/14 injected regressions rejected. SIMULATED ONLY.
+- **Mbed:** #46161956391 source-contract 141031015239 PASS; core 3.3.13 and 4.0.0 builds IN_PROGRESS at this read.
+- **Full:** #46161956393 validation job 141031061284 FAILED at handover freshness because the source commit postdated the IN PROGRESS handover. This is a docs-ordering failure; target jobs were still running. No Full PASS claimed.
+- **Limits:** local checkout NOT RUN; physical relay/acceptor, EEPROM/NVS brown-out, 150 cuts, 30-device/24-hour soak and electrical recovery NOT TESTED. HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
+
+
+## 2026-11-28 — PHX-HW-20261128T15Z-POSTDENY-DIRECT-GPIO-ESCAPE (terminal CI reconciliation)
+
+- **UTC:** 2026-11-28T16:00:00Z; **role:** PHX-HARDWARE; **PR:** #378 OPEN / DRAFT / UNMERGED; **branch:** `phoenix/hw-postdeny-gpio-escape-guard-20261128-utc15`.
+- **Source/test SHA:** `6c22c7ebef3eaa9082735511f4cf3e525731085c`; **docs head tested:** `8fdbd9b013c0c787763d5b3e62071fd7b615dd90`.
+- **Poll #46162211315 / job 141031804552:** PASS exact docs head. Both board fixtures rejected the post-final-deny direct GPIO ON mutation; 5 transport outcomes × 4 polarity combinations; existing Hardware suites pass; ledger append-only guard passes. SIMULATED ONLY.
+- **Mbed #46162211276:** 3/3 PASS (source-contract, core 3.3.13, core 4.0.0); both clean A/B builds identical per core. Source-tree SHA `ccea8c3ba80f417b5cd0789ad68928f78c12a467ce77a0a3957121a4ad494c81`; image SHA 3.3.13 `6262897c8783b6dcb9d8ee845aaf556360a6b316ec40b34512f99067949e62d6`; 4.0.0 `96d1a06abc4622ad0486c21cbc648f62d3e2c7572602414c11ecccd6fef34071`.
+- **Full #46162211282 attempt 2:** HND-0700/CI-0701 PASS; validation job 141032316089 FAIL at QA-owned `tests/controllers.sh:21` missing `config_revision`; 14/14 target/platform builds PASS; production downstream stages skipped.
+- **Native:** NOT RUN on #378; parent #377 Native #46158944131 failed PAY-0745. No result transferred.
+- **Limits:** local checkout NOT RUN; physical relay/acceptor, EEPROM/NVS brown-out, 150 cuts, 30-device/24-hour soak and electrical recovery NOT TESTED. HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.

@@ -278,6 +278,21 @@ def verify_board(name: str, path: Path):
         f"{name} transient untrusted-response actuation mutation",
     )
 
+    # Failure injection: a direct relay GPIO write after the final deny must also fail.
+    # This bypasses applyOutputs(), so the write-history latch must catch it.
+    post_deny_gpio_mutation = poll_block.replace(
+        "lastPoll=millis();",
+        "writeLogical(runRelayPin,true,runRelayActiveHigh);\n        lastPoll=millis();",
+        1,
+    )
+    if post_deny_gpio_mutation == poll_block:
+        raise AssertionError(f"{name}: post-deny direct GPIO mutation anchor missing")
+    compile_poll_transport_outcome_matrix(
+        apply_fn, deny_fn, post_deny_gpio_mutation, False,
+        f"{name} direct relay GPIO re-enable after final post-poll deny",
+    )
+    print(f"POST_POLL_DENY_DIRECT_GPIO_REENABLE_MUTATION_REJECTED {name}")
+
     # Failure injection: removing the pre-poll deny must leave an energized
     # relay visible to the 3500 ms wait model and be rejected.
     mutated_poll_block = poll_block.replace("denyRemoteControl();", "", 1)

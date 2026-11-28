@@ -2231,3 +2231,65 @@ The #375 host GPIO mutation regression and source-contract changes were carried 
 
 The existing append-only `CHANGE_LEDGER.md` and all prior handover history are preserved unchanged; this UTC15 record is appended here and in the new narrow handover. Next action: inspect exact-child Poll, Mbed, Native and Full Actions; retain QA/CORE ownership of their blockers.
 
+
+
+## PHX-HARDWARE UTC15 — post-deny direct GPIO escape regression (IN PROGRESS)
+
+**Updated:** 2026-11-28T15:36:06Z  
+**Task:** `PHX-HW-177-POSTDENY-GPIO-ESCAPE-20261128T15Z`  
+**Parent candidate:** [#377](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/377) at `95e54790ab986dab3c1b3723ea9603a3d125c0d6`  
+**Isolated branch:** `phoenix/hw-postdeny-gpio-escape-guard-20261128-utc15`  
+**Scope:** Hardware-owned poll lab only: `experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_preflight_inhibit_lab_cases.py`, plus this narrow handover and canonical records.
+
+### Proven gap and bounded plan
+
+The current #377 matrix already rejects an untrusted positive poll body that re-enables outputs before the final post-poll deny. This task adds a distinct mutation that bypasses `applyOutputs()` and directly writes the relay GPIO ON **after** the final deny, before the completion timestamp. The existing source-extracted transport matrix should reject that post-deny escape on both board-shaped fixtures.
+
+This is a test-only regression improvement. No production sketch, GPIO configuration, controller API, CORE contract, QA-owned assertion, finance, receipt, signer, witness, migration, or COE destination is in scope. No local repository checkout is claimed. Exact-source CI is pending.
+
+**Safety:** keep coin/relay admission deny-only; no flash, reset, live money, merge, release tag, migration, signing or deployment.
+
+
+## PHX-HARDWARE UTC15 — post-deny direct GPIO escape source/test result
+
+**Updated:** 2026-11-28T15:54:00Z  
+**Task:** `PHX-HW-177-POSTDENY-GPIO-ESCAPE-20261128T15Z`  
+**PR:** [#378](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/378), OPEN / DRAFT / UNMERGED.  
+**Branch:** `phoenix/hw-postdeny-gpio-escape-guard-20261128-utc15`  
+**Parent:** #377 exact head `95e54790ab986dab3c1b3723ea9603a3d125c0d6`  
+**Source/test SHA:** `6c22c7ebef3eaa9082735511f4cf3e525731085c`.
+
+### Actual change and exact evidence
+
+Only `poll_preflight_inhibit_lab_cases.py` changed after the IN PROGRESS checkpoint. It adds a failure injection that directly calls `writeLogical(runRelayPin,true,runRelayActiveHigh)` after the final post-poll deny and before `lastPoll`, bypassing `applyOutputs()`.
+
+- Poll [run #46161956366](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46161956366), exact-source job `141031014911`: **PASS**. Checkout is exactly `6c22c7ebef3eaa9082735511f4cf3e525731085c`. Both boards emitted `POST_POLL_DENY_DIRECT_GPIO_REENABLE_MUTATION_REJECTED`; existing poll matrix passed (5 transport outcomes × 4 polarity combinations), 8/8 board/polarity output scenarios passed, 14/14 injected regressions were rejected, and EEPROM/pending-recovery suites passed. Log explicitly says `POLL_INTAKE_GUARD_SIMULATED_ONLY=1`.
+- Mbed TLS [run #46161956391](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46161956391): source-contract job `141031015239` **PASS**; ESP32 core 3.3.13 and 4.0.0 target builds were still **IN_PROGRESS** at this update.
+- Full [run #46161956393](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46161956393): initial validation job `141031061284` **FAIL** at the mandatory handover-freshness gate because this source/test commit followed the IN PROGRESS docs commit. This is a documentation ordering failure, not a firmware/test failure. Target jobs were still running; no Full target-matrix or overall PASS is claimed.
+
+No production sketch, shared CORE API, QA-owned assertion, finance, receipt, signer, witness, migration or COE source changed. Local repository checkout/tests were NOT RUN; GitHub Actions supplied the source-exact host execution.
+
+**Acceptance:** SIMULATED / CI VERIFIED for this regression only. Physical relay/acceptor polarity, pulse retention, EEPROM/NVS brown-out, LittleFS power-loss, 150 power cuts, 30-device/24-hour soak and electrical pulse/recovery remain NOT TESTED. HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
+
+
+## PHX-HARDWARE UTC15 — terminal exact-head CI reconciliation for post-deny GPIO escape guard
+
+**Updated:** 2026-11-28T16:00:00Z  
+**Task:** `PHX-HW-177-POSTDENY-GPIO-ESCAPE-20261128T15Z`  
+**PR:** [#378](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/378), OPEN / DRAFT / UNMERGED.  
+**Branch:** `phoenix/hw-postdeny-gpio-escape-guard-20261128-utc15`  
+**Source/test SHA:** `6c22c7ebef3eaa9082735511f4cf3e525731085c`  
+**Docs/evidence head tested:** `8fdbd9b013c0c787763d5b3e62071fd7b615dd90`.
+
+### Exact-head CI
+
+- Poll [run #46162211315](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46162211315), job `141031804552`: **PASS** at exact docs head `8fdbd9b013c0c787763d5b3e62071fd7b615dd90`. Both ESP8266 and ESP32 fixtures emitted `POST_POLL_DENY_DIRECT_GPIO_REENABLE_MUTATION_REJECTED`. Each board's transport matrix passed 5 outcomes × 4 polarity combinations; existing GPIO/EEPROM/pending-recovery tests passed. `CHANGE_LEDGER_APPEND_ONLY_PASS` was also emitted. The log explicitly marks `POLL_INTAKE_GUARD_SIMULATED_ONLY=1`.
+- Mbed TLS [run #46162211276](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46162211276): **3/3 PASS** — source contract job `141031804458`, ESP32 core 3.3.13 job `141031804690`, core 4.0.0 job `141031804702`. Both cores produced identical clean A/B builds. Staged source-tree SHA-256: `ccea8c3ba80f417b5cd0789ad68928f78c12a467ce77a0a3957121a4ad494c81`. Core 3.3.13 image SHA-256: `6262897c8783b6dcb9d8ee845aaf556360a6b316ec40b34512f99067949e62d6`; artifact [15270625886](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46162211276/artifacts/15270625886). Core 4.0.0 image SHA-256: `96d1a06abc4622ad0486c21cbc648f62d3e2c7572602414c11ecccd6fef34071`; artifact [15270556226](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46162211276/artifacts/15270556226).
+- Full [run #46162211282](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46162211282), attempt 2, tested synthetic merge checkout `cef9aa439` of docs head `8fdbd9b013c0c787763d5b3e62071fd7b615dd90` into #377 base `95e54790`: **OVERALL FAIL**. HND-0700 and CI-0701 passed. Validation job `141032316089` failed at QA-owned `tests/controllers.sh:21`, the literal `config_revision` presence assertion. All **14/14 target/platform jobs** passed (13 firmware targets plus Android). Production import, update bundle, simulations, candidate, signing and publication stages were skipped.
+- Native Synthetic Journal workflow: **NOT RUN on #378** (no Native run was returned for this head). Parent #377 Native [run #46158944131](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46158944131), job `141021690695`, remains failed at QA-owned PAY-0745; that historical result is not re-labelled as a #378 run.
+
+### Interpretation and ownership
+
+The new direct-GPIO mutation is rejected on both board fixtures. This is SIMULATED / CI VERIFIED only. The Full failure is independent controller-source parity, not the new mutation. The current QA script requires `config_revision` on both sketches; do not add a decoy token. PHX-QA owns assertion semantics; PHX-CORE owns the authenticated register/poll/receipt/disposition contract; PHX-MASTER owns role/integration pins.
+
+No production sketch, shared CORE API, QA-owned assertion, finance, receipt, signer, witness, migration or COE source changed. Local checkout/tests NOT RUN. Physical relay/acceptor polarity, pulse retention, EEPROM/NVS brown-out, LittleFS power-loss, 150 power cuts, 30-device/24-hour soak and electrical pulse/recovery remain NOT TESTED. HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
