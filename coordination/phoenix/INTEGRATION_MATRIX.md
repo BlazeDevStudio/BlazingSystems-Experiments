@@ -1,3 +1,39 @@
+## PHX-MASTER UTC03 — 2026-11-28T03:37Z — exact COE #26 route, test, license and source-pin reconciliation
+
+**Candidate:** `integration/ecosystem-nonproprietary-candidate-20261111@b382d233ff06c8791b1028bed3c617cc7b670d12`, OPEN / DRAFT / FROZEN. **COE main:** `a6513ab4412b4c014eee2863e45cbe32d06cb243` (3 entries / 2 blobs). Candidate tree: 286 entries / 207 blobs; five candidate workflows CANCELLED, zero combined statuses.
+
+### SOURCE_INTAKE correction
+- 61 runtime rows; actual statuses and blob comparison are 46 byte-identical / 15 derived. The JSON summary still says 47 / 14.
+- Current Experiments main `6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5` compared with pinned historical source `6d4c9b487af4d768c4d7627654d119417fcc6e00`: 33 unchanged / 20 divergent / 8 missing across the 61 runtime paths.
+- Four original tests: two byte-identical and two derived. Fifteen derived-test manifest blobs all match the exact destination tree (15/15). `MIGRATION_MAP.md` contains 14 derived-test rows; the sole missing mapping is `tests/voucher_txn_journal.sh`.
+- Derived-test status: 11 NOT_RUN; four PENDING_CI_RUN. The previously reported `run_focus.sh` and `member_txn_journal.sh` blob-ID discrepancies are **not present at this exact candidate head**: both manifest IDs match their destination blobs. Do not repeat the stale-hash claim.
+- `SOURCE_INTAKE.destination.branch` still names `feature/pisowifi-cleanup-stabilization`; actual PR #26 branch is `integration/ecosystem-nonproprietary-candidate-20261111`.
+
+### Exact route completeness
+Comparisons below use current Experiments main `6be5d19b` for general routes, and current HARDWARE candidate #369 `6febf546` for its ESP32/ESP8266 source paths. Counts are Git blobs; identical means exact path-relative blob SHA.
+
+| Owner route | Source / destination | Identical | Divergent | Missing source paths | Destination extras |
+|---|---:|---:|---:|---:|---:|
+| CORE `usr/lib/blazepwifi/` | 15 / 20 | 6 | 9 | 0 | 5 |
+| CORE CGI `vendo` | 1 / 1 | 0 | 1 | 0 | 0 |
+| RENTAL Android | 983 / 8 | 0 | 0 | 983 | 8 |
+| RENTAL server | 7 / 4 | 0 | 1 | 6 | 3 |
+| PISONET SoftTimer | 32 / 47 | 13 | 11 | 8 | 23 |
+| HARDWARE ESP32 (#369) | 4 / 1 | 0 | 1 | 3 | 0 |
+| HARDWARE ESP8266 (#369) | 18 / 1 | 0 | 1 | 17 | 0 |
+| QA tests (main) | 38 / 19 | 1 | 3 | 34 | 15 |
+| QA tests (#369 candidate tree) | 151 / 19 | 2 | 2 | 147 | 15 |
+| RELEASE build workflow | 1 / 1 | 0 | 1 | 0 | 0 |
+
+Standalone Rental profile has 31 source files and remains `manual-file-mapping-required` with `copy_permitted=false`; do not recursively copy into broad `Rental/`.
+
+### Licensing / NOTICE
+Historical source tree contains 11 LICENSE/NOTICE artifacts (including repository-root NOTICE); destination has four exact counterparts. Seven are missing: repository-root `NOTICE.md`; Android Launcher `LICENSE` and `assets/license.html`; R281 rental vendor `qrcode-LICENSE`; jsqr vendor `LICENSE`; UI QRCode `LICENSE`; UI Tabler `LICENSE`. No license file was copied or changed.
+
+**Disposition:** keep #26 FROZEN. No staging, copying, moving, overwriting, cherry-picking, route promotion or destination write. COE owner must reconcile source baseline, branch pin, summary counts, voucher map row, route imports and licensing, then run exact-head candidate CI before proposing any move.
+
+---
+
 ## PHX-MASTER UTC02 terminal CI refresh — Hardware PR #369 (2026-11-28T02:57Z)
 
 PR #369 current head c3648fbb1ce7dbd905a061be0aaa81dcb18b511e is now terminal on all three workflows: Focused #46100115505 PASS (17/17 alias mutations per board); Mbed #46100115477 PASS 3/3; Full #46100115480 TERMINAL FAILURE at QA-owned validate job 140840509447, Controller protocol parity / tests/controllers.sh:21 config_revision presence assertion. All 14 target/platform jobs, including Android, passed; validation-dependent simulation/update/sign/publication stages were skipped.

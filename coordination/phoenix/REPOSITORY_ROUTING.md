@@ -1,3 +1,14 @@
+## PHX-MASTER UTC03 — 2026-11-28T03:37Z — exact routing manifest and branch-governance refresh
+
+- `OWNERSHIP_ROUTES.json` remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`, 11 routes, `DRAFT_REVIEW_ONLY`; PHX-MASTER source `coordination/phoenix/`, target `null`, kind `coordination-only`. No manifest edit or ownership promotion.
+- The existing routing notes still carry historical Experiments main `f4e8a891`; live main is `6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5`. COE SOURCE_INTAKE is pinned to historical source `6d4c9b48`; its destination branch pin is stale (`feature/pisowifi-cleanup-stabilization`) versus actual PR #26 branch `integration/ecosystem-nonproprietary-candidate-20261111` at `b382d233`.
+- Exact route comparisons and import/license gaps are recorded in INTEGRATION_MATRIX.md. Keep broad standalone Rental mapping manual-only; no recursive copy is permitted.
+- GitHub branch metadata reports `protected=false` for Experiments main, development, v0.6 and Master, plus COE main and #26 candidate branch. This metadata does not prove effective ruleset state; repository administrators must verify enforcement and required checks.
+- Canonical private registry v11 and newer corrections, artifact manifest and sync ledger were not accessible through this runtime. No private IDs or registry contents are published; no new file/artifact or migration staging was created.
+- No source branch, COE destination, route manifest, owner assignment, signer, release, hardware or financial state changed. CORE remains with its separate owner; PHX-MASTER did not create a competing CORE task.
+
+---
+
 ## PHX-MASTER UTC02 — route, registry and automation reconciliation (2026-11-28T02:38Z)
 
 - OWNERSHIP_ROUTES.json remains schema v1, 11 routes, DRAFT_REVIEW_ONLY; PHX-MASTER target null / coordination-only. No route or owner changed.

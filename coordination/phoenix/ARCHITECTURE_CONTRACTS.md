@@ -1,3 +1,23 @@
+## PHX-MASTER UTC03 — 2026-11-28T03:37Z — controller deny-default and poll interface contract revalidation
+
+### Current HARDWARE candidate boundary
+- HARDWARE #369 current PR/docs head is `6febf546b818d97ae7d1cfae0af5e6d07b11bd05`; its ESP8266/ESP32 sketches are `7527dbff` / `a673e323`.
+- Both sketches call `denyRemoteControl()` before `(void)post("poll")`, discard the poll response, call `denyRemoteControl()` again, then sample the coin pin. This is a deny-only candidate; it does not establish an authenticated positive controller poll contract and remains an unmerged draft.
+- QA-owned `experiment/openwrt/BlazePwifi/tests/controllers.sh` blob `53a7af25fdee9a650e10e870c4204e0fb43239c6` still has line 21 `grep -q 'config_revision' "$f"`. Neither deny-only sketch contains `config_revision`; the Full failure is therefore an obsolete presence assertion, not evidence that firmware should emit a positive control field.
+- QA should replace that assertion with source-linked negative checks for deny-before-poll, discarded response, deny-after-poll, no poll-derived `insertMode`/`activeTarget` assignment, and default-deny on missing/invalid authenticated contract. Do not add a decoy `config_revision` or `response_sig`.
+
+### CORE-owned controller contract
+- Current main CGI blob `2e3a1430d08cc6606429a042df3b5848f53c7267`: `register|ping` and `poll` responses contain no controller `response_sig`; member snapshot/auth/mutation responses do contain member response signatures. Member signatures are not controller signatures.
+- CORE owns the authenticated register/poll/receipt/disposition schema and producer. HARDWARE owns firmware consumption/relay behavior. QA owns independent semantic tests. MASTER owns this cross-role boundary only.
+
+### Active v0.6 P0 source
+- Exact active comparison branch `blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859`; issue #177 remains OPEN and still embeds older source pin `9df0a7e7`.
+- ESP8266 source blob `12c4bb82b6fddafe813674a0b5f692c1d3634073`: synchronous `post("poll")` at line 354; first `digitalRead(runCoinPin)` at line 357; HTTP timeout 3,500 ms.
+- ESP32 source blob `29f1125d52ff474a0d028ad41f7af201be1f0f9d`: synchronous `post("poll")` at line 314; first `digitalRead(runCoinPin)` at line 318; HTTP timeout 3,500 ms.
+- The deny-only #369 candidate is not merged into this active v0.6 branch; do not mark P0 fixed or physically accepted. Preserve fail-closed behavior until CORE/HARDWARE/QA agree on the authenticated interface and hardware proves relay polarity.
+
+---
+
 ## PHX-MASTER UTC02 contract verification notes — 2026-11-28T02:38Z
 
 - The active v0.6 controller contract remains default-deny. Current source CGI blob db58041c returns response_sig for member snapshot/auth/mutation routes, but register/ping (lines 114–116) and poll (lines 119–137) responses do not include a controller response_sig. Member signatures are not controller-response authentication.

@@ -1,3 +1,20 @@
+## PHX-MASTER UTC03 — 2026-11-28T03:37Z — live exact-head, role/CI and migration reconciliation
+
+Task: `PHX-MASTER-20261128T03Z-HW369-COE26-CORRECTED-PROVENANCE` · PHX-MASTER only · Strict NO CODEX.
+
+- Audit-start Master: `4d207266a3cbd1bdda8fb073ef75beb942116df0`; PR #288 remains OPEN / DRAFT / UNMERGED. Experiments main `6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5`; development `aad3aade72c1156eecba1fed30907c6d0283b2c5`; v0.6 audit foundation `2fbd2475e9f54878c316fa7cea2f228386b0e859`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE #26 candidate `b382d233ff06c8791b1028bed3c617cc7b670d12`.
+- PR #288: 266 changed paths, all under `coordination/phoenix/`; compare main: 693 ahead / 1 behind, merge base `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`. No rebase, retarget, merge or source-path change.
+- COE #26 remains OPEN / DRAFT / FROZEN; candidate tree 286 entries / 207 blobs, COE main 3 entries / 2 blobs; all five candidate workflows are CANCELLED and combined statuses are empty.
+- `OWNERSHIP_ROUTES.json` remains 11 routes / `DRAFT_REVIEW_ONLY`; PHX-MASTER target is null. No route promotion, ownership transfer or destination staging.
+- Current owner heads and exact-head CI are in `ROLE_ASSIGNMENTS.md`; exact route/blob/test/license reconciliation and corrected prior findings are in `INTEGRATION_MATRIX.md`.
+- Cleanup #266 remains OPEN / 0 of 7 tracks accepted. P0 #177, #31, #32, #34 and #43 remain OPEN. Production remains NO-GO.
+- Branch metadata reports `protected=false` for Experiments main/development/v0.6/Master and COE main/#26 branch. Effective ruleset enforcement remains unverified; repository administrators must confirm.
+- Canonical private Drive registry v11 and newer corrections were not accessible. No new file/artifact was created; only existing coordination documents were updated, consistent with AGENTS storage controls.
+- Read-only source/tree/blob/mode/manifest inspection executed. Master Python suite and `verify_coordination.py` NOT RUN; no authenticated local checkout. Master exact-head Actions/statuses: none.
+- No subsystem source, COE destination, firmware, secrets, signing, physical test, payment state, release or customer data changed.
+
+---
+
 ## PHX-MASTER UTC02 terminal CI refresh — Hardware PR #369 (2026-11-28T02:57Z)
 
 PR #369 current head c3648fbb1ce7dbd905a061be0aaa81dcb18b511e is now terminal on all three workflows: Focused #46100115505 PASS (17/17 alias mutations per board); Mbed #46100115477 PASS 3/3; Full #46100115480 TERMINAL FAILURE at QA-owned validate job 140840509447, Controller protocol parity / tests/controllers.sh:21 config_revision presence assertion. All 14 target/platform jobs, including Android, passed; validation-dependent simulation/update/sign/publication stages were skipped.
