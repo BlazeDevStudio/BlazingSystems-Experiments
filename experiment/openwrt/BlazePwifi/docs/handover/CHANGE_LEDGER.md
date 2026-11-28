@@ -4040,3 +4040,17 @@ This is the required documentation-first IN-PROGRESS record. No source/test resu
 - The earlier source-before-CURRENT_STATE sequencing deviation remains disclosed; no history was backdated or removed.
 - Rollback: close/revert only child PR #374; preserve #373 and parent stack.
 - NEXT ACTION: QA fixes/supersedes its two assertions on the QA branch; Master refreshes the #374 role/integration pins to docs head 26ee6b5a; Hardware keeps coin/relay admission denied.
+
+## PHX-HARDWARE UTC09 — 2026-11-28 17:47 Asia/Manila — CheckedEEPROMClass beginChecked runtime failure injection (#374)
+
+- ID: PHX-HW-CHECKED-EEPROM-BEGIN-RUNTIME-LAB-20261128T09Z.
+- Scope: Hardware-owned ESP8266 checked EEPROM initialization lab; child PR #374; no production firmware or shared API changes.
+- Branch: `phoenix/hw-eeprom-begin-failclosed-20261128-utc07`; source/test SHA: `f8865fb40e2811c74c5364e6075379692597fadd`; base before task: `10c8284467a130e8328d1875b059ddcc4bbf53c5`.
+- Added source contract, native fake-flash harness and runner that extract and execute the actual `CheckedEEPROMClass::beginChecked()` implementation. Integrated the lab into the existing focused EEPROM persistence entrypoint.
+- Focused Poll Intake Deny [#46132067080](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46132067080), job `140939195350`: PASS. Ledger guard: base 1,132,798 bytes; prior appended tail 64,351 bytes; PASS.
+- Runtime matrix PASS: zero/oversize deny, deterministic allocation failure, flash-read failure cleanup, four-byte alignment, inherited sector address, same-size reuse, resize reinitialization, invalid retry preservation.
+- Source mutation rejection 5/5; runtime mutation rejection 5/5. Final marker `CHECKED_EEPROM_BEGIN_RUNTIME_AND_MUTATION_MATRIX_PASS`.
+- Existing EEPROM load/migration runtime matrix PASS: current 1/1, invalid current 6/6, legacy 1/1, invalid legacy 5/5, commit retry 2/2, begin failure 1/1, flash-read failure 1/1.
+- Mbed #46131685056 3/3 PASS on adjacent source/test SHA `44334e37`; exact docs-head rerun pending. Full #46132067088 failed mandatory handover freshness before root handover/ledger sync; CI-0701 PASS, target builds pending at time of checkpoint. Native Synthetic #46131685065 FAIL at QA-owned literal assertion `tests/v060_vendo_sequence_contract.py:18`.
+- No production sketch, controller contract, financial state, QA test, signer/witness, migration, COE destination or device changed. Physical brown-out/power-cut and all required hardware acceptance NOT TESTED. Coin/relay admission denied.
+- Next: exact docs-head Focused/Mbed/Full reruns; QA fixes semantic pending-state assertion; Master refreshes #374 assignment/integration pin.
