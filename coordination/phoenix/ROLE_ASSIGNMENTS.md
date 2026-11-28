@@ -1,3 +1,22 @@
+## PHX-MASTER UTC07 — live role heads and exact-head CI (2026-11-28T07:35Z)
+
+| Owner / PR | Exact head | Exact-head evidence / disposition |
+|---|---|---|
+| CORE #252 | c82705f2de865c89ab733b10efa84f26f56a5cc4 | Build #42698139210 PASS; CORE remains read-only to its separate owner. |
+| RENTAL #289 | 68928774d0d7cf65adb26bc6b54199a3159d066c | Build #43653329229 PASS; native auth #43653329235 PASS. |
+| RENTAL #328 | 10fc200b6dbf470a95e679d3acc58aff4ab2a67f | API21/23 smoke #45622918364, native auth #45622918551 and APK identity #45622918340 PASS; Build #45622918468 FAIL (stale handover freshness and ESP32 mbedtls/sha256.h missing). |
+| PISONET #255 | d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | Windows synthetic #42462978704 PASS; native COM NOT TESTED. |
+| QA #290 | 5c29d15994cee1279058f1eca12f2a3180704292 | Windows synthetic #43633486963 PASS; not native acceptance. |
+| QA #292 | 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | No exact-head workflow. |
+| RELEASE #291 | bf339a76964a1abe2412fac45392fe06a8e66418 | No exact-head workflow. |
+| HARDWARE #373 | 3783654a3c9862598bbb714268c536fb8b34578b | Focused #46118310162 PASS; Mbed #46118310195 3/3 PASS; Full #46118310135 terminal FAIL at QA-owned controllers.sh assertion. All 14/14 target/platform jobs incl. Android PASS; downstream stages SKIPPED. |
+
+HARDWARE #373 source/test SHA e411a99c23485f4f92720aa38cf29dca757b5190; PR/docs head 3783654a3c9862598bbb714268c536fb8b34578b. This is host-lab fixture work only, not a production firmware fix or hardware acceptance. QA owns the obsolete config_revision assertion. No role ownership changed; no CORE source or branch was modified.
+
+[Full UTC07 exact-head report](PHX_MASTER_UTC07_20261128_HW373_COE26_ROLE_CI_AND_REGISTRY_ACCESS_AUDIT.md).
+
+---
+
 ## PHX-MASTER UTC05 — live role heads and exact-head CI
 
 | Owner / PR | Exact head | Exact-head evidence / disposition |
