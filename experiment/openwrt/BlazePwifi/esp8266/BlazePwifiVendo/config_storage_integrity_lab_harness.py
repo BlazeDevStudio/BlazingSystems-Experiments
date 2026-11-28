@@ -130,6 +130,41 @@ def _replace_fixture_marker(template: str, marker: str, replacement: str) -> str
     return template.replace(marker, replacement, 1)
 
 
+RUNTIME_FIXTURE_MARKERS = (
+    "/* PHX_CONFIG_STRUCTS */",
+    "/* PHX_CONFIG_CONSTANTS */",
+    "/* PHX_CONFIG_HELPERS */",
+    "/* PHX_CONFIG_RUNTIME_FUNCTIONS */",
+)
+
+
+def render_runtime_fixture(template: str, replacements) -> str:
+    """Render required source fragments and reject every unresolved PHX marker."""
+    for marker, replacement in replacements:
+        template = _replace_fixture_marker(template, marker, replacement)
+    if "PHX_CONFIG_" in template:
+        raise AssertionError("unresolved runtime fixture template marker")
+    return template
+
+
+def expect_runtime_fixture_rejected(
+    template: str,
+    replacements,
+    label: str,
+    expected_error: str,
+) -> None:
+    """Require malformed templates to fail for the expected reason."""
+    try:
+        render_runtime_fixture(template, replacements)
+    except AssertionError as exc:
+        if expected_error not in str(exc):
+            raise AssertionError(
+                f"{label}: rejected for an unexpected reason: {exc}"
+            ) from exc
+        return
+    raise AssertionError(f"{label}: unsafe runtime fixture template was accepted")
+
+
 def loadcfg_runtime_harness(source: str) -> str:
     """Render the standalone C++ fixture with source-extracted firmware declarations."""
     structs = extract_struct(source, "ConfigV1") + "\n" + extract_struct(source, "Config")
@@ -149,14 +184,11 @@ def loadcfg_runtime_harness(source: str) -> str:
     ))
     template_path = Path(__file__).with_name("config_loadcfg_runtime_fixture.cpp.in")
     template = template_path.read_text(encoding="utf-8")
-    for marker, replacement in (
-        ("/* PHX_CONFIG_STRUCTS */", structs),
-        ("/* PHX_CONFIG_CONSTANTS */", constants),
-        ("/* PHX_CONFIG_HELPERS */", helpers),
-        ("/* PHX_CONFIG_RUNTIME_FUNCTIONS */", runtime_functions),
-    ):
-        template = _replace_fixture_marker(template, marker, replacement)
-    if "PHX_CONFIG_" in template:
-        raise AssertionError("unresolved runtime fixture template marker")
-    return template
+    replacements = (
+        (RUNTIME_FIXTURE_MARKERS[0], structs),
+        (RUNTIME_FIXTURE_MARKERS[1], constants),
+        (RUNTIME_FIXTURE_MARKERS[2], helpers),
+        (RUNTIME_FIXTURE_MARKERS[3], runtime_functions),
+    )
+    return render_runtime_fixture(template, replacements)
 
