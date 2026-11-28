@@ -4163,3 +4163,45 @@ This is the required documentation-first IN-PROGRESS record. No source/test resu
 - **Full #46162211282 attempt 2:** HND-0700/CI-0701 PASS; validation job 141032316089 FAIL at QA-owned `tests/controllers.sh:21` missing `config_revision`; 14/14 target/platform builds PASS; production downstream stages skipped.
 - **Native:** NOT RUN on #378; parent #377 Native #46158944131 failed PAY-0745. No result transferred.
 - **Limits:** local checkout NOT RUN; physical relay/acceptor, EEPROM/NVS brown-out, 150 cuts, 30-device/24-hour soak and electrical recovery NOT TESTED. HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
+
+
+## PHX-HARDWARE UTC16 — centralized GPIO writer authority contract (IN PROGRESS)
+
+**Updated:** 2026-11-28T16:36:58Z  
+**Task:** `PHX-HW-177-GPIO-WRITER-AUTHORITY-20261128T16Z`  
+**Parent:** [PR #378](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/378) at `3f67ba41dc3e087f868d3c57f6604e69f7a0e17b`  
+**Branch:** `phoenix/hw-output-writer-authority-guard-20261129-utc16`  
+**Scope:** Hardware-owned poll lab contract/cases plus append-only handovers only.
+
+The #378 post-deny mutation protects the bounded poll helper. This follow-up makes the broader source invariant explicit: the sketch has one low-level `digitalWrite` inside `writeLogical`; every `writeLogical` call must remain inside `configureRuntimePins` (logical OFF only) or `applyOutputs` (the existing `accepting` predicate). No controller API or production sketch change is planned.
+
+Planned failure injections: (1) add a logical relay-ON call in `denyRemoteControl`; (2) add a raw `digitalWrite` outside `writeLogical`; (3) change startup pin configuration to logical ON; (4) replace the `applyOutputs` accepting predicate with unconditional ON. Both ESP8266 and ESP32 source fixtures must reject all four mutations.
+
+No QA-owned assertion, CORE contract, financial state, receipt, signer, witness, migration, COE source, or physical device is in scope. Local checkout/tests are NOT RUN; exact-source GitHub Actions will be the execution evidence. Keep coin/relay admission denied. No flash, reset, live money, merge, release tag, signing or deployment.
+
+**Status:** IN_PROGRESS; source/test change and CI not yet run. HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
+
+
+## Source/test implementation — 2026-11-28T16:43:00Z
+
+- **Task:** `PHX-HW-177-GPIO-WRITER-AUTHORITY-20261128T16Z`; **branch:** `phoenix/hw-output-writer-authority-guard-20261129-utc16`.
+- **Source/test commit:** `b3db93481d676a519fd8870af3a66fc7f2d23d5a` (parent `7658662744394888014b17e4c6ce63d57cf88585`).
+- **Changed files:** `poll_preflight_inhibit_lab_contract.py` and `poll_preflight_inhibit_lab_cases.py` only. No production sketch or shared interface changed.
+- Added a source contract requiring one `digitalWrite` inside `writeLogical`, restricting all `writeLogical` callsites to `configureRuntimePins` and `applyOutputs`, requiring startup writes to be logical OFF, and preserving the existing four `applyOutputs` gate/polarity calls.
+- Added four failure injections per board: direct logical writer, raw digitalWrite, startup ON write, and ungated output. Expected 8/8 mutation rejections across ESP8266 and ESP32.
+- **CI:** pending at this checkpoint; no pass/fail claim. Local checkout/tests NOT RUN.
+- **Acceptance:** source-contract / host simulation only; physical GPIO, pulse, brown-out, 150 cuts, 30-device/24-hour soak and electrical recovery NOT TESTED. HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
+
+
+## 2026-11-28T16:55:00Z — PHX-HARDWARE #177 — centralized GPIO writer authority contract (PR #379)
+
+- **Task:** `PHX-HW-177-GPIO-WRITER-AUTHORITY-20261128T16Z`; **priority:** P1; **state:** validated focused/compatibility gates, blocked Full controller parity.
+- **Repository/branch:** `BlazeDevStudio/BlazingSystems-Experiments` / `phoenix/hw-output-writer-authority-guard-20261129-utc16`.
+- **PR:** #379 OPEN / DRAFT / UNMERGED; child of #378 at `3f67ba41dc3e087f868d3c57f6604e69f7a0e17b`.
+- **Source/test commit:** `b3db93481d676a519fd8870af3a66fc7f2d23d5a`; exact tested docs head `c192904e05fbaa9291ddbe4a69e64c11857e7670`.
+- **Paths:** `poll_preflight_inhibit_lab_contract.py`, `poll_preflight_inhibit_lab_cases.py`; no production sketch, CORE API, QA assertion, finance, receipt, signer, witness, migration or COE source changed.
+- **Change:** centralized `digitalWrite`/logical writer callsite invariant; startup OFF only; dynamic ON only through existing `applyOutputs` accepting gate. Four injected mutations per board; 8/8 rejected.
+- **Exact CI:** Poll #46166976076 job 141046570599 PASS; Mbed #46166976049 jobs 141046571223/141046571246/141046571025 PASS 3/3; Full #46166976129 CI-0701 141046571277 PASS, validation 141046615235 FAIL at QA-owned `tests/controllers.sh:21` missing `config_revision`; 14/14 target/platform jobs PASS; downstream update/simulation/signing/publication skipped. Native NOT RUN.
+- **Local checkout/tests:** NOT RUN. Physical hardware and acceptance gates remain NOT TESTED.
+- **Next exact action:** PHX-QA/CORE resolve the controller contract; PHX-MASTER pins #379 ancestry; Hardware holds draft without changing production sketches or inventing protocol fields.
+- **Disposition:** CI VERIFIED for focused Poll and Mbed; Full BLOCKED; HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
