@@ -9,7 +9,6 @@ from firmware_source_extract import (
 )
 from poll_preflight_inhibit_lab_contract import (
     coin_post_matches,
-    poll_call_matches,
     poll_guard_locations,
     register_guard_locations,
     startup_storage_guard_locations,
@@ -367,21 +366,21 @@ def verify_board(name: str, path: Path):
     # Failure injection: a conditional post-poll deny or an early return must
     # not allow the blocking poll to bypass the final fail-closed state.
     expect_poll_guard_mutation_rejected(
-        name, loop,
+        name, source,
         r"\(void\)post\(\"poll\"\);\s*denyRemoteControl\(\);",
         '(void)post("poll");\n    if (false) { denyRemoteControl(); }',
         "braced conditional post-poll guard",
         "post-poll: deny guard must be an unconditional standalone statement",
     )
     expect_poll_guard_mutation_rejected(
-        name, loop,
+        name, source,
         r"\(void\)post\(\"poll\"\);\s*denyRemoteControl\(\);",
         '(void)post("poll");\n    if (false) denyRemoteControl();',
         "unbraced conditional post-poll guard",
         "post-poll: deny guard must be an unconditional standalone statement",
     )
     expect_poll_guard_mutation_rejected(
-        name, loop,
+        name, source,
         r"\(void\)post\(\"poll\"\);\s*denyRemoteControl\(\);",
         '(void)post("poll");\n    return;\n    denyRemoteControl();',
         "early return before post-poll guard",
