@@ -537,17 +537,53 @@ void loop() {
 
 
 
+def _expect_gpio_writer_mutation_rejected(
+    name: str, label: str, mutated_source: str, expected: str
+):
+    try:
+        gpio_write_authority_locations(mutated_source)
+    except AssertionError as exc:
+        if expected not in str(exc):
+            raise AssertionError(
+                f"{name}: {label} failed for an unexpected reason: {exc}"
+            ) from exc
+    else:
+        raise AssertionError(f"{name}: {label} mutation was not rejected")
+
+
 def verify_gpio_write_authority_mutations():
-    """Reject direct GPIO bypasses on both board source fixtures."""
+    """Reject direct and alternate GPIO output paths on both board source fixtures."""
+    alternative_calls = (
+        ("analogWrite", "analogWrite(runRelayPin,255);"),
+        ("digitalWriteFast", "digitalWriteFast(runRelayPin,HIGH);"),
+        ("ledcWrite", "ledcWrite(0,255);"),
+        ("ledcWriteChannel", "ledcWriteChannel(0,255);"),
+        ("dacWrite", "dacWrite(runRelayPin,255);"),
+        ("gpio_set_level", "gpio_set_level((gpio_num_t)runRelayPin,1);"),
+        ("gpio_ll_set_level", "gpio_ll_set_level(&GPIO,runRelayPin,1);"),
+        ("gpio_hal_set_level", "gpio_hal_set_level(&GPIO,runRelayPin,1);"),
+        ("tone", "tone(runRelayPin,1000);"),
+        ("noTone", "noTone(runRelayPin);"),
+        ("shiftOut", "shiftOut(runRelayPin,runLedPin,MSBFIRST,0xFF);"),
+    )
+    register_writes = (
+        ("esp8266-gpos", "GPOS = (1U << runRelayPin);"),
+        ("esp8266-gpoc", "GPOC = (1U << runRelayPin);"),
+        ("esp32-out-w1ts", "GPIO.out_w1ts = (1U << runRelayPin);"),
+        ("esp32-out-w1tc", "GPIO.out_w1tc = (1U << runRelayPin);"),
+    )
+    rejected = 0
+
     for name, path in SKETCHES.items():
         source = path.read_text(encoding="utf-8")
         gpio_write_authority_locations(source)
-        mutations = (
+
+        existing_mutations = (
             (
                 "direct-logical-writer",
                 source.replace(
                     "void denyRemoteControl(){",
-                    "void denyRemoteControl(){\n  writeLogical(runRelayPin,true,runRelayActiveHigh);",
+                    "void denyRemoteControl(){\\n  writeLogical(runRelayPin,true,runRelayActiveHigh);",
                     1,
                 ),
                 "writeLogical calls must be limited to configureRuntimePins and applyOutputs",
@@ -556,7 +592,7 @@ def verify_gpio_write_authority_mutations():
                 "raw-digital-write",
                 source.replace(
                     "void denyRemoteControl(){",
-                    "void denyRemoteControl(){\n  digitalWrite(runRelayPin,HIGH);",
+                    "void denyRemoteControl(){\\n  digitalWrite(runRelayPin,HIGH);",
                     1,
                 ),
                 "digitalWrite must be centralized in writeLogical",
@@ -580,20 +616,59 @@ def verify_gpio_write_authority_mutations():
                 "applyOutputs must retain the exact accepting-gated GPIO call set",
             ),
         )
-        for label, mutated, expected in mutations:
+        for label, mutated, expected in existing_mutations:
             if mutated == source:
                 raise AssertionError(f"{name}: {label} mutation anchor missing")
-            try:
-                gpio_write_authority_locations(mutated)
-            except AssertionError as exc:
-                if expected not in str(exc):
-                    raise AssertionError(
-                        f"{name}: {label} failed for an unexpected reason: {exc}"
-                    ) from exc
-            else:
-                raise AssertionError(f"{name}: {label} mutation was not rejected")
+            _expect_gpio_writer_mutation_rejected(name, label, mutated, expected)
+            rejected += 1
             print(f"GPIO_WRITE_AUTHORITY_MUTATION_REJECTED {name} {label}")
-    print("GPIO_WRITE_AUTHORITY_MUTATIONS_REJECTED=8")
+
+        for label, statement in alternative_calls:
+            mutated = source.replace(
+                "void denyRemoteControl(){",
+                "void denyRemoteControl(){\\n  " + statement,
+                1,
+            )
+            if mutated == source:
+                raise AssertionError(f"{name}: {label} mutation anchor missing")
+            _expect_gpio_writer_mutation_rejected(
+                name,
+                label,
+                mutated,
+                f"alternative GPIO writer API '{label}' must remain absent",
+            )
+            rejected += 1
+            print(f"GPIO_WRITE_BYPASS_MUTATION_REJECTED {name} {label}")
+
+        for label, statement in register_writes:
+            mutated = source.replace(
+                "void denyRemoteControl(){",
+                "void denyRemoteControl(){\\n  " + statement,
+                1,
+            )
+            if mutated == source:
+                raise AssertionError(f"{name}: {label} mutation anchor missing")
+            _expect_gpio_writer_mutation_rejected(
+                name,
+                label,
+                mutated,
+                "direct GPIO output register writes must remain absent",
+            )
+            rejected += 1
+            print(f"GPIO_WRITE_REGISTER_MUTATION_REJECTED {name} {label}")
+
+        # Comments and string literals must not create false-positive bypasses.
+        decoy_source = (
+            source
+            + "\\n// analogWrite(runRelayPin,255); GPOS = (1U << runRelayPin);"
+            + '\\nconst char *gpioWriterDecoy = "ledcWrite(0,255); GPIO.out_w1ts = BIT(runRelayPin);";'
+        )
+        gpio_write_authority_locations(decoy_source)
+        print(f"GPIO_WRITE_BYPASS_COMMENT_STRING_DECOYS_IGNORED {name}")
+
+    print(f"GPIO_WRITE_AUTHORITY_MUTATIONS_REJECTED={rejected}")
+    if rejected != 38:
+        raise AssertionError(f"expected 38 GPIO writer mutations, got {rejected}")
 
 def main():
     startup_failures = []

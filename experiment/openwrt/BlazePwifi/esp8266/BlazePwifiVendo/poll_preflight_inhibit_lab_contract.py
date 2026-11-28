@@ -5,6 +5,43 @@ __all__ = ["coin_post_matches", "gpio_write_authority_locations", "poll_call_mat
 
 from firmware_source_extract import extract_braced, extract_function, mask_non_code
 
+# These APIs can drive a physical output without passing through writeLogical().
+# Keep the list explicit so a reviewer can extend it when a board core adds a writer.
+ALTERNATIVE_GPIO_WRITE_APIS = (
+    "analogWrite",
+    "digitalWriteFast",
+    "ledcWrite",
+    "ledcWriteChannel",
+    "dacWrite",
+    "gpio_set_level",
+    "gpio_ll_set_level",
+    "gpio_hal_set_level",
+    "tone",
+    "noTone",
+    "shiftOut",
+)
+
+DIRECT_GPIO_OUTPUT_REGISTER_ASSIGNMENTS = (
+    r"\\b(?:GPOS|GPOC)\\s*(?:\\||&|\\^)?=",
+    r"\\bGPIO\\s*\\.\\s*out(?:_w1ts|_w1tc|1_w1ts|1_w1tc)?(?:\\s*\\.\\s*val)?\\s*(?:\\||&|\\^)?=",
+)
+
+
+def _assert_no_gpio_write_bypasses(masked_source: str):
+    """Reject alternate Arduino/ESP-IDF output APIs and direct GPIO register writes."""
+    for api in ALTERNATIVE_GPIO_WRITE_APIS:
+        if re.search(rf"\\b{re.escape(api)}\\s*\\(", masked_source):
+            raise AssertionError(
+                f"alternative GPIO writer API '{api}' must remain absent; use writeLogical"
+            )
+
+    for pattern in DIRECT_GPIO_OUTPUT_REGISTER_ASSIGNMENTS:
+        if re.search(pattern, masked_source):
+            raise AssertionError(
+                "direct GPIO output register writes must remain absent; use writeLogical"
+            )
+
+
 
 def poll_call_matches(source: str):
     """Find executable post("poll") calls, excluding comments and literals."""
@@ -364,6 +401,7 @@ def _call_arguments(masked_source, match):
 def gpio_write_authority_locations(source: str):
     """Keep physical GPIO writes centralized behind the existing deny predicate."""
     masked = mask_non_code(source)
+    _assert_no_gpio_write_bypasses(masked)
     definitions = list(re.finditer(r"\bvoid\s+writeLogical\s*\(", masked))
     if len(definitions) != 1:
         raise AssertionError("writeLogical must have exactly one implementation")
