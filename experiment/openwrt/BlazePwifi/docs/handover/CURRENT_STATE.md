@@ -1,28 +1,35 @@
-## PHX-HARDWARE UTC14 — IN PROGRESS / scoped CI verified
+## PHX-HARDWARE UTC14 — FINAL / candidate CI verified, integration blocked
 
-**Task:** #177 poll-boundary GPIO-off failure injection; cleanup-first #266.  
-**PR:** #375 OPEN / DRAFT / UNMERGED, child of #366.  
-**Branch:** `phoenix/hw-poll-deny-wrapper-20261128-utc13`.  
-**Source/test SHA:** `227658bc09fa1ab5ff9140c0b920ecc95cc7422d`.  
-**Changed path:** `experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_preflight_inhibit_lab_cases.py` (host-only test; no production sketch change in this increment).
+**Role:** PHX-HARDWARE. **PR:** #375 OPEN / DRAFT / UNMERGED, child of #366.  
+**Branch:** `phoenix/hw-poll-deny-wrapper-20261128-utc13`. **Source/test commit:** `227658bc09fa1ab5ff9140c0b920ecc95cc7422d`.  
+**Exact tested code + docs head:** `d6bd3737e60b49a7f4cec12226396ff60e83b9f6`.
 
-The source-extracted host harness now removes `applyOutputs();` from the extracted `denyRemoteControl()` function and runs the actual deny + blocking poll body. This detects the case where software flags are false but the relay GPIO was never written OFF before the 3,500 ms synchronous HTTP wait. The mutation is rejected on ESP8266 and ESP32 (exit 23). The six pulse windows and four independent relay/LED polarity combinations remain covered.
+### Change
 
-**Focused Poll:** [#46153565954](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46153565954), job `141005200843`, PASS at exact source/test SHA `227658bc09fa1ab5ff9140c0b920ecc95cc7422d`.
+The source-extracted host harness now removes `applyOutputs();` from the actual extracted `denyRemoteControl()` body and executes the pre-poll deny plus 3,500 ms blocking wait. This catches logical deny flags without the immediate physical GPIO OFF write. Mutation rejected on ESP8266 and ESP32 (exit 23); explicit `PREPOLL_GPIO_OFF_WRITE_MUTATION_REJECTED` markers emitted. Six pulse windows × four independent relay/LED polarities and five transport outcomes × four polarities remain covered.
 
-**Full:** [#46153565907](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46153565907), validation job `141005241203`, failed mandatory handover freshness because root `PROJECT_HANDOVER.md` had not yet been refreshed. This commit synchronizes the canonical root/live/ledger records; a new source-triggered Full run is required for final gate evidence.
+### Exact-head CI
 
-**Mbed:** #46152593146 3/3 PASS only at prior SHA `224bea1bf663b703e78c34b965df032739fb0c90`; not exact-head evidence. **Native:** #46152593143 fails at QA-owned PAY-0745 literal assertion on that prior SHA; no current-head Native run.
+- Poll push #46153921703 job `141006279696` PASS; PR #46153917558 job `141006267901` PASS.
+- Mbed push #46153921753 and PR #46153917594: 3/3 PASS each (source contract, ESP32 core 3.3.13, core 4.0.0).
+- Native #46153921746 job `141006279859` FAIL at QA-owned PAY-0745 literal assertion: corrupt persisted state must halt startup.
+- Full push #46153917616 job `141006320757` and PR #46153921719 job `141006484294` FAIL at QA-owned Controller protocol parity (`tests/controllers.sh:21`, `config_revision`). Handover freshness + regression PASS; 14/14 ESP8266/ESP32/Android/firmware target builds PASS. Update bundle, simulations, signing and publishing skipped.
 
-The active branch `blazepwifi-v0.6.0-audit-foundation` remains `2fbd2475e9f54878c316fa7cea2f228386b0e859` and still consumes the synchronous poll response before sampling the coin input. PR #375 is a deny-only candidate stack and is not merged. Issue #177 remains OPEN / P0.
+### Coordination blocker
 
-**HARDWARE ACCEPTED = NO. PRODUCTION READY = NO-GO.** Physical acceptor/relay, electrical, 150 power-cut, 30-device/24-hour soak, protected signer/witness, v1→v2 migration, durable accounting/replay and independent QA/release gates remain NOT TESTED / NOT ACCEPTED.
+Master head `42dc13a7b732ff56152ec2170f2c61904b3dc67f`; Master PR #288 remains OPEN/DRAFT. ROLE_ASSIGNMENTS and INTEGRATION_MATRIX still pin #375 to `224bea1`. Master identifies #374 and #375 as separate non-stacked branches with seven overlapping paths and requires canonical-parent selection before integration. Further overlapping sketch/workflow edits are paused pending Master sequencing. #239, #254 and #283 remain open drafts and untouched.
+
+Active v0.6 branch `2fbd2475e9f54878c316fa7cea2f228386b0e859` still performs blocking poll/response consumption before coin sampling; #375 is an unmerged candidate and does not make the active branch safe. Issue #177 remains OPEN / P0. Keep coin/relay admission denied.
+
+Private Drive registry v11 and hourly signal YAML were not available through the exposed Library/connector/repository tree. COE #26 remains FROZEN; no migration.
+
+**SIMULATED / CI VERIFIED only. HARDWARE ACCEPTED = NO. PRODUCTION READY = NO-GO.** Physical relay/acceptor, electrical, 150 power-cut, 30-device/24-hour soak, signer/witness, durable accounting/replay, v1→v2 migration and independent QA/release gates remain NOT TESTED / NOT ACCEPTED.
 
 ## NEXT EXACT ACTION
 
-- PHX-QA: replace PAY-0745 literal token assertion with semantic source-linked fail-closed vectors; review the new GPIO-off failure injection independently.
-- PHX-MASTER: add PR #375 and its stacked ancestry to role/integration matrices.
-- PHX-HARDWARE: revalidate #375 HEAD, rerun exact-head Poll/Full after handover sync, and continue only deny-only P0 pulse-capture work. No merge, flash, relay admission or production cutover.
+- PHX-MASTER: select canonical #374/#375 parent and refresh role/integration pins to the current #375 head.
+- PHX-QA + PHX-CORE: resolve PAY-0745 semantic test and controller parity against the approved authenticated contract.
+- PHX-HARDWARE: pause further overlapping sketch/workflow edits until sequencing is recorded; continue only deny-only P0 review, no merge or device operation.
 
 ---
 
