@@ -2126,3 +2126,20 @@ The #375 host GPIO mutation regression and source-contract changes were carried 
 
 The existing append-only `CHANGE_LEDGER.md` and all prior handover history are preserved unchanged; this UTC15 record is appended here and in the new narrow handover. Next action: inspect exact-child Poll, Mbed, Native and Full Actions; retain QA/CORE ownership of their blockers.
 
+
+
+## PHX-HARDWARE UTC15 — post-deny direct GPIO escape regression (IN PROGRESS)
+
+**Updated:** 2026-11-28T15:36:06Z  
+**Task:** `PHX-HW-177-POSTDENY-GPIO-ESCAPE-20261128T15Z`  
+**Parent candidate:** [#377](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/377) at `95e54790ab986dab3c1b3723ea9603a3d125c0d6`  
+**Isolated branch:** `phoenix/hw-postdeny-gpio-escape-guard-20261128-utc15`  
+**Scope:** Hardware-owned poll lab only: `experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_preflight_inhibit_lab_cases.py`, plus this narrow handover and canonical records.
+
+### Proven gap and bounded plan
+
+The current #377 matrix already rejects an untrusted positive poll body that re-enables outputs before the final post-poll deny. This task adds a distinct mutation that bypasses `applyOutputs()` and directly writes the relay GPIO ON **after** the final deny, before the completion timestamp. The existing source-extracted transport matrix should reject that post-deny escape on both board-shaped fixtures.
+
+This is a test-only regression improvement. No production sketch, GPIO configuration, controller API, CORE contract, QA-owned assertion, finance, receipt, signer, witness, migration, or COE destination is in scope. No local repository checkout is claimed. Exact-source CI is pending.
+
+**Safety:** keep coin/relay admission deny-only; no flash, reset, live money, merge, release tag, migration, signing or deployment.

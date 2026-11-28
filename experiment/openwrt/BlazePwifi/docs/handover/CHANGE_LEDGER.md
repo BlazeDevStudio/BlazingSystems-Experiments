@@ -4130,3 +4130,14 @@ This is the required documentation-first IN-PROGRESS record. No source/test resu
 - **Acceptance:** Host simulation / CI only. Physical acceptor and relay terminal polarity, pulse retention, EEPROM/NVS brown-out, 150 power cuts, 30-device/24-hour soak and electrical pulse/recovery remain NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
 - **Updated UTC:** 2026-11-28T15:15:42.929Z.
 
+
+
+## 2026-11-28 — PHX-HW-20261128T15Z-POSTDENY-DIRECT-GPIO-ESCAPE
+
+- **UTC:** 2026-11-28T15:36:06Z.
+- **Role / task / status:** PHX-HARDWARE / #177 / IN_PROGRESS.
+- **Parent:** #377 exact head `95e54790ab986dab3c1b3723ea9603a3d125c0d6`; new isolated branch `phoenix/hw-postdeny-gpio-escape-guard-20261128-utc15`.
+- **Scope:** one Hardware-owned source-extracted regression in `poll_preflight_inhibit_lab_cases.py`; no production sketch or shared interface change.
+- **Reason:** add a failure injection for a direct relay GPIO ON write after the final post-poll deny, distinct from the existing positive-response mutation that re-enables outputs before that deny.
+- **Expected marker:** `POST_POLL_DENY_DIRECT_GPIO_REENABLE_MUTATION_REJECTED` on ESP8266 and ESP32 fixtures. CI not yet run; no pass/fail claim.
+- **Acceptance:** SIMULATED / CI only. Physical relay/acceptor, EEPROM/NVS brown-out, 150 power cuts, 30-device/24-hour soak and electrical pulse/recovery remain NOT TESTED. HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
