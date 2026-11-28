@@ -1,3 +1,22 @@
+## PHX-MASTER UTC20 — HARDWARE #380 and COE #26 integration gate (2026-11-28T20:34Z)
+
+### HARDWARE #380
+- Current PR head 5297760322c3752878087d38b784ee8c715db6f2, base #377@95ace1236c2b3e4816515c372edd4853ceeed064, source/test SHA 83fc27e474064f2ed429332b8a14fa8ffb66784c.
+- Compare from a4ec0383 to current head is one docs-only handover addition; no source/test changed.
+- Poll #46182701890 PASS; Mbed #46182701872 3/3 PASS; Full #46182701931 FAIL at Controller protocol parity after 14/14 target/platform jobs PASS; Native NOT RUN by path filter.
+- Preserve #378/#379 OPEN/unmerged and #376 separate. #380 remains a candidate integration-order pin only, not merge or hardware acceptance.
+
+### COE #26 exact-tree gate
+- Source snapshot 6d4c9b487af4d768c4d7627654d119417fcc6e00; candidate b382d233ff06c8791b1028bed3c617cc7b670d12; source tree 2,391 entries, candidate 286, both non-truncated.
+- Runtime 61/61 exact blob+mode; actual 46 identical / 15 derived vs SOURCE_INTAKE summary 47/14.
+- Tests 19/19 exact source/destination blob+mode; migration map 18/19 rows, missing tests/voucher_txn_journal.sh; stale run_focus.sh and member_txn_journal.sh hashes.
+- Four in-scope legal artifacts exact; all five candidate workflows CANCELLED. Destination branch pin stale. No staging/write.
+
+### Ownership
+CORE produces the authenticated versioned controller contract; HARDWARE consumes it only after contract review; QA owns semantic fail-closed parity. Master owns this matrix only. See [UTC20 report](PHX_MASTER_UTC20_20261128_HW380_COE26_SOURCE_TESTMAP_ROLE_CI_REVALIDATION.md).
+
+---
+
 ## PHX-MASTER UTC18 — #380 canonical stack and COE #26 provenance (2026-11-28T18Z)
 
 ### HARDWARE integration decision

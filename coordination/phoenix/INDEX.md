@@ -1,3 +1,13 @@
+## PHX-MASTER UTC20 — 2026-11-28T20:34Z
+
+- [UTC20 exact-head, migration-map and governance report](PHX_MASTER_UTC20_20261128_HW380_COE26_SOURCE_TESTMAP_ROLE_CI_REVALIDATION.md).
+- Live refs: Experiments main 6be5d19b, development aad3aade, active v0.6 2fbd2475, Master input a4630ce9; COE main a6513ab4 and #26 b382d233.
+- #380 current docs head 52977603, source/test SHA 83fc27e4; exact-head Poll/Mbed PASS, Full Controller protocol parity FAIL, Native NOT RUN.
+- COE #26 exact trees: 61/61 runtime identities and 19/19 test identities match; actual runtime classification 46/15 vs stale summary 47/14; migration map 18/19 test rows, voucher missing, two stale hashes; four in-scope legal artifacts exact; five workflows CANCELLED. No staging.
+- Registry v11/newer corrections NOT RECOVERED; cleanup #266 0/7; P0 #177 OPEN; branch protection UNKNOWN; Master tests NOT RUN; PRODUCTION NO-GO.
+
+---
+
 ## PHX-MASTER UTC18 — #380 canonical child decision and COE #26 exact-tree audit (2026-11-28T18Z)
 
 - [UTC18 full audit report](PHX_MASTER_UTC18_20261128_HW380_CANONICAL_STACK_COE26_EXACT_TREE_AUDIT.md)

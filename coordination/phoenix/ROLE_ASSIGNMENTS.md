@@ -1,3 +1,26 @@
+## PHX-MASTER UTC20 — live role heads and exact-head CI (2026-11-28T20:34Z)
+
+| Role / PR | Exact head | Exact-head evidence |
+|---|---|---|
+| CORE #252 | c82705f2de865c89ab733b10efa84f26f56a5cc4 | Build #42698139210 PASS |
+| RENTAL #289 | 68928774d0d7cf65adb26bc6b54199a3159d066c | Build #43653329229 and native auth #43653329235 PASS |
+| RENTAL #328 | 10fc200b6dbf470a95e679d3acc58aff4ab2a67f | Build #45622918468 FAIL; API21 smoke, native auth/recovery and APK identity PASS |
+| PISONET #255 | d01fd1642c105b3b0f6cd3343d1c9b67291f6e09 | Windows Release #42462978704 PASS |
+| QA #290 | 5c29d15994cee1279058f1eca12f2a3180704292 | Windows synthetic #43633486963 PASS |
+| QA #292 | 75a3f66d9563e38a0a48b9cf487b0b057a91ea96 | No exact-head workflow |
+| RELEASE #291 | bf339a76964a1abe2412fac45392fe06a8e66418 | No exact-head workflow; mergeable=false |
+| HARDWARE #376 | 0f5968b232f411943c4be3a4d4911a0da4f83fff | Poll/Mbed/Full PASS; signing/publication not evidence of acceptance |
+| HARDWARE #377 | 95ace1236c2b3e4816515c372edd4853ceeed064 | Poll/Mbed PASS; Native PAY-0745 and Full Controller parity FAIL |
+| HARDWARE #378 | 3f67ba41dc3e087f868d3c57f6604e69f7a0e17b | Poll/Mbed PASS; Full CANCELLED; stale parent; mergeable=false |
+| HARDWARE #379 | 5ac75dbb53bc36abc161fb276b6e7e80534e9b28 | Poll/Mbed PASS; Full Controller parity FAIL |
+| HARDWARE #380 | 5297760322c3752878087d38b784ee8c715db6f2 | Canonical combined DRAFT child of #377; Poll/Mbed PASS; Full Controller parity FAIL; Native NOT RUN |
+
+Supporting COE owner PRs: RELEASE #35 at bc57ba8e (case-collision PASS; sandbox and Hardware/Shared FAIL); CORE #45 at 9d76a134 (Overlay/Shell and case-collision PASS; durable authority remains blocked); INTERCON #49 at aeb8ff11 (Stage 5.1 and case-collision PASS; Hardware/Shared FAIL).
+
+Master did not modify subsystem source. CORE remains owner-only. See [UTC20 report](PHX_MASTER_UTC20_20261128_HW380_COE26_SOURCE_TESTMAP_ROLE_CI_REVALIDATION.md).
+
+---
+
 ## PHX-MASTER UTC18 — live role heads and exact-head CI (2026-11-28T18Z)
 
 | Role | PR / exact head | Exact-head evidence |

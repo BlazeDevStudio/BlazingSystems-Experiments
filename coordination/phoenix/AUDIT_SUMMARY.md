@@ -1,3 +1,19 @@
+## PHX-MASTER UTC20 — live audit summary (2026-11-28T20:34Z)
+
+**Result:** coordination-only exact-head, CI and migration-provenance revalidation. PR #288 remains OPEN/DRAFT/UNMERGED; this activation changes coordination/phoenix only.
+
+- Exact refs: Experiments main 6be5d19b, development aad3aade, active v0.6 2fbd2475, Master input a4630ce9; COE main a6513ab4 and PR #26 b382d233.
+- HARDWARE #380 current docs head 52977603; Poll/Mbed PASS, Full Controller parity FAIL, Native NOT RUN. Active v0.6 poll-before-first-sample remains P0 on ESP8266 and ESP32.
+- COE #26 remains FROZEN: runtime 61/61 exact; actual 46/15 vs stale 47/14 summary; tests 19/19 exact but map 18/19; voucher row missing; two stale map hashes; four in-scope legal artifacts exact; five workflows CANCELLED.
+- Cleanup #266 OPEN / 0-of-7. P0 #177 OPEN. Private Drive registry v11/newer corrections NOT RECOVERED; no Google Drive connector. Branch protection UNKNOWN after 403 reads.
+- Master repository suite and Master CI NOT RUN; no authenticated non-Codex checkout.
+
+**Disposition:** PRODUCTION NO-GO. No subsystem source, COE destination, private registry, signer, secret, device, payment or production state changed.
+
+[UTC20 report](PHX_MASTER_UTC20_20261128_HW380_COE26_SOURCE_TESTMAP_ROLE_CI_REVALIDATION.md)
+
+---
+
 ## PHX-MASTER UTC18 — live audit summary (2026-11-28T18Z)
 
 **Result:** coordination-only source/CI/provenance audit. Master PR #288 remains OPEN/DRAFT/UNMERGED. Current Master parent `78a8f09a73d8d3e2945c7f97b559f8f9091a3897`; exact current main `6be5d19b...`; comparison 720 ahead / 1 behind. All 276 pre-update PR paths were under coordination/phoenix. Ownership manifest unchanged (11 routes; Master target null).

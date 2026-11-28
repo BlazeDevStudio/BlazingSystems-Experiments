@@ -1,3 +1,15 @@
+## PHX-MASTER UTC20 — P0 poll order and controller producer/consumer boundary (2026-11-28T20:34Z)
+
+- Active v0.6@2fbd2475: ESP8266 timeout line 263, synchronous poll line 354, first coin sample line 357; ESP32 timeout line 230, poll line 314, first coin sample line 318. Source order confirms poll-before-first-sample; no physical pulse/relay test is claimed. P0 #177 remains OPEN.
+- CORE owns the canonical versioned authenticated controller/configuration and receipt/disposition producer. HARDWARE owns the consumer and deny/inhibit behavior. QA owns semantic fail-closed and controller-parity tests.
+- HARDWARE #380 current docs head 52977603: exact-head Poll/Mbed PASS, Full fails QA-owned Controller protocol parity after 14/14 target/platform jobs PASS; Native NOT RUN by path filter.
+- No flat/nested guessing, decoy config_revision, invented response_sig or positive coin/relay admission. Admission remains DENIED.
+- Financial promotion still requires protected signing/anti-rollback witness, crash-atomic durable state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized gates.
+
+[UTC20 report](PHX_MASTER_UTC20_20261128_HW380_COE26_SOURCE_TESTMAP_ROLE_CI_REVALIDATION.md)
+
+---
+
 ## PHX-MASTER UTC18 — deny-only GPIO writer and controller envelope boundary (2026-11-28T18Z)
 
 - Pin HARDWARE #380 as the reconciled DRAFT child of current #377 for combined post-deny GPIO escape and centralized writer-authority tests. The source contract requires one executable digitalWrite in writeLogical, six startup logical-OFF writes and four existing accepting-gated output writes. This is host/source-contract evidence only.

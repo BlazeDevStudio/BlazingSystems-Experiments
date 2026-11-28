@@ -1,3 +1,16 @@
+## PHX-MASTER UTC20 — refs, route authority and private-registry access (2026-11-28T20:34Z)
+
+- Exact refs: Experiments main 6be5d19b; development aad3aade; active v0.6 2fbd2475; Master input a4630ce9; COE main a6513ab4; COE PR #26 b382d233.
+- OWNERSHIP_ROUTES.json remains blob e4db324315a1b3543fec17a148fbf960170fcb29, 11 routes, DRAFT_REVIEW_ONLY; PHX-MASTER target null. No route or owner was changed.
+- Root AGENTS.md, latest README_FIRST, COMMUNICATION_PROTOCOL(3), Cloud Artifact Policy and Cloud Storage Recovery Handover were read. Policy requires the private registry and sync ledger before mirror/artifact operations.
+- Private BLAZE_PROJECT_REGISTRY_v11_20261027.json and newer corrections NOT_RECOVERED. Exact Library search did not find v11; no Google Drive connector/action is exposed. Historical registry snapshots were not substituted; no private IDs/content copied and no Drive write occurred.
+- Branch-protection detail returned 403 for Experiments main/development and COE main; effective protection/required checks UNKNOWN. Master branch protection endpoint could not be resolved.
+- Cleanup #266 remains OPEN / 0-of-7; P0 #177 OPEN; COE #26 FROZEN. CORE remained read-only; no parallel CORE source work was started.
+
+[UTC20 report](PHX_MASTER_UTC20_20261128_HW380_COE26_SOURCE_TESTMAP_ROLE_CI_REVALIDATION.md)
+
+---
+
 ## PHX-MASTER UTC18 — routing, registry and governance refresh (2026-11-28T18Z)
 
 - OWNERSHIP_ROUTES remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`, schema v1, 11 routes; PHX-MASTER target null, coordination-only. No route changed.
