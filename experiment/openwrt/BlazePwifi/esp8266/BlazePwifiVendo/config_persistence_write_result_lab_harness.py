@@ -6,7 +6,8 @@ import tempfile
 from firmware_source_extract import extract_function
 
 
-def compile_and_run(source: str, label: str) -> str:
+def compile_and_run_result(source: str, label: str):
+    """Compile a native fixture and return its process result for exact failure checks."""
     with tempfile.TemporaryDirectory(prefix="phx-config-persist-") as directory:
         cpp = Path(directory) / f"{label}.cpp"
         exe = Path(directory) / label
@@ -17,8 +18,16 @@ def compile_and_run(source: str, label: str) -> str:
             capture_output=True,
             text=True,
         )
-        result = subprocess.run([str(exe)], check=True, capture_output=True, text=True)
-        return result.stdout.strip()
+        return subprocess.run([str(exe)], check=False, capture_output=True, text=True)
+
+
+def compile_and_run(source: str, label: str) -> str:
+    result = compile_and_run_result(source, label)
+    if result.returncode != 0:
+        raise subprocess.CalledProcessError(
+            result.returncode, result.args, output=result.stdout, stderr=result.stderr
+        )
+    return result.stdout.strip()
 
 
 def eeprom_harness(source: str) -> str:

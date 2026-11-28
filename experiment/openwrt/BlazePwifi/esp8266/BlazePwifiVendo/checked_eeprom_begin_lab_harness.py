@@ -85,7 +85,10 @@ int main() {
     store.markDirty();
     ESP.read_result = false;
     if (store.beginChecked(64)) return 5;
-    if (store.data() != nullptr || store.size() != 0 || store.dirty()) return 6;
+    if (store.data() != nullptr || store.size() != 0 || store.dirty()) {
+        fflush(stdout);
+        std::_Exit(6);
+    }
     puts("CHECKED_EEPROM_FLASH_READ_FAILURE_CLEANUP_PASS");
 
     ESP.read_result = true;
