@@ -3,6 +3,8 @@
 #   -v scratch=/mnt/blaze-v2-lab-media-ID -v source=/dev/sdXN \
 #   -f tools/v060_lab_mountinfo_guard.awk /proc/self/mountinfo
 # /proc/*/mountinfo spec: ID PARENT MAJ:MIN ROOT MOUNT OPTS ... - FSTYPE SOURCE OPTIONS
+# Require both per-mount and superblock options to be rw. A writable bind-mount
+# flag alone must not hide a read-only backing filesystem.
 function rw(opts) { return index("," opts ",", ",rw,") > 0 }
 BEGIN {
   if (want !~ /^\/tmp\/blaze-v2-native-[A-Za-z0-9_-]+$/ ||
@@ -36,12 +38,12 @@ BEGIN {
   if ($5==want) {
     target_count++
     target_device=$3; target_root=$4; target_opts=$6
-    target_fs=$(separator+1); target_source=$(separator+2)
+    target_fs=$(separator+1); target_source=$(separator+2); target_super_opts=$(separator+3)
   }
   if ($5==scratch) {
     scratch_count++
     scratch_device=$3; scratch_root=$4; scratch_opts=$6
-    scratch_fs=$(separator+1); scratch_source=$(separator+2)
+    scratch_fs=$(separator+1); scratch_source=$(separator+2); scratch_super_opts=$(separator+3)
   }
 }
 END {
@@ -58,6 +60,7 @@ END {
       index(target_root, "\\") || index(scratch_root, "\\") ||
       scratch_root!="/" || target_source!=source || scratch_source!=source ||
       target_fs!=scratch_fs || !rw(target_opts) || !rw(scratch_opts) ||
+      !rw(target_super_opts) || !rw(scratch_super_opts) ||
       !(target_fs=="ext4" || target_fs=="f2fs" ||
         target_fs=="xfs" || target_fs=="btrfs")) {
     print "STORCHK-0674 BLOCKED: missing/unsafe persistent scratch bind mount; no power-cut authorization" > "/dev/stderr"
@@ -75,6 +78,7 @@ END {
   print "rom_device=" rom_device
   print "boot_device=" boot_device
   print "scratch_device=" scratch_device
+  print "superblock_rw_verified=1"
   print "physical_powercut_verified=0"
   print "customer_install_authorized=0"
 }

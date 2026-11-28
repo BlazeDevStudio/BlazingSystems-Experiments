@@ -1,3 +1,84 @@
+## PHX-HARDWARE UTC14 — STORCHK-0674 mutation harness corrected
+
+**Updated:** 2026-11-28T14:59:00Z  
+**DRAFT PR:** [#376](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/376)  
+**Branch:** `phoenix/hw-storage-superblock-rw-guard-20261128-utc14`  
+**Previous head:** `3111858ac8fb48b559b7bda53bd807e7f551c481`
+
+The second focused run [#46157057143](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46157057143), job `141015924749`, failed because the remaining escaped-slash `sed` expression was parsed as a label. Existing STORCHK mountinfo and physical-parent tests passed before the new harness step. This was a test-harness syntax failure, not a parser false-acceptance result.
+
+Correction: the three new superblock-option mutations now use a bounded AWK helper that finds exactly one requested mountpoint and changes only the post-separator superblock-options field. It fails if the target row is missing or duplicated. The `rwx`, `notrw`, and missing-`rw` cases remain. The full script passed locally against the corrected parser; hosted exact-head verification is pending.
+
+Full run [#46157057189](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46157057189) was in progress at the time of this update; no terminal result is claimed. This source-test correction is co-committed with canonical handover/current-state/ledger updates so the next Full validation checks a synchronized head.
+
+All evidence remains SIMULATED / CI only. No mount, write, power cut, flash, reset, payment, migration, merge, release or deployment occurred. Production NO-GO.
+
+---
+## PHX-HARDWARE UTC14 — STORCHK-0674 mutation harness correction
+
+**Updated:** 2026-11-28T14:58:00Z  
+**DRAFT PR:** [#376](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/376)  
+**Branch:** `phoenix/hw-storage-superblock-rw-guard-20261128-utc14`  
+**Previous head:** `af17462bf79859439a7a852e6c2ccbf3d39f23b6`
+
+The second exact-head focused run [#46157057143](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46157057143), job `141015924749`, also failed in the test harness: the remaining escaped-slash expression was interpreted by `sed` as a label (`sed: can't find label for jump`). The existing mountinfo and physical-parent matrix passed before this step. This is a test harness syntax issue, not a parser false-acceptance result.
+
+Correction: remove the fragile path-addressed `sed` mutations and use a small AWK helper that locates the exact mountpoint, changes only the post-separator superblock-options field, and exits nonzero unless exactly one row was changed. The `rwx`, `notrw`, and missing-`rw` token cases remain. The parser logic is unchanged.
+
+Full run [#46157057189](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46157057189) was in progress at the time of this update; no terminal result is claimed. This source-test correction is co-committed with the canonical handover/current-state/ledger refresh so the next Full run evaluates a synchronized exact head.
+
+All evidence remains SIMULATED / CI only. No mount, write, power cut, flash, reset, payment, migration, merge, release or deployment occurred. Production NO-GO.
+
+---
+## PHX-HARDWARE UTC14 — STORCHK-0674 test-harness correction
+
+**Updated:** 2026-11-28T14:56:00Z  
+**DRAFT PR:** [#376](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/376)  
+**Branch:** `phoenix/hw-storage-superblock-rw-guard-20261128-utc14`  
+**Previous head:** `6793c9e749081f5494f744896976aa1c495a4681`
+
+The first docs-synced exact-head focused run [#46156833024](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46156833024), job `141015236831`, failed in the new synthetic harness because three newly added `sed` address expressions were over-escaped (`sed: can't find label for jump`). This was a test-harness syntax defect, not a parser acceptance failure. The existing mountinfo/physical-parent suite passed before the new harness step. The earlier focused run [#46156397146](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46156397146), job `141013890732`, passed the original read-only-superblock regression on exact checkout `13f8732d93b7a5897dcd23dceccb0853b14b40ee`.
+
+Correction: normalize the three test-only path expressions to the same single-backslash POSIX BRE form already used by the passing cases. The added `rwx`, `notrw`, and missing-`rw` mutations remain in place. The parser logic is unchanged by this correction.
+
+Full run [#46156833042](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46156833042) was still in progress at the time of this update; no terminal result is claimed. This commit co-updates the source test and canonical root handovers/ledger so the next exact-head Full validation does not fail merely because those records lagged the source change.
+
+All evidence remains SIMULATED / CI only. No mount, write, power cut, flash, reset, payment, migration, merge, release or deployment occurred. Production NO-GO.
+
+---
+## PHX-HARDWARE UTC14 — STORCHK-0674 writable-superblock guard
+
+**Updated:** 2026-11-28T14:50:00Z  
+**Role:** PHX-HARDWARE  
+**Repository:** `BlazeDevStudio/BlazingSystems-Experiments`  
+**DRAFT PR:** [#376](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/376) — OPEN / DRAFT / UNMERGED; child of [#356](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/356)  
+**Branch:** `phoenix/hw-storage-superblock-rw-guard-20261128-utc14`  
+**Parent:** `phoenix/hardware-storage-preflight-device-separation-20261126-utc23@0ea32d31ed5c902b2187d98c181aab14bc9fdeae`
+
+### Proven source gap and bounded fix
+
+The STORCHK-0674 mountinfo parser previously required `rw` only in the per-mount option field and ignored the superblock-options field after `- FSTYPE SOURCE`. A synthetic mountinfo fixture with `rw` bind/mount options but a `ro` backing superblock was accepted by the parent parser. The guard now captures and requires `rw` in both option fields for both the fixture and scratch mounts.
+
+The Hardware-owned synthetic regression covers a writable positive control, read-only target/scratch superblock mutations, read-only target/scratch mount mutations, and malformed or missing `rw` tokens. The added token-boundary cases are co-committed with this handover refresh.
+
+### Exact evidence
+
+- Focused PR run [#46156397146](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46156397146), job `141013890732`: **PASS** on exact checkout `13f8732d93b7a5897dcd23dceccb0853b14b40ee`. The log verifies exact SHA, zero ledger deletions, existing mountinfo/physical-parent matrix PASS, and the new superblock regression PASS.
+- Initial Full run [#46156397106](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46156397106), validation job `141013938648`: **FAIL at mandatory handover freshness**, because source/workflow changes preceded the canonical root handover update. This is a process-gate failure, not a target build or parser failure. The exact failure is recorded; no target build result from that still-running run is claimed.
+- Local expected RED against the parent parser and corrected PASS were reproduced before the PR. All results remain **SIMULATED / CI VERIFIED**, not physical acceptance.
+
+### Ownership and safety
+
+Only Hardware-owned storage-preflight tooling, its Hardware workflow, and Hardware handovers were changed. QA-owned tests, Master coordination, CORE API, ESP sketches, finance, receipts, signer/witness, migration, and COE source remain untouched. Historical ledger bytes are preserved and the new record is appended.
+
+No mount, write, power cut, flash, reset, coin/payment, customer data operation, signing, migration, merge, release or deployment occurred. Output remains `physical_powercut_verified=0` and `customer_install_authorized=0`.
+
+**Physical scratch-media independence, 150 power cuts, 30-device/24-hour soak, electrical pulse/recovery, protected signer/witness, durable accounting/replay, v1-to-v2 migration, and independent QA/release acceptance remain NOT TESTED / NOT ACCEPTED.**
+
+**Next exact action:** obtain the co-committed exact-head Full rerun, then request PHX-QA semantic review and PHX-MASTER registration of #376 without changing the unresolved #374/#375 sequencing decision.
+
+---
+
 ## PHX-HARDWARE UTC04 — #356 exact-head Full CI and handover refresh
 
 **Updated:** 2026-11-27T04:30:51Z  
@@ -873,4 +954,37 @@ Read terminal exact-head matrix and Full results for the corrected source and up
 ## NEXT EXACT ACTION
 
 Request PHX-QA independent review of the Mbed TLS provider and ledger guard; PHX-MASTER refreshes stale #356 pins in PR #288; PHX-HARDWARE next resumes the unblocked hardware-owned target or waits for CORE's authenticated #177 contract before changing intake/poll behavior. Keep PR #356 DRAFT and unmerged.
+
+
+
+## PHX-HARDWARE UTC16 — #376/#377 independent-stack reconciliation (2026-11-28T16:03:49Z)
+
+**Canonical sequencing decision:** keep the two Hardware drafts independent; do not merge, cherry-pick, or rebase one onto the other.
+
+- **Storage preflight:** PR #376, `phoenix/hw-storage-superblock-rw-guard-20261128-utc14`, exact source/docs head `22ff6eb054b9578daf74a30d5c04d51fd754917e`, child of #356 at `0ea32d31ed5c902b2187d98c181aab14bc9fdeae`. Scope is read-only STORCHK-0674 mountinfo/superblock preflight and its Hardware-owned synthetic guard.
+- **Poll/firmware candidate:** PR #377, `phoenix/hw-poll-deny-wrapper-child-20261128-utc15`, exact head `95e54790ab986dab3c1b3723ea9603a3d125c0d6`, child of #374 at `cfb19ed5df920bf5fa7e33e08dc73a25f8b14db9`, with #375 preserved as the second parent at `94b1231c631eb32da0f019604ce00a4a0851a471`. This remains deny-only and is not integrated into active v0.6.
+- The three shared handovers (`PROJECT_HANDOVER.md`, `docs/handover/CURRENT_STATE.md`, `docs/handover/CHANGE_LEDGER.md`) are append-only. This record cross-references both branches; neither branch is promoted to main or to the active v0.6 branch. Master retains integration/merge authority.
+
+### PR #376 exact-head evidence (source/test head 22ff6eb)
+
+- Focused STORCHK [#46157303529](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46157303529), job `141016684329`: **PASS**. Writable positive control accepted; read-only target/scratch superblocks, malformed/missing `rw` tokens, and read-only mount options rejected.
+- Mbed TLS [#46157303545](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46157303545): **3/3 PASS** — source contract `141016798875`, ESP32 core 3.3.13 `141016799074`, core 4.0.0 `141016799081`.
+- Full [#46157303505](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46157303505): **SUCCESS**. Validation `141016811425` PASS; all 14 target/platform jobs PASS (13 firmware targets plus Android); all 9 v0.4 simulation jobs PASS; update bundle `141017868047` PASS. Production import, sign handoff, prerelease and release publication were skipped.
+- Full handover artifact: [15267944217](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46157303505/artifacts/15267944217). Mbed artifacts: [core 3.3.13 / 15268775146](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46157303545/artifacts/15268775146), [core 4.0.0 / 15268525760](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46157303545/artifacts/15268525760).
+- The focused log explicitly records `SIMULATED_ONLY=1`, `PHYSICAL_POWER_CUT_VERIFIED=0`, and `CUSTOMER_INSTALL_AUTHORIZED=0`. This is CI verification of a read-only parser/preflight, not physical storage or power-cut acceptance.
+
+### PR #377 exact-head evidence (head 95e54790)
+
+- Poll [#46158944089](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46158944089), job `141021690629`: PASS, simulated-only.
+- Mbed [#46158944181](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46158944181): 3/3 PASS.
+- Native [#46158944131](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46158944131): FAIL at QA-owned PAY-0745 literal corrupt-state assertion.
+- Full [#46158944182](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46158944182): handover gates PASS and 14/14 target/platform jobs PASS; validation FAIL at QA-owned controller parity (`config_revision`). Candidate/sign/publish stages skipped.
+
+### Disposition and next exact actions
+
+- #376 remains a separate read-only preflight draft; its green Full result is not hardware acceptance.
+- #377 remains the canonical deny-only poll candidate; it does not fix active v0.6 poll-before-first-sample and does not enable coin/relay admission.
+- PHX-QA owns PAY-0745 and controller-parity semantic assertions; PHX-CORE owns authenticated register/poll/receipt/disposition contracts; PHX-MASTER owns role/integration pins and merge authority.
+- P0 #177 remains OPEN. Physical acceptor/relay polarity, EEPROM/NVS brown-out, 150 power cuts, 30-device/24-hour soak and electrical pulse/recovery remain NOT TESTED. Protected signer/witness, v1-to-v2 migration, durable accounting/replay and independent QA/release signoff remain NOT ACCEPTED.
+- No firmware source, shared API, finance, signer, witness, migration, COE destination, physical device, or production state was changed in this reconciliation. Both PRs remain OPEN / DRAFT / UNMERGED.
 
