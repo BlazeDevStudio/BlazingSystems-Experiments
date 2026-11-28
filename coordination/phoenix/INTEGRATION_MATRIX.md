@@ -1,3 +1,14 @@
+## PHX-MASTER UTC10 integration refresh — PHX-MASTER-20261128T10Z-HW374-COE26-ROLE-CI-ROUTES (2026-11-28T10:40:48Z)
+
+- Live refs: Experiments main `6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5`, development `aad3aade72c1156eecba1fed30907c6d0283b2c5`, comparison-only v0.6 `2fbd2475e9f54878c316fa7cea2f228386b0e859`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`.
+- Master PR #288: `c7798bf63d7f545b98bbbb7c8db68d57f0f36559`, OPEN / DRAFT / UNMERGED, base `main@f4e8a891aed8af86d5fd315d28750a0ac3a7372b`, compare 707 ahead / 1 behind, 271 changed paths all under `coordination/phoenix/`; no Master workflow runs.
+- Current HARDWARE #374 head `09374c8b232f925424d15bce830b1c375e11e024`: Poll #46132251089 PASS; Mbed #46132251056 PASS 3/3; Native #46132251066 FAIL at QA-owned PAY-0745 corrupt-persisted-state assertion; Full #46132251064 FAIL at QA-owned Controller protocol parity while all 14/14 target/platform and Android jobs pass. Parent #373 Full #46118310135 remains failed at QA-owned controller parity.
+- COE #26 remains FROZEN at `b382d233ff06c8791b1028bed3c617cc7b670d12` against main `a6513ab4412b4c014eee2863e45cbe32d06cb243`: 61/61 runtime source/destination blob+mode matches but SOURCE_INTAKE count is wrong (46/15 actual vs 47/14 declared); 149 source test blobs vs 19 candidate; 15 derived tests vs 14 map rows; voucher row missing; two stale hashes; seven of eleven project LICENSE/NOTICE counterparts missing; all five candidate workflows CANCELLED. No destination staging or write.
+- `OWNERSHIP_ROUTES.json` blob `e4db324315a1b3543fec17a148fbf960170fcb29` remains 11 routes / `DRAFT_REVIEW_ONLY` / PHX-MASTER target null. The Rental broad route remains manual-file-mapping-only; no route or ownership change.
+- Cleanup #266 OPEN / 0-of-7; P0 #177 OPEN. Private Drive registry v11/newer corrections NOT RECOVERED; no Drive connector exposed. Master local suite and `verify_coordination.py` NOT RUN.
+- No subsystem source edits, migration, merge, release, signing, secret provisioning, flash, physical test or payment operation. **PRODUCTION NO-GO.**
+
+[Full UTC10 audit](PHX_MASTER_UTC10_20261128_HW374_ROLE_CI_AND_COE26_PROVENANCE_AUDIT.md).
 ## PHX-MASTER UTC09 COE #26 provenance refresh — PHX-MASTER-20261128T09Z-HW374-COE26-EXACT-HEAD-PROVENANCE (2026-11-28T10:01:48.418Z)
 
 - Candidate PR #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; pinned source `6d4c9b487af4d768c4d7627654d119417fcc6e00`. Both recursive trees complete, not truncated.
