@@ -75,3 +75,24 @@ This is a host-test contract improvement only. No production .ino, active v0.6 d
 - PHX-MASTER's current #288 role/integration matrices pin through #371 and need a refresh for #372/#373.
 - PHX-HARDWARE: confirm terminal Mbed results, rerun Full after this handover refresh, and record exact docs-head outcomes. Keep #373 DRAFT / UNMERGED.
 
+
+---
+
+## PHX-HARDWARE UTC05 correction — append-only ledger restored after bounded-read failure
+
+PR #373 remains OPEN / DRAFT / UNMERGED. Source/test commit `e411a99c23485f4f92720aa38cf29dca757b5190` has Focused PASS (9/9 new template mutations; existing EEPROM matrix PASS) and Mbed 3/3 PASS. The first docs refresh `36a910f0` used a bounded file-content response for the large ledger; exact docs-head Focused run #46113667258 job `140882561193` failed the append-only guard with candidate size 3,497 bytes versus 1,132,798-byte base. This was a documentation update error, not a source/test failure.
+
+The full original ledger was recovered from immutable parent blob `4d1590ed144e399f552e403c30b971c0bf3d022f` (1,188,219 characters), not from a partial fetch. Its prefix matches the exact #354 base blob `b950f7be47f79d71e6cb8b721801c1bae128df45` (1,131,320 characters) byte-for-byte after GitHub's UTF-8 representation. The complete prior history is restored and the UTC05 record is appended. Final append-only verification is pending on the repair head.
+
+## 2026-11-28 UTC05 — PR #373 template-marker tests and ledger restoration
+
+- Hardware source/test commit: `e411a99c23485f4f92720aa38cf29dca757b5190`; PR #373 remains OPEN / DRAFT / UNMERGED.
+- Focused source-head run [#46113449436](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46113449436), job `140881884708`: PASS; the new runtime-template mutation suite reports 9/9 rejected, while the existing EEPROM current/legacy/commit-retry matrix and 7/7 source mutations pass.
+- Mbed source-head run [#46113449427](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46113449427): source-contract `140881885041`, ESP32 core 3.3.13 `140881885126`, and core 4.0.0 `140881884923` all PASS.
+- Docs refresh commit `36a910f065fa506febf4134e6d7909cfca1c8d86` accidentally used the bounded `fetch_file` response for the 1.18M-character ledger. Docs-head Focused run [#46113667258](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46113667258), job `140882561193`, correctly FAILED: `CHANGE_LEDGER_APPEND_ONLY_FAIL candidate does not preserve the base byte-for-byte (common_prefix_bytes=0 base_bytes=1132798 candidate_bytes=3497)`. This is a handover-writing error, not a firmware/test regression.
+- Recovery: fetched the complete immutable parent ledger blob `4d1590ed144e399f552e403c30b971c0bf3d022f` (1,188,219 characters) and exact #354 base blob `b950f7be47f79d71e6cb8b721801c1bae128df45` (1,131,320 characters). Verified `fullLedger.startsWith(historicalBase) === true`; the full prior history is restored below with this record appended. No historical entry was reconstructed from snippets.
+- The docs-head Full run #46113667260 had not reached terminal state at this correction checkpoint. Its result must be re-read after this repair.
+- Updated UTC: 2026-11-28T05:49:14.868Z.
+
+**Disposition:** retain PR #373 DRAFT / UNMERGED. Re-run the focused append-only guard on the repaired docs head, then verify the final Full/Mbed results. Physical hardware acceptance remains NOT TESTED; HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
+

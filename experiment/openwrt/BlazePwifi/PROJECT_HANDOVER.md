@@ -1,3 +1,9 @@
+## PHX-HARDWARE UTC05 correction — append-only ledger restored after bounded-read failure
+
+PR #373 remains OPEN / DRAFT / UNMERGED. Source/test commit `e411a99c23485f4f92720aa38cf29dca757b5190` has Focused PASS (9/9 new template mutations; existing EEPROM matrix PASS) and Mbed 3/3 PASS. The first docs refresh `36a910f0` used a bounded file-content response for the large ledger; exact docs-head Focused run #46113667258 job `140882561193` failed the append-only guard with candidate size 3,497 bytes versus 1,132,798-byte base. This was a documentation update error, not a source/test failure.
+
+The full original ledger was recovered from immutable parent blob `4d1590ed144e399f552e403c30b971c0bf3d022f` (1,188,219 characters), not from a partial fetch. Its prefix matches the exact #354 base blob `b950f7be47f79d71e6cb8b721801c1bae128df45` (1,131,320 characters) byte-for-byte after GitHub's UTF-8 representation. The complete prior history is restored and the UTC05 record is appended. Final append-only verification is pending on the repair head.
+
 ## PHX-HARDWARE UTC05 — EEPROM fixture marker failure injection (#373) — SCOPED CI VERIFIED / FULL REFRESH REQUIRED
 
 **PR #373:** OPEN / DRAFT / UNMERGED  
