@@ -4095,3 +4095,15 @@ This is the required documentation-first IN-PROGRESS record. No source/test resu
 - Mbed #46140109953 was on adjacent docs head 659249d; source-contract and core 3.3.13 PASS, core 4.0.0 pending at last read. No Mbed result is claimed for this source/test SHA.
 - No production sketch, shared API, QA source, finance, signer, witness, migration, COE destination or physical device changed. Physical EEPROM/NVS and hardware acceptance NOT TESTED. Historical ledger prefix preserved; append only.
 
+
+## PHX-HW-20261128T12Z-EEPROM-CONNECTSTA-RUNTIME-NETWORK-GATE
+
+- Role: PHX-HARDWARE; PR #374 OPEN/DRAFT/UNMERGED; branch \`phoenix/hw-eeprom-begin-failclosed-20261128-utc07\`.
+- Source/test HEAD: \`4da5e7a8b8911538f2d3905e559f983b773e703d\`; parent #373 \`3783654a3c9862598bbb714268c536fb8b34578b\`.
+- Added source-extracted C++11 runtime coverage for the actual ESP8266 \`connectSta()\` path after EEPROM initialization failure. Four normal states pass; two injected guard removals fail at exact exits 10 and 20 after preceding markers.
+- Local smoke: g++ 14.2.0, ASan/UBSan; 4/4 normal cases PASS; 2/2 mutations rejected.
+- Exact-head GitHub Actions: NOT RUN / no status exposed for this SHA; workflow-dispatch action unavailable in connected GitHub tools. Full repo checkout also NOT RUN locally because github.com DNS failed.
+- This is SIMULATED test evidence only. No production sketch/API, QA-owned tests, financial state, signer/witness, migration, COE, device or release path changed. Physical EEPROM/NVS, GPIO/relay, 150 power cuts and 30-device/24-hour soak NOT TESTED.
+- Keep coin/relay denied; HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
+- Updated UTC: 2026-11-28T12:42:00Z.
+
