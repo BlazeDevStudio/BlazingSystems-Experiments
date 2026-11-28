@@ -4054,3 +4054,16 @@ This is the required documentation-first IN-PROGRESS record. No source/test resu
 - Mbed #46131685056 3/3 PASS on adjacent source/test SHA `44334e37`; exact docs-head rerun pending. Full #46132067088 failed mandatory handover freshness before root handover/ledger sync; CI-0701 PASS, target builds pending at time of checkpoint. Native Synthetic #46131685065 FAIL at QA-owned literal assertion `tests/v060_vendo_sequence_contract.py:18`.
 - No production sketch, controller contract, financial state, QA test, signer/witness, migration, COE destination or device changed. Physical brown-out/power-cut and all required hardware acceptance NOT TESTED. Coin/relay admission denied.
 - Next: exact docs-head Focused/Mbed/Full reruns; QA fixes semantic pending-state assertion; Master refreshes #374 assignment/integration pin.
+
+
+## 2026-11-28 — EEPROM runtime mutation attribution hardening (#374)
+
+- Task: PHX-HW-EEPROM-RUNTIME-MUTATION-ATTRIBUTION-20261128T10Z; role PHX-HARDWARE; branch `phoenix/hw-eeprom-begin-failclosed-20261128-utc07`.
+- Source/test commit: `2f1496ac98011f00ee2168118b0c8698b2ca82b5`; parent was prior branch HEAD `09374c8b232f925424d15bce830b1c375e11e024`.
+- The native fixture helper now exposes runtime exit status while preserving compile-time fail-fast behavior.
+- Five CheckedEEPROMClass runtime mutation cases now require exact expected exit codes and preceding success markers; compiler errors, unrelated crashes, and wrong assertion locations no longer count as valid mutation rejection.
+- Test-only cleanup uses `std::_Exit(6)` after flushing stdout to avoid double-free during the deliberately dangling-buffer mutation case.
+- Baseline exact-head evidence at 09374c8b232f925424d15bce830b1c375e11e024: Focused #46132251089 PASS; Mbed #46132251056 3/3 PASS; Full #46132251064 FAIL at QA-owned `tests/controllers.sh:21` literal `config_revision`; Native #46132251066 FAIL at QA-owned `tests/v060_vendo_sequence_contract.py:18` literal `if(any) return false;`.
+- New exact-head CI is pending. No production firmware, shared controller contract, QA assertion, financial state, signer/witness, migration, COE destination or device changed. Coin/relay admission remains denied. Physical EEPROM/NVS and power-cut acceptance NOT TESTED.
+- Historical ledger prefix preserved by append only.
+

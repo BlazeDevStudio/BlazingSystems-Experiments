@@ -1,3 +1,43 @@
+## PHX-HARDWARE UTC10 — Exact EEPROM runtime-mutation failure attribution (#374) — IN PROGRESS
+
+**Task:** PHX-HW-EEPROM-RUNTIME-MUTATION-ATTRIBUTION-20261128T10Z  
+**Role:** PHX-HARDWARE  
+**PR:** [#374](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/374), OPEN / DRAFT / UNMERGED  
+**Branch:** `phoenix/hw-eeprom-begin-failclosed-20261128-utc07`  
+**Parent #373:** `3783654a3c9862598bbb714268c536fb8b34578b`  
+**Prior branch HEAD:** `09374c8b232f925424d15bce830b1c375e11e024`  
+**Source/test commit:** `2f1496ac98011f00ee2168118b0c8698b2ca82b5`  
+**Documentation commit:** this additive handover update; final branch HEAD is read back after push.
+
+### Selected bounded task
+
+The existing CheckedEEPROMClass runtime mutation runner treated any nonzero fixture exit as a successful rejection. That could misclassify an unrelated assertion, abort, or crash as evidence that the intended invariant caught the mutation.
+
+### Actual changes
+
+- Added `compile_and_run_result()` to the shared Hardware-owned native fixture helper. Compilation still fails the test on compiler errors; runtime status/stdout/stderr are returned for explicit inspection.
+- Kept `compile_and_run()` behavior fail-fast for existing callers by raising `CalledProcessError` on nonzero runtime exit.
+- Changed the five CheckedEEPROMClass runtime mutations to require their exact expected invariant exit code and the expected preceding baseline marker.
+- The failed-read-buffer mutation uses a test-process-only `std::_Exit(6)` after flushing output, preventing the fake base destructor from double-freeing a deliberately dangling mutation fixture. This does not alter production firmware.
+
+### Baseline at prior exact HEAD
+
+At prior docs/branch HEAD `09374c8b232f925424d15bce830b1c375e11e024`:
+- Focused Poll Intake Deny [#46132251089](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46132251089): PASS.
+- Mbed TLS 3/4 [#46132251056](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46132251056): 3/3 PASS.
+- Full [#46132251064](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46132251064): FAIL in QA-owned `tests/controllers.sh:21`, literal `config_revision` presence assertion.
+- Native Synthetic [#46132251066](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46132251066): FAIL in QA-owned `tests/v060_vendo_sequence_contract.py:18`, literal `if(any) return false;` assertion.
+
+These are baseline results, not results for the new source/test commit. New exact-head CI is pending.
+
+### Safety and ownership
+
+Only Hardware-owned test/harness files changed. No production `.ino`, CORE API, controller schema, finance, accounting, pending receipt/disposition, QA-owned assertions, signer, witness, migration, COE destination, or hardware device changed. Coin/relay admission remains denied. This is host simulation/test-contract evidence only; EEPROM/NVS brown-out and physical power-cut behavior remain NOT TESTED.
+
+**Next exact action:** run Focused, Mbed and Full on the pushed docs HEAD; verify all five mutations fail at their intended exit/marker, then report QA/Master-owned blockers without editing their files.
+
+---
+
 ## PHX-HARDWARE UTC09 — CheckedEEPROMClass runtime allocation/flash-read matrix (#374) — IN PROGRESS
 
 **Task:** PHX-HW-CHECKED-EEPROM-BEGIN-RUNTIME-LAB-20261128T09Z  
