@@ -1,3 +1,20 @@
+## PHX-MASTER UTC07 — execution summary and blockers (2026-11-28T07:35Z)
+
+**Task:** PHX-MASTER-20261128T07Z-HW373-COE26-ROLE-CI-IMPORT-AUDIT · **Audit-start:** c52dcab4b4803ee5946b5d9b5f8d3008ae4a73b6.
+
+- EXECUTED: live issue/PR/branch reads; recursive source and destination Git trees; exact runtime/test blob+mode comparisons; SOURCE_INTAKE/MIGRATION_MAP reconciliation; project-root license path audit; role PR exact-head workflow/job/log inspection.
+- NOT RUN: Master Python suite, verify_coordination.py, local shell/native tests, and new Master Actions. GitHub DNS failure prevented a non-Codex local clone. Master head c52dcab4b4803ee5946b5d9b5f8d3008ae4a73b6 has no Actions run and no combined status.
+- HARDWARE #373: Focused/Mbed PASS; Full terminal FAIL at QA-owned controller parity; 14/14 target/platform builds PASS, downstream stages skipped.
+- COE #26: 61/61 runtime identities match pinned source/candidate, actual 46/15 vs declared 47/14; 15 derived tests present but map has 14 rows, one missing and two stale hashes; seven project-root license artifacts missing; all five workflows cancelled. No staging.
+- Private Drive registry v11/newer corrections NOT_RECOVERED; no Google Drive connector. No old registry substituted.
+- #266 OPEN / 0-of-7. P0 #177/#31/#32/#34/#43 OPEN. Branch-protection endpoint 403; effective enforcement UNKNOWN.
+
+**Next:** QA replaces the obsolete config_revision literal assertion with source-linked deny-only vectors and reruns Full on the exact successor SHA; COE owner reconciles migration map/license/branch pins before staging; registry custodian restores v11.
+
+**PRODUCTION NO-GO.**
+
+---
+
 ## PHX-MASTER UTC05 — execution summary and blockers
 
 **Task:** `PHX-MASTER-20261128T05Z-HW373-COE26-EXACT-TEST-LICENSE-ROLE-CI` · **Audit-start:** `2af334464185b0e8439a85812fbadf6d3ab79675`.
