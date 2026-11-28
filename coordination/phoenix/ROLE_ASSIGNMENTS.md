@@ -1,3 +1,18 @@
+## PHX-MASTER UTC10 role refresh — PHX-MASTER-20261128T10Z-HW374-COE26-ROLE-CI-ROUTES (2026-11-28T10:40:48Z)
+
+| Owner / PR | Exact head | Exact-head evidence |
+|---|---|---|
+| CORE #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | Build #42698139210 SUCCESS; CORE untouched by Master. |
+| RENTAL #289 | `68928774d0d7cf65adb26bc6b54199a3159d066c` | Build #43653329229 and isolated native auth #43653329235 SUCCESS. |
+| RENTAL #328 | `10fc200b6dbf470a95e679d3acc58aff4ab2a67f` | API21/23 smoke #45622918364, native auth #45622918551, APK identity #45622918340 SUCCESS; Build #45622918468 FAILURE. |
+| PISONET #255 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | Windows synthetic #42462978704 SUCCESS; native COM NOT TESTED. |
+| QA #290 | `5c29d15994cee1279058f1eca12f2a3180704292` | Windows synthetic #43633486963 SUCCESS; not native acceptance. |
+| QA #292 | `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | No exact-head workflow run. |
+| RELEASE #291 | `bf339a76964a1abe2412fac45392fe06a8e66418` | No exact-head workflow run. |
+| HARDWARE #373 | `3783654a3c9862598bbb714268c536fb8b34578b` | Poll #46118310162 PASS; Mbed #46118310195 PASS 3/3; Full #46118310135 FAIL at QA controller parity after 14/14 target builds pass. |
+| HARDWARE #374 | `09374c8b232f925424d15bce830b1c375e11e024` | Poll #46132251089 PASS; Mbed #46132251056 PASS 3/3; Native #46132251066 FAIL at PAY-0745 corrupt-persisted-state assertion; Full #46132251064 FAIL at QA Controller protocol parity after 14/14 target/platform + Android jobs pass. |
+
+#374's current exact PR head is `09374c8b232f925424d15bce830b1c375e11e024`; prior `44334e37` / `bdd69c75` rows are superseded. Native and Full failures are CI/test failures, not physical acceptance. CORE remains reserved to its separate owner; Master changed no subsystem source.
 ## PHX-MASTER UTC09 role refresh — PHX-MASTER-20261128T09Z-HW374-COE26-EXACT-HEAD-PROVENANCE (2026-11-28T10:01:48.418Z)
 
 | Owner / PR | Exact head | Exact-head evidence |
