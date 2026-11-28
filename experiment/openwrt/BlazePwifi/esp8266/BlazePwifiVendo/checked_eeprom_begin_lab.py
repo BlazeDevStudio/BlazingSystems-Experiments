@@ -22,7 +22,7 @@ def expect_contract_rejected(label: str, source: str, expected: str) -> None:
 
 
 def expect_runtime_rejected(
-    label: str, source: str, expected_return_code: int
+    label: str, source: str, expected_return_code: int, expected_output: str
 ) -> None:
     result = compile_and_run_result(
         checked_eeprom_begin_harness(source), f"checked_eeprom_{label}"
@@ -34,9 +34,14 @@ def expect_runtime_rejected(
             f"{label}: expected invariant exit {expected_return_code}, "
             f"got {result.returncode}; stdout={result.stdout!r}; stderr={result.stderr!r}"
         )
+    if expected_output not in result.stdout:
+        raise AssertionError(
+            f"{label}: did not reach preceding marker {expected_output!r}; "
+            f"stdout={result.stdout!r}; stderr={result.stderr!r}"
+        )
     print(
         f"CHECKED_EEPROM_RUNTIME_MUTATION_REJECTED {label} "
-        f"exit={expected_return_code}"
+        f"exit={expected_return_code} marker={expected_output}"
     )
 
 
@@ -97,12 +102,13 @@ def main() -> None:
         1,
     )
     expect_runtime_rejected(
-        "oversized-sector", oversized, 3
+        "oversized-sector", oversized, 3, "CHECKED_EEPROM_ZERO_SIZE_DENY_PASS"
     )
     expect_runtime_rejected(
         "allocation-failure-guard-removed",
         source.replace("if(!_data){", "if(false){", 1),
         13,
+        "CHECKED_EEPROM_INVALID_SIZE_DENY_PASS",
     )
     expect_runtime_rejected(
         "flash-read-failure-ignored",
@@ -112,6 +118,7 @@ def main() -> None:
             1,
         ),
         5,
+        "CHECKED_EEPROM_ALLOCATION_FAILURE_FAIL_CLOSED_PASS",
     )
     expect_runtime_rejected(
         "wrong-flash-sector",
@@ -121,6 +128,7 @@ def main() -> None:
             1,
         ),
         8,
+        "CHECKED_EEPROM_FLASH_READ_FAILURE_CLEANUP_PASS",
     )
     expect_runtime_rejected(
         "failed-read-buffer-not-cleared",
@@ -130,6 +138,7 @@ def main() -> None:
             1,
         ),
         6,
+        "CHECKED_EEPROM_ALLOCATION_FAILURE_FAIL_CLOSED_PASS",
     )
     print("CHECKED_EEPROM_BEGIN_RUNTIME_AND_MUTATION_MATRIX_PASS")
 

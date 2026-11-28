@@ -67,20 +67,26 @@ public:
     void markDirty() { _dirty = true; }
 };
 
+static void report(const char *message) {
+    puts(message);
+    fflush(stdout);
+}
+
 int main() {
     InspectableCheckedEEPROM store;
     if (store.beginChecked(0)) return 1;
     if (ESP.read_calls != 0 || store.data() != nullptr || store.size() != 0) return 2;
+    report("CHECKED_EEPROM_ZERO_SIZE_DENY_PASS");
     if (store.beginChecked(4097)) return 3;
     if (ESP.read_calls != 0 || store.data() != nullptr || store.size() != 0) return 4;
-    puts("CHECKED_EEPROM_INVALID_SIZE_DENY_PASS");
+    report("CHECKED_EEPROM_INVALID_SIZE_DENY_PASS");
 
     InspectableCheckedEEPROM allocation_failure_store;
     fail_next_array_allocation = true;
     if (allocation_failure_store.beginChecked(128)) return 12;
     if (allocation_failure_store.data() != nullptr || allocation_failure_store.size() != 0 ||
         allocation_failure_store.dirty() || ESP.read_calls != 0) return 13;
-    puts("CHECKED_EEPROM_ALLOCATION_FAILURE_FAIL_CLOSED_PASS");
+    report("CHECKED_EEPROM_ALLOCATION_FAILURE_FAIL_CLOSED_PASS");
 
     store.markDirty();
     ESP.read_result = false;
@@ -89,7 +95,7 @@ int main() {
         fflush(stdout);
         std::_Exit(6);
     }
-    puts("CHECKED_EEPROM_FLASH_READ_FAILURE_CLEANUP_PASS");
+    report("CHECKED_EEPROM_FLASH_READ_FAILURE_CLEANUP_PASS");
 
     ESP.read_result = true;
     if (!store.beginChecked(4093)) return 7;
@@ -97,16 +103,16 @@ int main() {
         ESP.read_size != 4096 || store.sector() != 17U || store.dirty()) return 8;
     uint8_t *first = store.data();
     if (!store.beginChecked(4093) || store.data() != first || ESP.read_calls != 3) return 9;
-    puts("CHECKED_EEPROM_ALIGNED_SECTOR_READ_AND_REUSE_PASS");
+    report("CHECKED_EEPROM_ALIGNED_SECTOR_READ_AND_REUSE_PASS");
 
     if (!store.beginChecked(100) || store.size() != 100 ||
         ESP.address != 17U * 4096U || ESP.read_size != 100) return 10;
-    puts("CHECKED_EEPROM_RESIZE_REINITIALIZE_PASS");
+    report("CHECKED_EEPROM_RESIZE_REINITIALIZE_PASS");
 
     uint8_t *before_invalid = store.data();
     if (store.beginChecked(0) || store.data() != before_invalid ||
         store.size() != 100 || ESP.read_calls != 4) return 11;
-    puts("CHECKED_EEPROM_INVALID_RETRY_PRESERVES_READY_BUFFER_PASS");
+    report("CHECKED_EEPROM_INVALID_RETRY_PRESERVES_READY_BUFFER_PASS");
     return 0;
 }
 """
