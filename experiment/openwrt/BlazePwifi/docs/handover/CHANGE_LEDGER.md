@@ -4079,3 +4079,16 @@ Private \`BLAZE_PROJECT_REGISTRY_v11_20261027.json\` remains NOT RECOVERED; no s
 - **Source-head Mbed:** [#46083988148](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46083988148) 3/3 PASS. **Source-head Focused:** [#46083988151](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46083988151) PASS.
 - **Blockers:** QA controller parity; CORE authenticated register/poll/receipt contract; P0 #177; Master role-matrix refresh; physical acceptance, witness, durable accounting/replay and migration.
 - **NEXT ACTION:** QA/CORE resolve parity without unauthenticated fields; Master refresh #367 matrix; Hardware recheck current-head Mbed/Full runs and preserve DRAFT/deny-only state.
+
+
+## 2026-11-28 — PHX-HARDWARE UTC00 — modularize deny-latch source contract and exact-head CI recheck
+
+- **ID:** PHX-HW-PR367-CONTRACT-MODULARIZATION-20261128T00
+- **Recorded:** 2026-11-28T00:41:06Z; repository `BlazeDevStudio/BlazingSystems-Experiments`; branch `phoenix/hw-deny-latch-monotonicity-20261127-utc21`; PR #367 OPEN / DRAFT / UNMERGED.
+- **Source/test SHA:** `985a54c289b8e3c796c2bcc977f652b178b293c0`; one Hardware-owned host contract file refactored into named alias-family and assignment validators. No production sketch or shared API changed.
+- **Focused:** [#46089157326](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46089157326), job `140805735661`: PASS; 7/7 direct and 10/10 alias mutations rejected per board; decoy/positive controls accepted.
+- **Mbed:** [#46089157351](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46089157351); source-contract `140805735998` PASS; core 3.3.13 `140805736279` PASS; core 4.0.0 `140805736289` IN_PROGRESS at readback.
+- **Full:** push [#46089151346](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46089151346) validation `140805785941` FAIL at handover freshness; PR [#46089157387](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46089157387) validation `140805804838` same. CI-0701 PASS; target builds mostly PASS/in progress; downstream stages skipped. This is not yet the QA controller-parity failure.
+- **Known prior Full blocker:** [#46084788285](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46084788285) on `778220aa...` reached `tests/controllers.sh:21` and failed the QA-owned `config_revision` assertion; all 14 target/platform jobs passed there. Do not add an unauthenticated placeholder.
+- **Blockers:** P0 #177 poll-before-first-sample; QA controller parity; CORE authenticated register/poll/receipt contract; physical 150 cuts/30-device soak/electrical recovery; witness; durable accounting/replay; v1-to-v2 migration; independent QA/release signoff; private Drive registry v11 unavailable.
+- **NEXT ACTION:** canonical handover sync then exact-head Full rerun; QA/CORE resolve their owned contract; keep coin/relay denied and PR DRAFT.
