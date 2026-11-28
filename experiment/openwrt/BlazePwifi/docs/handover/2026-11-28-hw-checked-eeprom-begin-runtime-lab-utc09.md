@@ -1,3 +1,34 @@
+## PHX-HARDWARE UTC11 — checked EEPROM runtime mutation runner correction (#374)
+
+**Task:** PHX-HW-EEPROM-RUNTIME-MUTATION-RUNNER-FIX-20261128T11Z  
+**Role:** PHX-HARDWARE  
+**PR:** [#374](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/374), OPEN / DRAFT / UNMERGED  
+**Branch:** `phoenix/hw-eeprom-begin-failclosed-20261128-utc07`  
+**Parent #373:** `3783654a3c9862598bbb714268c536fb8b34578b`  
+**Prior docs HEAD:** `76dfffbffad9ba68ce5f1d3ea397b9701e698a7d`  
+**Source/test HEAD:** `20cb46b02e2885438c42f53d8990b3da87ff7fd0`
+
+### Proven test-runner defect and correction
+
+The helper `expect_runtime_rejected(label, source, expected_return_code)` accepts three arguments. Four mutation call sites still passed a fourth, obsolete stdout-marker argument after the earlier helper change. Exact Poll workflow #46138676580 / job 140959565121 reproduced the defect as a `TypeError` at `checked_eeprom_begin_lab.py:102`. The previous test therefore did not complete its intended mutation matrix.
+
+The current source removes the four obsolete arguments. The five runtime mutations now require their exact invariant exits: oversized sector=3, allocation failure=13, ignored flash-read failure=5, wrong sector=8, and stale buffer after failed read=6. Compiler failures remain fatal; arbitrary nonzero exits are not accepted as mutation evidence.
+
+### Exact-head evidence
+
+- Corrected exact-source Poll Intake Deny [#46139742888](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46139742888), job `140962803936`: **PASS**. All five runtime mutation cases emitted their expected exit codes (3, 13, 5, 8, 6); all five source mutations were rejected; the valid bounds/allocation/read-failure/resize/reuse scenarios passed. Existing EEPROM config failure injection remained 17/17 and pending-recovery promotion passed 15 scenarios per board.
+- Full [#46139739101](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46139739101), validation job `140962844258`: **FAIL at handover freshness**, because this source/test commit was newer than `PROJECT_HANDOVER.md`; the gate identified `checked_eeprom_begin_lab.py` and prior checkpoint `76dfffb`. This record synchronizes the handover; Full must be rerun on the new docs head. The same run's 14/14 target/platform + Android builds passed (ESP8266, ESP32, Android, x86_64, Ruijie and supported Orange Pi targets).
+- Mbed TLS matrix [#46138676583](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46138676583): 3/3 PASS on prior docs head `76dfffb`; no separate Mbed matrix was triggered on `20cb46b02e2885438c42f53d8990b3da87ff7fd0`. The corrected commit changes only the native test runner, not either production sketch.
+- Native Synthetic [#46138676568](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46138676568), job `140959565383`: FAIL at QA-owned `tests/v060_vendo_sequence_contract.py:18`, which requires literal `if(any) return false;`. Hardware did not edit the QA assertion or add decoy source text.
+
+### Scope and safety
+
+Only `checked_eeprom_begin_lab.py` changed in the source/test correction. No production `.ino`, CORE API, controller schema, finance, accounting, pending disposition, signer, witness, migration, COE destination, QA-owned assertion, or physical device changed. Coin/relay admission remains denied. This is host simulation / CI evidence only. EEPROM/NVS brown-out and all physical acceptance remain NOT TESTED.
+
+**Disposition:** scoped runtime mutation harness = CI VERIFIED; HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.  
+**Next:** rerun Full on the synchronized docs head; QA owns replacing the stale literal pending-state assertion with source-linked semantic vectors; Master owns refreshing #374's exact head in role/integration matrices.
+---
+
 ## PHX-HARDWARE UTC10 correction — runtime mutation failure attribution (#374)
 
 **Task:** PHX-HW-EEPROM-RUNTIME-MUTATION-ATTRIBUTION-20261128T10Z  

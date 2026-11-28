@@ -4075,3 +4075,13 @@ This is the required documentation-first IN-PROGRESS record. No source/test resu
 - Exact-head Focused #46138392550 / job 140958701627 failed because the fixture's stdout marker was empty even though the oversized mutation returned the expected exit code 3. This was a test assertion defect, not a firmware failure.
 - Removed stdout-marker requirements; exact expected return codes remain required for all five mutations. Compilation errors remain fatal and cannot count as mutation rejection.
 - New corrected-source CI pending. Append only; historical ledger prefix preserved. No production firmware, shared API, QA assertion, finance, signer, witness, migration, COE destination or hardware changed.
+
+## 2026-11-28 — checked EEPROM runtime mutation runner correction (#374)
+
+- Task: PHX-HW-EEPROM-RUNTIME-MUTATION-RUNNER-FIX-20261128T11Z; source/test HEAD `20cb46b02e2885438c42f53d8990b3da87ff7fd0`, branch `phoenix/hw-eeprom-begin-failclosed-20261128-utc07`, PR #374 OPEN / DRAFT / UNMERGED.
+- Proven failure: prior Poll #46138676580 / job 140959565121 raised TypeError because four runtime mutation calls still passed a fourth stdout-marker argument to a three-parameter helper.
+- Correction: removed the four stale arguments; exact runtime exit codes 3, 13, 5, 8 and 6 remain mandatory. Corrected Poll #46139742888 / job 140962803936 PASS; five source mutations and five runtime mutations rejected, all expected runtime scenarios pass.
+- Full #46139739101 / job 140962844258 failed at handover freshness because this source/test commit was newer than the root handover. Its 14/14 target/platform + Android builds passed. This record synchronizes the handover; rerun Full on the new docs head.
+- Native Synthetic #46138676568 remains blocked by QA-owned literal `if(any) return false;` assertion at `tests/v060_vendo_sequence_contract.py:18`. Mbed #46138676583 was 3/3 PASS on adjacent docs head 76dff; no Mbed run on 20cb46.
+- No production sketch, shared API, finance, QA source, signer, witness, migration, COE destination or device changed. Physical EEPROM/NVS and hardware acceptance NOT TESTED. Historical ledger prefix preserved; append only.
+
