@@ -27,4 +27,4 @@ No production `.ino` sketch, GPIO runtime behavior, CORE API, finance, journal d
 
 ## Evidence
 
-Exact-head Focused Hardware and Mbed TLS runs are requested by the DRAFT PR. Results will be recorded only after GitHub Actions reaches terminal status. Full integration remains subject to the existing QA-owned controller-parity assertion; this child does not modify it.
+Exact-head Focused Hardware [run #46094348641](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46094348641), job `140822175939`, passed on branch head `d0439b62e678a94854498a47becef7f2c09ac3e9`. Both boards rejected 14/14 alias mutations, including 4/4 C-style/reinterpret-cast cases. Full [run #46094348644](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46094348644) failed its validation job at the stale root handover freshness gate before target jobs completed; this checkpoint refreshes the root handover and requires a fresh Full rerun. No terminal Full result is claimed.

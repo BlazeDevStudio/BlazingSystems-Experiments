@@ -1954,3 +1954,30 @@ The first split commit `d4f65ab7f72fabc6160cf70609a9258f1f757120` omitted the ru
 Full push [#46040057846](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46040057846), validation job `140645440782`, and Full PR [#46040095561](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46040095561), validation job `140645415590`, failed the handover-freshness gate because the `f77869c4` runner correction had not yet been recorded in this live handover. This commit records the exact source/test SHA and evidence; a fresh Full run is required. Do not transfer parent #362's controller-parity result to this child.
 
 **Scope:** host-lab modularization only; no production firmware sketch or runtime behavior changed. `CHANGE_LEDGER.md` remains byte-identical to the parent and its append-only guard remains enabled. Physical acceptance remains NOT TESTED; HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+
+
+## PHX-HARDWARE UTC01 — deny-latch cast-alias regression child #368
+
+**Current child PR:** [#368](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/368), OPEN / DRAFT / UNMERGED  
+**Branch:** `phoenix/hw-deny-latch-cast-alias-20261128-utc01`  
+**Parent PR #367 HEAD:** `4e558a06ff558dffef8a966a6e412029e7340119`  
+**Source/test commit:** `b35072bfb2b74f3bc4bdca31381d178261d1ae35`  
+**Workflow wiring / current branch head at this checkpoint:** `d0439b62e678a94854498a47becef7f2c09ac3e9`
+
+### Exact focused evidence
+
+- Focused Hardware [run #46094348641](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46094348641), exact head `d0439b62e678a94854498a47becef7f2c09ac3e9`, job `140822175939`: **PASS**.
+- Earlier source/test-head Focused [run #46094288923](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46094288923), job `140821990488`: **PASS** at `b35072b`.
+- Exact-head logs show ESP8266 and ESP32 each reject **14/14** alias mutations, including **4/4** new C-style / `reinterpret_cast` cases. Logical-AND and comment/string decoys remain accepted/ignored.
+- Existing blocking-poll, transport, request-auth, startup-output, config-persistence and pending-recovery host labs also pass in the focused workflow. These remain SIMULATED / CI VERIFIED only.
+- The workflow's append-only ledger guard passed. `CHANGE_LEDGER.md` was not modified in this child.
+
+### Full workflow freshness correction
+
+Full [run #46094348644](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46094348644) at the pre-handover head `d0439b62` had CI-0701 PASS but validation job `140822297524` failed the handover freshness gate: source/test files were newer than this root `PROJECT_HANDOVER.md` checkpoint. This record is the required live handover update; rerun Full on the resulting exact head. At the last read, target jobs were still running, so no terminal target-build aggregate is claimed from that run.
+
+### Scope and release boundary
+
+Only the deny-latch source contract, failure-injection cases, focused workflow branch allowlist and handover records changed. No production `.ino`, CORE API, finance, journal disposition, QA-owned assertion, migration, signer, witness or COE file changed. This bounded regex contract does not prove arbitrary C++ alias safety, opaque helper-return safety, memory safety or electrical behavior. Coin and relay admission remain deny-only.
+
+Physical GPIO/relay behavior, LittleFS power-loss durability, 150 power cuts, 30-device / 24-hour soak and electrical pulse/recovery remain NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
