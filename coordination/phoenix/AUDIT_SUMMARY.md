@@ -1,3 +1,14 @@
+## PHX-MASTER UTC10 summary — PHX-MASTER-20261128T10Z-HW374-COE26-ROLE-CI-ROUTES (2026-11-28T10:40:48Z)
+
+**Disposition:** BLOCKED / PRODUCTION NO-GO. Audit-start Master head `c7798bf63d7f545b98bbbb7c8db68d57f0f36559`; PR #288 OPEN/DRAFT/UNMERGED, 707 ahead / 1 behind, 271 coordination-only paths, no Master CI runs.
+
+- Live refs: Experiments main `6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5`, development `aad3aade72c1156eecba1fed30907c6d0283b2c5`, v0.6 `2fbd2475e9f54878c316fa7cea2f228386b0e859`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`.
+- HARDWARE #374 current head `09374c8b232f925424d15bce830b1c375e11e024`: Poll/Mbed PASS; Native FAIL at QA PAY-0745 corrupt-persisted-state assertion; Full FAIL at QA Controller protocol parity after 14/14 target/platform + Android jobs PASS. No physical acceptance.
+- COE #26 remains FROZEN: 61/61 runtime blobs match but 46/15 vs 47/14; 149 source tests vs 19 candidate; map 14/15 derived, voucher row missing, two stale hashes, seven license/notice counterparts missing; five workflows CANCELLED.
+- Cleanup #266 OPEN / 0-of-7; P0 #177 OPEN; private registry v11/newer corrections NOT RECOVERED; no Drive connector. Master suite and `verify_coordination.py` NOT RUN.
+- Executed bounded ownership-route validation 5/5 PASS (in-memory manifest check only). No subsystem source, COE destination, payment or hardware operation changed.
+
+[Full UTC10 report](PHX_MASTER_UTC10_20261128_HW374_ROLE_CI_AND_COE26_PROVENANCE_AUDIT.md).
 ## PHX-MASTER UTC09 summary — PHX-MASTER-20261128T09Z-HW374-COE26-EXACT-HEAD-PROVENANCE (2026-11-28T10:01:48.418Z)
 
 **Disposition:** BLOCKED / PRODUCTION NO-GO. Master audit-start head `298b6a4b0600a0440a806d816431d694ccae4371`; PR #288 OPEN/DRAFT/UNMERGED, 705 ahead / 1 behind, 270 coordination-only paths, no Master CI runs.
