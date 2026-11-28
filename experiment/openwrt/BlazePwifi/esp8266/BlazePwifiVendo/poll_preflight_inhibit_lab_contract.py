@@ -354,6 +354,52 @@ def _reject_reference_aliases(masked: str, protected_pattern: str) -> None:
         )
 
 
+
+def _reject_named_reference_type_aliases(masked: str, protected_pattern: str) -> None:
+    """Reject direct or chained using/typedef reference aliases to protected fields."""
+    aliases = {}
+    for match in re.finditer(
+        r"\busing\s+(?P<alias>[A-Za-z_]\w*)\s*=\s*(?P<type>[^;]+);",
+        masked,
+    ):
+        aliases[match.group("alias")] = match.group("type")
+    for match in re.finditer(
+        r"\btypedef\s+(?P<type>[^;]+?)\s+(?P<alias>[A-Za-z_]\w*)\s*;",
+        masked,
+    ):
+        aliases[match.group("alias")] = match.group("type")
+
+    reference_aliases = set()
+    changed = True
+    while changed:
+        changed = False
+        for alias, type_expression in aliases.items():
+            if alias in reference_aliases:
+                continue
+            if "&" in type_expression or any(
+                re.search(rf"\b{re.escape(existing)}\b", type_expression)
+                for existing in reference_aliases
+            ):
+                reference_aliases.add(alias)
+                changed = True
+
+    if not reference_aliases:
+        return
+
+    alias_pattern = "|".join(
+        re.escape(alias) for alias in sorted(reference_aliases)
+    )
+    match = re.search(
+        rf"\b(?:(?:const|volatile)\s+)*(?:{alias_pattern})\s+"
+        rf"[A-Za-z_]\w*\s*=\s*\(?\s*(?P<name>{protected_pattern})\b",
+        masked,
+    )
+    if match:
+        raise AssertionError(
+            f"{match.group('name')}: named reference-type alias can bypass the deny-latch assignment guard"
+        )
+
+
 def _reject_decltype_auto_aliases(masked: str, protected_pattern: str) -> None:
     """Reject parenthesized lvalues whose decltype(auto) deduction preserves reference."""
     match = re.search(
@@ -472,6 +518,7 @@ def deny_latch_assignment_contract(source: str) -> None:
     # contract boundary that needs review.
     _reject_address_escapes(masked, protected_pattern)
     _reject_reference_aliases(masked, protected_pattern)
+    _reject_named_reference_type_aliases(masked, protected_pattern)
     _reject_decltype_auto_aliases(masked, protected_pattern)
     _reject_reference_wrappers(masked, protected_pattern)
     _validate_runtime_state_assignments(source, masked)

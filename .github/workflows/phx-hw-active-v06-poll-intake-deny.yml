@@ -9,6 +9,7 @@ on:
       - phoenix/hw-pending-recovery-contract-module-split-20261128-utc17
       - phoenix/hw-output-enable-lab-modules-20261128-utc19
       - phoenix/hw-deny-latch-cast-alias-20261128-utc01
+      - phoenix/hw-deny-latch-type-alias-20261128-utc02
     paths:
       - 'experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino'
       - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/BlazePwifiVendo.ino'
@@ -29,6 +30,7 @@ on:
       - 'experiment/openwrt/BlazePwifi/PROJECT_HANDOVER.md'
       - 'experiment/openwrt/BlazePwifi/docs/handover/CURRENT_STATE.md'
       - 'experiment/openwrt/BlazePwifi/docs/handover/2026-11-28-hw-pending-recovery-contract-module-split-utc17.md'
+      - 'experiment/openwrt/BlazePwifi/docs/handover/2026-11-28-hw-typedef-reference-alias-guard-utc02.md'
       - 'experiment/openwrt/BlazePwifi/docs/handover/CHANGE_LEDGER.md'
       - 'experiment/openwrt/BlazePwifi/tools/handover_ledger_append_only_guard.py'
       - 'experiment/openwrt/BlazePwifi/tests/handover_ledger_append_only_guard_test.py'
@@ -57,6 +59,7 @@ on:
       - 'experiment/openwrt/BlazePwifi/PROJECT_HANDOVER.md'
       - 'experiment/openwrt/BlazePwifi/docs/handover/CURRENT_STATE.md'
       - 'experiment/openwrt/BlazePwifi/docs/handover/2026-11-28-hw-pending-recovery-contract-module-split-utc17.md'
+      - 'experiment/openwrt/BlazePwifi/docs/handover/2026-11-28-hw-typedef-reference-alias-guard-utc02.md'
       - 'experiment/openwrt/BlazePwifi/docs/handover/CHANGE_LEDGER.md'
       - 'experiment/openwrt/BlazePwifi/tools/handover_ledger_append_only_guard.py'
       - 'experiment/openwrt/BlazePwifi/tests/handover_ledger_append_only_guard_test.py'

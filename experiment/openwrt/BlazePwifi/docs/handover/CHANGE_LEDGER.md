@@ -4124,3 +4124,34 @@ Private \`BLAZE_PROJECT_REGISTRY_v11_20261027.json\` remains NOT RECOVERED; no s
 - Full run #46094498502 validation job `140822787592`: failed handover freshness because this ledger checkpoint was stale at `4e558a06`. Root `PROJECT_HANDOVER.md` and `CURRENT_STATE.md` had already been refreshed. This entry restores the complete prior ledger blob and appends this evidence.
 - **Recovery note:** an intermediate ledger-update commit `5a58fd7e` contained only the new entry because the large-file reader returned an empty content window. It was not merged. This correction restores the exact original Git blob prefix `1616d32103fd20b594a5444e9cb0363b39bbd9c6` byte-for-byte and appends the evidence. No history was force-pushed or rewritten.
 - No production sketch, CORE API, finance, journal disposition, QA assertion, migration, signer, witness or COE file changed. Physical acceptance remains NOT TESTED; HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+
+
+## 2026-11-28 UTC02 — PHX-HARDWARE PR #369 named reference-type alias guard
+
+- Role: PHX-HARDWARE; repository: BlazeDevStudio/BlazingSystems-Experiments.
+- Branch: `phoenix/hw-deny-latch-type-alias-20261128-utc02`; parent PR #368 exact base `9885c81d934922fe35777d5c8f7245766b622255`; source/test commit `5e3c802ce9ccf21c621fd99807604eb3baf56b27`; pre-ledger head `616e29751ddc317d0ca6442bb32d3c5847880694`.
+- Added direct/chained C++ `using` and `typedef` reference-type alias detection for protected runtime fields. Added three alias failure injections per board and an unrelated-local-reference positive control; target matrix 17/17 per board.
+- Focused run [#46099926022](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46099926022), job `140839820433`: PASS. Logs show ESP8266 and ESP32 each reject 17/17 alias mutations; existing 7/7 direct mutations, 4/4 cast mutations, positive logical-AND/local alias controls, poll transport matrix and output-deny labs pass.
+- Mbed run [#46099925966](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46099925966): source-contract job `140839820917` PASS; ESP32 core 3.3.13/4.0.0 target jobs were IN_PROGRESS at this ledger checkpoint.
+- Full run [#46099926023](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46099926023): CI-0701 job `140839820874` PASS; validation job `140839866567` failed the mandatory handover-freshness gate because this ledger entry had not yet been appended. Root `PROJECT_HANDOVER.md` and `CURRENT_STATE.md` were refreshed first. Firmware target jobs were still running at this readback; no Full success is claimed.
+- The original CHANGE_LEDGER blob was recovered by exact immutable blob SHA `41999d8d8194d06f9c7c58d4037292a8bc0dc687` (1,209,932 characters); this entry is appended after the complete original content. No historical entry was replaced or deleted.
+- No production `.ino`, CORE API, finance, journal disposition, QA assertion, signer, witness, migration, release or COE source changed. P0 #177 remains open; coin/relay remain deny-only. Physical GPIO/relay, LittleFS power-loss, 150 power cuts, 30-device/24-hour soak and electrical pulse/recovery remain NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+
+
+## 2026-11-28 UTC02 — PR #369 exact-head CI terminal result
+
+- Role PHX-HARDWARE; PR #369 branch `phoenix/hw-deny-latch-type-alias-20261128-utc02`; parent #368 exact base `9885c81d934922fe35777d5c8f7245766b622255`; tested head `c3648fbb1ce7dbd905a061be0aaa81dcb18b511e`; source/test commit `5e3c802ce9ccf21c621fd99807604eb3baf56b27`.
+- Focused [#46100115505](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46100115505), job `140840406605`: PASS. ESP8266 and ESP32 each reject 17/17 named reference-alias mutations, 7/7 direct mutations and 4/4 cast mutations; local alias decoys and logical-AND positive controls pass.
+- Mbed [#46100115477](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46100115477): 3/3 PASS — source contract `140840461486`, ESP32 core 3.3.13 `140840461623`, core 4.0.0 `140840461652`.
+- Full [#46100115480](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46100115480): terminal FAILURE at QA-owned validation job `140840509447`, `tests/controllers.sh:21` literal `config_revision` presence assertion. Mandatory handover freshness passed; all 14/14 target/platform builds including Android passed; downstream validation-dependent simulation/update/sign/release stages were skipped.
+- The prior ledger checkpoint `c3648fbb1ce7dbd905a061be0aaa81dcb18b511e` repaired the stale-ledger freshness failure. This entry records the subsequent exact-head Full result; no code or test assertion was altered to bypass QA ownership.
+- Original ledger prefix remains byte-for-byte preserved; this is append-only.
+- No production `.ino`, CORE API, QA test, finance, journal, signer, witness, migration, release or COE source changed. P0 #177 remains open; coin/relay remain deny-only. Physical GPIO/relay, LittleFS power-loss, 150 power cuts, 30-device/24-hour soak and electrical pulse/recovery remain NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+
+
+## 2026-11-28 UTC02 — PHX-HARDWARE ledger provenance label correction
+
+- This append-only entry corrects a label in the preceding UTC02 handover: `c3648fbb1ce7dbd905a061be0aaa81dcb18b511e` was the prior ledger checkpoint that repaired the initial stale-ledger freshness failure; it was not the final ledger append commit. The subsequent final-results ledger append is contained in the current branch history after that checkpoint.
+- No ledger bytes were rewritten or removed. The complete existing ledger blob is the prefix of this file; this is an append-only correction.
+- Exact source/test CI evidence remains at `c3648fbb1ce7dbd905a061be0aaa81dcb18b511e`: Focused #46100115505 PASS, Mbed #46100115477 3/3 PASS, Full #46100115480 terminal validation failure at QA-owned `tests/controllers.sh:21` with 14/14 target/platform jobs PASS.
+- Production firmware sketches and shared APIs remain untouched; P0 #177, physical acceptance, finance, witness, migration and release gates remain open. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
