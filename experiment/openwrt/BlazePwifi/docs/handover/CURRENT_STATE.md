@@ -1,3 +1,13 @@
+## PHX-HARDWARE UTC13 — centralize the deny-only synchronous poll boundary
+
+**Stacked draft:** child of PR #366, branch `phoenix/hw-poll-deny-wrapper-20261128-utc13`, parent `07fef4e8e1055c06cf5e5c3a0d3829c52be31cc9`. Exact implementation is recorded in the new narrow handover `docs/handover/2026-11-28-hw-poll-deny-wrapper-utc13.md`.
+
+Both board sketches now route the bounded blocking poll through one `pollDenyOnly()` helper. The helper owns the pre-poll deny, explicitly discarded POST, post-poll deny, and completion timestamp. The source-extracted contract requires the helper to be the sole poll callsite and adds bypass/response-consumption failure injection. This is a structure/guardrail change on the deny-only candidate stack; it does not enable coins or claim to resolve physical pulse retention.
+
+Exact-head Poll, Mbed TLS 3/4 and Full CI are pending. Physical GPIO/relay/pulse, power-cut, soak, migration, signer/witness and financial acceptance remain NOT TESTED / NOT ACCEPTED. HARDWARE ACCEPTED=NO; PRODUCTION NO-GO.
+
+---
+
 ## PHX-HARDWARE UTC19 — startup GPIO sequence lab modularization
 
 **PR #366: OPEN / DRAFT / UNMERGED** — child of #365; base remains e65b0b895af9c3fc5e5632f704cb67b347e69725.

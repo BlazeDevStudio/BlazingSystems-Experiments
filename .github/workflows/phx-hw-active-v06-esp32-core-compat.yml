@@ -5,10 +5,12 @@ on:
     branches:
       - phoenix/hw-active-v06-poll-intake-deny-20261126-utc05
       - phoenix/hw-pending-candidate-collision-guard-20261127-utc15
+      - phoenix/hw-poll-deny-wrapper-20261128-utc13
     paths:
       - 'experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino'
       - 'experiment/openwrt/BlazePwifi/tools/package-vendo-source.py'
       - 'experiment/openwrt/BlazePwifi/docs/handover/CURRENT_STATE.md'
+      - 'experiment/openwrt/BlazePwifi/docs/handover/2026-11-28-hw-poll-deny-wrapper-utc13.md'
       - 'experiment/openwrt/BlazePwifi/docs/handover/CHANGE_LEDGER.md'
       - 'experiment/openwrt/BlazePwifi/PROJECT_HANDOVER.md'
       - 'experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/mbedtls_sha256_compat_lab.py'
@@ -19,6 +21,7 @@ on:
       - 'experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino'
       - 'experiment/openwrt/BlazePwifi/tools/package-vendo-source.py'
       - 'experiment/openwrt/BlazePwifi/docs/handover/CURRENT_STATE.md'
+      - 'experiment/openwrt/BlazePwifi/docs/handover/2026-11-28-hw-poll-deny-wrapper-utc13.md'
       - 'experiment/openwrt/BlazePwifi/docs/handover/CHANGE_LEDGER.md'
       - 'experiment/openwrt/BlazePwifi/PROJECT_HANDOVER.md'
       - 'experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/mbedtls_sha256_compat_lab.py'

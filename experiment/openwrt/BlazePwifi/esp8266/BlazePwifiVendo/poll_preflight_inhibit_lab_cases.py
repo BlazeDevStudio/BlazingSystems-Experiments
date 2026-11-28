@@ -216,6 +216,7 @@ def verify_board(name: str, path: Path):
         raise AssertionError(f"{name}: automatic coin POST must remain absent from firmware")
     verify_register_preflight(name, source)
     loop, poll_block, pre_guard, poll_at, post_guard = poll_guard_locations(source)
+    poll_helper = extract_function(source, "void pollDenyOnly()")
     if not (pre_guard < poll_at < post_guard):
         raise AssertionError(f"{name}: invalid poll guard order")
 
@@ -335,14 +336,12 @@ def verify_board(name: str, path: Path):
 
     # Failure injection: remove the pre-poll guard while retaining the
     # post-poll guard. The source-order assertion must reject this regression.
-    mutated_loop = loop
-    loop_start = mutated_loop.find("void loop()")
-    pre_guard_global = loop_start + mask_non_code(mutated_loop[loop_start:]).find("denyRemoteControl();")
-    if pre_guard_global < loop_start:
+    mutated_helper = poll_helper.replace("denyRemoteControl();", "", 1)
+    if mutated_helper == poll_helper:
         raise AssertionError(f"{name}: pre-poll guard not found for mutation")
-    mutated_loop = mutated_loop[:pre_guard_global] + mutated_loop[pre_guard_global + len("denyRemoteControl();"):]
+    mutated_source = source.replace(poll_helper, mutated_helper, 1)
     try:
-        poll_guard_locations(mutated_loop)
+        poll_guard_locations(mutated_source)
     except AssertionError:
         pass
     else:
@@ -352,14 +351,14 @@ def verify_board(name: str, path: Path):
     # Failure injection: a deny call nested under a false condition must not
     # satisfy the pre-poll guard requirement.
     expect_poll_guard_mutation_rejected(
-        name, loop,
+        name, source,
         r"denyRemoteControl\(\);\s*\(void\)post\(\"poll\"\);",
         'if (false) { denyRemoteControl(); }\n    (void)post("poll");',
         "braced conditional pre-poll guard",
         "pre-poll: deny guard must be an unconditional standalone statement",
     )
     expect_poll_guard_mutation_rejected(
-        name, loop,
+        name, source,
         r"denyRemoteControl\(\);\s*\(void\)post\(\"poll\"\);",
         'if (false) denyRemoteControl();\n    (void)post("poll");',
         "unbraced conditional pre-poll guard",
@@ -391,14 +390,13 @@ def verify_board(name: str, path: Path):
 
     # Failure injection: a poll request outside the bounded guarded block
     # must be rejected, not hidden by the first guarded site.
-    poll_matches = poll_call_matches(loop)
-    poll_at = poll_matches[0].start() if poll_matches else -1
-    sample_at = mask_non_code(loop).find("digitalRead(runCoinPin)", poll_at)
-    if poll_at < 0 or sample_at < 0:
+    sample_at = mask_non_code(loop).find("digitalRead(runCoinPin)")
+    if sample_at < 0:
         raise AssertionError(f"{name}: cannot place unguarded second-poll mutation")
     mutated_loop = loop[:sample_at] + '    post("poll");\n    ' + loop[sample_at:]
+    mutated_source = source.replace(loop, mutated_loop, 1)
     try:
-        poll_guard_locations(mutated_loop)
+        poll_guard_locations(mutated_source)
     except AssertionError:
         pass
     else:
@@ -406,8 +404,9 @@ def verify_board(name: str, path: Path):
 
     # Failure injection: reintroducing an automatic coin POST must be rejected.
     mutated_loop = loop.replace("delay(2);", 'post("coin");\n    delay(2);', 1)
+    mutated_source = source.replace(loop, mutated_loop, 1)
     try:
-        poll_guard_locations(mutated_loop)
+        poll_guard_locations(mutated_source)
     except AssertionError:
         pass
     else:
@@ -416,8 +415,9 @@ def verify_board(name: str, path: Path):
     # Failure injection: clearing a pending event without an authenticated
     # receipt/disposition contract must be rejected.
     mutated_loop = loop.replace("delay(2);", "clearPending();\n    delay(2);", 1)
+    mutated_source = source.replace(loop, mutated_loop, 1)
     try:
-        poll_guard_locations(mutated_loop)
+        poll_guard_locations(mutated_source)
     except AssertionError:
         pass
     else:
@@ -457,13 +457,18 @@ def verify_source_extractor_decoy_regressions():
 
 
     poll_source = r'''
+void pollDenyOnly() {
+    wifiFailures = 0;
+    denyRemoteControl();
+    (void)post("poll");
+    denyRemoteControl();
+    lastPoll = millis();
+}
 void loop() {
     // post("poll"); denyRemoteControl(); post("coin"); clearPending(true);
-    const char *note = "post(\"poll\"); post(\"coin\"); clearPending(true);";
+    const char *note = "post(\\"poll\\"); post(\\"coin\\"); clearPending(true);";
     if (WiFi.status() == WL_CONNECTED && millis() - lastPoll > 1500) {
-        denyRemoteControl();
-        (void)post("poll");
-        denyRemoteControl();
+        pollDenyOnly();
     }
     digitalRead(runCoinPin);
 }
@@ -472,8 +477,8 @@ void loop() {
     # Failure injection: both response consumption and independent remote-config
     # application must be rejected until the authenticated contract is approved.
     unsafe_poll_source = poll_source.replace(
-        '        (void)post("poll");',
-        '        String response = post("poll");\n        applyRemoteConfig(response);',
+        '    (void)post("poll");',
+        '    String response = post("poll");\n    applyRemoteConfig(response);',
     )
     try:
         poll_guard_locations(unsafe_poll_source)
@@ -482,8 +487,8 @@ void loop() {
     else:
         raise AssertionError("poll-response consumption mutation was not rejected")
     unsafe_config_source = poll_source.replace(
-        '        (void)post("poll");',
-        '        (void)post("poll");\n        applyRemoteConfig(staleResponse);',
+        '    (void)post("poll");',
+        '    (void)post("poll");\n    applyRemoteConfig(staleResponse);',
     )
     try:
         poll_guard_locations(unsafe_config_source)
