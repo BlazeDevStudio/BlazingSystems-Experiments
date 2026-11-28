@@ -2213,3 +2213,21 @@ Source/test commit `8d33f53396a9357f4e2d2dd931e66ce2bfc91765` on `phoenix/hw-loa
 - This confirms the template extraction executes in the existing native C++11 ASan/UBSan test; it does not change the inherited controller-parity blocker.
 
 No production `.ino`, controller API, config schema, finance/receipt state, QA-owned assertion, signer/witness, COE destination or physical device changed. Physical EEPROM/NVS brown-out and all required electrical/hardware acceptance remain **NOT TESTED**. HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
+
+## PHX-HARDWARE UTC15 — canonical #374/#375 deny-only poll integration
+
+**Updated:** 2026-11-28T15:13:12.800Z  
+**PR:** [#377](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/377) OPEN / DRAFT / UNMERGED.  
+**Branch:** `phoenix/hw-poll-deny-wrapper-child-20261128-utc15`  
+**Integration commit:** `4d99c023aa65ed84c6e80d705acc3da044d13075` (first parent #374 `cfb19ed5df920bf5fa7e33e08dc73a25f8b14db9`; second parent #375 `94b1231c631eb32da0f019604ce00a4a0851a471`).
+
+Following PHX-MASTER's UTC14 decision in PR #288, the five-commit #375 delta is preserved as the second parent of a new child of #374. The original #375 branch was not rewritten. The nine shared paths were manually reconciled; the #374 ESP8266 configuration-store readiness guard remains in the sketch and source contract.
+
+Both sketches now centralize the deny-only synchronous poll boundary in `pollDenyOnly()`: pre-poll deny/GPIO-off, discarded poll response, post-poll deny, then completion timestamp. No coin admission, response application, pending-journal clearing, CORE API, QA-owned assertion, finance, signer, witness, or migration behavior was enabled or changed.
+
+The #375 host GPIO mutation regression and source-contract changes were carried into the child. Exact #375 historical evidence: Poll push #46153921703 / job 141006279696 PASS; Mbed push #46153921753 3/3 PASS; Native #46153921746 FAIL at QA-owned PAY-0745; Full #46153917616 FAIL at QA-owned controller parity after 14/14 target builds PASS. These results do **not** transfer to the new child SHA.
+
+**New-child exact-head CI:** pending; no local repository checkout/test run is claimed. Physical acceptor/relay polarity, pulse retention, EEPROM/NVS brown-out, 150 power cuts, 30-device/24-hour soak and electrical pulse/recovery remain NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+
+The existing append-only `CHANGE_LEDGER.md` and all prior handover history are preserved unchanged; this UTC15 record is appended here and in the new narrow handover. Next action: inspect exact-child Poll, Mbed, Native and Full Actions; retain QA/CORE ownership of their blockers.
+
