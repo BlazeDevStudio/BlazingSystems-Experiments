@@ -1,3 +1,33 @@
+## PHX-MASTER UTC14 — Hardware stack collision and COE #26 provenance revalidation
+
+### Parallel Hardware candidate stacks — owner sequencing required
+
+| PR | Exact head | Parent/base | Relevant CI |
+|---|---|---|---|
+| #375 | `224bea1bf663b703e78c34b965df032739fb0c90` | #366@`07fef4e8e1055c06cf5e5c3a0d3829c52be31cc9` | Poll #46152593226 PASS; Mbed #46152593146 3/3 PASS; Native #46152593143 FAIL at QA PAY-0745; Full #46152593188 FAIL at handover freshness after 14/14 target jobs PASS. |
+| #374 | `cfb19ed5df920bf5fa7e33e08dc73a25f8b14db9` | #373@`3783654a3c9862598bbb714268c536fb8b34578b` | Poll #46147124328 PASS; Mbed #46147124263 3/3 PASS; Native #46147124253 FAIL at QA PAY-0745; Full #46147124375 FAIL at QA Controller protocol parity after 14/14 target jobs PASS. |
+
+**Exact changed-path overlap (7):**
+1. `.github/workflows/phx-hw-active-v06-esp32-core-compat.yml`
+2. `.github/workflows/phx-hw-active-v06-poll-intake-deny.yml`
+3. `experiment/openwrt/BlazePwifi/docs/handover/CURRENT_STATE.md`
+4. `experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/BlazePwifiVendo.ino`
+5. `experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_preflight_inhibit_lab_cases.py`
+6. `experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_preflight_inhibit_lab_contract.py`
+7. `experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_preflight_inhibit_lab_harness.py`
+
+These branches are not stacked on one another. HARDWARE must select the canonical parent and reconcile append-only handovers before integration. Master makes no source changes and does not transfer child-run evidence across PRs.
+
+### COE #26 — exact intake/map recheck
+
+- Candidate head remains `b382d233ff06c8791b1028bed3c617cc7b670d12`; COE main remains `a6513ab4412b4c014eee2863e45cbe32d06cb243`. Intake blob `1b9018ff944f7f673934d0fc2a97e0a0090d3f5f`; map blob `b54fc15d83bc2269de03db8aadd0e76259fd13d9`.
+- Runtime rows: 61; blob+mode equality: 46 identical / 15 derived; manifest summary still declares 47/14.
+- Test inventory: 4 original + 15 derived test rows in SOURCE_INTAKE; MIGRATION_MAP omits `voucher_txn_journal.sh` (candidate blob `4277a56af800b930135745bb942d62b6d580cb99`). `run_focus.sh` candidate blob `2b7b861ec63cf811d18d0e63b11a65efd1bec0e9`; `member_txn_journal.sh` candidate blob `d04df3c6f3ada60b9fda8c8c04230dd31e37019a`; both disagree with recorded map hashes.
+- Prior complete tree audit remains 149 source test blobs vs 19 destination test blobs; 7/11 project-scoped license/notice counterparts missing. Intake destination branch pin remains `feature/pisowifi-cleanup-stabilization`, not live PR #26 branch `integration/ecosystem-nonproprietary-candidate-20261111`.
+- All five candidate workflows are CANCELLED; no candidate check-run PASS. PR #26 stays OPEN/DRAFT/FROZEN. No staging, copy, move or destination write.
+
+---
+
 ## PHX-MASTER UTC12 continuation — exact tree and migration provenance (2026-11-28T12:42:51Z)
 
 - Experiments source snapshot: `6d4c9b487af4d768c4d7627654d119417fcc6e00` (2,391 complete tree entries); current Experiments main `6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5` (2,341 complete entries); COE PR #26 candidate `b382d233ff06c8791b1028bed3c617cc7b670d12` (286 complete entries). No tree response was truncated.

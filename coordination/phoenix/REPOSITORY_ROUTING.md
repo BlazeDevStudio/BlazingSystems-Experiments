@@ -1,3 +1,14 @@
+## PHX-MASTER UTC14 — routing, governance and private-registry access
+
+- `OWNERSHIP_ROUTES.json` remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`, schema `phoenix/ownership-routes/v1`, 11 routes, `DRAFT_REVIEW_ONLY`. PHX-MASTER source is `coordination/phoenix/`, target `null`, kind `coordination-only`. No route or destination target was changed.
+- Five in-memory assertions PASS: schema, 11 routes, Master target null, broad Rental route manual-only with `copy_permitted=false`, and two nested Rental destination overlaps. This is not `verify_coordination.py` or the repository test suite.
+- Exact refs: Experiments main `6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5`; development `aad3aade72c1156eecba1fed30907c6d0283b2c5`; active v0.6 `2fbd2475e9f54878c316fa7cea2f228386b0e859`; Master PR #288 head `9fd37533bd771ac0d80c11ee72112226fb89667b`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; #26 candidate `b382d233ff06c8791b1028bed3c617cc7b670d12`.
+- Branch metadata reports `protected=false` for Experiments main/development/v0.6 and COE main. Effective required-check enforcement is not established; repository admin must verify. Master head's workflow/status query returned empty.
+- Experiments root AGENTS.md requires private registry/sync-ledger review before artifact creation and prohibits public disclosure of Drive IDs. Exact private `BLAZE_PROJECT_REGISTRY_v11_20261027.json` and newer corrections were not found in Library search; no Google Drive connector/action is exposed. Older v3-v7 snapshots were not substituted and no private IDs/content were copied to GitHub.
+- COE root `AGENTS.md` was not found on main; COE README is minimal. No COE destination staging or writes were made. CORE and all subsystem source branches remain owner-only.
+
+---
+
 ## PHX-MASTER UTC12 continuation — live routing and governance (2026-11-28T12:42:51Z)
 
 - `OWNERSHIP_ROUTES.json` remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`, schema v1, 11 routes, `DRAFT_REVIEW_ONLY`; PHX-MASTER source `coordination/phoenix/`, target `null`, coordination-only. No route, role owner or destination target was changed.

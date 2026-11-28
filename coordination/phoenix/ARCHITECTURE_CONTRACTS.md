@@ -1,3 +1,13 @@
+## PHX-MASTER UTC14 — P0 poll-order and deny-only candidate boundary
+
+- Current active v0.6 source remains `blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859`. ESP8266 blob `12c4bb82b6fddafe813674a0b5f692c1d3634073`: timeout line 263, synchronous poll/config apply line 354, first `digitalRead(runCoinPin)` line 357. ESP32 blob `29f1125d52ff474a0d028ad41f7af201be1f0f9d`: timeout line 230, poll line 314, first sample line 318.
+- P0 issue #177 remains OPEN. The active branch still blocks sampling before the first coin read. Its issue-body source pin is stale; current branch SHA above is authoritative.
+- Hardware PR #375 exact head `224bea1bf663b703e78c34b965df032739fb0c90` centralizes a deny-only synchronous poll path in `pollDenyOnly()`: deny before poll, discard response, deny again, timestamp completion. It does not parse/apply controller reply, enable coin intake, prove durable pulse retention, or test physical GPIO/relay polarity. It is a candidate stack, not a fix merged into active v0.6.
+- PR #375 and #374 overlap on seven exact paths, including ESP8266 sketch, poll-preflight harness modules, two workflows and CURRENT_STATE. HARDWARE owns sequencing and append-only handover; QA owns PAY-0745 and Controller parity semantics; CORE owns controller/financial authority; Master owns cross-role contract and integration coordination only.
+- No independent protected signing/anti-rollback witness, crash-atomic durable paid state, reversible migration proof, native acceptance, 150 real power cuts or 30-device/24-hour soak evidence was supplied. Production financial admission remains denied.
+
+---
+
 ## PHX-MASTER UTC12 cross-role contract and P0 poll-order revalidation
 
 - Contract ownership remains: CORE owns authenticated controller register/poll/receipt/disposition and financial authority; HARDWARE owns firmware intake, relay and persistence behavior; QA owns independent semantic/default-deny tests; RELEASE owns signing/build admission; MASTER owns cross-role contracts, provenance and release-gate coordination only. No shared schema or subsystem source changed.

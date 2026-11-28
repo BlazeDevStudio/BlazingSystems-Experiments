@@ -1,4 +1,20 @@
-## PHX-MASTER UTC12 role refresh — exact owner heads and CI
+## PHX-MASTER UTC14 role refresh — exact owner heads and CI
+
+| Owner / PR | Exact head | Exact-head evidence / disposition |
+|---|---|---|
+| CORE #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | Build [#42698139210](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42698139210) PASS; source untouched by Master. |
+| RENTAL #289 | `68928774d0d7cf65adb26bc6b54199a3159d066c` | Build [#43653329229](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329229) and native auth [#43653329235](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329235) PASS. |
+| RENTAL #328 | `10fc200b6dbf470a95e679d3acc58aff4ab2a67f` | Build [#45622918468](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45622918468) FAIL: handover freshness and ESP32 `mbedtls/sha256.h`; API21/23, native auth and APK identity checks PASS. |
+| PISONET #255 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | Windows synthetic [#42462978704](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42462978704) PASS; native COM NOT TESTED. |
+| QA #290 | `5c29d15994cee1279058f1eca12f2a3180704292` | Windows synthetic [#43633486963](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43633486963) PASS; not native acceptance. |
+| QA #292 | `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | No exact-head workflow run. |
+| RELEASE #291 | `bf339a76964a1abe2412fac45392fe06a8e66418` | No exact-head workflow run. |
+| HARDWARE #374 | `cfb19ed5df920bf5fa7e33e08dc73a25f8b14db9` | Poll [#46147124328](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46147124328) PASS; Mbed [#46147124263](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46147124263) 3/3 PASS; Native [#46147124253](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46147124253) FAIL at QA PAY-0745 literal assertion; Full [#46147124375](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46147124375) FAIL at QA Controller protocol parity after 14/14 target jobs PASS. |
+| HARDWARE #375 | `224bea1bf663b703e78c34b965df032739fb0c90` | Poll [#46152593226](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46152593226) PASS; Mbed [#46152593146](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46152593146) 3/3 PASS; Native [#46152593143](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46152593143) FAIL at QA PAY-0745 literal assertion; Full [#46152593188](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46152593188) FAIL at handover freshness after 14/14 target jobs PASS. |
+
+**Stack collision:** #375 is a child of #366@`07fef4e8e1055c06cf5e5c3a0d3829c52be31cc9`; #374 is a child of #373@`3783654a3c9862598bbb714268c536fb8b34578b`. Their diffs overlap on seven paths (two workflows, ESP8266 sketch, `CURRENT_STATE.md`, and three `poll_preflight_inhibit_lab_*` modules). HARDWARE must sequence/rebase these owner branches and update append-only handovers; Master does not edit either source stack.
+
+QA owns PAY-0745 and Controller protocol parity assertions. Master does not alter QA/HARDWARE source or tests. CORE remains read-only to Master.## PHX-MASTER UTC12 role refresh — exact owner heads and CI
 
 | Owner / PR | Exact head | Exact-head evidence / disposition |
 |---|---|---|

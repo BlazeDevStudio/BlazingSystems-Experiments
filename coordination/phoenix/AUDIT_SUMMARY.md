@@ -1,3 +1,34 @@
+## PHX-MASTER UTC14 continuation — live overlap and migration audit (2026-11-28T14:04:19Z)
+
+**Role:** PHX-MASTER · **Task:** `PHX-MASTER-20261128T14Z-HW375-COE26-OVERLAP-RECONCILIATION` · **Audit input:** `phoenix/master-coordination@9fd37533bd771ac0d80c11ee72112226fb89667b` · **Scope:** six existing coordination files only.
+
+### Live refs and PR state
+- Experiments default `main@6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5`; development `blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5`; active v0.6 `blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE PR #26 candidate `integration/ecosystem-nonproprietary-candidate-20261111@b382d233ff06c8791b1028bed3c617cc7b670d12`.
+- Master PR #288 OPEN/DRAFT/UNMERGED; compare main...head 715 ahead / 1 behind, merge base `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`, 273 changed paths all under `coordination/phoenix/`. Current Master head has no associated workflow runs and no combined status checks.
+- Experiments `README.md` blob `feb909e3f74ffb7b5b22df50399ccd127ada3b95`; root `AGENTS.md` blob `d8777e3b58efc41caa5aa3c969c932aee9103d5f`. Cloud Artifact Policy blob `5e503925750c4e511314e4b7624579d82f60aae2`; Cloud Storage Recovery Handover blob `a15f14cb3baf46424b820e1a921462794422f06b`. COE `README.md` blob `744867f9164723d6733a990b97a9557f3a19d12`; no root COE `AGENTS.md` found.
+- Branch metadata reports `protected=false` for Experiments main, development, active v0.6 and COE main. Effective required-check enforcement is therefore not established; repository administrator must verify branch rules.
+
+### Latest Hardware owner evidence and collision
+- #375 exact head `224bea1bf663b703e78c34b965df032739fb0c90`, child #366@`07fef4e8e1055c06cf5e5c3a0d3829c52be31cc9`: Poll #46152593226 PASS; Mbed #46152593146 3/3 PASS; Native #46152593143 fails at QA-owned `if(any) return false;` PAY-0745 source-shape assertion; Full #46152593188 fails mandatory handover freshness (`PROJECT_HANDOVER.md` / append-only handover checkpoint behind code), despite 14/14 target jobs passing. Downstream simulations/publishing are skipped.
+- #374 exact head `cfb19ed5df920bf5fa7e33e08dc73a25f8b14db9`, child #373@`3783654a3c9862598bbb714268c536fb8b34578b`: Poll #46147124328 PASS; Mbed #46147124263 3/3 PASS; Native #46147124253 fails same QA-owned PAY-0745 assertion; Full #46147124375 fails QA-owned Controller protocol parity after handover freshness passes and 14/14 target jobs pass.
+- #375 and #374 changed-file lists overlap on seven exact paths: `.github/workflows/phx-hw-active-v06-esp32-core-compat.yml`, `.github/workflows/phx-hw-active-v06-poll-intake-deny.yml`, `experiment/openwrt/BlazePwifi/docs/handover/CURRENT_STATE.md`, `experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/BlazePwifiVendo.ino`, and `poll_preflight_inhibit_lab_cases.py`, `_contract.py`, `_harness.py` in the ESP8266 project directory. These are separate stacks; do not merge or rebase without HARDWARE owner sequencing.
+- QA owns PAY-0745 and Controller parity assertions. HARDWARE owns firmware, branch stack, handover and PR descriptions. Master does not change either role's source/tests.
+
+### P0 poll-order contract
+- Active v0.6 source at `2fbd2475e9f54878c316fa7cea2f228386b0e859` still performs synchronous poll before first coin sample: ESP8266 blob `12c4bb82b6fddafe813674a0b5f692c1d3634073`, timeout line 263, poll/config apply line 354, first `digitalRead(runCoinPin)` line 357; ESP32 blob `29f1125d52ff474a0d028ad41f7af201be1f0f9d`, timeout line 230, poll line 314, first sample line 318. Issue #177 remains OPEN/P0; its embedded source pin is stale.
+- #375 centralizes the candidate's deny-only synchronous poll sequence in `pollDenyOnly()` and discards the poll response; it does not enable coin intake, prove durable pulse capture, or establish physical GPIO/relay behavior. It is not a fix for active v0.6 source or the P0.
+
+### COE #26 exact manifest and staging gate
+- COE #26 remains OPEN/DRAFT/FROZEN at `b382d233ff06c8791b1028bed3c617cc7b670d12`; COE main remains structure-only at `a6513ab4412b4c014eee2863e45cbe32d06cb243`. `Pisowifi/SOURCE_INTAKE.json` blob `1b9018ff944f7f673934d0fc2a97e0a0090d3f5f`; `Pisowifi/MIGRATION_MAP.md` blob `b54fc15d83bc2269de03db8aadd0e76259fd13d9`.
+- Runtime manifest has 61 rows; exact source/destination blob+mode equality is 46 identical / 15 derived, conflicting with declared summary 47/14. Four original test rows plus 15 derived test rows are declared, while MIGRATION_MAP omits `voucher_txn_journal.sh`; exact candidate blob `4277a56af800b930135745bb942d62b6d580cb99`. Candidate `run_focus.sh` blob `2b7b861ec63cf811d18d0e63b11a65efd1bec0e9` and `member_txn_journal.sh` blob `d04df3c6f3ada60b9fda8c8c04230dd31e37019a` disagree with recorded map hashes. Prior complete-tree audit: 149 source test blobs vs 19 destination test blobs; seven of eleven project-scoped license/notice counterparts missing.
+- SOURCE_INTAKE still pins destination branch `feature/pisowifi-cleanup-stabilization`, but live PR #26 uses `integration/ecosystem-nonproprietary-candidate-20261111`. Five candidate workflows remain CANCELLED: #43096752563, #43096752800, #43096752557, #43096752609, #43096752632. No destination check-run PASS, staging, copy, move or destination write.
+
+### Execution and blockers
+- Ownership route blob `e4db324315a1b3543fec17a148fbf960170fcb29`: 11 routes / `DRAFT_REVIEW_ONLY`; Master target null; five bounded in-memory assertions PASS. This is not the repository test suite.
+- `test_verify_coordination.py`, `verify_coordination.py`, Master Python/shell/native suites and Master CI NOT RUN; no authenticated non-Codex checkout. The exact private `BLAZE_PROJECT_REGISTRY_v11_20261027.json` and newer corrections were not found in the Library; no Google Drive connector/action is available. Older v3-v7 copies were not substituted.
+- Cleanup #266 remains OPEN / 0-of-7. Production release, protected signing/anti-rollback witness, crash-atomic financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized release gates remain unproven. **PRODUCTION NO-GO.**
+
+---
 ## PHX-MASTER UTC12 continuation — exact live reconciliation (2026-11-28T12:42:51Z)
 
 **Role:** PHX-MASTER · **Task:** `PHX-MASTER-20261128T12Z-HW374-COE26-EXACT-HEAD-P0-RECHECK` · **Audit input HEAD:** `3a71116c9aff8abc4948ebae9962e45b4080c7bd` · **Scope:** four existing files under `coordination/phoenix/` only.
