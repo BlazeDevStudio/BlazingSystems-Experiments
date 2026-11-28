@@ -34,3 +34,15 @@ Source/test commit: `6c22c7ebef3eaa9082735511f4cf3e525731085c`. PR [#378](https:
 - Full [#46161956393](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46161956393): validation job `141031061284` failed only at handover freshness because the source commit followed the IN PROGRESS checkpoint. This ordering failure is being corrected by this docs commit; target matrix was still running and no overall Full result is claimed.
 
 The new test is host/source-extracted simulation only. No production sketch or shared API changed. Physical electrical and all #34 acceptance remain NOT TESTED; HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
+
+
+## Terminal docs-head evidence — 2026-11-28T16:00:00Z
+
+At docs head `8fdbd9b013c0c787763d5b3e62071fd7b615dd90` (source/test `6c22c7ebef3eaa9082735511f4cf3e525731085c`):
+
+- Poll [#46162211315](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46162211315), job `141031804552`: PASS; both boards emitted `POST_POLL_DENY_DIRECT_GPIO_REENABLE_MUTATION_REJECTED`; 5×4 transport matrix and existing Hardware suites passed; ledger append-only guard passed; SIMULATED ONLY.
+- Mbed [#46162211276](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46162211276): 3/3 PASS. Both core versions clean A/B identical; source tree `ccea8c3ba80f417b5cd0789ad68928f78c12a467ce77a0a3957121a4ad494c81`; core 3.3.13 image `6262897c8783b6dcb9d8ee845aaf556360a6b316ec40b34512f99067949e62d6`; core 4.0.0 image `96d1a06abc4622ad0486c21cbc648f62d3e2c7572602414c11ecccd6fef34071`.
+- Full [#46162211282](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46162211282), attempt 2: HND-0700 and CI-0701 PASS; validation job `141032316089` FAIL at QA-owned `tests/controllers.sh:21` literal `config_revision`; all 14/14 target/platform jobs PASS; production stages skipped.
+- Native Synthetic: NOT RUN on #378; parent #377 Native #46158944131 remains PAY-0745 failure.
+
+No physical acceptance. HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO. Keep deny-only behavior.
