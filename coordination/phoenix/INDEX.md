@@ -1,3 +1,17 @@
+## PHX-MASTER UTC07 — 2026-11-28T07:35Z — exact role CI and COE #26 provenance
+
+Task: PHX-MASTER-20261128T07Z-HW373-COE26-ROLE-CI-IMPORT-AUDIT. Audit-start Master head c52dcab4b4803ee5946b5d9b5f8d3008ae4a73b6. Strict NO CODEX. Current role heads and exact CI were refreshed; COE #26 remains FROZEN; cleanup #266 remains 0/7; P0 #177/#31/#32/#34/#43 remain OPEN; PRODUCTION NO-GO.
+
+- Experiments main 6be5d19b; development aad3aade; active v0.6 2fbd2475; COE main a6513ab4; PR #26 candidate b382d233.
+- PR #288 remains OPEN / DRAFT / UNMERGED; all 268 current changed paths are under coordination/phoenix/; compare main 696 ahead / 1 behind. This activation adds only Master coordination documents.
+- HARDWARE #373 current head 3783654: Focused and Mbed PASS; Full terminal FAIL at QA-owned controllers.sh assertion after all 14 target/platform jobs pass.
+- COE #26: runtime 61/61 pinned blob+mode matches, actual 46 identical / 15 derived vs summary 47/14; derived test map 14/15 with one missing row and two stale hashes; seven project-root license artifacts missing; all five candidate workflows CANCELLED. No staging.
+- Private Drive v11/newer corrections NOT_RECOVERED; no Google Drive connector. Master local tests NOT RUN because GitHub DNS is unavailable.
+
+[Full UTC07 exact-head report](PHX_MASTER_UTC07_20261128_HW373_COE26_ROLE_CI_AND_REGISTRY_ACCESS_AUDIT.md).
+
+---
+
 ## PHX-MASTER UTC05 — 2026-11-28T05:35Z — Hardware #373 and COE #26 exact reconciliation
 
 Task: `PHX-MASTER-20261128T05Z-HW373-COE26-EXACT-TEST-LICENSE-ROLE-CI`. Strict NO CODEX. The latest Hardware child is #373 at `7ed2a1e9`; Focused and Mbed pass, Full is terminally failed at the QA-owned `config_revision` assertion after all 14 target/platform jobs including Android pass. HARDWARE owns refreshing its stale in-progress PR text.
