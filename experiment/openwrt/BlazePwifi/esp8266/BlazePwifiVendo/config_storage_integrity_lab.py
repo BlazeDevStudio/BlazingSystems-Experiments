@@ -6,15 +6,62 @@ from config_storage_integrity_lab_contract import (
     expect_rejected,
     move_helpers_before_legacy_struct,
 )
+from pathlib import Path
+
 from config_storage_integrity_lab_harness import (
+    RUNTIME_FIXTURE_MARKERS,
     compile_and_run,
     cxx_harness,
+    expect_runtime_fixture_rejected,
     loadcfg_runtime_harness,
+    render_runtime_fixture,
 )
+
+def verify_runtime_fixture_template_contract() -> None:
+    template_path = Path(__file__).with_name("config_loadcfg_runtime_fixture.cpp.in")
+    template = template_path.read_text(encoding="utf-8")
+    replacements = tuple(
+        (marker, "// PHX fixture segment rendered")
+        for marker in RUNTIME_FIXTURE_MARKERS
+    )
+
+    rendered = render_runtime_fixture(template, replacements)
+    if "PHX_CONFIG_" in rendered:
+        raise AssertionError("valid runtime fixture retained an unresolved marker")
+
+    rejected = 0
+    for marker in RUNTIME_FIXTURE_MARKERS:
+        expect_runtime_fixture_rejected(
+            template.replace(marker, "", 1),
+            replacements,
+            f"missing:{marker}",
+            "must occur exactly once",
+        )
+        rejected += 1
+        expect_runtime_fixture_rejected(
+            template + "\n" + marker,
+            replacements,
+            f"duplicate:{marker}",
+            "must occur exactly once",
+        )
+        rejected += 1
+
+    expect_runtime_fixture_rejected(
+        template + "\n/* PHX_CONFIG_UNKNOWN */",
+        replacements,
+        "unresolved-marker",
+        "unresolved runtime fixture template marker",
+    )
+    rejected += 1
+    if rejected != 9:
+        raise AssertionError(f"unexpected runtime fixture mutation count: {rejected}")
+    print(f"EEPROM_RUNTIME_TEMPLATE_FAILURE_INJECTION_PASS {rejected}/9")
+
 
 def main() -> None:
     source = SKETCH.read_text(encoding="utf-8")
     assert_source_contract(source)
+    verify_runtime_fixture_template_contract()
     expect_rejected(
         "arduino-prototype-order",
         move_helpers_before_legacy_struct(source),

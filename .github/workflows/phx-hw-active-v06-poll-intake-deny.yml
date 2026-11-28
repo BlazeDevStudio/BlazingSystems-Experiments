@@ -11,6 +11,7 @@ on:
       - phoenix/hw-config-persistence-lab-modules-20261128-utc03
       - phoenix/hw-config-storage-integrity-modules-20261128-utc04
       - phoenix/hw-eeprom-loadcfg-runtime-harness-20261128-utc04
+      - phoenix/hw-loadcfg-runtime-fixture-template-20261128-utc05
     paths:
       - 'experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino'
       - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/BlazePwifiVendo.ino'
@@ -26,6 +27,7 @@ on:
       - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/config_storage_integrity_lab.py'
       - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/config_storage_integrity_lab_contract.py'
       - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/config_storage_integrity_lab_harness.py'
+      - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/config_loadcfg_runtime_fixture.cpp.in'
       - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/config_persistence_write_result_lab.py'
       - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/config_persistence_write_result_lab_contract.py'
       - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/config_persistence_write_result_lab_harness.py'
@@ -34,6 +36,7 @@ on:
       - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/pending_recovery_promotion_lab_harness.hpp'
       - 'experiment/openwrt/BlazePwifi/PROJECT_HANDOVER.md'
       - 'experiment/openwrt/BlazePwifi/docs/handover/CURRENT_STATE.md'
+      - 'experiment/openwrt/BlazePwifi/docs/handover/2026-11-28-hw-loadcfg-runtime-fixture-template-utc05.md'
       - 'experiment/openwrt/BlazePwifi/docs/handover/2026-11-28-hw-pending-recovery-contract-module-split-utc17.md'
       - 'experiment/openwrt/BlazePwifi/docs/handover/CHANGE_LEDGER.md'
       - 'experiment/openwrt/BlazePwifi/tools/handover_ledger_append_only_guard.py'
@@ -58,6 +61,7 @@ on:
       - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/config_storage_integrity_lab.py'
       - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/config_storage_integrity_lab_contract.py'
       - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/config_storage_integrity_lab_harness.py'
+      - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/config_loadcfg_runtime_fixture.cpp.in'
       - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/config_persistence_write_result_lab.py'
       - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/config_persistence_write_result_lab_contract.py'
       - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/config_persistence_write_result_lab_harness.py'
@@ -66,6 +70,7 @@ on:
       - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/pending_recovery_promotion_lab_harness.hpp'
       - 'experiment/openwrt/BlazePwifi/PROJECT_HANDOVER.md'
       - 'experiment/openwrt/BlazePwifi/docs/handover/CURRENT_STATE.md'
+      - 'experiment/openwrt/BlazePwifi/docs/handover/2026-11-28-hw-loadcfg-runtime-fixture-template-utc05.md'
       - 'experiment/openwrt/BlazePwifi/docs/handover/2026-11-28-hw-pending-recovery-contract-module-split-utc17.md'
       - 'experiment/openwrt/BlazePwifi/docs/handover/CHANGE_LEDGER.md'
       - 'experiment/openwrt/BlazePwifi/tools/handover_ledger_append_only_guard.py'

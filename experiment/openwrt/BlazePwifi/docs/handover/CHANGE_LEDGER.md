@@ -3973,3 +3973,39 @@ This is the required documentation-first IN-PROGRESS record. No source/test resu
 - Full #46110095274 terminal FAILURE: CI-0701 and handover freshness PASS; validation job 140871599695 fails at QA-owned tests/controllers.sh:21 literal config_revision assertion. All 14/14 target/platform jobs PASS (ESP8266, ESP32, Android, Ruijie, x86_64, Orange Pi and optional targets). Downstream v0.4 simulation, update bundle, signing and publication skipped.
 - No production firmware/config/schema/API/finance/witness/COE/device change. Host simulation only; physical EEPROM/NVS brown-out and all required hardware acceptance remain NOT TESTED. HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
 - Updated UTC: 2026-11-28T05:04:25.085Z.
+
+---
+
+## PHX-HARDWARE UTC05 — EEPROM runtime fixture template extraction
+
+- Task: `PHX-HW-LOADCFG-FIXTURE-TEMPLATE-20261128T05Z`; child PR #373 of #372.
+- Parent: `96a22ba3af1411a016478eee56c5f0fdbbc2b512`; branch: `phoenix/hw-loadcfg-runtime-fixture-template-20261128-utc05`.
+- Extracted the embedded C++11 loadCfg/defaults/saveCfg fixture into `config_loadcfg_runtime_fixture.cpp.in`; harness now injects four exact-once source-derived markers and rejects unresolved markers.
+- Updated focused workflow branch/path allowlists; added narrow Hardware handover and refreshed PROJECT_HANDOVER/CURRENT_STATE.
+- Behavior-preserving test refactor; production sketches, controller/finance APIs, QA-owned tests, signer/witness and COE remain untouched.
+- Focused/Mbed/Full results pending at this documentation checkpoint; physical EEPROM/NVS and all required hardware acceptance NOT TESTED.
+- Updated UTC: 2026-11-28T05:08:53Z.
+
+---
+
+## PHX-HARDWARE UTC05 — PR #373 terminal exact-head evidence
+
+- Source/test SHA: `8d33f53396a9357f4e2d2dd931e66ce2bfc91765`; branch: `phoenix/hw-loadcfg-runtime-fixture-template-20261128-utc05`; PR #373 OPEN/DRAFT/UNMERGED.
+- Focused #46111352698 job 140875370614 PASS; runtime current/legacy/commit-retry matrix PASS; seven source mutations rejected; append-only ledger guard PASS (base 1,132,798 bytes; append 55,989 bytes). Push Focused #46111347759 PASS.
+- Mbed #46111352724 PASS 3/3: source contract, ESP32 core 3.3.13 and 4.0.0.
+- Full #46111352710 terminal FAIL at QA-owned tests/controllers.sh:21 config_revision assertion after CI-0701 and handover freshness PASS; all 14/14 target/platform jobs PASS. Push Full #46111347820 has the same result. Downstream simulation/update/sign/publication stages skipped.
+- No production sketch/API/finance/QA test/COE/device change; physical acceptance NOT TESTED; HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
+- Updated UTC: 2026-11-28T05:20:45Z.
+
+## 2026-11-28 UTC05 — PR #373 template-marker tests and ledger restoration
+
+- Hardware source/test commit: `e411a99c23485f4f92720aa38cf29dca757b5190`; PR #373 remains OPEN / DRAFT / UNMERGED.
+- Focused source-head run [#46113449436](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46113449436), job `140881884708`: PASS; the new runtime-template mutation suite reports 9/9 rejected, while the existing EEPROM current/legacy/commit-retry matrix and 7/7 source mutations pass.
+- Mbed source-head run [#46113449427](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46113449427): source-contract `140881885041`, ESP32 core 3.3.13 `140881885126`, and core 4.0.0 `140881884923` all PASS.
+- Docs refresh commit `36a910f065fa506febf4134e6d7909cfca1c8d86` accidentally used the bounded `fetch_file` response for the 1.18M-character ledger. Docs-head Focused run [#46113667258](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46113667258), job `140882561193`, correctly FAILED: `CHANGE_LEDGER_APPEND_ONLY_FAIL candidate does not preserve the base byte-for-byte (common_prefix_bytes=0 base_bytes=1132798 candidate_bytes=3497)`. This is a handover-writing error, not a firmware/test regression.
+- Recovery: fetched the complete immutable parent ledger blob `4d1590ed144e399f552e403c30b971c0bf3d022f` (1,188,219 characters) and exact #354 base blob `b950f7be47f79d71e6cb8b721801c1bae128df45` (1,131,320 characters). Verified `fullLedger.startsWith(historicalBase) === true`; the full prior history is restored below with this record appended. No historical entry was reconstructed from snippets.
+- The docs-head Full run #46113667260 had not reached terminal state at this correction checkpoint. Its result must be re-read after this repair.
+- Updated UTC: 2026-11-28T05:49:14.868Z.
+
+**Disposition:** retain PR #373 DRAFT / UNMERGED. Re-run the focused append-only guard on the repaired docs head, then verify the final Full/Mbed results. Physical hardware acceptance remains NOT TESTED; HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
+
