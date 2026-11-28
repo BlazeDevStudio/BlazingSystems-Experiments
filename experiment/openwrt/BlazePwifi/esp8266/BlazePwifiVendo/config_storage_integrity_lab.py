@@ -60,7 +60,7 @@ def main() -> None:
     print(compile_and_run(cxx_harness(source), "config_integrity"))
     print(compile_and_run(loadcfg_runtime_harness(source), "config_loadcfg_runtime"))
     print("EEPROM_CONFIG_SOURCE_CONTRACT_PASS")
-    print("EEPROM_CONFIG_FAILURE_INJECTION_PASS 5/5")
+    print("EEPROM_CONFIG_FAILURE_INJECTION_PASS 7/7")
 
 if __name__ == "__main__":
     main()
