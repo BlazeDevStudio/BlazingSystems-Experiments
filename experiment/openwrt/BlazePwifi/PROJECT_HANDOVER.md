@@ -1784,3 +1784,10 @@ No production `.ino`, controller API, finance, receipt/disposition, QA-owned ass
 - Physical EEPROM/NVS brown-out, GPIO/relay voltage, LittleFS recovery, 150 power cuts, 30-device/24-hour soak and electrical pulse/recovery remain **NOT TESTED**.
 
 Status: host source cleanup only; HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+
+### UTC04 evidence refresh — PR #371
+
+- Focused exact-head [#46105780778](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46105780778), job `140858075446`: **PASS**; Config 6/6, ConfigV1 5/5, five failure injections rejected.
+- Mbed [#46105780822](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46105780822): **3/3 PASS** (source contract, ESP32 core 3.3.13, core 4.0.0).
+- Initial Full [#46105780768](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46105780768): validation failed at mandatory handover freshness because `CHANGE_LEDGER.md` still ended at parent #370 commit `b0fed471...`; the append-only checkpoint is included in this docs commit. Rerun Full on the refreshed head.
+- No production sketch or shared financial/authentication API changed. Physical acceptance remains NOT TESTED; HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
