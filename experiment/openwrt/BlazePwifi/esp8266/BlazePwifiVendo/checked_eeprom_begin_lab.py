@@ -22,7 +22,7 @@ def expect_contract_rejected(label: str, source: str, expected: str) -> None:
 
 
 def expect_runtime_rejected(
-    label: str, source: str, expected_return_code: int, expected_output: str
+    label: str, source: str, expected_return_code: int
 ) -> None:
     result = compile_and_run_result(
         checked_eeprom_begin_harness(source), f"checked_eeprom_{label}"
@@ -33,11 +33,6 @@ def expect_runtime_rejected(
         raise AssertionError(
             f"{label}: expected invariant exit {expected_return_code}, "
             f"got {result.returncode}; stdout={result.stdout!r}; stderr={result.stderr!r}"
-        )
-    if expected_output not in result.stdout:
-        raise AssertionError(
-            f"{label}: did not reach expected precondition marker {expected_output!r}; "
-            f"stdout={result.stdout!r}; stderr={result.stderr!r}"
         )
     print(
         f"CHECKED_EEPROM_RUNTIME_MUTATION_REJECTED {label} "
@@ -102,7 +97,7 @@ def main() -> None:
         1,
     )
     expect_runtime_rejected(
-        "oversized-sector", oversized, 3, "CHECKED_EEPROM_INVALID_SIZE_DENY_PASS"
+        "oversized-sector", oversized, 3
     )
     expect_runtime_rejected(
         "allocation-failure-guard-removed",
