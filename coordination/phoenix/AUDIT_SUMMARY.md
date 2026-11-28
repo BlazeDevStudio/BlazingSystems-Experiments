@@ -1,3 +1,42 @@
+## PHX-MASTER UTC12 continuation — exact live reconciliation (2026-11-28T12:42:51Z)
+
+**Role:** PHX-MASTER · **Task:** `PHX-MASTER-20261128T12Z-HW374-COE26-EXACT-HEAD-P0-RECHECK` · **Audit input HEAD:** `3a71116c9aff8abc4948ebae9962e45b4080c7bd` · **Scope:** four existing files under `coordination/phoenix/` only.
+
+### Live refs, PR and governance
+- Experiments default `main@6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5`; development `blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5`; active v0.6 `blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`.
+- Master PR #288 is OPEN / DRAFT / UNMERGED. Before this continuation commit it compared 714 ahead / 1 behind main, merge base `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`, 273 changed paths, all under `coordination/phoenix/`. No workflow run was returned for Master audit input `3a71116c9aff8abc4948ebae9962e45b4080c7bd`.
+- Branch API metadata reports `protected=false` for Experiments main, development, v0.6 and Master, and COE main. Both rulesets endpoints returned `[]`; the classic branch-protection detail endpoint returned 403. This does not establish effective required-check enforcement; repository admin must verify and configure it.
+- Cleanup #266 remains OPEN / 0-of-7; P0 #177 remains OPEN. The #177 issue body still embeds an older source SHA; current active v0.6 remains at `2fbd2475e9f54878c316fa7cea2f228386b0e859`.
+
+### Exact role CI
+- CORE #252 `c82705f2de865c89ab733b10efa84f26f56a5cc4`: Build #42698139210 PASS; Master did not touch CORE.
+- RENTAL #289 `68928774d0d7cf65adb26bc6b54199a3159d066c`: Build #43653329229 and native auth #43653329235 PASS.
+- RENTAL #328 `10fc200b6dbf470a95e679d3acc58aff4ab2a67f`: Build #45622918468 FAIL at mandatory handover freshness and ESP32 `mbedtls/sha256.h` include; API21/23 #45622918364, native auth #45622918551 and APK identity #45622918340 PASS.
+- PISONET #255 `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09`: Windows synthetic #42462978704 PASS; native COM NOT TESTED.
+- QA #290 `5c29d15994cee1279058f1eca12f2a3180704292`: Windows synthetic #43633486963 PASS; QA #292 `75a3f66d9563e38a0a48b9cf487b0b057a91ea96`: no exact-head workflow.
+- RELEASE #291 `bf339a76964a1abe2412fac45392fe06a8e66418`: no exact-head workflow.
+- HARDWARE #374 `84c980e85ff9c1553ea63c5d297665269e0cd371`: Poll #46140525342 PASS; Mbed #46140525300 3/3 PASS on exact head; Native #46140525305 FAIL at QA-owned PAY-0745 assertion; Full #46140525393 FAIL at QA-owned Controller protocol parity after 14/14 target/platform jobs pass. The latest #374 owner handover still says Full final-head run NOT RUN; HARDWARE must refresh its own description/handover.
+- HARDWARE #373 `3783654a3c9862598bbb714268c536fb8b34578b`: Poll #46118310162 and Mbed #46118310195 PASS; Full #46118310135 FAIL at Controller protocol parity.
+- QA owns the literal PAY-0745 and Controller parity assertions. Master does not edit QA or Hardware source/tests.
+
+### COE #26 exact migration audit
+- Experiments pinned source commit `6d4c9b487af4d768c4d7627654d119417fcc6e00`: 2,391 complete tree entries. Current Experiments main: 2,341 complete entries. COE #26 candidate `b382d233ff06c8791b1028bed3c617cc7b670d12`: 286 complete entries.
+- The 61 SOURCE_INTAKE runtime rows match exact source and destination Git blob + mode values **61/61**. Actual source/destination comparison is **46 byte-identical / 15 derived**; schema-v8 summary still claims 47/14. Against current Experiments main, those 61 pinned source files are 33 unchanged / 20 changed / 8 absent.
+- Source tests: 149 blobs; candidate `Pisowifi/tests/`: 19 blobs. SOURCE_INTAKE records four original and 15 derived tests; MIGRATION_MAP lists only 14 derived rows, omitting `Pisowifi/tests/voucher_txn_journal.sh`. Map hashes for `run_focus.sh` and `member_txn_journal.sh` are stale versus exact candidate blobs.
+- Project-scoped source license/notice inventory: 11 artifacts; only four destination path counterparts exist. Seven are missing: Android launcher LICENSE, MODULE_LICENSE_APACHE2 and assets/license.html; R281 rental qrcode-LICENSE; jsqr LICENSE; UI qrcode LICENSE; UI tabler LICENSE. PR #26 body claims the licensing/privacy conflict is resolved, which conflicts with this exact path inventory; keep the candidate frozen until the owner reconciles it.
+- SOURCE_INTAKE still pins destination branch `feature/pisowifi-cleanup-stabilization`, while live PR #26 uses `integration/ecosystem-nonproprietary-candidate-20261111`. All five candidate workflows remain CANCELLED: #43096752563, #43096752800, #43096752557, #43096752609, #43096752632. No destination check-run PASS is established.
+- No staging, destination write, move or migration proposal occurred.
+
+### Test/access classification and next actions
+- Five bounded ownership-route assertions PASS in memory (schema, 11 routes, Master target null, broad Rental manual-only/copy-disabled, and two nested Rental destination overlaps blocked). This is not the repository test suite.
+- `test_verify_coordination.py`, `verify_coordination.py`, Master Python/shell/native suites and Master CI were NOT RUN. No authenticated non-Codex checkout is available. Worker CI is not Master test evidence.
+- Root AGENTS.md, BLAZE Cloud Artifact Policy and Cloud Storage Recovery Handover were re-read. The canonical private `BLAZE_PROJECT_REGISTRY_v11_20261027.json` and newer corrections were not found in the Library, and no Google Drive connector/action is exposed. Older v3-v7 snapshots were not substituted; no private registry data or IDs were published.
+- Next: QA replaces literal source-shape checks with semantic source-linked default-deny vectors and reruns exact-head Native/Full; HARDWARE updates its own #374 handover; COE owner reconciles counts, test map/hashes, licenses and branch pin before staging; registry custodian restores v11 via approved Drive access; repository admin supplies authenticated non-Codex checkout and verifies branch rulesets.
+
+**Disposition: BLOCKED / PRODUCTION NO-GO.** No merge, release, signing, secret provisioning, hardware flash, physical tests, real payment operations, financial migration or customer cutover occurred.
+
+---
+
 ## PHX-MASTER UTC12 — exact-head role CI, COE import provenance, and P0 poll-order revalidation
 
 **Observed:** 2026-11-28T12:13:19Z  

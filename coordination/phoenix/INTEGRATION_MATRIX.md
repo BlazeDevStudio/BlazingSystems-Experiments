@@ -1,3 +1,14 @@
+## PHX-MASTER UTC12 continuation — exact tree and migration provenance (2026-11-28T12:42:51Z)
+
+- Experiments source snapshot: `6d4c9b487af4d768c4d7627654d119417fcc6e00` (2,391 complete tree entries); current Experiments main `6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5` (2,341 complete entries); COE PR #26 candidate `b382d233ff06c8791b1028bed3c617cc7b670d12` (286 complete entries). No tree response was truncated.
+- Exact SOURCE_INTAKE runtime comparison: 61/61 source and destination blob+mode rows match the pinned manifest. Actual content split is 46 byte-identical / 15 derived, not the manifest summary 47 / 14. Against current Experiments main, the 61 pinned source paths are 33 unchanged / 20 changed / 8 absent; the pinned source commit must not be treated as current main.
+- Test identity: pinned source tree has 149 test blobs; destination `Pisowifi/tests/` has 19. The manifest lists four original and 15 derived tests; MIGRATION_MAP records only 14 derived rows, omitting `voucher_txn_journal.sh`. The map has stale recorded hashes for `run_focus.sh` and `member_txn_journal.sh`.
+- Licensing: 11 project-scoped source LICENSE/NOTICE artifacts versus four exact destination path counterparts; seven destination counterparts are missing (three Android launcher notices/licenses, R281 rental qrcode license, jsqr license, UI qrcode license and UI tabler license). This conflicts with PR #26's body claim that its licensing/privacy conflict is resolved.
+- The intake manifest's destination branch pin remains `feature/pisowifi-cleanup-stabilization`; live PR #26 is on `integration/ecosystem-nonproprietary-candidate-20261111`. All five exact candidate workflows are CANCELLED: #43096752563, #43096752800, #43096752557, #43096752609, #43096752632.
+- PR #26 remains OPEN / DRAFT / FROZEN; destination main remains structure-only. No staging, destination write, copy, move or migration proposal. Keep the candidate frozen until the COE owner reconciles exact file/test/license identities, current source drift, branch pin and executable CI.
+
+---
+
 ## PHX-MASTER UTC12 integration refresh — exact candidate and source/test provenance
 
 - Experiments `main@6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5`; development `blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5`; active v0.6 `2fbd2475e9f54878c316fa7cea2f228386b0e859`; Master audit-start `phoenix/master-coordination@d5d6e66c4cecfc3a6c67845f9c7eeec9ce1b491f`.
