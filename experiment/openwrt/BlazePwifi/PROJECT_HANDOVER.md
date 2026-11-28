@@ -1,3 +1,40 @@
+## PHX-HARDWARE UTC04 — EEPROM loadCfg runtime lab (#372) — CI VERIFIED / PR_READY
+
+PR #372 is OPEN / DRAFT / UNMERGED, stacked on #371. Branch `phoenix/hw-eeprom-loadcfg-runtime-harness-20261128-utc04`; source/test head `6a29509079b0e4383b4305a75197bd72e6874066`; canonical docs head at the terminal Full readback `2bf108d6f4b46263376dcc99ded4b0fc3b7eceb6`.
+
+The Hardware-owned EEPROM integrity lab now executes source-extracted `loadCfg()`, `defaults()`, and `saveCfg()` in a native C++11 ASan/UBSan fixture using a fake EEPROM with distinct durable/staged bytes. It covers valid current Config acceptance (1/1), all unterminated current fields rejected (6/6), valid ConfigV1 migration (1/1), all unterminated legacy fields rejected (5/5), migration commit failure preserving durable v1 and next-boot retry, and defaults commit failure preserving corrupt durable bytes and next-boot retry (2/2). The source contract requires both write paths to check `saveCfg()`; failure injection rejects ignoring either result. Seven source mutations are rejected (7/7).
+
+**Focused CI:** push [#46110090617](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46110090617), job `140871475900`, PASS at docs head `2bf108d6`; PR [#46110095250](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46110095250), job `140871489774`, PASS at the same head. Both report the runtime matrix and 7/7 mutation pass. Append-only ledger guard PASS: base prefix 1,132,798 bytes, appended 53,642 bytes.
+**Mbed:** [#46109906713](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46109906713), 3/3 PASS at source/test head `6a295090` (source contract, ESP32 core 3.3.13 and 4.0.0).
+**Full:** [#46110095274](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46110095274) terminal FAILURE. CI-0701 job `140871556929` PASS and mandatory handover freshness PASS. QA-owned validation job `140871599695` fails at `experiment/openwrt/BlazePwifi/tests/controllers.sh:21`, the literal `config_revision` presence assertion. All 14/14 target/platform builds PASS, including ESP8266, ESP32, Android, Ruijie, x86_64, Orange Pi and optional targets. Downstream v0.4 simulations, update bundle, signing and publication remain skipped because validation failed. This is an inherited QA/controller-contract blocker, not a new firmware compile failure.
+
+No production .ino, config schema, shared controller API, finance/receipt state, QA-owned test, signer/witness, migration runtime, COE destination, physical device or EEPROM was changed. This is host/CI evidence only, not physical EEPROM/NVS brown-out acceptance. Physical GPIO/relay, LittleFS power-loss, 150 power cuts, 30-device/24-hour soak, electrical pulse/recovery, protected signer/witness, durable accounting/replay, v1-to-v2 migration and independent release signoff remain NOT TESTED or NOT ACCEPTED. HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
+
+Next: PHX-QA replaces the stale literal controller assertion with source-linked deny-only vectors; PHX-CORE publishes the authenticated register/poll/receipt/disposition contract; PHX-MASTER refreshes ROLE_ASSIGNMENTS/INTEGRATION_MATRIX for #370/#371/#372; PHX-HARDWARE continues P0 #177 only within the approved fail-closed interface.
+
+Updated UTC: 2026-11-28T05:04:25.085Z.
+
+---
+
+## PHX-HARDWARE UTC04 — EEPROM loadCfg runtime harness (#372)
+
+**PR #372 OPEN / DRAFT / UNMERGED**, child of #371 at `18a3fa470970e729a02920607562f4b9a1e50d34`.
+Branch: `phoenix/hw-eeprom-loadcfg-runtime-harness-20261128-utc04`; latest source/test head: `6a29509079b0e4383b4305a75197bd72e6874066`.
+
+The existing EEPROM integrity lab now executes the actual source-extracted `loadCfg()`, `defaults()`, and `saveCfg()` functions against a host fake EEPROM with separate durable and staged byte arrays. It verifies valid current Config acceptance; rejection of all six unterminated current fields; valid ConfigV1 migration; rejection of all five unterminated legacy fields; migration commit failure preserving durable v1 bytes and retrying on next boot; and default commit failure preserving the invalid durable image and retrying on next boot. The source contract also requires both migration/default branches to inspect `saveCfg()` results; two additional mutations prove those checks cannot be silently removed.
+
+**Exact focused evidence:** [run #46109901701](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46109901701), job `140870890653`, PASS at source/test head `6a29509079b0e4383b4305a75197bd72e6874066`. Output: current 1/1; current invalid fields 6/6; legacy migration 1/1; legacy invalid fields 5/5; commit-failure retry 2/2; source mutations rejected 7/7. The preceding source commit `9fd874680b352ff93f06704e558bc77baf87d2cc` had a stale `5/5` summary label; follow-up commit `6a29509` corrected it to `7/7` without changing test behavior.
+
+**Other workflows at this checkpoint:** Mbed [#46109906713](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46109906713) source-contract job PASS; ESP32 core 3.3.13 and 4.0.0 target jobs still RUNNING. Full push [#46109901702](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46109901702) and PR [#46109906747](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46109906747) validation jobs FAILED the mandatory handover freshness check because canonical records had not yet been refreshed after the source commit; these runs did not reach controller parity. Target build jobs were still running at this checkpoint. This documentation update is the corrective handover transaction; rerun Full on the refreshed head.
+
+No production .ino, config schema, controller API, financial state, QA assertion, signer/witness, migration runtime, COE destination, device or physical EEPROM was changed. The fake EEPROM is deterministic host simulation, not physical brown-out acceptance. Physical EEPROM/NVS brown-out, GPIO/relay, LittleFS power loss, 150 power cuts, 30-device/24-hour soak and electrical pulse/recovery remain NOT TESTED. HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
+
+Next exact action: confirm Mbed terminal results, rerun Full after this canonical handover refresh, and record the final exact-head outcomes without promoting or merging the stack.
+
+Updated UTC: 2026-11-28T04:59:59.698Z.
+
+---
+
 ## PHX-HARDWARE UTC19 — startup GPIO sequence lab modularization
 
 **PR #366: OPEN / DRAFT / UNMERGED** — child of #365; base remains e65b0b895af9c3fc5e5632f704cb67b347e69725.
