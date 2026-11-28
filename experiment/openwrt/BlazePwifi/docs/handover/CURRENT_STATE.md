@@ -1,3 +1,34 @@
+## PHX-HARDWARE UTC11 follow-up — ordered precondition markers for EEPROM mutations (#374)
+
+**Task:** PHX-HW-EEPROM-RUNTIME-MUTATION-MARKERS-20261128T11Z  
+**Role:** PHX-HARDWARE · **PR:** [#374](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/374) OPEN / DRAFT / UNMERGED  
+**Branch:** `phoenix/hw-eeprom-begin-failclosed-20261128-utc07` · **Source/test HEAD:** `b8e2077eebfbb4eed500ce954b535298d67e1f10` · **Prior docs HEAD:** `659249d05d7f118b411863d288104ba7d3281db0`
+
+### Why this follow-up was required
+
+Exact exit codes alone did not prove the fixture had reached the intended preceding scenario. The earlier stdout-marker assertion was attached to the wrong point: the oversized-size marker was emitted only *after* the oversized mutation target. The corrected fixture now emits a separate zero-size precondition marker before that target and flushes every marker immediately.
+
+The runner again requires both the exact expected exit and the expected preceding marker for all five runtime mutations. The marker ordering is:
+- oversized sector: `CHECKED_EEPROM_ZERO_SIZE_DENY_PASS`
+- allocation failure: `CHECKED_EEPROM_INVALID_SIZE_DENY_PASS`
+- ignored flash-read result: `CHECKED_EEPROM_ALLOCATION_FAILURE_FAIL_CLOSED_PASS`
+- wrong sector address: `CHECKED_EEPROM_FLASH_READ_FAILURE_CLEANUP_PASS`
+- stale buffer after read failure: allocation-failure marker above
+
+### Exact-source result
+
+- Corrected Poll Intake Deny [#46140271750](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46140271750), job `140964436965`: **PASS**. Logs confirm all five precondition markers, all five source mutations rejected, and all five runtime mutations rejected at the expected exit with the expected preceding marker. Final marker: `CHECKED_EEPROM_BEGIN_RUNTIME_AND_MUTATION_MATRIX_PASS`.
+- Full [#46140271763](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46140271763), validation job `140964488070`: **FAIL at handover freshness** because this source/test commit postdated the prior root handover `659249d`. This commit synchronizes the root handover and ledger; Full must be rerun on this synchronized head. Target builds were still running when the validation gate stopped.
+- Mbed run [#46140109953](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46140109953) is on prior docs head `659249d`, not this source/test head; source-contract and core 3.3.13 passed, core 4.0.0 was still running at the last read. No Mbed result is claimed for `b8e2077eebfbb4eed500ce954b535298d67e1f10`.
+
+### Scope and safety
+
+Only the Hardware-owned native runner/harness files changed in the source/test correction. No production `.ino`, CORE API, QA assertion, controller contract, finance, receipt/disposition, signer, witness, migration, COE destination, or device changed. Coin/relay admission remains denied. Host simulation / CI only; physical EEPROM/NVS, power cuts, GPIO/relay and electrical acceptance remain NOT TESTED.
+
+**Disposition:** EEPROM runtime mutation contract = CI VERIFIED; HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.  
+**Next:** run Full on the synchronized docs head; QA owns the stale literal pending-state assertion; Master owns refreshing the exact #374 head in role/integration matrices.
+---
+
 ## PHX-HARDWARE UTC11 — checked EEPROM runtime mutation runner correction (#374)
 
 **Task:** PHX-HW-EEPROM-RUNTIME-MUTATION-RUNNER-FIX-20261128T11Z  

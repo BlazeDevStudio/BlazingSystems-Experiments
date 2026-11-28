@@ -1,4 +1,4 @@
-"""Run source-linked CheckedEEPROMClass bounds and flash-read failure tests."""
+"""Require exact invariant exits after their preceding flushed markers."""
 from pathlib import Path
 
 from checked_eeprom_begin_lab_contract import assert_checked_eeprom_begin

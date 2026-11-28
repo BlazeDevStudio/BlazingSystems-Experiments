@@ -4085,3 +4085,13 @@ This is the required documentation-first IN-PROGRESS record. No source/test resu
 - Native Synthetic #46138676568 remains blocked by QA-owned literal `if(any) return false;` assertion at `tests/v060_vendo_sequence_contract.py:18`. Mbed #46138676583 was 3/3 PASS on adjacent docs head 76dff; no Mbed run on 20cb46.
 - No production sketch, shared API, finance, QA source, signer, witness, migration, COE destination or device changed. Physical EEPROM/NVS and hardware acceptance NOT TESTED. Historical ledger prefix preserved; append only.
 
+
+## 2026-11-28 — ordered precondition markers for checked EEPROM runtime mutations (#374)
+
+- Task: PHX-HW-EEPROM-RUNTIME-MUTATION-MARKERS-20261128T11Z; source/test HEAD `b8e2077eebfbb4eed500ce954b535298d67e1f10`, PR #374 OPEN / DRAFT / UNMERGED.
+- Added a flushed zero-size marker before the oversized-sector mutation; all fixture markers now flush immediately. The runner requires both the exact invariant exit and the preceding scenario marker for each of five runtime mutations.
+- Corrected Poll #46140271750 / job 140964436965 PASS: five precondition markers observed, five source mutations rejected, five runtime mutations rejected with expected exits and markers; final runtime/mutation matrix PASS.
+- Full #46140271763 / job 140964488070 failed at handover freshness because the source/test commit was newer than root handover at 659249d. This commit synchronizes the root records; rerun Full on the new docs head.
+- Mbed #46140109953 was on adjacent docs head 659249d; source-contract and core 3.3.13 PASS, core 4.0.0 pending at last read. No Mbed result is claimed for this source/test SHA.
+- No production sketch, shared API, QA source, finance, signer, witness, migration, COE destination or physical device changed. Physical EEPROM/NVS and hardware acceptance NOT TESTED. Historical ledger prefix preserved; append only.
+
