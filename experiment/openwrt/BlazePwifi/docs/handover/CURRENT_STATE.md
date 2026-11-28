@@ -2156,3 +2156,25 @@ The existing append-only `CHANGE_LEDGER.md` and all prior handover history are p
 P0 #177 remains OPEN: active v0.6 `2fbd2475e9f54878c316fa7cea2f228386b0e859` still polls synchronously before first coin sample on both boards. #377 is a candidate only. QA owns PAY-0745/controller-parity semantics; CORE owns authenticated register/poll/receipt/disposition; MASTER owns role/integration pins. Physical relay/pulse/power acceptance, 150 power cuts, 30-device/24-hour soak, protected signer/witness, v1-to-v2 migration, durable accounting/replay and independent QA/release signoff remain NOT TESTED / NOT ACCEPTED.
 
 No firmware/API/finance source, COE destination, physical device, or production state changed in this reconciliation. Both PRs remain OPEN / DRAFT / UNMERGED.
+
+
+## PHX-HARDWARE UTC17 — current-stack reconciliation and first exact-head CI
+
+**Updated:** 2026-11-28T17:50Z (first CI read; canonical handover sync follows)  
+**Task:** `PHX-HW-177-GPIO-WRITER-STACK-RECONCILE-20261128T17Z`  
+**PR:** [#380](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/380), OPEN / DRAFT / UNMERGED  
+**Branch:** `phoenix/hw-gpio-writer-reconcile-20261128-utc17`  
+**Base:** #377 at `95ace1236c2b3e4816515c372edd4853ceeed064`  
+**Source/test SHA:** `83fc27e474064f2ed429332b8a14fa8ffb66784c`  
+**First tested PR head:** `dffa9a8e43b750372f8cd002b4106aa767a3abba`
+
+### Exact CI on first tested head
+
+- Poll Intake Deny [#46172575486](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46172575486), job `141064062306`: **PASS**. Logs contain `GPIO_WRITE_AUTHORITY_MUTATIONS_REJECTED=8`, both ESP8266 and ESP32 `POST_POLL_DENY_DIRECT_GPIO_REENABLE_MUTATION_REJECTED` markers, and the 5-outcome × 4-polarity poll transport matrix. The run explicitly reports `POLL_INTAKE_GUARD_SIMULATED_ONLY=1`.
+- Full [#46172575460](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46172575460), validation job `141064117452`: **FAIL** at the mandatory handover-freshness gate. Its log identifies prior canonical checkpoint `f52524d20a589c7c300f0a97a13bfdb5ac3e8a6c` and requires the live canonical handover/state/ledger to be updated after the code change. It did **not** reach the controller-parity assertion. Target/platform jobs were still running at first read; no final target count is claimed here. This record is the corrective append-only canonical sync; a fresh Full run is required on the resulting head.
+- Mbed TLS: **NOT RUN** on this PR head (no matching run returned).
+- Native Synthetic Journal: **NOT RUN** on this PR head (no matching run returned).
+
+### Classification
+
+The source mutation guard is **CI VERIFIED / SIMULATED** by the exact Poll run. Full integration is **FAILED at handover freshness** on the first tested head; this is not a Full pass and not a controller-contract result. Mbed and Native remain NOT TESTED. No physical acceptance is inferred. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.

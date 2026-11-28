@@ -4160,3 +4160,15 @@ This is the required documentation-first IN-PROGRESS record. No source/test resu
 P0 #177 remains OPEN: active v0.6 `2fbd2475e9f54878c316fa7cea2f228386b0e859` still polls synchronously before first coin sample on both boards. #377 is a candidate only. QA owns PAY-0745/controller-parity semantics; CORE owns authenticated register/poll/receipt/disposition; MASTER owns role/integration pins. Physical relay/pulse/power acceptance, 150 power cuts, 30-device/24-hour soak, protected signer/witness, v1-to-v2 migration, durable accounting/replay and independent QA/release signoff remain NOT TESTED / NOT ACCEPTED.
 
 No firmware/API/finance source, COE destination, physical device, or production state changed in this reconciliation. Both PRs remain OPEN / DRAFT / UNMERGED.
+
+
+## 2026-11-28T17Z — PHX-HARDWARE GPIO writer stack reconciliation (#380)
+
+- **Role/task:** PHX-HARDWARE / `PHX-HW-177-GPIO-WRITER-STACK-RECONCILE-20261128T17Z`.
+- **Branch/base:** `phoenix/hw-gpio-writer-reconcile-20261128-utc17` child of #377 at `95ace1236c2b3e4816515c372edd4853ceeed064`.
+- **Source/test SHA:** `83fc27e474064f2ed429332b8a14fa8ffb66784c`; first tested docs head `dffa9a8e43b750372f8cd002b4106aa767a3abba`.
+- **Change:** ported #378's post-deny direct GPIO ON failure injection and #379's GPIO writer-authority contract onto the current #377 stack. No production sketch or shared API changed.
+- **Poll:** #46172575486 / job 141064062306 PASS; 8 writer-authority mutations rejected, post-deny direct-GPIO mutation rejected on both board fixtures, 5 outcomes × 4 polarity combinations; SIMULATED ONLY.
+- **Full:** #46172575460 / validation job 141064117452 FAIL at canonical handover freshness because the three append-only canonical records were not yet updated after source SHA 83fc27e. Controller parity was not reached; target matrix was still running at first read. Canonical append follows in this branch; fresh Full run required.
+- **Mbed / Native:** NOT RUN on this PR head.
+- **Disposition:** keep #380 DRAFT; keep coin/relay denied. Physical acceptance, signer/witness, migration, durable accounting/replay and release signoff remain NOT TESTED / NOT ACCEPTED.
