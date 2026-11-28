@@ -1,3 +1,44 @@
+## AUTHORITATIVE LIVE LINKS
+
+- [Project Phoenix Control Plane #172](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/172)
+- [Cleanup-first #266](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/266)
+- [P0 hardware pulse-loss issue #177](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/177)
+- [Current Hardware draft PR #375](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/375) — child of #366; OPEN / DRAFT / UNMERGED
+- [Protected Phase A deny PR #239](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/239)
+- [ControllerAuthV1Lab PR #254](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/254)
+- [Parallel sketch PR #283](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/283)
+
+## PHX-HARDWARE UTC14 — immediate GPIO-off failure injection
+
+**Repository:** `BlazeDevStudio/BlazingSystems-Experiments` (owner namespace verified; repository slug unchanged).  
+**Branch:** `phoenix/hw-poll-deny-wrapper-20261128-utc13`  
+**Parent PR:** #366 at `07fef4e8e1055c06cf5e5c3a0d3829c52be31cc9`.  
+**Source/test commit:** `227658bc09fa1ab5ff9140c0b920ecc95cc7422d`.  
+**Checkpoint time:** 2026-11-28T14:13:40Z (Asia/Manila 2026-11-28 22:13:40).
+
+### Change
+
+Added a source-extracted failure injection that removes the `applyOutputs();` GPIO write from the actual `denyRemoteControl()` body, then executes the real extracted pre-poll deny and 3,500 ms blocking-poll sequence against the host GPIO model. The mutation is rejected on both boards because logical deny flags without the immediate physical OFF write leave the relay energized during the wait. Corrected the stale polarity-test comment: the harness exercises all four independent relay/LED polarity combinations.
+
+The production sketches were not changed in this incremental task. Existing candidate-stack `pollDenyOnly()` behavior still remains on an unmerged draft branch; the active `blazepwifi-v0.6.0-audit-foundation` branch remains at `2fbd2475e9f54878c316fa7cea2f228386b0e859` and still has poll-before-first-sample/response-consumption ordering. **Issue #177 is not resolved on the active branch.**
+
+### Exact evidence at source/test SHA
+
+- Focused Poll [run #46153565954](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46153565954), job `141005200843`: **PASS** at `227658bc09fa1ab5ff9140c0b920ecc95cc7422d`. The new “deny latch without immediate GPIO OFF write” mutation is rejected on ESP8266 and ESP32 (host exit 23). Existing six pulse windows × four independent polarity combinations, five transport outcomes × four polarities, pending evidence preservation and other deny mutations also pass.
+- Full [run #46153565907](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46153565907), validation job `141005241203`: **FAIL** at the mandatory handover freshness gate. Exact log identifies root `PROJECT_HANDOVER.md` as stale after the source/sketch/workflow changes; this checkpoint is syncing the canonical records. The remaining target jobs were still in progress at the last read; no Full PASS is claimed.
+- Mbed #46152593146: 3/3 PASS at preceding SHA `224bea1bf663b703e78c34b965df032739fb0c90`, **not** the current source/test SHA.
+- Native #46152593143: FAIL at QA-owned PAY-0745 literal assertion on preceding SHA `224bea1bf663b703e78c34b965df032739fb0c90`; no exact-head rerun on `227658bc`.
+
+### Acceptance
+
+SIMULATED / CI VERIFIED for the host GPIO/poll regression only. Physical relay polarity, acceptor inhibit/reject behavior, pulse retention, electrical recovery, EEPROM/NVS brown-out, 150 power cuts and 30-device/24-hour soak remain **NOT TESTED**. HARDWARE ACCEPTED = NO. PRODUCTION READY = NO-GO. No live coin, relay, device, firmware flash, migration, signer, witness or release operation occurred.
+
+### NEXT EXACT ACTION
+
+PHX-QA: replace the PAY-0745 literal source-token assertion with semantic source-linked corruption/recovery vectors and independently review the GPIO-off mutation. PHX-MASTER: register PR #375 and its #366→#365→#364→#362→#361→#359→#355→#354 ancestry in role/integration pins. PHX-HARDWARE: keep the active branch and all candidate outputs denied; after the canonical handover sync, re-run exact-head Poll/Full and continue the P0 #177 candidate-stack review without merging.
+
+---
+
 ## PHX-HARDWARE UTC19 — startup GPIO sequence lab modularization
 
 **PR #366: OPEN / DRAFT / UNMERGED** — child of #365; base remains e65b0b895af9c3fc5e5632f704cb67b347e69725.

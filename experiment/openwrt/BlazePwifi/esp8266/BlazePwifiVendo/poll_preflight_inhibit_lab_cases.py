@@ -292,6 +292,7 @@ def verify_board(name: str, path: Path):
         apply_fn, mutated_deny_without_gpio_write, poll_block, False,
         f"{name} deny latch without immediate GPIO OFF write",
     )
+    print(f"PREPOLL_GPIO_OFF_WRITE_MUTATION_REJECTED {name}")
 
     # Failure injection: the relay OFF branch must use relay polarity even
     # when the LED has the opposite active level.

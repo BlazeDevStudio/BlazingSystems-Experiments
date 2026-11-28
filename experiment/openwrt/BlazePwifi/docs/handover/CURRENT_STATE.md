@@ -1,3 +1,31 @@
+## PHX-HARDWARE UTC14 — IN PROGRESS / scoped CI verified
+
+**Task:** #177 poll-boundary GPIO-off failure injection; cleanup-first #266.  
+**PR:** #375 OPEN / DRAFT / UNMERGED, child of #366.  
+**Branch:** `phoenix/hw-poll-deny-wrapper-20261128-utc13`.  
+**Source/test SHA:** `227658bc09fa1ab5ff9140c0b920ecc95cc7422d`.  
+**Changed path:** `experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_preflight_inhibit_lab_cases.py` (host-only test; no production sketch change in this increment).
+
+The source-extracted host harness now removes `applyOutputs();` from the extracted `denyRemoteControl()` function and runs the actual deny + blocking poll body. This detects the case where software flags are false but the relay GPIO was never written OFF before the 3,500 ms synchronous HTTP wait. The mutation is rejected on ESP8266 and ESP32 (exit 23). The six pulse windows and four independent relay/LED polarity combinations remain covered.
+
+**Focused Poll:** [#46153565954](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46153565954), job `141005200843`, PASS at exact source/test SHA `227658bc09fa1ab5ff9140c0b920ecc95cc7422d`.
+
+**Full:** [#46153565907](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46153565907), validation job `141005241203`, failed mandatory handover freshness because root `PROJECT_HANDOVER.md` had not yet been refreshed. This commit synchronizes the canonical root/live/ledger records; a new source-triggered Full run is required for final gate evidence.
+
+**Mbed:** #46152593146 3/3 PASS only at prior SHA `224bea1bf663b703e78c34b965df032739fb0c90`; not exact-head evidence. **Native:** #46152593143 fails at QA-owned PAY-0745 literal assertion on that prior SHA; no current-head Native run.
+
+The active branch `blazepwifi-v0.6.0-audit-foundation` remains `2fbd2475e9f54878c316fa7cea2f228386b0e859` and still consumes the synchronous poll response before sampling the coin input. PR #375 is a deny-only candidate stack and is not merged. Issue #177 remains OPEN / P0.
+
+**HARDWARE ACCEPTED = NO. PRODUCTION READY = NO-GO.** Physical acceptor/relay, electrical, 150 power-cut, 30-device/24-hour soak, protected signer/witness, v1→v2 migration, durable accounting/replay and independent QA/release gates remain NOT TESTED / NOT ACCEPTED.
+
+## NEXT EXACT ACTION
+
+- PHX-QA: replace PAY-0745 literal token assertion with semantic source-linked fail-closed vectors; review the new GPIO-off failure injection independently.
+- PHX-MASTER: add PR #375 and its stacked ancestry to role/integration matrices.
+- PHX-HARDWARE: revalidate #375 HEAD, rerun exact-head Poll/Full after handover sync, and continue only deny-only P0 pulse-capture work. No merge, flash, relay admission or production cutover.
+
+---
+
 ## PHX-HARDWARE UTC13 — centralize the deny-only synchronous poll boundary
 
 **Stacked draft:** child of PR #366, branch `phoenix/hw-poll-deny-wrapper-20261128-utc13`, parent `07fef4e8e1055c06cf5e5c3a0d3829c52be31cc9`. Exact implementation is recorded in the new narrow handover `docs/handover/2026-11-28-hw-poll-deny-wrapper-utc13.md`.

@@ -3913,3 +3913,19 @@ This is the required documentation-first IN-PROGRESS record. No source/test resu
 - This PR is a host-lab maintainability refactor only; no production sketch or shared API changed. Physical GPIO/relay, pulse retention, 150 power cuts and 30-device/24-hour soak NOT TESTED; HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
 - CHANGE_LEDGER parent prefix preserved byte-for-byte; focused append-only guard reports base_bytes=1132798 appended_bytes=43445.
 - Updated UTC: 2026-11-27T19:31:19Z.
+
+## 2026-11-28 — PHX-HW-20261128T14Z-POLL-GPIO-OFF-FAILURE-INJECTION
+
+- **Local time / UTC:** 2026-11-28 22:13:40 Asia/Manila / 2026-11-28T14:13:40Z.
+- **Role / priority / status:** PHX-HARDWARE / P0 safety evidence / committed; focused Poll CI verified; Full handover gate failed before this canonical sync.
+- **Task:** Project Phoenix issue #177; cleanup-first #266. PR #375 OPEN / DRAFT / UNMERGED, child of #366.
+- **Repository / branch:** BlazeDevStudio/BlazingSystems-Experiments; `phoenix/hw-poll-deny-wrapper-20261128-utc13`.
+- **Source/test commit:** `227658bc09fa1ab5ff9140c0b920ecc95cc7422d`.
+- **Changed path:** `experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_preflight_inhibit_lab_cases.py`.
+- **Why:** the existing source contract required `applyOutputs();` in `denyRemoteControl()`, but did not behaviorally inject its removal. The new mutation executes the extracted deny function and blocking poll against the GPIO model, proving that a logical flag change without the immediate OFF write leaves the relay energized during the wait.
+- **Exact test:** Poll [#46153565954](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46153565954), job `141005200843`, PASS at exact SHA `227658bc09fa1ab5ff9140c0b920ecc95cc7422d`. New mutation rejected on ESP8266 and ESP32 (exit 23); six pulse windows × four polarities and five transport outcomes × four polarities pass.
+- **Failed evidence retained:** Full [#46153565907](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46153565907), job `141005241203`, failed because `PROJECT_HANDOVER.md` was stale after source/workflow changes. This is a handover sequencing failure, not a firmware compile result. Mbed #46152593146 3/3 PASS and Native #46152593143 PAY-0745 failure are at preceding SHA `224bea1`, not exact current head.
+- **Rollback / risk:** revert the source/test commit; no production sketch, coin, relay, API, finance, migration, signer, witness or device state changed.
+- **Not tested:** physical acceptor inhibit/reject and relay polarity, pulse retention, electrical recovery, EEPROM/NVS brown-out, 150 power cuts, 30-device/24-hour soak.
+- **Next exact action:** re-run exact-head Poll and Full after canonical handover sync; PHX-QA to replace PAY-0745 literal assertion with semantic tests; PHX-MASTER to pin #375 and its parent chain. Keep active branch and candidate outputs deny-only.
+
