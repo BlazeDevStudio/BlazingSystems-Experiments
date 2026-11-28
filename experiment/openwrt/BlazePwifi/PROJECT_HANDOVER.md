@@ -1,3 +1,22 @@
+## PHX-HARDWARE UTC04 — EEPROM loadCfg runtime harness (#372)
+
+**PR #372 OPEN / DRAFT / UNMERGED**, child of #371 at `18a3fa470970e729a02920607562f4b9a1e50d34`.
+Branch: `phoenix/hw-eeprom-loadcfg-runtime-harness-20261128-utc04`; latest source/test head: `6a29509079b0e4383b4305a75197bd72e6874066`.
+
+The existing EEPROM integrity lab now executes the actual source-extracted `loadCfg()`, `defaults()`, and `saveCfg()` functions against a host fake EEPROM with separate durable and staged byte arrays. It verifies valid current Config acceptance; rejection of all six unterminated current fields; valid ConfigV1 migration; rejection of all five unterminated legacy fields; migration commit failure preserving durable v1 bytes and retrying on next boot; and default commit failure preserving the invalid durable image and retrying on next boot. The source contract also requires both migration/default branches to inspect `saveCfg()` results; two additional mutations prove those checks cannot be silently removed.
+
+**Exact focused evidence:** [run #46109901701](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46109901701), job `140870890653`, PASS at source/test head `6a29509079b0e4383b4305a75197bd72e6874066`. Output: current 1/1; current invalid fields 6/6; legacy migration 1/1; legacy invalid fields 5/5; commit-failure retry 2/2; source mutations rejected 7/7. The preceding source commit `9fd874680b352ff93f06704e558bc77baf87d2cc` had a stale `5/5` summary label; follow-up commit `6a29509` corrected it to `7/7` without changing test behavior.
+
+**Other workflows at this checkpoint:** Mbed [#46109906713](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46109906713) source-contract job PASS; ESP32 core 3.3.13 and 4.0.0 target jobs still RUNNING. Full push [#46109901702](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46109901702) and PR [#46109906747](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46109906747) validation jobs FAILED the mandatory handover freshness check because canonical records had not yet been refreshed after the source commit; these runs did not reach controller parity. Target build jobs were still running at this checkpoint. This documentation update is the corrective handover transaction; rerun Full on the refreshed head.
+
+No production .ino, config schema, controller API, financial state, QA assertion, signer/witness, migration runtime, COE destination, device or physical EEPROM was changed. The fake EEPROM is deterministic host simulation, not physical brown-out acceptance. Physical EEPROM/NVS brown-out, GPIO/relay, LittleFS power loss, 150 power cuts, 30-device/24-hour soak and electrical pulse/recovery remain NOT TESTED. HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
+
+Next exact action: confirm Mbed terminal results, rerun Full after this canonical handover refresh, and record the final exact-head outcomes without promoting or merging the stack.
+
+Updated UTC: 2026-11-28T04:59:59.698Z.
+
+---
+
 ## PHX-HARDWARE UTC19 — startup GPIO sequence lab modularization
 
 **PR #366: OPEN / DRAFT / UNMERGED** — child of #365; base remains e65b0b895af9c3fc5e5632f704cb67b347e69725.

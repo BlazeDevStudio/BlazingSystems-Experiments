@@ -3953,3 +3953,14 @@ This is the required documentation-first IN-PROGRESS record. No source/test resu
 - Physical EEPROM/NVS brown-out, GPIO/relay voltage, LittleFS recovery, 150 power cuts, 30-device/24-hour soak and electrical pulse/recovery remain NOT TESTED. HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
 - Next exact action: PHX-QA replaces the literal `config_revision` presence check with source-linked deny-only controller vectors; PHX-CORE publishes authenticated register/poll/receipt/disposition; PHX-HARDWARE then resumes P0 #177 within that contract.
 - Updated UTC: 2026-11-28T04:14Z.
+
+## 2026-11-28 — PHX-HARDWARE UTC04 EEPROM loadCfg runtime harness
+
+- Work item PHX-HW-EEPROM-LOADCFG-RUNTIME-20261128T04Z; PR #372 OPEN / DRAFT / UNMERGED, child of #371 at 18a3fa470970e729a02920607562f4b9a1e50d34.
+- Branch phoenix/hw-eeprom-loadcfg-runtime-harness-20261128-utc04; source/test head 6a29509079b0e4383b4305a75197bd72e6874066; source implementation commit 9fd874680b352ff93f06704e558bc77baf87d2cc; reporting correction commit 6a29509079b0e4383b4305a75197bd72e6874066.
+- The host lab now executes source-extracted loadCfg(), defaults(), and saveCfg() against fake EEPROM with separate durable/staged bytes. Valid current Config 1/1; current unterminated fields rejected 6/6; valid ConfigV1 migration 1/1; legacy unterminated fields rejected 5/5; migration commit-failure preservation/retry PASS; defaults commit-failure preservation/retry PASS.
+- Focused [#46109901701](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46109901701), job 140870890653: PASS; seven source mutations rejected (7/7). The earlier run on source head 9fd874 printed the stale 5/5 summary label; 6a295 corrected the marker to 7/7 and the exact-head focused rerun passed.
+- Mbed [#46109906713](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46109906713): source-contract job PASS; ESP32 core 3.3.13 and 4.0.0 builds were still running at 2026-11-28T04:59:59.698Z.
+- Full push [#46109901702](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46109901702) and PR [#46109906747](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46109906747) failed mandatory handover freshness because canonical PROJECT_HANDOVER/ledger had not been updated after source changes; validation did not reach controller parity. Target jobs were still running. This append-only documentation transaction refreshes the canonical handover; rerun Full on the refreshed head.
+- No production .ino, config schema, controller API, finance, QA assertion, signer/witness, migration runtime, COE, device, or physical EEPROM changed. Host simulation only; physical brown-out and all hardware acceptance remain NOT TESTED. HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
+- Updated UTC: 2026-11-28T04:59:59.698Z.
