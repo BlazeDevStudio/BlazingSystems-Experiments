@@ -1,3 +1,29 @@
+## PHX-MASTER UTC04 — 2026-11-28T04:37Z — live role heads and exact-head CI
+
+Task: `PHX-MASTER-20261128T04Z-HW371-P0-COE26-EXACT-PROVENANCE`. Heads and workflow runs were re-read from GitHub; no role branch was modified.
+
+| Owner / PR | Exact head | Exact-head CI / disposition |
+|---|---|---|
+| CORE #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | Build #42698139210 PASS; CORE left to its separate active owner |
+| RENTAL #289 | `68928774d0d7cf65adb26bc6b54199a3159d066c` | Build #43653329229 and native auth #43653329235 PASS |
+| RENTAL #328 | `10fc200b6dbf470a95e679d3acc58aff4ab2a67f` | APK/API/native auth pass; build #45622918468 fails handover freshness and ESP32 `mbedtls/sha256.h` |
+| PISONET #255 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | Windows synthetic #42462978704 PASS; native COM NOT TESTED |
+| HARDWARE #366 | `07fef4e8e1055c06cf5e5c3a0d3829c52be31cc9` | Poll #46059524018 PASS; Mbed #46059523991 PASS; Full #46059524022 FAIL |
+| HARDWARE #367 | `85142129ed9336710539ea573ebf8f7a41cb2dd8` | Poll #46095032998 PASS; Mbed #46095033011 PASS; Full #46095032997 FAIL |
+| HARDWARE #368 | `9885c81d934922fe35777d5c8f7245766b622255` | Poll #46095152313 PASS; Mbed #46095152451 PASS; Full #46095152346 FAIL |
+| HARDWARE #369 | `6febf546b818d97ae7d1cfae0af5e6d07b11bd05` | Focused #46100665938 PASS; Mbed #46100665996 PASS; Full #46100665973 FAIL |
+| HARDWARE #370 | `b0fed471b00b88bdc03e0721547667db5edc5ec0` | Poll #46104494354 PASS; Mbed #46104494345 PASS; Full #46104494394 FAIL |
+| HARDWARE #371 | `18a3fa470970e729a02920607562f4b9a1e50d34` | Poll #46106458815 PASS; Mbed #46106458810 PASS; Full #46106458816 FAIL at controller parity |
+| QA #290 | `5c29d15994cee1279058f1eca12f2a3180704292` | Windows synthetic #43633486963 PASS; not native acceptance |
+| QA #292 | `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | No exact-head workflow |
+| RELEASE #291 / #242 | `bf339a76964a1abe2412fac45392fe06a8e66418` / `36c0d0bb3e58786359555b307bb784f720f023ce` | No exact-head workflow/status |
+
+Separate Hardware stacks remain #367→#368→#369 and #366→#370→#371. QA owns the stale `config_revision` assertion. No CORE, RENTAL, PISONET, HARDWARE, QA or RELEASE ownership changed.
+
+COE role drafts: #35 `bc57ba8e` (case collision PASS; ImageBuilder blocked by missing bwrap; Hardware/Shared blocked by missing approved ULA /48 in ten profiles); #45 `9d76a134` (overlay/shell and case-collision PASS); #49 `aeb8ff11` (Stage 5.1 and case-collision PASS; ESP32 compile fails on missing `mbedtls/sha256.h`).
+
+---
+
 ## PHX-MASTER UTC03 — 2026-11-28T03:37Z — live owner PR heads and exact-head CI
 
 Task: `PHX-MASTER-20261128T03Z-HW369-COE26-CORRECTED-PROVENANCE`. The following pins were fetched from live PR metadata and exact commit workflow runs, not inherited from prior reports.

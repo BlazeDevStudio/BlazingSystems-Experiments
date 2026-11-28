@@ -1,3 +1,21 @@
+## PHX-MASTER UTC04 — 2026-11-28T04:37Z — COE #26 exact manifest and destination recheck
+
+Candidate `integration/ecosystem-nonproprietary-candidate-20261111@b382d233ff06c8791b1028bed3c617cc7b670d12` remains OPEN / DRAFT / FROZEN. COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243` is a 3-entry / 2-blob scaffold; candidate is 286 entries / 207 blobs, 205 changed paths. All five candidate workflows are CANCELLED.
+
+### Exact source/destination facts
+
+- SOURCE_INTAKE blob `1b9018ff944f7f673934d0fc2a97e0a0090d3f5f` pins source commit `6d4c9b487af4d768c4d7627654d119417fcc6e00` and destination branch `feature/pisowifi-cleanup-stabilization`, but live PR #26 is branch `integration/ecosystem-nonproprietary-candidate-20261111`.
+- All 61 runtime rows match the pinned source blob, candidate destination blob and Git mode. Actual counts are 46 byte-identical / 15 derived; summary says 47 / 14.
+- Current Experiments main vs pinned source: 33 unchanged / 20 divergent / 8 missing. Candidate destination vs current main: 25 same / 28 different / 8 missing.
+- Four original tests: portal/security identical; config/integration derived. All 15 derived-test blobs/modes match destination; 11 NOT_RUN, 4 PENDING_CI_RUN. MIGRATION_MAP has 14 derived rows, missing `tests/voucher_txn_journal.sh`. Map hashes are stale for `run_focus.sh` (map `fa1f4f2c6393504499d50659d8bf980caf7ff85b`, intake `2b7b861ec63cf811d18d0e63b11a65efd1bec0e9`) and `member_txn_journal.sh` (map `01dc9c65ae9d74eaafb403d47aebcd20edd14390`, intake `d04df3c6f3ada60b9fda8c8c04230dd31e37019a`).
+- Source tree has 10 LICENSE/NOTICE artifacts; candidate has four exact counterparts and six missing: root NOTICE, Android Launcher LICENSE + assets/license.html, jsqr vendor LICENSE, UI QRCode LICENSE, UI Tabler LICENSE.
+- Current v0.6 firmware source ESP8266/ESP32 blobs `12c4bb82...` / `29f1125d...` differ from candidate `c8be98f7...` / `3cc7ec54...`. Both candidate .ino files exist despite the candidate hardware audit claiming they were not copied.
+- COE #35: bwrap unavailable and ten profiles lack approved ULA /48. COE #45 overlay/shell + case-collision pass. COE #49 Stage 5.1 + case-collision pass; ESP32 compile fails on missing `mbedtls/sha256.h`.
+
+No staging, copy, move, overwrite, cherry-pick, rebase or retarget is authorized or performed.
+
+---
+
 ## PHX-MASTER UTC03 — 2026-11-28T03:37Z — exact COE #26 route, test, license and source-pin reconciliation
 
 **Candidate:** `integration/ecosystem-nonproprietary-candidate-20261111@b382d233ff06c8791b1028bed3c617cc7b670d12`, OPEN / DRAFT / FROZEN. **COE main:** `a6513ab4412b4c014eee2863e45cbe32d06cb243` (3 entries / 2 blobs). Candidate tree: 286 entries / 207 blobs; five candidate workflows CANCELLED, zero combined statuses.

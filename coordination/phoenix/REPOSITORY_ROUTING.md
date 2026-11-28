@@ -1,3 +1,15 @@
+## PHX-MASTER UTC04 — 2026-11-28T04:37Z — live branch pins, ownership and protection
+
+- Experiments default `main@6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5`; development `blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5`; active v0.6 `blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859`; Master audit-start `phoenix/master-coordination@696852a64b096d8502cf08dda36bf759eb813b62`.
+- COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; PR #26 candidate `integration/ecosystem-nonproprietary-candidate-20261111@b382d233ff06c8791b1028bed3c617cc7b670d12`.
+- `OWNERSHIP_ROUTES.json` remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`, 11 routes, `DRAFT_REVIEW_ONLY`; Master target null. Its source_ref `f4e8a891` is historical vs current main `6be5d19b`. COE SOURCE_INTAKE/MIGRATION_MAP still pin stale destination branch `feature/pisowifi-cleanup-stabilization`.
+- Branch endpoints for Experiments main/development/v0.6/Master report `protected=false`; repository rulesets endpoint returned an empty list. Repository admin must verify effective protection and establish required branch/ruleset policy. No force update, rebase, retarget or manifest promotion.
+- Broad standalone Rental destination remains manual-file-mapping-only. No recursive copy, mass move or inferred target path.
+- Canonical private registry v11 and newer corrections were not recovered; do not use older snapshots as substitute or publish private Drive identifiers.
+- Automation inventory shows a separate active production-development automation; CORE #252 was read-only and no competing CORE worker/task was started.
+
+---
+
 ## PHX-MASTER UTC03 — 2026-11-28T03:37Z — exact routing manifest and branch-governance refresh
 
 - `OWNERSHIP_ROUTES.json` remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`, 11 routes, `DRAFT_REVIEW_ONLY`; PHX-MASTER source `coordination/phoenix/`, target `null`, kind `coordination-only`. No manifest edit or ownership promotion.

@@ -1,3 +1,19 @@
+## PHX-MASTER UTC04 — 2026-11-28T04:37Z — executed checks and current blockers
+
+**Role/task:** PHX-MASTER · `PHX-MASTER-20261128T04Z-HW371-P0-COE26-EXACT-PROVENANCE` · audit-start `phoenix/master-coordination@696852a64b096d8502cf08dda36bf759eb813b62`.
+
+- Executed read-only GitHub branch/PR/issue inspection, complete recursive tree inspection, exact blob/mode checks, runtime/test/license manifest reconciliation, workflow/job inspection and failure-log review.
+- Existing exact-head CI was inspected; Master did not trigger owner workflows. The #371 Full run fails at the QA-owned controller parity assertion; 14 target/platform jobs pass and downstream gates are skipped.
+- The active v0.6 branch still polls synchronously for 3500 ms before first coin sampling on both boards. Issue #177 body source SHA is stale; current branch and source blobs are recorded in ARCHITECTURE_CONTRACTS.md.
+- COE #26 remains frozen with source-pin, test-map, license and firmware provenance discrepancies. All five candidate workflows are cancelled.
+- Private Drive v11/newer corrections and the artifact/sync ledgers remain NOT_RECOVERED; Google Drive connector not exposed. No older registry snapshot used.
+- Master suite and `verify_coordination.py` NOT RUN: ordinary non-Codex git clone was attempted but this runtime could not resolve `github.com`; no local checkout/test environment.
+- Cleanup #266 remains OPEN / 0-of-7. No subsystem branch, destination staging, private record, secret, payment system, firmware, hardware or release artifact changed.
+
+**Open gates:** protected signing/anti-rollback witness; crash-atomic durable financial state; reversible migration tests; independent QA; native acceptance; 150 real power cuts; 30-device/24-hour soak; owner-authorized release gates. **PRODUCTION NO-GO.**
+
+---
+
 ## PHX-MASTER UTC03 — 2026-11-28T03:37Z — read-only audit result and blockers
 
 **Role/task:** PHX-MASTER · `PHX-MASTER-20261128T03Z-HW369-COE26-CORRECTED-PROVENANCE` · audit-start `phoenix/master-coordination@4d207266a3cbd1bdda8fb073ef75beb942116df0`.

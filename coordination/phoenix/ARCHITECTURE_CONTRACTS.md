@@ -1,3 +1,18 @@
+## PHX-MASTER UTC04 — 2026-11-28T04:37Z — P0 poll ordering and deny-only controller contract
+
+Issue #177 remains OPEN. Its description cites stale source `9df0a7e7cae31fc06d098d5a0ea7ae27f56a75ed`; live `blazepwifi-v0.6.0-audit-foundation` is `2fbd2475e9f54878c316fa7cea2f228386b0e859`.
+
+- ESP8266 blob `12c4bb82b6fddafe813674a0b5f692c1d3634073`: `h.setTimeout(3500)` line 263; synchronous `post("poll")` line 354; first `digitalRead(runCoinPin)` line 357.
+- ESP32 blob `29f1125d52ff474a0d028ad41f7af201be1f0f9d`: `h.setTimeout(3500)` line 230; synchronous `post("poll")` line 314; first `digitalRead(runCoinPin)` line 318.
+
+The prior `insertMode` state can keep output admission enabled during the blocking call; the active v0.6 source has no pre-poll inhibit or durable edge-capture replacement. P0 remains unresolved. The previous host reproduction is simulated, not physical evidence.
+
+QA's `tests/controllers.sh` remains blob `53a7af25fdee9a650e10e870c4204e0fb43239c6`, line 21: `grep -q 'config_revision' "$f"`. Deny-only candidate sketches intentionally omit this field; #371 Full fails at this assertion. QA must replace the literal presence check with source-linked deny-only vectors. Do not add a decoy config field or invent controller `response_sig`. CORE owns authenticated register/poll/receipt semantics; HARDWARE owns firmware; QA owns independent validation; Master owns the cross-role contract only.
+
+No firmware, schema, financial logic or physical test was changed or approved.
+
+---
+
 ## PHX-MASTER UTC03 — 2026-11-28T03:37Z — controller deny-default and poll interface contract revalidation
 
 ### Current HARDWARE candidate boundary

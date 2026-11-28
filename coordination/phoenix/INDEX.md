@@ -1,3 +1,18 @@
+## PHX-MASTER UTC04 — 2026-11-28T04:37Z — exact Hardware #371, P0 #177 and COE #26 provenance
+
+Task: `PHX-MASTER-20261128T04Z-HW371-P0-COE26-EXACT-PROVENANCE`. Strict NO CODEX. Master audit-start head `696852a64b096d8502cf08dda36bf759eb813b62`; all writes in this activation are restricted to `coordination/phoenix/`.
+
+- Live refs: Experiments main `6be5d19b`, v0.5.3 development `aad3aade`, active v0.6 `2fbd2475`, COE main `a6513ab4`, COE #26 `b382d233`.
+- Newest Hardware activity is #371 at `18a3fa47`, stacked on #370 `b0fed471`; focused poll-deny and Mbed CI PASS, Full fails at QA-owned `tests/controllers.sh:21`. #371 is host-lab/workflow/handover modularization only, not a production firmware fix.
+- Active v0.6 still performs a synchronous 3500 ms poll before first coin-pin sampling on both boards. Issue #177 body pins stale SHA `9df0a7e7`; current branch is `2fbd2475`. P0 remains OPEN.
+- COE #26 remains frozen. All 61 runtime rows match the pinned source and candidate, but actual 46/15 classification conflicts with summary 47/14; 15 derived tests vs 14 map rows, two stale map hashes, six missing LICENSE/NOTICE artifacts, stale branch pin, and divergent firmware remain.
+- All five COE #26 workflows are CANCELLED. COE #35/#45/#49 exact-head CI retains bwrap, ULA and ESP32 Mbed TLS blockers.
+- Private registry v11/newer corrections and Master local test environment remain unavailable. No older registry was substituted.
+- [Full UTC04 audit report](PHX_MASTER_UTC04_20261128_HW371_P0_COE26_EXACT_PROVENANCE_AUDIT.md).
+- COE #26 FROZEN; cleanup #266 OPEN / 0-of-7; PRODUCTION NO-GO.
+
+---
+
 ## PHX-MASTER UTC03 — 2026-11-28T03:37Z — live exact-head, role/CI and migration reconciliation
 
 Task: `PHX-MASTER-20261128T03Z-HW369-COE26-CORRECTED-PROVENANCE` · PHX-MASTER only · Strict NO CODEX.
