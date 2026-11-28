@@ -12,6 +12,7 @@ from config_persistence_write_result_lab_harness import (
     eeprom_harness,
     preferences_harness,
 )
+from checked_eeprom_begin_lab import main as checked_eeprom_begin_main
 
 
 def main() -> None:
@@ -24,8 +25,39 @@ def main() -> None:
     print(compile_and_run(preferences_harness(esp32), "preferences_failure"))
 
     expect_rejected(
+        "eeprom-begin-result-ignored",
+        esp8266.replace(
+            "configStoreReady=configEeprom.beginChecked(sizeof(Config));",
+            "configEeprom.beginChecked(sizeof(Config)); configStoreReady=true;",
+            1,
+        ),
+        assert_esp8266,
+    )
+    expect_rejected(
+        "eeprom-save-skips-begin-check",
+        esp8266.replace(
+            "if(!beginConfigStore()) return false;",
+            "/* begin guard removed */",
+            1,
+        ),
+        assert_esp8266,
+    )
+    expect_rejected(
         "eeprom-commit-result-ignored",
-        esp8266.replace("return EEPROM.commit();", "EEPROM.commit(); return true;", 1),
+        esp8266.replace(
+            "if(!configEeprom.commit()){",
+            "configEeprom.commit(); if(false){",
+            1,
+        ),
+        assert_esp8266,
+    )
+    expect_rejected(
+        "eeprom-commit-failure-keeps-store-ready",
+        esp8266.replace(
+            "if(!configEeprom.commit()){\n    configStoreReady=false;",
+            "if(!configEeprom.commit()){\n    configStoreReady=true;",
+            1,
+        ),
         assert_esp8266,
     )
     expect_rejected(
@@ -75,6 +107,8 @@ def main() -> None:
         assert_esp32,
     )
     print("CONFIG_PERSISTENCE_WRITE_RESULT_PASS ESP8266+ESP32")
+    # CheckedEEPROMClass allocator and flash-read failure paths run in this CI entrypoint.
+    checked_eeprom_begin_main()
 
 
 if __name__ == "__main__":

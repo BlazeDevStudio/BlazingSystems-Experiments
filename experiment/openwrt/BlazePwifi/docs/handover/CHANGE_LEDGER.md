@@ -4009,3 +4009,111 @@ This is the required documentation-first IN-PROGRESS record. No source/test resu
 
 **Disposition:** retain PR #373 DRAFT / UNMERGED. Re-run the focused append-only guard on the repaired docs head, then verify the final Full/Mbed results. Physical hardware acceptance remains NOT TESTED; HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
 
+
+## PHX-HARDWARE UTC08 — 2026-11-28 17:05 Asia/Manila — EEPROM checked-store persistence test contract (#374)
+
+- ID: PHX-HW-EEPROM-STORE-TEST-CONTRACT-20261128T09Z.
+- Scope: Hardware-owned ESP8266 EEPROM checked-store wrapper test contract; cleanup-first #266; child PR #374.
+- Status: in_progress; priority: P1 (configuration persistence / service fail-closed).
+- Why: PR #374's CheckedEEPROMClass replaced direct ESP8266 EEPROM calls, but the Hardware persistence lab still asserted the previous EEPROM.put/commit API and failed before exercising the new wrapper.
+- Branch: phoenix/hw-eeprom-begin-failclosed-20261128-utc07; parent PR #373 head 3783654a3c9862598bbb714268c536fb8b34578b.
+- Exact source/test commit: 3934cf40f1a2999ba66df2fb4e9ff2f0a1081e51 — test-only paths: config_persistence_write_result_lab_contract.py, config_persistence_write_result_lab_harness.py, config_persistence_write_result_lab.py.
+- Changes: source contract now checks beginChecked propagation, begin-before-write, wrapper put/commit, and readiness invalidation after commit failure. Native C++ harness now injects begin failure (no write/commit), commit failure, successful commit, and ready-state reuse. Four new source mutations reject ignored begin result, removed begin guard, ignored commit result, and readiness retained after commit failure.
+- Exact test evidence at source/test SHA: Poll Intake Deny push #46128730343 job 140929006378 PASS; PR #46128734749 job 140929019615 PASS. Logs: ESP8266_EEPROM_BEGIN_FAILURE_NO_WRITE_PASS, ESP8266_EEPROM_COMMIT_FAILURE_PROPAGATED_PASS, ESP8266_EEPROM_COMMIT_SUCCESS_AND_READY_REUSE_PASS, EEPROM config mutation matrix 17/17, and append-only ledger guard PASS (base 1,132,798 bytes; prior appended 59,093 bytes).
+- Cross-role failures: Native Synthetic #46128734730 job 140929019769 FAIL at QA-owned tests/v060_vendo_sequence_contract.py:18 (literal corrupt-state guard assertion). Do not edit QA's test or add a decoy token. Pre-sync Full #46128730422 validate job 140929058201 FAIL because this source commit was newer than the previous handover checkpoint; docs are now synchronized and Full must be rerun. Mbed #46128734862 source-contract passed; target builds were pending at this entry.
+- Process deviation: source/test commit preceded the required IN PROGRESS state entry. Recorded in the handover now; not backdated.
+- Safety: no production .ino modified in this activation; no CORE/QA shared contract, finance, receipt/disposition, signer/witness, COE, device or deployment changed. Host simulations are not physical acceptance. Brown-out, 150 power cuts, 30-device/24-hour soak and electrical pulse/recovery remain NOT TESTED. HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
+- Rollback: revert/close only child PR #374; preserve parent #373 and earlier stack.
+- NEXT ACTION: rerun exact-head Mbed and Full after docs sync; request PHX-QA disposition of the stale corruption-state assertion; keep coin/relay admission denied.
+
+## PHX-HARDWARE UTC08 terminal — 2026-11-28 17:10 Asia/Manila — EEPROM checked-store persistence contract (#374)
+
+- ID: PHX-HW-EEPROM-STORE-TEST-CONTRACT-20261128T09Z.
+- Scope: Hardware-owned ESP8266 checked EEPROM persistence lab; cleanup-first #266; child PR #374.
+- Status: validated for the scoped Hardware test-contract change; overall PR remains blocked; priority P1.
+- Source/test commit: 3934cf40f1a2999ba66df2fb4e9ff2f0a1081e51. Final docs/head: 26ee6b5a1f5b7de024ea04a602d8299812c5c384.
+- Focused exact docs-head push #46129051057 job 140929984400 PASS; PR #46129056177 job 140930000532 PASS. Append-only guard: base 1,132,798 bytes; appended 62,065 bytes. New EEPROM begin-failure/no-write, commit-failure propagation, commit success/ready reuse, existing EEPROM failure matrix 17/17 and config write-result lab PASS.
+- Mbed #46129056171 3/3 PASS: source contract 140930000947, core 3.3.13 140930000945, core 4.0.0 140930000750.
+- Full #46129056271 terminal FAIL at QA-owned tests/controllers.sh line 21 config_revision presence assertion (validation job 140930061660); HND-0700 and CI-0701 passed; all 14/14 target/platform builds including Android passed; downstream update/simulation/signing/publication skipped.
+- Native Synthetic #46129056215 job 140930001011 terminal FAIL at QA-owned tests/v060_vendo_sequence_contract.py line 18 literal if(any) return false; assertion. The source's loadPending() has semantic fail-closed handling: candidate present but no valid candidate -> fsReady=false, pendingReady=true, preserve files, return false. Hardware did not modify QA tests or add decoy text.
+- The three changed test files are Hardware-owned. No production .ino changed in this activation; previous CheckedEEPROMClass firmware commit e832194501c6b93746b06fd0afca61149d34c3e1 is compile-validated by the ESP8266 Full target only. Physical EEPROM/NVS brown-out remains NOT TESTED.
+- The earlier source-before-CURRENT_STATE sequencing deviation remains disclosed; no history was backdated or removed.
+- Rollback: close/revert only child PR #374; preserve #373 and parent stack.
+- NEXT ACTION: QA fixes/supersedes its two assertions on the QA branch; Master refreshes the #374 role/integration pins to docs head 26ee6b5a; Hardware keeps coin/relay admission denied.
+
+## PHX-HARDWARE UTC09 — 2026-11-28 17:47 Asia/Manila — CheckedEEPROMClass beginChecked runtime failure injection (#374)
+
+- ID: PHX-HW-CHECKED-EEPROM-BEGIN-RUNTIME-LAB-20261128T09Z.
+- Scope: Hardware-owned ESP8266 checked EEPROM initialization lab; child PR #374; no production firmware or shared API changes.
+- Branch: `phoenix/hw-eeprom-begin-failclosed-20261128-utc07`; source/test SHA: `f8865fb40e2811c74c5364e6075379692597fadd`; base before task: `10c8284467a130e8328d1875b059ddcc4bbf53c5`.
+- Added source contract, native fake-flash harness and runner that extract and execute the actual `CheckedEEPROMClass::beginChecked()` implementation. Integrated the lab into the existing focused EEPROM persistence entrypoint.
+- Focused Poll Intake Deny [#46132067080](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46132067080), job `140939195350`: PASS. Ledger guard: base 1,132,798 bytes; prior appended tail 64,351 bytes; PASS.
+- Runtime matrix PASS: zero/oversize deny, deterministic allocation failure, flash-read failure cleanup, four-byte alignment, inherited sector address, same-size reuse, resize reinitialization, invalid retry preservation.
+- Source mutation rejection 5/5; runtime mutation rejection 5/5. Final marker `CHECKED_EEPROM_BEGIN_RUNTIME_AND_MUTATION_MATRIX_PASS`.
+- Existing EEPROM load/migration runtime matrix PASS: current 1/1, invalid current 6/6, legacy 1/1, invalid legacy 5/5, commit retry 2/2, begin failure 1/1, flash-read failure 1/1.
+- Mbed #46131685056 3/3 PASS on adjacent source/test SHA `44334e37`; exact docs-head rerun pending. Full #46132067088 failed mandatory handover freshness before root handover/ledger sync; CI-0701 PASS, target builds pending at time of checkpoint. Native Synthetic #46131685065 FAIL at QA-owned literal assertion `tests/v060_vendo_sequence_contract.py:18`.
+- No production sketch, controller contract, financial state, QA test, signer/witness, migration, COE destination or device changed. Physical brown-out/power-cut and all required hardware acceptance NOT TESTED. Coin/relay admission denied.
+- Next: exact docs-head Focused/Mbed/Full reruns; QA fixes semantic pending-state assertion; Master refreshes #374 assignment/integration pin.
+
+
+## 2026-11-28 — EEPROM runtime mutation attribution hardening (#374)
+
+- Task: PHX-HW-EEPROM-RUNTIME-MUTATION-ATTRIBUTION-20261128T10Z; role PHX-HARDWARE; branch `phoenix/hw-eeprom-begin-failclosed-20261128-utc07`.
+- Source/test commit: `2f1496ac98011f00ee2168118b0c8698b2ca82b5`; parent was prior branch HEAD `09374c8b232f925424d15bce830b1c375e11e024`.
+- The native fixture helper now exposes runtime exit status while preserving compile-time fail-fast behavior.
+- Five CheckedEEPROMClass runtime mutation cases now require exact expected exit codes and preceding success markers; compiler errors, unrelated crashes, and wrong assertion locations no longer count as valid mutation rejection.
+- Test-only cleanup uses `std::_Exit(6)` after flushing stdout to avoid double-free during the deliberately dangling-buffer mutation case.
+- Baseline exact-head evidence at 09374c8b232f925424d15bce830b1c375e11e024: Focused #46132251089 PASS; Mbed #46132251056 3/3 PASS; Full #46132251064 FAIL at QA-owned `tests/controllers.sh:21` literal `config_revision`; Native #46132251066 FAIL at QA-owned `tests/v060_vendo_sequence_contract.py:18` literal `if(any) return false;`.
+- New exact-head CI is pending. No production firmware, shared controller contract, QA assertion, financial state, signer/witness, migration, COE destination or device changed. Coin/relay admission remains denied. Physical EEPROM/NVS and power-cut acceptance NOT TESTED.
+- Historical ledger prefix preserved by append only.
+
+
+
+## 2026-11-28 — EEPROM mutation-attribution harness correction (#374)
+
+- Task: PHX-HW-EEPROM-RUNTIME-MUTATION-ATTRIBUTION-20261128T10Z; correction source/test SHA `3515000ccf117a547bfe9d44e1b3e2cb110ed976`; prior source/test SHA `2f1496ac98011f00ee2168118b0c8698b2ca82b5`.
+- Exact-head Focused #46138392550 / job 140958701627 failed because the fixture's stdout marker was empty even though the oversized mutation returned the expected exit code 3. This was a test assertion defect, not a firmware failure.
+- Removed stdout-marker requirements; exact expected return codes remain required for all five mutations. Compilation errors remain fatal and cannot count as mutation rejection.
+- New corrected-source CI pending. Append only; historical ledger prefix preserved. No production firmware, shared API, QA assertion, finance, signer, witness, migration, COE destination or hardware changed.
+
+## 2026-11-28 — checked EEPROM runtime mutation runner correction (#374)
+
+- Task: PHX-HW-EEPROM-RUNTIME-MUTATION-RUNNER-FIX-20261128T11Z; source/test HEAD `20cb46b02e2885438c42f53d8990b3da87ff7fd0`, branch `phoenix/hw-eeprom-begin-failclosed-20261128-utc07`, PR #374 OPEN / DRAFT / UNMERGED.
+- Proven failure: prior Poll #46138676580 / job 140959565121 raised TypeError because four runtime mutation calls still passed a fourth stdout-marker argument to a three-parameter helper.
+- Correction: removed the four stale arguments; exact runtime exit codes 3, 13, 5, 8 and 6 remain mandatory. Corrected Poll #46139742888 / job 140962803936 PASS; five source mutations and five runtime mutations rejected, all expected runtime scenarios pass.
+- Full #46139739101 / job 140962844258 failed at handover freshness because this source/test commit was newer than the root handover. Its 14/14 target/platform + Android builds passed. This record synchronizes the handover; rerun Full on the new docs head.
+- Native Synthetic #46138676568 remains blocked by QA-owned literal `if(any) return false;` assertion at `tests/v060_vendo_sequence_contract.py:18`. Mbed #46138676583 was 3/3 PASS on adjacent docs head 76dff; no Mbed run on 20cb46.
+- No production sketch, shared API, finance, QA source, signer, witness, migration, COE destination or device changed. Physical EEPROM/NVS and hardware acceptance NOT TESTED. Historical ledger prefix preserved; append only.
+
+
+## 2026-11-28 — ordered precondition markers for checked EEPROM runtime mutations (#374)
+
+- Task: PHX-HW-EEPROM-RUNTIME-MUTATION-MARKERS-20261128T11Z; source/test HEAD `b8e2077eebfbb4eed500ce954b535298d67e1f10`, PR #374 OPEN / DRAFT / UNMERGED.
+- Added a flushed zero-size marker before the oversized-sector mutation; all fixture markers now flush immediately. The runner requires both the exact invariant exit and the preceding scenario marker for each of five runtime mutations.
+- Corrected Poll #46140271750 / job 140964436965 PASS: five precondition markers observed, five source mutations rejected, five runtime mutations rejected with expected exits and markers; final runtime/mutation matrix PASS.
+- Full #46140271763 / job 140964488070 failed at handover freshness because the source/test commit was newer than root handover at 659249d. This commit synchronizes the root records; rerun Full on the new docs head.
+- Mbed #46140109953 was on adjacent docs head 659249d; source-contract and core 3.3.13 PASS, core 4.0.0 pending at last read. No Mbed result is claimed for this source/test SHA.
+- No production sketch, shared API, QA source, finance, signer, witness, migration, COE destination or physical device changed. Physical EEPROM/NVS and hardware acceptance NOT TESTED. Historical ledger prefix preserved; append only.
+
+
+## PHX-HW-20261128T12Z-EEPROM-CONNECTSTA-RUNTIME-NETWORK-GATE
+
+- Role: PHX-HARDWARE; PR #374 OPEN/DRAFT/UNMERGED; branch \`phoenix/hw-eeprom-begin-failclosed-20261128-utc07\`.
+- Source/test HEAD: \`4da5e7a8b8911538f2d3905e559f983b773e703d\`; parent #373 \`3783654a3c9862598bbb714268c536fb8b34578b\`.
+- Added source-extracted C++11 runtime coverage for the actual ESP8266 \`connectSta()\` path after EEPROM initialization failure. Four normal states pass; two injected guard removals fail at exact exits 10 and 20 after preceding markers.
+- Local smoke: g++ 14.2.0, ASan/UBSan; 4/4 normal cases PASS; 2/2 mutations rejected.
+- Exact-head GitHub Actions: NOT RUN / no status exposed for this SHA; workflow-dispatch action unavailable in connected GitHub tools. Full repo checkout also NOT RUN locally because github.com DNS failed.
+- This is SIMULATED test evidence only. No production sketch/API, QA-owned tests, financial state, signer/witness, migration, COE, device or release path changed. Physical EEPROM/NVS, GPIO/relay, 150 power cuts and 30-device/24-hour soak NOT TESTED.
+- Keep coin/relay denied; HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
+- Updated UTC: 2026-11-28T12:42:00Z.
+
+
+## PHX-HW-20261128T12Z-EEPROM-CONNECTSTA-POLL-CI-UPDATE
+
+- Source/test SHA \`4da5e7a8b8911538f2d3905e559f983b773e703d\`; exact Poll checkout \`bb0ccc269d105bb0b70ad5a1bd42e2089c3f844d\`; PR #374 remains OPEN/DRAFT/UNMERGED.
+- Poll #46146914426 / job 140984874139 PASS. Log confirms exact checkout ref, 4/4 connectSta runtime scenarios, 2/2 injected guard mutations rejected at exits 10/20, existing 17/17 EEPROM config mutations, loadCfg runtime and pending recovery 15 scenarios per board.
+- Native Synthetic #46146914476 / job 140984876253 FAIL at QA-owned \`tests/v060_vendo_sequence_contract.py\` corrupt-persisted-state assertion.
+- Mbed #46146914481 source-contract job 140985013035 PASS; core 3.3.13 and 4.0.0 jobs in progress at read. Full #46146914480 pending; no Full result claimed.
+- Poll CI VERIFIED only; native fail, Mbed partial, Full pending. No production sketch or physical device changed. Hardware acceptance NOT TESTED; PRODUCTION NO-GO.
+- Updated UTC: 2026-11-28T12:56:00Z.
+

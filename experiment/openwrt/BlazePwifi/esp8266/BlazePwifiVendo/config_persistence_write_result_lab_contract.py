@@ -48,11 +48,27 @@ def require_failure_gate(source: str, save_name: str) -> None:
 
 
 def assert_esp8266(source: str) -> None:
+    begin = mask_non_code(extract_function(source, "bool beginConfigStore()"))
+    require(
+        "configStoreReady=configEeprom.beginChecked(sizeof(Config));" in begin and
+        "return configStoreReady;" in begin,
+        "ESP8266 beginConfigStore must propagate the checked wrapper result",
+    )
+
     save = mask_non_code(extract_function(source, "bool saveCfg("))
-    require(re.search(r"\bEEPROM\.put\s*\(\s*0\s*,\s*cfg\s*\)\s*;", save) is not None,
-            "ESP8266 saveCfg must stage the current Config record")
-    require(re.search(r"\breturn\s+EEPROM\.commit\s*\(\s*\)\s*;", save) is not None,
-            "ESP8266 saveCfg must propagate EEPROM.commit()")
+    require("if(!beginConfigStore()) return false;" in save,
+            "ESP8266 saveCfg must stop before writing when storage cannot initialize")
+    require("configEeprom.put(0,cfg);" in save,
+            "ESP8266 saveCfg must stage the current Config through the checked store")
+    require(re.search(
+        r"if\s*\(\s*!\s*configEeprom\.commit\s*\(\s*\)\s*\)\s*\{\s*"
+        r"configStoreReady\s*=\s*false\s*;\s*return\s+false\s*;\s*\}",
+        save,
+    ) is not None,
+        "ESP8266 saveCfg must propagate commit failure and invalidate store readiness")
+    require(re.search(r"\breturn\s+true\s*;", save) is not None,
+            "ESP8266 saveCfg must report success only after commit succeeds")
+
     load = mask_non_code(extract_function(source, "void loadCfg("))
     require(len(re.findall(r"if\s*\(\s*!\s*saveCfg\s*\(\s*\)\s*\)", load)) >= 2,
             "legacy migration and defaults paths must report failed persistence")

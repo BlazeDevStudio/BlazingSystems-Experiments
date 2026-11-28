@@ -64,9 +64,15 @@ def poll_guard_locations(source: str):
         raise AssertionError("automatic coin POST remains in loop before authenticated receipt contract approval")
     if re.search(r"\bclearPending\s*\(", masked_loop):
         raise AssertionError("pending coin disposition remains active in loop before authenticated receipt contract approval")
+    readiness_guard = (
+        r"configStoreReady\s*&&\s*"
+        if "configStoreReady" in masked_loop
+        else r"(?:configStoreReady\s*&&\s*)?"
+    )
     condition = re.search(
         r"if\s*\(\s*WiFi\.status\(\)\s*==\s*WL_CONNECTED\s*&&\s*"
-        r"millis\(\)\s*-\s*lastPoll\s*>\s*1500\s*\)",
+        + readiness_guard
+        + r"millis\(\)\s*-\s*lastPoll\s*>\s*1500\s*\)",
         masked_loop,
     )
     if not condition:

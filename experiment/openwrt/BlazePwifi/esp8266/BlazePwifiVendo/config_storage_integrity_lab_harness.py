@@ -179,6 +179,7 @@ def loadcfg_runtime_harness(source: str) -> str:
     ))
     runtime_functions = "\n".join((
         extract_function(source, "void defaults()"),
+        extract_function(source, "bool beginConfigStore()"),
         extract_function(source, "bool saveCfg("),
         extract_function(source, "void loadCfg()"),
     ))
@@ -192,3 +193,109 @@ def loadcfg_runtime_harness(source: str) -> str:
     )
     return render_runtime_fixture(template, replacements)
 
+
+
+def compile_and_run_result(source: str, label: str):
+    """Compile the extracted runtime path and return its exact process result."""
+    with tempfile.TemporaryDirectory(prefix="phx-eeprom-network-") as directory:
+        cpp = Path(directory) / f"{label}.cpp"
+        binary = Path(directory) / label
+        cpp.write_text(source, encoding="utf-8")
+        try:
+            subprocess.run(
+                [
+                    "g++", "-std=c++11", "-Wall", "-Wextra", "-Werror",
+                    "-fsanitize=address,undefined", "-fno-omit-frame-pointer",
+                    str(cpp), "-o", str(binary),
+                ],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+        except subprocess.CalledProcessError as exc:
+            raise AssertionError(
+                "network-gate harness compilation failed:\n" + (exc.stderr or exc.stdout)
+            ) from exc
+        return subprocess.run([str(binary)], capture_output=True, text=True)
+
+
+def connectsta_runtime_harness(source: str) -> str:
+    """Execute the real connectSta() body against deterministic fake network I/O."""
+    connect_sta = extract_function(source, "void connectSta()")
+    return r"""
+#include <cstdint>
+#include <cstdio>
+#include <cstring>
+
+static const int WL_CONNECTED = 3;
+struct Config { char ssid[33]; char pass[65]; };
+Config cfg{};
+bool configStoreReady = false;
+int wifiFailures = 7;
+int post_calls = 0;
+int deny_calls = 0;
+uint32_t fake_millis = 0;
+
+struct FakeWiFi {
+    int state = WL_CONNECTED;
+    int begin_calls = 0;
+    void begin(const char *, const char *) { ++begin_calls; }
+    int status() const { return state; }
+} WiFi;
+
+uint32_t millis() { return fake_millis; }
+void delay(uint32_t value) { fake_millis += value; }
+void yield() {}
+int post(const char *action) {
+    if (std::strcmp(action, "register") != 0) return -1;
+    ++post_calls;
+    return 0;
+}
+void denyRemoteControl() { ++deny_calls; }
+
+@@CONNECT_STA@@
+
+static void reset_case(bool ready, int wifi_state) {
+    configStoreReady = ready;
+    WiFi.state = wifi_state;
+    WiFi.begin_calls = 0;
+    post_calls = 0;
+    deny_calls = 0;
+    wifiFailures = 7;
+    fake_millis = 0;
+}
+
+int main() {
+    std::strcpy(cfg.ssid, "fixture-ssid");
+    std::strcpy(cfg.pass, "fixture-pass");
+
+    reset_case(false, WL_CONNECTED);
+    std::puts("CONFIG_STORE_UNAVAILABLE_PRECONDITION_READY");
+    connectSta();
+    if (WiFi.begin_calls != 0 || post_calls != 0 || deny_calls != 0 ||
+        wifiFailures != 7) return 10;
+    std::puts("CONFIG_STORE_UNAVAILABLE_NETWORK_DENY_PASS");
+
+    reset_case(true, WL_CONNECTED);
+    cfg.ssid[0] = 0;
+    std::puts("CONFIG_STORE_EMPTY_SSID_PRECONDITION_READY");
+    connectSta();
+    if (WiFi.begin_calls != 0 || post_calls != 0 || deny_calls != 0) return 11;
+    std::puts("CONFIG_STORE_EMPTY_SSID_DENY_PASS");
+
+    std::strcpy(cfg.ssid, "fixture-ssid");
+    reset_case(true, 0);
+    std::puts("CONFIG_STORE_READY_DISCONNECTED_PRECONDITION_READY");
+    connectSta();
+    if (WiFi.begin_calls != 1 || post_calls != 0 || deny_calls != 0 ||
+        wifiFailures != 7 || fake_millis < 12000) return 20;
+    std::puts("CONFIG_STORE_READY_DISCONNECTED_NO_REGISTER_PASS");
+
+    reset_case(true, WL_CONNECTED);
+    connectSta();
+    if (WiFi.begin_calls != 1 || post_calls != 1 || deny_calls != 1 ||
+        wifiFailures != 0) return 30;
+    std::puts("CONFIG_STORE_READY_CONNECTED_REGISTER_PASS");
+    return 0;
+}
+""".replace("@@CONNECT_STA@@", connect_sta)

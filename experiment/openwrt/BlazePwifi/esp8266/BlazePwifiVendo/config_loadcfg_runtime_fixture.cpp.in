@@ -11,6 +11,7 @@ using std::strcpy;
 /* PHX_CONFIG_CONSTANTS */
 
 Config cfg{};
+bool configStoreReady=false;
 
 struct FakeSerial {
     std::string last;
@@ -31,13 +32,22 @@ size_t strlcpy(char *destination, const char *source, size_t capacity) {
 struct FakeEEPROM {
     unsigned char durable[sizeof(Config)]{};
     unsigned char staged[sizeof(Config)]{};
+    bool begin_ok = true;
+    bool read_ok = true;
     bool commit_ok = true;
     int begin_calls = 0;
+    int read_calls = 0;
     int get_calls = 0;
     int put_calls = 0;
     int commit_calls = 0;
 
-    void begin(size_t size) { (void)size; ++begin_calls; }
+    bool beginChecked(size_t size) {
+        (void)size;
+        ++begin_calls;
+        if (!begin_ok) return false;
+        ++read_calls;
+        return read_ok;
+    }
 
     template <typename T>
     void get(int address, T &value) {
@@ -65,12 +75,15 @@ struct FakeEEPROM {
         std::memset(durable, 0, sizeof(durable));
         std::memcpy(durable, &value, sizeof(T));
         std::memcpy(staged, durable, sizeof(durable));
+        begin_ok = true;
+        read_ok = true;
         commit_ok = true;
-        begin_calls = get_calls = put_calls = commit_calls = 0;
+        configStoreReady = false;
+        begin_calls = read_calls = get_calls = put_calls = commit_calls = 0;
     }
 
     void resetCounters() {
-        begin_calls = get_calls = put_calls = commit_calls = 0;
+        begin_calls = read_calls = get_calls = put_calls = commit_calls = 0;
     }
 
     template <typename T>
@@ -78,7 +91,7 @@ struct FakeEEPROM {
         std::memcpy(&value, durable, sizeof(T));
     }
 };
-FakeEEPROM EEPROM;
+FakeEEPROM configEeprom;
 
 void makeSetupPassword() {
     strlcpy(cfg.apPass, "fixture-pass-12", sizeof(cfg.apPass));
@@ -133,12 +146,12 @@ static bool isDefaults() {
 
 int main() {
     Config current = makeCurrent();
-    EEPROM.seed(current);
+    configEeprom.seed(current);
     cfg = Config{};
     loadCfg();
     if (cfg.magic != MAGIC || std::strcmp(cfg.ssid, "current-ssid") != 0 ||
         std::strcmp(cfg.apPass, "current-ap-pass") != 0 ||
-        EEPROM.put_calls != 0 || EEPROM.commit_calls != 0) return 1;
+        configEeprom.put_calls != 0 || configEeprom.commit_calls != 0) return 1;
     std::cout << "EEPROM_LOADCFG_CURRENT_ACCEPT_PASS\n";
 
     struct CurrentField { char *value; size_t capacity; };
@@ -153,15 +166,15 @@ int main() {
             {current.apPass, sizeof(current.apPass)}
         };
         std::memset(fields[field].value, 'X', fields[field].capacity);
-        EEPROM.seed(current);
+        configEeprom.seed(current);
         cfg = Config{};
         loadCfg();
-        if (!isDefaults() || EEPROM.put_calls != 1 || EEPROM.commit_calls != 1) return 2;
+        if (!isDefaults() || configEeprom.put_calls != 1 || configEeprom.commit_calls != 1) return 2;
     }
     std::cout << "EEPROM_LOADCFG_CURRENT_UNTERMINATED_REJECT_PASS fields=6/6\n";
 
     ConfigV1 legacy = makeLegacy();
-    EEPROM.seed(legacy);
+    configEeprom.seed(legacy);
     cfg = Config{};
     Serial.last.clear();
     loadCfg();
@@ -172,10 +185,10 @@ int main() {
         std::strcmp(cfg.id, "legacy-id") != 0 ||
         std::strcmp(cfg.apPass, "fixture-pass-12") != 0 ||
         cfg.coinPin != 12 || cfg.insertLedPin != 13 || cfg.relayPin != 15 ||
-        cfg.coinActiveLow != 0 || EEPROM.put_calls != 1 || EEPROM.commit_calls != 1 ||
+        cfg.coinActiveLow != 0 || configEeprom.put_calls != 1 || configEeprom.commit_calls != 1 ||
         Serial.last != "Migrated BlazePwifi Vendo v1 configuration.") return 3;
     Config persisted{};
-    EEPROM.readDurable(persisted);
+    configEeprom.readDurable(persisted);
     if (persisted.magic != MAGIC || std::strcmp(persisted.ssid, "legacy-ssid") != 0 ||
         std::strcmp(persisted.apPass, "fixture-pass-12") != 0) return 4;
     std::cout << "EEPROM_LOADCFG_LEGACY_MIGRATION_PASS\n";
@@ -191,60 +204,122 @@ int main() {
             {legacy.id, sizeof(legacy.id)}
         };
         std::memset(fields[field].value, 'X', fields[field].capacity);
-        EEPROM.seed(legacy);
+        configEeprom.seed(legacy);
         cfg = Config{};
         loadCfg();
-        if (!isDefaults() || EEPROM.put_calls != 1 || EEPROM.commit_calls != 1) return 5;
+        if (!isDefaults() || configEeprom.put_calls != 1 || configEeprom.commit_calls != 1) return 5;
     }
     std::cout << "EEPROM_LOADCFG_LEGACY_UNTERMINATED_REJECT_PASS fields=5/5\n";
 
     legacy = makeLegacy();
-    EEPROM.seed(legacy);
-    EEPROM.commit_ok = false;
+    configEeprom.seed(legacy);
+    configEeprom.commit_ok = false;
     cfg = Config{};
     Serial.last.clear();
     loadCfg();
     ConfigV1 durableLegacy{};
-    EEPROM.readDurable(durableLegacy);
-    if (EEPROM.commit_calls != 1 || EEPROM.put_calls != 1 ||
+    configEeprom.readDurable(durableLegacy);
+    if (configEeprom.commit_calls != 1 || configEeprom.put_calls != 1 ||
         durableLegacy.magic != MAGIC_V1 ||
         std::strcmp(durableLegacy.ssid, "legacy-ssid") != 0 ||
         Serial.last != "CRITICAL: EEPROM configuration migration write failed; retrying on next boot.") return 6;
-    EEPROM.commit_ok = true;
-    EEPROM.resetCounters();
+    configEeprom.commit_ok = true;
+    configEeprom.resetCounters();
     cfg = Config{};
     Serial.last.clear();
     loadCfg();
     Config retried{};
-    EEPROM.readDurable(retried);
+    configEeprom.readDurable(retried);
     if (retried.magic != MAGIC || std::strcmp(retried.ssid, "legacy-ssid") != 0 ||
-        EEPROM.commit_calls != 1 ||
+        configEeprom.commit_calls != 1 ||
         Serial.last != "Migrated BlazePwifi Vendo v1 configuration.") return 7;
     std::cout << "EEPROM_LOADCFG_MIGRATION_COMMIT_FAILURE_RETRY_PASS\n";
 
     current = makeCurrent();
     std::memset(current.ssid, 'X', sizeof(current.ssid));
-    EEPROM.seed(current);
-    EEPROM.commit_ok = false;
+    configEeprom.seed(current);
+    configEeprom.commit_ok = false;
     cfg = Config{};
     Serial.last.clear();
     loadCfg();
     Config stillInvalid{};
-    EEPROM.readDurable(stillInvalid);
-    if (EEPROM.commit_calls != 1 || stillInvalid.magic != MAGIC ||
+    configEeprom.readDurable(stillInvalid);
+    if (configEeprom.commit_calls != 1 || stillInvalid.magic != MAGIC ||
         stillInvalid.ssid[sizeof(stillInvalid.ssid) - 1] != 'X' ||
         Serial.last != "CRITICAL: EEPROM defaults write failed; setup remains available.") return 8;
-    EEPROM.commit_ok = true;
-    EEPROM.resetCounters();
+    configEeprom.commit_ok = true;
+    configEeprom.resetCounters();
     cfg = Config{};
     Serial.last.clear();
     loadCfg();
     Config repaired{};
-    EEPROM.readDurable(repaired);
+    configEeprom.readDurable(repaired);
     if (!isDefaults() || repaired.magic != MAGIC || repaired.ssid[0] != '\0' ||
-        EEPROM.commit_calls != 1) return 9;
+        configEeprom.commit_calls != 1) return 9;
     std::cout << "EEPROM_LOADCFG_DEFAULT_COMMIT_FAILURE_RETRY_PASS\n";
 
-    std::cout << "EEPROM_LOADCFG_RUNTIME_PASS current=1/1 current_invalid=6/6 legacy=1/1 legacy_invalid=5/5 commit_retry=2/2\n";
+
+    current = makeCurrent();
+    configEeprom.seed(current);
+    configEeprom.begin_ok = false;
+    cfg = Config{};
+    Serial.last.clear();
+    loadCfg();
+    Config durableAfterBeginFailure{};
+    configEeprom.readDurable(durableAfterBeginFailure);
+    if (configStoreReady || !isDefaults() || configEeprom.begin_calls != 1 ||
+        configEeprom.get_calls != 0 || configEeprom.put_calls != 0 || configEeprom.commit_calls != 0 ||
+        durableAfterBeginFailure.magic != MAGIC ||
+        std::strcmp(durableAfterBeginFailure.ssid, "current-ssid") != 0 ||
+        Serial.last != "CRITICAL: EEPROM initialization failed; configuration unavailable; coin intake remains denied.") return 10;
+    std::cout << "EEPROM_LOADCFG_BEGIN_FAILURE_FAIL_CLOSED_PASS\n";
+
+    configEeprom.begin_ok = true;
+    cfg = makeCurrent();
+    if (!saveCfg() || !configStoreReady || configEeprom.begin_calls != 2 ||
+        configEeprom.get_calls != 0 || configEeprom.put_calls != 1 || configEeprom.commit_calls != 1) return 11;
+    Config recoveredAfterBeginFailure{};
+    configEeprom.readDurable(recoveredAfterBeginFailure);
+    if (recoveredAfterBeginFailure.magic != MAGIC ||
+        std::strcmp(recoveredAfterBeginFailure.ssid, "current-ssid") != 0) return 12;
+    std::cout << "EEPROM_LOADCFG_BEGIN_FAILURE_RECOVERY_PASS\n";
+
+    current = makeCurrent();
+    configEeprom.seed(current);
+    configEeprom.read_ok = false;
+    cfg = Config{};
+    Serial.last.clear();
+    loadCfg();
+    Config durableAfterReadFailure{};
+    configEeprom.readDurable(durableAfterReadFailure);
+    if (configStoreReady || !isDefaults() || configEeprom.begin_calls != 1 ||
+        configEeprom.read_calls != 1 || configEeprom.get_calls != 0 ||
+        configEeprom.put_calls != 0 || configEeprom.commit_calls != 0 ||
+        durableAfterReadFailure.magic != MAGIC ||
+        std::strcmp(durableAfterReadFailure.ssid, "current-ssid") != 0) return 14;
+    std::cout << "EEPROM_LOADCFG_FLASH_READ_FAILURE_FAIL_CLOSED_PASS\\n";
+
+    configEeprom.read_ok = true;
+    cfg = makeCurrent();
+    if (!saveCfg() || !configStoreReady || configEeprom.begin_calls != 2 ||
+        configEeprom.read_calls != 2 || configEeprom.put_calls != 1 ||
+        configEeprom.commit_calls != 1) return 15;
+    Config recoveredAfterReadFailure{};
+    configEeprom.readDurable(recoveredAfterReadFailure);
+    if (recoveredAfterReadFailure.magic != MAGIC ||
+        std::strcmp(recoveredAfterReadFailure.ssid, "current-ssid") != 0) return 16;
+    std::cout << "EEPROM_LOADCFG_FLASH_READ_FAILURE_RECOVERY_PASS\\n";
+
+    configEeprom.resetCounters();
+    configStoreReady = false;
+    cfg = Config{};
+    Serial.last.clear();
+    loadCfg();
+    if (!configStoreReady || cfg.magic != MAGIC ||
+        std::strcmp(cfg.ssid, "current-ssid") != 0 ||
+        configEeprom.begin_calls != 1 || configEeprom.get_calls != 1 ||
+        configEeprom.put_calls != 0 || configEeprom.commit_calls != 0) return 13;
+
+    std::cout << "EEPROM_LOADCFG_RUNTIME_PASS current=1/1 current_invalid=6/6 legacy=1/1 legacy_invalid=5/5 commit_retry=2/2 begin_failure=1/1 flash_read_failure=1/1\n";
     return 0;
 }

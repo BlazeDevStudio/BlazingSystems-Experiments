@@ -85,6 +85,77 @@ def assert_source_contract(source: str) -> None:
             "legacy string copies must remain after the bounded validation guard")
     require("strlen(" not in load,
             "loadCfg must not use unbounded strlen on raw EEPROM bytes")
+
+    store_ready = re.search(r"\bbool\s+configStoreReady\s*=\s*false\s*;", masked_source)
+    require(store_ready is not None, "EEPROM readiness state must default to denied")
+    checked_class_match = re.search(
+        r"\bclass\s+CheckedEEPROMClass\s*:\s*public\s+EEPROMClass\s*\{",
+        masked_source,
+    )
+    require(checked_class_match is not None,
+            "ESP8266 EEPROM wrapper must expose a checked begin path")
+    checked_open = masked_source.find("{", checked_class_match.start())
+    checked_class = mask_non_code(extract_braced(source, checked_open))
+    require("if(requested==0 || requested>kFlashSectorBytes) return false;" in checked_class,
+            "EEPROM requested size must be bounded to the flash sector")
+    require("new (std::nothrow) uint8_t[aligned]" in checked_class,
+            "EEPROM allocation must be checked without throwing")
+    require("if(!_data){" in checked_class and "_size=aligned;" in checked_class,
+            "EEPROM allocation result must be checked before flash access")
+    require("if(!ESP.flashRead(address,_data,_size))" in checked_class,
+            "EEPROM flash read failure must be reported")
+    require("delete[] _data;" in checked_class and "_data=nullptr;" in checked_class,
+            "failed EEPROM initialization must release and clear the buffer")
+    require("CheckedEEPROMClass configEeprom;" in masked_source,
+            "firmware must use the checked EEPROM instance")
+
+    begin_fn = mask_non_code(extract_function(source, "bool beginConfigStore()"))
+    require("if(configStoreReady) return true;" in begin_fn,
+            "EEPROM begin helper must reuse a confirmed ready state")
+    require("configStoreReady=configEeprom.beginChecked(sizeof(Config));" in begin_fn and
+            "return configStoreReady;" in begin_fn,
+            "EEPROM checked begin result must be retained and returned")
+
+    save = mask_non_code(extract_function(source, "bool saveCfg()"))
+    save_begin = save.find("if(!beginConfigStore()) return false;")
+    save_put = save.find("configEeprom.put(0,cfg);")
+    save_commit = save.find("if(!configEeprom.commit()){")
+    save_deny = save.find("configStoreReady=false;", save_commit)
+    require(0 <= save_begin < save_put < save_commit < save_deny,
+            "saveCfg must initialize storage before writing and invalidate readiness on commit failure")
+
+    load = mask_non_code(extract_function(source, "void loadCfg()"))
+    load_begin = load.find("if(!beginConfigStore()){")
+    load_defaults = load.find("defaults();", load_begin)
+    load_return = load.find("return;", load_defaults)
+    first_read = load.find("configEeprom.get(")
+    require(0 <= load_begin < load_defaults < load_return < first_read,
+            "loadCfg must default and return before any EEPROM read when begin fails")
+    require("EEPROM.begin(" not in load,
+            "loadCfg must use the checked begin helper, not an unchecked direct begin")
+    require(re.search(r"\bEEPROM\s*\.\s*(?:begin|get|put|commit)\s*\(", masked_source) is None,
+            "firmware must not bypass the checked EEPROM wrapper")
+
+    outputs = mask_non_code(extract_function(source, "void applyOutputs()"))
+    require("bool accepting=configStoreReady && controllerEnabled && coinEnabled && insertMode && fsReady && !pendingReady;" in outputs,
+            "relay/LED admission must remain denied when EEPROM is unavailable")
+
+    connect = mask_non_code(extract_function(source, "void connectSta()"))
+    connect_guard = connect.find("if(!configStoreReady || !strlen(cfg.ssid)) return;")
+    connect_wifi = connect.find("WiFi.begin(")
+    require(0 <= connect_guard < connect_wifi,
+            "connectSta must not use config loaded from an unavailable EEPROM store")
+
+    loop = mask_non_code(extract_function(source, "void loop()"))
+    require(re.search(
+        r"WiFi\.status\(\)!=WL_CONNECTED\s*&&\s*configStoreReady\s*&&\s*strlen\(cfg\.ssid\)",
+        loop,
+    ) is not None, "automatic reconnect must require a valid EEPROM store")
+    require(re.search(
+        r"WiFi\.status\(\)==WL_CONNECTED\s*&&\s*configStoreReady\s*&&\s*millis\(\)-lastPoll>1500",
+        loop,
+    ) is not None, "poll POST must require a valid EEPROM store")
+
 def expect_rejected(label: str, mutated: str) -> None:
     try:
         assert_source_contract(mutated)
