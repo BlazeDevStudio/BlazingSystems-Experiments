@@ -8,6 +8,7 @@ on:
       - phoenix/hw-pending-candidate-collision-guard-20261127-utc15
       - phoenix/hw-pending-recovery-contract-module-split-20261128-utc17
       - phoenix/hw-output-enable-lab-modules-20261128-utc19
+      - phoenix/hw-deny-latch-cast-alias-20261128-utc01
     paths:
       - 'experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino'
       - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/BlazePwifiVendo.ino'
