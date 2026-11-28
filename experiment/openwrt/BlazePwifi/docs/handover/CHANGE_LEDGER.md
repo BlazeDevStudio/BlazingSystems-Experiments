@@ -3985,3 +3985,14 @@ This is the required documentation-first IN-PROGRESS record. No source/test resu
 - Behavior-preserving test refactor; production sketches, controller/finance APIs, QA-owned tests, signer/witness and COE remain untouched.
 - Focused/Mbed/Full results pending at this documentation checkpoint; physical EEPROM/NVS and all required hardware acceptance NOT TESTED.
 - Updated UTC: 2026-11-28T05:08:53Z.
+
+---
+
+## PHX-HARDWARE UTC05 — PR #373 terminal exact-head evidence
+
+- Source/test SHA: `8d33f53396a9357f4e2d2dd931e66ce2bfc91765`; branch: `phoenix/hw-loadcfg-runtime-fixture-template-20261128-utc05`; PR #373 OPEN/DRAFT/UNMERGED.
+- Focused #46111352698 job 140875370614 PASS; runtime current/legacy/commit-retry matrix PASS; seven source mutations rejected; append-only ledger guard PASS (base 1,132,798 bytes; append 55,989 bytes). Push Focused #46111347759 PASS.
+- Mbed #46111352724 PASS 3/3: source contract, ESP32 core 3.3.13 and 4.0.0.
+- Full #46111352710 terminal FAIL at QA-owned tests/controllers.sh:21 config_revision assertion after CI-0701 and handover freshness PASS; all 14/14 target/platform jobs PASS. Push Full #46111347820 has the same result. Downstream simulation/update/sign/publication stages skipped.
+- No production sketch/API/finance/QA test/COE/device change; physical acceptance NOT TESTED; HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
+- Updated UTC: 2026-11-28T05:20:45Z.

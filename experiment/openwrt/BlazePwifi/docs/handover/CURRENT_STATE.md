@@ -1764,3 +1764,16 @@ No production `.ino`, controller API, config schema, finance/receipt state, QA-o
 **Next:** verify exact-head Focused and Mbed results, then Full; append terminal job evidence without rewriting historical records.
 
 Updated UTC: 2026-11-28T05:08:53Z.
+
+---
+
+## UTC05 exact-head terminal evidence — PR #373
+
+Source/test commit `8d33f53396a9357f4e2d2dd931e66ce2bfc91765` on `phoenix/hw-loadcfg-runtime-fixture-template-20261128-utc05`; PR #373 remains OPEN / DRAFT / UNMERGED.
+
+- Focused PR [run #46111352698](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46111352698), job `140875370614`: **PASS**. The EEPROM runtime output is `EEPROM_LOADCFG_RUNTIME_PASS current=1/1 current_invalid=6/6 legacy=1/1 legacy_invalid=5/5 commit_retry=2/2`; seven source mutations rejected (7/7). The same exact-source job passed the append-only ledger guard: base 1,132,798 bytes; appended 55,989 bytes. Push exact-head Focused [#46111347759](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46111347759) also PASS.
+- Mbed [run #46111352724](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46111352724): **3/3 PASS** — source-contract job `140875370853`, ESP32 core 3.3.13 job `140875370794`, core 4.0.0 job `140875370653`.
+- Full PR [run #46111352710](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46111352710): **TERMINAL FAILURE** at validation job `140875418595`. CI-0701 and mandatory handover freshness passed; QA-owned `tests/controllers.sh:21` fails on the literal `config_revision` presence assertion. All 14/14 target/platform jobs passed: ESP8266, ESP32, Android, Ruijie, x86_64, Orange Pi PC/One/Zero3, and optional PC2/PC+/One+/Zero/Zero2/Zero2W. Downstream update bundle, simulations, candidate, signing and publication were skipped. Exact-head push Full [#46111347820](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46111347820) has the same terminal validation failure and 14/14 target/platform PASS.
+- This confirms the template extraction executes in the existing native C++11 ASan/UBSan test; it does not change the inherited controller-parity blocker.
+
+No production `.ino`, controller API, config schema, finance/receipt state, QA-owned assertion, signer/witness, COE destination or physical device changed. Physical EEPROM/NVS brown-out and all required electrical/hardware acceptance remain **NOT TESTED**. HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
