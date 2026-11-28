@@ -104,10 +104,64 @@ def main() -> None:
         ),
     )
 
+
+    expect_rejected(
+        "eeprom-begin-result-ignored",
+        source.replace(
+            "configStoreReady=EEPROM.begin(sizeof(Config));",
+            "EEPROM.begin(sizeof(Config)); configStoreReady=true;",
+            1,
+        ),
+    )
+    expect_rejected(
+        "loadcfg-begin-failure-fallthrough",
+        source.replace("if(!beginConfigStore()){", "if(false){", 1),
+    )
+    expect_rejected(
+        "savecfg-skips-begin-check",
+        source.replace(
+            "if(!beginConfigStore()) return false;",
+            "/* begin guard removed */",
+            1,
+        ),
+    )
+    expect_rejected(
+        "connectsta-uses-uninitialized-config",
+        source.replace(
+            "if(!configStoreReady || !strlen(cfg.ssid)) return;",
+            "if(!strlen(cfg.ssid)) return;",
+            1,
+        ),
+    )
+    expect_rejected(
+        "reconnect-uses-uninitialized-config",
+        source.replace(
+            "&& configStoreReady && strlen(cfg.ssid)",
+            "&& strlen(cfg.ssid)",
+            1,
+        ),
+    )
+    expect_rejected(
+        "poll-uses-uninitialized-config",
+        source.replace(
+            "WiFi.status()==WL_CONNECTED && configStoreReady && millis()-lastPoll>1500",
+            "WiFi.status()==WL_CONNECTED && millis()-lastPoll>1500",
+            1,
+        ),
+    )
+    expect_rejected(
+        "output-enable-without-config-store",
+        source.replace(
+            "bool accepting=configStoreReady && controllerEnabled",
+            "bool accepting=controllerEnabled",
+            1,
+        ),
+    )
+
     print(compile_and_run(cxx_harness(source), "config_integrity"))
     print(compile_and_run(loadcfg_runtime_harness(source), "config_loadcfg_runtime"))
     print("EEPROM_CONFIG_SOURCE_CONTRACT_PASS")
-    print("EEPROM_CONFIG_FAILURE_INJECTION_PASS 7/7")
+    print("EEPROM_CONFIG_FAILURE_INJECTION_PASS 14/14")
 
 if __name__ == "__main__":
     main()

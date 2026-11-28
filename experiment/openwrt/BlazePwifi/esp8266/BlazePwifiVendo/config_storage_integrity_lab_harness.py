@@ -179,6 +179,7 @@ def loadcfg_runtime_harness(source: str) -> str:
     ))
     runtime_functions = "\n".join((
         extract_function(source, "void defaults()"),
+        extract_function(source, "bool beginConfigStore()"),
         extract_function(source, "bool saveCfg("),
         extract_function(source, "void loadCfg()"),
     ))

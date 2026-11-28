@@ -34,6 +34,7 @@ struct Config {
 };
 
 Config cfg;
+bool configStoreReady=false;
 
 ESP8266WebServer web(80);
 const uint32_t MAGIC_V1=0x42505731;
@@ -257,10 +258,29 @@ void defaults(){
 }
 
 // EEPROM.commit() is the persistence result; callers must not report success or reboot on false.
-bool saveCfg(){ EEPROM.put(0,cfg); return EEPROM.commit(); }
+bool beginConfigStore(){
+  if(configStoreReady) return true;
+  configStoreReady=EEPROM.begin(sizeof(Config));
+  return configStoreReady;
+}
+
+// EEPROM writes are not usable until begin succeeds; failed commits keep intake denied.
+bool saveCfg(){
+  if(!beginConfigStore()) return false;
+  EEPROM.put(0,cfg);
+  if(!EEPROM.commit()){
+    configStoreReady=false;
+    return false;
+  }
+  return true;
+}
 
 void loadCfg(){
-  EEPROM.begin(sizeof(Config));
+  if(!beginConfigStore()){
+    defaults();
+    Serial.println("CRITICAL: EEPROM initialization failed; configuration unavailable; coin intake remains denied.");
+    return;
+  }
   EEPROM.get(0,cfg);
   if(cfg.magic==MAGIC && configStringsTerminated(cfg) &&
      boundedStringLength(cfg.apPass,sizeof(cfg.apPass))>=8) return;
@@ -331,7 +351,7 @@ String post(const String& action,const String& pulses="0",const String& target="
 }
 
 void applyOutputs(){
-  bool accepting=controllerEnabled && coinEnabled && insertMode && fsReady && !pendingReady;
+  bool accepting=configStoreReady && controllerEnabled && coinEnabled && insertMode && fsReady && !pendingReady;
   if(ledEnabled) writeLogical(runLedPin,accepting,runLedActiveHigh); else writeLogical(runLedPin,false,runLedActiveHigh);
   if(relayEnabled) writeLogical(runRelayPin,accepting,runRelayActiveHigh); else writeLogical(runRelayPin,false,runRelayActiveHigh);
 }
@@ -389,7 +409,7 @@ void setupPortal(){
     cfg.coinPin=web.arg("coin").toInt();cfg.insertLedPin=web.arg("led").toInt();cfg.relayPin=web.arg("relay").toInt();
     if(!saveCfg()){
       denyRemoteControl();
-      web.send(500,"text/plain","EEPROM commit failed; settings were not confirmed. Setup mode remains active.");
+      web.send(500,"text/plain","EEPROM storage unavailable or commit failed; settings were not confirmed. Setup mode remains active.");
       return;
     }
     web.send(200,"text/plain","Wi-Fi verified and settings saved. Rebooting...");delay(700);ESP.restart();
@@ -399,7 +419,7 @@ void setupPortal(){
 }
 
 void connectSta(){
-  if(!strlen(cfg.ssid)) return;
+  if(!configStoreReady || !strlen(cfg.ssid)) return;
   WiFi.begin(cfg.ssid,cfg.pass);
   uint32_t t=millis();
   while(WiFi.status()!=WL_CONNECTED && millis()-t<12000){ delay(250);yield(); }
@@ -435,12 +455,12 @@ void setup(){
 void loop(){
   web.handleClient();
 
-  if(WiFi.status()!=WL_CONNECTED && strlen(cfg.ssid) && millis()-lastPoll>8000){
+  if(WiFi.status()!=WL_CONNECTED && configStoreReady && strlen(cfg.ssid) && millis()-lastPoll>8000){
     WiFi.disconnect();WiFi.begin(cfg.ssid,cfg.pass);wifiFailures++;lastPoll=millis();
     if(wifiFailures>=maxWifiRetries)startSetupAp();
   }
 
-  if(WiFi.status()==WL_CONNECTED && millis()-lastPoll>1500){
+  if(WiFi.status()==WL_CONNECTED && configStoreReady && millis()-lastPoll>1500){
     wifiFailures=0;
     // P0: disable the physical coin acceptor before the blocking 3.5s HTTP wait.
     // Keep the poll response discarded until CORE's authenticated contract is approved.

@@ -11,6 +11,7 @@ using std::strcpy;
 /* PHX_CONFIG_CONSTANTS */
 
 Config cfg{};
+bool configStoreReady=false;
 
 struct FakeSerial {
     std::string last;
@@ -31,13 +32,14 @@ size_t strlcpy(char *destination, const char *source, size_t capacity) {
 struct FakeEEPROM {
     unsigned char durable[sizeof(Config)]{};
     unsigned char staged[sizeof(Config)]{};
+    bool begin_ok = true;
     bool commit_ok = true;
     int begin_calls = 0;
     int get_calls = 0;
     int put_calls = 0;
     int commit_calls = 0;
 
-    void begin(size_t size) { (void)size; ++begin_calls; }
+    bool begin(size_t size) { (void)size; ++begin_calls; return begin_ok; }
 
     template <typename T>
     void get(int address, T &value) {
@@ -65,7 +67,9 @@ struct FakeEEPROM {
         std::memset(durable, 0, sizeof(durable));
         std::memcpy(durable, &value, sizeof(T));
         std::memcpy(staged, durable, sizeof(durable));
+        begin_ok = true;
         commit_ok = true;
+        configStoreReady = false;
         begin_calls = get_calls = put_calls = commit_calls = 0;
     }
 
@@ -245,6 +249,42 @@ int main() {
         EEPROM.commit_calls != 1) return 9;
     std::cout << "EEPROM_LOADCFG_DEFAULT_COMMIT_FAILURE_RETRY_PASS\n";
 
-    std::cout << "EEPROM_LOADCFG_RUNTIME_PASS current=1/1 current_invalid=6/6 legacy=1/1 legacy_invalid=5/5 commit_retry=2/2\n";
+
+    current = makeCurrent();
+    EEPROM.seed(current);
+    EEPROM.begin_ok = false;
+    cfg = Config{};
+    Serial.last.clear();
+    loadCfg();
+    Config durableAfterBeginFailure{};
+    EEPROM.readDurable(durableAfterBeginFailure);
+    if (configStoreReady || !isDefaults() || EEPROM.begin_calls != 1 ||
+        EEPROM.get_calls != 0 || EEPROM.put_calls != 0 || EEPROM.commit_calls != 0 ||
+        durableAfterBeginFailure.magic != MAGIC ||
+        std::strcmp(durableAfterBeginFailure.ssid, "current-ssid") != 0 ||
+        Serial.last != "CRITICAL: EEPROM initialization failed; configuration unavailable; coin intake remains denied.") return 10;
+    std::cout << "EEPROM_LOADCFG_BEGIN_FAILURE_FAIL_CLOSED_PASS\n";
+
+    EEPROM.begin_ok = true;
+    cfg = makeCurrent();
+    if (!saveCfg() || !configStoreReady || EEPROM.begin_calls != 2 ||
+        EEPROM.get_calls != 0 || EEPROM.put_calls != 1 || EEPROM.commit_calls != 1) return 11;
+    Config recoveredAfterBeginFailure{};
+    EEPROM.readDurable(recoveredAfterBeginFailure);
+    if (recoveredAfterBeginFailure.magic != MAGIC ||
+        std::strcmp(recoveredAfterBeginFailure.ssid, "current-ssid") != 0) return 12;
+    std::cout << "EEPROM_LOADCFG_BEGIN_FAILURE_RECOVERY_PASS\n";
+
+    EEPROM.resetCounters();
+    configStoreReady = false;
+    cfg = Config{};
+    Serial.last.clear();
+    loadCfg();
+    if (!configStoreReady || cfg.magic != MAGIC ||
+        std::strcmp(cfg.ssid, "current-ssid") != 0 ||
+        EEPROM.begin_calls != 1 || EEPROM.get_calls != 1 ||
+        EEPROM.put_calls != 0 || EEPROM.commit_calls != 0) return 13;
+
+    std::cout << "EEPROM_LOADCFG_RUNTIME_PASS current=1/1 current_invalid=6/6 legacy=1/1 legacy_invalid=5/5 commit_retry=2/2 begin_failure=1/1\n";
     return 0;
 }
