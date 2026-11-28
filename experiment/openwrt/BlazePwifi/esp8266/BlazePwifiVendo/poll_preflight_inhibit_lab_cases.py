@@ -283,6 +283,16 @@ def verify_board(name: str, path: Path):
         f"{name} missing pre-poll deny during blocking wait",
     )
 
+    # Failure injection: logical deny flags alone are insufficient. The
+    # physical GPIO OFF write must happen before the blocking HTTP wait.
+    mutated_deny_without_gpio_write = deny_fn.replace("applyOutputs();", "", 1)
+    if mutated_deny_without_gpio_write == deny_fn:
+        raise AssertionError(f"{name}: immediate GPIO write mutation anchor missing")
+    compile_blocking_poll_and_run(
+        apply_fn, mutated_deny_without_gpio_write, poll_block, False,
+        f"{name} deny latch without immediate GPIO OFF write",
+    )
+
     # Failure injection: the relay OFF branch must use relay polarity even
     # when the LED has the opposite active level.
     mutated_apply = apply_fn.replace(
@@ -297,9 +307,9 @@ def verify_board(name: str, path: Path):
         f"{name} relay OFF borrows LED polarity during blocking wait",
     )
 
-    # Failure injection: the relay OFF path must use relay polarity, not LED polarity.
-    # The existing two-case harness gives both outputs the same polarity, so this
-    # mutation currently survives; the RED run proves that blind spot.
+    # Failure injection: the relay OFF path must use relay polarity, not LED
+    # polarity. The standalone GPIO harness crosses all four independent
+    # relay/LED combinations, including both mismatched-polarity cases.
     mutated_relay_polarity = apply_fn.replace(
         "writeLogical(runRelayPin,false,runRelayActiveHigh)",
         "writeLogical(runRelayPin,false,runLedActiveHigh)",
