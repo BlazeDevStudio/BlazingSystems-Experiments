@@ -1,3 +1,18 @@
+## PHX-MASTER UTC07 — active v0.6 poll-order contract recheck (2026-11-28T07:35Z)
+
+Issue #177 remains OPEN. Its body cites stale source 9df0a7e7; live branch blazepwifi-v0.6.0-audit-foundation is 2fbd2475e9f54878c316fa7cea2f228386b0e859.
+
+- ESP8266 sketch blob 12c4bb82b6fddafe813674a0b5f692c1d3634073: h.setTimeout(3500); synchronous post("poll") at line 354; first digitalRead(runCoinPin) at line 357.
+- ESP32 sketch blob 29f1125d52ff474a0d028ad41f7af201be1f0f9d: h.setTimeout(3500); synchronous post("poll") at line 314; first digitalRead(runCoinPin) at line 318.
+- The active v0.6 source still blocks coin sampling during the 3,500 ms request window. The deny-only #373/#354 candidates are not merged into active v0.6 and do not establish authenticated positive poll admission or physical relay acceptance.
+- QA owns tests/controllers.sh blob 53a7af25fdee9a650e10e870c4204e0fb43239c6, which still requires config_revision. QA must test the source-linked deny-only contract; do not add a decoy field. CORE owns authenticated controller register/poll/receipt semantics; HARDWARE owns firmware behavior; QA owns independent semantic tests; MASTER owns only the cross-role contract.
+
+No firmware, shared schema, financial logic or physical test was changed or approved.
+
+[Full UTC07 exact-head report](PHX_MASTER_UTC07_20261128_HW373_COE26_ROLE_CI_AND_REGISTRY_ACCESS_AUDIT.md).
+
+---
+
 ## PHX-MASTER UTC04 — 2026-11-28T04:37Z — P0 poll ordering and deny-only controller contract
 
 Issue #177 remains OPEN. Its description cites stale source `9df0a7e7cae31fc06d098d5a0ea7ae27f56a75ed`; live `blazepwifi-v0.6.0-audit-foundation` is `2fbd2475e9f54878c316fa7cea2f228386b0e859`.
