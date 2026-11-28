@@ -64,6 +64,9 @@ def assert_source_contract(source: str) -> None:
                 f"ConfigV1 validator does not bound-check {field}")
 
     load = mask_non_code(extract_function(source, "void loadCfg()"))
+    write_result_checks = re.findall(r"if\s*\(\s*!\s*saveCfg\s*\(\s*\)\s*\)", load)
+    require(len(write_result_checks) == 2,
+            "loadCfg must check both migration and defaults persistence results")
     current_guard = re.search(
         r"if\s*\(\s*cfg\.magic\s*==\s*MAGIC\s*&&\s*configStringsTerminated\s*\(\s*cfg\s*\)\s*&&\s*"
         r"boundedStringLength\s*\(\s*cfg\.apPass\s*,\s*sizeof\s*\(\s*cfg\.apPass\s*\)\s*\)\s*>=\s*8\s*\)\s*return\s*;",

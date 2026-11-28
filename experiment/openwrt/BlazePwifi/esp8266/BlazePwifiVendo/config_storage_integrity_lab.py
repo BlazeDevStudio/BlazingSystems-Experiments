@@ -6,7 +6,11 @@ from config_storage_integrity_lab_contract import (
     expect_rejected,
     move_helpers_before_legacy_struct,
 )
-from config_storage_integrity_lab_harness import compile_and_run, cxx_harness
+from config_storage_integrity_lab_harness import (
+    compile_and_run,
+    cxx_harness,
+    loadcfg_runtime_harness,
+)
 
 def main() -> None:
     source = SKETCH.read_text(encoding="utf-8")
@@ -36,7 +40,25 @@ def main() -> None:
         ),
     )
 
+    expect_rejected(
+        "migration-commit-result-ignored",
+        source.replace(
+            'if(!saveCfg()) Serial.println("CRITICAL: EEPROM configuration migration write failed; retrying on next boot.");',
+            "saveCfg();",
+            1,
+        ),
+    )
+    expect_rejected(
+        "defaults-commit-result-ignored",
+        source.replace(
+            'if(!saveCfg()) Serial.println("CRITICAL: EEPROM defaults write failed; setup remains available.");',
+            "saveCfg();",
+            1,
+        ),
+    )
+
     print(compile_and_run(cxx_harness(source), "config_integrity"))
+    print(compile_and_run(loadcfg_runtime_harness(source), "config_loadcfg_runtime"))
     print("EEPROM_CONFIG_SOURCE_CONTRACT_PASS")
     print("EEPROM_CONFIG_FAILURE_INJECTION_PASS 5/5")
 
