@@ -4009,3 +4009,19 @@ This is the required documentation-first IN-PROGRESS record. No source/test resu
 
 **Disposition:** retain PR #373 DRAFT / UNMERGED. Re-run the focused append-only guard on the repaired docs head, then verify the final Full/Mbed results. Physical hardware acceptance remains NOT TESTED; HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
 
+
+## PHX-HARDWARE UTC08 — 2026-11-28 17:05 Asia/Manila — EEPROM checked-store persistence test contract (#374)
+
+- ID: PHX-HW-EEPROM-STORE-TEST-CONTRACT-20261128T09Z.
+- Scope: Hardware-owned ESP8266 EEPROM checked-store wrapper test contract; cleanup-first #266; child PR #374.
+- Status: in_progress; priority: P1 (configuration persistence / service fail-closed).
+- Why: PR #374's CheckedEEPROMClass replaced direct ESP8266 EEPROM calls, but the Hardware persistence lab still asserted the previous EEPROM.put/commit API and failed before exercising the new wrapper.
+- Branch: phoenix/hw-eeprom-begin-failclosed-20261128-utc07; parent PR #373 head 3783654a3c9862598bbb714268c536fb8b34578b.
+- Exact source/test commit: 3934cf40f1a2999ba66df2fb4e9ff2f0a1081e51 — test-only paths: config_persistence_write_result_lab_contract.py, config_persistence_write_result_lab_harness.py, config_persistence_write_result_lab.py.
+- Changes: source contract now checks beginChecked propagation, begin-before-write, wrapper put/commit, and readiness invalidation after commit failure. Native C++ harness now injects begin failure (no write/commit), commit failure, successful commit, and ready-state reuse. Four new source mutations reject ignored begin result, removed begin guard, ignored commit result, and readiness retained after commit failure.
+- Exact test evidence at source/test SHA: Poll Intake Deny push #46128730343 job 140929006378 PASS; PR #46128734749 job 140929019615 PASS. Logs: ESP8266_EEPROM_BEGIN_FAILURE_NO_WRITE_PASS, ESP8266_EEPROM_COMMIT_FAILURE_PROPAGATED_PASS, ESP8266_EEPROM_COMMIT_SUCCESS_AND_READY_REUSE_PASS, EEPROM config mutation matrix 17/17, and append-only ledger guard PASS (base 1,132,798 bytes; prior appended 59,093 bytes).
+- Cross-role failures: Native Synthetic #46128734730 job 140929019769 FAIL at QA-owned tests/v060_vendo_sequence_contract.py:18 (literal corrupt-state guard assertion). Do not edit QA's test or add a decoy token. Pre-sync Full #46128730422 validate job 140929058201 FAIL because this source commit was newer than the previous handover checkpoint; docs are now synchronized and Full must be rerun. Mbed #46128734862 source-contract passed; target builds were pending at this entry.
+- Process deviation: source/test commit preceded the required IN PROGRESS state entry. Recorded in the handover now; not backdated.
+- Safety: no production .ino modified in this activation; no CORE/QA shared contract, finance, receipt/disposition, signer/witness, COE, device or deployment changed. Host simulations are not physical acceptance. Brown-out, 150 power cuts, 30-device/24-hour soak and electrical pulse/recovery remain NOT TESTED. HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
+- Rollback: revert/close only child PR #374; preserve parent #373 and earlier stack.
+- NEXT ACTION: rerun exact-head Mbed and Full after docs sync; request PHX-QA disposition of the stale corruption-state assertion; keep coin/relay admission denied.
