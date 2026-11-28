@@ -131,7 +131,7 @@ def assert_source_contract(source: str) -> None:
             "loadCfg must default and return before any EEPROM read when begin fails")
     require("EEPROM.begin(" not in load,
             "loadCfg must use the checked begin helper, not an unchecked direct begin")
-    require(re.search(r"\\bEEPROM\\s*\\.\\s*(?:begin|get|put|commit)\\s*\\(", masked_source) is None,
+    require(re.search(r"\bEEPROM\s*\.\s*(?:begin|get|put|commit)\s*\(", masked_source) is None,
             "firmware must not bypass the checked EEPROM wrapper")
 
     outputs = mask_non_code(extract_function(source, "void applyOutputs()"))
