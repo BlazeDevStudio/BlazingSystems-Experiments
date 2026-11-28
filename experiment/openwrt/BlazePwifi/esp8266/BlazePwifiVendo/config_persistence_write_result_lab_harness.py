@@ -22,33 +22,55 @@ def compile_and_run(source: str, label: str) -> str:
 
 
 def eeprom_harness(source: str) -> str:
+    begin = extract_function(source, "bool beginConfigStore()")
     save = extract_function(source, "bool saveCfg(")
     return r"""
+#include <cstddef>
 #include <iostream>
 struct Config { int marker; };
-struct FakeEEPROM {
+struct FakeCheckedEEPROM {
+    bool begin_result = false;
     bool commit_result = false;
+    int begin_calls = 0;
     int put_calls = 0;
     int commit_calls = 0;
+    bool beginChecked(size_t size) {
+        ++begin_calls;
+        return size == sizeof(Config) && begin_result;
+    }
     void put(int address, const Config &value) {
         (void)address; (void)value; ++put_calls;
     }
     bool commit() { ++commit_calls; return commit_result; }
 };
+bool configStoreReady = false;
 Config cfg{};
-FakeEEPROM EEPROM;
-""" + save + r"""
+FakeCheckedEEPROM configEeprom;
+""" + begin + "\n" + save + r"""
 int main() {
-    EEPROM.commit_result = false;
+    configEeprom.begin_result = false;
     if (saveCfg()) return 1;
-    if (EEPROM.put_calls != 1 || EEPROM.commit_calls != 1) return 2;
-    EEPROM.commit_result = true;
-    if (!saveCfg()) return 3;
-    if (EEPROM.put_calls != 2 || EEPROM.commit_calls != 2) return 4;
+    if (configStoreReady || configEeprom.begin_calls != 1 ||
+        configEeprom.put_calls != 0 || configEeprom.commit_calls != 0) return 2;
+    std::cout << "ESP8266_EEPROM_BEGIN_FAILURE_NO_WRITE_PASS\n";
+
+    configEeprom.begin_result = true;
+    configEeprom.commit_result = false;
+    if (saveCfg()) return 3;
+    if (configStoreReady || configEeprom.begin_calls != 2 ||
+        configEeprom.put_calls != 1 || configEeprom.commit_calls != 1) return 4;
     std::cout << "ESP8266_EEPROM_COMMIT_FAILURE_PROPAGATED_PASS\n";
+
+    configEeprom.commit_result = true;
+    if (!saveCfg()) return 5;
+    if (!configStoreReady || configEeprom.begin_calls != 3 ||
+        configEeprom.put_calls != 2 || configEeprom.commit_calls != 2) return 6;
+    if (!beginConfigStore() || configEeprom.begin_calls != 3) return 7;
+    std::cout << "ESP8266_EEPROM_COMMIT_SUCCESS_AND_READY_REUSE_PASS\n";
     return 0;
 }
 """
+
 
 
 def preferences_harness(source: str) -> str:
