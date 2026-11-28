@@ -3973,3 +3973,15 @@ This is the required documentation-first IN-PROGRESS record. No source/test resu
 - Full #46110095274 terminal FAILURE: CI-0701 and handover freshness PASS; validation job 140871599695 fails at QA-owned tests/controllers.sh:21 literal config_revision assertion. All 14/14 target/platform jobs PASS (ESP8266, ESP32, Android, Ruijie, x86_64, Orange Pi and optional targets). Downstream v0.4 simulation, update bundle, signing and publication skipped.
 - No production firmware/config/schema/API/finance/witness/COE/device change. Host simulation only; physical EEPROM/NVS brown-out and all required hardware acceptance remain NOT TESTED. HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
 - Updated UTC: 2026-11-28T05:04:25.085Z.
+
+---
+
+## PHX-HARDWARE UTC05 — EEPROM runtime fixture template extraction
+
+- Task: `PHX-HW-LOADCFG-FIXTURE-TEMPLATE-20261128T05Z`; child PR #373 of #372.
+- Parent: `96a22ba3af1411a016478eee56c5f0fdbbc2b512`; branch: `phoenix/hw-loadcfg-runtime-fixture-template-20261128-utc05`.
+- Extracted the embedded C++11 loadCfg/defaults/saveCfg fixture into `config_loadcfg_runtime_fixture.cpp.in`; harness now injects four exact-once source-derived markers and rejects unresolved markers.
+- Updated focused workflow branch/path allowlists; added narrow Hardware handover and refreshed PROJECT_HANDOVER/CURRENT_STATE.
+- Behavior-preserving test refactor; production sketches, controller/finance APIs, QA-owned tests, signer/witness and COE remain untouched.
+- Focused/Mbed/Full results pending at this documentation checkpoint; physical EEPROM/NVS and all required hardware acceptance NOT TESTED.
+- Updated UTC: 2026-11-28T05:08:53Z.
