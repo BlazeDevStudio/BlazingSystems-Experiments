@@ -571,6 +571,14 @@ def verify_gpio_write_authority_mutations():
         ("esp8266-gpoc", "GPOC = (1U << runRelayPin);"),
         ("esp32-out-w1ts", "GPIO.out_w1ts = (1U << runRelayPin);"),
         ("esp32-out-w1tc", "GPIO.out_w1tc = (1U << runRelayPin);"),
+        ("esp8266-gpos-or-assign", "GPOS |= (1U << runRelayPin);"),
+        ("esp8266-gpoc-or-assign", "GPOC |= (1U << runRelayPin);"),
+        ("esp32-out-w1ts-val", "GPIO.out_w1ts.val = (1U << runRelayPin);"),
+        ("esp32-out-w1tc-val", "GPIO.out_w1tc.val = (1U << runRelayPin);"),
+        ("esp32-out1-w1ts-val", "GPIO.out1_w1ts.val = (1U << runRelayPin);"),
+        ("esp32-out1-w1tc-val", "GPIO.out1_w1tc.val = (1U << runRelayPin);"),
+        ("esp32-out-w1ts-or-assign", "GPIO.out_w1ts |= (1U << runRelayPin);"),
+        ("esp32-out1-w1tc-or-assign", "GPIO.out1_w1tc |= (1U << runRelayPin);"),
     )
     rejected = 0
 
@@ -667,8 +675,8 @@ def verify_gpio_write_authority_mutations():
         print(f"GPIO_WRITE_BYPASS_COMMENT_STRING_DECOYS_IGNORED {name}")
 
     print(f"GPIO_WRITE_AUTHORITY_MUTATIONS_REJECTED={rejected}")
-    if rejected != 38:
-        raise AssertionError(f"expected 38 GPIO writer mutations, got {rejected}")
+    if rejected != 54:
+        raise AssertionError(f"expected 54 GPIO writer mutations, got {rejected}")
 
 def main():
     startup_failures = []

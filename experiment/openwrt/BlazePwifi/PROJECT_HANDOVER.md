@@ -2369,3 +2369,22 @@ GitHub Actions workflow runs for source/test SHA 0c09d8ed5927bac037f01a2649d0d33
 - Physical relay/acceptor polarity, EEPROM/NVS brown-out, LittleFS recovery, 150 power cuts, 30-device/24-hour soak, electrical pulse/recovery, protected signer/witness, v1-to-v2 migration, durable accounting/replay, and independent QA/release signoff remain NOT TESTED / NOT ACCEPTED.
 
 **HARDWARE ACCEPTED = NO. PRODUCTION READY = NO-GO.**
+
+ 
+## PHX-HARDWARE UTC20 — GPIO output-register bank and compound-assignment coverage
+
+**Updated:** 2026-11-28T20:48Z  
+**Task:** PHX-HW-177-GPIO-OUTPUT-API-AUTHORITY-20261128T20Z  
+**PR:** #380, OPEN / DRAFT / UNMERGED  
+**Branch:** phoenix/hw-gpio-writer-reconcile-20261128-utc17  
+**Source/test + handover commit:** the commit containing this append-only entry (the exact resulting SHA is pinned in the PR body and PHX-HARDWARE UTC20 checkpoint).
+
+### Additional failure-injection coverage
+
+Expanded the direct-register mutation matrix beyond simple assignment to cover ESP8266 GPOS/GPOC compound OR assignment and ESP32 GPIO.out_w1ts/out_w1tc plus GPIO.out1_w1ts/out1_w1tc .val and compound-assignment forms.
+
+The final source-contract matrix now contains 27 mutations per board: 4 existing logical-writer mutations, 11 alternate output API calls, and 12 direct register writes/assignments. Expected rejection count: 54 total across ESP8266 and ESP32. Comment/string decoys remain a positive control.
+
+The source contract itself is unchanged in this follow-up; the mutation matrix now exercises the already-defined register patterns. This remains static/source-extracted CI evidence only, not electrical or physical acceptance. Poll, Mbed TLS, and Full exact-head Actions results must be read after this commit; prior runs are not transferable.
+
+**HARDWARE ACCEPTED = NO. PRODUCTION READY = NO-GO.**
