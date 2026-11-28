@@ -1640,3 +1640,41 @@ The Hardware workflow now watches both new modules and this isolated child branc
 Only the host lab runner/modules and Hardware workflow path filters changed. No production ESP8266/ESP32 sketch, controller API, finance, receipt/disposition, QA-owned assertion, migration, signer/witness, release workflow, or COE source changed. This is source-extracted host simulation/CI only; physical EEPROM/NVS brown-out, GPIO/relay voltage, LittleFS recovery, electrical pulse retention, 150 power cuts and 30-device/24-hour soak remain **NOT TESTED**. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
 
 **Next exact action:** rerun Full on the refreshed documentation head; keep the inherited QA controller-parity assertion and CORE authenticated-response contract as separate blockers. No flash, reset, live coin/money, secret provisioning, signing, migration, merge, release or deployment.
+
+## PHX-HARDWARE UTC04 — config-storage integrity lab module split (#371)
+
+**PR:** DRAFT child of #370; **branch:** `phoenix/hw-config-storage-integrity-modules-20261128-utc04`.
+**Parent:** #370 at `b0fed471b00b88bdc03e0721547667db5edc5ec0`; **source/test commit:** `40860925d0150f5de49f310678d32e0c23f6f9a6`.
+
+The 10 KB `config_storage_integrity_lab.py` mixed source invariants, mutation helpers, C++ fixture construction, sanitizer compilation/execution, and command orchestration. The runner is now thin; source-contract/mutation checks and the native C++ sanitizer harness live in separate modules.
+
+- `config_storage_integrity_lab_contract.py`: bounded Config/ConfigV1 field checks, NUL termination guards, legacy migration ordering, and five unsafe-source mutation rejections.
+- `config_storage_integrity_lab_harness.py`: source-extracted Config/ConfigV1 validators plus the C++11 ASan/UBSan compile/run helper.
+- `config_storage_integrity_lab.py`: preserves the original command and the same five failure-injection cases.
+- Hardware workflow push/PR path filters include both new modules and the isolated child branch.
+
+No production `.ino`, controller API, finance, receipt/disposition, QA-owned assertions, migration runtime, signer/witness, release or COE path changed. The canonical CHANGE_LEDGER was intentionally left byte-identical; no historical entries were rewritten or deleted.
+
+### Verification at source commit
+
+- Focused, Mbed and Full exact-head results: **PENDING** at source commit `40860925d0150f5de49f310678d32e0c23f6f9a6`.
+- Existing lab checks current Config 6/6 fields, legacy ConfigV1 5/5 fields, five negative source mutations, and C++11 ASan/UBSan execution.
+- Physical EEPROM/NVS brown-out, GPIO/relay voltage, LittleFS recovery, 150 power cuts, 30-device/24-hour soak and electrical pulse/recovery remain **NOT TESTED**.
+
+Status: host source cleanup only; HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+
+### PHX-HARDWARE UTC04 — PR #371 evidence correction
+
+Focused exact-head run #46105780778 PASS (job 140858075446); EEPROM Config 6/6, ConfigV1 5/5 and five failure-injection mutations rejected. ESP32 Mbed matrix #46105780822 PASS 3/3.
+
+Full #46105780768 validation job 140858135917 failed at the mandatory handover freshness gate because CHANGE_LEDGER.md had not yet been appended after source/workflow commit 40860925d0150f5de49f310678d32e0c23f6f9a6. The append-only ledger checkpoint is added in this commit; a fresh Full run is required. The failed run did not reach controller parity or downstream simulation/signing/publication.
+
+This is a host-lab modularization only. Production sketches, physical hardware, finance, signer/witness and migration are unchanged; physical acceptance NOT TESTED; PRODUCTION NO-GO.
+
+### PHX-HARDWARE UTC04 terminal result — PR #371
+
+Focused #46106079097 PASS; Mbed #46106079120 PASS 3/3. Full #46106079194 terminal FAILURE after the mandatory handover freshness gate passed; the QA-owned controller parity check failed at `tests/controllers.sh:21` because both deny-only candidate sketches have no `config_revision` field. All 14/14 target/platform builds, including Android, completed PASS; downstream simulations/update/signing/publication/candidate gates were skipped.
+
+This is not a target compilation failure. Do not add an unauthenticated placeholder to satisfy a literal grep. PHX-QA owns source-linked deny-only vectors; PHX-CORE owns authenticated register/poll/receipt/disposition. PHX-HARDWARE retains P0 #177 as next firmware task after interface coordination.
+
+No production sketch changed in #371. Physical EEPROM/NVS, GPIO/relay, LittleFS power loss, 150 power cuts, 30-device/24-hour soak and electrical pulse/recovery remain NOT TESTED. HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.

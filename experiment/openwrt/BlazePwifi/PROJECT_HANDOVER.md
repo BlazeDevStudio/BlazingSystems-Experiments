@@ -1762,3 +1762,40 @@ The Hardware workflow now watches both new modules and this isolated child branc
 Only the host lab runner/modules and Hardware workflow path filters changed. No production ESP8266/ESP32 sketch, controller API, finance, receipt/disposition, QA-owned assertion, migration, signer/witness, release workflow, or COE source changed. This is source-extracted host simulation/CI only; physical EEPROM/NVS brown-out, GPIO/relay voltage, LittleFS recovery, electrical pulse retention, 150 power cuts and 30-device/24-hour soak remain **NOT TESTED**. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
 
 **Next exact action:** rerun Full on the refreshed documentation head; keep the inherited QA controller-parity assertion and CORE authenticated-response contract as separate blockers. No flash, reset, live coin/money, secret provisioning, signing, migration, merge, release or deployment.
+
+## PHX-HARDWARE UTC04 — config-storage integrity lab module split (#371)
+
+**PR:** DRAFT child of #370; **branch:** `phoenix/hw-config-storage-integrity-modules-20261128-utc04`.
+**Parent:** #370 at `b0fed471b00b88bdc03e0721547667db5edc5ec0`; **source/test commit:** `40860925d0150f5de49f310678d32e0c23f6f9a6`.
+
+The 10 KB `config_storage_integrity_lab.py` mixed source invariants, mutation helpers, C++ fixture construction, sanitizer compilation/execution, and command orchestration. The runner is now thin; source-contract/mutation checks and the native C++ sanitizer harness live in separate modules.
+
+- `config_storage_integrity_lab_contract.py`: bounded Config/ConfigV1 field checks, NUL termination guards, legacy migration ordering, and five unsafe-source mutation rejections.
+- `config_storage_integrity_lab_harness.py`: source-extracted Config/ConfigV1 validators plus the C++11 ASan/UBSan compile/run helper.
+- `config_storage_integrity_lab.py`: preserves the original command and the same five failure-injection cases.
+- Hardware workflow push/PR path filters include both new modules and the isolated child branch.
+
+No production `.ino`, controller API, finance, receipt/disposition, QA-owned assertions, migration runtime, signer/witness, release or COE path changed. The canonical CHANGE_LEDGER was intentionally left byte-identical; no historical entries were rewritten or deleted.
+
+### Verification at source commit
+
+- Focused, Mbed and Full exact-head results: **PENDING** at source commit `40860925d0150f5de49f310678d32e0c23f6f9a6`.
+- Existing lab checks current Config 6/6 fields, legacy ConfigV1 5/5 fields, five negative source mutations, and C++11 ASan/UBSan execution.
+- Physical EEPROM/NVS brown-out, GPIO/relay voltage, LittleFS recovery, 150 power cuts, 30-device/24-hour soak and electrical pulse/recovery remain **NOT TESTED**.
+
+Status: host source cleanup only; HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+
+### UTC04 evidence refresh — PR #371
+
+- Focused exact-head [#46105780778](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46105780778), job `140858075446`: **PASS**; Config 6/6, ConfigV1 5/5, five failure injections rejected.
+- Mbed [#46105780822](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46105780822): **3/3 PASS** (source contract, ESP32 core 3.3.13, core 4.0.0).
+- Initial Full [#46105780768](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46105780768): validation failed at mandatory handover freshness because `CHANGE_LEDGER.md` still ended at parent #370 commit `b0fed471...`; the append-only checkpoint is included in this docs commit. Rerun Full on the refreshed head.
+- No production sketch or shared financial/authentication API changed. Physical acceptance remains NOT TESTED; HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
+
+### UTC04 terminal exact-head CI — PR #371
+
+- Focused [#46106079097](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46106079097): **PASS**; EEPROM Config 6/6, ConfigV1 5/5, five failure injections rejected; native C++11 ASan/UBSan harness and append-only ledger guard passed.
+- Mbed [#46106079120](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46106079120): **3/3 PASS** (source contract, ESP32 core 3.3.13 and 4.0.0).
+- Full [#46106079194](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46106079194): handover freshness **PASS**; QA-owned `tests/controllers.sh:21` **FAIL** because it requires `config_revision` in both deny-only sketches. All 14/14 target/platform builds, including Android, PASS. Validation-dependent simulation/update/signing/publication/candidate stages SKIPPED.
+- Exact PR-head ESP8266 and ESP32 sketch blobs contain zero `config_revision` occurrences. Hardware did not add a decoy field or edit QA-owned tests.
+- This is host-lab modularization and CI evidence only. Physical hardware acceptance remains NOT TESTED; HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.

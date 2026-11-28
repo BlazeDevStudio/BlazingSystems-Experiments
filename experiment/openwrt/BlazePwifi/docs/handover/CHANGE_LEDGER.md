@@ -3925,3 +3925,31 @@ This is the required documentation-first IN-PROGRESS record. No source/test resu
 - No production sketches, shared API, financial/receipt contract, QA assertion, migration, signer/witness, release, or COE source changed.
 - Physical EEPROM/NVS, GPIO/relay, electrical pulse, LittleFS, 150 power cuts and 30-device/24-hour soak: NOT TESTED. HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
 - Updated UTC: 2026-11-28T03:43Z.
+## 2026-11-28 — PHX-HARDWARE UTC04 config-storage integrity lab module split (#371)
+
+- Role: PHX-HARDWARE; repository: BlazeDevStudio/BlazingSystems-Experiments.
+- PR #371 OPEN / DRAFT / UNMERGED; child of PR #370 at `b0fed471b00b88bdc03e0721547667db5edc5ec0`.
+- Branch: `phoenix/hw-config-storage-integrity-modules-20261128-utc04`; source/test commit: `40860925d0150f5de49f310678d32e0c23f6f9a6`; pre-ledger docs head: `a0ccf734e340611322400c74f62d403ebae474c6`.
+- Source change: split the EEPROM configuration-integrity lab into a source-contract/mutation module, a C++11 ASan/UBSan harness module, and a thin runner; preserved all five negative mutation cases and existing 6/6 Config + 5/5 ConfigV1 validation.
+- Focused exact-head PR run [#46105780778](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46105780778), job `140858075446`: PASS. Logs show five mutation rejections, `EEPROM_CONFIG_BOUNDED_VALIDATION_PASS current=6/6 legacy=5/5`, source-contract PASS and failure-injection 5/5. The append-only ledger guard also passed against its configured base.
+- ESP32 Mbed matrix [#46105780822](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46105780822): source-contract PASS; core 3.3.13 and 4.0.0 target builds PASS (3/3 total).
+- Initial Full [#46105780768](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46105780768), validation job `140858135917`: FAIL at mandatory handover freshness. `handover_gate.sh` explicitly reported source/workflow changes newer than `CHANGE_LEDGER.md`; last checkpoint was parent commit `b0fed471...`. This record appends the missing post-change checkpoint; rerun Full on the refreshed docs head.
+- At the freshness-failed Full check, 12 target/platform jobs had completed PASS and ESP32/Android were still running; this is not a terminal 14/14 claim. Downstream simulations/update/signing/publication were skipped by the failed freshness gate.
+- No production `.ino`, controller API, QA-owned test, financial source, migration runtime, signer/witness, release or COE path changed. The prior ledger content is preserved as an unchanged prefix; this section is appended only.
+- Physical EEPROM/NVS brown-out, GPIO/relay, LittleFS power-loss, 150 power cuts, 30-device/24-hour soak and electrical pulse/recovery remain NOT TESTED. HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
+- Next exact action: verify this append-only checkpoint passes the freshness gate, then record the terminal Full result and any separate QA-owned blocker.
+- Updated UTC: 2026-11-28T04:08Z.
+## 2026-11-28 — PHX-HARDWARE UTC04 PR #371 terminal exact-head CI
+
+- Role: PHX-HARDWARE; PR #371 remains OPEN / DRAFT / UNMERGED, stacked on #370.
+- Source/test SHA: `40860925d0150f5de49f310678d32e0c23f6f9a6`; pre-evidence docs head: `dcd9d57547066dacb8833d9d6c7909902c34131c`; branch: `phoenix/hw-config-storage-integrity-modules-20261128-utc04`.
+- Focused [#46106079097](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46106079097), job `140859006487`: PASS. EEPROM Config 6/6 and ConfigV1 5/5; all five negative source mutations rejected; native C++11 ASan/UBSan harness passed; append-only ledger guard passed.
+- Mbed [#46106079120](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46106079120): PASS 3/3 — source contract, ESP32 core 3.3.13 and 4.0.0.
+- Full [#46106079194](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46106079194): terminal FAILURE. Mandatory handover freshness gate passed; controller validation failed at QA-owned `tests/controllers.sh:21`, `grep -q 'config_revision'`.
+- Exact PR-head ESP8266 sketch blob `7527dbff41b7f21bdc3d3ed9ee3db1c0d21eb07b` and ESP32 sketch blob `a673e323e1c160cbfe03949d13a9e01b47386596` each contain zero `config_revision` occurrences. The assertion is incompatible with the deny-only candidate. Hardware did not add an unauthenticated placeholder or modify QA-owned tests.
+- All 14/14 target/platform build jobs, including ESP8266, ESP32, Android, Ruijie, x86_64 and Orange Pi variants, completed PASS. Update bundle, v0.4 simulations, signing, publication and candidate gates were skipped because validation failed.
+- The earlier Full #46105780768 failed only handover freshness; the append-only checkpoint in docs head `dcd9d57547066dacb8833d9d6c7909902c34131c` corrected it. Full #46106079194 now passes freshness and reaches the inherited QA blocker.
+- The previous ledger content remains an unchanged prefix; this entry is appended only. No production `.ino`, QA test, controller API, finance, migration runtime, signer/witness, release or COE source changed.
+- Physical EEPROM/NVS brown-out, GPIO/relay voltage, LittleFS recovery, 150 power cuts, 30-device/24-hour soak and electrical pulse/recovery remain NOT TESTED. HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
+- Next exact action: PHX-QA replaces the literal `config_revision` presence check with source-linked deny-only controller vectors; PHX-CORE publishes authenticated register/poll/receipt/disposition; PHX-HARDWARE then resumes P0 #177 within that contract.
+- Updated UTC: 2026-11-28T04:14Z.
