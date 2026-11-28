@@ -46,6 +46,7 @@ bool relayEnabled = true;
 bool ledEnabled = true;
 bool insertMode = true;
 bool fsReady = true;
+bool configStoreReady = true;
 bool pendingReady = false;
 bool runRelayActiveHigh = true;
 bool runLedActiveHigh = true;
