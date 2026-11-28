@@ -1,3 +1,23 @@
+## PHX-MASTER UTC16 role refresh — exact current heads and CI (2026-11-28T16:55:10Z)
+
+| Role / PR | Exact head | Exact-head evidence |
+|---|---|---|
+| CORE #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | Build #42698139210 PASS; CORE owner-only and untouched. |
+| RENTAL #289 | `68928774d0d7cf65adb26bc6b54199a3159d066c` | Build #43653329229 and native auth #43653329235 PASS. |
+| RENTAL #328 | `10fc200b6dbf470a95e679d3acc58aff4ab2a67f` | Build #45622918468 FAIL; API21/23 smoke, native auth and APK identity PASS. |
+| PISONET #255 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | Windows release #42462978704 PASS; native COM acceptance not established. |
+| QA #290 | `5c29d15994cee1279058f1eca12f2a3180704292` | Windows synthetic #43633486963 PASS. |
+| QA #292 | `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | No exact-head workflow. |
+| RELEASE #291 | `bf339a76964a1abe2412fac45392fe06a8e66418` | No exact-head workflow. |
+| HARDWARE #376 | `0f5968b232f411943c4be3a4d4911a0da4f83fff` | Focused #46164674619 PASS; Mbed #46164674611 3/3 PASS; Full #46164674737 PASS; signing/publication skipped. |
+| HARDWARE #377 | `95ace1236c2b3e4816515c372edd4853ceeed064` | Poll #46164676430 PASS; Mbed #46164676331 3/3 PASS; Native #46164676365 FAIL PAY-0745; Full #46164676426 FAIL Controller parity after 14/14 targets PASS. |
+| HARDWARE #378 | `3f67ba41dc3e087f868d3c57f6604e69f7a0e17b` | Poll #46162754701 PASS; Mbed #46162754714 3/3 PASS; Full #46162754741 CANCELLED; Native NOT RUN; base stale / mergeable=false. |
+| HARDWARE #379 | `5ac75dbb53bc36abc161fb276b6e7e80534e9b28` | Exact-head Poll #46167474941 PASS; Mbed #46167474965 3/3 PASS; Full #46167474925 FAIL Controller parity after 14/14 targets PASS; Native NOT RUN. |
+
+QA owns PAY-0745 and Controller parity assertions. CORE owns authenticated controller/financial contracts. HARDWARE owns firmware, test harnesses, branch sequencing and handovers. Master owns cross-role contracts/provenance only; no subsystem source/test edits.
+
+---
+
 ## PHX-MASTER UTC15 role refresh — exact current heads and CI (2026-11-28T15:36:30Z)
 
 | Role / PR | Exact head | Exact-head evidence |

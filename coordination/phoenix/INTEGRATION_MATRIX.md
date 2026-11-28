@@ -1,3 +1,22 @@
+## PHX-MASTER UTC16 integration refresh — #378/#379 parent drift and controller envelope (2026-11-28T16:55:10Z)
+
+### HARDWARE stack
+- #376/#377 shared narrow reconciliation note matches exact blob `79df6029dc5a4e83274b1dafa6015340a64ab74f`; original branches remain separate and draft.
+- #378 base points to #377@ `95e54790...`, while live #377 is `95ace123...`. Compare current #377 to #378: diverged, 4 ahead / 2 behind, merge base `95e54790...`, five changed paths including append-only handovers. #378 is mergeable=false.
+- #379 is a child of #378@ `3f67ba41...`; its current exact head `5ac75dbb...` has Poll/Mbed PASS and Full Controller parity FAIL. It inherits #378's stale ancestry. Keep #378/#379 draft and require HARDWARE-owned reconciliation before integration.
+- #376 Full CI passes 14/14 target jobs, 9/9 simulations and update bundle; sign/publish skipped. #377 Native PAY-0745 and Full Controller parity remain failed after 14/14 target jobs pass.
+
+### Controller configuration contract
+- #376 reads flat root-level `config_revision` and config fields; current CORE #252 CGI nests the controller object (including `config_revision`) under top-level `controller` and appends `config_auth`.
+- #377 discards register/poll replies and stays deny-only. #379 only tests GPIO writer callsites. No approved authenticated config consumer exists. CORE must define the canonical versioned envelope; QA must verify semantic default-deny behavior at the same SHA.
+
+### COE #26 provenance
+- Pinned source/candidate trees complete: 2,391 / 286 entries; COE main has 3 entries. Runtime 61/61 exact; actual 46 identical / 15 derived vs declared 47 / 14; current source-main drift 33 unchanged / 20 changed / 8 absent.
+- Original tests 4/4 exact; derived tests 15/15 exact at destination; map 14 rows and omits `voucher_txn_journal.sh`. Map hashes for `run_focus.sh` and `member_txn_journal.sh` are stale.
+- Four in-scope PisoWiFi legal artifacts exact; seven other source legal artifacts are outside this intake. Destination branch pin stale; all five candidate workflows CANCELLED. COE #26 remains FROZEN; no staging/write.
+
+---
+
 ## PHX-MASTER UTC15 integration refresh — #377 parent reconciliation and #376 cross-stack overlap (2026-11-28T15:36:30Z)
 
 ### HARDWARE #374/#375 reconciliation

@@ -1,3 +1,18 @@
+## PHX-MASTER UTC16 audit summary — controller envelope, #378/#379 and COE exact provenance (2026-11-28T16:55:10Z)
+
+**Result:** coordination-only audit. PR #288 remains OPEN / DRAFT / UNMERGED. Six existing coordination documents and one new report are the only changes.
+
+- #376 Full PASS; #377 Native PAY-0745 and Full Controller parity FAIL; #378 Full CANCELLED and mergeable=false because its base is two commits behind current #377; #379 exact-head Poll/Mbed PASS, Full Controller parity FAIL after 14/14 targets pass.
+- #379 exact final-head runs are #46167474941, #46167474965 and #46167474925. Its PR body/handover should be refreshed by HARDWARE with those results.
+- Cross-role contract mismatch: #376 consumes flat-root config fields, while CORE #252 nests controller configuration and config_revision under `controller` with a separate signed, deny-only `config_auth`; #377 rejects replies and remains deny-only. CORE/QA/HARDWARE must resolve the schema before any config consumer is integrated.
+- COE #26 runtime 61/61 exact; actual 46/15 vs declared 47/14; 4 original tests and 15 derived test blobs exact; map 14 derived rows, voucher missing, two stale hashes; four in-scope legal artifacts exact; destination branch pin stale; five workflows cancelled.
+- Ownership manifest remains 11 routes / DRAFT_REVIEW_ONLY / Master target null; 5/5 in-memory assertions PASS. Cleanup #266 OPEN / 0-of-7; P0 #177 OPEN.
+- Private registry v11/newer corrections NOT_RECOVERED; no Drive connector. Master suite, `verify_coordination.py` and Master CI NOT RUN.
+
+**BLOCKED / PRODUCTION NO-GO.** No subsystem source, COE destination, private registry, secret, signer, device, payment or production state changed.
+
+---
+
 ## PHX-MASTER UTC15 audit summary — exact #377/#376, role CI and COE provenance (2026-11-28T15:36:30Z)
 
 **Result:** coordination-only audit and documentation update. PR #288 remains OPEN / DRAFT / UNMERGED. No subsystem source or destination repository was changed.

@@ -1,3 +1,14 @@
+## PHX-MASTER UTC16 interface decision — controller config envelope is not integrated (2026-11-28T16:55:10Z)
+
+- HARDWARE #376 ESP8266 blob `12c4bb82b6fddafe813674a0b5f692c1d3634073` reads `jsonInt(r,"config_revision",remoteRevision)` at line 238; ESP32 blob `6edefc9283a3a4554c15ec9c9e4a9e038e98504d` does so at line 233. The legacy consumer expects flat root-level fields.
+- CORE #252 `controller.sh` blob `1a820416051a7af5462841b191b02630aa87781f` builds a controller object containing `config_revision`; Vendo CGI blob `16eb4105c15569dfd77b19a276ee05a25768083e` nests that object under `controller` and adds `config_auth`. v1 auth binds the controller object but has `admission_allowed:false`.
+- CORE lab contract blob `3528bf3a4cd63f83fdb2fb0eba9aa8a2265ae0a5` says this is a source-level lab proposal, not paid-admission authorization; HARDWARE must verify the full HMAC before applying non-actuating configuration.
+- #377 ESP8266/ESP32 blobs `426ada921d6d20a56e3fdad9f3efd4bdf5047464` / `449c76a6f2fbab548bd355c07a39bbfc850e0cb0` reject register/poll replies and keep outputs denied. #379 changes only Hardware-owned tests, not the protocol.
+- **Decision:** no flat/nested field guessing, decoy `config_revision`, invented `response_sig`, or positive admission. CORE publishes the canonical versioned authenticated envelope; HARDWARE implements only after contract review; QA verifies the same exact SHA. Coin/relay remain DENIED.
+- Active v0.6 still polls before first coin sample (ESP8266 354→357; ESP32 314→318); P0 #177 remains OPEN. #376/#377/#378/#379 are draft candidates, not hardware acceptance.
+
+---
+
 ## PHX-MASTER UTC15 architecture/interface decision — deny-only boundary and storage guard scope (2026-11-28T15:36:30Z)
 
 - #377's `pollDenyOnly()` candidate keeps admission denied before and after the blocking poll and discards the poll response. It does not establish authenticated response acceptance, durable pulse retention, or fix active v0.6.

@@ -1,3 +1,16 @@
+## PHX-MASTER UTC16 — #378/#379 stack, controller envelope and COE provenance (2026-11-28T16:55:10Z)
+
+- [UTC16 audit report](PHX_MASTER_UTC16_20261128_HW378_HW379_CONTROLLER_CONTRACT_COE26_AUDIT.md).
+- HARDWARE #376 current head `0f5968b2`: Focused/Mbed/Full PASS; 9/9 simulations and update bundle PASS; signing/publication skipped.
+- HARDWARE #377 current head `95ace123`: Poll/Mbed PASS; Native PAY-0745 and Full Controller parity FAIL.
+- HARDWARE #378 current head `3f67ba41`: Poll/Mbed PASS, Full CANCELLED, Native NOT RUN; its base is two commits behind current #377 and the PR is mergeable=false.
+- HARDWARE #379 current head `5ac75dbb`: Poll/Mbed PASS, Full Controller parity FAIL after 14/14 targets; test-only GPIO writer guard, no production sketch change. Its ancestry inherits #378's stale parent.
+- #376 flat-root `config_revision` parsing is not compatible with CORE #252's nested `controller` + `config_auth` response; #377 remains deny-only. CORE owns the canonical versioned contract; QA owns semantic verification.
+- COE #26 remains FROZEN: runtime 61/61 exact, actual 46/15 vs declared 47/14, derived tests 15 vs map 14, voucher row missing, two stale hashes; four in-scope legal artifacts exact.
+- Registry v11/newer corrections NOT_RECOVERED; no Drive connector. Cleanup #266 remains 0/7; P0 #177 OPEN. **PRODUCTION NO-GO.**
+
+---
+
 ## PHX-MASTER UTC15 — #377 stack integration, #376 shared handovers, and COE scope correction (2026-11-28T15:36:30Z)
 
 - [UTC15 audit report](PHX_MASTER_UTC15_20261128_HW377_STACK_COE26_PROVENANCE_AUDIT.md).
