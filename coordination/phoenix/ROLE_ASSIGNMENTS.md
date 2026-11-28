@@ -1,3 +1,25 @@
+## PHX-MASTER UTC18 — live role heads and exact-head CI (2026-11-28T18Z)
+
+| Role | PR / exact head | Exact-head evidence |
+|---|---|---|
+| CORE | #252 `c82705f2...` | Build PASS; CORE source remains owner-only |
+| RENTAL | #289 `68928774...` | Build + native status-auth instrumentation PASS |
+| RENTAL | #328 `10fc200b...` | Build FAIL; emulator, native auth/recovery and APK identity PASS |
+| PISONET | #255 `d01fd164...` | Windows Release PASS |
+| QA | #290 `5c29d159...` | Windows Release PASS |
+| QA | #292 `75a3f66d...` | No exact-head workflow |
+| RELEASE | #291 `bf339a76...` | No exact-head workflow; mergeable=false |
+| HARDWARE | #376 `0f5968b2...` | Poll PASS; Mbed 3/3 PASS; Full PASS; no physical acceptance |
+| HARDWARE | #377 `95ace123...` | Poll/Mbed PASS; Native PAY-0745 FAIL; Full Controller parity FAIL |
+| HARDWARE | #378 `3f67ba41...` | Poll/Mbed PASS; Full CANCELLED; stale base; mergeable=false |
+| HARDWARE | #379 `5ac75dbb...` | Poll/Mbed PASS; Full Controller parity FAIL |
+| HARDWARE | #380 `a4ec0383...` | Canonical combined successor child of #377; Poll/Mbed PASS; Full Controller parity FAIL; Native NOT RUN |
+
+#380 is a candidate integration-order pin only. #378/#379 remain open and unmerged; #376 remains a separate storage-preflight line. Master did not modify subsystem branches. See [UTC18 report](PHX_MASTER_UTC18_20261128_HW380_CANONICAL_STACK_COE26_EXACT_TREE_AUDIT.md).
+
+
+---
+
 ## PHX-MASTER UTC17 — role/CI exact-head reconciliation (2026-11-28T17:42:33Z)
 
 | Role / PR | Exact current head | Current exact-head evidence |

@@ -1,3 +1,18 @@
+## PHX-MASTER UTC18 — live audit summary (2026-11-28T18Z)
+
+**Result:** coordination-only source/CI/provenance audit. Master PR #288 remains OPEN/DRAFT/UNMERGED. Current Master parent `78a8f09a73d8d3e2945c7f97b559f8f9091a3897`; exact current main `6be5d19b...`; comparison 720 ahead / 1 behind. All 276 pre-update PR paths were under coordination/phoenix. Ownership manifest unchanged (11 routes; Master target null).
+
+- HARDWARE #380 is pinned as the canonical combined DRAFT successor of current #377; #378/#379 preserved open/unmerged. Poll PASS, Mbed 3/3 PASS, Full FAIL at QA-owned Controller parity after 14/14 target jobs PASS; Native NOT RUN.
+- Active v0.6 still polls before first coin sample on both boards (ESP8266 354→357; ESP32 314→318); P0 #177 OPEN.
+- COE #26 remains frozen. Exact runtime tree 61/61; actual 46/15 vs stale summary 47/14; original tests 4/4; derived tests 15/15; map 14/15; two stale map hashes; four in-scope licenses exact; five workflows CANCELLED.
+- Private Drive registry v11/newer corrections NOT RECOVERED; no Drive connector. Cleanup #266 OPEN / 0-of-7.
+- Branch protection reads 403; effective protection UNKNOWN. Master repository tests and Master CI NOT RUN; in-memory source/tree checks are not test-suite executions.
+
+**Disposition:** PRODUCTION NO-GO. No subsystem source, COE destination, private registry record, signer, secret, hardware, payment or production state changed.
+
+
+---
+
 ## PHX-MASTER UTC17 — live audit summary (2026-11-28T17:42:33Z)
 
 **Result:** coordination-only source/CI/provenance audit. Existing Master PR #288 remains OPEN/DRAFT/UNMERGED. Six existing Master documents and one new audit report are the only intended changes.

@@ -1,3 +1,18 @@
+## PHX-MASTER UTC18 — routing, registry and governance refresh (2026-11-28T18Z)
+
+- OWNERSHIP_ROUTES remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`, schema v1, 11 routes; PHX-MASTER target null, coordination-only. No route changed.
+- Exact branches: Experiments main `6be5d19b...`, development `aad3aade...`, active v0.6 `2fbd2475...`, Master `78a8f09a...`; COE main `a6513ab4...`.
+- Root Experiments AGENTS.md, README_FIRST, BLAZE-COMMS/1 protocol, Cloud Artifact Policy and Storage Recovery Handover read. Policy requires canonical private registry and sync ledger before mirror/artifact work.
+- Private `BLAZE_PROJECT_REGISTRY_v11_20261027.json` and newer corrections NOT RECOVERED; Library only had historical v3–v7. No Google Drive connector/action exposed. No older registry substituted; no private IDs/content copied; no Drive artifact created.
+- Branch-protection reads returned 403 for Experiments main/development/Master and COE main; effective protection/required checks UNKNOWN.
+- Automation inventory shows active Phoenix Master Hourly Development and Blaze Hourly Production Development; exact named CORE automation Blaze Production Continuation not visible. CORE stayed read-only; no parallel worker or automation change.
+- Cleanup #266 remains OPEN / 0-of-7; P0 #177 OPEN; COE #26 FROZEN.
+
+See [UTC18 audit](PHX_MASTER_UTC18_20261128_HW380_CANONICAL_STACK_COE26_EXACT_TREE_AUDIT.md).
+
+
+---
+
 ## PHX-MASTER UTC17 — routing, registry access and automation deconfliction (2026-11-28T17:42:33Z)
 
 - `OWNERSHIP_ROUTES.json` remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`, 11 routes, `DRAFT_REVIEW_ONLY`; PHX-MASTER source `coordination/phoenix/`, target `null`. No route changed.

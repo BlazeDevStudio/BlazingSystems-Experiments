@@ -1,3 +1,13 @@
+## PHX-MASTER UTC18 — #380 canonical child decision and COE #26 exact-tree audit (2026-11-28T18Z)
+
+- [UTC18 full audit report](PHX_MASTER_UTC18_20261128_HW380_CANONICAL_STACK_COE26_EXACT_TREE_AUDIT.md)
+- Canonical HARDWARE candidate: #380 is the reconciled child of current #377; preserve #378/#379 open and unmerged. #380 exact-head Poll/Mbed PASS; Full fails QA-owned Controller protocol parity; Native NOT RUN.
+- COE #26 remains FROZEN: 61/61 runtime blob/mode identities exact; actual 46/15 vs stale summary 47/14; 15/15 derived test blobs match, map 14/15; four in-scope licenses exact; all five workflows CANCELLED.
+- Private registry v11/newer corrections NOT RECOVERED; no Google Drive connector. Cleanup #266 remains OPEN / 0-of-7; P0 #177 remains OPEN; PRODUCTION NO-GO.
+
+
+---
+
 ## PHX-MASTER UTC17 — exact-head hardware ancestry, handover blobs and P0 poll-order recheck (2026-11-28T17:42:33Z)
 
 - [UTC17 audit report](PHX_MASTER_UTC17_20261128_HW376_379_BLOB_OVERLAP_P0_POLL_COE26_AUDIT.md).

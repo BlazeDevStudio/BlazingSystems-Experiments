@@ -1,3 +1,24 @@
+## PHX-MASTER UTC18 — #380 canonical stack and COE #26 provenance (2026-11-28T18Z)
+
+### HARDWARE integration decision
+- #380 current head `a4ec03835fb8ad3483d0447d105436f0f38071e3` is the single reconciled DRAFT child of current #377@ `95ace1236c2b3e4816515c372edd4853ceeed064`, carrying #378 post-deny GPIO escape and #379 writer-authority test scope.
+- #378 remains on stale #377 snapshot `95e54790...`; #379 remains stacked on #378. Preserve both original branches open/unmerged; do not integrate them separately. #376 is separate.
+- #380 exact-head Poll #46173865754 PASS; Mbed #46173865768 3/3 PASS; Full #46173865781 FAIL at QA-owned Controller parity after 14/14 target/platform jobs PASS; Native NOT RUN by path filter.
+- Exact source blobs: contract #377/#378 `837b4df5`, #379/#380 `bb14c16e`; cases #377 `ef91b15f`, #378 `02f965ff`, #379/#380 `9b4afb22`. #380's contract centralizes one digitalWrite in writeLogical; cases retain direct post-deny GPIO mutation and eight writer-authority mutations.
+- PROJECT_HANDOVER and CURRENT_STATE are exact-prefix append-only; CHANGE_LEDGER patch appends at EOF. PR body needs refresh from tested head `8b9a9d12...` to live API head `a4ec0383...`.
+
+### COE #26 exact candidate
+- Pinned source `6d4c9b48...`: 2,391 tree entries; current source main `6be5d19b...`: 2,341; candidate `b382d233...`: 286; COE main `a6513ab4...`: 3. Trees complete/non-truncated.
+- Runtime 61/61 source/destination blobs and modes match; actual 46 identical / 15 derived. SOURCE_INTAKE summary 47/14 is stale; row statuses and exact trees are 46/15. Source-main drift: 33 unchanged / 20 changed / 8 absent.
+- Original tests 4/4 exact; 15/15 derived test destination blobs/modes exact; migration map only 14/15, missing voucher_txn_journal.sh. Map hashes for run_focus.sh and member_txn_journal.sh are stale.
+- Four in-scope legal artifacts exact; seven additional source legal artifacts are outside this PisoWiFi-only intake. Five candidate workflows CANCELLED; no combined status.
+- SOURCE_INTAKE destination branch pin is stale versus live PR #26 head branch. No staging or destination write.
+
+See [UTC18 report](PHX_MASTER_UTC18_20261128_HW380_CANONICAL_STACK_COE26_EXACT_TREE_AUDIT.md).
+
+
+---
+
 ## PHX-MASTER UTC17 — stack/blob provenance and destination hold (2026-11-28T17:42:33Z)
 
 ### HARDWARE exact intersections

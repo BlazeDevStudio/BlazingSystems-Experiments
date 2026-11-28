@@ -1,3 +1,16 @@
+## PHX-MASTER UTC18 — deny-only GPIO writer and controller envelope boundary (2026-11-28T18Z)
+
+- Pin HARDWARE #380 as the reconciled DRAFT child of current #377 for combined post-deny GPIO escape and centralized writer-authority tests. The source contract requires one executable digitalWrite in writeLogical, six startup logical-OFF writes and four existing accepting-gated output writes. This is host/source-contract evidence only.
+- #380 exact-head Poll/Mbed PASS; Full fails QA-owned Controller protocol parity after 14/14 target/platform jobs pass; Native not run by path filter. No physical GPIO/relay acceptance is inferred.
+- CORE owns the canonical versioned authenticated controller configuration envelope; HARDWARE owns its consumer; QA owns semantic parity and default-deny tests. No decoy config_revision, invented response_sig or positive admission.
+- Active v0.6 still performs blocking poll before first coin sample (ESP8266 354→357; ESP32 314→318). P0 #177 remains OPEN. Coin/relay admission stays DENIED.
+- Financial promotion still requires independent protected signing/anti-rollback witness, crash-atomic durable state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized gates.
+
+See [UTC18 audit](PHX_MASTER_UTC18_20261128_HW380_CANONICAL_STACK_COE26_EXACT_TREE_AUDIT.md).
+
+
+---
+
 ## PHX-MASTER UTC17 — P0 poll-order and controller contract decision (2026-11-28T17:42:33Z)
 
 ### Active v0.6 source re-read
