@@ -1,3 +1,16 @@
+## PHX-MASTER UTC10 live checkpoint — PHX-MASTER-20261128T10Z-HW374-COE26-ROLE-CI-ROUTES (2026-11-28T10:40:48Z)
+
+- Master branch `phoenix/master-coordination@c7798bf63d7f545b98bbbb7c8db68d57f0f36559`; PR #288 OPEN / DRAFT / UNMERGED, base `main@f4e8a891aed8af86d5fd315d28750a0ac3a7372b`, 707 ahead / 1 behind, 271 changed paths all under `coordination/phoenix/`, no Master CI runs.
+- Live refs: Experiments main `6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5`; development `aad3aade72c1156eecba1fed30907c6d0283b2c5`; comparison-only v0.6 `2fbd2475e9f54878c316fa7cea2f228386b0e859`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE #26 candidate `b382d233ff06c8791b1028bed3c617cc7b670d12`.
+- Current role CI and exact blockers are refreshed in [ROLE_ASSIGNMENTS.md](ROLE_ASSIGNMENTS.md) and [INTEGRATION_MATRIX.md](INTEGRATION_MATRIX.md). HARDWARE #374 now at `09374c8b232f925424d15bce830b1c375e11e024`; Native PAY-0745 and Full QA Controller protocol parity fail; Poll and Mbed pass; 14/14 target/platform and Android jobs pass.
+- Ownership manifest blob `e4db324315a1b3543fec17a148fbf960170fcb29` remains 11 routes / DRAFT_REVIEW_ONLY / PHX-MASTER target null. Static route checks 5/5 PASS.
+- COE #26 remains FROZEN; cleanup #266 OPEN / 0-of-7; P0 #177 OPEN; private Drive registry v11/newer corrections NOT RECOVERED. No staging or production operation.
+- Master local suite and `verify_coordination.py` NOT RUN; no authenticated non-Codex checkout. **PRODUCTION NO-GO.**
+
+[Full UTC10 audit report](PHX_MASTER_UTC10_20261128_HW374_ROLE_CI_AND_COE26_PROVENANCE_AUDIT.md).
+
+---
+
 ## PHX-MASTER UTC09 follow-up — PHX-MASTER-20261128T09Z-HW374-COE26-EXACT-HEAD-PROVENANCE (2026-11-28T10:01:48.418Z)
 
 - Audit-start Master head `298b6a4b0600a0440a806d816431d694ccae4371`; current coordination commit is being reconciled in this UTC09 checkpoint. Experiments main `6be5d19b`, development `aad3aade`, active v0.6 `2fbd2475`, COE main `a6513ab4`, COE #26 candidate `b382d233`.
