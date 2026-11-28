@@ -1,3 +1,15 @@
+## PHX-MASTER UTC08 — EEPROM initialization and controller trust boundaries (2026-11-28T08:02Z)
+
+### Hardware #374 API compatibility blocker
+The current #374 candidate assigns `EEPROM.begin(sizeof(Config))` to a boolean readiness field. The exact ESP8266 core 3.1.2 compile log reports that the expression has type `void`. Its host FakeEEPROM returns `bool`, so the fixture currently proves a contract that the target library does not provide. HARDWARE must use the actual platform API semantics, preserve fail-closed output/network behavior, and align the fake/native harness to the target signature before the candidate is considered buildable. Master does not alter Hardware source or tests.
+
+### Controller parity ownership
+The shared `tests/controllers.sh:21` assertion still checks literal `config_revision` presence. #373 Full reaches this QA-owned failure after all 14 target/platform jobs pass. QA must replace token-presence testing with source-linked default-deny/controller vectors; CORE owns authenticated register/poll/receipt/disposition semantics. Do not add an unauthenticated decoy field or weaken deny-only behavior.
+
+### Active v0.6 pulse-loss P0 remains unresolved
+Live active-v0.6 source still executes synchronous `post("poll")` before the first coin-pin sample on both boards: ESP8266 lines 354→357 and ESP32 lines 314→318, with a 3,500 ms HTTP timeout. Issue #177's embedded source pin `9df0a7e7` is stale relative to live branch `2fbd2475`. Host simulations and CI do not establish physical pulse retention, relay polarity, power-loss durability or device acceptance.
+
+---
 ## PHX-MASTER UTC07 — active v0.6 poll-order contract recheck (2026-11-28T07:35Z)
 
 Issue #177 remains OPEN. Its body cites stale source 9df0a7e7; live branch blazepwifi-v0.6.0-audit-foundation is 2fbd2475e9f54878c316fa7cea2f228386b0e859.

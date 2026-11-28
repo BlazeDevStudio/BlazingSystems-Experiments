@@ -1,3 +1,13 @@
+## PHX-MASTER UTC08 — 2026-11-28T08:02Z — Hardware #374 EEPROM API and exact-head role audit
+
+Task: `PHX-MASTER-20261128T08Z-HW374-EEPROM-BEGIN-CI-AUDIT`. Audit-start Master head `3e5b18d605b3cbe0f142ff4b0ddf768e30ae284d`. Strict NO CODEX.
+
+- [Full UTC08 report](PHX_MASTER_UTC08_20261128_HW374_EEPROM_BEGIN_FAILCLOSED_AND_LIVE_ROLE_CI_AUDIT.md).
+- Newly surfaced Hardware child PR #374 at `e8321945` is OPEN/DRAFT; ESP8266 compile fails because the candidate assigns the void-returning `EEPROM.begin()` to a boolean. Focused source-contract and native synthetic gates also fail; Mbed TLS 3/4 passes 3/3; Full fails validation and ESP8266 build.
+- Parent #373 remains at `3783654a`; Focused/Mbed pass, Full fails the QA-owned `tests/controllers.sh:21` literal `config_revision` assertion after 14/14 target builds pass.
+- Experiments main/development/v0.6 are `6be5d19b` / `aad3aade` / `2fbd2475`; COE main/#26 are `a6513ab4` / `b382d233`. #26 remains FROZEN; cleanup #266 0/7; P0 #177 open; private Drive v11 NOT_RECOVERED; PRODUCTION NO-GO.
+
+---
 ## PHX-MASTER UTC07 — 2026-11-28T07:35Z — exact role CI and COE #26 provenance
 
 Task: PHX-MASTER-20261128T07Z-HW373-COE26-ROLE-CI-IMPORT-AUDIT. Audit-start Master head c52dcab4b4803ee5946b5d9b5f8d3008ae4a73b6. Strict NO CODEX. Current role heads and exact CI were refreshed; COE #26 remains FROZEN; cleanup #266 remains 0/7; P0 #177/#31/#32/#34/#43 remain OPEN; PRODUCTION NO-GO.

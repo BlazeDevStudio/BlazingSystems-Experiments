@@ -1,3 +1,17 @@
+## PHX-MASTER UTC08 — Hardware #374 source/test gate and COE #26 hold (2026-11-28T08:02Z)
+
+Hardware #374 is OPEN/DRAFT at `e832194501c6b93746b06fd0afca61149d34c3e1`, child of #373@ `3783654a3c9862598bbb714268c536fb8b34578b`. It changes Hardware-owned ESP8266 configuration-store behavior and its host fixture; it does not change CORE/shared contracts.
+
+- Exact ESP8266 build error: `configStoreReady=EEPROM.begin(sizeof(Config));` attempts to use a void return from ESP8266 core 3.1.2. The host FakeEEPROM currently returns bool, so the fake does not model the target API.
+- Focused source-contract #46123621209 fails `missing bounded synchronous poll condition`; Native #46123621222 fails the PAY-0758 corrupt-persisted-state assertion; Mbed #46123621224 passes 3/3; Full #46123621259 fails validation and ESP8266 compile, with 13/14 target/platform jobs passing and downstream stages skipped.
+- Hardware must correct the API/fixture mismatch and rerun exact-head CI. Master does not edit Hardware source or tests.
+- Parent #373 Full #46118310135 fails QA-owned validation; `tests/controllers.sh` line 21 still requires literal `config_revision`. QA owns source-linked deny-only vectors; do not add a decoy field.
+
+COE #26 remains OPEN/DRAFT/FROZEN at `b382d233ff06c8791b1028bed3c617cc7b670d12`; main is `a6513ab4412b4c014eee2863e45cbe32d06cb243`. The 61 runtime blob/mode identities match their pinned source/candidate, but actual 46 identical / 15 derived conflicts with the 47/14 summary; 15 derived tests exist but only 14 are mapped; seven license/NOTICE counterparts are missing; destination branch pin is stale; all five candidate workflows are CANCELLED. No staging/copy/move/overwrite/cherry-pick/route promotion is permitted.
+
+[Full UTC08 source/test/CI and migration report](PHX_MASTER_UTC08_20261128_HW374_EEPROM_BEGIN_FAILCLOSED_AND_LIVE_ROLE_CI_AUDIT.md).
+
+---
 ## PHX-MASTER UTC07 — exact COE #26 source/destination reconciliation (2026-11-28T07:35Z)
 
 Candidate PR #26 remains OPEN / DRAFT / FROZEN at integration/ecosystem-nonproprietary-candidate-20261111 @ b382d233ff06c8791b1028bed3c617cc7b670d12. COE main remains a6513ab4412b4c014eee2863e45cbe32d06cb243 (3 entries / 2 blobs); candidate tree is 286 entries. Historical Experiments source pin 6d4c9b487af4d768c4d7627654d119417fcc6e00 has 2,391 entries; current main 6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5 has 2,341.

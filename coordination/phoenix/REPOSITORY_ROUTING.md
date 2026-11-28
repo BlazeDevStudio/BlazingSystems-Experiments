@@ -1,3 +1,12 @@
+## PHX-MASTER UTC08 — exact branch pins and owner routing (2026-11-28T08:02Z)
+
+- Experiments main `6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5`; development `blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5`; active v0.6 `blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859`; Master audit-start `phoenix/master-coordination@3e5b18d605b3cbe0f142ff4b0ddf768e30ae284d`.
+- COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; #26 candidate `integration/ecosystem-nonproprietary-candidate-20261111@b382d233ff06c8791b1028bed3c617cc7b670d12`.
+- Hardware child PR #374 is owned by PHX-HARDWARE at `phoenix/hw-eeprom-begin-failclosed-20261128-utc07@e832194501c6b93746b06fd0afca61149d34c3e1`; its new source change stays on the Hardware-owned branch. Master only records the route/CI checkpoint.
+- `OWNERSHIP_ROUTES.json` remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`, 11 routes, `DRAFT_REVIEW_ONLY`; PHX-MASTER target null. Two Rental target-prefix overlaps remain explicitly blocked; broad `Rental/` is manual-file-mapping-only with `copy_permitted=false`.
+- Private Drive registry v11/newer corrections remain NOT_RECOVERED; no Drive connector/action is exposed. No older registry substituted and no private IDs/content published. CORE remains reserved to its separate owner; no competing CORE task or source edit.
+
+---
 ## PHX-MASTER UTC07 — live branch pins, ownership and access (2026-11-28T07:35Z)
 
 - Experiments default main @ 6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5; development blazepwifi-v0.5.3-development @ aad3aade72c1156eecba1fed30907c6d0283b2c5; active v0.6 @ 2fbd2475e9f54878c316fa7cea2f228386b0e859; Master audit-start phoenix/master-coordination @ c52dcab4b4803ee5946b5d9b5f8d3008ae4a73b6.
