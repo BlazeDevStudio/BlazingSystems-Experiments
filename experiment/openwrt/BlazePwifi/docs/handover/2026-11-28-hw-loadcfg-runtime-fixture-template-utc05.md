@@ -96,3 +96,30 @@ The full original ledger was recovered from immutable parent blob `4d1590ed144e3
 
 **Disposition:** retain PR #373 DRAFT / UNMERGED. Re-run the focused append-only guard on the repaired docs head, then verify the final Full/Mbed results. Physical hardware acceptance remains NOT TESTED; HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
 
+
+
+## PHX-HARDWARE UTC06 — terminal docs-head CI and Android artifact reconciliation
+
+**Evidence-tested PR/docs HEAD:** `3fe9d835e89f3f53de7cedbba40985226186af70`  
+**Source/test SHA:** `e411a99c23485f4f92720aa38cf29dca757b5190`  
+**PR #373:** OPEN / DRAFT / UNMERGED; this is a documentation-only evidence refresh.
+
+### Exact terminal results
+
+- Focused [run #46113833886](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46113833886), job `140883075583`: **PASS**. Log confirms `EEPROM_RUNTIME_TEMPLATE_FAILURE_INJECTION_PASS 9/9`, current/legacy EEPROM runtime matrix, commit-failure retries, and the existing source-mutation checks.
+- Mbed [run #46113833894](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46113833894): **3/3 PASS** — source contract `140883135816`, ESP32 core 3.3.13 `140883136039`, core 4.0.0 `140883135927`.
+- Full [run #46113833899](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46113833899): **TERMINAL FAILURE**, 29 jobs total: 15 success, 1 failure, 13 skipped. CI-0701 `140883132498` PASS. Validation `140883177800` FAIL at QA-owned controller parity (`tests/controllers.sh:21`, literal `config_revision` requirement). All 14/14 target/platform jobs passed, including Android.
+- Android job `140883177803`: **SUCCESS**, log states `BUILD SUCCESSFUL in 38s`. Artifact `BlazePwifi-android-current.zip`, ID `15250379262`, SHA-256 `4a72a671709b2247cc53b17f55aaea840f1d0c66a230389561eb54a6b612cd56`. The build log still reports existing MissingTranslation diagnostics for multiple locales; this is build evidence, not translation QA signoff.
+- Update bundle, simulations, production signing and publication stages were skipped after validation failed. No production artifact was signed or released.
+
+### Disposition and ownership
+
+This confirms Android completed successfully; it does not convert Full integration to PASS. No production sketch, shared API, finance/receipt state, QA-owned assertion, signer/witness, COE destination or physical device changed. The artifact is a CI build output only.
+
+The new template mutation matrix is SIMULATED / CI VERIFIED. Physical EEPROM/NVS brown-out, GPIO/relay/electrical acceptance, LittleFS power loss, 150 controlled power cuts and 30-device/24-hour soak remain NOT TESTED. HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
+
+### Next exact action
+
+PHX-QA must replace the stale literal `config_revision` presence check with source-linked deny-only vectors and rerun Full on the exact successor head. PHX-CORE must publish the authenticated register/poll/receipt/disposition contract. PHX-MASTER must refresh #373's exact head in its role and integration matrices. PHX-HARDWARE keeps coin/relay admission denied and makes no shared-contract or positive-admission change until those owners complete their gates.
+
+Updated UTC: 2026-11-28T06:36:19Z.
