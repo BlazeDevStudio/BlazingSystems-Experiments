@@ -1,23 +1,20 @@
-## PHX-MASTER UTC08 — live role heads and exact-head CI (2026-11-28T08:02Z)
+## PHX-MASTER UTC08 follow-up — live role heads and exact-head CI (2026-11-28T08:49Z)
 
 | Owner / PR | Exact head | Exact-head evidence / disposition |
 |---|---|---|
-| CORE #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | Build #42698139210 PASS; CORE remains with its separate owner. |
+| CORE #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | Build #42698139210 PASS; CORE remains read-only to its separate owner. |
 | RENTAL #289 | `68928774d0d7cf65adb26bc6b54199a3159d066c` | Build #43653329229 and native auth #43653329235 PASS. |
-| RENTAL #328 | `10fc200b6dbf470a95e679d3acc58aff4ab2a67f` | API21/23, native auth and APK identity pass; Build #45622918468 FAIL (handover validation and ESP32 `mbedtls/sha256.h` missing). |
+| RENTAL #328 | `10fc200b6dbf470a95e679d3acc58aff4ab2a67f` | API21/23 smoke, native auth and APK identity PASS; Build #45622918468 FAIL in validate and ESP32 jobs. |
 | PISONET #255 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | Windows synthetic #42462978704 PASS; native COM NOT TESTED. |
 | QA #290 | `5c29d15994cee1279058f1eca12f2a3180704292` | Windows synthetic #43633486963 PASS; not native acceptance. |
 | QA #292 | `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | No exact-head workflow. |
 | RELEASE #291 | `bf339a76964a1abe2412fac45392fe06a8e66418` | No exact-head workflow. |
-| HARDWARE #373 | `3783654a3c9862598bbb714268c536fb8b34578b` | Focused #46118310162 PASS; Mbed #46118310195 3/3 PASS; Full #46118310135 FAIL in QA validation; 14/14 target/platform jobs PASS. |
-| HARDWARE #374 (child of #373) | `e832194501c6b93746b06fd0afca61149d34c3e1` | Poll/source #46123621209 FAIL; Native #46123621222 FAIL; Mbed #46123621224 PASS 3/3; Full #46123621259 FAIL (validate + ESP8266 compile); 13/14 target/platform jobs PASS. HARDWARE owns remediation. |
+| HARDWARE #373 | `3783654a3c9862598bbb714268c536fb8b34578b` | Focused #46118310162 PASS; Mbed #46118310195 PASS 3/3; Full #46118310135 FAIL at QA controller parity; 14/14 target builds PASS. |
+| HARDWARE #374 | `bdd69c75e84714cc7b39ab59d0827971cad81bb6` | Focused #46126024602 FAIL (stale adapter assertion); Native #46126024649 FAIL (stale literal pending-state assertion); Mbed #46126024646 PASS 3/3; Full #46126024658 FAIL at handover freshness; 14/14 target builds PASS. |
 
-### COE role drafts
-- #35 `bc57ba8ecc5245ce538c6770a45bb25e2b8b5ef3`: case-collision PASS; ImageBuilder FAIL because `bwrap` is absent (exit 125); Hardware/Shared FAIL because ten profiles lack approved site-scoped ULA /48.
-- #45 `9d76a134c1f6512aa40c20ec4d247306a71a8cce`: overlay/shell and case-collision PASS.
-- #49 `aeb8ff11b2f5db9a5f86280ab62ab988245f3919`: Stage 5.1 and case-collision PASS; ESP32 compile FAIL because `mbedtls/sha256.h` is missing.
+#374 remains PHX-HARDWARE-owned. Its PR body still cites historical e8321945 and the superseded EEPROM API failure; HARDWARE must refresh its own PR body and append-only handover/ledger. The expected UTC07 handover file is absent. QA owns `tests/v060_vendo_sequence_contract.py` and `tests/controllers.sh:21`; replace literal token checks with source-linked semantic/default-deny vectors. CORE owns authenticated controller register/poll/receipt/disposition semantics. No ownership changed; Master made no subsystem source edits.
 
-No role ownership changed. Master did not edit CORE, RENTAL, PISONET, HARDWARE, QA or RELEASE source branches.
+---
 ---
 
 ## PHX-MASTER UTC07 — live role heads and exact-head CI (2026-11-28T07:35Z)

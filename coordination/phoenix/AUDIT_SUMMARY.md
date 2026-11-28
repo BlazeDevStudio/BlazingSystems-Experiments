@@ -1,16 +1,20 @@
-## PHX-MASTER UTC08 — executed checks and current blockers (2026-11-28T08:02Z)
+## PHX-MASTER UTC08 follow-up — executed checks and current blockers (2026-11-28T08:49Z)
 
-**Task:** `PHX-MASTER-20261128T08Z-HW374-EEPROM-BEGIN-CI-AUDIT` · audit-start `3e5b18d605b3cbe0f142ff4b0ddf768e30ae284d`.
+**Task:** `PHX-MASTER-20261128T08Z-HW374-EEPROM-BEGIN-CI-AUDIT` · audit-start `d624ca2683c81fbd1da238cbb6cbcc4a1c01309c`.
 
-- EXECUTED: live control-plane #172, cleanup #266, P0 #177, PR #288, branch refs, ownership manifest, current role PR metadata, recursive Master tree and exact owner CI/job-log reads.
-- EXECUTED: five in-process static assertions on current `OWNERSHIP_ROUTES.json` (schema, 11 routes, Master target null, broad Rental manual-only, exactly two explicit Rental prefix overlaps): **5/5 PASS**.
-- EXECUTED: source-level inspection of active v0.6 poll order on both boards and exact ESP8266 core build log for Hardware #374.
-- NOT RUN: Master Python suite, `verify_coordination.py`, local shell/native suites, and Master Actions. A non-Codex shallow clone failed because this runtime could not resolve `github.com`; no local checkout exists. Existing worker CI is not a Master test.
-- HARDWARE #374: Focused/source FAIL; Native FAIL; Mbed 3/4 PASS 3/3; Full FAIL due validation and ESP8266 compile; 13/14 target/platform jobs PASS. Parent #373 Full still fails QA controller assertion.
-- COE #26 FROZEN; 61/61 runtime identities match pins but 46/15 differs from summary 47/14; test map 14/15; seven license/NOTICE paths missing; five workflows CANCELLED. No staging.
-- #266 OPEN / 0-of-7; #177 OPEN; private registry v11/newer corrections NOT_RECOVERED; PRODUCTION NO-GO.
+- EXECUTED: live #172/#266/#177, PR #288/#26, default/development/v0.6 refs, role PR metadata and exact-head CI/job logs.
+- EXECUTED: COE source/destination tree comparison; complete non-truncated trees (2,391 source entries; 286 candidate entries); 61/61 runtime manifest rows match pinned source and candidate blob/mode; actual 46/15 vs declared 47/14.
+- EXECUTED: test/license inventory: 149 source test blobs vs 19 candidate; 15 derived tests but 14 mapped; missing voucher journal map row; two stale hashes; 11 source license/notice artifacts vs four destination counterparts.
+- EXECUTED: five static ownership-route assertions **5/5 PASS** (schema, 11 routes, Master target null, broad Rental manual-only, exactly two Rental prefix overlaps).
+- EXECUTED: exact #374 job-log inspection. Current head `bdd69c75`: Focused and Native fail on stale literal assertions; Mbed 3/3 PASS; Full fails handover freshness; 14/14 target/platform builds pass.
+- NOT RUN: Master Python suite, `verify_coordination.py`, local shell/native suites and Master Actions. No local non-Codex checkout is available; worker CI is not a Master test.
+- HARDWARE #373 Full remains failed at QA-owned controller assertion; COE #26 remains FROZEN; cleanup #266 0/7; P0 #177 OPEN.
+- Private Drive v11/newer corrections NOT_RECOVERED; no Drive connector exposed. CORE remains read-only; no competing CORE work.
 
-**Next:** HARDWARE fixes #374 against actual EEPROM API and fixture; QA repairs the source-linked controller assertion; COE owner reconciles migration records; registry custodian/admin restores authorized Drive and non-Codex test access. No production action.
+**Next:** HARDWARE refreshes #374 source/fixture assertions and append-only handover, then reruns Focused/Native/Full. QA replaces literal pending-state and `config_revision` checks with semantic vectors. COE owner reconciles migration map/licenses/pins before staging. Registry custodian restores v11 and repository admin provides a non-Codex Master checkout.
+
+**PRODUCTION NO-GO.**
+---
 ---
 ## PHX-MASTER UTC07 — execution summary and blockers (2026-11-28T07:35Z)
 

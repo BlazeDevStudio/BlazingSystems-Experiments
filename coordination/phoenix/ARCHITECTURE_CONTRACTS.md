@@ -1,14 +1,21 @@
-## PHX-MASTER UTC08 — EEPROM initialization and controller trust boundaries (2026-11-28T08:02Z)
+## PHX-MASTER UTC08 follow-up — EEPROM adapter and controller boundaries (2026-11-28T08:49Z)
 
-### Hardware #374 API compatibility blocker
-The current #374 candidate assigns `EEPROM.begin(sizeof(Config))` to a boolean readiness field. The exact ESP8266 core 3.1.2 compile log reports that the expression has type `void`. Its host FakeEEPROM returns `bool`, so the fixture currently proves a contract that the target library does not provide. HARDWARE must use the actual platform API semantics, preserve fail-closed output/network behavior, and align the fake/native harness to the target signature before the candidate is considered buildable. Master does not alter Hardware source or tests.
+### Hardware #374 current head supersedes the earlier API diagnosis
 
-### Controller parity ownership
-The shared `tests/controllers.sh:21` assertion still checks literal `config_revision` presence. #373 Full reaches this QA-owned failure after all 14 target/platform jobs pass. QA must replace token-presence testing with source-linked default-deny/controller vectors; CORE owns authenticated register/poll/receipt/disposition semantics. Do not add an unauthenticated decoy field or weaken deny-only behavior.
+Current head `bdd69c75e84714cc7b39ab59d0827971cad81bb6`; ESP8266 sketch blob `58237c017d75e345d7305bcb6f931e683810a6e9`. Current code no longer assigns void-returning `EEPROM.begin()` to a bool. It uses a checked `CheckedEEPROMClass::beginChecked()` path that bounds size, checks allocation and `ESP.flashRead`, and gates config persistence, STA connection/reconnect/poll and output admission on `configStoreReady`. The e8321945 compile failure is historical for the superseded head only.
 
-### Active v0.6 pulse-loss P0 remains unresolved
-Live active-v0.6 source still executes synchronous `post("poll")` before the first coin-pin sample on both boards: ESP8266 lines 354→357 and ESP32 lines 314→318, with a 3,500 ms HTTP timeout. Issue #177's embedded source pin `9df0a7e7` is stale relative to live branch `2fbd2475`. Host simulations and CI do not establish physical pulse retention, relay polarity, power-loss durability or device acceptance.
+Current CI is not green: Focused #46126024602 fails because a source contract expects `EEPROM.put(0,cfg)` rather than `configEeprom.put`; Native #46126024649 fails because the sequence test requires literal `if(any) return false;` rather than the current candidate-count/invalid-candidate fail-closed branch; Full #46126024658 fails handover freshness because the current source/workflow changes lack an appended handover/ledger record. Mbed #46126024646 passes 3/3 and all 14/14 target/platform builds pass. These are source/CI findings, not hardware acceptance.
 
+HARDWARE owns the adapter, fixture, PR body and append-only handover. QA owns semantic sequence/controller tests. Master does not modify either role's source or tests.
+
+### Parent controller parity and active v0.6 P0
+
+Parent #373 Full #46118310135 remains failed at QA-owned `tests/controllers.sh:21` literal `config_revision`. QA must use source-linked deny-only vectors; do not add a decoy field. CORE owns authenticated register/poll/receipt/disposition semantics.
+
+Issue #177 remains OPEN. Active v0.6 `2fbd2475e9f54878c316fa7cea2f228386b0e859` still polls before first coin sample: ESP8266 timeout line 263, poll 354, sample 357; ESP32 timeout 230, poll 314, sample 318. Issue #177 embeds stale pin `9df0a7e7`. No unmerged deny-only candidate fixes active v0.6 or proves physical pulse retention.
+
+No shared CORE schema, financial state, migration, signer/witness, production firmware branch or physical test changed.
+---
 ---
 ## PHX-MASTER UTC07 — active v0.6 poll-order contract recheck (2026-11-28T07:35Z)
 

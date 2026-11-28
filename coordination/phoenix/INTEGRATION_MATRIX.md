@@ -1,16 +1,27 @@
-## PHX-MASTER UTC08 — Hardware #374 source/test gate and COE #26 hold (2026-11-28T08:02Z)
+## PHX-MASTER UTC08 follow-up — Hardware #374 and COE #26 exact provenance (2026-11-28T08:49Z)
 
-Hardware #374 is OPEN/DRAFT at `e832194501c6b93746b06fd0afca61149d34c3e1`, child of #373@ `3783654a3c9862598bbb714268c536fb8b34578b`. It changes Hardware-owned ESP8266 configuration-store behavior and its host fixture; it does not change CORE/shared contracts.
+### Hardware #374 current head
 
-- Exact ESP8266 build error: `configStoreReady=EEPROM.begin(sizeof(Config));` attempts to use a void return from ESP8266 core 3.1.2. The host FakeEEPROM currently returns bool, so the fake does not model the target API.
-- Focused source-contract #46123621209 fails `missing bounded synchronous poll condition`; Native #46123621222 fails the PAY-0758 corrupt-persisted-state assertion; Mbed #46123621224 passes 3/3; Full #46123621259 fails validation and ESP8266 compile, with 13/14 target/platform jobs passing and downstream stages skipped.
-- Hardware must correct the API/fixture mismatch and rerun exact-head CI. Master does not edit Hardware source or tests.
-- Parent #373 Full #46118310135 fails QA-owned validation; `tests/controllers.sh` line 21 still requires literal `config_revision`. QA owns source-linked deny-only vectors; do not add a decoy field.
+PR #374 is OPEN/DRAFT/UNMERGED, child of #373@ `3783654a3c9862598bbb714268c536fb8b34578b`, current head `bdd69c75e84714cc7b39ab59d0827971cad81bb6`. Current ESP8266 source uses `CheckedEEPROMClass::beginChecked()`; the earlier e8321945 void-return compile diagnosis is superseded.
 
-COE #26 remains OPEN/DRAFT/FROZEN at `b382d233ff06c8791b1028bed3c617cc7b670d12`; main is `a6513ab4412b4c014eee2863e45cbe32d06cb243`. The 61 runtime blob/mode identities match their pinned source/candidate, but actual 46 identical / 15 derived conflicts with the 47/14 summary; 15 derived tests exist but only 14 are mapped; seven license/NOTICE counterparts are missing; destination branch pin is stale; all five candidate workflows are CANCELLED. No staging/copy/move/overwrite/cherry-pick/route promotion is permitted.
+- Focused #46126024602 fails because the source contract still expects `EEPROM.put(0,cfg)` instead of `configEeprom.put`.
+- Native #46126024649 fails because the sequence contract requires literal `if(any) return false;`; current source uses a candidate-count guard and explicit invalid-candidate fail-closed branch.
+- Mbed #46126024646 passes 3/3. Full #46126024658 fails handover freshness: current source/workflow changes are newer than `PROJECT_HANDOVER.md` / `CURRENT_STATE.md`, and the expected UTC07 handover file is absent. All 14/14 target/platform builds pass; 13 downstream jobs are skipped.
+- HARDWARE owns the source/fixture, PR description and append-only handover/ledger; Master does not edit Hardware files. Parent #373 Full #46118310135 remains failed at QA-owned `tests/controllers.sh:21` literal `config_revision` assertion.
 
-[Full UTC08 source/test/CI and migration report](PHX_MASTER_UTC08_20261128_HW374_EEPROM_BEGIN_FAILCLOSED_AND_LIVE_ROLE_CI_AUDIT.md).
+### COE #26 remains FROZEN
 
+Candidate `integration/ecosystem-nonproprietary-candidate-20261111@b382d233ff06c8791b1028bed3c617cc7b670d12`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`. Candidate tree 286 entries; main 3 entries / 2 blobs. Current `SOURCE_INTAKE.json` blob `1b9018ff944f7f673934d0fc2a97e0a0090d3f5f`; `MIGRATION_MAP.md` blob `b54fc15d83bc2269de03db8aadd0e76259fd13d9`.
+
+- Runtime: 61/61 source and destination blob/mode identities match pinned source/candidate; actual 46 byte-identical / 15 derived vs summary 47/14.
+- Tests: source 149 test blobs vs candidate 19; four original test rows plus 15 derived tests, but only 14 derived rows in the map; `voucher_txn_journal.sh` omitted; `run_focus.sh` and `member_txn_journal.sh` map hashes stale.
+- Licensing: 11 source license/notice artifacts; four exact destination counterparts; seven missing.
+- Pins disagree: SOURCE_INTAKE source commit `6d4c9b48` and destination branch `feature/pisowifi-cleanup-stabilization`; live PR branch is `integration/ecosystem-nonproprietary-candidate-20261111`; OWNERSHIP_ROUTES source_ref remains `f4e8a891`.
+- All five candidate workflows CANCELLED; combined statuses empty.
+
+No staging, copy, move, overwrite, cherry-pick, route promotion or destination write is permitted.
+
+---
 ---
 ## PHX-MASTER UTC07 — exact COE #26 source/destination reconciliation (2026-11-28T07:35Z)
 

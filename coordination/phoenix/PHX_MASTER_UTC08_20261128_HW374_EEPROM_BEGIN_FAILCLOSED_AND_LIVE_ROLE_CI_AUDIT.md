@@ -90,3 +90,43 @@ The current `OWNERSHIP_ROUTES.json` remains 11 routes / `DRAFT_REVIEW_ONLY`; PHX
 5. **Registry custodian / repository administrator:** restore authorized private Drive registry v11 and newer corrections, expose the Drive connector and provide a non-Codex Master test checkout.
 
 **Safety:** no merge, rebase, release, flash, secret provisioning, real payment operation, financial migration, physical test, signer/witness approval or production gate approval. **PRODUCTION NO-GO.**
+
+
+---
+
+## Post-checkpoint exact-head refresh — 2026-11-28T08:49Z (same UTC08 event)
+
+The prior e8321945 finding is retained as a historical snapshot but superseded by current Hardware #374 head `bdd69c75e84714cc7b39ab59d0827971cad81bb6`. The existing issue #172 comment is updated in place; no duplicate UTC08 event is created.
+
+- Current branch `phoenix/hw-eeprom-begin-failclosed-20261128-utc07`, based on #373@ `3783654a3c9862598bbb714268c536fb8b34578b`. ESP8266 sketch blob `58237c017d75e345d7305bcb6f931e683810a6e9`; ESP32 blob `a673e323e1c160cbfe03949d13a9e01b47386596`.
+- Current ESP8266 source uses `CheckedEEPROMClass::beginChecked()`, bounds the EEPROM size to one 4 KiB sector, checks allocation and `ESP.flashRead`, and gates config persistence/network/output admission on `configStoreReady`. It no longer assigns `EEPROM.begin()` to a boolean.
+- Current `loadPending()` rejects multiple candidates; if a candidate exists but none validates it marks the filesystem unavailable, marks pending state ready, logs a critical error and returns false. `initPendingStore()` preserves the unavailable state; output admission remains gated. The native test's exact-string assertion is stale relative to this source form.
+
+### Exact current #374 CI
+
+| Workflow | Run | Result | Finding |
+|---|---:|---|---|
+| Focused poll-intake/source | [#46126024602](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46126024602) | FAIL | Job 140920699008: source contract still requires `EEPROM.put(0,cfg)`; current code uses `configEeprom.put`. Earlier integrity fixture, 17/17 source mutations and begin/read failure injection pass before this assertion. |
+| Native synthetic journal | [#46126024649](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46126024649) | FAIL | Job 140920699441: `tests/v060_vendo_sequence_contract.py` requires literal `if(any) return false;`; current source uses a candidate-count/invalid-candidate fail-closed branch. |
+| ESP32 Mbed TLS 3/4 | [#46126024646](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46126024646) | PASS 3/3 | Source contract and ESP32 core 3.3.13 / 4.0.0 pass. |
+| Full build | [#46126024658](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46126024658) | FAIL | Validate job 140920803802 fails handover freshness: source/workflow changes are newer than `PROJECT_HANDOVER.md`; expected UTC07 handover file is absent. All 14/14 target/platform build jobs pass; 13 downstream jobs are skipped. |
+
+The current #374 PR body still names e8321945 and repeats the superseded void-return diagnosis. HARDWARE owns refreshing the body and append-only handover/ledger.
+
+### Cross-role and integration refresh
+
+- Parent #373: Focused #46118310162 PASS; Mbed #46118310195 PASS 3/3; Full #46118310135 FAIL at QA-owned `tests/controllers.sh:21` literal `config_revision` after 14/14 target builds pass.
+- COE #26 remains FROZEN at `b382d233`; main `a6513ab4`. Source tree 2,391 entries, candidate 286, both non-truncated. Runtime 61/61 blob/mode identities match; actual 46 identical / 15 derived vs 47/14 summary. Tests: 149 source blobs vs 19 candidate; 15 derived exist but only 14 are mapped; `voucher_txn_journal.sh` missing; `run_focus.sh` and `member_txn_journal.sh` map hashes stale. Licenses: 11 source artifacts, four destination counterparts, seven missing. Five candidate workflows CANCELLED. No staging.
+- Experiments main/development/v0.6: `6be5d19b` / `aad3aade` / `2fbd2475`; COE main/#26: `a6513ab4` / `b382d233`. Cleanup #266 0/7. P0 #177 remains OPEN; active v0.6 polls before sampling on both boards with a 3,500 ms timeout.
+- OWNERSHIP_ROUTES remains 11 routes / DRAFT_REVIEW_ONLY; Master target null; five route assertions PASS.
+- Private Drive registry v11/newer corrections NOT_RECOVERED; no Drive connector and no older snapshot substituted.
+- The only other visible active automation is `Blaze Hourly Production Development`; its saved prompt identifies PHX-HARDWARE. No separate CORE automation title is visible. CORE remains untouched.
+
+### Next owner actions
+
+1. HARDWARE updates the adapter source-contract expectation, appends the missing handover/ledger record, refreshes PR #374 body, and reruns Focused/Native/Full at the resulting exact head.
+2. QA replaces literal pending-state and `config_revision` assertions with source-linked semantic/default-deny vectors.
+3. COE owner reconciles 46/15 vs 47/14, test-map completeness/hashes, license coverage and branch pins before staging.
+4. Registry custodian/repository administrator restores private Drive v11 and a non-Codex Master test checkout.
+
+No subsystem source, COE destination, secrets, financial state, signing, hardware, payment, release or production gate changed. **PRODUCTION NO-GO.**

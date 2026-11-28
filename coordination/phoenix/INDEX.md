@@ -1,12 +1,19 @@
-## PHX-MASTER UTC08 — 2026-11-28T08:02Z — Hardware #374 EEPROM API and exact-head role audit
+## PHX-MASTER UTC08 follow-up — 2026-11-28T08:49Z — current Hardware #374 head
 
-Task: `PHX-MASTER-20261128T08Z-HW374-EEPROM-BEGIN-CI-AUDIT`. Audit-start Master head `3e5b18d605b3cbe0f142ff4b0ddf768e30ae284d`. Strict NO CODEX.
+Task: `PHX-MASTER-20261128T08Z-HW374-EEPROM-BEGIN-CI-AUDIT` (same UTC08 event; existing checkpoint updated in place, not duplicated). Audit-start Master head `d624ca2683c81fbd1da238cbb6cbcc4a1c01309c`. Strict NO CODEX.
 
-- [Full UTC08 report](PHX_MASTER_UTC08_20261128_HW374_EEPROM_BEGIN_FAILCLOSED_AND_LIVE_ROLE_CI_AUDIT.md).
-- Newly surfaced Hardware child PR #374 at `e8321945` is OPEN/DRAFT; ESP8266 compile fails because the candidate assigns the void-returning `EEPROM.begin()` to a boolean. Focused source-contract and native synthetic gates also fail; Mbed TLS 3/4 passes 3/3; Full fails validation and ESP8266 build.
-- Parent #373 remains at `3783654a`; Focused/Mbed pass, Full fails the QA-owned `tests/controllers.sh:21` literal `config_revision` assertion after 14/14 target builds pass.
-- Experiments main/development/v0.6 are `6be5d19b` / `aad3aade` / `2fbd2475`; COE main/#26 are `a6513ab4` / `b382d233`. #26 remains FROZEN; cleanup #266 0/7; P0 #177 open; private Drive v11 NOT_RECOVERED; PRODUCTION NO-GO.
+- Live refs: Experiments main `6be5d19b`; development `aad3aade`; active v0.6 `2fbd2475`; COE main `a6513ab4`; COE #26 candidate `b382d233`.
+- PR #288 remains OPEN/DRAFT/UNMERGED. At audit start its head was `d624ca2683c81fbd1da238cbb6cbcc4a1c01309c`; compare current main: 704 ahead / 1 behind, merge base `f4e8a891`; 270 changed paths are all under `coordination/phoenix/`.
+- Hardware #374 current head is `bdd69c75e84714cc7b39ab59d0827971cad81bb6`, superseding the earlier e8321945 snapshot. Current code uses `CheckedEEPROMClass::beginChecked()`; it no longer assigns the void-returning `EEPROM.begin()` result.
+- Exact #374 CI: Focused #46126024602 FAIL (stale `EEPROM.put(0,cfg)` assertion vs current `configEeprom.put`); Native #46126024649 FAIL (literal `if(any) return false;` assertion vs current fail-closed branch); Mbed #46126024646 PASS 3/3; Full #46126024658 FAIL at handover freshness. All 14/14 target/platform builds pass; 13 downstream jobs are skipped.
+- Parent #373 remains `3783654a`; Focused/Mbed pass, Full #46118310135 still fails QA-owned `tests/controllers.sh:21` literal `config_revision`.
+- COE #26 remains FROZEN: 61/61 runtime blob/mode matches; actual 46 identical / 15 derived vs declared 47/14; 15 derived tests vs 14 map rows, voucher journal omitted, two stale test hashes; 11 source license/notice artifacts vs four destination counterparts; five candidate workflows CANCELLED. No staging or destination write.
+- Cleanup #266 OPEN / 0-of-7. P0 #177 OPEN: active v0.6 still polls before first coin sample on both boards (ESP8266 354→357; ESP32 314→318; 3,500 ms timeout).
+- Private Drive registry v11/newer corrections NOT_RECOVERED; no Drive connector exposed; no older snapshot substituted. Master suite and `verify_coordination.py` NOT RUN without a local non-Codex checkout.
+- Automation inventory shows the other visible active task is `Blaze Hourly Production Development` and its saved prompt says PHX-HARDWARE; no separate `Blaze Production Continuation` / CORE task is visible. CORE remains untouched.
+- PRODUCTION NO-GO; no merge, release, flash, secrets, real payment, financial migration or physical test.
 
+[Full UTC08 report](PHX_MASTER_UTC08_20261128_HW374_EEPROM_BEGIN_FAILCLOSED_AND_LIVE_ROLE_CI_AUDIT.md).
 ---
 ## PHX-MASTER UTC07 — 2026-11-28T07:35Z — exact role CI and COE #26 provenance
 
