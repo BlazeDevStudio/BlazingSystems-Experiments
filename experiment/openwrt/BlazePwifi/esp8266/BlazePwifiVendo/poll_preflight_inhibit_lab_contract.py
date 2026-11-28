@@ -1,9 +1,45 @@
 """Source-level contracts for fail-closed startup, register and poll handling in both Vendo sketches."""
 import re
 
-__all__ = ["coin_post_matches", "poll_call_matches", "poll_guard_locations", "register_call_matches", "register_guard_locations"]
+__all__ = ["coin_post_matches", "gpio_write_authority_locations", "poll_call_matches", "poll_guard_locations", "register_call_matches", "register_guard_locations"]
 
 from firmware_source_extract import extract_braced, extract_function, mask_non_code
+
+# These APIs can drive a physical output without passing through writeLogical().
+# Keep the list explicit so a reviewer can extend it when a board core adds a writer.
+ALTERNATIVE_GPIO_WRITE_APIS = (
+    "analogWrite",
+    "digitalWriteFast",
+    "ledcWrite",
+    "ledcWriteChannel",
+    "dacWrite",
+    "gpio_set_level",
+    "gpio_ll_set_level",
+    "gpio_hal_set_level",
+    "tone",
+    "noTone",
+    "shiftOut",
+)
+
+DIRECT_GPIO_OUTPUT_REGISTER_ASSIGNMENTS = (
+    r"\b(?:GPOS|GPOC)\s*(?:\||&|\^)?=",
+    r"\bGPIO\s*\.\s*out(?:_w1ts|_w1tc|1_w1ts|1_w1tc)?(?:\s*\.\s*val)?\s*(?:\||&|\^)?=",
+)
+
+
+def _assert_no_gpio_write_bypasses(masked_source: str):
+    """Reject alternate Arduino/ESP-IDF output APIs and direct GPIO register writes."""
+    for api in ALTERNATIVE_GPIO_WRITE_APIS:
+        if re.search(rf"\b{re.escape(api)}\s*\(", masked_source):
+            raise AssertionError(
+                f"alternative GPIO writer API '{api}' must remain absent; use writeLogical"
+            )
+
+    for pattern in DIRECT_GPIO_OUTPUT_REGISTER_ASSIGNMENTS:
+        if re.search(pattern, masked_source):
+            raise AssertionError(
+                "direct GPIO output register writes must remain absent; use writeLogical"
+            )
 
 
 def poll_call_matches(source: str):
@@ -336,3 +372,87 @@ def startup_storage_guard_locations(source: str):
         )
 
     return setup
+
+
+def _call_arguments(masked_source, match):
+    """Split a simple C++ call argument list while respecting nested parentheses."""
+    opening = masked_source.find("(", match.start())
+    if opening < 0:
+        raise AssertionError("callsite has no opening parenthesis")
+    depth = 0
+    start = opening + 1
+    arguments = []
+    for position in range(opening, len(masked_source)):
+        character = masked_source[position]
+        if character == "(":
+            depth += 1
+        elif character == ")":
+            depth -= 1
+            if depth == 0:
+                arguments.append(masked_source[start:position].strip())
+                return tuple(arguments)
+        elif character == "," and depth == 1:
+            arguments.append(masked_source[start:position].strip())
+            start = position + 1
+    raise AssertionError("unclosed writeLogical argument list")
+
+
+def gpio_write_authority_locations(source: str):
+    """Keep physical GPIO writes centralized behind the existing deny predicate."""
+    masked = mask_non_code(source)
+    _assert_no_gpio_write_bypasses(masked)
+    definitions = list(re.finditer(r"\bvoid\s+writeLogical\s*\(", masked))
+    if len(definitions) != 1:
+        raise AssertionError("writeLogical must have exactly one implementation")
+    definition_name = masked.find("writeLogical", definitions[0].start())
+
+    write_function = extract_function(source, "void writeLogical")
+    write_mask = mask_non_code(write_function)
+    digital_calls = list(re.finditer(r"\bdigitalWrite\s*\(", masked))
+    writer_digital_calls = list(re.finditer(r"\bdigitalWrite\s*\(", write_mask))
+    if len(digital_calls) != 1 or len(writer_digital_calls) != 1:
+        raise AssertionError("digitalWrite must be centralized in writeLogical")
+
+    configure = extract_function(source, "void configureRuntimePins")
+    apply = extract_function(source, "void applyOutputs()")
+    configure_mask = mask_non_code(configure)
+    apply_mask = mask_non_code(apply)
+    configure_calls = list(re.finditer(r"\bwriteLogical\s*\(", configure_mask))
+    apply_calls = list(re.finditer(r"\bwriteLogical\s*\(", apply_mask))
+    all_calls = [
+        match for match in re.finditer(r"\bwriteLogical\s*\(", masked)
+        if match.start() != definition_name
+    ]
+
+    if len(configure_calls) != 6 or len(apply_calls) != 4:
+        raise AssertionError(
+            "writeLogical callsites must remain limited to six startup OFF writes "
+            "and four applyOutputs gate writes"
+        )
+    if len(all_calls) != len(configure_calls) + len(apply_calls):
+        raise AssertionError(
+            "writeLogical calls must be limited to configureRuntimePins and applyOutputs"
+        )
+
+    for call in configure_calls:
+        arguments = _call_arguments(configure_mask, call)
+        if len(arguments) != 3 or arguments[1] != "false":
+            raise AssertionError("configureRuntimePins may only write logical OFF")
+
+    actual_apply = sorted(_call_arguments(apply_mask, call) for call in apply_calls)
+    expected_apply = sorted((
+        ("runLedPin", "accepting", "runLedActiveHigh"),
+        ("runLedPin", "false", "runLedActiveHigh"),
+        ("runRelayPin", "accepting", "runRelayActiveHigh"),
+        ("runRelayPin", "false", "runRelayActiveHigh"),
+    ))
+    if actual_apply != expected_apply:
+        raise AssertionError(
+            "applyOutputs must retain the exact accepting-gated GPIO call set"
+        )
+
+    return {
+        "digital_write_calls": len(digital_calls),
+        "startup_off_calls": len(configure_calls),
+        "gated_output_calls": len(apply_calls),
+    }

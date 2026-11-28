@@ -9,6 +9,7 @@ from firmware_source_extract import (
 )
 from poll_preflight_inhibit_lab_contract import (
     coin_post_matches,
+    gpio_write_authority_locations,
     poll_guard_locations,
     register_guard_locations,
     startup_storage_guard_locations,
@@ -21,7 +22,7 @@ from poll_preflight_inhibit_lab_harness import (
     remove_first_code_token,
 )
 
-__all__ = ["main", "verify_board", "verify_register_preflight", "verify_startup_storage_order", "verify_source_extractor_decoy_regressions"]
+__all__ = ["main", "verify_board", "verify_gpio_write_authority_mutations", "verify_register_preflight", "verify_startup_storage_order", "verify_source_extractor_decoy_regressions"]
 
 
 
@@ -209,6 +210,7 @@ def verify_register_preflight(name: str, source: str):
 def verify_board(name: str, path: Path):
     source = path.read_text(encoding="utf-8")
     masked_source = mask_non_code(source)
+    gpio_write_authority_locations(source)
     if len(re.findall(r"clearPending\s*\(", masked_source)) != 1:
         raise AssertionError(f"{name}: clearPending must remain definition-only until authenticated receipt approval")
     if coin_post_matches(source):
@@ -277,6 +279,21 @@ def verify_board(name: str, path: Path):
         apply_fn, deny_fn, response_mutation, False,
         f"{name} transient untrusted-response actuation mutation",
     )
+
+    # Failure injection: a direct relay GPIO write after the final deny must also fail.
+    # This bypasses applyOutputs(), so the write-history latch must catch it.
+    post_deny_gpio_mutation = poll_block.replace(
+        "lastPoll=millis();",
+        "writeLogical(runRelayPin,true,runRelayActiveHigh);\n        lastPoll=millis();",
+        1,
+    )
+    if post_deny_gpio_mutation == poll_block:
+        raise AssertionError(f"{name}: post-deny direct GPIO mutation anchor missing")
+    compile_poll_transport_outcome_matrix(
+        apply_fn, deny_fn, post_deny_gpio_mutation, False,
+        f"{name} direct relay GPIO re-enable after final post-poll deny",
+    )
+    print(f"POST_POLL_DENY_DIRECT_GPIO_REENABLE_MUTATION_REJECTED {name}")
 
     # Failure injection: removing the pre-poll deny must leave an energized
     # relay visible to the 3500 ms wait model and be rejected.
@@ -518,6 +535,149 @@ void loop() {
     if has_empty_string_assignment('void f() { /* activeTarget = ""; */ }', "activeTarget"):
         raise AssertionError("comment-only empty-target decoy was accepted")
 
+
+
+def _expect_gpio_writer_mutation_rejected(
+    name: str, label: str, mutated_source: str, expected: str
+):
+    try:
+        gpio_write_authority_locations(mutated_source)
+    except AssertionError as exc:
+        if expected not in str(exc):
+            raise AssertionError(
+                f"{name}: {label} failed for an unexpected reason: {exc}"
+            ) from exc
+    else:
+        raise AssertionError(f"{name}: {label} mutation was not rejected")
+
+
+def verify_gpio_write_authority_mutations():
+    """Reject direct and alternate GPIO output paths on both board source fixtures."""
+    alternative_calls = (
+        ("analogWrite", "analogWrite(runRelayPin,255);"),
+        ("digitalWriteFast", "digitalWriteFast(runRelayPin,HIGH);"),
+        ("ledcWrite", "ledcWrite(0,255);"),
+        ("ledcWriteChannel", "ledcWriteChannel(0,255);"),
+        ("dacWrite", "dacWrite(runRelayPin,255);"),
+        ("gpio_set_level", "gpio_set_level((gpio_num_t)runRelayPin,1);"),
+        ("gpio_ll_set_level", "gpio_ll_set_level(&GPIO,runRelayPin,1);"),
+        ("gpio_hal_set_level", "gpio_hal_set_level(&GPIO,runRelayPin,1);"),
+        ("tone", "tone(runRelayPin,1000);"),
+        ("noTone", "noTone(runRelayPin);"),
+        ("shiftOut", "shiftOut(runRelayPin,runLedPin,MSBFIRST,0xFF);"),
+    )
+    register_writes = (
+        ("esp8266-gpos", "GPOS = (1U << runRelayPin);"),
+        ("esp8266-gpoc", "GPOC = (1U << runRelayPin);"),
+        ("esp32-out-w1ts", "GPIO.out_w1ts = (1U << runRelayPin);"),
+        ("esp32-out-w1tc", "GPIO.out_w1tc = (1U << runRelayPin);"),
+        ("esp8266-gpos-or-assign", "GPOS |= (1U << runRelayPin);"),
+        ("esp8266-gpoc-or-assign", "GPOC |= (1U << runRelayPin);"),
+        ("esp32-out-w1ts-val", "GPIO.out_w1ts.val = (1U << runRelayPin);"),
+        ("esp32-out-w1tc-val", "GPIO.out_w1tc.val = (1U << runRelayPin);"),
+        ("esp32-out1-w1ts-val", "GPIO.out1_w1ts.val = (1U << runRelayPin);"),
+        ("esp32-out1-w1tc-val", "GPIO.out1_w1tc.val = (1U << runRelayPin);"),
+        ("esp32-out-w1ts-or-assign", "GPIO.out_w1ts |= (1U << runRelayPin);"),
+        ("esp32-out1-w1tc-or-assign", "GPIO.out1_w1tc |= (1U << runRelayPin);"),
+    )
+    rejected = 0
+
+    for name, path in SKETCHES.items():
+        source = path.read_text(encoding="utf-8")
+        gpio_write_authority_locations(source)
+
+        existing_mutations = (
+            (
+                "direct-logical-writer",
+                source.replace(
+                    "void denyRemoteControl(){",
+                    "void denyRemoteControl(){\n  writeLogical(runRelayPin,true,runRelayActiveHigh);",
+                    1,
+                ),
+                "writeLogical calls must be limited to configureRuntimePins and applyOutputs",
+            ),
+            (
+                "raw-digital-write",
+                source.replace(
+                    "void denyRemoteControl(){",
+                    "void denyRemoteControl(){\n  digitalWrite(runRelayPin,HIGH);",
+                    1,
+                ),
+                "digitalWrite must be centralized in writeLogical",
+            ),
+            (
+                "startup-on-write",
+                source.replace(
+                    "writeLogical(runRelayPin,false,runRelayActiveHigh);",
+                    "writeLogical(runRelayPin,true,runRelayActiveHigh);",
+                    1,
+                ),
+                "configureRuntimePins may only write logical OFF",
+            ),
+            (
+                "ungated-output",
+                source.replace(
+                    "writeLogical(runRelayPin,accepting,runRelayActiveHigh)",
+                    "writeLogical(runRelayPin,true,runRelayActiveHigh)",
+                    1,
+                ),
+                "applyOutputs must retain the exact accepting-gated GPIO call set",
+            ),
+        )
+        for label, mutated, expected in existing_mutations:
+            if mutated == source:
+                raise AssertionError(f"{name}: {label} mutation anchor missing")
+            _expect_gpio_writer_mutation_rejected(name, label, mutated, expected)
+            rejected += 1
+            print(f"GPIO_WRITE_AUTHORITY_MUTATION_REJECTED {name} {label}")
+
+        for label, statement in alternative_calls:
+            mutated = source.replace(
+                "void denyRemoteControl(){",
+                "void denyRemoteControl(){\n  " + statement,
+                1,
+            )
+            if mutated == source:
+                raise AssertionError(f"{name}: {label} mutation anchor missing")
+            _expect_gpio_writer_mutation_rejected(
+                name,
+                label,
+                mutated,
+                f"alternative GPIO writer API '{label}' must remain absent",
+            )
+            rejected += 1
+            print(f"GPIO_WRITE_BYPASS_MUTATION_REJECTED {name} {label}")
+
+        for label, statement in register_writes:
+            mutated = source.replace(
+                "void denyRemoteControl(){",
+                "void denyRemoteControl(){\n  " + statement,
+                1,
+            )
+            if mutated == source:
+                raise AssertionError(f"{name}: {label} mutation anchor missing")
+            _expect_gpio_writer_mutation_rejected(
+                name,
+                label,
+                mutated,
+                "direct GPIO output register writes must remain absent",
+            )
+            rejected += 1
+            print(f"GPIO_WRITE_REGISTER_MUTATION_REJECTED {name} {label}")
+
+        # Comments and string literals must not create false-positive bypasses.
+        decoy_source = (
+            source
+            + "\n// analogWrite(runRelayPin,255); GPOS = (1U << runRelayPin);"
+            + '\nconst char *gpioWriterDecoy = "ledcWrite(0,255); GPIO.out_w1ts = BIT(runRelayPin);";'
+        )
+        gpio_write_authority_locations(decoy_source)
+        print(f"GPIO_WRITE_BYPASS_COMMENT_STRING_DECOYS_IGNORED {name}")
+
+    print(f"GPIO_WRITE_AUTHORITY_MUTATIONS_REJECTED={rejected}")
+    if rejected != 54:
+        raise AssertionError(f"expected 54 GPIO writer mutations, got {rejected}")
+
 def main():
     startup_failures = []
     for name, path in SKETCHES.items():
@@ -531,6 +691,7 @@ def main():
         raise AssertionError("STARTUP_OUTPUT_ORDER_RED: " + " | ".join(startup_failures))
 
     verify_source_extractor_decoy_regressions()
+    verify_gpio_write_authority_mutations()
     for name, path in SKETCHES.items():
         verify_board(name, path)
     print("POLL_INTAKE_GUARD_SIMULATED_ONLY=1")

@@ -2156,3 +2156,169 @@ The existing append-only `CHANGE_LEDGER.md` and all prior handover history are p
 P0 #177 remains OPEN: active v0.6 `2fbd2475e9f54878c316fa7cea2f228386b0e859` still polls synchronously before first coin sample on both boards. #377 is a candidate only. QA owns PAY-0745/controller-parity semantics; CORE owns authenticated register/poll/receipt/disposition; MASTER owns role/integration pins. Physical relay/pulse/power acceptance, 150 power cuts, 30-device/24-hour soak, protected signer/witness, v1-to-v2 migration, durable accounting/replay and independent QA/release signoff remain NOT TESTED / NOT ACCEPTED.
 
 No firmware/API/finance source, COE destination, physical device, or production state changed in this reconciliation. Both PRs remain OPEN / DRAFT / UNMERGED.
+
+
+## PHX-HARDWARE UTC17 — current-stack reconciliation and first exact-head CI
+
+**Updated:** 2026-11-28T17:50Z (first CI read; canonical handover sync follows)  
+**Task:** `PHX-HW-177-GPIO-WRITER-STACK-RECONCILE-20261128T17Z`  
+**PR:** [#380](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/380), OPEN / DRAFT / UNMERGED  
+**Branch:** `phoenix/hw-gpio-writer-reconcile-20261128-utc17`  
+**Base:** #377 at `95ace1236c2b3e4816515c372edd4853ceeed064`  
+**Source/test SHA:** `83fc27e474064f2ed429332b8a14fa8ffb66784c`  
+**First tested PR head:** `dffa9a8e43b750372f8cd002b4106aa767a3abba`
+
+### Exact CI on first tested head
+
+- Poll Intake Deny [#46172575486](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46172575486), job `141064062306`: **PASS**. Logs contain `GPIO_WRITE_AUTHORITY_MUTATIONS_REJECTED=8`, both ESP8266 and ESP32 `POST_POLL_DENY_DIRECT_GPIO_REENABLE_MUTATION_REJECTED` markers, and the 5-outcome × 4-polarity poll transport matrix. The run explicitly reports `POLL_INTAKE_GUARD_SIMULATED_ONLY=1`.
+- Full [#46172575460](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46172575460), validation job `141064117452`: **FAIL** at the mandatory handover-freshness gate. Its log identifies prior canonical checkpoint `f52524d20a589c7c300f0a97a13bfdb5ac3e8a6c` and requires the live canonical handover/state/ledger to be updated after the code change. It did **not** reach the controller-parity assertion. Target/platform jobs were still running at first read; no final target count is claimed here. This record is the corrective append-only canonical sync; a fresh Full run is required on the resulting head.
+- Mbed TLS: **NOT RUN** on this PR head (no matching run returned).
+- Native Synthetic Journal: **NOT RUN** on this PR head (no matching run returned).
+
+### Classification
+
+The source mutation guard is **CI VERIFIED / SIMULATED** by the exact Poll run. Full integration is **FAILED at handover freshness** on the first tested head; this is not a Full pass and not a controller-contract result. Mbed and Native remain NOT TESTED. No physical acceptance is inferred. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+
+
+## PHX-HARDWARE UTC17 — terminal exact-head reconciliation CI
+
+**Updated:** 2026-11-28T17:58:01Z  
+**Task:** `PHX-HW-177-GPIO-WRITER-STACK-RECONCILE-20261128T17Z`  
+**PR:** [#380](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/380), OPEN / DRAFT / UNMERGED  
+**Branch:** `phoenix/hw-gpio-writer-reconcile-20261128-utc17`  
+**Source/test SHA:** `83fc27e474064f2ed429332b8a14fa8ffb66784c`  
+**Exact tested docs head:** `923bb5fa773a9164b0587b21b1e0fd29cf8323ed`
+
+### Exact-head results
+
+- Poll Intake Deny [#46173004720](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46173004720), job `141065398557`: **PASS**. Both ESP8266 and ESP32 reject the four GPIO-writer mutations (8/8), both reject the direct post-deny relay GPIO ON mutation, and each passes the five-outcome × four-polarity matrix (20 cases). Log explicitly says `POLL_INTAKE_GUARD_SIMULATED_ONLY=1`.
+- ESP32 Mbed TLS [#46173004705](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46173004705): **3/3 PASS** — source contract job `141065398993`, core 4.0.0 job `141065399222`, core 3.3.13 job `141065399304`. Both clean A/B builds were byte-identical. Staged source tree SHA-256: `ccea8c3ba80f417b5cd0789ad68928f78c12a467ce77a0a3957121a4ad494c81`; core 4.0.0 image SHA-256: `0dd322dbb123a503076c3751e41363a1930737ca14276cae149c815b418d3d0d`; core 3.3.13 image SHA-256: `c96d722323d68ac2df940946930074f7961707cfaf0544572f4292eb486ba9cc`. Artifacts: [4.0.0 #15274507915](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46173004705/artifacts/15274507915), [3.3.13 #15274855972](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46173004705/artifacts/15274855972).
+- Full [#46173004825](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46173004825): **FAIL overall**. Handover freshness/history and CI-0701 passed. Validation job `141065462212` failed at QA-owned `tests/controllers.sh:21`, `grep -q 'config_revision' "$f"`. Both #377-based sketches lack that field. All **14/14 target/platform jobs passed**, including Android. Update bundle, simulations, candidate, signing and publication stages were skipped. This is a real CORE/QA controller-contract parity blocker; no decoy token was added.
+- Native Synthetic Journal: **NOT RUN**. The workflow `blazepwifi-v060-native-journal.yml` is path-filtered to native journal files, pending-sequence files, and the two production sketches; this PR changes only the Hardware host-lab Python contract/case and handovers. No manual workflow-dispatch action is exposed by the connected GitHub tools.
+- The first Full attempt on `dffa9a8` failed the canonical handover-freshness gate before controller parity; it is superseded by this exact-head Full result after append-only canonical sync.
+
+### Remaining safety / release status
+
+The active v0.6 branch remains `2fbd2475e9f54878c316fa7cea2f228386b0e859`; ESP8266 still performs synchronous poll before its first coin sample (lines 354/357), and ESP32 does so at lines 314/318. This reconciliation does not fix P0 pulse loss. Physical relay/acceptor polarity, pulse retention, EEPROM/NVS brown-out, LittleFS recovery, 150 controlled power cuts, 30-device/24-hour soak and electrical pulse/recovery remain **NOT TESTED**. Protected signer/witness, v1-to-v2 migration, durable accounting/replay and independent QA/release signoff remain **NOT ACCEPTED**. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+
+
+## PHX-HARDWARE UTC17 — final exact tested PR head and release disposition
+
+**Updated:** 2026-11-28T18:03:30Z  
+**Task:** `PHX-HW-177-GPIO-WRITER-STACK-RECONCILE-20261128T17Z`  
+**PR:** [#380](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/380), OPEN / DRAFT / UNMERGED  
+**Branch:** `phoenix/hw-gpio-writer-reconcile-20261128-utc17`  
+**Source/test SHA:** `83fc27e474064f2ed429332b8a14fa8ffb66784c`  
+**Exact tested docs head:** `8b9a9d127fed56d9f38052bef353c2a4d71a7bcb`
+
+### Final exact-head CI
+
+- Poll [#46173474280](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46173474280), job `141066875248`: **PASS**. Eight writer-authority mutations rejected (four per board), direct post-deny GPIO ON rejected on both boards, five poll outcomes × four polarity combinations pass. Explicit `POLL_INTAKE_GUARD_SIMULATED_ONLY=1`.
+- Mbed TLS [#46173474278](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46173474278): **3/3 PASS** — source contract `141066875879`, core 4.0.0 `141066876027`, core 3.3.13 `141066876136`. Both clean A/B builds byte-identical. Staged source tree SHA-256 `ccea8c3ba80f417b5cd0789ad68928f78c12a467ce77a0a3957121a4ad494c81`; core 4.0.0 image SHA-256 `1a544126e2f6ee4244d5eb66de5cfd4ac6a274e77ea1f7714b61b64c5bcb651e`; core 3.3.13 image SHA-256 `631f31a969ca4d367121d0b32db83e25162caab2b5ee0db4b63e23d34f345ab0`. Artifacts: [4.0.0 #15274374112](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46173474278/artifacts/15274374112), [3.3.13 #15274757818](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46173474278/artifacts/15274757818).
+- Full [#46173474301](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46173474301): **FAIL overall**. CI-0701 and handover freshness/history pass. Validation job `141066938748` fails at QA-owned `tests/controllers.sh:21` (`grep -q 'config_revision' "$f"`); both #377-based sketches lack that field. All **14/14 target/platform jobs PASS**, including Android, ESP8266, ESP32 and 11 OpenWrt targets. Update bundle, simulations, signing and publication remain skipped.
+- Native Synthetic Journal: **NOT RUN**. Its workflow path filter requires native journal / pending-sequence paths or the production `.ino` sketches; this PR changes host-lab Python contract/cases and handovers only. The available GitHub connector exposes no workflow-dispatch write action.
+
+### Disposition and next owner action
+
+The #380 combined child preserves #378's post-deny GPIO escape test and #379's centralized writer authority on the current #377 base. Original #378/#379 remain OPEN/DRAFT and unmodified at their exact heads; #380 is a non-force-push successor, not a rewrite of either branch. PHX-MASTER must decide whether to pin #380 as the reconciled child or request a separately stacked child for #379.
+
+QA owns the `config_revision` semantic parity assertion; CORE owns the canonical authenticated controller envelope. Do not add a decoy field or invent `response_sig`. Active v0.6 still polls before first coin sample on ESP8266 (354/357) and ESP32 (314/318). Physical GPIO/relay polarity, pulse retention, EEPROM/NVS brown-out, LittleFS recovery, 150 power cuts, 30-device/24-hour soak and electrical pulse/recovery remain **NOT TESTED**. Protected signer/witness, v1-to-v2 migration, durable accounting/replay and independent QA/release signoff remain **NOT ACCEPTED**. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+
+ 
+## PHX-HARDWARE UTC20 — alternate GPIO writer bypass guard
+
+**Updated:** 2026-11-28T20:36Z  
+**Task:** PHX-HW-177-GPIO-OUTPUT-API-AUTHORITY-20261128T20Z  
+**PR:** [#380](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/380), OPEN / DRAFT / UNMERGED  
+**Branch:** phoenix/hw-gpio-writer-reconcile-20261128-utc17  
+**Base:** #377 at 95ace1236c2b3e4816515c372edd4853ceeed064  
+**Source/test commit:** 0c09d8ed5927bac037f01a2649d0d332c5717a38  
+**Prior intermediate commit:** c5a9f666ddb016ed6df43ed73756696b3db3c824 (corrected immediately; its regex/newline escaping is not the final implementation).
+
+### Proven gap and correction
+
+The previous writer-authority guard enforced one digitalWrite() implementation inside writeLogical(), but it did not reject alternate output APIs or direct output-register assignments. A future analogWrite, ESP32 LEDC/DAC, ESP-IDF GPIO-level call, tone/shiftOut, or direct GPIO register write could bypass that contract while the original digitalWrite count remained unchanged.
+
+The source contract now explicitly rejects 11 alternate output APIs:
+analogWrite, digitalWriteFast, ledcWrite, ledcWriteChannel, dacWrite, gpio_set_level, gpio_ll_set_level, gpio_hal_set_level, tone, noTone, and shiftOut.
+
+It also rejects ESP8266 GPOS/GPOC and ESP32 GPIO.out* output-register assignments. The existing single digitalWrite() inside writeLogical(), six startup logical-OFF writes, four accepting-gated output writes, and polarity rules remain unchanged.
+
+### Failure-injection coverage
+
+The host source-contract lab now injects 19 mutations per board (4 existing writer-authority mutations, 11 alternate output API calls, and 4 direct register assignments), for 38 total expected rejections across ESP8266 and ESP32. Comment/string decoys are also checked to avoid false positives.
+
+These are static/source-extracted regression tests only. They do not establish physical GPIO voltage, relay polarity, coin-acceptor behavior, pulse retention, or hardware acceptance.
+
+### CI status at this checkpoint
+
+GitHub Actions workflow runs for source/test SHA 0c09d8ed5927bac037f01a2649d0d332c5717a38 were not returned by the commit-run lookup at the time of this handover. Poll Intake Deny, Mbed TLS, Full, and Native must be re-read on their exact tested heads after the append-only handover update. Do not transfer earlier #380 runs to this new source SHA. Native remains subject to its existing path filter; no manual workflow-dispatch write action is exposed.
+
+### Release and ownership disposition
+
+- CORE still owns the canonical authenticated controller/financial envelope.
+- QA still owns PAY-0745 and controller parity semantics.
+- HARDWARE owns this firmware host-lab source contract and the #380 stack handovers.
+- Active v0.6 P0 #177 poll-before-first-sample remains unresolved; no coin/relay re-enable was introduced.
+- #239, #254, and #283 remain separate protected DRAFTs; no edits or retargeting.
+- Physical relay/acceptor polarity, EEPROM/NVS brown-out, LittleFS recovery, 150 power cuts, 30-device/24-hour soak, electrical pulse/recovery, protected signer/witness, v1-to-v2 migration, durable accounting/replay, and independent QA/release signoff remain NOT TESTED / NOT ACCEPTED.
+
+**HARDWARE ACCEPTED = NO. PRODUCTION READY = NO-GO.**
+
+ 
+## PHX-HARDWARE UTC20 — GPIO output-register bank and compound-assignment coverage
+
+**Updated:** 2026-11-28T20:48Z  
+**Task:** PHX-HW-177-GPIO-OUTPUT-API-AUTHORITY-20261128T20Z  
+**PR:** #380, OPEN / DRAFT / UNMERGED  
+**Branch:** phoenix/hw-gpio-writer-reconcile-20261128-utc17  
+**Source/test + handover commit:** the commit containing this append-only entry (the exact resulting SHA is pinned in the PR body and PHX-HARDWARE UTC20 checkpoint).
+
+### Additional failure-injection coverage
+
+Expanded the direct-register mutation matrix beyond simple assignment to cover ESP8266 GPOS/GPOC compound OR assignment and ESP32 GPIO.out_w1ts/out_w1tc plus GPIO.out1_w1ts/out1_w1tc .val and compound-assignment forms.
+
+The final source-contract matrix now contains 27 mutations per board: 4 existing logical-writer mutations, 11 alternate output API calls, and 12 direct register writes/assignments. Expected rejection count: 54 total across ESP8266 and ESP32. Comment/string decoys remain a positive control.
+
+The source contract itself is unchanged in this follow-up; the mutation matrix now exercises the already-defined register patterns. This remains static/source-extracted CI evidence only, not electrical or physical acceptance. Poll, Mbed TLS, and Full exact-head Actions results must be read after this commit; prior runs are not transferable.
+
+**HARDWARE ACCEPTED = NO. PRODUCTION READY = NO-GO.**
+
+ 
+## PHX-HARDWARE UTC20 — exact-head terminal CI and P0 source revalidation
+
+**Updated:** 2026-11-28T20Z  
+**Exact tested source/test head:** b355d92b392c81b539e3f4e80b7839b186ef74ab  
+**Branch:** phoenix/hw-gpio-writer-reconcile-20261128-utc17  
+**PR:** #380 OPEN / DRAFT / UNMERGED; canonical child of #377@95ace1236c2b3e4816515c372edd4853ceeed064.
+
+### Exact-head workflow results
+
+- Poll Intake Deny [#46187906137](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46187906137), job 141111859740: PASS. The log records 54/54 GPIO writer/register mutations rejected across ESP8266 and ESP32 (27 per board), comment/string decoys ignored, both board guards PASS, and POLL_INTAKE_GUARD_SIMULATED_ONLY=1.
+- Mbed TLS [#46187906203](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46187906203): 3/3 PASS (source contract, ESP32 core 3.3.13 and 4.0.0). Within-core clean A/B outputs match: 3.3.13 SHA256 51c1cad7743336db806bddf05b1e6d08ab769f9b077246804010c7e52fee16aa; 4.0.0 SHA256 258a9701cf4ad6f0767242cd9583a39f5185ee48d4bee2dd0e4ae8a3975cd358. Artifacts 15280626741 and 15281115206.
+- Full [#46187906187](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46187906187): FAIL at QA-owned tests/controllers.sh:21 literal config_revision requirement. Both #377-based ESP sketches lack that field. All 14/14 target/platform jobs completed PASS (ESP8266, ESP32, Android, and 11 OpenWrt targets). CI-0701 and mandatory handover freshness passed; update bundle, simulations, candidate, signing and publication were skipped.
+- Native Synthetic Journal: NOT RUN; path filters exclude these Hardware host-lab Python files and no manual workflow-dispatch action is exposed.
+
+### Source and correction history
+
+- Contract change commit: 0c09d8ed5927bac037f01a2649d0d332c5717a38.
+- Final test expansion and handover sync commit: b355d92b392c81b539e3f4e80b7839b186ef74ab.
+- Intermediate c5a9f666ddb016ed6df43ed73756696b3db3c824 had an escaping defect in regex/newline fixtures and was corrected by 0c09d8; do not use its failed Poll run as final evidence.
+- No production ESP8266/ESP32 .ino, CORE API, QA-owned controller test, finance, signer, witness, migration or COE destination source was changed.
+
+### Live blockers and ownership
+
+- Active v0.6 remains at 2fbd2475e9f54878c316fa7cea2f228386b0e859: ESP8266 poll 354 -> first coin sample 357; ESP32 poll 314 -> first sample 318. P0 #177 remains OPEN; this PR does not fix the race.
+- CORE #252 v1 config_auth is a DENY-only lab proposal with admission_allowed=false and does not bind immutable owner/window-kind identity. CORE owns the versioned authenticated producer/contract; HARDWARE consumes only after review; QA owns semantic fail-closed vectors.
+- #283 source audit: failed quarantine append returns false before clearPending; quarantinePending is definition-only at the inspected head; current main register/poll has no approved response_sig. Do not guess or wire a positive response.
+- Master #288 UTC20 head 0d8a48b908078663eeadf283cb33a9541785e9be still pinned the prior #380 head 5297760322c3752878087d38b784ee8c715db6f2; HARDWARE requested a Master-owned ROLE_ASSIGNMENTS/INTEGRATION_MATRIX refresh to b355d92.
+- Private BLAZE_PROJECT_REGISTRY_v11_20261027.json NOT RECOVERED; no Google Drive connector/action is exposed. No older registry substituted.
+
+### Release classification
+
+GPIO writer authority guard and 54 mutation cases: CI VERIFIED / SIMULATED.  
+Controller Full integration: FAILED. Native: NOT TESTED.  
+Physical relay/acceptor polarity, EEPROM/NVS brown-out, LittleFS recovery, 150 power cuts, 30-device/24-hour soak and electrical pulse/recovery: NOT TESTED.  
+Protected anti-rollback signer/witness, v1-to-v2 migration, durable accounting/replay and independent QA/release signoff: NOT ACCEPTED.
+
+**HARDWARE ACCEPTED = NO. PRODUCTION READY = NO-GO.**
