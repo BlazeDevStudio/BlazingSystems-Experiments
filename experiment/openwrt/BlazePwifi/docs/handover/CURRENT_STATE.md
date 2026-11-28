@@ -1,3 +1,32 @@
+## PHX-HARDWARE UTC12 follow-up — runtime EEPROM readiness network gate (#374)
+
+**PR:** [#374](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/374) OPEN / DRAFT / UNMERGED  
+**Branch:** \`phoenix/hw-eeprom-begin-failclosed-20261128-utc07\`  
+**Source/test HEAD:** \`4da5e7a8b8911538f2d3905e559f983b773e703d\`  
+**Parent stack:** #373 at \`3783654a3c9862598bbb714268c536fb8b34578b\`
+
+### Change
+Extended the Hardware-owned EEPROM config-integrity lab to execute the real ESP8266 \`connectSta()\` function extracted from the sketch against deterministic fake Wi-Fi/HTTP I/O. The harness verifies:
+- EEPROM/config store unavailable: no \`WiFi.begin\`, register POST, or remote-control transition.
+- Empty SSID: no network operation.
+- Wi-Fi remains disconnected through the 12-second timeout: no register POST.
+- Connected path with a valid store: one station begin, one register request, and the existing deny transition.
+
+Two failure injections remove the config-store readiness guard and the connected-state guard. Each must fail at its exact invariant exit after its preceding scenario marker. Existing 17 source-contract mutations and EEPROM/loadCfg runtime fixtures remain in place.
+
+### Evidence
+- Local C++11 host smoke using the exact extracted \`connectSta()\` source body, g++ 14.2.0, AddressSanitizer and UBSan: **4/4 normal scenarios PASS; 2/2 injected mutations rejected** (exit 10 and 20 with the expected precondition markers).
+- Full repository checkout was unavailable from the container because GitHub DNS resolution failed. The complete repository Python runner was therefore **NOT RUN locally**.
+- Exact GitHub SHA \`4da5e7a8...\`: connector readback showed no associated workflow run and no commit status at the time of this record. The workflow contains \`workflow_dispatch\`, but the connected GitHub actions do not expose a dispatch operation. **CI VERIFIED is not claimed.** Request owner/QA to dispatch or rerun the Hardware workflow on the exact head.
+
+### Boundary
+Only Hardware-owned host test code changed. No production \`.ino\`, shared CORE API, QA-owned assertion, financial state, signer/witness, migration, COE destination, or device changed. This is SIMULATED host evidence only; physical EEPROM/NVS brown-out, GPIO/relay, 150 power cuts and 30-device/24-hour soak remain NOT TESTED. Keep coin/relay admission denied. HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
+
+### Next exact action
+PHX-QA/Master: review the runtime network-gate fixture and obtain an exact-head Actions run for \`4da5e7a8...\`; PHX-HARDWARE will reconcile terminal jobs before any further source change.
+
+---
+
 ## PHX-HARDWARE UTC11 follow-up — ordered precondition markers for EEPROM mutations (#374)
 
 **Task:** PHX-HW-EEPROM-RUNTIME-MUTATION-MARKERS-20261128T11Z  
