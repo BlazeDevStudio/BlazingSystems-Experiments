@@ -311,63 +311,76 @@ def startup_storage_guard_locations(source: str):
 
 
 
-def deny_latch_assignment_contract(source: str) -> None:
-    """Reject runtime writes and pointer/reference/cast escapes from deny-only authority fields."""
-    masked = mask_non_code(source)
-
-    # Direct-assignment checks are bypassable if protected state escapes through
-    # pointers, lvalue/rvalue references, decltype(auto), forwarding/move helpers,
-    # or reference/pointer casts. Keep these fields local to the deny helper
-    # until an independently reviewed authority exists.
+def _protected_runtime_field_pattern() -> str:
+    """Return the one canonical alternation for fields controlled by the deny latch."""
     protected_names = (
         "controllerEnabled", "coinEnabled", "relayEnabled",
         "ledEnabled", "insertMode", "activeTarget",
     )
-    protected_pattern = "|".join(re.escape(name) for name in protected_names)
-    address_escape = re.search(
+    return "|".join(re.escape(name) for name in protected_names)
+
+
+def _reject_address_escapes(masked: str, protected_pattern: str) -> None:
+    """Reject direct address-of expressions while allowing logical && reads."""
+    match = re.search(
         rf"(?<!&)&(?!&)\s*(?P<name>{protected_pattern})\b",
         masked,
     )
-    if address_escape:
+    if match:
         raise AssertionError(
-            f"{address_escape.group('name')}: address escape can bypass the deny-latch assignment guard"
+            f"{match.group('name')}: address escape can bypass the deny-latch assignment guard"
         )
+
+
+def _reject_reference_aliases(masked: str, protected_pattern: str) -> None:
+    """Reject ordinary, move/forward, and cast-based reference aliases."""
     reference_source = (
         rf"(?:(?:std::)?(?:move|forward)\s*(?:<[^;()]*>)?\s*\(\s*"
         rf"|(?:static_cast|const_cast)\s*<[^;()]*[&*][^;()]*>\s*\(\s*"
         rf"|\(\s*)?"
         rf"(?P<name>{protected_pattern})\b\s*\)?"
     )
-    reference_alias = re.search(
+    match = re.search(
         rf"\b(?:const\s+|volatile\s+|const\s+volatile\s+)?"
         rf"(?:bool|String|auto|decltype\s*\([^)]*\))\s*&&?\s*"
         rf"[A-Za-z_]\w*\s*=\s*{reference_source}",
         masked,
     )
-    if reference_alias:
+    if match:
         raise AssertionError(
-            f"{reference_alias.group('name')}: reference alias can bypass the deny-latch assignment guard"
+            f"{match.group('name')}: reference alias can bypass the deny-latch assignment guard"
         )
-    decltype_auto_alias = re.search(
+
+
+def _reject_decltype_auto_aliases(masked: str, protected_pattern: str) -> None:
+    """Reject parenthesized lvalues whose decltype(auto) deduction preserves reference."""
+    match = re.search(
         rf"\bdecltype\s*\(\s*auto\s*\)\s*[A-Za-z_]\w*\s*=\s*"
         rf"\(\s*(?P<name>{protected_pattern})\s*\)",
         masked,
     )
-    if decltype_auto_alias:
+    if match:
         raise AssertionError(
-            f"{decltype_auto_alias.group('name')}: decltype(auto) reference alias can bypass the deny-latch assignment guard"
+            f"{match.group('name')}: decltype(auto) reference alias can bypass the deny-latch assignment guard"
         )
-    reference_wrapper = re.search(
+
+
+def _reject_reference_wrappers(masked: str, protected_pattern: str) -> None:
+    """Reject standard reference/address wrappers and explicit reference/pointer casts."""
+    match = re.search(
         rf"(?:(?:std::)?(?:ref|cref|addressof|move|forward)\s*(?:<[^;()]*>)?\s*\(\s*"
         rf"|(?:static_cast|const_cast)\s*<[^;()]*[&*][^;()]*>\s*\(\s*)"
         rf"(?P<name>{protected_pattern})\s*\)",
         masked,
     )
-    if reference_wrapper:
+    if match:
         raise AssertionError(
-            f"{reference_wrapper.group('name')}: reference/address/cast wrapper can bypass the deny-latch assignment guard"
+            f"{match.group('name')}: reference/address/cast wrapper can bypass the deny-latch assignment guard"
         )
 
+
+def _validate_runtime_state_assignments(source: str, masked: str) -> None:
+    """Allow protected-state writes only in global initializers and the deny helper."""
     deny_fn = extract_function(source, "void denyRemoteControl()")
     deny_start = source.find(deny_fn)
     if deny_start < 0:
@@ -436,3 +449,18 @@ def deny_latch_assignment_contract(source: str) -> None:
     missing_deny = [name for name, count in deny_counts.items() if count != 1]
     if missing_deny:
         raise AssertionError("denyRemoteControl() must clear each runtime field exactly once: " + ", ".join(missing_deny))
+
+
+def deny_latch_assignment_contract(source: str) -> None:
+    """Reject runtime writes and alias escapes from deny-only authority fields."""
+    masked = mask_non_code(source)
+    protected_pattern = _protected_runtime_field_pattern()
+
+    # Keep each escape family isolated so a failure identifies the exact
+    # contract boundary that needs review.
+    _reject_address_escapes(masked, protected_pattern)
+    _reject_reference_aliases(masked, protected_pattern)
+    _reject_decltype_auto_aliases(masked, protected_pattern)
+    _reject_reference_wrappers(masked, protected_pattern)
+    _validate_runtime_state_assignments(source, masked)
+
