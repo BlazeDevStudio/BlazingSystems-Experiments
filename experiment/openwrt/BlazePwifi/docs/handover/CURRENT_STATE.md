@@ -2143,3 +2143,25 @@ The current #377 matrix already rejects an untrusted positive poll body that re-
 This is a test-only regression improvement. No production sketch, GPIO configuration, controller API, CORE contract, QA-owned assertion, finance, receipt, signer, witness, migration, or COE destination is in scope. No local repository checkout is claimed. Exact-source CI is pending.
 
 **Safety:** keep coin/relay admission deny-only; no flash, reset, live money, merge, release tag, migration, signing or deployment.
+
+
+## PHX-HARDWARE UTC15 — post-deny direct GPIO escape source/test result
+
+**Updated:** 2026-11-28T15:54:00Z  
+**Task:** `PHX-HW-177-POSTDENY-GPIO-ESCAPE-20261128T15Z`  
+**PR:** [#378](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/378), OPEN / DRAFT / UNMERGED.  
+**Branch:** `phoenix/hw-postdeny-gpio-escape-guard-20261128-utc15`  
+**Parent:** #377 exact head `95e54790ab986dab3c1b3723ea9603a3d125c0d6`  
+**Source/test SHA:** `6c22c7ebef3eaa9082735511f4cf3e525731085c`.
+
+### Actual change and exact evidence
+
+Only `poll_preflight_inhibit_lab_cases.py` changed after the IN PROGRESS checkpoint. It adds a failure injection that directly calls `writeLogical(runRelayPin,true,runRelayActiveHigh)` after the final post-poll deny and before `lastPoll`, bypassing `applyOutputs()`.
+
+- Poll [run #46161956366](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46161956366), exact-source job `141031014911`: **PASS**. Checkout is exactly `6c22c7ebef3eaa9082735511f4cf3e525731085c`. Both boards emitted `POST_POLL_DENY_DIRECT_GPIO_REENABLE_MUTATION_REJECTED`; existing poll matrix passed (5 transport outcomes × 4 polarity combinations), 8/8 board/polarity output scenarios passed, 14/14 injected regressions were rejected, and EEPROM/pending-recovery suites passed. Log explicitly says `POLL_INTAKE_GUARD_SIMULATED_ONLY=1`.
+- Mbed TLS [run #46161956391](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46161956391): source-contract job `141031015239` **PASS**; ESP32 core 3.3.13 and 4.0.0 target builds were still **IN_PROGRESS** at this update.
+- Full [run #46161956393](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46161956393): initial validation job `141031061284` **FAIL** at the mandatory handover-freshness gate because this source/test commit followed the IN PROGRESS docs commit. This is a documentation ordering failure, not a firmware/test failure. Target jobs were still running; no Full target-matrix or overall PASS is claimed.
+
+No production sketch, shared CORE API, QA-owned assertion, finance, receipt, signer, witness, migration or COE source changed. Local repository checkout/tests were NOT RUN; GitHub Actions supplied the source-exact host execution.
+
+**Acceptance:** SIMULATED / CI VERIFIED for this regression only. Physical relay/acceptor polarity, pulse retention, EEPROM/NVS brown-out, LittleFS power-loss, 150 power cuts, 30-device/24-hour soak and electrical pulse/recovery remain NOT TESTED. HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.

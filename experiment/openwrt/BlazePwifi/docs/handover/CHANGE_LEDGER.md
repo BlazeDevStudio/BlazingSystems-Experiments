@@ -4141,3 +4141,14 @@ This is the required documentation-first IN-PROGRESS record. No source/test resu
 - **Reason:** add a failure injection for a direct relay GPIO ON write after the final post-poll deny, distinct from the existing positive-response mutation that re-enables outputs before that deny.
 - **Expected marker:** `POST_POLL_DENY_DIRECT_GPIO_REENABLE_MUTATION_REJECTED` on ESP8266 and ESP32 fixtures. CI not yet run; no pass/fail claim.
 - **Acceptance:** SIMULATED / CI only. Physical relay/acceptor, EEPROM/NVS brown-out, 150 power cuts, 30-device/24-hour soak and electrical pulse/recovery remain NOT TESTED. HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
+
+
+## 2026-11-28 — PHX-HW-20261128T15Z-POSTDENY-DIRECT-GPIO-ESCAPE (source/test result)
+
+- **UTC:** 2026-11-28T15:54:00Z; **role:** PHX-HARDWARE; **PR:** #378 OPEN / DRAFT / UNMERGED; **branch:** `phoenix/hw-postdeny-gpio-escape-guard-20261128-utc15`.
+- **Source/test SHA:** `6c22c7ebef3eaa9082735511f4cf3e525731085c`; only `poll_preflight_inhibit_lab_cases.py` changed after the IN PROGRESS record.
+- **Change:** direct relay GPIO ON mutation after final post-poll deny, before `lastPoll`, is injected and required to fail through the write-history latch on both board fixtures.
+- **Poll:** #46161956366 / job 141031014911 PASS at exact source/test SHA; both board markers emitted; five transport outcomes × four polarities; 8/8 output scenarios; 14/14 injected regressions rejected. SIMULATED ONLY.
+- **Mbed:** #46161956391 source-contract 141031015239 PASS; core 3.3.13 and 4.0.0 builds IN_PROGRESS at this read.
+- **Full:** #46161956393 validation job 141031061284 FAILED at handover freshness because the source commit postdated the IN PROGRESS handover. This is a docs-ordering failure; target jobs were still running. No Full PASS claimed.
+- **Limits:** local checkout NOT RUN; physical relay/acceptor, EEPROM/NVS brown-out, 150 cuts, 30-device/24-hour soak and electrical recovery NOT TESTED. HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
