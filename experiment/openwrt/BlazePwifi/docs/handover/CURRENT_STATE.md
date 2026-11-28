@@ -1981,3 +1981,16 @@ Full [run #46094348644](https://github.com/BlazeDevStudio/BlazingSystems-Experim
 Only the deny-latch source contract, failure-injection cases, focused workflow branch allowlist and handover records changed. No production `.ino`, CORE API, finance, journal disposition, QA-owned assertion, migration, signer, witness or COE file changed. This bounded regex contract does not prove arbitrary C++ alias safety, opaque helper-return safety, memory safety or electrical behavior. Coin and relay admission remain deny-only.
 
 Physical GPIO/relay behavior, LittleFS power-loss durability, 150 power cuts, 30-device / 24-hour soak and electrical pulse/recovery remain NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+
+
+## PHX-HARDWARE UTC01 — append-only ledger freshness and Full rerun
+
+- Child PR: [#368](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/368), OPEN / DRAFT.
+- Branch: `phoenix/hw-deny-latch-cast-alias-20261128-utc01`.
+- Source/test commit: `b35072bfb2b74f3bc4bdca31381d178261d1ae35`.
+- Pre-ledger docs head: `d8bf447e176f49a70d9a0a5de0133b7fc77c10ac`.
+- Exact-head Focused run [#46094498476](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46094498476), job `140822646418`: PASS at `d8bf447e176f49a70d9a0a5de0133b7fc77c10ac`.
+- Focused logs: ESP8266 and ESP32 each rejected 14/14 deny-latch alias mutations, including 4/4 C-style/reinterpret-cast cases; logical-AND and comment/string decoys passed. Ledger guard passed with base_bytes=1,132,798 and previously appended_bytes=75,077.
+- Full run [#46094498502](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46094498502), validation job `140822787592`: FAILED the handover freshness gate because `CHANGE_LEDGER.md` still had last checkpoint commit `4e558a06`. `PROJECT_HANDOVER.md` and `CURRENT_STATE.md` were already refreshed; this entry appends the matching ledger evidence. A fresh Full run is required.
+- At the last read, ESP8266 and multiple OpenWrt target jobs passed; ESP32, Android and other targets were still running. No terminal Full target aggregate is claimed from that run.
+- No production sketch, CORE API, finance, journal disposition, QA assertion, migration, signer, witness or COE file changed. Physical GPIO/relay acceptance remains NOT TESTED; HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
