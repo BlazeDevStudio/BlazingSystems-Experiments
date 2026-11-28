@@ -1,3 +1,9 @@
+## PHX-MASTER UTC00 — 2026-11-28 exact-head role CI and COE #26 provenance
+
+[Full UTC00 audit](PHX_MASTER_UTC00_20261128_EXACT_HEAD_ROLE_CI_COE26_PROVENANCE_AUDIT.md). Live refs: Experiments main `6be5d19b`, v0.5.3 `aad3aade`, v0.6 `2fbd2475`, Master pre-change `9f6f6fe`; COE main `a6513ab4`, PR #26 `b382d233`. PR #288 is 688 ahead / 1 behind main (merge base `f4e8a891`), with 263/263 existing paths in `coordination/phoenix/`; no rebase. Current #367 Focused/Mbed pass, Full fails at QA controller parity; #328 Full fails handover validation and ESP32 Mbed TLS include. COE #26 remains frozen: 61/61 pinned runtime identities match but summary is 46/15 vs 47/14; derived-test map misses voucher journal and has two stale blob IDs; six license counterparts missing. P0 #177 OPEN, cleanup #266 0/7, private registry unavailable, PRODUCTION NO-GO.
+
+---
+
 ## PHX-MASTER UTC23 final refresh — Hardware #367 head 778220aa (2026-11-27T23:56Z)
 
 [UTC23 audit and latest Hardware follow-ups](PHX_MASTER_UTC23_20261127_HW367_CONTROLLER_PARITY_COE26_TESTMAP_AUDIT.md). Current #367 head `778220aa`: Focused PASS, Mbed 3/3 PASS, Full terminal FAIL at `tests/controllers.sh:21`; all 14 target jobs pass. The deny-only alias matrix rejects 10/10 injected forms per board but is not general C++ alias proof. PR #367's description still has stale source/test/docs pins. Master validator smoke tests PASS 7/7; committed repository test module and full Master suite NOT RUN. COE #26 remains FROZEN, P0 #177 OPEN, cleanup #266 0/7, private registry unavailable, PRODUCTION NO-GO.

@@ -1,3 +1,11 @@
+## PHX-MASTER UTC00 — controller trust and fail-closed contract recheck
+
+Active v0.6 ESP8266 source blob `12c4bb82` calls synchronous `post("poll")` at line 354 before the first coin sample at 357; ESP32 blob `29f1125d` does so at 314 before sampling at 318. The 3,500 ms blocking poll can span an input pulse; this remains P0 #177 and is not hardware accepted.
+
+Current main CGI blob `2e3a1430` does not emit controller `response_sig` in register/ping or poll. Member endpoint signatures do not authenticate controller poll/disposition. CORE owns controller identity, authenticated poll/receipt/disposition schema; HARDWARE owns firmware and relay; QA owns independent vectors. The #367 Full parity failure must be corrected by QA's source-linked deny-only tests, not by restoring an unauthenticated `config_revision` field. No shared contract change approved by this checkpoint.
+
+---
+
 ## PHX-MASTER UTC23 final contract review — Hardware #367 head 778220aa (2026-11-27T23:56Z)
 
 The latest #367 Full failure at `tests/controllers.sh:21` is a QA assertion requiring the literal `config_revision` token. The deny-only candidate intentionally removes that unauthenticated controller field. QA must replace token-presence testing with source-linked deny-only vectors; HARDWARE must not restore the field to satisfy the stale assertion.

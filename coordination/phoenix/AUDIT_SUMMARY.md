@@ -1,3 +1,14 @@
+## PHX-MASTER UTC00 — current blockers (2026-11-28T00:38Z)
+
+- PR #288 current pre-change head `9f6f6fe`, OPEN/DRAFT/UNMERGED; 263/263 paths coordination-only; 688 ahead / 1 behind live main. Main-only commit `6be5d19b` adds root `promp CallerID`; no rebase.
+- #367 Focused/Mbed PASS, Full FAIL at QA Controller protocol parity; Hardware PR body/handover stale. #328 Full FAIL at handover freshness and ESP32 missing `mbedtls/sha256.h`.
+- P0 #177 remains poll-before-first-sample (ESP8266 354→357; ESP32 314→318); controller register/ping and poll lack controller `response_sig`.
+- COE #26 frozen. 61/61 pinned runtime rows and 4/4 original test rows match; summary 46/15 vs 47/14. Derived-test map missing voucher row and two stale blob IDs; six license/notice counterparts missing; branch pin stale.
+- Canonical private registry v11/newer corrections NOT RECOVERED; no Drive connector. Master tests and exact-head Master Actions NOT RUN. Cleanup #266 OPEN / 0-of-7.
+- **PRODUCTION NO-GO**; no staging, merge, release, signing, flashing, payment or physical test.
+
+---
+
 ## PHX-MASTER UTC23 final blocker refresh — Hardware #367 head 778220aa (2026-11-27T23:56Z)
 
 HARDWARE #367 current head `778220aa`: Focused and Mbed PASS; Full terminal FAIL at QA-owned `tests/controllers.sh:21` because deny-only sketches omit `config_revision`. All 14 target builds pass; downstream acceptance/sign/publish skipped. The PR body still has stale source/test/docs pins and needs Hardware-owner refresh. The 10/10 alias mutation matrix is bounded regex evidence only. Master validator focused smoke 7/7 PASS; committed repository tests/full suite NOT RUN. P0 #177, COE #26, registry v11, cleanup #266 0/7 and all production gates remain blocked.

@@ -1,3 +1,23 @@
+## PHX-MASTER UTC00 — exact COE #26 tree and intake matrix
+
+Historical source pin `6d4c9b48`: 2,391 entries / 1,845 blobs. COE #26 destination `b382d233`: 286 / 207. Current Experiments main `6be5d19b`: 2,341 / 1,765. All trees non-truncated.
+
+| Route | Pinned source blobs | Destination blobs | Exact | Divergent | Source-only | Destination-only |
+|---|---:|---:|---:|---:|---:|---:|
+| CORE library | 20 | 20 | 14 | 6 | 0 | 0 |
+| CORE CGI | 1 | 1 | 0 | 1 | 0 | 0 |
+| RENTAL Android | 983 | 8 | 0 | 0 | 983 | 8 |
+| PISONET | 44 | 47 | 16 | 9 | 19 | 22 |
+| ESP32 | 3 | 1 | 0 | 1 | 2 | 0 |
+| ESP8266 | 3 | 1 | 0 | 1 | 2 | 0 |
+| QA tests | 149 | 19 | 2 | 2 | 145 | 15 |
+
+SOURCE_INTAKE schema 8: 61/61 runtime rows match pinned source and destination blob/mode; actual 46 identical / 15 derived vs summary 47/14. Original tests 4/4 match (2 identical, 2 derived). Derived tests 15/15 destination identities match; map has 14 rows, missing voucher journal and mismatching run_focus/member_txn_journal blob IDs. Current main vs historical runtime pin: 33 match, 20 drift, 8 missing. Six license/notice counterparts missing. COE #26 workflows all CANCELLED. No staging.
+
+See [UTC00 exact audit](PHX_MASTER_UTC00_20261128_EXACT_HEAD_ROLE_CI_COE26_PROVENANCE_AUDIT.md).
+
+---
+
 ## PHX-MASTER UTC23 final matrix refresh — current #367 head 778220aa (2026-11-27T23:56Z)
 
 - Current #367 head `778220aa999d31da2c7d47074eed96377c04155a`: 2,439 entries / 1,893 blobs / 546 trees, non-truncated; 9 changed paths, no `.ino` change.

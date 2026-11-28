@@ -1,3 +1,23 @@
+## PHX-MASTER UTC00 owner/CI refresh — 2026-11-28T00:38Z
+
+| Role | Current PR/head | Exact evidence | Disposition |
+|---|---|---|---|
+| CORE | #252 `c82705f2` | Build #42698139210 PASS | Scoped only; CORE source untouched |
+| RENTAL | #289 `68928774` | #43653329229 and #43653329235 PASS | Parent checks scoped |
+| RENTAL | #328 `10fc200b` | API/auth/APK focused PASS; Full #45622918468 FAIL (handover validation + ESP32 missing mbedtls/sha256.h) | Owner fix required |
+| PISONET | #255 `d01fd164` | Windows synthetic #42462978704 PASS | Native COM NOT TESTED |
+| HARDWARE | #367 `778220aa` | Focused #46084788298 PASS; Mbed #46084788312 PASS; Full #46084788285 FAIL at Controller protocol parity | QA assertion + Hardware handover/body stale |
+| HARDWARE | #354 `fc842342` | Focused/Mbed PASS; Full/Native FAIL | P0 #177 candidate, no acceptance |
+| HARDWARE | #357 `963c3713` | Focused/Mbed PASS; Full/Native FAIL | Draft only |
+| QA | #290 `5c29d159` | Windows synthetic #43633486963 PASS | Not hardware acceptance |
+| QA | #292 `75a3f66d` | No exact-head run | Expected RED remains unverified |
+| RELEASE | #291 `bf339a76`; #242 `36c0d0bb` | No exact-head runs/statuses; #242 mergeable=false | NO-GO |
+| MASTER | #288 pre-change `9f6f6fe` | No exact-head Actions/status | Master tests NOT RUN |
+
+HARDWARE #367 PR body and current handover still cite `f7abed43` / older source-doc pins although live PR head is `778220aa`; HARDWARE must refresh its own canonical handover and description. #266 remains OPEN / 0-of-7. No ownership changed.
+
+---
+
 ## PHX-MASTER UTC23 final owner refresh — Hardware #367 current head 778220aa (2026-11-27T23:56Z)
 
 | Role | Current evidence | Disposition |
