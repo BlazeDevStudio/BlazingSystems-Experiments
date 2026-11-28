@@ -2305,3 +2305,26 @@ The source mutation guard is **CI VERIFIED / SIMULATED** by the exact Poll run. 
 ### Remaining safety / release status
 
 The active v0.6 branch remains `2fbd2475e9f54878c316fa7cea2f228386b0e859`; ESP8266 still performs synchronous poll before its first coin sample (lines 354/357), and ESP32 does so at lines 314/318. This reconciliation does not fix P0 pulse loss. Physical relay/acceptor polarity, pulse retention, EEPROM/NVS brown-out, LittleFS recovery, 150 controlled power cuts, 30-device/24-hour soak and electrical pulse/recovery remain **NOT TESTED**. Protected signer/witness, v1-to-v2 migration, durable accounting/replay and independent QA/release signoff remain **NOT ACCEPTED**. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+
+
+## PHX-HARDWARE UTC17 — final exact tested PR head and release disposition
+
+**Updated:** 2026-11-28T18:03:30Z  
+**Task:** `PHX-HW-177-GPIO-WRITER-STACK-RECONCILE-20261128T17Z`  
+**PR:** [#380](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/380), OPEN / DRAFT / UNMERGED  
+**Branch:** `phoenix/hw-gpio-writer-reconcile-20261128-utc17`  
+**Source/test SHA:** `83fc27e474064f2ed429332b8a14fa8ffb66784c`  
+**Exact tested docs head:** `8b9a9d127fed56d9f38052bef353c2a4d71a7bcb`
+
+### Final exact-head CI
+
+- Poll [#46173474280](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46173474280), job `141066875248`: **PASS**. Eight writer-authority mutations rejected (four per board), direct post-deny GPIO ON rejected on both boards, five poll outcomes × four polarity combinations pass. Explicit `POLL_INTAKE_GUARD_SIMULATED_ONLY=1`.
+- Mbed TLS [#46173474278](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46173474278): **3/3 PASS** — source contract `141066875879`, core 4.0.0 `141066876027`, core 3.3.13 `141066876136`. Both clean A/B builds byte-identical. Staged source tree SHA-256 `ccea8c3ba80f417b5cd0789ad68928f78c12a467ce77a0a3957121a4ad494c81`; core 4.0.0 image SHA-256 `1a544126e2f6ee4244d5eb66de5cfd4ac6a274e77ea1f7714b61b64c5bcb651e`; core 3.3.13 image SHA-256 `631f31a969ca4d367121d0b32db83e25162caab2b5ee0db4b63e23d34f345ab0`. Artifacts: [4.0.0 #15274374112](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46173474278/artifacts/15274374112), [3.3.13 #15274757818](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46173474278/artifacts/15274757818).
+- Full [#46173474301](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46173474301): **FAIL overall**. CI-0701 and handover freshness/history pass. Validation job `141066938748` fails at QA-owned `tests/controllers.sh:21` (`grep -q 'config_revision' "$f"`); both #377-based sketches lack that field. All **14/14 target/platform jobs PASS**, including Android, ESP8266, ESP32 and 11 OpenWrt targets. Update bundle, simulations, signing and publication remain skipped.
+- Native Synthetic Journal: **NOT RUN**. Its workflow path filter requires native journal / pending-sequence paths or the production `.ino` sketches; this PR changes host-lab Python contract/cases and handovers only. The available GitHub connector exposes no workflow-dispatch write action.
+
+### Disposition and next owner action
+
+The #380 combined child preserves #378's post-deny GPIO escape test and #379's centralized writer authority on the current #377 base. Original #378/#379 remain OPEN/DRAFT and unmodified at their exact heads; #380 is a non-force-push successor, not a rewrite of either branch. PHX-MASTER must decide whether to pin #380 as the reconciled child or request a separately stacked child for #379.
+
+QA owns the `config_revision` semantic parity assertion; CORE owns the canonical authenticated controller envelope. Do not add a decoy field or invent `response_sig`. Active v0.6 still polls before first coin sample on ESP8266 (354/357) and ESP32 (314/318). Physical GPIO/relay polarity, pulse retention, EEPROM/NVS brown-out, LittleFS recovery, 150 power cuts, 30-device/24-hour soak and electrical pulse/recovery remain **NOT TESTED**. Protected signer/witness, v1-to-v2 migration, durable accounting/replay and independent QA/release signoff remain **NOT ACCEPTED**. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.

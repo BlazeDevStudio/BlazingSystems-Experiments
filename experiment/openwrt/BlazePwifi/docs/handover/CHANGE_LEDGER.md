@@ -4184,3 +4184,15 @@ No firmware/API/finance source, COE destination, physical device, or production 
 - **Full:** #46173004825 overall FAIL; handover/history/CI-0701 gates PASS; validation job 141065462212 FAIL at QA-owned tests/controllers.sh:21 `config_revision` parity. 14/14 target/platform jobs PASS; downstream bundle/simulation/signing/publication skipped.
 - **Native:** NOT RUN; workflow path filter excludes these two host-lab Python files and handover paths.
 - **Disposition:** source contract CI VERIFIED/SIMULATED only; controller parity remains CORE/QA-owned; physical acceptance and release gates remain NOT TESTED / NOT ACCEPTED.
+
+
+## 2026-11-28T18Z — PHX-HARDWARE #380 final exact-head CI
+
+- **Role/task:** PHX-HARDWARE / `PHX-HW-177-GPIO-WRITER-STACK-RECONCILE-20261128T17Z`.
+- **PR/branch:** #380 OPEN/DRAFT/UNMERGED; `phoenix/hw-gpio-writer-reconcile-20261128-utc17`, base #377@95ace1236c2b3e4816515c372edd4853ceeed064.
+- **Source/test SHA:** `83fc27e474064f2ed429332b8a14fa8ffb66784c`; exact tested docs head `8b9a9d127fed56d9f38052bef353c2a4d71a7bcb`.
+- **Poll:** #46173474280 / job 141066875248 PASS; 8/8 GPIO writer mutations rejected; post-deny direct GPIO ON rejected on both boards; 5 outcomes × 4 polarities; SIMULATED ONLY.
+- **Mbed:** #46173474278 PASS 3/3; source contract and ESP32 3.3.13 / 4.0.0 clean builds; A/B byte-identical. Source tree SHA256 ccea8c3ba80f417b5cd0789ad68928f78c12a467ce77a0a3957121a4ad494c81; 3.3.13 SHA256 631f31a969ca4d367121d0b32db83e25162caab2b5ee0db4b63e23d34f345ab0; 4.0.0 SHA256 1a544126e2f6ee4244d5eb66de5cfd4ac6a274e77ea1f7714b61b64c5bcb651e.
+- **Full:** #46173474301 FAIL at QA-owned tests/controllers.sh:21 `config_revision`; handover/history gates pass; 14/14 target/platform jobs PASS; downstream bundle/simulation/signing/publication skipped.
+- **Native:** NOT RUN; workflow paths do not include this PR's changed files.
+- **Disposition:** CI VERIFIED / SIMULATED for source guard only; Full integration blocked on CORE/QA contract parity; physical acceptance and release gates NOT TESTED / NOT ACCEPTED.
