@@ -2069,3 +2069,53 @@ Full push [#46040057846](https://github.com/BlazeDevStudio/BlazingSystems-Experi
 - Master UTC01 checkpoint #7231916175 (https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/172#issuecomment-7231916175) confirms QA owns replacing the positive marker assertion with source-linked deny-only vectors; CORE owns the authenticated register/poll/receipt/disposition contract; P0 #177 remains open.
 - Child PR #368 is a separate Hardware-owned source-contract extension based on #367 at 4e558a06ff558dffef8a966a6e412029e7340119; child branch phoenix/hw-deny-latch-cast-alias-20261128-utc01, current child head bc2e90392378b29bd633d098afc7cf29498a1d32. Its focused alias-cast tests passed at exact head d8bf447e; current corrected-head Focused/Mbed/Full runs are pending/in progress. Do not transfer #367 evidence to #368 or vice versa.
 - No production .ino, CORE API, finance, journal disposition, QA assertion, migration, signer, witness or COE source changed. Coin/relay remain deny-only. Physical GPIO/relay, LittleFS power-loss, 150 power cuts, 30-device/24-hour soak and electrical recovery remain NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+
+## PHX-HARDWARE UTC01 — deny-latch cast-alias regression child #368
+
+**Current child PR:** [#368](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/368), OPEN / DRAFT / UNMERGED  
+**Branch:** `phoenix/hw-deny-latch-cast-alias-20261128-utc01`  
+**Parent PR #367 HEAD:** `4e558a06ff558dffef8a966a6e412029e7340119`  
+**Source/test commit:** `b35072bfb2b74f3bc4bdca31381d178261d1ae35`  
+**Workflow wiring / current branch head at this checkpoint:** `d0439b62e678a94854498a47becef7f2c09ac3e9`
+
+### Exact focused evidence
+
+- Focused Hardware [run #46094348641](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46094348641), exact head `d0439b62e678a94854498a47becef7f2c09ac3e9`, job `140822175939`: **PASS**.
+- Earlier source/test-head Focused [run #46094288923](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46094288923), job `140821990488`: **PASS** at `b35072b`.
+- Exact-head logs show ESP8266 and ESP32 each reject **14/14** alias mutations, including **4/4** new C-style / `reinterpret_cast` cases. Logical-AND and comment/string decoys remain accepted/ignored.
+- Existing blocking-poll, transport, request-auth, startup-output, config-persistence and pending-recovery host labs also pass in the focused workflow. These remain SIMULATED / CI VERIFIED only.
+- The workflow's append-only ledger guard passed. `CHANGE_LEDGER.md` was not modified in this child.
+
+### Full workflow freshness correction
+
+Full [run #46094348644](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46094348644) at the pre-handover head `d0439b62` had CI-0701 PASS but validation job `140822297524` failed the handover freshness gate: source/test files were newer than this root `PROJECT_HANDOVER.md` checkpoint. This record is the required live handover update; rerun Full on the resulting exact head. At the last read, target jobs were still running, so no terminal target-build aggregate is claimed from that run.
+
+### Scope and release boundary
+
+Only the deny-latch source contract, failure-injection cases, focused workflow branch allowlist and handover records changed. No production `.ino`, CORE API, finance, journal disposition, QA-owned assertion, migration, signer, witness or COE file changed. This bounded regex contract does not prove arbitrary C++ alias safety, opaque helper-return safety, memory safety or electrical behavior. Coin and relay admission remain deny-only.
+
+Physical GPIO/relay behavior, LittleFS power-loss durability, 150 power cuts, 30-device / 24-hour soak and electrical pulse/recovery remain NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+
+
+## PHX-HARDWARE UTC01 — append-only ledger freshness and Full rerun
+
+- Child PR: [#368](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/368), OPEN / DRAFT.
+- Branch: `phoenix/hw-deny-latch-cast-alias-20261128-utc01`.
+- Source/test commit: `b35072bfb2b74f3bc4bdca31381d178261d1ae35`.
+- Pre-ledger docs head: `d8bf447e176f49a70d9a0a5de0133b7fc77c10ac`.
+- Exact-head Focused run [#46094498476](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46094498476), job `140822646418`: PASS at `d8bf447e176f49a70d9a0a5de0133b7fc77c10ac`.
+- Focused logs: ESP8266 and ESP32 each rejected 14/14 deny-latch alias mutations, including 4/4 C-style/reinterpret-cast cases; logical-AND and comment/string decoys passed. Ledger guard passed with base_bytes=1,132,798 and previously appended_bytes=75,077.
+- Full run [#46094498502](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46094498502), validation job `140822787592`: FAILED the handover freshness gate because `CHANGE_LEDGER.md` still had last checkpoint commit `4e558a06`. `PROJECT_HANDOVER.md` and `CURRENT_STATE.md` were already refreshed; this entry appends the matching ledger evidence. A fresh Full run is required.
+- At the last read, ESP8266 and multiple OpenWrt target jobs passed; ESP32, Android and other targets were still running. No terminal Full target aggregate is claimed from that run.
+- No production sketch, CORE API, finance, journal disposition, QA assertion, migration, signer, witness or COE file changed. Physical GPIO/relay acceptance remains NOT TESTED; HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+
+
+## 2026-11-28 UTC01 — PHX-HARDWARE PR #368 cast-alias contract evidence and recovery
+
+- Role: PHX-HARDWARE; branch: `phoenix/hw-deny-latch-cast-alias-20261128-utc01`.
+- PR: https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/368 (OPEN / DRAFT / UNMERGED).
+- Source/test commit: `b35072bfb2b74f3bc4bdca31381d178261d1ae35`; latest pre-recovery head: `5a58fd7ebea1d9e97f4e39107b18afecfdd47828`.
+- Focused run #46094498476, exact head `d8bf447e`, job `140822646418`: PASS. ESP8266 and ESP32 each rejected 14/14 deny-latch alias mutations, including 4/4 C-style/reinterpret-cast cases.
+- Full run #46094498502 validation job `140822787592`: failed handover freshness because this ledger checkpoint was stale at `4e558a06`. Root `PROJECT_HANDOVER.md` and `CURRENT_STATE.md` had already been refreshed. This entry restores the complete prior ledger blob and appends this evidence.
+- **Recovery note:** an intermediate ledger-update commit `5a58fd7e` contained only the new entry because the large-file reader returned an empty content window. It was not merged. This correction restores the exact original Git blob prefix `1616d32103fd20b594a5444e9cb0363b39bbd9c6` byte-for-byte and appends the evidence. No history was force-pushed or rewritten.
+- No production sketch, CORE API, finance, journal disposition, QA assertion, migration, signer, witness or COE file changed. Physical acceptance remains NOT TESTED; HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.

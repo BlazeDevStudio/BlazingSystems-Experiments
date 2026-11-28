@@ -337,6 +337,8 @@ def _reject_reference_aliases(masked: str, protected_pattern: str) -> None:
     reference_source = (
         rf"(?:(?:std::)?(?:move|forward)\s*(?:<[^;()]*>)?\s*\(\s*"
         rf"|(?:static_cast|const_cast)\s*<[^;()]*[&*][^;()]*>\s*\(\s*"
+        rf"|reinterpret_cast\s*<[^;()]*&[^;()]*>\s*\(\s*"
+        rf"|\(\s*[^;()]*&[^;()]*\)\s*"
         rf"|\(\s*)?"
         rf"(?P<name>{protected_pattern})\b\s*\)?"
     )
@@ -366,10 +368,20 @@ def _reject_decltype_auto_aliases(masked: str, protected_pattern: str) -> None:
 
 
 def _reject_reference_wrappers(masked: str, protected_pattern: str) -> None:
-    """Reject standard reference/address wrappers and explicit reference/pointer casts."""
+    """Reject standard wrappers plus C-style and named reference casts."""
+    c_style_match = re.search(
+        rf"\(\s*[^;()]*&[^;()]*\)\s*(?P<name>{protected_pattern})\b",
+        masked,
+    )
+    if c_style_match:
+        raise AssertionError(
+            f"{c_style_match.group('name')}: C-style reference cast can bypass the deny-latch assignment guard"
+        )
+
     match = re.search(
         rf"(?:(?:std::)?(?:ref|cref|addressof|move|forward)\s*(?:<[^;()]*>)?\s*\(\s*"
-        rf"|(?:static_cast|const_cast)\s*<[^;()]*[&*][^;()]*>\s*\(\s*)"
+        rf"|(?:static_cast|const_cast)\s*<[^;()]*[&*][^;()]*>\s*\(\s*"
+        rf"|reinterpret_cast\s*<[^;()]*&[^;()]*>\s*\(\s*)"
         rf"(?P<name>{protected_pattern})\s*\)",
         masked,
     )

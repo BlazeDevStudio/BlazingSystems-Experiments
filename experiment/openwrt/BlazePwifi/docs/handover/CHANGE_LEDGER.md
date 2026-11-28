@@ -4114,3 +4114,13 @@ Private \`BLAZE_PROJECT_REGISTRY_v11_20261027.json\` remains NOT RECOVERED; no s
 - Master UTC01 checkpoint #7231916175 (https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/172#issuecomment-7231916175) confirms QA owns replacing the positive marker assertion with source-linked deny-only vectors; CORE owns the authenticated register/poll/receipt/disposition contract; P0 #177 remains open.
 - Child PR #368 is a separate Hardware-owned source-contract extension based on #367 at 4e558a06ff558dffef8a966a6e412029e7340119; child branch phoenix/hw-deny-latch-cast-alias-20261128-utc01, current child head bc2e90392378b29bd633d098afc7cf29498a1d32. Its focused alias-cast tests passed at exact head d8bf447e; current corrected-head Focused/Mbed/Full runs are pending/in progress. Do not transfer #367 evidence to #368 or vice versa.
 - No production .ino, CORE API, finance, journal disposition, QA assertion, migration, signer, witness or COE source changed. Coin/relay remain deny-only. Physical GPIO/relay, LittleFS power-loss, 150 power cuts, 30-device/24-hour soak and electrical recovery remain NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+
+## 2026-11-28 UTC01 — PHX-HARDWARE PR #368 cast-alias contract evidence and recovery
+
+- Role: PHX-HARDWARE; branch: `phoenix/hw-deny-latch-cast-alias-20261128-utc01`.
+- PR: https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/368 (OPEN / DRAFT / UNMERGED).
+- Source/test commit: `b35072bfb2b74f3bc4bdca31381d178261d1ae35`; latest pre-recovery head: `5a58fd7ebea1d9e97f4e39107b18afecfdd47828`.
+- Focused run #46094498476, exact head `d8bf447e`, job `140822646418`: PASS. ESP8266 and ESP32 each rejected 14/14 deny-latch alias mutations, including 4/4 C-style/reinterpret-cast cases.
+- Full run #46094498502 validation job `140822787592`: failed handover freshness because this ledger checkpoint was stale at `4e558a06`. Root `PROJECT_HANDOVER.md` and `CURRENT_STATE.md` had already been refreshed. This entry restores the complete prior ledger blob and appends this evidence.
+- **Recovery note:** an intermediate ledger-update commit `5a58fd7e` contained only the new entry because the large-file reader returned an empty content window. It was not merged. This correction restores the exact original Git blob prefix `1616d32103fd20b594a5444e9cb0363b39bbd9c6` byte-for-byte and appends the evidence. No history was force-pushed or rewritten.
+- No production sketch, CORE API, finance, journal disposition, QA assertion, migration, signer, witness or COE file changed. Physical acceptance remains NOT TESTED; HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
