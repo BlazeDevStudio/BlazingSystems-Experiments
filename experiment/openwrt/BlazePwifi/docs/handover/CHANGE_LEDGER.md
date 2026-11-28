@@ -4067,3 +4067,11 @@ This is the required documentation-first IN-PROGRESS record. No source/test resu
 - New exact-head CI is pending. No production firmware, shared controller contract, QA assertion, financial state, signer/witness, migration, COE destination or device changed. Coin/relay admission remains denied. Physical EEPROM/NVS and power-cut acceptance NOT TESTED.
 - Historical ledger prefix preserved by append only.
 
+
+
+## 2026-11-28 — EEPROM mutation-attribution harness correction (#374)
+
+- Task: PHX-HW-EEPROM-RUNTIME-MUTATION-ATTRIBUTION-20261128T10Z; correction source/test SHA `3515000ccf117a547bfe9d44e1b3e2cb110ed976`; prior source/test SHA `2f1496ac98011f00ee2168118b0c8698b2ca82b5`.
+- Exact-head Focused #46138392550 / job 140958701627 failed because the fixture's stdout marker was empty even though the oversized mutation returned the expected exit code 3. This was a test assertion defect, not a firmware failure.
+- Removed stdout-marker requirements; exact expected return codes remain required for all five mutations. Compilation errors remain fatal and cannot count as mutation rejection.
+- New corrected-source CI pending. Append only; historical ledger prefix preserved. No production firmware, shared API, QA assertion, finance, signer, witness, migration, COE destination or hardware changed.

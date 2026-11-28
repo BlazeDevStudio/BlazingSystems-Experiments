@@ -1,3 +1,24 @@
+## PHX-HARDWARE UTC10 correction — runtime mutation failure attribution (#374)
+
+**Task:** PHX-HW-EEPROM-RUNTIME-MUTATION-ATTRIBUTION-20261128T10Z  
+**Correction source/test SHA:** `3515000ccf117a547bfe9d44e1b3e2cb110ed976`  
+**Parent source/test SHA:** `2f1496ac98011f00ee2168118b0c8698b2ca82b5`  
+**Initial docs HEAD:** `e424de2ba9424da091e699a3fa5182ba122ad523`
+
+### First exact-head result and correction
+
+Focused run [#46138392550](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46138392550), job `140958701627`, **FAILED** at the first oversized-sector mutation. The C++ fixture returned the expected exit code `3`, but captured stdout was empty, so the additional preceding-marker assertion itself was invalid under the captured-process execution path. The intended mutation was rejected at the expected harness exit; the new marker requirement caused a false-negative test failure.
+
+Correction: remove stdout-marker requirements and retain exact expected process exit codes for all five mutations. Compiler errors still fail during the compile step and cannot be counted as successful mutation rejection. The test-only `std::_Exit(6)` remains only for the deliberate dangling-pointer mutation to avoid destructor double-free.
+
+The five expected invariant exits remain `3, 13, 5, 8, 6`. Exact corrected-source CI is pending.
+
+No production sketch or controller/financial interface changed. Coin/relay admission remains denied; physical EEPROM/NVS acceptance remains NOT TESTED.
+
+**Next:** push the correction with append-only handover/ledger synchronization, then read exact-head Focused/Mbed/Full/Native outcomes.
+
+---
+
 ## PHX-HARDWARE UTC10 — Exact EEPROM runtime-mutation failure attribution (#374) — IN PROGRESS
 
 **Task:** PHX-HW-EEPROM-RUNTIME-MUTATION-ATTRIBUTION-20261128T10Z  
