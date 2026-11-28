@@ -96,6 +96,8 @@ def assert_source_contract(source: str) -> None:
             "ESP8266 EEPROM wrapper must expose a checked begin path")
     checked_open = masked_source.find("{", checked_class_match.start())
     checked_class = mask_non_code(extract_braced(source, checked_open))
+    require("if(requested==0 || requested>kFlashSectorBytes) return false;" in checked_class,
+            "EEPROM requested size must be bounded to the flash sector")
     require("new (std::nothrow) uint8_t[aligned]" in checked_class,
             "EEPROM allocation must be checked without throwing")
     require("if(!_data)" in checked_class and "_size=aligned;" in checked_class,
