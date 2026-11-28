@@ -123,3 +123,21 @@ The new template mutation matrix is SIMULATED / CI VERIFIED. Physical EEPROM/NVS
 PHX-QA must replace the stale literal `config_revision` presence check with source-linked deny-only vectors and rerun Full on the exact successor head. PHX-CORE must publish the authenticated register/poll/receipt/disposition contract. PHX-MASTER must refresh #373's exact head in its role and integration matrices. PHX-HARDWARE keeps coin/relay admission denied and makes no shared-contract or positive-admission change until those owners complete their gates.
 
 Updated UTC: 2026-11-28T06:36:19Z.
+
+
+## PHX-HARDWARE UTC06 terminal recheck — docs head 95edb7e
+
+**Evidence-tested docs head:** `95edb7e0359b2ca567904b0090da90ad4dab46b8`  
+**Source/test SHA:** `e411a99c23485f4f92720aa38cf29dca757b5190`
+
+- Focused [#46117912216](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46117912216), job `140895734668`: **PASS**. The exact log reports template mutation failure injection 9/9; EEPROM current/legacy/migration/commit-retry; 7/7 source mutations; pending-recovery lab; and the existing board/output/authentication deny tests.
+- Mbed [#46117912228](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46117912228): **3/3 PASS** — source contract `140895747741`, ESP32 core 3.3.13 `140895747721`, core 4.0.0 `140895747561`.
+- Full [#46117912309](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46117912309): **TERMINAL FAILURE**, 29 jobs: 15 success, 1 failure, 13 skipped. CI-0701 `140895748143` PASS; QA-owned validation `140895798158` FAIL at `experiment/openwrt/BlazePwifi/tests/controllers.sh:21` — `grep -q 'config_revision' "$f"`. The deny-only candidate sketches intentionally do not carry that field; Hardware did not add a decoy field or modify QA-owned tests.
+- All 14/14 target/platform jobs **PASS**, including Android job `140895798184`. Android log: `BUILD SUCCESSFUL in 1m 7s`; artifact `BlazePwifi-android-current.zip`, ID `15252467608`, SHA-256 `fe9ba859a8373f4537c58fcd5cefc4c8f0e8d8db1b0fe7a69882c3c22597815a`. Existing MissingTranslation diagnostics remain in the build log; this is build success, not translation QA signoff.
+- Seven validation-dependent downstream jobs were skipped, including update bundle, simulations, signing and publication.
+
+**Disposition:** this exact docs head is Focused + Mbed CI VERIFIED, with all 14 target builds CI VERIFIED; Full integration remains FAILED at the QA-owned controller assertion. The Android artifact is a CI output only. No production artifact was signed or released. The next documentation-only commit records this terminal recheck; its own exact-head CI must be checked separately.
+
+Physical EEPROM/NVS brown-out, GPIO/relay/electrical acceptance, LittleFS power loss, 150 controlled power cuts, and 30-device/24-hour soak remain NOT TESTED. HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
+
+Updated UTC: 2026-11-28T06:47:00Z.
