@@ -4147,3 +4147,11 @@ Private \`BLAZE_PROJECT_REGISTRY_v11_20261027.json\` remains NOT RECOVERED; no s
 - The prior ledger checkpoint `c3648fbb1ce7dbd905a061be0aaa81dcb18b511e` repaired the stale-ledger freshness failure. This entry records the subsequent exact-head Full result; no code or test assertion was altered to bypass QA ownership.
 - Original ledger prefix remains byte-for-byte preserved; this is append-only.
 - No production `.ino`, CORE API, QA test, finance, journal, signer, witness, migration, release or COE source changed. P0 #177 remains open; coin/relay remain deny-only. Physical GPIO/relay, LittleFS power-loss, 150 power cuts, 30-device/24-hour soak and electrical pulse/recovery remain NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+
+
+## 2026-11-28 UTC02 — PHX-HARDWARE ledger provenance label correction
+
+- This append-only entry corrects a label in the preceding UTC02 handover: `c3648fbb1ce7dbd905a061be0aaa81dcb18b511e` was the prior ledger checkpoint that repaired the initial stale-ledger freshness failure; it was not the final ledger append commit. The subsequent final-results ledger append is contained in the current branch history after that checkpoint.
+- No ledger bytes were rewritten or removed. The complete existing ledger blob is the prefix of this file; this is an append-only correction.
+- Exact source/test CI evidence remains at `c3648fbb1ce7dbd905a061be0aaa81dcb18b511e`: Focused #46100115505 PASS, Mbed #46100115477 3/3 PASS, Full #46100115480 terminal validation failure at QA-owned `tests/controllers.sh:21` with 14/14 target/platform jobs PASS.
+- Production firmware sketches and shared APIs remain untouched; P0 #177, physical acceptance, finance, witness, migration and release gates remain open. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
