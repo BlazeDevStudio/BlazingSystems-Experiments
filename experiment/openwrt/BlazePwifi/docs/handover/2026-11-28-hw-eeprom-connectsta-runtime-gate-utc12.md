@@ -23,6 +23,10 @@ Mutations:
 
 ## Evidence and limitations
 
+- Exact-head Poll [#46146914426](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46146914426), job `140984874139`: PASS on checkout `bb0ccc269d105bb0b70ad5a1bd42e2089c3f844d`; all four runtime scenarios and both exact mutation exits are present in the log.
+- Native Synthetic [#46146914476](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46146914476), job `140984876253`: FAIL at QA-owned corrupt-persisted-state assertion.
+- Mbed #46146914481 source-contract job `140985013035` PASS; core 3.3.13/4.0.0 jobs still in progress. Full #46146914480 pending with no jobs exposed.
+
 - Local g++ 14.2.0 / C++11 / ASan+UBSan smoke: 4/4 normal cases PASS; 2/2 mutations rejected with exact exits/markers.
 - Full repository Python runner: NOT RUN locally (container could not resolve github.com).
 - GitHub Actions at exact SHA: NOT RUN / no commit status exposed; connected GitHub tools provide no workflow-dispatch action. Do not classify this as CI VERIFIED.
