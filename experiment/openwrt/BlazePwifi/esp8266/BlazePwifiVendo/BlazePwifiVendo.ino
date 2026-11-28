@@ -1,10 +1,46 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
 #include <ESP8266HTTPClient.h>
-#include <EEPROM.h>
+#include <configEeprom.h>
+#include <new>
 #include <LittleFS.h>
 #include <bearssl/bearssl_hash.h>
 #include <v060_pending_sequence.h>
+
+// ESP8266 core 3.1.2 exposes EEPROMClass storage internals but begin() returns void.
+// Use a checked allocator/read path so failed allocation or flash read cannot reach get()/put().
+class CheckedEEPROMClass : public EEPROMClass {
+public:
+  bool beginChecked(size_t requested) {
+    static const uint32_t kFlashSectorBytes=4096U;
+    if(requested==0 || requested>kFlashSectorBytes) return false;
+    const size_t aligned=(requested+3U)&~static_cast<size_t>(3U);
+    if(aligned==0 || aligned>kFlashSectorBytes) return false;
+    if(_data && _size!=aligned){
+      delete[] _data;
+      _data=nullptr;
+      _size=0;
+    }
+    if(!_data) _data=new (std::nothrow) uint8_t[aligned];
+    if(!_data){
+      _size=0;
+      _dirty=false;
+      return false;
+    }
+    _size=aligned;
+    const uint32_t address=static_cast<uint32_t>(_sector*kFlashSectorBytes);
+    if(!ESP.flashRead(address,_data,_size)){
+      delete[] _data;
+      _data=nullptr;
+      _size=0;
+      _dirty=false;
+      return false;
+    }
+    _dirty=false;
+    return true;
+  }
+};
+CheckedEEPROMClass configEeprom;
 
 struct ConfigV1 {
   uint32_t magic;
@@ -257,18 +293,18 @@ void defaults(){
   makeSetupPassword();
 }
 
-// EEPROM.commit() is the persistence result; callers must not report success or reboot on false.
+// configEeprom.commit() is the persistence result; callers must not report success or reboot on false.
 bool beginConfigStore(){
   if(configStoreReady) return true;
-  configStoreReady=EEPROM.begin(sizeof(Config));
+  configStoreReady=configEeprom.beginChecked(sizeof(Config));
   return configStoreReady;
 }
 
 // EEPROM writes are not usable until begin succeeds; failed commits keep intake denied.
 bool saveCfg(){
   if(!beginConfigStore()) return false;
-  EEPROM.put(0,cfg);
-  if(!EEPROM.commit()){
+  configEeprom.put(0,cfg);
+  if(!configEeprom.commit()){
     configStoreReady=false;
     return false;
   }
@@ -281,12 +317,12 @@ void loadCfg(){
     Serial.println("CRITICAL: EEPROM initialization failed; configuration unavailable; coin intake remains denied.");
     return;
   }
-  EEPROM.get(0,cfg);
+  configEeprom.get(0,cfg);
   if(cfg.magic==MAGIC && configStringsTerminated(cfg) &&
      boundedStringLength(cfg.apPass,sizeof(cfg.apPass))>=8) return;
 
   ConfigV1 oldCfg;
-  EEPROM.get(0,oldCfg);
+  configEeprom.get(0,oldCfg);
   if(oldCfg.magic==MAGIC_V1 && configV1StringsTerminated(oldCfg)){
     defaults();
     strlcpy(cfg.ssid,oldCfg.ssid,sizeof(cfg.ssid));

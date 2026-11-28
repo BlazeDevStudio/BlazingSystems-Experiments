@@ -108,7 +108,7 @@ def main() -> None:
     expect_rejected(
         "eeprom-begin-result-ignored",
         source.replace(
-            "configStoreReady=EEPROM.begin(sizeof(Config));",
+            "configStoreReady=configEeprom.beginChecked(sizeof(Config));",
             "EEPROM.begin(sizeof(Config)); configStoreReady=true;",
             1,
         ),
@@ -158,10 +158,32 @@ def main() -> None:
         ),
     )
 
+
+    expect_rejected(
+        "eeprom-sector-limit-removed",
+        source.replace(
+            "if(requested==0 || requested>kFlashSectorBytes) return false;",
+            "if(false) return false;",
+            1,
+        ),
+    )
+    expect_rejected(
+        "eeprom-allocation-failure-ignored",
+        source.replace("if(!_data){", "if(false){", 1),
+    )
+    expect_rejected(
+        "eeprom-flash-read-failure-ignored",
+        source.replace(
+            "if(!ESP.flashRead(address,_data,_size)){",
+            "if(false){",
+            1,
+        ),
+    )
+
     print(compile_and_run(cxx_harness(source), "config_integrity"))
     print(compile_and_run(loadcfg_runtime_harness(source), "config_loadcfg_runtime"))
     print("EEPROM_CONFIG_SOURCE_CONTRACT_PASS")
-    print("EEPROM_CONFIG_FAILURE_INJECTION_PASS 14/14")
+    print("EEPROM_CONFIG_FAILURE_INJECTION_PASS 17/17")
 
 if __name__ == "__main__":
     main()
