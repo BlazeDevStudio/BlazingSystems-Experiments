@@ -1,3 +1,15 @@
+## PHX-MASTER UTC23 final owner refresh — Hardware #367 current head 778220aa (2026-11-27T23:56Z)
+
+| Role | Current evidence | Disposition |
+|---|---|---|
+| HARDWARE #367 | `778220aa999d31da2c7d47074eed96377c04155a`; source/test `1922dcba`; docs `4a78354c` | Focused #46084788298 PASS; Mbed #46084788312 3/3 PASS; Full #46084788285 FAIL at `tests/controllers.sh:21`; all 14 target jobs pass |
+| QA | #290 `5c29d159`; #292 `75a3f66d` | #290 synthetic PASS; #292 no exact-head workflow. QA owns the stale `config_revision` assertion |
+| MASTER #288 | final head to be read back after this refresh | Focused validator smoke 7/7 PASS; committed test module/full suite NOT RUN; no Master Actions/status |
+
+The current #367 tree is 2,439 entries / 1,893 blobs, non-truncated; 9 changed paths and no production sketch edits. The 10/10 per-board alias rejection is a bounded source regex scan, not complete C++ alias analysis or hardware acceptance. Hardware must refresh its stale PR description and rerun/reconcile Full at exact head. No ownership transfer; PRODUCTION NO-GO.
+
+---
+
 ## PHX-MASTER UTC23 follow-up — latest owner checkpoint #7230394247 (2026-11-27T23:52Z)
 
 | Role | Current head / evidence | Review status |

@@ -1,3 +1,9 @@
+## PHX-MASTER UTC23 final blocker refresh — Hardware #367 head 778220aa (2026-11-27T23:56Z)
+
+HARDWARE #367 current head `778220aa`: Focused and Mbed PASS; Full terminal FAIL at QA-owned `tests/controllers.sh:21` because deny-only sketches omit `config_revision`. All 14 target builds pass; downstream acceptance/sign/publish skipped. The PR body still has stale source/test/docs pins and needs Hardware-owner refresh. The 10/10 alias mutation matrix is bounded regex evidence only. Master validator focused smoke 7/7 PASS; committed repository tests/full suite NOT RUN. P0 #177, COE #26, registry v11, cleanup #266 0/7 and all production gates remain blocked.
+
+---
+
 ## PHX-MASTER UTC23 follow-up — latest #367 owner evidence (2026-11-27T23:52Z)
 
 HARDWARE #367 is now `f7abed43`; current-head Focused PASS and Mbed 3/3 PASS, Full CANCELLED. Latest terminal Full at docs head `4a78354c` fails the QA-owned `config_revision` assertion after all 14 target jobs pass. The source/test lab's 10/10 per-board alias rejection is bounded regex evidence, not general C++ alias proof. HARDWARE must refresh its stale PR description; QA must fix the assertion without weakening deny-default. Master validator smoke: 7/7 focused Python cases PASS; committed repository test module and full Master suite NOT RUN.

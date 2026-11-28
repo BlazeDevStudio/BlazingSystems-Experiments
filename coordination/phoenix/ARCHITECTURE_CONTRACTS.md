@@ -1,3 +1,11 @@
+## PHX-MASTER UTC23 final contract review — Hardware #367 head 778220aa (2026-11-27T23:56Z)
+
+The latest #367 Full failure at `tests/controllers.sh:21` is a QA assertion requiring the literal `config_revision` token. The deny-only candidate intentionally removes that unauthenticated controller field. QA must replace token-presence testing with source-linked deny-only vectors; HARDWARE must not restore the field to satisfy the stale assertion.
+
+The #367 source/test matrix rejects 10/10 injected alias mutations per board, but its regex scan does not prove absence of `reinterpret_cast`, C-style casts, opaque alias returns, arbitrary memory corruption or electrical faults. Treat it as bounded source regression evidence, not complete C++ alias proof or physical acceptance. CORE still owns authenticated controller receipt/disposition; HARDWARE owns firmware; QA owns independent vectors.
+
+---
+
 ## PHX-MASTER UTC23 follow-up — scope of deny-latch source-contract evidence (2026-11-27T23:52Z)
 
 HARDWARE #367 source/test SHA `1922dcba` rejects 10/10 injected alias forms per board: address/reference wrappers, `decltype(auto)`, `std::move`, `std::forward`, `static_cast` and `const_cast`; logical-AND and comment/string decoys remain accepted. This is a bounded regex/source scan, not C++ AST/dataflow proof. `reinterpret_cast`, C-style casts, opaque helper returns, memory corruption and electrical faults are outside the demonstrated matrix. Do not describe it as complete alias-proof or physical acceptance.

@@ -1,8 +1,9 @@
-## PHX-MASTER UTC23 follow-up — latest Hardware #367 head (2026-11-27T23:52Z)
+## PHX-MASTER UTC23 final refresh — Hardware #367 head 778220aa (2026-11-27T23:56Z)
 
-[UTC23 audit report and Hardware follow-up](PHX_MASTER_UTC23_20261127_HW367_CONTROLLER_PARITY_COE26_TESTMAP_AUDIT.md). Hardware #367 advanced to `f7abed43`: current-head Focused PASS and Mbed 3/3 PASS; Full at that exact head is CANCELLED. The latest tested docs-head Full `4a78354c` fails at QA-owned `tests/controllers.sh:21` after all 14 target jobs pass. New alias tests are source-contract evidence only; no firmware sketch changed. PR description still needs owner refresh.
+[UTC23 audit and latest Hardware follow-ups](PHX_MASTER_UTC23_20261127_HW367_CONTROLLER_PARITY_COE26_TESTMAP_AUDIT.md). Current #367 head `778220aa`: Focused PASS, Mbed 3/3 PASS, Full terminal FAIL at `tests/controllers.sh:21`; all 14 target jobs pass. The deny-only alias matrix rejects 10/10 injected forms per board but is not general C++ alias proof. PR #367's description still has stale source/test/docs pins. Master validator smoke tests PASS 7/7; committed repository test module and full Master suite NOT RUN. COE #26 remains FROZEN, P0 #177 OPEN, cleanup #266 0/7, private registry unavailable, PRODUCTION NO-GO.
 
 ---
+
 
 
 ## PHX-MASTER UTC22 — restored #367 tree and exact COE intake reconciliation

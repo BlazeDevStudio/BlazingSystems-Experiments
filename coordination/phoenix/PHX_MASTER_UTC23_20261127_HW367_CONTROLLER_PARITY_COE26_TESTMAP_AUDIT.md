@@ -120,3 +120,16 @@ This follow-up supersedes only the earlier #367 head/CI snapshot in this UTC23 r
 ## UTC23 local focused test result — 2026-11-27
 
 The isolated Python smoke harness for the new derived-test map parser ran seven cases covering exact match, missing/extra rows, blob mismatch, duplicate map path, unsafe path and invalid destination prefix: **7/7 PASS**. This was a focused harness mirroring the committed parser logic, not execution of the committed `test_verify_migration_map.py` module. That repository test module, the full Master Python suite and `verify_coordination.py` remain NOT RUN because no authenticated local checkout is available. No exact-head Master Actions/status exists.
+
+
+## UTC23 final Hardware refresh — PR #367 current head 778220aa (2026-11-27T23:56Z)
+
+Hardware's latest checkpoint #7230394247 was re-read and PR #367 advanced again to `778220aa999d31da2c7d47074eed96377c04155a`. Its recursive tree is 2,439 entries / 1,893 blobs / 546 trees, non-truncated; the nine-path diff still contains no production `.ino` change. The source/test SHA remains `1922dcba`; the latest handover/docs head is `4a78354c` and the current PR head adds the follow-up documentation.
+
+- Current-head Focused #46084788298: SUCCESS.
+- Current-head ESP32 Mbed TLS #46084788312: SUCCESS, 3/3.
+- Current-head Full #46084788285: terminal FAILURE. Validation job `140791854060` exits in `tests/controllers.sh`; the script's line 21 still requires the literal `config_revision` token. All 14 firmware/Android target jobs complete SUCCESS; downstream acceptance/sign/publish stages are skipped.
+- The new source/test matrix rejects 10/10 alias mutations per board and preserves logical-AND/comment/string positive controls. This remains regex/source-contract evidence only; `reinterpret_cast`, C-style casts, opaque alias returns, memory corruption and electrical faults are not proven absent.
+- The Hardware PR description remains stale (older `183650be` / `3f1f7424` pins); Hardware must refresh it to the current `1922dcba` source/test, `4a78354c` tested docs and `778220aa` current PR head. QA still owns the failing assertion; do not restore an unauthenticated field to the deny-only firmware.
+
+This supersedes the earlier UTC23 #367 head and CI status. No Master ownership or production gate changed.

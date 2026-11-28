@@ -1,3 +1,12 @@
+## PHX-MASTER UTC23 final matrix refresh — current #367 head 778220aa (2026-11-27T23:56Z)
+
+- Current #367 head `778220aa999d31da2c7d47074eed96377c04155a`: 2,439 entries / 1,893 blobs / 546 trees, non-truncated; 9 changed paths, no `.ino` change.
+- Current-head Focused #46084788298 PASS; Mbed #46084788312 3/3 PASS; Full #46084788285 terminal FAIL at validation job `140791854060`, `tests/controllers.sh:21` (`config_revision` literal assertion). All 14 firmware/Android target jobs pass; downstream acceptance/sign/publish stages skipped.
+- Source/test SHA `1922dcba` rejects 10/10 injected alias mutations per board; logical-AND/comment/string decoys pass. It is a bounded regex scan, not full C++ alias proof.
+- Hardware PR description remains pinned to older `183650be` / `3f1f7424`; owner must refresh it to current source/test/docs/PR heads.
+
+---
+
 ## PHX-MASTER UTC23 follow-up — #367 current head supersedes earlier tree snapshot (2026-11-27T23:52Z)
 
 - Current #367 head `f7abed43a46f9e85976d5c2897f927609cd2f446`: 2,439 entries / 1,893 blobs / 546 trees, non-truncated; 9 changed paths, no production `.ino` changes.
