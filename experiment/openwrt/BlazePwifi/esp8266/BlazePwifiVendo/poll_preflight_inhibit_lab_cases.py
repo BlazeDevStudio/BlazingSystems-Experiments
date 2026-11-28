@@ -251,6 +251,9 @@ def verify_deny_latch_monotonicity(name: str, source: str) -> None:
         ("coin-reinterpret-reference-alias", "bool& coinReinterpretAlias = reinterpret_cast<bool&>(coinEnabled);"),
         ("relay-cstyle-reference-alias", "bool& relayCStyleAlias = (bool&)relayEnabled;"),
         ("insert-cstyle-reference-alias", "bool& insertCStyleAlias = (bool&)insertMode;"),
+        ("coin-using-reference-type-alias", "using CoinEnabledRef = bool&; CoinEnabledRef coinAlias = coinEnabled;"),
+        ("relay-typedef-reference-type-alias", "typedef bool& RelayEnabledRef; RelayEnabledRef relayAlias = relayEnabled;"),
+        ("target-chained-reference-type-alias", "using BaseTargetRef = String&; using TargetRef = BaseTargetRef; TargetRef targetAlias = activeTarget;"),
         ("led-reinterpret-reference-write", "reinterpret_cast<bool&>(ledEnabled) = true;"),
     )
     for label, statement in alias_mutations:
@@ -260,6 +263,7 @@ def verify_deny_latch_monotonicity(name: str, source: str) -> None:
     decoy_source = source + (
         "\nvoid injected_logical_and_read_only() { bool accepting = controllerEnabled && coinEnabled; }\n"
         "\nvoid injected_local_reference_controls() { bool localFlag = true; auto&& localMove = std::move(localFlag); decltype(auto) localRef = (localFlag); }\n"
+        "\nusing LocalBoolRef = bool&; typedef bool& LocalTypedefRef;\nvoid injected_local_type_alias_controls() { bool localFlag = true; LocalBoolRef localAlias = localFlag; LocalTypedefRef localTypedefAlias = localFlag; }\n"
         "\n// bool *decoy = &coinEnabled; auto&& ignored = std::move(controllerEnabled); reinterpret_cast<bool&>(coinEnabled); (bool&)relayEnabled;\n"
         'const char *aliasNote = "bool &decoy = relayEnabled; std::ref(activeTarget); std::forward<bool&>(insertMode); const_cast<bool&>(ledEnabled); reinterpret_cast<bool&>(coinEnabled); (bool&)insertMode;";\n'
     )
@@ -268,7 +272,7 @@ def verify_deny_latch_monotonicity(name: str, source: str) -> None:
     print(f"DENY_LATCH_ALIAS_DECOYS_IGNORED {name}")
     print(f"DENY_LATCH_MONOTONIC_PASS {name}")
     print(f"DENY_LATCH_MUTATIONS_REJECTED {name} 7/7")
-    print(f"DENY_LATCH_ALIAS_MUTATIONS_REJECTED {name} 14/14")
+    print(f"DENY_LATCH_ALIAS_MUTATIONS_REJECTED {name} 17/17")
     print(f"DENY_LATCH_CAST_MUTATIONS_REJECTED {name} 4/4")
 
 def verify_board(name: str, path: Path):
