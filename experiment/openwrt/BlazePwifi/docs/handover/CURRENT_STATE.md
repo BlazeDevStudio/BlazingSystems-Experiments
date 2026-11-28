@@ -1,3 +1,19 @@
+## PHX-HARDWARE UTC04 — IN PROGRESS: execute EEPROM loadCfg migration paths in the native lab
+
+- Work item: `PHX-HW-EEPROM-LOADCFG-RUNTIME-20261128T04Z`.
+- Branch: `phoenix/hw-eeprom-loadcfg-runtime-harness-20261128-utc04`; base PR #371 exact head: `18a3fa470970e729a02920607562f4b9a1e50d34`.
+- Intent: extend the existing ESP8266 EEPROM config-integrity lab so the host fixture executes the actual source-extracted `loadCfg()`, `defaults()`, and `saveCfg()` paths. Cover valid current Config acceptance, valid ConfigV1 migration, every unterminated current/legacy string field, commit-failure preservation, and next-boot retry.
+- Owned surfaces: `config_storage_integrity_lab.py`, `config_storage_integrity_lab_harness.py`, the Hardware focused-workflow branch allowlist, and Hardware-owned handovers/provenance only.
+- Safety boundary: host-only source-extracted fixture. No production sketch, config schema, controller API, finance, migration runtime, signer/witness, QA-owned assertion, COE destination, device or physical EEPROM is changed.
+- Hazards: the fake EEPROM must distinguish durable bytes from staged writes; a failed `commit()` must not update durable storage. The harness is SIMULATED/CI evidence, not electrical/brown-out acceptance.
+- Success proof: C++11 ASan/UBSan execution of current/legacy startup paths; invalid fields never migrate; failed commit preserves the prior durable image and a later boot retries; exact-head focused GitHub Actions PASS.
+- Failure proof: any invalid current/legacy field is accepted, migration/default writes appear durable after failed commit, or retry fails.
+- Rollback: revert only the new host-lab/harness/workflow change on this child branch; leave parent #371 and protected PRs untouched.
+- Status: IN_PROGRESS; tests NOT RUN at this checkpoint.
+- Updated UTC: 2026-11-28T04:40Z.
+
+---
+
 ## PHX-HARDWARE UTC19 — startup GPIO sequence lab modularization
 
 **PR #366: OPEN / DRAFT / UNMERGED** — child of #365; base remains e65b0b895af9c3fc5e5632f704cb67b347e69725.
