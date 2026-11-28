@@ -1,3 +1,13 @@
+## PHX-MASTER UTC02 terminal CI refresh — Hardware PR #369 (2026-11-28T02:57Z)
+
+PR #369 current head c3648fbb1ce7dbd905a061be0aaa81dcb18b511e is now terminal on all three workflows: Focused #46100115505 PASS (17/17 alias mutations per board); Mbed #46100115477 PASS 3/3; Full #46100115480 TERMINAL FAILURE at QA-owned validate job 140840509447, Controller protocol parity / tests/controllers.sh:21 config_revision presence assertion. All 14 target/platform jobs, including Android, passed; validation-dependent simulation/update/sign/publication stages were skipped.
+
+The previous #369 head 616e2975 Full #46099926023 failed the mandatory handover freshness gate. Current c3648fbb differs by one CHANGE_LEDGER.md-only commit (+12 lines), passes mandatory handover freshness, and reaches the inherited QA controller assertion. The current #369 tree is 2,443 entries / 1,897 blobs; production ESP32/ESP8266 .ino blobs remain identical to #368. Seven changed paths are workflow/handover/lab-contract only.
+
+Hardware's existing UTC02 checkpoint #7232624756 and PR #369 body still say Android is in progress and should be refreshed by HARDWARE in place with the terminal Full result. Master does not edit Hardware-owned records. QA owns the stale assertion; CORE owns authenticated controller response contracts.
+
+---
+
 ## PHX-MASTER UTC02 follow-up — Hardware PR #369 current exact head (2026-11-28T02:52Z)
 
 PR #369 is now at c3648fbb1ce7dbd905a061be0aaa81dcb18b511e, stacked on #368 at 9885c81d934922fe35777d5c8f7245766b622255. Source/test commit remains 5e3c802ce9ccf21c621fd99807604eb3baf56b27. Current exact-head Focused #46100115505 PASS; Mbed #46100115477 IN_PROGRESS (source-contract PASS, ESP32 3.3.13/4.0.0 builds running); Full #46100115480 IN_PROGRESS, with validate job 140840509447 already FAILED at QA-owned Controller protocol parity while several target/platform jobs remain in progress. Do not call Full terminal yet.

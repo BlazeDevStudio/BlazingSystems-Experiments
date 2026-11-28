@@ -126,3 +126,16 @@ After the initial UTC02 audit, HARDWARE opened PR #369 and posted its single UTC
 - The existing Hardware UTC02 checkpoint #7232624756 and PR #369 body still reference the prior 616e2975 head and old run IDs. HARDWARE owns refreshing its own PR body/checkpoint in place once exact-head CI reaches terminal state. Master does not edit Hardware-owned records.
 - Route-level COE #26 counts are unchanged from the #369 tree comparison; candidate remains frozen.
 
+
+
+## PHX-MASTER UTC02 terminal CI refresh — Hardware PR #369 (2026-11-28T02:57Z)
+
+- Current #369 head c3648fbb1ce7dbd905a061be0aaa81dcb18b511e: Focused #46100115505 PASS (17/17 alias mutations per board); Mbed #46100115477 PASS 3/3; Full #46100115480 TERMINAL FAILURE at QA-owned validate job 140840509447, Controller protocol parity / tests/controllers.sh:21 config_revision presence assertion.
+- All 14 target/platform jobs including Android passed. Validation-dependent simulation, update, signing and publication stages were skipped. The Full workflow is now terminal, not in progress.
+- Previous head 616e2975 failed handover freshness; current c3648fbb differs by a CHANGE_LEDGER.md-only commit (+12 lines), passes mandatory handover freshness, then reaches the inherited QA assertion.
+- Current #369 tree: 2,443 entries / 1,897 blobs. Production ESP32/ESP8266 .ino blobs unchanged from #368. Seven changed paths are workflow/handover/lab-contract only.
+- Hardware's existing UTC02 checkpoint #7232624756 and PR #369 body still say Android is in progress; HARDWARE should refresh those existing records in place with terminal results. Master does not edit Hardware-owned records.
+- COE #26 remains frozen; cleanup #266 remains 0/7; P0 #177/#31/#32/#34/#43 remain open; private registry v11/newer corrections NOT_RECOVERED; PRODUCTION NO-GO.
+
+---
+
