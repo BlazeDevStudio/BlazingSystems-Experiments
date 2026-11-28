@@ -1,3 +1,21 @@
+## PHX-MASTER UTC15 role refresh — exact current heads and CI (2026-11-28T15:36:30Z)
+
+| Role / PR | Exact head | Exact-head evidence |
+|---|---|---|
+| CORE #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | Build #42698139210 PASS; CORE remains owner-only and untouched. |
+| RENTAL #289 | `68928774d0d7cf65adb26bc6b54199a3159d066c` | Build #43653329229 and native auth #43653329235 PASS. |
+| RENTAL #328 | `10fc200b6dbf470a95e679d3acc58aff4ab2a67f` | Build #45622918468 FAIL; API21/23 smoke #45622918364, native auth/recovery #45622918551 and APK identity #45622918340 PASS. |
+| PISONET #255 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | Windows release #42462978704 PASS; native COM acceptance not established. |
+| QA #290 | `5c29d15994cee1279058f1eca12f2a3180704292` | Windows synthetic #43633486963 PASS. |
+| QA #292 | `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | No exact-head workflow. |
+| RELEASE #291 | `bf339a76964a1abe2412fac45392fe06a8e66418` | No exact-head workflow. |
+| HARDWARE #377 | `95e54790ab986dab3c1b3723ea9603a3d125c0d6` | Poll #46158944089 PASS; Mbed #46158944181 3/3 PASS; Native #46158944131 FAIL PAY-0745; Full #46158944182 FAIL Controller parity after 14/14 target jobs PASS. |
+| HARDWARE #376 | `22ff6eb054b9578daf74a30d5c04d51fd754917e` | Focused #46157303529 PASS; Mbed #46157303545 3/3 PASS; Full #46157303505 PASS; publish/sign jobs skipped. |
+| HARDWARE #374 / #375 | `cfb19ed5...` / `94b1231c...` | Preserved parent branches. #377 merge commit 4d99c023 has #374 first parent and #375 second parent; nine overlaps reconciled in #377. |
+
+QA owns PAY-0745 and Controller parity assertions. HARDWARE owns #376/#377 source, sequencing and handovers. CORE owns authenticated controller/financial contracts. Master made no subsystem source/test changes.
+
+---
 ## PHX-MASTER UTC14 role refresh — exact current heads and CI (2026-11-28T14:36:52Z)
 
 | Role / PR | Exact current head | Exact-head evidence |

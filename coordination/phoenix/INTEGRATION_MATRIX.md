@@ -1,3 +1,27 @@
+## PHX-MASTER UTC15 integration refresh — #377 parent reconciliation and #376 cross-stack overlap (2026-11-28T15:36:30Z)
+
+### HARDWARE #374/#375 reconciliation
+
+- #377 head `95e54790ab986dab3c1b3723ea9603a3d125c0d6`, base #374 `cfb19ed5df920bf5fa7e33e08dc73a25f8b14db9`.
+- Merge commit `4d99c023aa65ed84c6e80d705acc3da044d13075`: first parent #374; second parent #375 `94b1231c631eb32da0f019604ce00a4a0851a471`.
+- The original #375 branch is preserved. All nine #374/#375 shared paths are reconciled in the two-parent integration; no merge approval is implied.
+- #377 Poll/Mbed PASS; Native PAY-0745 FAIL; Full Controller parity FAIL after 14/14 target builds PASS.
+
+### Separate #376/#377 collision
+
+- #376 `22ff6eb054b9578daf74a30d5c04d51fd754917e` is based on #356 `0ea32d31ed5c902b2187d98c181aab14bc9fdeae`; Focused, Mbed 3/4 and Full CI PASS, while publication/signing jobs are skipped.
+- #376 and #377 overlap on exactly `PROJECT_HANDOVER.md`, `CURRENT_STATE.md`, and `CHANGE_LEDGER.md`. Their source/tool/workflow files otherwise do not overlap.
+- #356 and #374 diverge from active v0.6 `2fbd2475...` (280 ahead / 26 behind from #356 to #374). No simple child order is safe to assume. HARDWARE must choose the canonical integration order and reconcile all three append-only records before any merge.
+
+### COE #26 provenance correction
+
+- Pinned source tree 2,391; current source main 2,341; COE candidate 286; none truncated.
+- Runtime 61/61 exact blob+mode; actual 46 identical / 15 derived vs declared 47 / 14. Source-main drift 33 unchanged / 20 changed / 8 absent.
+- Original tests 4/4 exact; derived tests 15/15 exact at destination; migration map 14 derived rows, missing voucher row, stale run_focus/member_txn_journal hashes.
+- Legal artifacts: 11 source / 4 destination; all four in-scope first-party/runtime license records match exact blobs. Seven other source legal artifacts are outside the PisoWiFi-only intake (Android, R281 Rental, jsqr test vendor, UI vendor), not missing migration counterparts.
+- Destination branch pin stale; five candidate workflows CANCELLED; no staging or destination write.
+
+---
 ## PHX-MASTER UTC14 integration refresh — exact ancestry, 9 overlaps and COE identity (2026-11-28T14:36:52Z)
 
 ### HARDWARE branch graph

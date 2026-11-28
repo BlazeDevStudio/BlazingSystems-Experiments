@@ -1,3 +1,13 @@
+## PHX-MASTER UTC15 architecture/interface decision — deny-only boundary and storage guard scope (2026-11-28T15:36:30Z)
+
+- #377's `pollDenyOnly()` candidate keeps admission denied before and after the blocking poll and discards the poll response. It does not establish authenticated response acceptance, durable pulse retention, or fix active v0.6.
+- Active v0.6 still performs synchronous poll before first coin sample on both boards (ESP8266 354→357; ESP32 314→318; 3,500 ms timeout). Keep P0 #177 OPEN and coin/relay admission denied.
+- #376's STORCHK-0674 superblock `rw` guard is a read-only preflight/synthetic fixture improvement. Its Full workflow passes, but release/signing/publish jobs are skipped; it is not physical scratch-media or brown-out acceptance.
+- #377 still fails QA-owned PAY-0745 and Controller parity. QA must validate semantic fail-closed behavior rather than literal source tokens; CORE owns authenticated register/poll/receipt/disposition contracts.
+- Three append-only handover files overlap between divergent #376/#377 stacks. Preserve original bytes/history and require HARDWARE-owned canonical sequencing before integration.
+- Financial promotion remains blocked on crash-atomic durable state, independent protected signing/anti-rollback witness, reversible migration, independent QA, native acceptance, 150 real power cuts and 30-device/24-hour soak.
+
+---
 ## PHX-MASTER UTC14 architecture/interface decision — deny boundary and branch order (2026-11-28T14:36:52Z)
 
 - HARDWARE stack order: retain #366 → #373 → #374; carry #375's five commits onto a new child of #374. Resolve nine overlapping paths manually and preserve `PROJECT_HANDOVER.md`, `CHANGE_LEDGER.md`, and `CURRENT_STATE.md` append-only history. No force-push, merge, or source change by Master.

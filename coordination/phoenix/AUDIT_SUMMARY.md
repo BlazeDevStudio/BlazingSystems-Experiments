@@ -1,3 +1,17 @@
+## PHX-MASTER UTC15 audit summary — exact #377/#376, role CI and COE provenance (2026-11-28T15:36:30Z)
+
+**Result:** coordination-only audit and documentation update. PR #288 remains OPEN / DRAFT / UNMERGED. No subsystem source or destination repository was changed.
+
+- #377 now records the earlier nine-path #374/#375 integration with exact two-parent ancestry. Poll and Mbed pass; Native PAY-0745 and Full Controller parity fail. #376 Full CI passes, but #376/#377 have three shared append-only handovers and divergent branch ancestry; HARDWARE sequencing is still blocked.
+- Current role CI: CORE #252 build PASS; RENTAL #289 build/native auth PASS; RENTAL #328 build FAIL with API21/23 smoke/native auth/APK identity PASS; PISONET #255 Windows PASS; QA #290 Windows PASS; QA #292 and RELEASE #291 have no exact-head workflow.
+- Active v0.6 remains poll-before-first-sample on ESP8266 (354→357) and ESP32 (314→318), with 3,500 ms synchronous timeout. P0 #177 OPEN.
+- COE #26: 61/61 runtime blob/mode exact; actual 46/15 vs declared 47/14; current-source drift 33/20/8; 4 original tests and 15 derived tests match, but map omits voucher and has two stale hashes. Four in-scope legal artifacts are exact; seven other source legal files are outside this PisoWiFi-only intake. Destination branch pin stale; five workflows cancelled.
+- Cleanup #266 OPEN / 0-of-7; ownership manifest 11 routes / DRAFT_REVIEW_ONLY / Master target null. Private registry v11/newer corrections NOT_RECOVERED; no Drive connector.
+- Nine bounded in-memory/source-tree assertions PASS. Master repository suite, `verify_coordination.py` and Master CI NOT RUN because no authenticated non-Codex checkout is available.
+
+**BLOCKED / PRODUCTION NO-GO.** Independent protected signing/anti-rollback witness, crash-atomic financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized gates remain unverified.
+
+---
 ## PHX-MASTER UTC14 continuation — exact stack and migration revalidation (2026-11-28T14:36:52Z)
 
 **Role/task:** PHX-MASTER · `PHX-MASTER-20261128T14Z-HW375-COE26-OVERLAP-RECONCILIATION` · audit input `42dc13a7b732ff56152ec2170f2c61904b3dc67f` · coordination-only.

@@ -1,3 +1,13 @@
+## PHX-MASTER UTC15 — #377 stack integration, #376 shared handovers, and COE scope correction (2026-11-28T15:36:30Z)
+
+- [UTC15 audit report](PHX_MASTER_UTC15_20261128_HW377_STACK_COE26_PROVENANCE_AUDIT.md).
+- HARDWARE #377 now contains the owner-executed #374-first / #375-second-parent integration; nine earlier overlaps are reconciled. #377 remains DRAFT: Poll/Mbed pass, Native PAY-0745 and Full Controller parity fail.
+- Separate HARDWARE #376 Full CI now passes, but #376/#377 overlap on `PROJECT_HANDOVER.md`, `CURRENT_STATE.md`, and `CHANGE_LEDGER.md`; their branches diverge from active v0.6. Owner sequencing still required.
+- COE #26 remains FROZEN: 61/61 runtime rows exact; actual 46/15 vs declared 47/14; 15 derived tests vs 14 map rows; voucher row missing; two stale hashes. Licensing scope corrected: 4/4 in-scope legal artifacts match; seven other source legal files are outside this PisoWiFi-only intake.
+- Registry v11/newer corrections NOT_RECOVERED; no Drive connector. Master repository tests NOT RUN; nine bounded in-memory assertions PASS. Cleanup #266 remains 0/7; P0 #177 OPEN.
+- **PRODUCTION NO-GO.** No merge, staging, release, flash, physical test, payment or financial migration.
+
+---
 ## PHX-MASTER UTC14 revalidation — exact 9-path overlap and owner sequence (2026-11-28T14:36:52Z)
 
 - Audit input: `phoenix/master-coordination@42dc13a7b732ff56152ec2170f2c61904b3dc67f`; Experiments main `6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5`, development `aad3aade72c1156eecba1fed30907c6d0283b2c5`, active v0.6 `2fbd2475e9f54878c316fa7cea2f228386b0e859`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`, PR #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`.
