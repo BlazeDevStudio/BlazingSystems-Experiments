@@ -1994,3 +1994,14 @@ Physical GPIO/relay behavior, LittleFS power-loss durability, 150 power cuts, 30
 - Full run [#46094498502](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46094498502), validation job `140822787592`: FAILED the handover freshness gate because `CHANGE_LEDGER.md` still had last checkpoint commit `4e558a06`. `PROJECT_HANDOVER.md` and `CURRENT_STATE.md` were already refreshed; this entry appends the matching ledger evidence. A fresh Full run is required.
 - At the last read, ESP8266 and multiple OpenWrt target jobs passed; ESP32, Android and other targets were still running. No terminal Full target aggregate is claimed from that run.
 - No production sketch, CORE API, finance, journal disposition, QA assertion, migration, signer, witness or COE file changed. Physical GPIO/relay acceptance remains NOT TESTED; HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+
+
+## 2026-11-28 UTC01 — PHX-HARDWARE PR #368 cast-alias contract evidence and recovery
+
+- Role: PHX-HARDWARE; branch: `phoenix/hw-deny-latch-cast-alias-20261128-utc01`.
+- PR: https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/368 (OPEN / DRAFT / UNMERGED).
+- Source/test commit: `b35072bfb2b74f3bc4bdca31381d178261d1ae35`; latest pre-recovery head: `5a58fd7ebea1d9e97f4e39107b18afecfdd47828`.
+- Focused run #46094498476, exact head `d8bf447e`, job `140822646418`: PASS. ESP8266 and ESP32 each rejected 14/14 deny-latch alias mutations, including 4/4 C-style/reinterpret-cast cases.
+- Full run #46094498502 validation job `140822787592`: failed handover freshness because this ledger checkpoint was stale at `4e558a06`. Root `PROJECT_HANDOVER.md` and `CURRENT_STATE.md` had already been refreshed. This entry restores the complete prior ledger blob and appends this evidence.
+- **Recovery note:** an intermediate ledger-update commit `5a58fd7e` contained only the new entry because the large-file reader returned an empty content window. It was not merged. This correction restores the exact original Git blob prefix `1616d32103fd20b594a5444e9cb0363b39bbd9c6` byte-for-byte and appends the evidence. No history was force-pushed or rewritten.
+- No production sketch, CORE API, finance, journal disposition, QA assertion, migration, signer, witness or COE file changed. Physical acceptance remains NOT TESTED; HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
