@@ -386,6 +386,16 @@ String post(const String& action,const String& pulses="0",const String& target="
   String r=code>0?h.getString():""; h.end(); return r;
 }
 
+void pollDenyOnly(){
+  // Keep the only synchronous poll boundary deny-only until CORE/QA approve
+  // the authenticated response contract. Never return or consume poll data.
+  wifiFailures=0;
+  denyRemoteControl();
+  (void)post("poll");
+  denyRemoteControl();
+  lastPoll=millis();
+}
+
 void applyOutputs(){
   bool accepting=configStoreReady && controllerEnabled && coinEnabled && insertMode && fsReady && !pendingReady;
   if(ledEnabled) writeLogical(runLedPin,accepting,runLedActiveHigh); else writeLogical(runLedPin,false,runLedActiveHigh);
@@ -497,13 +507,7 @@ void loop(){
   }
 
   if(WiFi.status()==WL_CONNECTED && configStoreReady && millis()-lastPoll>1500){
-    wifiFailures=0;
-    // P0: disable the physical coin acceptor before the blocking 3.5s HTTP wait.
-    // Keep the poll response discarded until CORE's authenticated contract is approved.
-    denyRemoteControl();
-    (void)post("poll");
-    denyRemoteControl();
-    lastPoll=millis();
+    pollDenyOnly();
   }
 
   bool raw=digitalRead(runCoinPin);

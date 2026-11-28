@@ -2213,3 +2213,51 @@ Source/test commit `8d33f53396a9357f4e2d2dd931e66ce2bfc91765` on `phoenix/hw-loa
 - This confirms the template extraction executes in the existing native C++11 ASan/UBSan test; it does not change the inherited controller-parity blocker.
 
 No production `.ino`, controller API, config schema, finance/receipt state, QA-owned assertion, signer/witness, COE destination or physical device changed. Physical EEPROM/NVS brown-out and all required electrical/hardware acceptance remain **NOT TESTED**. HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
+
+## PHX-HARDWARE UTC15 — canonical #374/#375 deny-only poll integration
+
+**Updated:** 2026-11-28T15:13:12.800Z  
+**PR:** [#377](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/377) OPEN / DRAFT / UNMERGED.  
+**Branch:** `phoenix/hw-poll-deny-wrapper-child-20261128-utc15`  
+**Integration commit:** `4d99c023aa65ed84c6e80d705acc3da044d13075` (first parent #374 `cfb19ed5df920bf5fa7e33e08dc73a25f8b14db9`; second parent #375 `94b1231c631eb32da0f019604ce00a4a0851a471`).
+
+Following PHX-MASTER's UTC14 decision in PR #288, the five-commit #375 delta is preserved as the second parent of a new child of #374. The original #375 branch was not rewritten. The nine shared paths were manually reconciled; the #374 ESP8266 configuration-store readiness guard remains in the sketch and source contract.
+
+Both sketches now centralize the deny-only synchronous poll boundary in `pollDenyOnly()`: pre-poll deny/GPIO-off, discarded poll response, post-poll deny, then completion timestamp. No coin admission, response application, pending-journal clearing, CORE API, QA-owned assertion, finance, signer, witness, or migration behavior was enabled or changed.
+
+The #375 host GPIO mutation regression and source-contract changes were carried into the child. Exact #375 historical evidence: Poll push #46153921703 / job 141006279696 PASS; Mbed push #46153921753 3/3 PASS; Native #46153921746 FAIL at QA-owned PAY-0745; Full #46153917616 FAIL at QA-owned controller parity after 14/14 target builds PASS. These results do **not** transfer to the new child SHA.
+
+**New-child exact-head CI:** pending; no local repository checkout/test run is claimed. Physical acceptor/relay polarity, pulse retention, EEPROM/NVS brown-out, 150 power cuts, 30-device/24-hour soak and electrical pulse/recovery remain NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+
+The existing append-only `CHANGE_LEDGER.md` and all prior handover history are preserved unchanged; this UTC15 record is appended here and in the new narrow handover. Next action: inspect exact-child Poll, Mbed, Native and Full Actions; retain QA/CORE ownership of their blockers.
+
+
+
+## PHX-HARDWARE UTC16 — #376/#377 independent-stack reconciliation (2026-11-28T16:03:49Z)
+
+**Canonical sequencing:** keep the two Hardware drafts independent; do not merge, cherry-pick, or rebase one onto the other.
+
+- **Storage preflight:** PR #376, `phoenix/hw-storage-superblock-rw-guard-20261128-utc14`, final docs head `627bf4f53199a337e3821bf634e53b6289d2c671`, source/test head `22ff6eb054b9578daf74a30d5c04d51fd754917e`, child of #356 at `0ea32d31ed5c902b2187d98c181aab14bc9fdeae`. It remains a read-only STORCHK-0674 preflight stack.
+- **Poll/firmware candidate:** PR #377, `phoenix/hw-poll-deny-wrapper-child-20261128-utc15`, source/test head `95e54790ab986dab3c1b3723ea9603a3d125c0d6`, child of #374 at `cfb19ed5df920bf5fa7e33e08dc73a25f8b14db9`, with #375 preserved as second parent `94b1231c631eb32da0f019604ce00a4a0851a471`. It remains deny-only and is not integrated into active v0.6.
+- The shared append-only handovers (`PROJECT_HANDOVER.md`, `docs/handover/CURRENT_STATE.md`, `docs/handover/CHANGE_LEDGER.md`) now cross-reference both branches. Neither is promoted to main or to active v0.6. Master retains integration/merge authority.
+
+### #376 exact-head evidence
+
+- Focused STORCHK [#46157303529](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46157303529), job `141016684329`: PASS; writable positive accepted; read-only target/scratch superblocks, malformed/missing `rw`, and read-only mount options rejected.
+- Mbed TLS [#46157303545](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46157303545): 3/3 PASS — source contract `141016798875`, core 3.3.13 `141016799074`, core 4.0.0 `141016799081`.
+- Full [#46157303505](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46157303505): SUCCESS — validation `141016811425` PASS, 14/14 target/platform jobs PASS, 9/9 v0.4 simulation jobs PASS, update bundle `141017868047` PASS; production import/sign/release stages skipped.
+- Artifacts: Full evidence [15267944217](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46157303505/artifacts/15267944217); Mbed core 3.3.13 [15268775146](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46157303545/artifacts/15268775146); core 4.0.0 [15268525760](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46157303545/artifacts/15268525760).
+- Focused output explicitly states `SIMULATED_ONLY=1`, `PHYSICAL_POWER_CUT_VERIFIED=0`, `CUSTOMER_INSTALL_AUTHORIZED=0`.
+
+### #377 exact-head evidence
+
+- Poll [#46158944089](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46158944089), job `141021690629`: PASS, simulated-only.
+- Mbed [#46158944181](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46158944181): 3/3 PASS.
+- Native [#46158944131](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46158944131): FAIL at QA-owned PAY-0745 literal corrupt-state assertion.
+- Full [#46158944182](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46158944182): handover gates PASS and 14/14 target/platform jobs PASS; validation FAIL at QA-owned controller parity (`config_revision`); candidate/sign/publish skipped.
+
+### Blockers and next actions
+
+P0 #177 remains OPEN: active v0.6 `2fbd2475e9f54878c316fa7cea2f228386b0e859` still polls synchronously before first coin sample on both boards. #377 is a candidate only. QA owns PAY-0745/controller-parity semantics; CORE owns authenticated register/poll/receipt/disposition; MASTER owns role/integration pins. Physical relay/pulse/power acceptance, 150 power cuts, 30-device/24-hour soak, protected signer/witness, v1-to-v2 migration, durable accounting/replay and independent QA/release signoff remain NOT TESTED / NOT ACCEPTED.
+
+No firmware/API/finance source, COE destination, physical device, or production state changed in this reconciliation. Both PRs remain OPEN / DRAFT / UNMERGED.
