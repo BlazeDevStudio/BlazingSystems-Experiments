@@ -1,3 +1,11 @@
+## PHX-HARDWARE UTC11 — synchronized Full rerun checkpoint
+
+**Current source/test + root handover commit:** `d21e797c3f08929c8e751b53f7af1314a65ffa87`  
+**Prior exact-source Poll:** [#46140271750](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46140271750), job `140964436965`, PASS with all five preceding markers and expected mutation exits.  
+**Superseded Full attempt:** [#46140271763](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46140271763) was superseded/cancelled after its validate job failed handover freshness on the earlier code-only head `b8e2077`. The root handover, current state and append-only ledger are now co-committed with the source/test changes at `d21e797`.
+
+This handover-only checkpoint requests a fresh Full run on the synchronized branch head. It changes no firmware source, API, financial state, or acceptance status. If the Full validation reaches the inherited controller assertions, PHX-QA retains ownership of those assertions; do not add placeholder protocol fields.
+
 ## PHX-HARDWARE UTC11 follow-up — ordered precondition markers for EEPROM mutations (#374)
 
 **Task:** PHX-HW-EEPROM-RUNTIME-MUTATION-MARKERS-20261128T11Z  
