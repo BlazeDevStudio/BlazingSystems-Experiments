@@ -3493,3 +3493,10 @@ Application/source snapshot is still exact520; this note is metadata only.
 - Focused CI #46156397146 job 141013890732 PASS at the pre-sync head; Full #46156397106 validation job 141013938648 failed only because the canonical root handover/current-state/ledger checkpoint had not yet been refreshed. This entry and the current-state handover are co-committed with the source/test update to make the next exact-head Full check meaningful.
 - Classification: SIMULATED / CI VERIFIED only. No physical mount, power cut, write, flash, reset, payment, migration, signer/witness, merge, release or deployment. `physical_powercut_verified=0`; `customer_install_authorized=0`.
 - Historical ledger prefix preserved byte-for-byte; this entry is appended only. Production remains NO-GO.
+
+## 2026-11-28 — PHX-HARDWARE STORCHK-0674 test-harness correction
+
+- PR #376: corrected over-escaped POSIX `sed` address expressions in the synthetic superblock-options regression; retained `rwx`, `notrw`, and missing-`rw` negative cases.
+- Exact focused run #46156833024 job 141015236831 failed at the test step with `sed: can't find label for jump`; existing STORCHK mountinfo and physical-parent tests passed. This was a harness syntax error, not a parser false-acceptance result.
+- Prior focused run #46156397146 job 141013890732 passed the original read-only-superblock regression on exact checkout 13f8732d93b7a5897dcd23dceccb0853b14b40ee. Corrected test and current-state records are co-committed for a new exact-head run.
+- SIMULATED / CI only; no hardware or customer operation. Historical ledger prefix preserved byte-for-byte; this record is append-only. Production NO-GO.

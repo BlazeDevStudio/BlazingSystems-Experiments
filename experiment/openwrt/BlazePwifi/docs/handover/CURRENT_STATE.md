@@ -1,3 +1,19 @@
+## PHX-HARDWARE UTC14 — STORCHK-0674 test-harness correction
+
+**Updated:** 2026-11-28T14:56:00Z  
+**DRAFT PR:** [#376](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/376)  
+**Branch:** `phoenix/hw-storage-superblock-rw-guard-20261128-utc14`  
+**Previous head:** `6793c9e749081f5494f744896976aa1c495a4681`
+
+The first docs-synced exact-head focused run [#46156833024](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46156833024), job `141015236831`, failed in the new synthetic harness because three newly added `sed` address expressions were over-escaped (`sed: can't find label for jump`). This was a test-harness syntax defect, not a parser acceptance failure. The existing mountinfo/physical-parent suite passed before the new harness step. The earlier focused run [#46156397146](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46156397146), job `141013890732`, passed the original read-only-superblock regression on exact checkout `13f8732d93b7a5897dcd23dceccb0853b14b40ee`.
+
+Correction: normalize the three test-only path expressions to the same single-backslash POSIX BRE form already used by the passing cases. The added `rwx`, `notrw`, and missing-`rw` mutations remain in place. The parser logic is unchanged by this correction.
+
+Full run [#46156833042](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46156833042) was still in progress at the time of this update; no terminal result is claimed. This commit co-updates the source test and canonical root handovers/ledger so the next exact-head Full validation does not fail merely because those records lagged the source change.
+
+All evidence remains SIMULATED / CI only. No mount, write, power cut, flash, reset, payment, migration, merge, release or deployment occurred. Production NO-GO.
+
+---
 ## PHX-HARDWARE UTC14 — STORCHK-0674 writable-superblock guard
 
 **Updated:** 2026-11-28T14:50:00Z  

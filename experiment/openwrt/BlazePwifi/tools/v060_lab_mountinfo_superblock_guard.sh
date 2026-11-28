@@ -50,11 +50,11 @@ sed '/\/tmp\/blaze-v2-native-test01/s/rw,relatime/ro,relatime/' "$TEMP/good" > "
 check_bad "$TEMP/ro-target-mount" 'read-only target mount options'
 sed '/\/mnt\/blaze-v2-lab-media-test01/s/rw,relatime/ro,relatime/' "$TEMP/good" > "$TEMP/ro-scratch-mount"
 check_bad "$TEMP/ro-scratch-mount" 'read-only scratch mount options'
-sed '/\\/tmp\\/blaze-v2-native-test01/s# /dev/sdb1 rw,data=ordered$# /dev/sdb1 rwx,data=ordered#' "$TEMP/good" > "$TEMP/bad-target-rwx"
+sed '/\/tmp\\/blaze-v2-native-test01/s# /dev/sdb1 rw,data=ordered$# /dev/sdb1 rwx,data=ordered#' "$TEMP/good" > "$TEMP/bad-target-rwx"
 check_bad "$TEMP/bad-target-rwx" 'invalid rwx token in target superblock options'
-sed '/\\/mnt\\/blaze-v2-lab-media-test01/s# /dev/sdb1 rw,data=ordered$# /dev/sdb1 notrw,data=ordered#' "$TEMP/good" > "$TEMP/bad-scratch-notrw"
+sed '/\/mnt\\/blaze-v2-lab-media-test01/s# /dev/sdb1 rw,data=ordered$# /dev/sdb1 notrw,data=ordered#' "$TEMP/good" > "$TEMP/bad-scratch-notrw"
 check_bad "$TEMP/bad-scratch-notrw" 'invalid notrw token in scratch superblock options'
-sed '/\\/tmp\\/blaze-v2-native-test01/s# /dev/sdb1 rw,data=ordered$# /dev/sdb1 data=ordered#' "$TEMP/good" > "$TEMP/bad-target-no-rw"
+sed '/\/tmp\\/blaze-v2-native-test01/s# /dev/sdb1 rw,data=ordered$# /dev/sdb1 data=ordered#' "$TEMP/good" > "$TEMP/bad-target-no-rw"
 check_bad "$TEMP/bad-target-no-rw" 'missing rw token in target superblock options'
 echo 'STORCHK-0674 SUPERBLOCK GUARD PASS: writable positive control accepted; read-only target/scratch superblocks, malformed/missing rw tokens and read-only mount options rejected'
 echo 'SIMULATED_ONLY=1; PHYSICAL_POWER_CUT_VERIFIED=0; CUSTOMER_INSTALL_AUTHORIZED=0'
