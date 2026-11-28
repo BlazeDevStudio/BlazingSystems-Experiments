@@ -1,3 +1,22 @@
+## PHX-MASTER UTC17 — stack/blob provenance and destination hold (2026-11-28T17:42:33Z)
+
+### HARDWARE exact intersections
+
+- #376 vs #377: 8 vs 14 changed files; 4 shared paths. Compare is DIVERGED 290 ahead / 36 behind, merge base active v0.6 `2fbd2475`. Exact shared blobs: `PROJECT_HANDOVER.md` differs (`0fbbd392` vs `0550730a`); `CHANGE_LEDGER.md` differs (`c609a4aa` vs `fea23f49`); `CURRENT_STATE.md` differs (`2cd7af2b` vs `be9c89f4`); the UTC16 #376/#377 reconciliation note matches exactly (`79df6029`).
+- #377 vs #378: compare DIVERGED 4 ahead / 2 behind, merge base `95e54790`. Four shared paths all differ: `PROJECT_HANDOVER.md` (`0550730a` / `14111131`), `CHANGE_LEDGER.md` (`fea23f49` / `117cae8f`), `CURRENT_STATE.md` (`be9c89f4` / `43e93d22`), and `poll_preflight_inhibit_lab_cases.py` (`ef91b15f` / `02f965ff`).
+- #378 vs #379: #379 is four commits ahead; the same four shared paths all differ: `PROJECT_HANDOVER.md` (`14111131` / `ae7b72af`), `CHANGE_LEDGER.md` (`117cae8f` / `23d09251`), `CURRENT_STATE.md` (`43e93d22` / `fb4889a1`), and `poll_preflight_inhibit_lab_cases.py` (`02f965ff` / `9b4afb22`).
+
+**Owner action:** HARDWARE must reconcile #378 against current #377, preserve append-only history, then refresh #379's child base and exact-head CI. Do not auto-rebase, merge or rewrite either branch from Master.
+
+### COE #26 staging review
+
+- COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; #26 remains OPEN/DRAFT at `b382d233ff06c8791b1028bed3c617cc7b670d12`, 205 changed files, branch `integration/ecosystem-nonproprietary-candidate-20261111`.
+- Five candidate workflows remain CANCELLED: [#43096752563](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/43096752563), [#43096752800](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/43096752800), [#43096752557](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/43096752557), [#43096752609](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/43096752609), [#43096752632](https://github.com/BlazeDevStudio/CoinOperatedEcosystem/actions/runs/43096752632).
+- The previous exact audit at this unchanged candidate head remains the provenance baseline: 61/61 runtime blob/mode matches; actual 46 identical / 15 derived vs declared 47 / 14; 15 derived test blobs vs 14 map rows; missing `voucher_txn_journal.sh`; stale `run_focus.sh` and `member_txn_journal.sh` hashes; four in-scope PisoWiFi legal artifacts exact. Destination branch pin remains stale.
+- This run re-read the 205-file PR inventory: four `Hardware/` paths and exactly four in-scope license/notice paths. No destination staging, copy, move or write.
+
+---
+
 ## PHX-MASTER UTC16 integration refresh — #378/#379 parent drift and controller envelope (2026-11-28T16:55:10Z)
 
 ### HARDWARE stack

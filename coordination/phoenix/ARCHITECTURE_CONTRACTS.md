@@ -1,3 +1,21 @@
+## PHX-MASTER UTC17 — P0 poll-order and controller contract decision (2026-11-28T17:42:33Z)
+
+### Active v0.6 source re-read
+
+- Active branch `blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859`.
+- ESP8266 sketch blob `12c4bb82b6fddafe813674a0b5f692c1d3634073`: timeout line 263, synchronous poll line 354, first `digitalRead(runCoinPin)` line 357.
+- ESP32 sketch blob `29f1125d52ff474a0d028ad41f7af201be1f0f9d`: timeout line 230, synchronous poll line 314, first coin sample line 318.
+- Source order confirms poll-before-first-sample on both boards; this is source inspection, not physical pulse testing. P0 [#177](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/177) remains OPEN.
+
+### Controller response boundary
+
+- CORE #252 head `c82705f2...`: controller library blob `1a820416...` builds a controller object containing `config_revision`; Vendo CGI blob `16eb4105...` nests it under top-level `controller` and adds top-level `config_auth` with `admission_allowed:false`.
+- HARDWARE #376's legacy `applyRemoteConfig(r)` reads flat root-level fields such as `config_revision`; it does not consume the nested envelope or verify `config_auth`.
+- HARDWARE #377 discards the poll response and reapplies deny; #379 adds test/authority checks but no controller consumer.
+- **Decision:** CORE owns the canonical versioned authenticated wire contract; HARDWARE owns a consumer only after that contract is reviewed; QA verifies semantic fail-closed behavior at the same exact SHA. No flat/nested guessing, decoy fields, invented `response_sig`, or positive admission. Coin and relay remain DENIED.
+
+---
+
 ## PHX-MASTER UTC16 interface decision — controller config envelope is not integrated (2026-11-28T16:55:10Z)
 
 - HARDWARE #376 ESP8266 blob `12c4bb82b6fddafe813674a0b5f692c1d3634073` reads `jsonInt(r,"config_revision",remoteRevision)` at line 238; ESP32 blob `6edefc9283a3a4554c15ec9c9e4a9e038e98504d` does so at line 233. The legacy consumer expects flat root-level fields.

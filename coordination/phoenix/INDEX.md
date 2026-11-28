@@ -1,3 +1,15 @@
+## PHX-MASTER UTC17 — exact-head hardware ancestry, handover blobs and P0 poll-order recheck (2026-11-28T17:42:33Z)
+
+- [UTC17 audit report](PHX_MASTER_UTC17_20261128_HW376_379_BLOB_OVERLAP_P0_POLL_COE26_AUDIT.md).
+- Live refs: Experiments main `6be5d19b`, development `aad3aade`, active v0.6 `2fbd2475`, Master input `15fdc676`; COE main `a6513ab4`, PR #26 `b382d233`.
+- HARDWARE #376/#377 diverge from active v0.6 by 290/36 commits and share four paths; three append-only blobs differ, while the UTC16 reconciliation note is identical.
+- #377/#378 diverge 4/2 from merge base `95e54790`; all four shared blobs differ. #379 is four commits ahead of #378 and all four shared blobs differ. Keep both draft; HARDWARE owner must reconcile.
+- Active v0.6 still polls before first coin sample on ESP8266 (354→357) and ESP32 (314→318). P0 #177 remains OPEN.
+- COE #26 remains FROZEN at unchanged head; five candidate workflows are CANCELLED. Prior exact 61/61 runtime provenance and test-map/hash discrepancies remain applicable; no staging/write.
+- Seven in-memory routing assertions PASS; Master repository suite and Master CI NOT RUN. Private Drive registry v11/newer corrections remain unavailable. **PRODUCTION NO-GO.**
+
+---
+
 ## PHX-MASTER UTC16 — #378/#379 stack, controller envelope and COE provenance (2026-11-28T16:55:10Z)
 
 - [UTC16 audit report](PHX_MASTER_UTC16_20261128_HW378_HW379_CONTROLLER_CONTRACT_COE26_AUDIT.md).

@@ -1,3 +1,23 @@
+## PHX-MASTER UTC17 — role/CI exact-head reconciliation (2026-11-28T17:42:33Z)
+
+| Role / PR | Exact current head | Current exact-head evidence |
+|---|---|---|
+| CORE #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | Build [#42698139210](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42698139210) PASS; CORE remains owner-only. |
+| RENTAL #289 | `68928774d0d7cf65adb26bc6b54199a3159d066c` | Build [#43653329229](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329229) and native auth [#43653329235](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329235) PASS. |
+| RENTAL #328 | `10fc200b6dbf470a95e679d3acc58aff4ab2a67f` | Build [#45622918468](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45622918468) FAIL; API21/23 smoke [#45622918364](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45622918364), native auth [#45622918551](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45622918551), APK identity [#45622918340](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45622918340) PASS. |
+| PISONET #255 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | Windows release [#42462978704](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42462978704) PASS. |
+| QA #290 | `5c29d15994cee1279058f1eca12f2a3180704292` | Windows synthetic [#43633486963](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43633486963) PASS. |
+| QA #292 | `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | No exact-head workflow run returned. |
+| RELEASE #291 | `bf339a76964a1abe2412fac45392fe06a8e66418` | No exact-head workflow run returned; PR mergeable=false. |
+| HARDWARE #376 | `0f5968b232f411943c4be3a4d4911a0da4f83fff` | Focused [#46164674619](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46164674619), Mbed 3/3 [#46164674611](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46164674611), Full [#46164674737](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46164674737) PASS; signing/publication skipped. PR body still states stale head `22ff6eb0`. |
+| HARDWARE #377 | `95ace1236c2b3e4816515c372edd4853ceeed064` | Poll [#46164676430](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46164676430) and Mbed 3/3 [#46164676331](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46164676331) PASS; Native [#46164676365](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46164676365) FAIL PAY-0745; Full [#46164676426](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46164676426) FAIL Controller parity after 14/14 target jobs. PR body still states stale head `95e54790`. |
+| HARDWARE #378 | `3f67ba41dc3e087f868d3c57f6604e69f7a0e17b` | Poll [#46162754701](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46162754701) and Mbed 3/3 [#46162754714](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46162754714) PASS; Full [#46162754741](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46162754741) CANCELLED; Native NOT RUN; mergeable=false. |
+| HARDWARE #379 | `5ac75dbb53bc36abc161fb276b6e7e80534e9b28` | Poll [#46167474941](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46167474941) and Mbed 3/3 [#46167474965](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46167474965) PASS; Full [#46167474925](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46167474925) FAIL Controller parity after 14/14 target jobs; Native NOT RUN. |
+
+**Ownership unchanged:** QA owns PAY-0745/controller parity semantics; HARDWARE owns firmware, stack sequencing and append-only handovers; CORE owns canonical authenticated controller/financial contracts; Master owns coordination only. No worker source was changed.
+
+---
+
 ## PHX-MASTER UTC16 role refresh — exact current heads and CI (2026-11-28T16:55:10Z)
 
 | Role / PR | Exact head | Exact-head evidence |

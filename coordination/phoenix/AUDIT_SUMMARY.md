@@ -1,3 +1,20 @@
+## PHX-MASTER UTC17 — live audit summary (2026-11-28T17:42:33Z)
+
+**Result:** coordination-only source/CI/provenance audit. Existing Master PR #288 remains OPEN/DRAFT/UNMERGED. Six existing Master documents and one new audit report are the only intended changes.
+
+- Live Experiments refs: main `6be5d19b`, development `aad3aade`, active v0.6 `2fbd2475`, Master input `15fdc676`; COE main `a6513ab4`, #26 `b382d233`.
+- HARDWARE #376/#377 diverge 290/36 from active v0.6; four shared paths, three append-only blobs differ. #377/#378 diverge 4/2; #378/#379 share four changed paths, all exact blobs differ. #378 remains mergeable=false.
+- #376 PR body and #377 PR body contain stale head claims; exact current API heads are `0f5968b2` and `95ace123`. #379 exact final-head CI exists despite its body saying no new final-head run appeared.
+- #377 Native fails QA-owned PAY-0745; #377 and #379 Full fail QA-owned Controller parity after 14/14 target builds. #378 Full is cancelled; #379 Native not run.
+- Active v0.6 still polls before first coin sample on both boards. P0 #177 OPEN. CORE's nested controller/config_auth response is not consumed by #376's flat-root parser; #377 remains deny-only.
+- COE #26 remains FROZEN; exact candidate head unchanged and all five workflows cancelled. Prior 61/61 runtime provenance and test-map/hash discrepancies remain open.
+- Ownership manifest remains 11 routes / DRAFT_REVIEW_ONLY / Master target null; 7/7 bounded in-memory checks PASS. Master suite, `verify_coordination.py`, and Master CI NOT RUN.
+- Private registry v11/newer corrections unavailable; no Google Drive connector. Cleanup #266 OPEN / 0-of-7. **PRODUCTION NO-GO.**
+
+No subsystem source, COE destination, ownership route, private registry, secret, device, payment or production state changed.
+
+---
+
 ## PHX-MASTER UTC16 audit summary — controller envelope, #378/#379 and COE exact provenance (2026-11-28T16:55:10Z)
 
 **Result:** coordination-only audit. PR #288 remains OPEN / DRAFT / UNMERGED. Six existing coordination documents and one new report are the only changes.
