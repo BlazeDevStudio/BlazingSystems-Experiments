@@ -1,3 +1,59 @@
+## AUTHORITATIVE LIVE LINKS
+
+- [Project Phoenix Control Plane #172](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/172)
+- [Cleanup-first #266](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/266)
+- [P0 coin-pulse/poll issue #177](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/177)
+- [Current Hardware candidate PR #375](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/375) — OPEN / DRAFT / UNMERGED; child of #366
+- [Parallel Hardware PR #374](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/374) — OPEN / DRAFT / UNMERGED; separate stack
+- [Phase A deny PR #239](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/239)
+- [ControllerAuthV1Lab PR #254](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/254)
+- [Parallel sketch PR #283](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/283)
+
+## PHX-HARDWARE UTC14 — FINAL exact-head regression and coordination blocker
+
+**Repository:** `BlazeDevStudio/BlazingSystems-Experiments` (owner namespace verified; slug unchanged).  
+**Role:** PHX-HARDWARE.  
+**PR:** #375 OPEN / DRAFT / UNMERGED; child of #366 at `07fef4e8e1055c06cf5e5c3a0d3829c52be31cc9`.  
+**Branch:** `phoenix/hw-poll-deny-wrapper-20261128-utc13`.  
+**Source/test commit:** `227658bc09fa1ab5ff9140c0b920ecc95cc7422d`.  
+**Exact tested code + docs head:** `d6bd3737e60b49a7f4cec12226396ff60e83b9f6`.
+
+### Actual Hardware-owned change
+
+Added a source-extracted mutation that removes `applyOutputs();` from the real extracted `denyRemoteControl()` body, then executes the actual pre-poll deny and 3,500 ms blocking-poll sequence against the host GPIO model. This proves that changing software deny flags without writing the relay GPIO OFF is insufficient: the injected mutation leaves the relay energized during the blocking wait and is rejected on both boards (host exit 23). Added an explicit `PREPOLL_GPIO_OFF_WRITE_MUTATION_REJECTED` marker and corrected the stale polarity comment; all four independent relay/LED polarity combinations remain exercised.
+
+No production sketch was changed in the incremental source commit. The existing PR #375 candidate stack contains deny-only sketch changes from its ancestors, but the active `blazepwifi-v0.6.0-audit-foundation` branch remains `2fbd2475e9f54878c316fa7cea2f228386b0e859`; its loop still performs synchronous `post("poll")`, consumes `insert`/target/config fields and only then samples `runCoinPin`. **P0 #177 is not resolved on the active branch.**
+
+### Exact-head Actions at `d6bd3737`
+
+- Focused Poll push [#46153921703](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46153921703), job `141006279696`: **PASS**. PR event [#46153917558](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46153917558), job `141006267901`: **PASS**. Both board logs show the new immediate-GPIO-OFF mutation rejected (exit 23), `PREPOLL_GPIO_OFF_WRITE_MUTATION_REJECTED`, six pulse windows × four polarities, five transport outcomes × four polarities, and zero accepted pulses.
+- Mbed TLS push [#46153921753](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46153921753): **3/3 PASS** — source contract `141006280238`, core 3.3.13 `141006280161`, core 4.0.0 `141006279970`. PR event [#46153917594](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46153917594): **3/3 PASS** — source contract `141006268191`, core 3.3.13 `141006267908`, core 4.0.0 `141006268113`.
+- Native [#46153921746](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46153921746), job `141006279859`: **FAIL** at QA-owned PAY-0745 assertion: `BlazePwifiVendo.ino: corrupt persisted state must halt startup`. The failing literal contract is `tests/v060_vendo_sequence_contract.py`; Hardware did not alter it.
+- Full push [#46153917616](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46153917616), validation job `141006320757`: **FAIL** at QA-owned Controller protocol parity, `tests/controllers.sh` line 21 requiring `config_revision`. The handover freshness gate and its history regression both **PASS**. ESP8266, ESP32, Android and all 11 firmware target jobs **PASS (14/14)**. Full PR event [#46153921719](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46153921719), validation job `141006484294`: same parity failure; 14/14 target jobs pass. Update bundle, simulations, production signing and publication stages were skipped after validation failure.
+- Earlier pre-sync Full [#46153565907](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46153565907) failed the handover freshness gate at source-only SHA `227658bc`; this was superseded by the exact tested docs head above, where handover freshness passes.
+
+### Master/QA coordination
+
+Master branch head is `42dc13a7b732ff56152ec2170f2c61904b3dc67f` (PR #288 remains OPEN / DRAFT). Its role assignment file `58f13679091924b8491915455acec5995b49d59d` and integration matrix `5baedaf01cfc8e5a2176809d7fbb45d72783e836` still pin #375 to old head `224bea1`. Master explicitly identifies #375 (child #366) and #374 (child #373) as separate, non-stacked Hardware branches with seven overlapping paths, and requires Hardware to select the canonical parent and reconcile append-only handovers before integration. No Master-owned file was changed. Further sketch/workflow edits are paused pending that sequencing decision.
+
+QA owns both blockers: PAY-0745 corrupt-state semantics and the literal `config_revision` controller parity assertion. CORE owns the authenticated register/poll/receipt/disposition contract. Hardware did not modify QA or CORE files.
+
+### Protected work and release state
+
+#239 remains OPEN/DRAFT at `d83b715b`; #254 remains OPEN/DRAFT at `84c442a4`; #283 remains OPEN/DRAFT at `4dd0b01b`. The #283 quarantine lifecycle still lacks an active callsite and the response-signature producer/consumer contract remains mismatched; the old unconditional-clear finding is not treated as a current defect without revalidation.
+
+Issues #172, #266, #177, #34, #31, #32 and #43 remain OPEN. COE main remains `a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE PR #26 remains `b382d233ff06c8791b1028bed3c617cc7b670d12`, OPEN/DRAFT/FROZEN. No migration or destination write occurred.
+
+The exact private Google Drive `BLAZE_PROJECT_REGISTRY_v11_20261027.json` was not available through the exposed Library/connector surface; it was not replaced with an older snapshot. No Google Drive connector action is exposed in this run. The hourly signal YAML was not found in the current repository tree or Library search; no signal comment is treated as execution.
+
+**Acceptance:** SIMULATED / CI VERIFIED for host GPIO/poll tests and target compilation only. Physical acceptor inhibit/reject, relay polarity at terminals, pulse retention, electrical recovery, EEPROM/NVS brown-out, 150 power cuts and 30-device/24-hour soak remain **NOT TESTED**. Protected signer/witness, v1→v2 migration, durable accounting/replay and independent QA/release acceptance remain **NOT ACCEPTED**. HARDWARE ACCEPTED = NO. PRODUCTION READY = NO-GO.
+
+### NEXT EXACT ACTION
+
+PHX-MASTER must choose the canonical #374/#375 parent/sequence and refresh the #375 head pin. PHX-QA must replace the PAY-0745 literal assertion with semantic fail-closed vectors and resolve controller parity with CORE's approved contract. PHX-HARDWARE must not make further overlapping sketch/workflow changes until that coordination is recorded; preserve deny-only behavior and continue P0 #177 review without enabling coin admission.
+
+---
+
 ## PHX-HARDWARE UTC19 — startup GPIO sequence lab modularization
 
 **PR #366: OPEN / DRAFT / UNMERGED** — child of #365; base remains e65b0b895af9c3fc5e5632f704cb67b347e69725.

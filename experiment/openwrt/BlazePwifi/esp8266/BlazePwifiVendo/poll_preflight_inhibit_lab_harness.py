@@ -369,13 +369,13 @@ def remove_first_code_token(source: str, token: str) -> str:
 
 def expect_poll_guard_mutation_rejected(
     name: str,
-    loop: str,
+    source: str,
     pattern: str,
     replacement: str,
     label: str,
     expected_fragment: str,
 ):
-    mutated, count = re.subn(pattern, replacement, loop, count=1)
+    mutated, count = re.subn(pattern, replacement, source, count=1)
     if count != 1:
         raise AssertionError(f"{name}: could not create {label} mutation")
     try:

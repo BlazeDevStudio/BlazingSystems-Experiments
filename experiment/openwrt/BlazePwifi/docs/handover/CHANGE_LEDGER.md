@@ -3913,3 +3913,37 @@ This is the required documentation-first IN-PROGRESS record. No source/test resu
 - This PR is a host-lab maintainability refactor only; no production sketch or shared API changed. Physical GPIO/relay, pulse retention, 150 power cuts and 30-device/24-hour soak NOT TESTED; HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
 - CHANGE_LEDGER parent prefix preserved byte-for-byte; focused append-only guard reports base_bytes=1132798 appended_bytes=43445.
 - Updated UTC: 2026-11-27T19:31:19Z.
+
+## 2026-11-28 — PHX-HW-20261128T14Z-POLL-GPIO-OFF-FAILURE-INJECTION
+
+- **Local time / UTC:** 2026-11-28 22:13:40 Asia/Manila / 2026-11-28T14:13:40Z.
+- **Role / priority / status:** PHX-HARDWARE / P0 safety evidence / committed; focused Poll CI verified; Full handover gate failed before this canonical sync.
+- **Task:** Project Phoenix issue #177; cleanup-first #266. PR #375 OPEN / DRAFT / UNMERGED, child of #366.
+- **Repository / branch:** BlazeDevStudio/BlazingSystems-Experiments; `phoenix/hw-poll-deny-wrapper-20261128-utc13`.
+- **Source/test commit:** `227658bc09fa1ab5ff9140c0b920ecc95cc7422d`.
+- **Changed path:** `experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_preflight_inhibit_lab_cases.py`.
+- **Why:** the existing source contract required `applyOutputs();` in `denyRemoteControl()`, but did not behaviorally inject its removal. The new mutation executes the extracted deny function and blocking poll against the GPIO model, proving that a logical flag change without the immediate OFF write leaves the relay energized during the wait.
+- **Exact test:** Poll [#46153565954](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46153565954), job `141005200843`, PASS at exact SHA `227658bc09fa1ab5ff9140c0b920ecc95cc7422d`. New mutation rejected on ESP8266 and ESP32 (exit 23); six pulse windows × four polarities and five transport outcomes × four polarities pass.
+- **Failed evidence retained:** Full [#46153565907](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46153565907), job `141005241203`, failed because `PROJECT_HANDOVER.md` was stale after source/workflow changes. This is a handover sequencing failure, not a firmware compile result. Mbed #46152593146 3/3 PASS and Native #46152593143 PAY-0745 failure are at preceding SHA `224bea1`, not exact current head.
+- **Rollback / risk:** revert the source/test commit; no production sketch, coin, relay, API, finance, migration, signer, witness or device state changed.
+- **Not tested:** physical acceptor inhibit/reject and relay polarity, pulse retention, electrical recovery, EEPROM/NVS brown-out, 150 power cuts, 30-device/24-hour soak.
+- **Next exact action:** re-run exact-head Poll and Full after canonical handover sync; PHX-QA to replace PAY-0745 literal assertion with semantic tests; PHX-MASTER to pin #375 and its parent chain. Keep active branch and candidate outputs deny-only.
+
+
+
+## 2026-11-28 — PHX-HW-20261128T14Z-POLL-GPIO-OFF-TERMINAL-CI
+
+- **Role / scope / priority:** PHX-HARDWARE; Project Phoenix #177 and cleanup-first #266; P0 safety evidence. Test-only incremental change plus handover synchronization; no shared API or QA source changed.
+- **Repository / branch / PR:** BlazeDevStudio/BlazingSystems-Experiments; `phoenix/hw-poll-deny-wrapper-20261128-utc13`; PR #375 OPEN/DRAFT/UNMERGED, child of #366.
+- **Source/test commit:** `227658bc09fa1ab5ff9140c0b920ecc95cc7422d`. **Exact tested code + docs head:** `d6bd3737e60b49a7f4cec12226396ff60e83b9f6`.
+- **Changed source path:** `experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_preflight_inhibit_lab_cases.py`. Added a failure injection removing `applyOutputs();` from the extracted `denyRemoteControl()` and executing the blocking poll model; both boards reject the mutation (exit 23). Added explicit rejection markers and corrected stale polarity-test commentary.
+- **Focused Poll:** push #46153921703 job `141006279696` PASS; PR #46153917558 job `141006267901` PASS. Both exact-head logs confirm new GPIO-off mutation rejection, six pulse windows × four polarity combinations, five transport outcomes × four polarities and zero accepted pulses.
+- **Mbed TLS:** push #46153921753 and PR #46153917594 each 3/3 PASS (source contract, Arduino core 3.3.13, 4.0.0).
+- **Native:** #46153921746 job `141006279859` FAIL at QA-owned PAY-0745 assertion `BlazePwifiVendo.ino: corrupt persisted state must halt startup`; not modified by Hardware.
+- **Full:** push #46153917616 validation job `141006320757` and PR #46153921719 validation job `141006484294` FAIL at QA-owned `tests/controllers.sh:21` requiring `config_revision`. Handover freshness and history regression PASS. ESP8266, ESP32, Android and all 11 firmware target jobs PASS (14/14). Update bundle, simulation, signing and publishing skipped.
+- **Coordination:** Master branch head `42dc13a7b732ff56152ec2170f2c61904b3dc67f`; ROLE_ASSIGNMENTS `58f13679091924b8491915455acec5995b49d59d` and INTEGRATION_MATRIX `5baedaf01cfc8e5a2176809d7fbb45d72783e836` pin #375 to stale `224bea1`. Master flags #374/#375 as non-stacked with seven overlapping paths; canonical-parent selection required before further integration. No Master files changed.
+- **Preservation:** previous CHANGE_LEDGER blob fetched by immutable SHA and its complete prefix retained before appending this record; no truncation or replacement.
+- **Acceptance:** host simulation / CI only. Active v0.6 branch remains unsafe at `2fbd2475e9f54878c316fa7cea2f228386b0e859`; #375 is unmerged. Physical acceptor/relay, electrical, power-cut, soak, signer/witness, migration, accounting/replay and independent release acceptance remain NOT TESTED / NOT ACCEPTED. HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
+- **Rollback:** revert the Hardware test commit; documentation remains append-only history. No production firmware flash, device reset, live money, migration, merge, signing or release.
+- **NEXT EXACT ACTION:** Master choose canonical #374/#375 sequence and update pins; QA/CORE resolve PAY-0745 and controller parity; Hardware pause overlapping sketch/workflow changes and preserve deny-only until sequencing/contract review.
+

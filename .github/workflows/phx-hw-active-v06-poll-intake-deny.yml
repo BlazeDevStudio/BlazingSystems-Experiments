@@ -8,6 +8,7 @@ on:
       - phoenix/hw-pending-candidate-collision-guard-20261127-utc15
       - phoenix/hw-pending-recovery-contract-module-split-20261128-utc17
       - phoenix/hw-output-enable-lab-modules-20261128-utc19
+      - phoenix/hw-poll-deny-wrapper-20261128-utc13
     paths:
       - 'experiment/openwrt/BlazePwifi/esp32/BlazePwifiVendo32/BlazePwifiVendo32.ino'
       - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/BlazePwifiVendo.ino'
@@ -27,6 +28,7 @@ on:
       - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/pending_recovery_promotion_lab_harness.hpp'
       - 'experiment/openwrt/BlazePwifi/PROJECT_HANDOVER.md'
       - 'experiment/openwrt/BlazePwifi/docs/handover/CURRENT_STATE.md'
+      - 'experiment/openwrt/BlazePwifi/docs/handover/2026-11-28-hw-poll-deny-wrapper-utc13.md'
       - 'experiment/openwrt/BlazePwifi/docs/handover/2026-11-28-hw-pending-recovery-contract-module-split-utc17.md'
       - 'experiment/openwrt/BlazePwifi/docs/handover/CHANGE_LEDGER.md'
       - 'experiment/openwrt/BlazePwifi/tools/handover_ledger_append_only_guard.py'
@@ -55,6 +57,7 @@ on:
       - 'experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/pending_recovery_promotion_lab_harness.hpp'
       - 'experiment/openwrt/BlazePwifi/PROJECT_HANDOVER.md'
       - 'experiment/openwrt/BlazePwifi/docs/handover/CURRENT_STATE.md'
+      - 'experiment/openwrt/BlazePwifi/docs/handover/2026-11-28-hw-poll-deny-wrapper-utc13.md'
       - 'experiment/openwrt/BlazePwifi/docs/handover/2026-11-28-hw-pending-recovery-contract-module-split-utc17.md'
       - 'experiment/openwrt/BlazePwifi/docs/handover/CHANGE_LEDGER.md'
       - 'experiment/openwrt/BlazePwifi/tools/handover_ledger_append_only_guard.py'

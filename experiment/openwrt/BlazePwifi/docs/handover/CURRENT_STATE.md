@@ -1,3 +1,48 @@
+## PHX-HARDWARE UTC14 — FINAL / candidate CI verified, integration blocked
+
+**Role:** PHX-HARDWARE. **PR:** #375 OPEN / DRAFT / UNMERGED, child of #366.  
+**Branch:** `phoenix/hw-poll-deny-wrapper-20261128-utc13`. **Source/test commit:** `227658bc09fa1ab5ff9140c0b920ecc95cc7422d`.  
+**Exact tested code + docs head:** `d6bd3737e60b49a7f4cec12226396ff60e83b9f6`.
+
+### Change
+
+The source-extracted host harness now removes `applyOutputs();` from the actual extracted `denyRemoteControl()` body and executes the pre-poll deny plus 3,500 ms blocking wait. This catches logical deny flags without the immediate physical GPIO OFF write. Mutation rejected on ESP8266 and ESP32 (exit 23); explicit `PREPOLL_GPIO_OFF_WRITE_MUTATION_REJECTED` markers emitted. Six pulse windows × four independent relay/LED polarities and five transport outcomes × four polarities remain covered.
+
+### Exact-head CI
+
+- Poll push #46153921703 job `141006279696` PASS; PR #46153917558 job `141006267901` PASS.
+- Mbed push #46153921753 and PR #46153917594: 3/3 PASS each (source contract, ESP32 core 3.3.13, core 4.0.0).
+- Native #46153921746 job `141006279859` FAIL at QA-owned PAY-0745 literal assertion: corrupt persisted state must halt startup.
+- Full push #46153917616 job `141006320757` and PR #46153921719 job `141006484294` FAIL at QA-owned Controller protocol parity (`tests/controllers.sh:21`, `config_revision`). Handover freshness + regression PASS; 14/14 ESP8266/ESP32/Android/firmware target builds PASS. Update bundle, simulations, signing and publishing skipped.
+
+### Coordination blocker
+
+Master head `42dc13a7b732ff56152ec2170f2c61904b3dc67f`; Master PR #288 remains OPEN/DRAFT. ROLE_ASSIGNMENTS and INTEGRATION_MATRIX still pin #375 to `224bea1`. Master identifies #374 and #375 as separate non-stacked branches with seven overlapping paths and requires canonical-parent selection before integration. Further overlapping sketch/workflow edits are paused pending Master sequencing. #239, #254 and #283 remain open drafts and untouched.
+
+Active v0.6 branch `2fbd2475e9f54878c316fa7cea2f228386b0e859` still performs blocking poll/response consumption before coin sampling; #375 is an unmerged candidate and does not make the active branch safe. Issue #177 remains OPEN / P0. Keep coin/relay admission denied.
+
+Private Drive registry v11 and hourly signal YAML were not available through the exposed Library/connector/repository tree. COE #26 remains FROZEN; no migration.
+
+**SIMULATED / CI VERIFIED only. HARDWARE ACCEPTED = NO. PRODUCTION READY = NO-GO.** Physical relay/acceptor, electrical, 150 power-cut, 30-device/24-hour soak, signer/witness, durable accounting/replay, v1→v2 migration and independent QA/release gates remain NOT TESTED / NOT ACCEPTED.
+
+## NEXT EXACT ACTION
+
+- PHX-MASTER: select canonical #374/#375 parent and refresh role/integration pins to the current #375 head.
+- PHX-QA + PHX-CORE: resolve PAY-0745 semantic test and controller parity against the approved authenticated contract.
+- PHX-HARDWARE: pause further overlapping sketch/workflow edits until sequencing is recorded; continue only deny-only P0 review, no merge or device operation.
+
+---
+
+## PHX-HARDWARE UTC13 — centralize the deny-only synchronous poll boundary
+
+**Stacked draft:** child of PR #366, branch `phoenix/hw-poll-deny-wrapper-20261128-utc13`, parent `07fef4e8e1055c06cf5e5c3a0d3829c52be31cc9`. Exact implementation is recorded in the new narrow handover `docs/handover/2026-11-28-hw-poll-deny-wrapper-utc13.md`.
+
+Both board sketches now route the bounded blocking poll through one `pollDenyOnly()` helper. The helper owns the pre-poll deny, explicitly discarded POST, post-poll deny, and completion timestamp. The source-extracted contract requires the helper to be the sole poll callsite and adds bypass/response-consumption failure injection. This is a structure/guardrail change on the deny-only candidate stack; it does not enable coins or claim to resolve physical pulse retention.
+
+Exact-head Poll, Mbed TLS 3/4 and Full CI are pending. Physical GPIO/relay/pulse, power-cut, soak, migration, signer/witness and financial acceptance remain NOT TESTED / NOT ACCEPTED. HARDWARE ACCEPTED=NO; PRODUCTION NO-GO.
+
+---
+
 ## PHX-HARDWARE UTC19 — startup GPIO sequence lab modularization
 
 **PR #366: OPEN / DRAFT / UNMERGED** — child of #365; base remains e65b0b895af9c3fc5e5632f704cb67b347e69725.

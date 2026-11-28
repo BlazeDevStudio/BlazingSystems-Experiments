@@ -347,6 +347,17 @@ void configureRuntimePins(int coinPin,int relayPin,int ledPin){
   writeLogical(runRelayPin,false,runRelayActiveHigh); writeLogical(runLedPin,false,runLedActiveHigh);
 }
 
+
+void pollDenyOnly(){
+  // Keep the only synchronous poll boundary deny-only until CORE/QA approve
+  // the authenticated response contract. Never return or consume poll data.
+  wifiFailures=0;
+  denyRemoteControl();
+  (void)post("poll");
+  denyRemoteControl();
+  lastPoll=millis();
+}
+
 void applyOutputs(){
   bool accepting=controllerEnabled && coinEnabled && insertMode && fsReady && !pendingReady;
   if(ledEnabled) writeLogical(runLedPin,accepting,runLedActiveHigh); else writeLogical(runLedPin,false,runLedActiveHigh);
@@ -452,13 +463,7 @@ void loop(){
     if(wifiFailures>=maxWifiRetries) startSetupAp();
   }
   if(WiFi.status()==WL_CONNECTED && millis()-lastPoll>1500){
-    wifiFailures=0;
-    // P0: disable the physical coin acceptor before the blocking 3.5s HTTP wait.
-    // Keep the poll response discarded until CORE's authenticated contract is approved.
-    denyRemoteControl();
-    (void)post("poll");
-    denyRemoteControl();
-    lastPoll=millis();
+    pollDenyOnly();
   }
 
   bool raw=digitalRead(runCoinPin);
