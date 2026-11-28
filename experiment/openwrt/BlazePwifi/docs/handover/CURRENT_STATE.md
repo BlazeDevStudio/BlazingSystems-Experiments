@@ -1,3 +1,36 @@
+## PHX-HARDWARE UTC14 — STORCHK-0674 writable-superblock guard
+
+**Updated:** 2026-11-28T14:50:00Z  
+**Role:** PHX-HARDWARE  
+**Repository:** `BlazeDevStudio/BlazingSystems-Experiments`  
+**DRAFT PR:** [#376](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/376) — OPEN / DRAFT / UNMERGED; child of [#356](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/356)  
+**Branch:** `phoenix/hw-storage-superblock-rw-guard-20261128-utc14`  
+**Parent:** `phoenix/hardware-storage-preflight-device-separation-20261126-utc23@0ea32d31ed5c902b2187d98c181aab14bc9fdeae`
+
+### Proven source gap and bounded fix
+
+The STORCHK-0674 mountinfo parser previously required `rw` only in the per-mount option field and ignored the superblock-options field after `- FSTYPE SOURCE`. A synthetic mountinfo fixture with `rw` bind/mount options but a `ro` backing superblock was accepted by the parent parser. The guard now captures and requires `rw` in both option fields for both the fixture and scratch mounts.
+
+The Hardware-owned synthetic regression covers a writable positive control, read-only target/scratch superblock mutations, read-only target/scratch mount mutations, and malformed or missing `rw` tokens. The added token-boundary cases are co-committed with this handover refresh.
+
+### Exact evidence
+
+- Focused PR run [#46156397146](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46156397146), job `141013890732`: **PASS** on exact checkout `13f8732d93b7a5897dcd23dceccb0853b14b40ee`. The log verifies exact SHA, zero ledger deletions, existing mountinfo/physical-parent matrix PASS, and the new superblock regression PASS.
+- Initial Full run [#46156397106](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46156397106), validation job `141013938648`: **FAIL at mandatory handover freshness**, because source/workflow changes preceded the canonical root handover update. This is a process-gate failure, not a target build or parser failure. The exact failure is recorded; no target build result from that still-running run is claimed.
+- Local expected RED against the parent parser and corrected PASS were reproduced before the PR. All results remain **SIMULATED / CI VERIFIED**, not physical acceptance.
+
+### Ownership and safety
+
+Only Hardware-owned storage-preflight tooling, its Hardware workflow, and Hardware handovers were changed. QA-owned tests, Master coordination, CORE API, ESP sketches, finance, receipts, signer/witness, migration, and COE source remain untouched. Historical ledger bytes are preserved and the new record is appended.
+
+No mount, write, power cut, flash, reset, coin/payment, customer data operation, signing, migration, merge, release or deployment occurred. Output remains `physical_powercut_verified=0` and `customer_install_authorized=0`.
+
+**Physical scratch-media independence, 150 power cuts, 30-device/24-hour soak, electrical pulse/recovery, protected signer/witness, durable accounting/replay, v1-to-v2 migration, and independent QA/release acceptance remain NOT TESTED / NOT ACCEPTED.**
+
+**Next exact action:** obtain the co-committed exact-head Full rerun, then request PHX-QA semantic review and PHX-MASTER registration of #376 without changing the unresolved #374/#375 sequencing decision.
+
+---
+
 ## PHX-HARDWARE UTC04 — #356 exact-head Full CI and handover refresh
 
 **Updated:** 2026-11-27T04:30:51Z  

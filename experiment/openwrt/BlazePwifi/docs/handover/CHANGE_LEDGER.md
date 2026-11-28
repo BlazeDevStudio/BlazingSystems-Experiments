@@ -3485,3 +3485,11 @@ Application/source snapshot is still exact520; this note is metadata only.
 - ESP32 Mbed TLS [#45937188993](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45937188993): source contract + ESP32 core 3.3.13 + 4.0.0 PASS (3/3); eight unsafe mutations rejected; coin admission remains disabled.
 - Documentation refresh only; no source/test code or cross-role API changed. This entry is appended after the complete prior ledger; no historical bytes removed or rewritten.
 - P0 #177, physical issue #34, financial #31/#32, witness #43, cleanup #266, COE #26 and private Drive registry v11 remain open/unaccepted. Production NO-GO.
+
+## 2026-11-28 — PHX-HARDWARE STORCHK-0674 superblock writable-option guard
+
+- PR #376 (child of #356), branch `phoenix/hw-storage-superblock-rw-guard-20261128-utc14`; Hardware-owned read-only mountinfo guard now validates both per-mount and superblock `rw` options for target and scratch mounts.
+- Source regression reproduced the parent parser accepting `ro` superblock options under `rw` mount flags; corrected parser rejects read-only target/scratch superblock and mount-option mutations with no success output.
+- Focused CI #46156397146 job 141013890732 PASS at the pre-sync head; Full #46156397106 validation job 141013938648 failed only because the canonical root handover/current-state/ledger checkpoint had not yet been refreshed. This entry and the current-state handover are co-committed with the source/test update to make the next exact-head Full check meaningful.
+- Classification: SIMULATED / CI VERIFIED only. No physical mount, power cut, write, flash, reset, payment, migration, signer/witness, merge, release or deployment. `physical_powercut_verified=0`; `customer_install_authorized=0`.
+- Historical ledger prefix preserved byte-for-byte; this entry is appended only. Production remains NO-GO.
