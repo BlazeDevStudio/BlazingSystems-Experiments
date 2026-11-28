@@ -9,6 +9,8 @@ from config_storage_integrity_lab_contract import (
 from pathlib import Path
 
 from config_storage_integrity_lab_harness import (
+    compile_and_run_result,
+    connectsta_runtime_harness,
     RUNTIME_FIXTURE_MARKERS,
     compile_and_run,
     cxx_harness,
@@ -56,6 +58,29 @@ def verify_runtime_fixture_template_contract() -> None:
     if rejected != 9:
         raise AssertionError(f"unexpected runtime fixture mutation count: {rejected}")
     print(f"EEPROM_RUNTIME_TEMPLATE_FAILURE_INJECTION_PASS {rejected}/9")
+
+
+
+def expect_network_runtime_rejected(
+    label: str, source: str, expected_return_code: int, expected_marker: str
+) -> None:
+    result = compile_and_run_result(
+        connectsta_runtime_harness(source), f"config_network_{label}"
+    )
+    if result.returncode != expected_return_code:
+        raise AssertionError(
+            f"{label}: expected invariant exit {expected_return_code}, "
+            f"got {result.returncode}; stdout={result.stdout!r}; stderr={result.stderr!r}"
+        )
+    if expected_marker not in result.stdout:
+        raise AssertionError(
+            f"{label}: did not reach preceding marker {expected_marker!r}; "
+            f"stdout={result.stdout!r}; stderr={result.stderr!r}"
+        )
+    print(
+        f"EEPROM_CONFIG_NETWORK_MUTATION_REJECTED {label} "
+        f"exit={expected_return_code} marker={expected_marker}"
+    )
 
 
 def main() -> None:
@@ -182,6 +207,38 @@ def main() -> None:
 
     print(compile_and_run(cxx_harness(source), "config_integrity"))
     print(compile_and_run(loadcfg_runtime_harness(source), "config_loadcfg_runtime"))
+
+    network_result = compile_and_run_result(
+        connectsta_runtime_harness(source), "config_network_gate"
+    )
+    if network_result.returncode != 0:
+        raise AssertionError(
+            "connectSta runtime gate failed: "
+            f"exit={network_result.returncode}; stdout={network_result.stdout!r}; "
+            f"stderr={network_result.stderr!r}"
+        )
+    print(network_result.stdout.strip())
+    expect_network_runtime_rejected(
+        "begin-failure-connect-guard",
+        source.replace(
+            "if(!configStoreReady || !strlen(cfg.ssid)) return;",
+            "if(!strlen(cfg.ssid)) return;",
+            1,
+        ),
+        10,
+        "CONFIG_STORE_UNAVAILABLE_PRECONDITION_READY",
+    )
+    expect_network_runtime_rejected(
+        "disconnected-register-guard",
+        source.replace(
+            "if(WiFi.status()==WL_CONNECTED){",
+            "if(true){",
+            1,
+        ),
+        20,
+        "CONFIG_STORE_READY_DISCONNECTED_PRECONDITION_READY",
+    )
+    print("EEPROM_CONFIG_NETWORK_GATE_RUNTIME_AND_MUTATION_PASS 2/2")
     print("EEPROM_CONFIG_SOURCE_CONTRACT_PASS")
     print("EEPROM_CONFIG_FAILURE_INJECTION_PASS 17/17")
 
