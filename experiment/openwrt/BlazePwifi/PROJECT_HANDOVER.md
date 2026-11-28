@@ -1762,3 +1762,25 @@ The Hardware workflow now watches both new modules and this isolated child branc
 Only the host lab runner/modules and Hardware workflow path filters changed. No production ESP8266/ESP32 sketch, controller API, finance, receipt/disposition, QA-owned assertion, migration, signer/witness, release workflow, or COE source changed. This is source-extracted host simulation/CI only; physical EEPROM/NVS brown-out, GPIO/relay voltage, LittleFS recovery, electrical pulse retention, 150 power cuts and 30-device/24-hour soak remain **NOT TESTED**. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
 
 **Next exact action:** rerun Full on the refreshed documentation head; keep the inherited QA controller-parity assertion and CORE authenticated-response contract as separate blockers. No flash, reset, live coin/money, secret provisioning, signing, migration, merge, release or deployment.
+
+## PHX-HARDWARE UTC04 — config-storage integrity lab module split (#371)
+
+**PR:** DRAFT child of #370; **branch:** `phoenix/hw-config-storage-integrity-modules-20261128-utc04`.
+**Parent:** #370 at `b0fed471b00b88bdc03e0721547667db5edc5ec0`; **source/test commit:** `40860925d0150f5de49f310678d32e0c23f6f9a6`.
+
+The 10 KB `config_storage_integrity_lab.py` mixed source invariants, mutation helpers, C++ fixture construction, sanitizer compilation/execution, and command orchestration. The runner is now thin; source-contract/mutation checks and the native C++ sanitizer harness live in separate modules.
+
+- `config_storage_integrity_lab_contract.py`: bounded Config/ConfigV1 field checks, NUL termination guards, legacy migration ordering, and five unsafe-source mutation rejections.
+- `config_storage_integrity_lab_harness.py`: source-extracted Config/ConfigV1 validators plus the C++11 ASan/UBSan compile/run helper.
+- `config_storage_integrity_lab.py`: preserves the original command and the same five failure-injection cases.
+- Hardware workflow push/PR path filters include both new modules and the isolated child branch.
+
+No production `.ino`, controller API, finance, receipt/disposition, QA-owned assertions, migration runtime, signer/witness, release or COE path changed. The canonical CHANGE_LEDGER was intentionally left byte-identical; no historical entries were rewritten or deleted.
+
+### Verification at source commit
+
+- Focused, Mbed and Full exact-head results: **PENDING** at source commit `40860925d0150f5de49f310678d32e0c23f6f9a6`.
+- Existing lab checks current Config 6/6 fields, legacy ConfigV1 5/5 fields, five negative source mutations, and C++11 ASan/UBSan execution.
+- Physical EEPROM/NVS brown-out, GPIO/relay voltage, LittleFS recovery, 150 power cuts, 30-device/24-hour soak and electrical pulse/recovery remain **NOT TESTED**.
+
+Status: host source cleanup only; HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
