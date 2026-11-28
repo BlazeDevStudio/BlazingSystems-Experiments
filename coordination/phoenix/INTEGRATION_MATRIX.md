@@ -1,3 +1,19 @@
+## PHX-MASTER UTC07 — exact COE #26 source/destination reconciliation (2026-11-28T07:35Z)
+
+Candidate PR #26 remains OPEN / DRAFT / FROZEN at integration/ecosystem-nonproprietary-candidate-20261111 @ b382d233ff06c8791b1028bed3c617cc7b670d12. COE main remains a6513ab4412b4c014eee2863e45cbe32d06cb243 (3 entries / 2 blobs); candidate tree is 286 entries. Historical Experiments source pin 6d4c9b487af4d768c4d7627654d119417fcc6e00 has 2,391 entries; current main 6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5 has 2,341.
+
+- Runtime: all 61 SOURCE_INTAKE rows match pinned source and candidate destination blobs/modes. Actual 46 identical / 15 derived; manifest summary remains 47 / 14. Current main vs source pin is 33 same / 20 divergent / 8 missing.
+- Tests: source test tree 149 blobs vs candidate 19. Four original test identities match 4/4; 15 derived identities match 15/15. MIGRATION_MAP contains 14 derived rows, omits voucher_txn_journal.sh, and has stale run_focus.sh and member_txn_journal.sh hashes.
+- Licensing: 11 LICENSE/NOTICE artifacts under the BlazePwifi project root; four exact destination counterparts and seven missing (Launcher LICENSE/MODULE_LICENSE_APACHE2/assets license page, R281 QR license, jsqr vendor license, UI QRCode license, UI Tabler license).
+- Pins: SOURCE_INTAKE destination branch feature/pisowifi-cleanup-stabilization differs from live PR #26 branch integration/ecosystem-nonproprietary-candidate-20261111. OWNERSHIP_ROUTES source_ref f4e8a891 differs from SOURCE_INTAKE source commit 6d4c9b48.
+- All five candidate workflows are CANCELLED (#43096752563, #43096752800, #43096752557, #43096752609, #43096752632); combined statuses empty.
+
+No staging, copy, move, overwrite, cherry-pick, route promotion or destination write is permitted from this audit. COE owner must reconcile pins, test map, full test inventory and license coverage first. PR #26 remains FROZEN.
+
+[Full UTC07 exact-head report](PHX_MASTER_UTC07_20261128_HW373_COE26_ROLE_CI_AND_REGISTRY_ACCESS_AUDIT.md).
+
+---
+
 ## PHX-MASTER UTC05 — exact COE #26 runtime, test and license audit
 
 PR #26 remains OPEN / DRAFT / FROZEN at `b382d233ff06c8791b1028bed3c617cc7b670d12`; COE main is `a6513ab4412b4c014eee2863e45cbe32d06cb243`. Pinned Experiments source `6d4c9b487af4d768c4d7627654d119417fcc6e00` has 2,391 tree entries; candidate has 286; main has 3. Both recursive trees were complete/non-truncated.
