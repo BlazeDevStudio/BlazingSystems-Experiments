@@ -1,3 +1,13 @@
+## PHX-MASTER UTC02 follow-up — Hardware #369 exact-head state (2026-11-28T02:52Z)
+
+- Current #369 head c3648fbb1ce7dbd905a061be0aaa81dcb18b511e. Focused #46100115505 PASS; Mbed #46100115477 IN_PROGRESS (source-contract PASS; target builds running); Full #46100115480 IN_PROGRESS, but validate job 140840509447 has failed at the inherited QA-owned Controller protocol parity assertion. Other target/platform jobs are still running; Full is not terminal.
+- Previous head 616e2975 Full #46099926023 failed the handover freshness gate. The new head differs by one CHANGE_LEDGER.md-only commit (+12 lines), and the current Full validate job passed the handover gate before reaching the controller-parity failure.
+- #369 current tree is 2,443 entries / 1,897 blobs; production ESP32/ESP8266 .ino blobs are unchanged from #368. Seven changed paths are workflow/handover/lab-contract only.
+- Hardware UTC02 checkpoint #7232624756 and PR body still cite 616e2975. HARDWARE should update its own existing checkpoint and PR body in place after exact-head CI is terminal.
+- COE #26 remains frozen; #266 remains 0/7; P0 #177/#31/#32/#34/#43 remain open; private registry v11/newer corrections NOT_RECOVERED; PRODUCTION NO-GO.
+
+---
+
 ## PHX-MASTER UTC02 — live blocker refresh (2026-11-28T02:38Z)
 
 - Control plane #172 current latest Master event is UTC01; no UTC02 PHX-MASTER event existed before this activation. Cleanup #266 remains OPEN with 0/7 gates checked.

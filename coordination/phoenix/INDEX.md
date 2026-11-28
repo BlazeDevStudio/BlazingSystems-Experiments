@@ -1,3 +1,13 @@
+## PHX-MASTER UTC02 follow-up — Hardware PR #369 current exact head (2026-11-28T02:52Z)
+
+PR #369 is now at c3648fbb1ce7dbd905a061be0aaa81dcb18b511e, stacked on #368 at 9885c81d934922fe35777d5c8f7245766b622255. Source/test commit remains 5e3c802ce9ccf21c621fd99807604eb3baf56b27. Current exact-head Focused #46100115505 PASS; Mbed #46100115477 IN_PROGRESS (source-contract PASS, ESP32 3.3.13/4.0.0 builds running); Full #46100115480 IN_PROGRESS, with validate job 140840509447 already FAILED at QA-owned Controller protocol parity while several target/platform jobs remain in progress. Do not call Full terminal yet.
+
+Previous #369 head 616e2975 Full #46099926023 failed at the mandatory handover freshness gate because source/workflow changes were newer than CHANGE_LEDGER.md (last checkpoint 9885c81d). The new c3648fbb commit changes only CHANGE_LEDGER.md (+12 lines); exact compare confirms the handover gate now passes on the current Full run, which reaches the inherited controller-parity failure. The current tree is 2,443 entries / 1,897 blobs; both production .ino blobs are unchanged from #368. Seven changed paths are all Hardware workflow/handover/lab-contract files; no firmware sketch or shared API changed.
+
+The existing Hardware UTC02 checkpoint #7232624756 and PR #369 body still cite the prior 616e2975 head/run IDs. HARDWARE owns refreshing its own PR body and existing checkpoint in place after current CI reaches terminal state. Master does not edit Hardware records or take ownership.
+
+---
+
 ## PHX-MASTER UTC02 — 2026-11-28 exact-head HW368 / COE #26 provenance audit
 
 [Full UTC02 audit](PHX_MASTER_UTC02_20261128_HW368_COE26_SOURCE_PIN_ROLE_CI_AUDIT.md). Master pre-change HEAD 181d08e2; main 6be5d19b; v0.5.3 development aad3aade; v0.6 audit foundation 2fbd2475; COE main a6513ab4; COE #26 candidate b382d233. PR #288 remains OPEN/DRAFT/UNMERGED, 690 ahead / 1 behind, 265/265 changed paths under coordination/phoenix/. HARDWARE #368 9885c81 focused + Mbed PASS, Full FAIL at QA-owned controller parity assertion; deny-latch cast-alias matrix 14/14 per board is bounded regex evidence only. COE #26 remains frozen: route imports are incomplete, runtime summary 47/14 vs actual 46/15, one derived test missing from map, two stale test blob IDs, six license/NOTICE gaps, source-ref and destination-branch pin disagreement. P0 #177, #31/#32/#34/#43 and cleanup #266 remain open; private registry v11/newer corrections NOT_RECOVERED; PRODUCTION NO-GO.

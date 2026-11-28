@@ -113,3 +113,16 @@ NOT RUN: Master Python suite, verify_coordination.py, local build/test suite, Ma
 5. Registry custodian/repository admin: restore authorized v11/newer corrections and provide a non-Codex Master test environment.
 
 **PRODUCTION NO-GO.** Protected signing/anti-rollback witness, crash-atomic durable financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized release gates remain unverified. No merge, release, signing, secret provisioning, flashing, real payment operation or financial migration occurred.
+
+
+## UTC02 live follow-up — new Hardware child PR #369
+
+After the initial UTC02 audit, HARDWARE opened PR #369 and posted its single UTC02 progress checkpoint. Master re-read the new PR, exact head, changed files and Actions before updating the Master matrices.
+
+- PR #369 current head: c3648fbb1ce7dbd905a061be0aaa81dcb18b511e; base #368 at 9885c81d934922fe35777d5c8f7245766b622255; source/test commit 5e3c802ce9ccf21c621fd99807604eb3baf56b27.
+- Focused #46100115505 PASS. Mbed #46100115477 is IN_PROGRESS: source-contract job PASS, ESP32 3.3.13 and 4.0.0 target builds still running. Full #46100115480 is IN_PROGRESS: CI-0701 docs-only proof PASS; validate job 140840509447 FAILED at QA-owned Controller protocol parity; several target/platform jobs remain in progress. This Full run is not terminal.
+- Previous #369 head 616e2975 Full #46099926023 failed the mandatory handover freshness gate because source/workflow changes were newer than CHANGE_LEDGER.md (last checkpoint 9885c81d). Current head c3648fbb adds only CHANGE_LEDGER.md (+12 lines); exact commit comparison confirms the current run passes handover freshness and reaches the inherited controller-parity failure.
+- Current #369 tree is 2,443 entries / 1,897 blobs. ESP32 and ESP8266 production sketch blobs are unchanged from #368. The seven changed paths are workflow, handover, ledger, and lab-contract files only; no production .ino, shared API, finance, signer, witness, migration, release or COE file changed.
+- The existing Hardware UTC02 checkpoint #7232624756 and PR #369 body still reference the prior 616e2975 head and old run IDs. HARDWARE owns refreshing its own PR body/checkpoint in place once exact-head CI reaches terminal state. Master does not edit Hardware-owned records.
+- Route-level COE #26 counts are unchanged from the #369 tree comparison; candidate remains frozen.
+
