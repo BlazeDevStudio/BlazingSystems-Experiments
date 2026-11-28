@@ -3913,3 +3913,15 @@ This is the required documentation-first IN-PROGRESS record. No source/test resu
 - This PR is a host-lab maintainability refactor only; no production sketch or shared API changed. Physical GPIO/relay, pulse retention, 150 power cuts and 30-device/24-hour soak NOT TESTED; HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
 - CHANGE_LEDGER parent prefix preserved byte-for-byte; focused append-only guard reports base_bytes=1132798 appended_bytes=43445.
 - Updated UTC: 2026-11-27T19:31:19Z.
+
+## PHX-HW-20261128T03Z-CONFIG-PERSISTENCE-LAB-MODULE-SPLIT
+
+- Role: PHX-HARDWARE; PR #370 OPEN/DRAFT/UNMERGED, child of #366 at 07fef4e8e1055c06cf5e5c3a0d3829c52be31cc9.
+- Branch: phoenix/hw-config-persistence-lab-modules-20261128-utc03; source/test commit: c8ca5e5a4a50de3a725eb742cdc99838974c38b3.
+- Change: split the 438-line config persistence host lab into a source-contract module, native C++ harness module, and thin runner; workflow path filters include both modules and the child branch.
+- Focused #46104154160 job 140853023938 PASS: EEPROM commit failure propagation; ESP32 invalid-marker defaults, legacy compatibility, Preferences retry and 14-field/two-marker-failure matrix; 7/7 unsafe persistence mutations rejected; surrounding EEPROM/pending recovery labs pass.
+- Append-only guard at source/test head: base_bytes=1132798, appended_bytes=44730; guard failure-injection test executed.
+- Initial Full #46104154060: CI-0701 PASS; validate job 140853070277 failed only handover freshness; all 14/14 target/platform jobs PASS; downstream simulation/update/signing/publication skipped. Fresh Full on docs head required.
+- No production sketches, shared API, financial/receipt contract, QA assertion, migration, signer/witness, release, or COE source changed.
+- Physical EEPROM/NVS, GPIO/relay, electrical pulse, LittleFS, 150 power cuts and 30-device/24-hour soak: NOT TESTED. HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
+- Updated UTC: 2026-11-28T03:43Z.
