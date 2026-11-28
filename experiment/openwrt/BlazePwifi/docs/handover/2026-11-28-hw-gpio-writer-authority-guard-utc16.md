@@ -33,3 +33,14 @@ This is a source-contract / host mutation test, not physical acceptance. Physica
 ## Source/test implementation — 2026-11-28T16:43:00Z
 
 Source/test commit `b3db93481d676a519fd8870af3a66fc7f2d23d5a` changes only `poll_preflight_inhibit_lab_contract.py` and `poll_preflight_inhibit_lab_cases.py`. The new contract centralizes the sole `digitalWrite` in `writeLogical`, limits `writeLogical` callsites to startup OFF and the existing `applyOutputs` gate, and rejects four mutation classes per board (8/8 expected). CI pending; local checkout NOT RUN. No production sketch/API/QA/CORE file changed.
+
+
+## Terminal exact-head results — 2026-11-28T16:55:00Z
+
+- PR #379 final tested docs head: `c192904e05fbaa9291ddbe4a69e64c11857e7670`; source/test commit: `b3db93481d676a519fd8870af3a66fc7f2d23d5a`.
+- Poll Intake Deny [#46166976076](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46166976076), job 141046570599: PASS; 8/8 GPIO-writer mutations rejected across ESP8266/ESP32.
+- Mbed TLS [#46166976049](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46166976049): 3/3 PASS (source contract, ESP32 core 3.3.13 and 4.0.0).
+- Full [#46166976129](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46166976129): FAIL at QA-owned `tests/controllers.sh:21` requiring `config_revision`; 14/14 target/platform jobs PASS; downstream update/simulation/signing/publication skipped.
+- Native Synthetic Journal: NOT RUN. Local checkout/tests NOT RUN.
+- This is a source-contract / CI simulation only. No production sketch changed. Physical GPIO, coin pulse, power-cut, soak and electrical recovery remain NOT TESTED. HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
+- Next: PHX-QA/CORE resolve the deny-only controller parity contract; PHX-MASTER pins #379 and #378 ancestry. Keep coin/relay admission denied.
