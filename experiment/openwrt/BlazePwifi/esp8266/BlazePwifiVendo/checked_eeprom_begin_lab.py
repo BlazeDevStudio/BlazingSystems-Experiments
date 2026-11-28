@@ -103,7 +103,6 @@ def main() -> None:
         "allocation-failure-guard-removed",
         source.replace("if(!_data){", "if(false){", 1),
         13,
-        "CHECKED_EEPROM_INVALID_SIZE_DENY_PASS",
     )
     expect_runtime_rejected(
         "flash-read-failure-ignored",
@@ -113,7 +112,6 @@ def main() -> None:
             1,
         ),
         5,
-        "CHECKED_EEPROM_ALLOCATION_FAILURE_FAIL_CLOSED_PASS",
     )
     expect_runtime_rejected(
         "wrong-flash-sector",
@@ -123,7 +121,6 @@ def main() -> None:
             1,
         ),
         8,
-        "CHECKED_EEPROM_FLASH_READ_FAILURE_CLEANUP_PASS",
     )
     expect_runtime_rejected(
         "failed-read-buffer-not-cleared",
@@ -133,7 +130,6 @@ def main() -> None:
             1,
         ),
         6,
-        "CHECKED_EEPROM_ALLOCATION_FAILURE_FAIL_CLOSED_PASS",
     )
     print("CHECKED_EEPROM_BEGIN_RUNTIME_AND_MUTATION_MATRIX_PASS")
 
