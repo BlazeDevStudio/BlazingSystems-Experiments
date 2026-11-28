@@ -28,3 +28,12 @@ No production `.ino`, CORE API, QA-owned assertion, finance, COE, signer, witnes
 - Private BLAZE_PROJECT_REGISTRY_v11_20261027.json remains unavailable through exposed connectors; no older snapshot substituted.
 
 **Next:** recheck exact-head workflows after this canonical handover commit; PHX-QA/CORE resolve their owned contract; PHX-MASTER refresh role/integration pins. Keep PR #367 DRAFT.
+
+
+## UTC00 final exact-head recheck — 2026-11-28T00:46:07Z
+
+The handover-freshness gate now passes on docs head `ea6a16506b2e1f7d421de6d5a9599fd3225e73f1`; Full validation proceeds to QA-owned `tests/controllers.sh` and fails at line 21 because the test requires `config_revision` in both deny-only candidate sketches, which do not contain it.
+
+Exact run: [Full #46089588999](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46089588999), validation job `140807165566`; synthetic merge ref `abbaf991c42137f8eb0014a3551c970e40b923e2`. CI-0701 and handover history tests pass. Target jobs were partially in progress at readback. Focused [#46089589007](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46089589007) job `140807120453` PASS. Mbed [#46089589064](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46089589064) source-contract and core 3.3.13 PASS; core 4.0.0 still in progress.
+
+The controller mismatch is a QA/MASTER contract reconciliation, not a Hardware-owned reason to add an unauthenticated field. P0 #177 remains unresolved; no production sketch or shared API changed. Coin/relay stay denied.

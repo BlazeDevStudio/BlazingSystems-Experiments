@@ -4092,3 +4092,15 @@ Private \`BLAZE_PROJECT_REGISTRY_v11_20261027.json\` remains NOT RECOVERED; no s
 - **Known prior Full blocker:** [#46084788285](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46084788285) on `778220aa...` reached `tests/controllers.sh:21` and failed the QA-owned `config_revision` assertion; all 14 target/platform jobs passed there. Do not add an unauthenticated placeholder.
 - **Blockers:** P0 #177 poll-before-first-sample; QA controller parity; CORE authenticated register/poll/receipt contract; physical 150 cuts/30-device soak/electrical recovery; witness; durable accounting/replay; v1-to-v2 migration; independent QA/release signoff; private Drive registry v11 unavailable.
 - **NEXT ACTION:** canonical handover sync then exact-head Full rerun; QA/CORE resolve their owned contract; keep coin/relay denied and PR DRAFT.
+
+
+## 2026-11-28 — PHX-HARDWARE UTC00 — final exact-head handover and controller-parity recheck
+
+- **ID:** PHX-HW-PR367-FINAL-RECHECK-20261128T00
+- **Source/test SHA:** `985a54c289b8e3c796c2bcc977f652b178b293c0`; **pre-final-docs head:** `ea6a16506b2e1f7d421de6d5a9599fd3225e73f1`; PR #367 OPEN / DRAFT / UNMERGED.
+- **Focused:** [#46089589007](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46089589007), job `140807120453`: PASS.
+- **Mbed:** [#46089589064](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46089589064): source contract PASS; ESP32 core 3.3.13 PASS; core 4.0.0 IN_PROGRESS at readback.
+- **Full:** [#46089588999](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46089588999): CI-0701 and handover history tests PASS; validation job `140807165566` FAIL at QA-owned `tests/controllers.sh` after handover freshness passed. Synthetic merge ref `abbaf991c42137f8eb0014a3551c970e40b923e2`; target jobs partially in progress.
+- **Proven parity cause:** `tests/controllers.sh:21` requires `config_revision`; neither candidate sketch at PR head `ea6a165...` contains that token. Do not insert a fake or unauthenticated field; QA/MASTER own assertion reconciliation and CORE owns the authenticated contract.
+- **Status:** source-contract CI VERIFIED; Mbed partial CI VERIFIED; Full handover gate PASS / QA parity FAIL; P0 #177 and all physical/financial/witness/migration/release gates remain open.
+- **NEXT ACTION:** QA/MASTER reconcile controller parity; CORE publish authenticated register/poll/receipt/disposition; Hardware recheck terminal exact-head jobs and keep coin/relay denied.

@@ -1,3 +1,42 @@
+# CURRENT STATUS — 2026-11-28T00:46:07Z — Focused PASS; Mbed partial PASS; Full handover freshness PASS, QA controller parity FAIL
+
+## PHX-HARDWARE UTC00 final exact-head recheck — deny-latch contract modularization
+
+**Recorded:** 2026-11-28T00:46:07Z
+**Role:** PHX-HARDWARE
+**Repository / branch:** `BlazeDevStudio/BlazingSystems-Experiments` / `phoenix/hw-deny-latch-monotonicity-20261127-utc21`
+**Main HEAD:** `6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5`
+**PR #367:** OPEN / DRAFT / UNMERGED; base #366 `07fef4e8e1055c06cf5e5c3a0d3829c52be31cc9`
+**Source/test SHA:** `985a54c289b8e3c796c2bcc977f652b178b293c0`
+**Pre-final-docs head:** `ea6a16506b2e1f7d421de6d5a9599fd3225e73f1`
+
+### Current exact-head evidence
+
+- Focused [#46089589007](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46089589007), job `140807120453`, exact docs head `ea6a165...`: **PASS**. Source-extracted deny-latch tests include 7/7 direct and 10/10 alias mutations rejected per board; decoys and logical-AND positive controls accepted; poll transport matrix 20 cases per board.
+- Mbed [#46089589064](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46089589064): source-contract `140807120906` **PASS**; ESP32 core 3.3.13 `140807121158` **PASS**; core 4.0.0 `140807121191` was **IN_PROGRESS** at readback.
+- Full [#46089588999](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46089588999), PR head `ea6a165...`, synthetic merge ref `abbaf991c42137f8eb0014a3551c970e40b923e2`: CI-0701 `140807120672` **PASS**; handover history tests passed (fresh / stale blocked / partial blocked / resynced); validation `140807165566` **FAIL** at QA-owned `tests/controllers.sh` after freshness gate passed. ESP8266 `140807165515` PASS; multiple target builds PASS; Android, ESP32 and several target jobs remained IN_PROGRESS at readback; simulation/update/sign/publication stages were skipped.
+- Validation failure source audit: `tests/controllers.sh:21` requires `grep -q 'config_revision'` in both candidate sketches. Exact PR-head ESP8266 and ESP32 `.ino` files contain no `config_revision`. This is consistent with the deny-only candidate not carrying the main branch's remote configuration field; QA/MASTER must reconcile the assertion with the approved deny-only contract. No placeholder was added.
+- Earlier Full [#46089157387](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46089157387) failed at handover freshness before the QA assertion. The current #46089588999 run proves the handover freshness gate now passes and reaches the controller assertion.
+
+### Source change
+
+Commit `985a54c289b8e3c796c2bcc977f652b178b293c0` refactors the Hardware-owned `poll_preflight_inhibit_lab_contract.py` into named helpers for protected-field enumeration, address escapes, reference aliases, `decltype(auto)` aliases, wrappers/casts, and runtime assignment validation. The original predicates/order are retained. No `.ino` or shared API changed.
+
+### Safety and blockers
+
+- P0 #177 remains unresolved: synchronous poll still precedes the first coin sample in the active v0.6 baseline. This source-contract refactor is not a pulse-loss fix.
+- QA owns `tests/controllers.sh` controller parity; CORE owns authenticated register/poll/receipt/disposition. Do not add unauthenticated `config_revision` or invent `response_sig`.
+- #239 `d83b715b...`, #254 `84c442a4...`, #283 `4dd0b01b...` remain OPEN / DRAFT / UNMERGED and untouched.
+- #266 cleanup remains OPEN / 0-of-7; COE #26 remains frozen DRAFT/NO-GO.
+- Private `BLAZE_PROJECT_REGISTRY_v11_20261027.json` remains NOT RECOVERED; no Google Drive connector is exposed; no older registry snapshot substituted.
+- 150 real power cuts, 30-device/24-hour soak, electrical pulse/recovery, protected witness, durable accounting/replay, v1-to-v2 migration and independent QA/release signoff remain NOT TESTED / NOT ACCEPTED.
+
+**Status:** focused source-contract **CI VERIFIED**; Mbed source contract and ESP32 core 3.3.13 **CI VERIFIED**, core 4.0.0 **IN PROGRESS** at readback; Full handover freshness **PASS**, controller parity **FAIL**; hardware acceptance **NO**; production **NO-GO**.
+
+**Next exact action:** PHX-QA/MASTER reconcile `tests/controllers.sh:21` with deny-only candidate semantics; PHX-CORE publish the authenticated response contract; PHX-HARDWARE recheck terminal Mbed/Full jobs on the new docs head. Keep coin/relay denied and PR #367 DRAFT.
+
+---
+
 # CURRENT STATUS — 2026-11-28T00:41:06Z — deny-latch contract modularized; Focused PASS; Mbed partial PASS; Full handover gate failed
 
 ## PHX-HARDWARE UTC00 — modularize the deny-latch source contract and reconcile exact-head CI
