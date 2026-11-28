@@ -3,11 +3,14 @@ on:
   push:
     branches:
       - phoenix/hardware-storage-preflight-device-separation-20261126-utc23
+      - phoenix/hw-storage-superblock-rw-guard-20261128-utc14
     paths:
       - 'experiment/openwrt/BlazePwifi/tests/v060_lab_storage_preflight.sh'
       - 'experiment/openwrt/BlazePwifi/tools/v060_lab_mountinfo_guard.awk'
       - 'experiment/openwrt/BlazePwifi/tools/v060_lab_block_parent_guard.sh'
       - 'experiment/openwrt/BlazePwifi/tools/v060_lab_storage_preflight.sh'
+      - 'experiment/openwrt/BlazePwifi/tools/v060_lab_mountinfo_superblock_guard.sh'
+      - 'experiment/openwrt/BlazePwifi/docs/handover/2026-11-28-hw-storage-superblock-rw-guard-utc14.md'
       - 'experiment/openwrt/BlazePwifi/docs/handover/CHANGE_LEDGER.md'
       - '.github/workflows/phx-hw-storage-preflight-device-separation.yml'
   pull_request:
@@ -65,6 +68,8 @@ jobs:
           echo 'CHANGE_LEDGER_APPEND_ONLY_PASS'
       - name: Run synthetic read-only mountinfo safety regression
         run: sh experiment/openwrt/BlazePwifi/tests/v060_lab_storage_preflight.sh
+      - name: Reject read-only superblock options under writable mount flags
+        run: sh experiment/openwrt/BlazePwifi/tools/v060_lab_mountinfo_superblock_guard.sh
       - name: State the evidence boundary
         run: |
           printf '%s\n' 'SIMULATED_ONLY=1'
