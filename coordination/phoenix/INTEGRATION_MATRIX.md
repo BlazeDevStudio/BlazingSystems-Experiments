@@ -1,3 +1,26 @@
+## PHX-MASTER UTC01 — exact COE #26 / Hardware stack matrix (2026-11-28T01:34Z)
+
+Exact non-truncated trees: pinned source 6d4c9b48 = 2,391 entries / 1,845 blobs; current Hardware #367 4e558a06 = 2,440 / 1,894; COE #26 b382d233 = 286 / 207.
+
+| Route | Source blobs | Destination blobs | Exact | Divergent | Source-only | Destination-only |
+|---|---:|---:|---:|---:|---:|---:|
+| Pinned ESP32 | 3 | 1 | 0 | 1 | 2 | 0 |
+| Pinned ESP8266 | 3 | 1 | 0 | 1 | 2 | 0 |
+| Pinned QA tests | 149 | 19 | 2 | 2 | 145 | 15 |
+| Current #367 ESP32 | 4 | 1 | 0 | 1 | 3 | 0 |
+| Current #367 ESP8266 | 18 | 1 | 0 | 1 | 17 | 0 |
+| Current #367 QA tests | 151 | 19 | 2 | 2 | 147 | 15 |
+
+SOURCE_INTAKE actual 61 runtime identities match source/destination blobs and modes; actual status count 46 byte-identical / 15 derived, summary 47 / 14. Original tests 4/4 declared identities match (2 identical, 2 intentionally edited). Derived tests 15/15 destination blobs/modes match SOURCE_INTAKE; 11 NOT_RUN and 4 PENDING_CI_RUN.
+
+MIGRATION_MAP contains 14 derived-test rows versus 15 in SOURCE_INTAKE; it omits voucher_txn_journal.sh and has stale run_focus.sh / member_txn_journal.sh blob IDs. Destination pin is stale (feature/pisowifi-cleanup-stabilization vs live PR #26 branch integration/ecosystem-nonproprietary-candidate-20261111). Six of ten named source license/NOTICE counterparts are absent.
+
+Current Hardware #367 firmware blobs (ESP8266 7527dbff; ESP32 a673e323) differ from both historical pinned source (12c4bb82 / 29f1125d) and COE destination (c8be98f7 / 3cc7ec54). COE firmware contains response_sig, |poll| and config_revision; current #367 deny-only sketches do not. COE Hardware test f921c56 requires response_sig and |poll|. COE #26 five workflows are CANCELLED. No staging or migration.
+
+See PHX_MASTER_UTC01_20261128_HW367_4E558A06_COE26_EXACT_PROVENANCE_ROLE_CI_AUDIT.md.
+
+---
+
 ## PHX-MASTER UTC00 — exact COE #26 tree and intake matrix
 
 Historical source pin `6d4c9b48`: 2,391 entries / 1,845 blobs. COE #26 destination `b382d233`: 286 / 207. Current Experiments main `6be5d19b`: 2,341 / 1,765. All trees non-truncated.

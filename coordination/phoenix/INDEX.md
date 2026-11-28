@@ -1,3 +1,9 @@
+## PHX-MASTER UTC01 — 2026-11-28 exact-head / COE #26 audit
+
+[Full UTC01 audit](PHX_MASTER_UTC01_20261128_HW367_4E558A06_COE26_EXACT_PROVENANCE_ROLE_CI_AUDIT.md). Starting Master HEAD bc780bce; current main 6be5d19b; v0.5.3 development aad3aade; v0.6 audit foundation 2fbd2475; COE main a6513ab4; COE #26 b382d233. PR #288 remains OPEN / DRAFT / UNMERGED. #367 current head 4e558a06 has Focused/Mbed PASS and Full FAIL at QA controller parity. COE #26 remains frozen: runtime 61/61 identities match but 46/15 actual statuses contradict 47/14 summary; derived map 14/15, voucher row missing, two stale blob IDs, six license/NOTICE gaps and firmware source divergence. P0 #177 and cleanup #266 remain open; private registry v11/newer corrections unavailable; PRODUCTION NO-GO.
+
+---
+
 ## PHX-MASTER UTC00 — 2026-11-28 exact-head role CI and COE #26 provenance
 
 [Full UTC00 audit](PHX_MASTER_UTC00_20261128_EXACT_HEAD_ROLE_CI_COE26_PROVENANCE_AUDIT.md). Live refs: Experiments main `6be5d19b`, v0.5.3 `aad3aade`, v0.6 `2fbd2475`, Master pre-change `9f6f6fe`; COE main `a6513ab4`, PR #26 `b382d233`. PR #288 is 688 ahead / 1 behind main (merge base `f4e8a891`), with 263/263 existing paths in `coordination/phoenix/`; no rebase. Current #367 Focused/Mbed pass, Full fails at QA controller parity; #328 Full fails handover validation and ESP32 Mbed TLS include. COE #26 remains frozen: 61/61 pinned runtime identities match but summary is 46/15 vs 47/14; derived-test map misses voucher journal and has two stale blob IDs; six license counterparts missing. P0 #177 OPEN, cleanup #266 0/7, private registry unavailable, PRODUCTION NO-GO.

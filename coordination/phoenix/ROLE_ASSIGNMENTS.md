@@ -1,3 +1,24 @@
+## PHX-MASTER UTC01 owner/CI refresh — 2026-11-28T01:34Z
+
+| Role | Current PR/head | Exact evidence | Disposition |
+|---|---|---|---|
+| CORE | #252 c82705f2 | Build #42698139210 PASS | Scoped only; CORE untouched |
+| RENTAL | #289 68928774 | Build #43653329229 and native auth #43653329235 PASS | Parent draft remains unmerged |
+| RENTAL | #328 10fc200b | API/auth/APK #45622918364/#45622918551/#45622918340 PASS; Build #45622918468 FAIL | Handover freshness + ESP32 mbedtls/sha256.h failure |
+| PISONET | #255 d01fd164 | Windows synthetic #42462978704 PASS | Native COM NOT TESTED |
+| HARDWARE | #365 e65b0b89 | Focused #46056656161 PASS; Mbed #46056656203 PASS; Full #46056656151 FAIL | Test-only poll-boundary matrix |
+| HARDWARE | #366 07fef4e8 | Focused #46059524018 PASS; Mbed #46059523991 PASS; Full #46059524022 FAIL | Stacked child; inherited controller parity |
+| HARDWARE | #367 4e558a06 | Focused #46089846162 PASS; Mbed #46089846114 PASS; Full #46089846111 FAIL | 15 success / 1 failure / 13 skipped; QA controller parity |
+| HARDWARE | #354 fc842342; #357 963c3713 | Focused/Mbed PASS; Full and Native FAIL on both | Draft only; no acceptance |
+| QA | #290 5c29d159 | Windows synthetic #43633486963 PASS | Not hardware acceptance |
+| QA | #292 75a3f66d | No exact-head run | Expected RED remains unverified |
+| RELEASE | #291 bf339a76; #242 36c0d0bb | No exact-head runs/statuses; #242 mergeable=false | NO-GO |
+| MASTER | #288 starting head bc780bce | No exact-head Actions/status | Master suite NOT RUN |
+
+HARDWARE #367 current source/test SHA is 985a54c289b8e3c796c2bcc977f652b178b293c0 and docs/head is 4e558a06. Its PR description still cites 183650be / 3f1f7424. HARDWARE must refresh its own description/handover. QA owns the stale config_revision assertion. No ownership changed.
+
+---
+
 ## PHX-MASTER UTC00 owner/CI refresh — 2026-11-28T00:38Z
 
 | Role | Current PR/head | Exact evidence | Disposition |

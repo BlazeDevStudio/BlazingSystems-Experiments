@@ -1,3 +1,18 @@
+## PHX-MASTER UTC01 — current blockers and next owner actions (2026-11-28T01:34Z)
+
+- HARDWARE #367 exact head 4e558a06: Focused and Mbed pass; Full #46089846111 fails at QA-owned tests/controllers.sh:21 because it still requires config_revision absent from the deny-only candidate sketches. 15 jobs passed, 1 failed, 13 downstream jobs skipped. PR description remains stale and needs Hardware-owner refresh.
+- HARDWARE #365/#366 remain stacked drafts; Focused/Mbed pass and Full fails at inherited controller parity. No physical coin/relay acceptance.
+- RENTAL #328 Build #45622918468 fails handover freshness and ESP32 compilation due missing mbedtls/sha256.h; focused API/auth/APK checks pass.
+- P0 #177 remains OPEN on active v0.6: synchronous poll precedes first coin sample on ESP8266/ESP32; controller register/poll responses lack controller response_sig.
+- COE #26 remains FROZEN. Runtime summary 46/15 vs 47/14; derived map 14/15, voucher row missing, two stale blob IDs, destination branch pin stale, six license/NOTICE counterparts missing, current Hardware source differs from destination firmware. All five #26 workflows CANCELLED. No staging.
+- Cleanup #266 remains OPEN / 0-of-7.
+- Canonical private registry v11/newer corrections NOT RECOVERED; no Google Drive connector/action. Master local tests and exact-head Actions NOT RUN.
+- **PRODUCTION NO-GO.** No merge, release, signing, flashing, payment, physical acceptance or financial migration.
+
+Next: QA updates the deny-only controller assertion and reruns Full on exact #367 head; Hardware refreshes its PR description/handover; COE owner reconciles source pin, test map and licenses; CORE/HARDWARE/QA resolve authenticated poll contract and P0 #177; registry custodian/admin restore private records and Master test access.
+
+---
+
 ## PHX-MASTER UTC00 — current blockers (2026-11-28T00:38Z)
 
 - PR #288 current pre-change head `9f6f6fe`, OPEN/DRAFT/UNMERGED; 263/263 paths coordination-only; 688 ahead / 1 behind live main. Main-only commit `6be5d19b` adds root `promp CallerID`; no rebase.
