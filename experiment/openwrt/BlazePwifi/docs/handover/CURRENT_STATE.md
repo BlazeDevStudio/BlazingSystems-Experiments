@@ -1,3 +1,21 @@
+## PHX-HARDWARE UTC04 — EEPROM loadCfg runtime lab (#372) — CI VERIFIED / PR_READY
+
+PR #372 is OPEN / DRAFT / UNMERGED, stacked on #371. Branch `phoenix/hw-eeprom-loadcfg-runtime-harness-20261128-utc04`; source/test head `6a29509079b0e4383b4305a75197bd72e6874066`; canonical docs head at the terminal Full readback `2bf108d6f4b46263376dcc99ded4b0fc3b7eceb6`.
+
+The Hardware-owned EEPROM integrity lab now executes source-extracted `loadCfg()`, `defaults()`, and `saveCfg()` in a native C++11 ASan/UBSan fixture using a fake EEPROM with distinct durable/staged bytes. It covers valid current Config acceptance (1/1), all unterminated current fields rejected (6/6), valid ConfigV1 migration (1/1), all unterminated legacy fields rejected (5/5), migration commit failure preserving durable v1 and next-boot retry, and defaults commit failure preserving corrupt durable bytes and next-boot retry (2/2). The source contract requires both write paths to check `saveCfg()`; failure injection rejects ignoring either result. Seven source mutations are rejected (7/7).
+
+**Focused CI:** push [#46110090617](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46110090617), job `140871475900`, PASS at docs head `2bf108d6`; PR [#46110095250](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46110095250), job `140871489774`, PASS at the same head. Both report the runtime matrix and 7/7 mutation pass. Append-only ledger guard PASS: base prefix 1,132,798 bytes, appended 53,642 bytes.
+**Mbed:** [#46109906713](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46109906713), 3/3 PASS at source/test head `6a295090` (source contract, ESP32 core 3.3.13 and 4.0.0).
+**Full:** [#46110095274](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46110095274) terminal FAILURE. CI-0701 job `140871556929` PASS and mandatory handover freshness PASS. QA-owned validation job `140871599695` fails at `experiment/openwrt/BlazePwifi/tests/controllers.sh:21`, the literal `config_revision` presence assertion. All 14/14 target/platform builds PASS, including ESP8266, ESP32, Android, Ruijie, x86_64, Orange Pi and optional targets. Downstream v0.4 simulations, update bundle, signing and publication remain skipped because validation failed. This is an inherited QA/controller-contract blocker, not a new firmware compile failure.
+
+No production .ino, config schema, shared controller API, finance/receipt state, QA-owned test, signer/witness, migration runtime, COE destination, physical device or EEPROM was changed. This is host/CI evidence only, not physical EEPROM/NVS brown-out acceptance. Physical GPIO/relay, LittleFS power-loss, 150 power cuts, 30-device/24-hour soak, electrical pulse/recovery, protected signer/witness, durable accounting/replay, v1-to-v2 migration and independent release signoff remain NOT TESTED or NOT ACCEPTED. HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
+
+Next: PHX-QA replaces the stale literal controller assertion with source-linked deny-only vectors; PHX-CORE publishes the authenticated register/poll/receipt/disposition contract; PHX-MASTER refreshes ROLE_ASSIGNMENTS/INTEGRATION_MATRIX for #370/#371/#372; PHX-HARDWARE continues P0 #177 only within the approved fail-closed interface.
+
+Updated UTC: 2026-11-28T05:04:25.085Z.
+
+---
+
 ## PHX-HARDWARE UTC04 — EEPROM loadCfg runtime harness (#372)
 
 **PR #372 OPEN / DRAFT / UNMERGED**, child of #371 at `18a3fa470970e729a02920607562f4b9a1e50d34`.

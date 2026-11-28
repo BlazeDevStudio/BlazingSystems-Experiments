@@ -3964,3 +3964,12 @@ This is the required documentation-first IN-PROGRESS record. No source/test resu
 - Full push [#46109901702](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46109901702) and PR [#46109906747](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46109906747) failed mandatory handover freshness because canonical PROJECT_HANDOVER/ledger had not been updated after source changes; validation did not reach controller parity. Target jobs were still running. This append-only documentation transaction refreshes the canonical handover; rerun Full on the refreshed head.
 - No production .ino, config schema, controller API, finance, QA assertion, signer/witness, migration runtime, COE, device, or physical EEPROM changed. Host simulation only; physical brown-out and all hardware acceptance remain NOT TESTED. HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
 - Updated UTC: 2026-11-28T04:59:59.698Z.
+
+## 2026-11-28 — PHX-HARDWARE UTC04 EEPROM loadCfg runtime lab — terminal CI evidence
+
+- PR #372 OPEN / DRAFT / UNMERGED; branch phoenix/hw-eeprom-loadcfg-runtime-harness-20261128-utc04; source/test head 6a29509079b0e4383b4305a75197bd72e6874066; docs head at Full run 2bf108d6f4b46263376dcc99ded4b0fc3b7eceb6.
+- Focused push #46110090617 job 140871475900 PASS; focused PR #46110095250 job 140871489774 PASS. Runtime matrix: current Config 1/1; current unterminated fields 6/6 rejected; ConfigV1 migration 1/1; legacy unterminated fields 5/5 rejected; migration/default commit failure retry 2/2; source mutations 7/7 rejected. Ledger append-only guard PASS, base 1,132,798 bytes and append 53,642 bytes.
+- Mbed #46109906713 PASS 3/3: source-contract, ESP32 core 3.3.13 and 4.0.0.
+- Full #46110095274 terminal FAILURE: CI-0701 and handover freshness PASS; validation job 140871599695 fails at QA-owned tests/controllers.sh:21 literal config_revision assertion. All 14/14 target/platform jobs PASS (ESP8266, ESP32, Android, Ruijie, x86_64, Orange Pi and optional targets). Downstream v0.4 simulation, update bundle, signing and publication skipped.
+- No production firmware/config/schema/API/finance/witness/COE/device change. Host simulation only; physical EEPROM/NVS brown-out and all required hardware acceptance remain NOT TESTED. HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
+- Updated UTC: 2026-11-28T05:04:25.085Z.
