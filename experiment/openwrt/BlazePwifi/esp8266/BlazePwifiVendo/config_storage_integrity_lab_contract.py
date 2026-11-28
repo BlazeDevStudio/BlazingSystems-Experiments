@@ -100,8 +100,8 @@ def assert_source_contract(source: str) -> None:
             "EEPROM requested size must be bounded to the flash sector")
     require("new (std::nothrow) uint8_t[aligned]" in checked_class,
             "EEPROM allocation must be checked without throwing")
-    require("if(!_data)" in checked_class and "_size=aligned;" in checked_class,
-            "EEPROM buffer and size must be validated before access")
+    require("if(!_data){" in checked_class and "_size=aligned;" in checked_class,
+            "EEPROM allocation result must be checked before flash access")
     require("if(!ESP.flashRead(address,_data,_size))" in checked_class,
             "EEPROM flash read failure must be reported")
     require("delete[] _data;" in checked_class and "_data=nullptr;" in checked_class,
