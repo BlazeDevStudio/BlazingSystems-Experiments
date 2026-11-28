@@ -1,3 +1,17 @@
+## PHX-MASTER UTC07 — live branch pins, ownership and access (2026-11-28T07:35Z)
+
+- Experiments default main @ 6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5; development blazepwifi-v0.5.3-development @ aad3aade72c1156eecba1fed30907c6d0283b2c5; active v0.6 @ 2fbd2475e9f54878c316fa7cea2f228386b0e859; Master audit-start phoenix/master-coordination @ c52dcab4b4803ee5946b5d9b5f8d3008ae4a73b6.
+- COE main @ a6513ab4412b4c014eee2863e45cbe32d06cb243; candidate PR #26 branch integration/ecosystem-nonproprietary-candidate-20261111 @ b382d233ff06c8791b1028bed3c617cc7b670d12.
+- OWNERSHIP_ROUTES.json remains blob e4db324315a1b3543fec17a148fbf960170fcb29, 11 routes, DRAFT_REVIEW_ONLY; PHX-MASTER target null. No ownership or route promotion.
+- SOURCE_INTAKE historical source pin 6d4c9b48 and destination branch feature/pisowifi-cleanup-stabilization differ from current main and live PR #26 branch. Preserve both pins pending COE owner reconciliation.
+- Private Drive registry v11/newer corrections NOT_RECOVERED. No Google Drive connector/action is exposed; no older Library registry was substituted and no private identifiers/content were published.
+- Root AGENTS.md and canonical cloud artifact policy/storage handover were re-read. Branch protection endpoint returned 403; rulesets endpoint returned an empty list; effective enforcement remains UNKNOWN.
+- CORE remains with its separate owner; Master made no CORE source changes and created no competing CORE task.
+
+[Full UTC07 exact-head report](PHX_MASTER_UTC07_20261128_HW373_COE26_ROLE_CI_AND_REGISTRY_ACCESS_AUDIT.md).
+
+---
+
 ## PHX-MASTER UTC05 — live branch pins and ownership
 
 - Experiments main `6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5`; development `blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5`; active v0.6 `blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859`.
