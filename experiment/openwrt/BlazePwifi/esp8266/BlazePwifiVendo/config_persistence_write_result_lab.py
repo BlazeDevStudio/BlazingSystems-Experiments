@@ -12,6 +12,7 @@ from config_persistence_write_result_lab_harness import (
     eeprom_harness,
     preferences_harness,
 )
+from checked_eeprom_begin_lab import main as checked_eeprom_begin_main
 
 
 def main() -> None:
@@ -106,6 +107,7 @@ def main() -> None:
         assert_esp32,
     )
     print("CONFIG_PERSISTENCE_WRITE_RESULT_PASS ESP8266+ESP32")
+    checked_eeprom_begin_main()
 
 
 if __name__ == "__main__":
