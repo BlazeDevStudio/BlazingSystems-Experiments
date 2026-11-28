@@ -4163,3 +4163,20 @@ This is the required documentation-first IN-PROGRESS record. No source/test resu
 - **Full #46162211282 attempt 2:** HND-0700/CI-0701 PASS; validation job 141032316089 FAIL at QA-owned `tests/controllers.sh:21` missing `config_revision`; 14/14 target/platform builds PASS; production downstream stages skipped.
 - **Native:** NOT RUN on #378; parent #377 Native #46158944131 failed PAY-0745. No result transferred.
 - **Limits:** local checkout NOT RUN; physical relay/acceptor, EEPROM/NVS brown-out, 150 cuts, 30-device/24-hour soak and electrical recovery NOT TESTED. HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
+
+
+## PHX-HARDWARE UTC16 — centralized GPIO writer authority contract (IN PROGRESS)
+
+**Updated:** 2026-11-28T16:36:58Z  
+**Task:** `PHX-HW-177-GPIO-WRITER-AUTHORITY-20261128T16Z`  
+**Parent:** [PR #378](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/378) at `3f67ba41dc3e087f868d3c57f6604e69f7a0e17b`  
+**Branch:** `phoenix/hw-output-writer-authority-guard-20261129-utc16`  
+**Scope:** Hardware-owned poll lab contract/cases plus append-only handovers only.
+
+The #378 post-deny mutation protects the bounded poll helper. This follow-up makes the broader source invariant explicit: the sketch has one low-level `digitalWrite` inside `writeLogical`; every `writeLogical` call must remain inside `configureRuntimePins` (logical OFF only) or `applyOutputs` (the existing `accepting` predicate). No controller API or production sketch change is planned.
+
+Planned failure injections: (1) add a logical relay-ON call in `denyRemoteControl`; (2) add a raw `digitalWrite` outside `writeLogical`; (3) change startup pin configuration to logical ON; (4) replace the `applyOutputs` accepting predicate with unconditional ON. Both ESP8266 and ESP32 source fixtures must reject all four mutations.
+
+No QA-owned assertion, CORE contract, financial state, receipt, signer, witness, migration, COE source, or physical device is in scope. Local checkout/tests are NOT RUN; exact-source GitHub Actions will be the execution evidence. Keep coin/relay admission denied. No flash, reset, live money, merge, release tag, signing or deployment.
+
+**Status:** IN_PROGRESS; source/test change and CI not yet run. HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
