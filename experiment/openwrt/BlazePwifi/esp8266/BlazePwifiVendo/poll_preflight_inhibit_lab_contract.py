@@ -22,15 +22,15 @@ ALTERNATIVE_GPIO_WRITE_APIS = (
 )
 
 DIRECT_GPIO_OUTPUT_REGISTER_ASSIGNMENTS = (
-    r"\\b(?:GPOS|GPOC)\\s*(?:\\||&|\\^)?=",
-    r"\\bGPIO\\s*\\.\\s*out(?:_w1ts|_w1tc|1_w1ts|1_w1tc)?(?:\\s*\\.\\s*val)?\\s*(?:\\||&|\\^)?=",
+    r"\b(?:GPOS|GPOC)\s*(?:\||&|\^)?=",
+    r"\bGPIO\s*\.\s*out(?:_w1ts|_w1tc|1_w1ts|1_w1tc)?(?:\s*\.\s*val)?\s*(?:\||&|\^)?=",
 )
 
 
 def _assert_no_gpio_write_bypasses(masked_source: str):
     """Reject alternate Arduino/ESP-IDF output APIs and direct GPIO register writes."""
     for api in ALTERNATIVE_GPIO_WRITE_APIS:
-        if re.search(rf"\\b{re.escape(api)}\\s*\\(", masked_source):
+        if re.search(rf"\b{re.escape(api)}\s*\(", masked_source):
             raise AssertionError(
                 f"alternative GPIO writer API '{api}' must remain absent; use writeLogical"
             )
@@ -40,7 +40,6 @@ def _assert_no_gpio_write_bypasses(masked_source: str):
             raise AssertionError(
                 "direct GPIO output register writes must remain absent; use writeLogical"
             )
-
 
 
 def poll_call_matches(source: str):

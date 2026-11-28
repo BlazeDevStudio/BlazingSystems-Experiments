@@ -583,7 +583,7 @@ def verify_gpio_write_authority_mutations():
                 "direct-logical-writer",
                 source.replace(
                     "void denyRemoteControl(){",
-                    "void denyRemoteControl(){\\n  writeLogical(runRelayPin,true,runRelayActiveHigh);",
+                    "void denyRemoteControl(){\n  writeLogical(runRelayPin,true,runRelayActiveHigh);",
                     1,
                 ),
                 "writeLogical calls must be limited to configureRuntimePins and applyOutputs",
@@ -592,7 +592,7 @@ def verify_gpio_write_authority_mutations():
                 "raw-digital-write",
                 source.replace(
                     "void denyRemoteControl(){",
-                    "void denyRemoteControl(){\\n  digitalWrite(runRelayPin,HIGH);",
+                    "void denyRemoteControl(){\n  digitalWrite(runRelayPin,HIGH);",
                     1,
                 ),
                 "digitalWrite must be centralized in writeLogical",
@@ -626,7 +626,7 @@ def verify_gpio_write_authority_mutations():
         for label, statement in alternative_calls:
             mutated = source.replace(
                 "void denyRemoteControl(){",
-                "void denyRemoteControl(){\\n  " + statement,
+                "void denyRemoteControl(){\n  " + statement,
                 1,
             )
             if mutated == source:
@@ -643,7 +643,7 @@ def verify_gpio_write_authority_mutations():
         for label, statement in register_writes:
             mutated = source.replace(
                 "void denyRemoteControl(){",
-                "void denyRemoteControl(){\\n  " + statement,
+                "void denyRemoteControl(){\n  " + statement,
                 1,
             )
             if mutated == source:
@@ -660,8 +660,8 @@ def verify_gpio_write_authority_mutations():
         # Comments and string literals must not create false-positive bypasses.
         decoy_source = (
             source
-            + "\\n// analogWrite(runRelayPin,255); GPOS = (1U << runRelayPin);"
-            + '\\nconst char *gpioWriterDecoy = "ledcWrite(0,255); GPIO.out_w1ts = BIT(runRelayPin);";'
+            + "\n// analogWrite(runRelayPin,255); GPOS = (1U << runRelayPin);"
+            + '\nconst char *gpioWriterDecoy = "ledcWrite(0,255); GPIO.out_w1ts = BIT(runRelayPin);";'
         )
         gpio_write_authority_locations(decoy_source)
         print(f"GPIO_WRITE_BYPASS_COMMENT_STRING_DECOYS_IGNORED {name}")
