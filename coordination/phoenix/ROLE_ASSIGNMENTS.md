@@ -1,3 +1,24 @@
+## PHX-MASTER UTC02 owner/CI refresh — 2026-11-28T02:38Z
+
+| Role | Current PR/head | Exact evidence | Disposition |
+|---|---|---|---|
+| MASTER | #288 181d08e2 pre-change | OPEN/DRAFT/UNMERGED; 690 ahead / 1 behind; 265/265 paths coordination-only | Master audit only; suite/Actions NOT RUN |
+| CORE | #252 c82705f2 | Build #42698139210 PASS | Scoped evidence only; CORE untouched/deconflicted |
+| RENTAL | #289 68928774 | Build #43653329229 + native auth #43653329235 PASS | Parent draft unmerged |
+| RENTAL | #328 10fc200b | API/auth/APK #45622918364/#45622918551/#45622918340 PASS; Build #45622918468 FAIL | Handover freshness gate + ESP32 mbedtls/sha256.h missing |
+| PISONET | #255 d01fd164 | Windows synthetic #42462978704 PASS | Native COM NOT TESTED |
+| HARDWARE | #365 e65b0b89 | Focused #46056656161 PASS; Mbed #46056656203 PASS; Full #46056656151 FAIL | Parent poll-boundary lab |
+| HARDWARE | #366 07fef4e8 | Focused #46059524018 PASS; Mbed #46059523991 PASS; Full #46059524022 FAIL | Stacked module split |
+| HARDWARE | #367 85142129 | Focused #46095032998 PASS; Mbed #46095033011 PASS; Full #46095032997 FAIL | Parent deny-latch monotonicity |
+| HARDWARE | #368 9885c81d | Focused #46095152313 PASS; Mbed #46095152451 PASS 3/3; Full #46095152346 FAIL at tests/controllers.sh:21 | Cast-alias child; QA owns stale config_revision assertion |
+| QA | #290 5c29d159 | Windows synthetic #43633486963 PASS | Not native COM/hardware acceptance |
+| QA | #292 75a3f66d | No exact-head workflow | NOT VERIFIED |
+| RELEASE | #291 bf339a76; #242 36c0d0bb | No exact-head workflows/statuses | NO-GO |
+
+HARDWARE #368 modifies only workflow/handover/lab-contract files; no production .ino file changed. Its per-board 14/14 cast-alias mutation matrix is bounded regex/source-contract evidence, not complete C++ AST/dataflow or electrical proof. QA must replace the literal config_revision presence assertion with source-linked default-deny controller tests; do not add a decoy field or weaken deny-only behavior. No ownership changed.
+
+---
+
 ## PHX-MASTER UTC01 owner/CI refresh — 2026-11-28T01:34Z
 
 | Role | Current PR/head | Exact evidence | Disposition |

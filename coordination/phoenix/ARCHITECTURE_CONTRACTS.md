@@ -1,3 +1,13 @@
+## PHX-MASTER UTC02 contract verification notes — 2026-11-28T02:38Z
+
+- The active v0.6 controller contract remains default-deny. Current source CGI blob db58041c returns response_sig for member snapshot/auth/mutation routes, but register/ping (lines 114–116) and poll (lines 119–137) responses do not include a controller response_sig. Member signatures are not controller-response authentication.
+- The active v0.6 sketches still perform synchronous poll before first coin sample: ESP8266 post("poll") line 354, digitalRead(runCoinPin) line 357; ESP32 line 314 then line 318; HTTP timeout 3,500 ms. No interrupt-only RAM count is a substitute for durable coin admission.
+- HARDWARE #368 focused and Mbed CI pass and its 14/14 per-board C-style/reinterpret-cast alias matrix is useful bounded source-contract evidence. It is not full C++ AST/dataflow proof, arbitrary memory-corruption proof, or electrical/hardware acceptance.
+- #368 Full remains failed at QA-owned tests/controllers.sh:21 because the old test requires literal config_revision presence. QA must test the negative/default-deny contract from source, not reintroduce an unauthenticated config_revision decoy or weaken deny-only behavior.
+- These are interface/verification findings only. Master did not change firmware, CGI, QA assertions, finance, migration, signer, witness, or hardware.
+
+---
+
 ## PHX-MASTER UTC00 — controller trust and fail-closed contract recheck
 
 Active v0.6 ESP8266 source blob `12c4bb82` calls synchronous `post("poll")` at line 354 before the first coin sample at 357; ESP32 blob `29f1125d` does so at 314 before sampling at 318. The 3,500 ms blocking poll can span an input pulse; this remains P0 #177 and is not hardware accepted.

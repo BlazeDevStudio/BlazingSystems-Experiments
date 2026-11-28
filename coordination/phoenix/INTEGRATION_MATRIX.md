@@ -1,3 +1,29 @@
+## PHX-MASTER UTC02 — exact COE #26 / current Hardware #368 route matrix (2026-11-28T02:38Z)
+
+Exact non-truncated trees: historical intake source 6d4c9b48 = 2,391 entries / 1,845 blobs; current Hardware #368 9885c81d = 2,442 / 1,896; COE #26 destination b382d233 = 286 / 207; COE main a6513ab4 = 3 / 2.
+
+| Route | Pinned source files | Current #368 source files | COE destination comparison (current #368) |
+|---|---:|---:|---|
+| CORE library | 20 | 20 | 14 exact / 6 divergent / 0 missing / 0 extra |
+| CORE CGI | 1 | 1 | 0 exact / 1 divergent |
+| RENTAL Android | 983 | 983 | 0 exact / 983 missing / 8 destination-only |
+| RENTAL standalone profile | 30 | 30 | manual-file-mapping-required; recursive copy explicitly forbidden |
+| RENTAL server | 12 | 12 | 0 exact / 1 divergent / 11 missing / 3 destination-only |
+| PISONET SoftTimer | 44 | 44 | 16 exact / 9 divergent / 19 missing / 22 destination-only |
+| HARDWARE ESP32 | 3 | 4 | 0 exact / 1 divergent / 3 missing |
+| HARDWARE ESP8266 | 3 | 18 | 0 exact / 1 divergent / 17 missing |
+| QA tests | 149 | 151 | 2 exact / 2 divergent / 147 missing / 15 destination-only |
+
+SOURCE_INTAKE.json schema 8: all 61 runtime rows match their declared pinned-source and destination Git blob SHA/mode against the exact trees; actual row statuses are 46 byte-identical / 15 derived, but summary says 47 / 14. Its 15 derived tests include 11 NOT_RUN and 4 PENDING_CI_RUN. MIGRATION_MAP.md has 14 derived-test rows, omits voucher_txn_journal.sh, and records stale blob IDs for run_focus.sh (fa1f4f2c vs intake 2b7b861e) and member_txn_journal.sh (01dc9c65 vs intake d04df3c6).
+
+Firmware source vs COE destination differs on both boards: current #368 ESP32 a673e323 vs destination 3cc7ec54; ESP8266 7527dbff vs destination c8be98f7. Historical pinned firmware blobs were ESP32 29f1125d, ESP8266 12c4bb82; neither matches destination. Ten named source LICENSE/NOTICE artifacts exist; only four exact destination counterparts were found. Missing: root NOTICE.md; Launcher LICENSE and assets/license.html; jsqr vendor LICENSE; UI qrcode LICENSE; UI tabler LICENSE.
+
+Source pin disagreement: OWNERSHIP_ROUTES.json source_ref=f4e8a891 while SOURCE_INTAKE.json / MIGRATION_MAP.md pin migration source commit 6d4c9b48. Destination pin disagreement: SOURCE_INTAKE/MIGRATION_MAP name feature/pisowifi-cleanup-stabilization, while live PR #26 head branch is integration/ecosystem-nonproprietary-candidate-20261111 at the same candidate SHA b382d233. Preserve both records until COE owner clarifies baseline semantics; no staging/copy/move.
+
+All five PR #26 workflows remain CANCELLED. PR #26 is OPEN/DRAFT with 205 changed files / 85 commits; destination main remains structure-only. The route manifest remains 11 routes / DRAFT_REVIEW_ONLY, PHX-MASTER target null. No migration approval.
+
+---
+
 ## PHX-MASTER UTC01 — exact COE #26 / Hardware stack matrix (2026-11-28T01:34Z)
 
 Exact non-truncated trees: pinned source 6d4c9b48 = 2,391 entries / 1,845 blobs; current Hardware #367 4e558a06 = 2,440 / 1,894; COE #26 b382d233 = 286 / 207.

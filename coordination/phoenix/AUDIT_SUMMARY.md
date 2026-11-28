@@ -1,3 +1,14 @@
+## PHX-MASTER UTC02 — live blocker refresh (2026-11-28T02:38Z)
+
+- Control plane #172 current latest Master event is UTC01; no UTC02 PHX-MASTER event existed before this activation. Cleanup #266 remains OPEN with 0/7 gates checked.
+- P0 #177 remains OPEN. Exact current v0.6 development branch 2fbd2475 still polls synchronously before sampling: ESP8266 post("poll") line 354 then digitalRead(runCoinPin) line 357; ESP32 line 314 then line 318; timeout is 3,500 ms. The issue's cited commit 9df0a7e7 is stale, but its two firmware blob SHAs remain identical on the current branch. Current CGI returns response_sig on member routes, but controller register/ping (line 114–116) and poll (119–137) responses contain no controller response_sig.
+- Financial crash atomicity #31 and rental receipt/lease consistency #32 remain OPEN; physical acceptance #34 and independent freshness witness #43 remain OPEN. No hardware or customer operations were performed.
+- Production remains NO-GO: protected signer/anti-rollback witness, crash-atomic durable state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized release gates are not verified.
+- Exact Master Python suite and verify_coordination.py NOT RUN; no Master exact-head Actions/status. The GitHub tree/blob/manifest comparisons were executed in-memory against exact non-truncated trees. No local checkout/test runner was available.
+- Canonical private BLAZE_PROJECT_REGISTRY_v11_20261027.json and newer corrections NOT_RECOVERED. Library search surfaced only older v3-v7 snapshots and a separate Nov 9 checkpoint; no Google Drive connector/action is exposed. No older file was substituted and no private contents or IDs were published.
+
+---
+
 ## PHX-MASTER UTC01 — current blockers and next owner actions (2026-11-28T01:34Z)
 
 - HARDWARE #367 exact head 4e558a06: Focused and Mbed pass; Full #46089846111 fails at QA-owned tests/controllers.sh:21 because it still requires config_revision absent from the deny-only candidate sketches. 15 jobs passed, 1 failed, 13 downstream jobs skipped. PR description remains stale and needs Hardware-owner refresh.

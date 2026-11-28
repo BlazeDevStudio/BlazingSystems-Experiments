@@ -1,3 +1,9 @@
+## PHX-MASTER UTC02 — 2026-11-28 exact-head HW368 / COE #26 provenance audit
+
+[Full UTC02 audit](PHX_MASTER_UTC02_20261128_HW368_COE26_SOURCE_PIN_ROLE_CI_AUDIT.md). Master pre-change HEAD 181d08e2; main 6be5d19b; v0.5.3 development aad3aade; v0.6 audit foundation 2fbd2475; COE main a6513ab4; COE #26 candidate b382d233. PR #288 remains OPEN/DRAFT/UNMERGED, 690 ahead / 1 behind, 265/265 changed paths under coordination/phoenix/. HARDWARE #368 9885c81 focused + Mbed PASS, Full FAIL at QA-owned controller parity assertion; deny-latch cast-alias matrix 14/14 per board is bounded regex evidence only. COE #26 remains frozen: route imports are incomplete, runtime summary 47/14 vs actual 46/15, one derived test missing from map, two stale test blob IDs, six license/NOTICE gaps, source-ref and destination-branch pin disagreement. P0 #177, #31/#32/#34/#43 and cleanup #266 remain open; private registry v11/newer corrections NOT_RECOVERED; PRODUCTION NO-GO.
+
+---
+
 ## PHX-MASTER UTC01 — 2026-11-28 exact-head / COE #26 audit
 
 [Full UTC01 audit](PHX_MASTER_UTC01_20261128_HW367_4E558A06_COE26_EXACT_PROVENANCE_ROLE_CI_AUDIT.md). Starting Master HEAD bc780bce; current main 6be5d19b; v0.5.3 development aad3aade; v0.6 audit foundation 2fbd2475; COE main a6513ab4; COE #26 b382d233. PR #288 remains OPEN / DRAFT / UNMERGED. #367 current head 4e558a06 has Focused/Mbed PASS and Full FAIL at QA controller parity. COE #26 remains frozen: runtime 61/61 identities match but 46/15 actual statuses contradict 47/14 summary; derived map 14/15, voucher row missing, two stale blob IDs, six license/NOTICE gaps and firmware source divergence. P0 #177 and cleanup #266 remain open; private registry v11/newer corrections unavailable; PRODUCTION NO-GO.
