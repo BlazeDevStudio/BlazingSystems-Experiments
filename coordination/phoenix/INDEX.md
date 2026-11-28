@@ -1,3 +1,14 @@
+## PHX-MASTER UTC05 — 2026-11-28T05:35Z — Hardware #373 and COE #26 exact reconciliation
+
+Task: `PHX-MASTER-20261128T05Z-HW373-COE26-EXACT-TEST-LICENSE-ROLE-CI`. Strict NO CODEX. The latest Hardware child is #373 at `7ed2a1e9`; Focused and Mbed pass, Full is terminally failed at the QA-owned `config_revision` assertion after all 14 target/platform jobs including Android pass. HARDWARE owns refreshing its stale in-progress PR text.
+
+COE #26 remains frozen at `b382d233`. Exact recursive source/destination tree audit confirms all 61 runtime intake rows match their pinned source and candidate blobs/modes; actual count is 46 identical / 15 derived versus the manifest summary 47 / 14. Four original tests plus 15 derived tests are in the candidate; all 15 derived destination blobs match, but MIGRATION_MAP has only 14 derived rows, omits `voucher_txn_journal.sh`, and has stale hashes for `run_focus.sh` and `member_txn_journal.sh`. Source test tree has 149 blobs versus 19 candidate test blobs; no complete per-file test inventory exists. Eleven source license/notice paths have only four exact destination path counterparts; seven are missing. All five #26 workflows are cancelled. No staging or migration.
+
+Live v0.6 source still polls synchronously for 3,500 ms before first coin sampling on both boards; P0 #177 remains open. Cleanup #266 remains 0/7. Private registry v11/newer corrections are not recovered; no Google Drive connector is exposed. Master tests were not run because no local non-Codex checkout is available. Production remains NO-GO.
+
+[Full UTC05 exact-head audit](PHX_MASTER_UTC05_20261128_HW373_COE26_SOURCE_TEST_LICENSE_AND_ROLE_CI_AUDIT.md).
+
+---
 ## PHX-MASTER UTC04 — 2026-11-28T04:37Z — exact Hardware #371, P0 #177 and COE #26 provenance
 
 Task: `PHX-MASTER-20261128T04Z-HW371-P0-COE26-EXACT-PROVENANCE`. Strict NO CODEX. Master audit-start head `696852a64b096d8502cf08dda36bf759eb813b62`; all writes in this activation are restricted to `coordination/phoenix/`.

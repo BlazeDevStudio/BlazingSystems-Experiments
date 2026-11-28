@@ -1,3 +1,20 @@
+## PHX-MASTER UTC05 — execution summary and blockers
+
+**Task:** `PHX-MASTER-20261128T05Z-HW373-COE26-EXACT-TEST-LICENSE-ROLE-CI` · **Audit-start:** `2af334464185b0e8439a85812fbadf6d3ab79675`.
+
+- Exact GitHub tree/blob/mode and migration-manifest comparisons executed: 61/61 runtime rows match pinned source and candidate; actual identical/derived split is 46/15, manifest says 47/14.
+- HARDWARE #373 exact docs head `7ed2a1e9`: Focused PASS, Mbed 3/3 PASS, Full terminal FAIL at QA-owned controller parity; all 14 target/platform jobs including Android PASS; downstream gates skipped.
+- COE #26 remains FROZEN; 15 derived test blobs match destination but one map row is missing, two map hashes are stale, seven license paths are missing, and destination branch pin disagrees with live PR #26. No staging.
+- P0 #177 remains OPEN: v0.6 ESP8266 poll line 354 precedes first sample line 357; ESP32 poll line 314 precedes first sample line 318; both have 3,500 ms timeout.
+- Cleanup #266 remains OPEN / 0-of-7. Branch protection enforcement UNKNOWN (rulesets empty, classic reads 403).
+- Private registry v11/newer corrections NOT_RECOVERED; no Google Drive connector exposed. Older Library snapshots not substituted. Master Python suite and `verify_coordination.py` NOT RUN; no local non-Codex checkout.
+- CORE remains read-only to its separate owner; no competing CORE worker/task created. No subsystem source or COE destination paths changed.
+
+**Next:** QA replace the obsolete `config_revision` presence assertion with source-linked deny-only tests and rerun Full on the exact successor SHA; HARDWARE refresh #373's terminal PR/ledger state; COE owner reconcile migration provenance; registry custodian restore v11; repository admin verify protection and provide a non-Codex test checkout.
+
+**PRODUCTION NO-GO.** No merge, release, signing, secret provisioning, flash, physical test, real payment operation or financial migration.
+
+---
 ## PHX-MASTER UTC04 — 2026-11-28T04:37Z — executed checks and current blockers
 
 **Role/task:** PHX-MASTER · `PHX-MASTER-20261128T04Z-HW371-P0-COE26-EXACT-PROVENANCE` · audit-start `phoenix/master-coordination@696852a64b096d8502cf08dda36bf759eb813b62`.

@@ -1,3 +1,16 @@
+## PHX-MASTER UTC05 — exact COE #26 runtime, test and license audit
+
+PR #26 remains OPEN / DRAFT / FROZEN at `b382d233ff06c8791b1028bed3c617cc7b670d12`; COE main is `a6513ab4412b4c014eee2863e45cbe32d06cb243`. Pinned Experiments source `6d4c9b487af4d768c4d7627654d119417fcc6e00` has 2,391 tree entries; candidate has 286; main has 3. Both recursive trees were complete/non-truncated.
+
+- Runtime: 61/61 `SOURCE_INTAKE.json` rows match actual pinned-source and candidate blob SHAs and modes. Actual count is 46 byte-identical / 15 derived, not the summary's 47 / 14.
+- Tests: four original test rows (two identical, two derived) plus 15 derived destination tests. All 15 derived destination blobs/modes match SOURCE_INTAKE; 11 NOT_RUN, four PENDING_CI_RUN. MIGRATION_MAP contains 18 test rows, omitting `tests/voucher_txn_journal.sh`; `run_focus.sh` and `member_txn_journal.sh` map hashes are stale against SOURCE_INTAKE and actual destination. The source `tests/` tree has 149 blobs and destination `Pisowifi/tests/` has 19; a complete per-file test inventory is still absent.
+- Licenses: 11 source LICENSE/NOTICE/COPYING path artifacts; four exact destination path counterparts; seven missing (Rental Launcher LICENSE/MODULE_LICENSE_APACHE2/assets license page, R281 QR license, jsqr vendor license, UI QRCode license, UI Tabler license).
+- Pins: SOURCE_INTAKE destination branch `feature/pisowifi-cleanup-stabilization` differs from actual PR #26 branch `integration/ecosystem-nonproprietary-candidate-20261111`; OWNERSHIP_ROUTES source_ref `f4e8a891` differs from SOURCE_INTAKE source commit `6d4c9b48`.
+- All five #26 candidate workflows are CANCELLED. COE #35/#45/#49 remain separate owner drafts with their exact-head CI recorded in ROLE_ASSIGNMENTS.md.
+
+No staging, copy, move, overwrite, cherry-pick, route promotion or destination write is permitted from this audit. COE integration owner must reconcile the manifest summary, missing map row, stale hashes, full test inventory, licenses and branch pins first.
+
+---
 ## PHX-MASTER UTC04 — 2026-11-28T04:37Z — COE #26 exact manifest and destination recheck
 
 Candidate `integration/ecosystem-nonproprietary-candidate-20261111@b382d233ff06c8791b1028bed3c617cc7b670d12` remains OPEN / DRAFT / FROZEN. COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243` is a 3-entry / 2-blob scaffold; candidate is 286 entries / 207 blobs, 205 changed paths. All five candidate workflows are CANCELLED.

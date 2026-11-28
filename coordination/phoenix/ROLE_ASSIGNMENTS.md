@@ -1,3 +1,22 @@
+## PHX-MASTER UTC05 — live role heads and exact-head CI
+
+| Owner / PR | Exact head | Exact-head evidence / disposition |
+|---|---|---|
+| CORE #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | Build #42698139210 PASS; read-only, separate owner retains CORE. |
+| RENTAL #289 | `68928774d0d7cf65adb26bc6b54199a3159d066c` | Build #43653329229 and native auth #43653329235 PASS. |
+| RENTAL #328 | `10fc200b6dbf470a95e679d3acc58aff4ab2a67f` | APK/API/native auth PASS; Build #45622918468 FAIL. |
+| PISONET #255 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | Windows synthetic #42462978704 PASS; native COM NOT TESTED. |
+| QA #290 | `5c29d15994cee1279058f1eca12f2a3180704292` | Windows synthetic #43633486963 PASS; not native acceptance. |
+| QA #292 | `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | No exact-head workflow. |
+| RELEASE #291 | `bf339a76964a1abe2412fac45392fe06a8e66418` | No exact-head workflow. |
+| RELEASE #242 | `36c0d0bb3e58786359555b307bb784f720f023ce` | No exact-head workflow. |
+| HARDWARE #373 | `7ed2a1e9bb84d00ae73909231e93939f0eb5d4a6` | Focused #46111743260 PASS; Mbed #46111743270 3/3 PASS; Full #46111743275 terminal FAIL at QA-owned `tests/controllers.sh:21`; Android and all 14/14 target/platform jobs PASS; downstream stages skipped. |
+
+Hardware #373 source/test SHA: `8d33f53396a9357f4e2d2dd931e66ce2bfc91765`. The current PR body still describes Android as in progress; HARDWARE must refresh its own PR body/ledger in place. QA owns the assertion correction. No role ownership changed.
+
+COE role PRs: #35 `bc57ba8ecc5245ce538c6770a45bb25e2b8b5ef3` — case-collision PASS, ImageBuilder FAIL (Bubblewrap unavailable), Hardware/Shared FAIL (ULA /48 missing); #45 `9d76a134c1f6512aa40c20ec4d247306a71a8cce` — overlay/shell and case-collision PASS; #49 `aeb8ff11b2f5db9a5f86280ab62ab988245f3919` — Stage 5.1 and case-collision PASS, Hardware/Shared FAIL (`mbedtls/sha256.h`).
+
+---
 ## PHX-MASTER UTC04 — 2026-11-28T04:37Z — live role heads and exact-head CI
 
 Task: `PHX-MASTER-20261128T04Z-HW371-P0-COE26-EXACT-PROVENANCE`. Heads and workflow runs were re-read from GitHub; no role branch was modified.
