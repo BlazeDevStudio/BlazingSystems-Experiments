@@ -1956,6 +1956,16 @@ Full push [#46040057846](https://github.com/BlazeDevStudio/BlazingSystems-Experi
 **Scope:** host-lab modularization only; no production firmware sketch or runtime behavior changed. `CHANGE_LEDGER.md` remains byte-identical to the parent and its append-only guard remains enabled. Physical acceptance remains NOT TESTED; HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
 
 
+## PHX-HARDWARE UTC01 — PR #367 exact-head final evidence and child #368
+
+- Parent PR #367: OPEN / DRAFT / UNMERGED; branch phoenix/hw-deny-latch-monotonicity-20261127-utc21; docs/PR head 4e558a06ff558dffef8a966a6e412029e7340119; source/test commit 985a54c289b8e3c796c2bcc977f652b178b293c0.
+- Focused run #46089846162 (https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46089846162), job 140807946248: PASS at exact head 4e558a06ff558dffef8a966a6e412029e7340119.
+- Mbed run #46089846114 (https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46089846114): PASS 3/3 — source contract 140807946755, ESP32 core 3.3.13 140807946800, core 4.0.0 140807946564.
+- Full run #46089846111 (https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46089846111): TERMINAL FAILURE at validation job 140808002601, QA-owned tests/controllers.sh:21 literal config_revision assertion. All 14 target/platform jobs including Android passed; validation-dependent simulation/update/sign/publication stages were skipped. This is not a firmware compile failure.
+- Master UTC01 checkpoint #7231916175 (https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/172#issuecomment-7231916175) confirms QA owns replacing the positive marker assertion with source-linked deny-only vectors; CORE owns the authenticated register/poll/receipt/disposition contract; P0 #177 remains open.
+- Child PR #368 is a separate Hardware-owned source-contract extension based on #367 at 4e558a06ff558dffef8a966a6e412029e7340119; child branch phoenix/hw-deny-latch-cast-alias-20261128-utc01, current child head bc2e90392378b29bd633d098afc7cf29498a1d32. Its focused alias-cast tests passed at exact head d8bf447e; current corrected-head Focused/Mbed/Full runs are pending/in progress. Do not transfer #367 evidence to #368 or vice versa.
+- No production .ino, CORE API, finance, journal disposition, QA assertion, migration, signer, witness or COE source changed. Coin/relay remain deny-only. Physical GPIO/relay, LittleFS power-loss, 150 power cuts, 30-device/24-hour soak and electrical recovery remain NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+
 ## PHX-HARDWARE UTC01 — deny-latch cast-alias regression child #368
 
 **Current child PR:** [#368](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/368), OPEN / DRAFT / UNMERGED  
