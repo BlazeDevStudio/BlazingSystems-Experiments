@@ -1,3 +1,13 @@
+## PHX-MASTER UTC14 architecture/interface decision — deny boundary and branch order (2026-11-28T14:36:52Z)
+
+- HARDWARE stack order: retain #366 → #373 → #374; carry #375's five commits onto a new child of #374. Resolve nine overlapping paths manually and preserve `PROJECT_HANDOVER.md`, `CHANGE_LEDGER.md`, and `CURRENT_STATE.md` append-only history. No force-push, merge, or source change by Master.
+- Active v0.6 remains P0-blocked: ESP8266 blob `12c4bb82b6fddafe813674a0b5f692c1d3634073`, timeout 263 / poll 354 / first coin sample 357; ESP32 blob `29f1125d52ff474a0d028ad41f7af201be1f0f9d`, timeout 230 / poll 314 / first sample 318. Issue #177 remains OPEN; its embedded source pin is stale.
+- Candidate #375 `pollDenyOnly()` discards poll response and reapplies deny. It does not fix active v0.6 pulse loss, prove durable pulse retention, or establish physical relay/GPIO acceptance.
+- QA owns PAY-0745 and Controller parity semantics; CORE owns authenticated register/poll/receipt/disposition and financial authority; HARDWARE owns firmware and handovers; Master owns cross-role contracts and sequencing only.
+- Independent protected signing/anti-rollback witness, crash-atomic durable paid state, reversible migration tests, independent QA, native acceptance, 150 real power cuts and 30-device/24-hour soak remain unverified. Production admission stays denied.
+
+---
+
 ## PHX-MASTER UTC14 — P0 poll-order and deny-only candidate boundary
 
 - Current active v0.6 source remains `blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859`. ESP8266 blob `12c4bb82b6fddafe813674a0b5f692c1d3634073`: timeout line 263, synchronous poll/config apply line 354, first `digitalRead(runCoinPin)` line 357. ESP32 blob `29f1125d52ff474a0d028ad41f7af201be1f0f9d`: timeout line 230, poll line 314, first sample line 318.

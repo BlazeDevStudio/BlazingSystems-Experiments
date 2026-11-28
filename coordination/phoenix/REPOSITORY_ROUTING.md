@@ -1,3 +1,15 @@
+## PHX-MASTER UTC14 routing/governance/access refresh (2026-11-28T14:36:52Z)
+
+- `OWNERSHIP_ROUTES.json` remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`, schema v1, 11 routes, `DRAFT_REVIEW_ONLY`; PHX-MASTER source `coordination/phoenix/`, target `null`. No route changed.
+- Exact refs: Experiments main `6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5`; development `aad3aade72c1156eecba1fed30907c6d0283b2c5`; active v0.6 `2fbd2475e9f54878c316fa7cea2f228386b0e859`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; PR #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`.
+- Five route safety properties remain: Master target null; broad Rental manual-file-mapping-only with copy disabled; two nested Rental overlaps blocked. Static checks are not `verify_coordination.py`.
+- Branch metadata reports `protected=false` for Experiments main/development/v0.6/Master and COE main. Effective required-check enforcement UNKNOWN; repository admin must verify.
+- Private `BLAZE_PROJECT_REGISTRY_v11_20261027.json` and newer corrections NOT_RECOVERED. No Google Drive connector/action exposed; v3-v7 copies not substituted; no private IDs/content copied. AGENTS-linked Cloud Artifact Policy / Storage Recovery Handover unavailable from legacy URL.
+- The visible automation inventory shows a separate active PHX-HARDWARE continuation. CORE remains read-only to Master per instruction; no competing CORE work or automation started.
+- A shallow non-Codex clone failed DNS resolution for github.com. Master Python suite, `verify_coordination.py`, and Master CI NOT RUN. No new large artifact, Drive write, subsystem source change or destination migration.
+
+---
+
 ## PHX-MASTER UTC14 — routing, governance and private-registry access
 
 - `OWNERSHIP_ROUTES.json` remains blob `e4db324315a1b3543fec17a148fbf960170fcb29`, schema `phoenix/ownership-routes/v1`, 11 routes, `DRAFT_REVIEW_ONLY`. PHX-MASTER source is `coordination/phoenix/`, target `null`, kind `coordination-only`. No route or destination target was changed.

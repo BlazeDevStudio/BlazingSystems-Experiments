@@ -1,3 +1,41 @@
+## PHX-MASTER UTC14 integration refresh — exact ancestry, 9 overlaps and COE identity (2026-11-28T14:36:52Z)
+
+### HARDWARE branch graph
+
+- #366 head `07fef4e8e1055c06cf5e5c3a0d3829c52be31cc9`.
+- #373 head `3783654a3c9862598bbb714268c536fb8b34578b`: 18 ahead / 0 behind #366.
+- #374 head `cfb19ed5df920bf5fa7e33e08dc73a25f8b14db9`: 52 ahead / 0 behind #366; child of #373.
+- #375 docs head `94b1231c631eb32da0f019604ce00a4a0851a471`: 5 commits ahead of #366. Compare #374...#375: diverged, ahead 5 / behind 52, merge base #366.
+
+The earlier seven-path count was incomplete. Exact changed-file intersection (23 files in #374; 12 in #375) is **nine**:
+1. `.github/workflows/phx-hw-active-v06-esp32-core-compat.yml`
+2. `.github/workflows/phx-hw-active-v06-poll-intake-deny.yml`
+3. `experiment/openwrt/BlazePwifi/PROJECT_HANDOVER.md`
+4. `experiment/openwrt/BlazePwifi/docs/handover/CHANGE_LEDGER.md`
+5. `experiment/openwrt/BlazePwifi/docs/handover/CURRENT_STATE.md`
+6. `experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/BlazePwifiVendo.ino`
+7. `experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_preflight_inhibit_lab_cases.py`
+8. `experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_preflight_inhibit_lab_contract.py`
+9. `experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_preflight_inhibit_lab_harness.py`
+
+**Recommended order, not merge authorization:** retain #366 → #373 → #374, then carry #375's five commits on a new child of #374. HARDWARE must resolve all nine overlaps manually, preserve `PROJECT_HANDOVER.md`, `CHANGE_LEDGER.md`, and `CURRENT_STATE.md` append-only history, keep the old #375 branch, and rerun Poll/Mbed/Native/Full on the new exact head.
+
+### Exact-head CI
+
+- #375 docs head `94b1231c`: Poll [#46154597287](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46154597287) PASS; Mbed [#46154597284](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46154597284) 3/3 PASS; Native [#46154597316](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46154597316) FAIL PAY-0745; Full [#46154597299](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46154597299) FAIL `tests/controllers.sh:21` `config_revision` after 14/14 target jobs PASS; downstream skipped.
+- #374 `cfb19ed5`: Poll #46147124328 PASS; Mbed #46147124263 3/3 PASS; Native #46147124253 FAIL PAY-0745; Full #46147124375 FAIL Controller parity after 14/14 target jobs PASS.
+
+### COE #26 exact tree/provenance
+
+- Trees: pinned source 2,391 entries; current Experiments main 2,341; COE candidate 286; none truncated.
+- Intake blob `1b9018ff944f7f673934d0fc2a97e0a0090d3f5f`; map blob `b54fc15d83bc2269de03db8aadd0e76259fd13d9`.
+- Runtime 61/61 source/destination blob+mode matches; actual 46 identical / 15 derived vs declared 47/14; current source-main drift 33 unchanged / 20 changed / 8 absent.
+- Tests 149 source / 19 candidate; manifest 4 original + 15 derived; map 14 rows, missing `voucher_txn_journal.sh`; stale hashes: `run_focus.sh` recorded `fa1f4f2c...` vs actual `2b7b861e...`, `member_txn_journal.sh` recorded `01dc9c65...` vs actual `d04df3c6...`.
+- Licensing 11 source / 4 destination / 7 missing: Android launcher LICENSE, MODULE_LICENSE_APACHE2 and assets/license.html; R281 rental qrcode-LICENSE; tests/vendor/jsqr LICENSE; ui/vendor/qrcode LICENSE; ui/vendor/tabler LICENSE.
+- Destination branch pin remains `feature/pisowifi-cleanup-stabilization`, not live PR #26 branch `integration/ecosystem-nonproprietary-candidate-20261111`. Five candidate workflows CANCELLED; exact candidate check-runs zero. COE #26 remains FROZEN; no staging/write.
+
+---
+
 ## PHX-MASTER UTC14 — Hardware stack collision and COE #26 provenance revalidation
 
 ### Parallel Hardware candidate stacks — owner sequencing required

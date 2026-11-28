@@ -1,3 +1,21 @@
+## PHX-MASTER UTC14 role refresh — exact current heads and CI (2026-11-28T14:36:52Z)
+
+| Role / PR | Exact current head | Exact-head evidence |
+|---|---|---|
+| CORE #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | PR run [#42698139210](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42698139210) completed without failed jobs; focused [#42698124709](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42698124709) PASS. Older push #42698124574 had an x86 simulation failure. CORE remains owner-only. |
+| RENTAL #289 | `68928774d0d7cf65adb26bc6b54199a3159d066c` | Build [#43653329229](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329229) and native auth [#43653329235](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43653329235) PASS. |
+| RENTAL #328 | `10fc200b6dbf470a95e679d3acc58aff4ab2a67f` | Build [#45622918468](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/45622918468) FAIL at ESP32 compile and handover validation; API21/23 smoke, native auth and APK identity PASS. |
+| PISONET #255 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | Windows synthetic [#42462978704](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/42462978704) PASS; native COM NOT TESTED. |
+| QA #290 | `5c29d15994cee1279058f1eca12f2a3180704292` | Windows synthetic [#43633486963](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/43633486963) PASS. |
+| QA #292 | `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | No exact-head workflow. |
+| RELEASE #291 | `bf339a76964a1abe2412fac45392fe06a8e66418` | No exact-head workflow. |
+| HARDWARE #374 | `cfb19ed5df920bf5fa7e33e08dc73a25f8b14db9` | Poll #46147124328 PASS; Mbed #46147124263 3/3 PASS; Native #46147124253 FAIL PAY-0745; Full #46147124375 FAIL Controller parity after 14/14 target jobs PASS. |
+| HARDWARE #375 | PR/docs `94b1231c631eb32da0f019604ce00a4a0851a471`; tested code/docs `d6bd3737e60b49a7f4cec12226396ff60e83b9f6`; source/test commit `227658bc09fa1ab5ff9140c0b920ecc95cc7422d` | Poll #46154597287 PASS; Mbed #46154597284 3/3 PASS; Native #46154597316 FAIL PAY-0745; Full #46154597299 FAIL `tests/controllers.sh:21` `config_revision` after 14/14 target jobs PASS. Latest docs-head result supersedes earlier handover-freshness failure. |
+
+**Master sequencing recommendation:** #366 → #373 → #374 → new child of #374 carrying the five #375 commits. Exact overlap is nine paths; HARDWARE must preserve the old #375 branch and append-only handovers. No merge approval.
+
+---
+
 ## PHX-MASTER UTC14 role refresh — exact owner heads and CI
 
 | Owner / PR | Exact head | Exact-head evidence / disposition |

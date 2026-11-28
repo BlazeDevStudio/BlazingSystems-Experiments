@@ -1,3 +1,14 @@
+## PHX-MASTER UTC14 revalidation — exact 9-path overlap and owner sequence (2026-11-28T14:36:52Z)
+
+- Audit input: `phoenix/master-coordination@42dc13a7b732ff56152ec2170f2c61904b3dc67f`; Experiments main `6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5`, development `aad3aade72c1156eecba1fed30907c6d0283b2c5`, active v0.6 `2fbd2475e9f54878c316fa7cea2f228386b0e859`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`, PR #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`.
+- Correction: exact #374/#375 file lists overlap on **9** paths, not the previously reported 7; the missed paths were `PROJECT_HANDOVER.md` and `CHANGE_LEDGER.md`.
+- Exact ancestry: #366 → #373 (18 commits ahead) → #374 (52 commits ahead of #366); #375 is a 5-commit sibling of #366. #374/#375 diverge from #366 (ahead 5 / behind 52). Master recommends carrying #375's five commits on a new child of #374, preserving the old #375 branch and append-only handovers; no force-push or merge.
+- #375 docs head `94b1231c`: Poll #46154597287 PASS; Mbed #46154597284 3/3 PASS; Native #46154597316 FAIL PAY-0745; Full #46154597299 FAIL Controller `config_revision` after 14/14 target builds PASS. This supersedes the earlier handover-freshness failure. #374 `cfb19ed5`: Poll/Mbed PASS; Native PAY-0745 FAIL; Full Controller parity FAIL after 14/14 target builds PASS.
+- COE #26 remains FROZEN: pinned source/candidate runtime 61/61 blobs+mode; actual 46 identical / 15 derived vs declared 47/14; current source-main drift 33/20/8; tests 149 source vs 19 candidate, 14 map rows vs 15 derived, voucher row missing, two stale hashes; 11 source license/notice artifacts vs 4 destination counterparts. No staging/write.
+- Cleanup #266 OPEN / 0-of-7; P0 #177 OPEN; private registry v11/newer corrections NOT_RECOVERED; no Google Drive connector; Master tests/CI NOT RUN. **BLOCKED / PRODUCTION NO-GO.**
+
+---
+
 ## PHX-MASTER UTC14 — exact live role/CI and cross-stack overlap audit — 2026-11-28T14:04:19Z
 
 - Audit input: `phoenix/master-coordination@9fd37533bd771ac0d80c11ee72112226fb89667b`; Experiments `main@6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5`, development `blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5`, active v0.6 `blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE #26 candidate `b382d233ff06c8791b1028bed3c617cc7b670d12`.

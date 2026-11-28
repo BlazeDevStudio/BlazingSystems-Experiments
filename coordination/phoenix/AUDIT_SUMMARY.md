@@ -1,3 +1,26 @@
+## PHX-MASTER UTC14 continuation — exact stack and migration revalidation (2026-11-28T14:36:52Z)
+
+**Role/task:** PHX-MASTER · `PHX-MASTER-20261128T14Z-HW375-COE26-OVERLAP-RECONCILIATION` · audit input `42dc13a7b732ff56152ec2170f2c61904b3dc67f` · coordination-only.
+
+### Work completed
+- Re-read issue #172, cleanup #266, Experiments main/development/active-v0.6 refs, PR #288 and ownership manifest, all relevant role PR heads/CI, COE main and PR #26, root AGENTS.md, README_FIRST and BLAZE-COMMS/1.
+- Recomputed #374/#375 changed-path intersection: **9**, correcting the prior 7-path count. The extra paths are `PROJECT_HANDOVER.md` and `CHANGE_LEDGER.md`. Exact ancestry supports #366 → #373 → #374 → new child of #374 carrying #375's five commits; preserve the existing #375 branch and append-only history.
+- Rechecked latest #375 docs-head CI: Poll/Mbed pass, Native PAY-0745 fails, Full `config_revision` parity fails after 14/14 target builds pass. This supersedes the earlier handover-freshness failure.
+- Recomputed COE #26 tree, runtime, test and license provenance; candidate remains frozen.
+
+### Live refs and blockers
+- Experiments main `6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5`; development `aad3aade72c1156eecba1fed30907c6d0283b2c5`; active v0.6 `2fbd2475e9f54878c316fa7cea2f228386b0e859`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; COE #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`.
+- Active v0.6 still polls before first coin sample: ESP8266 blob `12c4bb82b6fddafe813674a0b5f692c1d3634073` lines 263/354/357; ESP32 blob `29f1125d52ff474a0d028ad41f7af201be1f0f9d` lines 230/314/318. P0 #177 OPEN; embedded source pin stale.
+- Cleanup #266 OPEN / 0-of-7; P0 #31/#32/#34/#43 OPEN. Ownership routes remain 11 / DRAFT_REVIEW_ONLY / Master target null.
+- COE runtime 61/61 exact; actual 46/15 vs declared 47/14; current-source drift 33/20/8; tests 149 vs 19; map missing voucher row and two stale hashes; licenses 11 vs 4 with 7 missing; destination branch pin stale; all five candidate workflows cancelled. No staging/write.
+- Private Drive registry v11/newer corrections NOT_RECOVERED; no Drive connector. No older registry substituted. AGENTS-linked Cloud Artifact Policy/Storage Recovery Handover could not be retrieved from the legacy URL.
+- Branch metadata reports `protected=false` for Experiments main/development/v0.6/Master and COE main; effective required-check enforcement UNKNOWN.
+- Local shallow clone failed DNS resolution for github.com. Master tests, `verify_coordination.py`, and Master CI NOT RUN. API/tree inspection is not test execution.
+
+**Disposition: BLOCKED / PRODUCTION NO-GO.** No subsystem source, ownership route, COE destination, private registry record, signer, secret, hardware, payment or production state changed.
+
+---
+
 ## PHX-MASTER UTC14 continuation — live overlap and migration audit (2026-11-28T14:04:19Z)
 
 **Role:** PHX-MASTER · **Task:** `PHX-MASTER-20261128T14Z-HW375-COE26-OVERLAP-RECONCILIATION` · **Audit input:** `phoenix/master-coordination@9fd37533bd771ac0d80c11ee72112226fb89667b` · **Scope:** six existing coordination files only.
