@@ -1,3 +1,23 @@
+## PHX-HARDWARE UTC12 CI update — EEPROM network-gate runtime proof (#374)
+
+**Source/test SHA:** \`4da5e7a8b8911538f2d3905e559f983b773e703d\`  
+**Exact CI checkout / prior docs head:** \`bb0ccc269d105bb0b70ad5a1bd42e2089c3f844d\`  
+**PR:** [#374](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/374), OPEN / DRAFT / UNMERGED.
+
+### Exact-head results
+- [Hardware Poll run #46146914426](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46146914426), job \`140984874139\`: **PASS**. The log confirms checkout ref \`bb0ccc269d105bb0b70ad5a1bd42e2089c3f844d\`, all 4 connectSta runtime scenarios PASS, both injected mutations rejected at exits 10/20 with expected markers, existing 17/17 config source mutations PASS, EEPROM/loadCfg runtime fixtures PASS, and pending-recovery promotion 15 scenarios per board PASS.
+- [Native Synthetic run #46146914476](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46146914476), job \`140984876253\`: **FAIL**, QA-owned assertion \`tests/v060_vendo_sequence_contract.py\`: corrupt persisted state must halt startup. No QA-owned file was changed.
+- [Mbed TLS 3/4 run #46146914481](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46146914481): source-contract job \`140985013035\` **PASS**; ESP32 core 3.3.13 job \`140985013179\` and core 4.0.0 job \`140985012859\` still **IN PROGRESS** at this read.
+- [Full build run #46146914480](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46146914480): **PENDING**, no jobs exposed yet. No Full success is claimed.
+
+### Disposition
+Poll regression = **CI VERIFIED** on \`bb0ccc269d105bb0b70ad5a1bd42e2089c3f844d\`. Native remains failed; Mbed is partial/in progress; Full pending. No production sketch changed. This does not establish EEPROM/NVS brown-out behavior or physical GPIO/relay acceptance. HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO. Keep coin/relay admission denied.
+
+### Coordination
+PHX-QA owns the corrupt-persisted-state assertion and controller parity tests. PHX-MASTER must refresh #374 role/integration pins; the live Master docs still pin stale #374 heads (\`84c980e\` / \`09374c8\`). PHX-CORE retains ownership of the authenticated controller response contract.
+
+---
+
 ## PHX-HARDWARE UTC12 follow-up — runtime EEPROM readiness network gate (#374)
 
 **PR:** [#374](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/374) OPEN / DRAFT / UNMERGED  
