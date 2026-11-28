@@ -133,3 +133,100 @@ Hardware's latest checkpoint #7230394247 was re-read and PR #367 advanced again 
 - The Hardware PR description remains stale (older `183650be` / `3f1f7424` pins); Hardware must refresh it to the current `1922dcba` source/test, `4a78354c` tested docs and `778220aa` current PR head. QA still owns the failing assertion; do not restore an unauthenticated field to the deny-only firmware.
 
 This supersedes the earlier UTC23 #367 head and CI status. No Master ownership or production gate changed.
+
+
+## UTC23 scheduled-run revalidation — exact source pin, tests, licences and live role CI (2026-11-28T00:05:35Z)
+
+This is an in-place continuation of the existing UTC23 PHX-MASTER event. The existing control-plane comment `#7230526411` is the unique UTC23 Master checkpoint and is updated in place; no duplicate role/hour comment is created.
+
+### Exact live refs at revalidation
+
+| Ref | Exact SHA |
+|---|---|
+| Experiments `main` | `6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5` |
+| `blazepwifi-v0.5.3-development` | `aad3aade72c1156eecba1fed30907c6d0283b2c5` |
+| `blazepwifi-v0.6.0-audit-foundation` | `2fbd2475e9f54878c316fa7cea2f228386b0e859` |
+| Master branch before this report-only commit | `79bd7a6f75dc1025e1557ef127fbe826ff61eda9` |
+| COE `main` | `a6513ab4412b4c014eee2863e45cbe32d06cb243` |
+| COE #26 candidate branch | `integration/ecosystem-nonproprietary-candidate-20261111@b382d233ff06c8791b1028bed3c617cc7b670d12` |
+
+`OWNERSHIP_ROUTES.json` remains schema v1, 11 routes, `DRAFT_REVIEW_ONLY`; PHX-MASTER target is null / coordination-only. No owner or route changed. PR #288 has 263 changed paths, all under `coordination/phoenix/`; the live main-vs-Master comparison before this commit was 687 ahead / 1 behind, merge base `f4e8a891aed8af86d5fd315d28750a0ac3a7372b`. Keep #288 OPEN / DRAFT / UNMERGED; no rebase or retarget.
+
+### COE #26 source-pin and destination provenance — new exact comparison
+
+All recursive trees were non-truncated:
+
+| Tree | Entries | Blobs |
+|---|---:|---:|
+| Pinned source `6d4c9b487af4d768c4d7627654d119417fcc6e00` | 2,391 | 1,845 |
+| Current Experiments main | 2,341 | 1,765 |
+| Active v0.6 development | 2,392 | 1,846 |
+| Legacy v0.5.3 development | 2,079 | 1,573 |
+| COE #26 destination | 286 | 207 |
+
+At the exact pinned source and destination trees:
+
+- SOURCE_INTAKE has 61 runtime rows; **61/61** match actual source and destination blob SHA plus Git mode.
+- Actual classification is **46 byte-identical / 15 derived**; the schema-8 summary still says 47 / 14.
+- All **4/4** original test rows match the pinned source and destination. All **15/15** derived-test blob IDs match destination files.
+- MIGRATION_MAP has only 14 derived-test rows and omits destination file `tests/voucher_txn_journal.sh`; this is a provenance-map omission, not a missing destination file.
+- Destination branch pin is stale: manifest says `feature/pisowifi-cleanup-stabilization`, while live PR #26 uses `integration/ecosystem-nonproprietary-candidate-20261111`.
+
+The pinned source is a historical snapshot, not interchangeable with every current source branch:
+
+- Against active v0.6, **60/61** runtime blobs/modes match the pinned snapshot; the only divergence is `openwrt/rootfs/usr/lib/blazepwifi/common.sh` (pinned `4ccb10777b08f541d092f7c2c2d2aad4d2f6562e`, v0.6 `50fa2d02d40af7fd8b06e83974345f1016a317f9`). All **4/4** original test identities match v0.6.
+- Against current main, **28/61** runtime paths differ or are absent relative to the pinned snapshot; **2/4** original test blobs differ.
+- Against v0.5.3 development, only **25/61** runtime paths match; 17 are absent and 19 differ; only 1/4 original tests match.
+
+Do not silently refresh or replace the historical source pin. The destination owner must explicitly decide which source snapshot is intended, reconcile the one v0.6 `common.sh` divergence and update branch/head provenance before any staging.
+
+### Licence and test import completeness
+
+A case-insensitive source-tree scan found 10 named LICENSE/NOTICE/COPYING artifacts (including repository-root NOTICE); four have exact destination counterparts:
+
+- Exact: `Pisowifi/LICENSE`, rootfs vendor QRCode LICENSE, rootfs vendor TailAdmin LICENSE and TailAdmin NOTICE.
+- Missing counterparts: root `NOTICE.md`; Android Launcher LICENSE and `assets/license.html`; jsqr test LICENSE; UI QRCode LICENSE; UI Tabler LICENSE.
+
+These six missing counterparts require destination-owner/licence review. No third-party asset was copied or changed.
+
+All five candidate workflows on COE #26 remain CANCELLED: #43096752563, #43096752800, #43096752557, #43096752609 and #43096752632. No destination CI was executed. **#26 remains FROZEN; no staging, copying, moving, overwriting, cherry-picking or migration occurred.**
+
+### Current role-owned CI re-read
+
+| Role / PR | Exact-head result |
+|---|---|
+| CORE #252 `c82705f2` | Build #42698139210 SUCCESS (scoped) |
+| RENTAL #328 `10fc200b` | API21/API23, native-auth and APK identity focused runs SUCCESS; shared build #45622918468 FAILURE |
+| RENTAL #289 `68928774` | Build #43653329229 and native auth #43653329235 SUCCESS |
+| PISONET #255 `d01fd164` | Windows synthetic #42462978704 SUCCESS; native COM hardware acceptance NOT TESTED |
+| HARDWARE #367 `778220aa` | Focused #46084788298 SUCCESS; Mbed #46084788312 3/3 SUCCESS; Full #46084788285 FAILURE at validation job 140791854060 / `tests/controllers.sh:21`; all 14 firmware/Android target jobs SUCCESS, downstream acceptance/sign/publish skipped |
+| HARDWARE #357 `963c3713` | Focused #46067421658 SUCCESS; Mbed #46067421664 3/3 SUCCESS; Full #46067421812 and Native #46067421738 FAILURE |
+| QA #290 `5c29d159` | Windows synthetic #43633486963 SUCCESS |
+| QA #292 `75a3f66d` | No exact-head workflow |
+| RELEASE #291 / #242 | No exact-head workflows |
+| COE #35 `bc57ba8e` | Case-collision SUCCESS; ImageBuilder and Hardware/Shared FAILURE |
+| COE #45 `9d76a134` | OpenWrt overlay and case-collision SUCCESS |
+| COE #49 `aeb8ff11` | Stage 5.1 bridge and case-collision SUCCESS; Hardware/Shared FAILURE |
+
+Hardware #367 PR description remains stale: it cites source/test `183650be` and docs `3f1f7424`, while the exact current source/test is `1922dcba`, tested docs are `4a78354c`, and PR head is `778220aa`. This is a HARDWARE-owned handover correction. QA owns the failing literal `config_revision` assertion; do not reintroduce unauthenticated controller fields or weaken deny-default.
+
+### P0 #177 and controller trust contract
+
+Active v0.6 source was fetched again:
+
+| Board | Exact source blob | Synchronous poll | First coin sample |
+|---|---|---:|---:|
+| ESP8266 | `12c4bb82b6fddafe813674a0b5f692c1d3634073` | 354 | 357 |
+| ESP32 | `29f1125d52ff474a0d028ad41f7af201be1f0f9d` | 314 | 318 |
+
+Both still poll synchronously before the first coin sample; the HTTP timeout remains 3,500 ms. Main CGI blob `2e3a1430d08cc6606429a042df3b5848f53c7267` returns controller register/ping and poll payloads without controller `response_sig`. Member endpoint signatures do not authenticate controller poll/disposition. CORE owns the authenticated contract, HARDWARE firmware, QA independent vectors; no interface change was made.
+
+### Master execution, registry and safety
+
+- Exact GitHub tree/manifest audit executed in memory: 61/61 runtime blob/mode rows, 15/15 derived-test destination blobs, 14/15 map coverage, source-branch drift counts, and license counterpart identities were recomputed from non-truncated trees.
+- Master repository unittest module, full Master Python suite and `verify_coordination.py`: NOT RUN. No authenticated local checkout; container GitHub DNS resolution failed. Master exact-head Actions/combined statuses: none.
+- Canonical private `BLAZE_PROJECT_REGISTRY_v11_20261027.json` and newer corrections were not found in Library; exact title search surfaced v3–v7 snapshots and a November 9 checkpoint reference only. No Google Drive connector/action is exposed. Do not substitute old snapshots or publish private data.
+- Visible automation inventory shows `Phoenix Master Hourly Development` and `Blaze Hourly Production Development` (the latter explicitly PHX-HARDWARE). The requested exact title `Blaze Production Continuation` was not present; no competing CORE task was started and CORE source remains untouched.
+- Cleanup #266 remains OPEN / 0-of-7. P0 #177 remains OPEN. Protected signing/anti-rollback witness, crash-atomic financial state, reversible migration tests, independent QA, native acceptance, 150 real power cuts, 30-device/24-hour soak and owner-authorized release gates remain unverified. **PRODUCTION NO-GO.**
+
+No merge, release, signing, secret provisioning, flashing, physical testing, payment operation, financial migration or approval occurred.
