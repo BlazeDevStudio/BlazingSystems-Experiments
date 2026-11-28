@@ -1,3 +1,14 @@
+## PHX-MASTER UTC09 follow-up — PHX-MASTER-20261128T09Z-HW374-COE26-EXACT-HEAD-PROVENANCE (2026-11-28T10:01:48.418Z)
+
+- Audit-start Master head `298b6a4b0600a0440a806d816431d694ccae4371`; current coordination commit is being reconciled in this UTC09 checkpoint. Experiments main `6be5d19b`, development `aad3aade`, active v0.6 `2fbd2475`, COE main `a6513ab4`, COE #26 candidate `b382d233`.
+- HARDWARE #374 current head `44334e37ad516815b3fa5f2c478a057d31327e3b`: Poll/Mbed PASS; Native FAIL at QA literal assertion; Full FAIL at handover freshness after 14/14 target builds PASS.
+- COE #26 remains FROZEN: runtime 61/61 exact blob+mode; actual 46/15 vs 47/14 summary; source tests 149 vs candidate 19; map 14/15 derived, missing voucher row and two stale hashes; seven of eleven project license paths missing; all five workflows CANCELLED.
+- Cleanup #266 0/7; P0 #177 OPEN; private registry v11 not recovered; no Drive connector; no source staging or production action.
+
+[Full UTC09 report](coordination/phoenix/PHX_MASTER_UTC09_20261128_HW374_EXACT_HEAD_AND_COE26_PROVENANCE_AUDIT.md).
+
+---
+
 ## PHX-MASTER UTC08 follow-up — 2026-11-28T08:49Z — current Hardware #374 head
 
 Task: `PHX-MASTER-20261128T08Z-HW374-EEPROM-BEGIN-CI-AUDIT` (same UTC08 event; existing checkpoint updated in place, not duplicated). Audit-start Master head `d624ca2683c81fbd1da238cbb6cbcc4a1c01309c`. Strict NO CODEX.

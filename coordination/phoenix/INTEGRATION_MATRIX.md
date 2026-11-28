@@ -1,3 +1,13 @@
+## PHX-MASTER UTC09 COE #26 provenance refresh — PHX-MASTER-20261128T09Z-HW374-COE26-EXACT-HEAD-PROVENANCE (2026-11-28T10:01:48.418Z)
+
+- Candidate PR #26 `b382d233ff06c8791b1028bed3c617cc7b670d12`; COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; pinned source `6d4c9b487af4d768c4d7627654d119417fcc6e00`. Both recursive trees complete, not truncated.
+- Runtime: 61/61 exact source/destination blob+mode matches; actual 46 byte-identical / 15 derived vs manifest summary 47/14.
+- Tests: source tree 149 blobs, destination 19. Four original test rows match source/destination blob+mode; all 15 derived entries match destination blob+mode. Map has 14 derived rows, omits `voucher_txn_journal.sh` (destination blob `4277a56af800b930135745bb942d62b6d580cb99`), and contains stale hashes for `run_focus.sh` (map `fa1f4f2c...`, actual `2b7b861e...`) and `member_txn_journal.sh` (map `01dc9c65...`, actual `d04df3c6...`). Only four original source test paths are mapped; other source test blobs are unaccounted for.
+- Licences: 11 project-scoped source LICENSE/NOTICE artifacts; four exact destination path+blob counterparts; seven missing. Source repository-root NOTICE is separate and absent from candidate root.
+- Destination branch pin remains `feature/pisowifi-cleanup-stabilization`, while live PR #26 uses `integration/ecosystem-nonproprietary-candidate-20261111`. All five candidate workflows are CANCELLED. No staging or destination write.
+
+---
+
 ## PHX-MASTER UTC08 follow-up — Hardware #374 and COE #26 exact provenance (2026-11-28T08:49Z)
 
 ### Hardware #374 current head

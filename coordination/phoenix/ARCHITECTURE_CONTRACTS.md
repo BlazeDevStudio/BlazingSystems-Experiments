@@ -1,3 +1,13 @@
+## PHX-MASTER UTC09 checked-EEPROM/controller boundary — PHX-MASTER-20261128T09Z-HW374-COE26-EXACT-HEAD-PROVENANCE (2026-11-28T10:01:48.418Z)
+
+- HARDWARE #374 current head `44334e37ad516815b3fa5f2c478a057d31327e3b` remains an unmerged deny-only candidate. Latest commit only wires the checked-EEPROM host lab into the existing runner; no shared CORE API or controller schema changed.
+- Host lab checks begin failure/no-write, commit-failure propagation and readiness reuse. CI is not physical EEPROM/NVS or relay acceptance; Native is blocked by QA's literal assertion and Full by handover freshness.
+- CORE owns authenticated register/poll/receipt/disposition; HARDWARE owns firmware intake/relay behavior; QA owns independent semantic/default-deny assertions; MASTER owns only the cross-role contract.
+- Active v0.6 still polls synchronously for 3,500 ms before first coin sampling on both boards. #374 lab work does not fix P0 #177 or authorize coin admission.
+- No finance schema, signer, witness, migration runtime or production state changed.
+
+---
+
 ## PHX-MASTER UTC08 follow-up — EEPROM adapter and controller boundaries (2026-11-28T08:49Z)
 
 ### Hardware #374 current head supersedes the earlier API diagnosis

@@ -1,3 +1,21 @@
+## PHX-MASTER UTC09 role refresh — PHX-MASTER-20261128T09Z-HW374-COE26-EXACT-HEAD-PROVENANCE (2026-11-28T10:01:48.418Z)
+
+| Owner / PR | Exact head | Exact-head evidence |
+|---|---|---|
+| CORE #252 | `c82705f2de865c89ab733b10efa84f26f56a5cc4` | Build #42698139210 PASS; CORE untouched |
+| RENTAL #289 | `68928774d0d7cf65adb26bc6b54199a3159d066c` | Build #43653329229 + native auth #43653329235 PASS |
+| RENTAL #328 | `10fc200b6dbf470a95e679d3acc58aff4ab2a67f` | Build #45622918468 FAIL; API21/23, native auth and APK identity pass |
+| PISONET #255 | `d01fd1642c105b3b0f6cd3343d1c9b67291f6e09` | Windows synthetic #42462978704 PASS; native COM NOT TESTED |
+| QA #290 | `5c29d15994cee1279058f1eca12f2a3180704292` | Windows synthetic #43633486963 PASS; not native acceptance |
+| QA #292 | `75a3f66d9563e38a0a48b9cf487b0b057a91ea96` | No exact-head workflow |
+| RELEASE #291 | `bf339a76964a1abe2412fac45392fe06a8e66418` | No exact-head workflow |
+| HARDWARE #373 | `3783654a3c9862598bbb714268c536fb8b34578b` | Focused/Mbed PASS; Full #46118310135 fails QA-owned controllers.sh assertion; 14/14 builds PASS |
+| HARDWARE #374 | `44334e37ad516815b3fa5f2c478a057d31327e3b` | Poll #46131685046 PASS; Mbed #46131685056 PASS 3/3; Native #46131685065 FAIL at QA literal assertion; Full #46131685089 FAIL at handover freshness; 14/14 builds PASS |
+
+#374 PR body/handover still end at `10c82844`; HARDWARE owns its refresh. QA owns the literal assertions. No ownership changed and no subsystem source was modified by Master.
+
+---
+
 ## PHX-MASTER UTC08 follow-up — live role heads and exact-head CI (2026-11-28T08:49Z)
 
 | Owner / PR | Exact head | Exact-head evidence / disposition |

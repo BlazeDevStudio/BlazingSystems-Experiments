@@ -1,3 +1,13 @@
+## PHX-MASTER UTC09 routing refresh — PHX-MASTER-20261128T09Z-HW374-COE26-EXACT-HEAD-PROVENANCE (2026-11-28T10:01:48.418Z)
+
+- Experiments main `6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5`; development `blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5`; active v0.6 `blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859`.
+- COE main `a6513ab4412b4c014eee2863e45cbe32d06cb243`; PR #26 candidate `integration/ecosystem-nonproprietary-candidate-20261111@b382d233ff06c8791b1028bed3c617cc7b670d12`.
+- OWNERSHIP_ROUTES remains 11 routes / `DRAFT_REVIEW_ONLY`; PHX-MASTER target null; historical source_ref `f4e8a891` retained. No route promotion.
+- SOURCE_INTAKE/MIGRATION_MAP destination branch pin is stale vs live PR #26. Broad Rental remains manual-file-mapping-only, `copy_permitted=false`.
+- Private registry v11/newer corrections not accessible through this runtime; no older registry substituted. CORE remains untouched.
+
+---
+
 ## PHX-MASTER UTC08 follow-up — exact branch pins and owner routing (2026-11-28T08:49Z)
 
 - Experiments main `6be5d19b743e7bc3e089f674ffc8bcbbe50d6be5`; development `blazepwifi-v0.5.3-development@aad3aade72c1156eecba1fed30907c6d0283b2c5`; active v0.6 `blazepwifi-v0.6.0-audit-foundation@2fbd2475e9f54878c316fa7cea2f228386b0e859`; Master audit-start `phoenix/master-coordination@d624ca2683c81fbd1da238cbb6cbcc4a1c01309c`.

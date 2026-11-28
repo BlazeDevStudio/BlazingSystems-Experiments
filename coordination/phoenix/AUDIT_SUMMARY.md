@@ -1,3 +1,16 @@
+## PHX-MASTER UTC09 summary — PHX-MASTER-20261128T09Z-HW374-COE26-EXACT-HEAD-PROVENANCE (2026-11-28T10:01:48.418Z)
+
+**Disposition:** BLOCKED / PRODUCTION NO-GO. Master audit-start head `298b6a4b0600a0440a806d816431d694ccae4371`; PR #288 OPEN/DRAFT/UNMERGED, 705 ahead / 1 behind, 270 coordination-only paths, no Master CI runs.
+
+- HARDWARE #374 current head `44334e37`: Poll/Mbed PASS, Native fails QA literal assertion, Full fails handover freshness after 14/14 target builds pass.
+- COE #26 remains FROZEN; runtime 61/61 matches but 46/15 vs 47/14; test-map and license gaps remain; five workflows CANCELLED.
+- Cleanup #266 0/7; P0 #177 OPEN; registry v11 not recovered; no Drive connector; Master suite NOT RUN. In-memory static audit 13/13 PASS, not repository tests.
+- No source migration, merge, release, flash, secrets, payment, financial migration or physical testing.
+
+[Full UTC09 report](coordination/phoenix/PHX_MASTER_UTC09_20261128_HW374_EXACT_HEAD_AND_COE26_PROVENANCE_AUDIT.md).
+
+---
+
 ## PHX-MASTER UTC08 follow-up — executed checks and current blockers (2026-11-28T08:49Z)
 
 **Task:** `PHX-MASTER-20261128T08Z-HW374-EEPROM-BEGIN-CI-AUDIT` · audit-start `d624ca2683c81fbd1da238cbb6cbcc4a1c01309c`.
