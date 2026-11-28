@@ -4196,3 +4196,44 @@ No firmware/API/finance source, COE destination, physical device, or production 
 - **Full:** #46173474301 FAIL at QA-owned tests/controllers.sh:21 `config_revision`; handover/history gates pass; 14/14 target/platform jobs PASS; downstream bundle/simulation/signing/publication skipped.
 - **Native:** NOT RUN; workflow paths do not include this PR's changed files.
 - **Disposition:** CI VERIFIED / SIMULATED for source guard only; Full integration blocked on CORE/QA contract parity; physical acceptance and release gates NOT TESTED / NOT ACCEPTED.
+
+ 
+## PHX-HARDWARE UTC20 — alternate GPIO writer bypass guard
+
+**Updated:** 2026-11-28T20:36Z  
+**Task:** PHX-HW-177-GPIO-OUTPUT-API-AUTHORITY-20261128T20Z  
+**PR:** [#380](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/380), OPEN / DRAFT / UNMERGED  
+**Branch:** phoenix/hw-gpio-writer-reconcile-20261128-utc17  
+**Base:** #377 at 95ace1236c2b3e4816515c372edd4853ceeed064  
+**Source/test commit:** 0c09d8ed5927bac037f01a2649d0d332c5717a38  
+**Prior intermediate commit:** c5a9f666ddb016ed6df43ed73756696b3db3c824 (corrected immediately; its regex/newline escaping is not the final implementation).
+
+### Proven gap and correction
+
+The previous writer-authority guard enforced one digitalWrite() implementation inside writeLogical(), but it did not reject alternate output APIs or direct output-register assignments. A future analogWrite, ESP32 LEDC/DAC, ESP-IDF GPIO-level call, tone/shiftOut, or direct GPIO register write could bypass that contract while the original digitalWrite count remained unchanged.
+
+The source contract now explicitly rejects 11 alternate output APIs:
+analogWrite, digitalWriteFast, ledcWrite, ledcWriteChannel, dacWrite, gpio_set_level, gpio_ll_set_level, gpio_hal_set_level, tone, noTone, and shiftOut.
+
+It also rejects ESP8266 GPOS/GPOC and ESP32 GPIO.out* output-register assignments. The existing single digitalWrite() inside writeLogical(), six startup logical-OFF writes, four accepting-gated output writes, and polarity rules remain unchanged.
+
+### Failure-injection coverage
+
+The host source-contract lab now injects 19 mutations per board (4 existing writer-authority mutations, 11 alternate output API calls, and 4 direct register assignments), for 38 total expected rejections across ESP8266 and ESP32. Comment/string decoys are also checked to avoid false positives.
+
+These are static/source-extracted regression tests only. They do not establish physical GPIO voltage, relay polarity, coin-acceptor behavior, pulse retention, or hardware acceptance.
+
+### CI status at this checkpoint
+
+GitHub Actions workflow runs for source/test SHA 0c09d8ed5927bac037f01a2649d0d332c5717a38 were not returned by the commit-run lookup at the time of this handover. Poll Intake Deny, Mbed TLS, Full, and Native must be re-read on their exact tested heads after the append-only handover update. Do not transfer earlier #380 runs to this new source SHA. Native remains subject to its existing path filter; no manual workflow-dispatch write action is exposed.
+
+### Release and ownership disposition
+
+- CORE still owns the canonical authenticated controller/financial envelope.
+- QA still owns PAY-0745 and controller parity semantics.
+- HARDWARE owns this firmware host-lab source contract and the #380 stack handovers.
+- Active v0.6 P0 #177 poll-before-first-sample remains unresolved; no coin/relay re-enable was introduced.
+- #239, #254, and #283 remain separate protected DRAFTs; no edits or retargeting.
+- Physical relay/acceptor polarity, EEPROM/NVS brown-out, LittleFS recovery, 150 power cuts, 30-device/24-hour soak, electrical pulse/recovery, protected signer/witness, v1-to-v2 migration, durable accounting/replay, and independent QA/release signoff remain NOT TESTED / NOT ACCEPTED.
+
+**HARDWARE ACCEPTED = NO. PRODUCTION READY = NO-GO.**
