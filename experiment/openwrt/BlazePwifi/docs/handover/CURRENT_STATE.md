@@ -1670,3 +1670,11 @@ Focused exact-head run #46105780778 PASS (job 140858075446); EEPROM Config 6/6, 
 Full #46105780768 validation job 140858135917 failed at the mandatory handover freshness gate because CHANGE_LEDGER.md had not yet been appended after source/workflow commit 40860925d0150f5de49f310678d32e0c23f6f9a6. The append-only ledger checkpoint is added in this commit; a fresh Full run is required. The failed run did not reach controller parity or downstream simulation/signing/publication.
 
 This is a host-lab modularization only. Production sketches, physical hardware, finance, signer/witness and migration are unchanged; physical acceptance NOT TESTED; PRODUCTION NO-GO.
+
+### PHX-HARDWARE UTC04 terminal result — PR #371
+
+Focused #46106079097 PASS; Mbed #46106079120 PASS 3/3. Full #46106079194 terminal FAILURE after the mandatory handover freshness gate passed; the QA-owned controller parity check failed at `tests/controllers.sh:21` because both deny-only candidate sketches have no `config_revision` field. All 14/14 target/platform builds, including Android, completed PASS; downstream simulations/update/signing/publication/candidate gates were skipped.
+
+This is not a target compilation failure. Do not add an unauthenticated placeholder to satisfy a literal grep. PHX-QA owns source-linked deny-only vectors; PHX-CORE owns authenticated register/poll/receipt/disposition. PHX-HARDWARE retains P0 #177 as next firmware task after interface coordination.
+
+No production sketch changed in #371. Physical EEPROM/NVS, GPIO/relay, LittleFS power loss, 150 power cuts, 30-device/24-hour soak and electrical pulse/recovery remain NOT TESTED. HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.

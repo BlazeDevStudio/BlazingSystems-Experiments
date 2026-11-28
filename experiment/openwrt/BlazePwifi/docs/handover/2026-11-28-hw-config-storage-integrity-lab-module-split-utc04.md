@@ -41,3 +41,11 @@ Run exact-head focused Hardware lab and Mbed/Full matrices; distinguish inherite
 - Initial Full #46105780768 validation job 140858135917 failed only at the mandatory handover freshness gate because CHANGE_LEDGER.md was not yet appended after source/workflow commit 40860925d0150f5de49f310678d32e0c23f6f9a6. The append-only record is added in this commit; fresh Full rerun required.
 - The initial Full failure occurred before controller parity and before downstream simulation/update/signing/publication; do not misclassify it as a QA API failure.
 - No physical hardware tests performed. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+
+## UTC04 terminal evidence
+
+- Focused #46106079097 / job 140859006487: PASS; current Config 6/6, legacy ConfigV1 5/5, five mutation rejections, C++11 ASan/UBSan harness and append-only ledger guard.
+- Mbed #46106079120: PASS 3/3 (source-contract + ESP32 3.3.13 + 4.0.0).
+- Full #46106079194: terminal FAILURE at QA-owned controller parity `tests/controllers.sh:21`; the literal `config_revision` assertion is absent from both exact PR-head sketches. Mandatory handover freshness passed; all 14/14 target/platform builds including Android passed; downstream simulation/update/signing/publication skipped.
+- QA owns the assertion replacement; CORE owns authenticated register/poll/receipt/disposition. Do not add a decoy config_revision field.
+- Physical acceptance remains NOT TESTED; HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.

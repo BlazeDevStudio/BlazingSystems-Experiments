@@ -1791,3 +1791,11 @@ Status: host source cleanup only; HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-
 - Mbed [#46105780822](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46105780822): **3/3 PASS** (source contract, ESP32 core 3.3.13, core 4.0.0).
 - Initial Full [#46105780768](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46105780768): validation failed at mandatory handover freshness because `CHANGE_LEDGER.md` still ended at parent #370 commit `b0fed471...`; the append-only checkpoint is included in this docs commit. Rerun Full on the refreshed head.
 - No production sketch or shared financial/authentication API changed. Physical acceptance remains NOT TESTED; HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
+
+### UTC04 terminal exact-head CI — PR #371
+
+- Focused [#46106079097](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46106079097): **PASS**; EEPROM Config 6/6, ConfigV1 5/5, five failure injections rejected; native C++11 ASan/UBSan harness and append-only ledger guard passed.
+- Mbed [#46106079120](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46106079120): **3/3 PASS** (source contract, ESP32 core 3.3.13 and 4.0.0).
+- Full [#46106079194](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46106079194): handover freshness **PASS**; QA-owned `tests/controllers.sh:21` **FAIL** because it requires `config_revision` in both deny-only sketches. All 14/14 target/platform builds, including Android, PASS. Validation-dependent simulation/update/signing/publication/candidate stages SKIPPED.
+- Exact PR-head ESP8266 and ESP32 sketch blobs contain zero `config_revision` occurrences. Hardware did not add a decoy field or edit QA-owned tests.
+- This is host-lab modularization and CI evidence only. Physical hardware acceptance remains NOT TESTED; HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
