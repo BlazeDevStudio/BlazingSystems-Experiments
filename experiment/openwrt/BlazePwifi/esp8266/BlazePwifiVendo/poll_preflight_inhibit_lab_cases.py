@@ -235,7 +235,12 @@ def verify_board(name: str, path: Path):
             raise AssertionError(f"{name}: denyRemoteControl missing {token!r}")
     if not has_empty_string_assignment(deny_fn, "activeTarget"):
         raise AssertionError(f"{name}: denyRemoteControl does not clear active target")
-    if "bool accepting=controllerEnabled && coinEnabled && insertMode && fsReady && !pendingReady;" not in apply_code:
+    readiness_guard = "configStoreReady && " if "configStoreReady" in apply_code else ""
+    expected_accepting = (
+        "bool accepting=" + readiness_guard
+        + "controllerEnabled && coinEnabled && insertMode && fsReady && !pendingReady;"
+    )
+    if expected_accepting not in apply_code:
         raise AssertionError(f"{name}: relay acceptance predicate changed unexpectedly")
     if "if(relayEnabled)" not in apply_code or "writeLogical(runRelayPin,false,runRelayActiveHigh)" not in apply_code:
         raise AssertionError(f"{name}: relay-off GPIO branch is not explicit")
