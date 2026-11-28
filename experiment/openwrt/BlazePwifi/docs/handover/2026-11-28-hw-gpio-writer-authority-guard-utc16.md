@@ -28,3 +28,8 @@ Run the Poll Intake Deny workflow and ESP32 Mbed TLS 3.3.13/4.0.0 matrix on the 
 This is a source-contract / host mutation test, not physical acceptance. Physical relay/acceptor polarity, pulse retention, EEPROM/NVS brown-out, LittleFS power-loss, 150 power cuts, 30-device/24-hour soak and electrical recovery remain NOT TESTED. HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO. No flash, reset, live money, migration, signing, release, merge or deployment.
 
 **Rollback:** close/revert only this child PR; parent #378 and earlier stack remain unchanged.
+
+
+## Source/test implementation — 2026-11-28T16:43:00Z
+
+Source/test commit `b3db93481d676a519fd8870af3a66fc7f2d23d5a` changes only `poll_preflight_inhibit_lab_contract.py` and `poll_preflight_inhibit_lab_cases.py`. The new contract centralizes the sole `digitalWrite` in `writeLogical`, limits `writeLogical` callsites to startup OFF and the existing `applyOutputs` gate, and rejects four mutation classes per board (8/8 expected). CI pending; local checkout NOT RUN. No production sketch/API/QA/CORE file changed.

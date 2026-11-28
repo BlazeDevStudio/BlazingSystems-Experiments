@@ -4180,3 +4180,14 @@ Planned failure injections: (1) add a logical relay-ON call in `denyRemoteContro
 No QA-owned assertion, CORE contract, financial state, receipt, signer, witness, migration, COE source, or physical device is in scope. Local checkout/tests are NOT RUN; exact-source GitHub Actions will be the execution evidence. Keep coin/relay admission denied. No flash, reset, live money, merge, release tag, signing or deployment.
 
 **Status:** IN_PROGRESS; source/test change and CI not yet run. HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
+
+
+## Source/test implementation — 2026-11-28T16:43:00Z
+
+- **Task:** `PHX-HW-177-GPIO-WRITER-AUTHORITY-20261128T16Z`; **branch:** `phoenix/hw-output-writer-authority-guard-20261129-utc16`.
+- **Source/test commit:** `b3db93481d676a519fd8870af3a66fc7f2d23d5a` (parent `7658662744394888014b17e4c6ce63d57cf88585`).
+- **Changed files:** `poll_preflight_inhibit_lab_contract.py` and `poll_preflight_inhibit_lab_cases.py` only. No production sketch or shared interface changed.
+- Added a source contract requiring one `digitalWrite` inside `writeLogical`, restricting all `writeLogical` callsites to `configureRuntimePins` and `applyOutputs`, requiring startup writes to be logical OFF, and preserving the existing four `applyOutputs` gate/polarity calls.
+- Added four failure injections per board: direct logical writer, raw digitalWrite, startup ON write, and ungated output. Expected 8/8 mutation rejections across ESP8266 and ESP32.
+- **CI:** pending at this checkpoint; no pass/fail claim. Local checkout/tests NOT RUN.
+- **Acceptance:** source-contract / host simulation only; physical GPIO, pulse, brown-out, 150 cuts, 30-device/24-hour soak and electrical recovery NOT TESTED. HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
