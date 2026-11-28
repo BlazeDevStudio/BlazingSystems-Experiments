@@ -1,7 +1,7 @@
 """Source-level contracts for fail-closed startup, register and poll handling in both Vendo sketches."""
 import re
 
-__all__ = ["coin_post_matches", "poll_call_matches", "poll_guard_locations", "register_call_matches", "register_guard_locations"]
+__all__ = ["coin_post_matches", "deny_latch_assignment_contract", "poll_call_matches", "poll_guard_locations", "register_call_matches", "register_guard_locations"]
 
 from firmware_source_extract import extract_braced, extract_function, mask_non_code
 
@@ -308,4 +308,159 @@ def startup_storage_guard_locations(source: str):
         )
 
     return setup
+
+
+
+def _protected_runtime_field_pattern() -> str:
+    """Return the one canonical alternation for fields controlled by the deny latch."""
+    protected_names = (
+        "controllerEnabled", "coinEnabled", "relayEnabled",
+        "ledEnabled", "insertMode", "activeTarget",
+    )
+    return "|".join(re.escape(name) for name in protected_names)
+
+
+def _reject_address_escapes(masked: str, protected_pattern: str) -> None:
+    """Reject direct address-of expressions while allowing logical && reads."""
+    match = re.search(
+        rf"(?<!&)&(?!&)\s*(?P<name>{protected_pattern})\b",
+        masked,
+    )
+    if match:
+        raise AssertionError(
+            f"{match.group('name')}: address escape can bypass the deny-latch assignment guard"
+        )
+
+
+def _reject_reference_aliases(masked: str, protected_pattern: str) -> None:
+    """Reject ordinary, move/forward, and cast-based reference aliases."""
+    reference_source = (
+        rf"(?:(?:std::)?(?:move|forward)\s*(?:<[^;()]*>)?\s*\(\s*"
+        rf"|(?:static_cast|const_cast)\s*<[^;()]*[&*][^;()]*>\s*\(\s*"
+        rf"|\(\s*)?"
+        rf"(?P<name>{protected_pattern})\b\s*\)?"
+    )
+    match = re.search(
+        rf"\b(?:const\s+|volatile\s+|const\s+volatile\s+)?"
+        rf"(?:bool|String|auto|decltype\s*\([^)]*\))\s*&&?\s*"
+        rf"[A-Za-z_]\w*\s*=\s*{reference_source}",
+        masked,
+    )
+    if match:
+        raise AssertionError(
+            f"{match.group('name')}: reference alias can bypass the deny-latch assignment guard"
+        )
+
+
+def _reject_decltype_auto_aliases(masked: str, protected_pattern: str) -> None:
+    """Reject parenthesized lvalues whose decltype(auto) deduction preserves reference."""
+    match = re.search(
+        rf"\bdecltype\s*\(\s*auto\s*\)\s*[A-Za-z_]\w*\s*=\s*"
+        rf"\(\s*(?P<name>{protected_pattern})\s*\)",
+        masked,
+    )
+    if match:
+        raise AssertionError(
+            f"{match.group('name')}: decltype(auto) reference alias can bypass the deny-latch assignment guard"
+        )
+
+
+def _reject_reference_wrappers(masked: str, protected_pattern: str) -> None:
+    """Reject standard reference/address wrappers and explicit reference/pointer casts."""
+    match = re.search(
+        rf"(?:(?:std::)?(?:ref|cref|addressof|move|forward)\s*(?:<[^;()]*>)?\s*\(\s*"
+        rf"|(?:static_cast|const_cast)\s*<[^;()]*[&*][^;()]*>\s*\(\s*)"
+        rf"(?P<name>{protected_pattern})\s*\)",
+        masked,
+    )
+    if match:
+        raise AssertionError(
+            f"{match.group('name')}: reference/address/cast wrapper can bypass the deny-latch assignment guard"
+        )
+
+
+def _validate_runtime_state_assignments(source: str, masked: str) -> None:
+    """Allow protected-state writes only in global initializers and the deny helper."""
+    deny_fn = extract_function(source, "void denyRemoteControl()")
+    deny_start = source.find(deny_fn)
+    if deny_start < 0:
+        raise AssertionError("deny-only function definition could not be located")
+    deny_end = deny_start + len(deny_fn)
+
+    initial_counts = {
+        "controllerEnabled": 0,
+        "coinEnabled": 0,
+        "relayEnabled": 0,
+        "ledEnabled": 0,
+        "insertMode": 0,
+    }
+    deny_counts = {
+        "controllerEnabled": 0,
+        "coinEnabled": 0,
+        "relayEnabled": 0,
+        "ledEnabled": 0,
+        "insertMode": 0,
+        "activeTarget": 0,
+    }
+    assignments = re.compile(
+        r"\b(?P<name>controllerEnabled|coinEnabled|relayEnabled|ledEnabled|insertMode|activeTarget)"
+        r"\s*(?P<operator>\+\+|--|\+=|-=|\*=|/=|%=|&=|\|=|\^=|(?<![=!<>])=(?!=))"
+    )
+
+    for match in assignments.finditer(masked):
+        name = match.group("name")
+        operator = match.group("operator")
+        depth = masked[:match.start()].count("{") - masked[:match.start()].count("}")
+        semicolon = masked.find(";", match.end())
+        if semicolon < 0:
+            raise AssertionError(f"{name}: assignment has no terminating semicolon")
+
+        rhs = masked[match.end():semicolon].split(",", 1)[0].strip()
+        if depth == 0:
+            if name not in initial_counts or operator != "=":
+                raise AssertionError(f"{name}: unexpected global runtime-state write")
+            if name == "insertMode":
+                if rhs != "false":
+                    raise AssertionError("insertMode must start denied")
+            elif rhs not in ("true", "false"):
+                raise AssertionError(f"{name}: global initializer must be an explicit boolean")
+            initial_counts[name] += 1
+            continue
+
+        if deny_start <= match.start() < deny_end:
+            if depth != 1 or operator != "=":
+                raise AssertionError(f"{name}: deny-latch writes must be unconditional simple assignments")
+            if name == "activeTarget":
+                raw_rhs = source[match.end():source.find(";", match.end())]
+                if re.sub(r"\s+", "", raw_rhs) != '""':
+                    raise AssertionError("activeTarget may only be cleared by the deny latch")
+            elif rhs != "false":
+                raise AssertionError(f"{name}: deny latch must assign false")
+            deny_counts[name] += 1
+            continue
+
+        raise AssertionError(
+            f"{name}: runtime state may only be initialized globally or cleared by denyRemoteControl()"
+        )
+
+    missing_initial = [name for name, count in initial_counts.items() if count != 1]
+    if missing_initial:
+        raise AssertionError("runtime deny flags need exactly one global initializer: " + ", ".join(missing_initial))
+    missing_deny = [name for name, count in deny_counts.items() if count != 1]
+    if missing_deny:
+        raise AssertionError("denyRemoteControl() must clear each runtime field exactly once: " + ", ".join(missing_deny))
+
+
+def deny_latch_assignment_contract(source: str) -> None:
+    """Reject runtime writes and alias escapes from deny-only authority fields."""
+    masked = mask_non_code(source)
+    protected_pattern = _protected_runtime_field_pattern()
+
+    # Keep each escape family isolated so a failure identifies the exact
+    # contract boundary that needs review.
+    _reject_address_escapes(masked, protected_pattern)
+    _reject_reference_aliases(masked, protected_pattern)
+    _reject_decltype_auto_aliases(masked, protected_pattern)
+    _reject_reference_wrappers(masked, protected_pattern)
+    _validate_runtime_state_assignments(source, masked)
 

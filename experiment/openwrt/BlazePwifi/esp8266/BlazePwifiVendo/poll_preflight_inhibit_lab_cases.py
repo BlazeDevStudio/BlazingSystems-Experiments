@@ -9,6 +9,7 @@ from firmware_source_extract import (
 )
 from poll_preflight_inhibit_lab_contract import (
     coin_post_matches,
+    deny_latch_assignment_contract,
     poll_call_matches,
     poll_guard_locations,
     register_guard_locations,
@@ -22,7 +23,7 @@ from poll_preflight_inhibit_lab_harness import (
     remove_first_code_token,
 )
 
-__all__ = ["main", "verify_board", "verify_register_preflight", "verify_startup_storage_order", "verify_source_extractor_decoy_regressions"]
+__all__ = ["main", "verify_board", "verify_deny_latch_monotonicity", "verify_register_preflight", "verify_startup_storage_order", "verify_source_extractor_decoy_regressions"]
 
 
 
@@ -207,8 +208,67 @@ def verify_register_preflight(name: str, source: str):
     print(f"REGISTER_POST_DECOY_MUTATIONS_IGNORED {name}")
 
 
+
+def verify_deny_latch_monotonicity(name: str, source: str) -> None:
+    """Reject any runtime write that can restore coin, relay or target authority."""
+    deny_latch_assignment_contract(source)
+    deny_fn = extract_function(source, "void denyRemoteControl()")
+
+    def expect_rejected(label: str, mutated: str) -> None:
+        if mutated == source:
+            raise AssertionError(f"{name}: {label} mutation anchor missing")
+        try:
+            deny_latch_assignment_contract(mutated)
+        except AssertionError:
+            print(f"DENY_LATCH_MUTATION_REJECTED {name} {label}")
+            return
+        raise AssertionError(f"{name}: unsafe deny-latch mutation survived: {label}")
+
+    for flag in ("controllerEnabled", "coinEnabled", "relayEnabled", "ledEnabled", "insertMode"):
+        mutated = source.replace("delay(2);", f"{flag}=true;\n    delay(2);", 1)
+        expect_rejected(f"{flag}-re-enable-outside-deny", mutated)
+
+    mutated = source.replace(
+        "delay(2);", 'activeTarget = "stale-target";\n    delay(2);', 1
+    )
+    expect_rejected("stale-target-restore-outside-deny", mutated)
+
+    mutated_deny = deny_fn.replace("relayEnabled=false;", "relayEnabled=true;", 1)
+    if mutated_deny == deny_fn:
+        raise AssertionError(f"{name}: deny-helper mutation anchor missing")
+    expect_rejected("deny-helper-sets-relay-enabled", source.replace(deny_fn, mutated_deny, 1))
+    alias_mutations = (
+        ("controller-pointer-escape", "bool *controllerAlias = &controllerEnabled;"),
+        ("coin-pointer-escape", "bool *coinAlias = &coinEnabled;"),
+        ("coin-reference-alias", "bool &coinReference = coinEnabled;"),
+        ("relay-reference-wrapper", "auto relayAlias = std::ref(relayEnabled);"),
+        ("target-address-wrapper", "auto targetAlias = std::addressof(activeTarget);"),
+        ("decltype-auto-lvalue-alias", "decltype(auto) coinLvalueAlias = (coinEnabled);"),
+        ("controller-rvalue-move-alias", "auto&& controllerRvalueAlias = std::move(controllerEnabled);"),
+        ("relay-rvalue-static-cast-alias", "bool&& relayRvalueAlias = static_cast<bool&&>(relayEnabled);"),
+        ("led-lvalue-const-cast-alias", "bool& ledMutableAlias = const_cast<bool&>(ledEnabled);"),
+        ("insert-forward-alias", "auto&& insertForwardAlias = std::forward<bool&>(insertMode);"),
+    )
+    for label, statement in alias_mutations:
+        mutated = source + f"\nvoid injected_alias_escape() {{ {statement} }}\n"
+        expect_rejected(label, mutated)
+
+    decoy_source = source + (
+        "\nvoid injected_logical_and_read_only() { bool accepting = controllerEnabled && coinEnabled; }\n"
+        "\nvoid injected_local_reference_controls() { bool localFlag = true; auto&& localMove = std::move(localFlag); decltype(auto) localRef = (localFlag); }\n"
+        "\n// bool *decoy = &coinEnabled; auto&& ignored = std::move(controllerEnabled);\n"
+        'const char *aliasNote = "bool &decoy = relayEnabled; std::ref(activeTarget); std::forward<bool&>(insertMode); const_cast<bool&>(ledEnabled);";\n'
+    )
+    deny_latch_assignment_contract(decoy_source)
+    print(f"DENY_LATCH_LOGICAL_AND_READ_ONLY_ACCEPTED {name}")
+    print(f"DENY_LATCH_ALIAS_DECOYS_IGNORED {name}")
+    print(f"DENY_LATCH_MONOTONIC_PASS {name}")
+    print(f"DENY_LATCH_MUTATIONS_REJECTED {name} 7/7")
+    print(f"DENY_LATCH_ALIAS_MUTATIONS_REJECTED {name} 10/10")
+
 def verify_board(name: str, path: Path):
     source = path.read_text(encoding="utf-8")
+    verify_deny_latch_monotonicity(name, source)
     masked_source = mask_non_code(source)
     if len(re.findall(r"clearPending\s*\(", masked_source)) != 1:
         raise AssertionError(f"{name}: clearPending must remain definition-only until authenticated receipt approval")

@@ -3913,3 +3913,204 @@ This is the required documentation-first IN-PROGRESS record. No source/test resu
 - This PR is a host-lab maintainability refactor only; no production sketch or shared API changed. Physical GPIO/relay, pulse retention, 150 power cuts and 30-device/24-hour soak NOT TESTED; HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
 - CHANGE_LEDGER parent prefix preserved byte-for-byte; focused append-only guard reports base_bytes=1132798 appended_bytes=43445.
 - Updated UTC: 2026-11-27T19:31:19Z.
+
+## 2026-11-27T21:14Z — PHX-HARDWARE #177 — deny-latch monotonicity contract
+
+- Repository: BlazeDevStudio/BlazingSystems-Experiments.
+- PR #367: DRAFT / OPEN / UNMERGED; child of #366.
+- Branch: phoenix/hw-deny-latch-monotonicity-20261127-utc21.
+- Parent #366 head: 07fef4e8e1055c06cf5e5c3a0d3829c52be31cc9.
+- Source/test commits: d0797078a0f41382ca3cdaeeba5c394013e59617, e7ec6494204681c4602436817acfaa14a860fd82; test-fixture correction e29c4705b0bcd989e3da1d0ad4fd0fe1730a4db7.
+- Docs head before ledger append: 4835fd9e2fe2993a92fe7ca05b367fb6b4c4044e.
+- Added a whole-sketch direct-assignment contract for controllerEnabled, coinEnabled, relayEnabled, ledEnabled, insertMode and activeTarget. Only global initializers and the unconditional denyRemoteControl() helper may write these fields; the helper must clear all five flags and the target exactly once.
+- Failure injection: seven unsafe mutations per board (five flag re-enables, stale-target restore, and relay re-enable inside the deny helper); 14/14 rejected.
+- Focused Actions run #46068847632, exact-source job 140740635829: PASS. Logs show DENY_LATCH_MONOTONIC_PASS for ESP8266 and ESP32 and 7/7 mutations rejected per board. Existing poll, register, GPIO, config-persistence and pending-recovery labs in the same job passed.
+- Mbed TLS run #46068847646: source-contract job 140740636239 PASS; target builds for cores 3.3.13 and 4.0.0 were still in progress at this record.
+- Initial Full run #46068847625 failed the mandatory handover freshness gate because this ledger append had not yet been made. A new PR-synchronize Full run is required after this append.
+- Test-only scope: no production sketch, shared API, finance, QA-owned test, COE source, signer, migration or release setting changed. This does not resolve active-v0.6 P0 #177 or authorize coin/relay admission.
+- Physical relay polarity, pulse retention, electrical recovery, 150 power cuts and 30-device/24-hour soak remain NOT TESTED. HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
+- Prefix provenance: exact current ledger content began with the full blob at phoenix/hw-active-v06-poll-intake-deny-20261126-utc05; the append preserves that historical prefix byte-for-byte.
+- Updated UTC: 2026-11-27T21:14:00Z.
+
+
+## 2026-11-27T21:19Z — PHX-HARDWARE #177 — terminal CI evidence for PR #367
+
+- Exact tested head: 183650be2174e94027b245654cf1eb5db5451dac (source/test code unchanged after the source commits).
+- Focused run #46069083820, job 140741404795: PASS. New deny-latch contract reports 7/7 unsafe mutations rejected on ESP8266 and 7/7 on ESP32; existing poll-intake, register, GPIO, configuration-persistence and pending-recovery host labs pass. Append-only guard: CHANGE_LEDGER_APPEND_ONLY_PASS base_bytes=1132798 appended_bytes=46976.
+- ESP32 clean-build matrix #46069083861: 3/3 PASS. Source-contract job 140741697634 PASS; Arduino ESP32 core 3.3.13 job 140741697559 PASS with two byte-identical builds SHA256 a53c3c91a5a52274c3e94cff3f1836764c07c33087938d7152f20b44d699c4e4; Arduino ESP32 core 4.0.0 job 140741697175 PASS with two byte-identical builds SHA256 bd59c469b50ce6bb579083110e089df3082aa0dff79b55f010aaac7fec83bfac.
+- Full run #46069084089: handover freshness, HND-0700 and CI-0701 PASS. All 14 build jobs PASS (ESP8266, ESP32, Android and 11 OpenWrt firmware targets). Validation job 140741571137 FAILS at QA-owned experiment/openwrt/BlazePwifi/tests/controllers.sh:21 because the deny-only v0.6 candidate lacks config_revision. This is an inherited CORE/QA contract parity blocker; this PR did not modify controllers.sh or add a decoy field. Update-bundle, simulations, candidate, signing and publication jobs were skipped.
+- No Native PAY-0745 run was triggered for this PR head; its prior QA-owned source-expression mismatch remains open.
+- This PR changes only host-lab source-contract tests and handovers/ledger. No production sketch, authenticated API, financial authority, COE source, signer, migration or release configuration changed.
+- Active v0.6 poll-before-first-sample P0 #177 remains unresolved. The candidate remains deny-only; coin and relay admission stay denied.
+- Physical pulse/relay retention, polarity, electrical recovery, 150 controlled power cuts, 30-device/24-hour soak, protected witness, v1-to-v2 migration and independent release acceptance remain NOT TESTED / NOT ACCEPTED. HARDWARE ACCEPTED=NO; PRODUCTION READY=NO-GO.
+- The previous full CHANGE_LEDGER prefix at phoenix/hw-active-v06-poll-intake-deny-20261126-utc05 remains preserved byte-for-byte.
+- Updated UTC: 2026-11-27T21:19:00Z.
+
+## PHX-HARDWARE UTC21 — deny-latch pointer/reference escape guard
+
+**Recorded:** 2026-11-27T21:33:50Z  
+**PR:** [#367 — Prove deny-only latch cannot be re-enabled outside startup](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/367)  
+**Branch:** \`phoenix/hw-deny-latch-monotonicity-20261127-utc21\`  
+**Source/test head:** \`32644d14ed8c69f682f3f4739880e18f9a4e4495\`  
+**Logic/test commit:** \`c97f6460b9340c009ee680e4d42c7103ba05d290\`  
+**Parent:** \`3f1f7424efe6285f023aee1e0e0a385e5aec2c4b\`
+
+### Scope and actual change
+
+The existing deny-latch contract scanned direct assignments to controller, coin, relay, LED, insert-mode and active-target fields, but did not reject address/reference escapes that could bypass that direct-assignment scan.
+
+Extended \`poll_preflight_inhibit_lab_contract.py\` to reject:
+- direct address-of escapes (for example \`&coinEnabled\`);
+- non-const reference aliases;
+- \`std::ref\`, \`std::cref\` and \`std::addressof\` wrappers.
+
+Extended the per-board mutation suite with four injected escape cases per board (8 total), plus comment/string decoy checks. No ESP8266/ESP32 production sketch, shared CORE API, QA-owned assertion, finance, signer, witness, migration or release setting changed.
+
+### Validation
+
+- Isolated local regex smoke check: PASS for pointer, reference, \`std::ref\`, \`std::addressof\`, and comment/string decoys.
+- Repository Python lab: NOT RUN; the runtime could not resolve github.com for a checkout.
+- GitHub Actions at current source/test head \`32644d14...\`: NOT RUN. The GitHub connection updated the ref, but no new workflow run appeared for the new SHA; the available GitHub actions expose run reads/retries but no workflow-dispatch action. Earlier runs at \`3f1f7424...\` are not transferable to this head.
+- Previous exact-head evidence remains historical: focused #46069674062 PASS; Mbed TLS #46069674071 PASS 3/3; Full #46069674142 FAIL at QA-owned controller parity. None validates this new source head.
+
+### Status and boundaries
+
+Source-contract change committed; local regex smoke SIMULATED only; CI VERIFIED at this SHA = NO; HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
+
+Keep coin and relay admission denied. The source scan is still syntactic and does not prove safety against arbitrary casts, memory corruption or hardware faults. CORE authenticated register/poll and receipt/disposition contract, QA parity, physical acceptance, protected witness, durable accounting/replay and v1-to-v2 migration remain external blockers.
+
+Private \`BLAZE_PROJECT_REGISTRY_v11_20261027.json\` remains NOT RECOVERED; no substitute registry was promoted.
+
+## 2026-11-27 — PHX-HARDWARE UTC22 — PR #367 full-tree restoration and deny-latch address-detector correction
+
+- **ID:** PHX-HW-PR367-TREE-RESTORE-ALIAS-20261127-UTC22
+- **Local time:** 2026-11-28 06:52 Asia/Manila; **UTC:** 2026-11-27T22:52Z
+- **Scope / priority / status:** Hardware-owned deny-latch source-contract lab and failure injection; P1 repository integrity / test correctness; `blocked` pending exact-head Mbed/Full completion and independent QA/Master review.
+- **Why:** Master UTC21 identified PR #367 at 13 tree entries / 6 blobs against the #366 base at 2,435 entries, deleting 1,884 unrelated blobs from the PR diff. The exact recursive trees reproduced the finding.
+- **Tree repair:** commit `f3988697ed960294bca1c849661a53ad0355b7b3` created a new tree from exact #366 base tree `4f0552d1926d134ff48be9b0c2dce512af69702e` and overlaid the six intended PR blobs. No force-push; branch update used expected old head and `force=false`. The resulting pre-sync tree had 2,438 entries / 1,892 blobs, non-truncated; PR diff contained eight paths and zero deletions.
+- **Code commits / exact paths:**
+  - `e1e333bc8b8bc53f37eb1ff62c5a94573ed31b3f` — `experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_preflight_inhibit_lab_contract.py`; require single address-of ampersand using `(?<!&)&(?!&)`, avoiding logical-`&&` false positives.
+  - `83504c222c60e823e5883f814e28f9948a1f7702` — `experiment/openwrt/BlazePwifi/esp8266/BlazePwifiVendo/poll_preflight_inhibit_lab_cases.py`; add `coinEnabled` pointer escape injection and logical-AND read-only positive control; alias/address mutation suite now 5/5 per board.
+- **Exact-head test evidence at pre-sync docs head `c473b9adba229661642b2c4ab7a2acd489399d2f`:**
+  - Focused [run #46078501079](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46078501079), job `140771750589`: PASS. ESP8266 and ESP32 each reject 7/7 direct deny-latch mutations and 5/5 pointer/reference/address mutations; logical-AND positive control accepted; register mutations 8/8 rejected; poll transport matrix 20 cases per board.
+  - Append-only ledger guard: PASS (`base_bytes=1132798`, `appended_bytes=51959`); seven guard unit tests PASS.
+  - Previous restored-head focused [run #46078329448](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46078329448), job `140771206739`: FAIL due false-positive matching of `&& coinEnabled`; fixed by the commits above. Retain this failure as historical evidence.
+  - Mbed [run #46078500994](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46078500994): source-contract job `140771935976` PASS; target builds 3.3.13 and 4.0.0 were IN PROGRESS at checkpoint.
+  - Full [run #46078501073](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46078501073): validation job `140771821462` FAIL at canonical handover freshness because source/test commits were newer than PROJECT_HANDOVER/CURRENT_STATE/CHANGE_LEDGER. This append and canonical sync are the corrective documentation checkpoint. Optional Orange Pi One Plus job `140771821527` failed because packages.microsoft.com returned HTTP 403 during apt update; do not misclassify this as a firmware defect. Other target jobs were partially passed/in progress at checkpoint.
+- **Preservation / safety:** CHANGE_LEDGER was appended only; historical prefix was not rewritten. No production sketch, shared CORE API, QA assertion, finance, signer, witness, migration, release setting, COE destination or Master-owned file changed. No physical flashing, device reset, live-money test, production migration, signing, merge, tag or deployment.
+- **Coordination:** PR #367 remains OPEN / DRAFT / UNMERGED. Master must refresh role/integration matrices; QA must review the detector and positive control; CORE/QA must resolve controller protocol parity separately. P0 #177 poll-before-first-sample race remains unresolved; coin/relay admission stays denied.
+- **Blockers / next exact action:** exact final documentation-head Actions must run after this canonical sync; verify focused, Mbed 3.3.13/4.0.0 and Full handover freshness. Then request independent QA/Master review. Physical pulse/relay, electrical recovery, 150 power cuts, 30-device/24-hour soak, anti-rollback witness, durable accounting/replay, v1-to-v2 migration and release signoff remain NOT TESTED / NOT ACCEPTED.
+- **Sequencing deviation:** the required pre-change IN_PROGRESS marker was not committed before the initial source/test correction; this is disclosed and not backdated.
+
+## 2026-11-27 — PHX-HARDWARE UTC22 — exact-head CI and controller parity result
+
+- **ID:** PHX-HW-PR367-EXACTHEAD-REVALIDATION-20261127T22
+- **Local time:** 2026-11-28 06:55 Asia/Manila; **UTC:** 2026-11-27T22:55Z
+- **Scope / priority / status:** Hardware-owned source-contract correction, full-tree restoration and exact-head validation; P1; `blocked` pending Mbed build completion and QA/CORE/Master review.
+- **Exact source/test SHA:** `83504c222c60e823e5883f814e28f9948a1f7702`; exact docs head tested: `638444dfa4f36a0a38cac8d06fd31f07ce9b8228`; PR #367 remains OPEN / DRAFT / UNMERGED.
+- **Focused:** [run #46078860359](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46078860359), job `140772887391`, PASS. Both board-shaped source labs: 7/7 deny-latch direct mutations rejected; 5/5 pointer/reference/address mutations rejected; logical-AND read-only positive control accepted; register mutations 8/8 rejected; poll transport outcome matrix 20 cases per board; append-only ledger guard PASS and 7/7 ledger-guard unit tests PASS.
+- **Mbed:** [run #46078860303](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46078860303), source-contract job `140773102073` PASS. Target-build jobs `140773102367` (core 3.3.13) and `140773102323` (core 4.0.0) were IN_PROGRESS at checkpoint.
+- **Full:** [run #46078860354](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46078860354). Canonical handover freshness gate passed, including fresh/stale/partial/resync regression tests. Validation job `140772945259` then failed at QA-owned `tests/controllers.sh`, which requires `config_revision` in both sketches. Main ESP8266 blob `bfb94920eb0a189ca01d52e5443954fa133f5423` and main ESP32 blob `117c6e937e8f12f3890ace2ae23b3a23ff1c3df0` contain that token; deny-only candidate blobs `7527dbff41b7f21bdc3d3ed9ee3db1c0d21eb07b` and `a673e323e1c160cbfe03949d13a9e01b47386596` do not. This is the known QA/CORE parity mismatch; do not add a fake/unauthenticated field. All 14 target build jobs (ESP8266, ESP32, Android and 11 OpenWrt targets) were PASS at last job read; the workflow was still IN_PROGRESS while final jobs settled. Update-bundle and simulation jobs skipped after validation failure.
+- **Handover gate correction:** prior Full #46078501073 failed only because canonical docs were stale. The exact-head Full #46078860354 confirms the freshness gate now passes; the later controller assertion is the remaining validation failure.
+- **Paths:** `PROJECT_HANDOVER.md`, `docs/handover/CURRENT_STATE.md`, `docs/handover/CHANGE_LEDGER.md`, `docs/handover/2026-11-27-hw-pr367-logical-and-positive-control-utc22.md`; source/test paths remain `poll_preflight_inhibit_lab_contract.py` and `poll_preflight_inhibit_lab_cases.py`.
+- **Safety:** no production sketch, CORE API, QA assertion, finance, signer, witness, migration, release setting, COE destination or Master-owned file changed. No physical flashing, reset, live-money test, production migration, signing, merge, tag or deployment.
+- **Next exact action:** wait for Mbed 3.3.13/4.0.0 terminal jobs and Full terminal status; QA to replace the stale config_revision assertion with a source-linked deny-only contract; Master to refresh #367 matrix. P0 #177 and all physical/financial release gates remain open.
+
+## 2026-11-27 — PHX-HARDWARE UTC22 — final exact-head focused/Mbed PASS and Full parity failure
+
+- **ID:** PHX-HW-PR367-FINAL-CI-20261127T22
+- **Local time:** 2026-11-28 07:02 Asia/Manila; **UTC:** 2026-11-27T23:02Z
+- **Scope / priority / status:** Hardware-owned deny-latch source-contract lab, failure injection, PR tree integrity and handover; P1; `blocked` on QA/CORE controller parity and Master matrix refresh.
+- **Current PR/docs head tested:** `8709a7f60c2dc8c2978c39d93d9e72f6b64e6ef4`; **source/test SHA:** `83504c222c60e823e5883f814e28f9948a1f7702`; PR #367 OPEN / DRAFT / UNMERGED.
+- **Focused:** [#46079211743](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46079211743), job `140773999801`: PASS. Both boards: 7/7 direct deny mutations rejected; 5/5 pointer/reference/address mutations rejected; logical-AND positive control accepted; register 8/8 rejected; poll transport matrix 20 cases/board. Append-only ledger guard PASS (`base_bytes=1132798`, `appended_bytes=59869`); seven guard unit tests PASS.
+- **Mbed:** [#46079211640](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46079211640): 3/3 PASS — source-contract `140773999722`, ESP32 core 3.3.13 `140773999982`, core 4.0.0 `140773999999`.
+- **Full:** [#46079211670](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46079211670): handover freshness gate and history tests PASS; validation `140774059558` FAIL at QA-owned `tests/controllers.sh` because `config_revision` is missing from both deny-only candidate sketches. Main ESP8266/ESP32 blobs contain the token; candidate blobs do not. All 14 target build jobs PASS (ESP8266, ESP32, Android and 11 OpenWrt targets); update-bundle, simulation, signing and publication stages skipped.
+- **Tree repair:** `f3988697ed960294bca1c849661a53ad0355b7b3`; current tree 2,438 entries / 1,892 blobs, not truncated; eight PR diff paths, zero deletions. The old 13-entry/6-blob tree was repaired using the exact #366 base tree without force-push.
+- **Source commits:** `e1e333bc8b8bc53f37eb1ff62c5a94573ed31b3f` (single-ampersand address detector) and `83504c222c60e823e5883f814e28f9948a1f7702` (coin pointer injection + logical-AND positive control).
+- **Paths:** `poll_preflight_inhibit_lab_contract.py`, `poll_preflight_inhibit_lab_cases.py`, `PROJECT_HANDOVER.md`, `docs/handover/CURRENT_STATE.md`, `docs/handover/CHANGE_LEDGER.md`, and narrow handover records.
+- **Safety:** no production sketch, shared CORE API, QA assertion, finance, signer, witness, migration, release setting, COE destination or Master-owned matrix changed. No physical flashing, reset, live-money test, production migration, signing, merge, tag or deployment.
+- **Next exact action:** PHX-QA/CORE reconcile controller parity without inserting an unauthenticated `config_revision`; PHX-MASTER refresh #367 role/integration matrix; PHX-HARDWARE revalidate exact head after those reviews. P0 #177 and all physical/financial release gates remain open.
+- **Sequencing deviation:** the pre-change IN_PROGRESS marker was not committed before the initial source/test correction; this is disclosed, not backdated.
+
+## 2026-11-27 — PHX-HARDWARE UTC23 — deny-latch rvalue/decltype reference-escape coverage
+
+- **ID:** PHX-HW-PR367-RVALUE-DECLTYPE-20261127T23
+- **Local time:** 2026-11-28 07:34:21 Asia/Manila; **UTC:** 2026-11-27T23:34:21Z
+- **Scope / priority / status:** Hardware-owned deny-latch source-contract and failure-injection lab; P1; `committed_untested` (isolated regex smoke passed; repository lab and exact-head CI not run).
+- **Repository / branch / PR:** `BlazeDevStudio/BlazingSystems-Experiments`; `phoenix/hw-deny-latch-monotonicity-20261127-utc21`; PR #367 OPEN / DRAFT / UNMERGED; base #366 `07fef4e8e1055c06cf5e5c3a0d3829c52be31cc9`.
+- **Source/test commit:** `1922dcba792aad40e576583db43de0d066522bf6`; **clarifying commit:** `d3fc76d76b97e8586837aaf70bb35fe602acc5d0`.
+- **Paths:** `poll_preflight_inhibit_lab_contract.py`; `poll_preflight_inhibit_lab_cases.py`; canonical handovers and this narrow UTC23 handover.
+- **Why:** the previous deny-latch guard missed `decltype(auto)` parenthesized lvalue deduction, `std::move`/`std::forward` rvalue-reference wrappers, and `static_cast`/`const_cast` reference/pointer wrappers. These are syntactic escape routes around a direct-assignment-only scan.
+- **Change:** expanded source-contract checks; added five new alias mutations per board; expanded alias matrix from 5/5 to 10/10 per board; retained positive controls for logical AND and unrelated local reference/move expressions.
+- **Tests:** isolated Python regex smoke 10/10 unsafe aliases rejected; 3/3 positive controls accepted; new regex block AST parse PASS. Full repository Python lab NOT RUN. GitHub Actions at exact source/test SHA NOT RUN (no run returned; no dispatch action exposed). Prior Focused/Mbed/Full evidence is not transferred.
+- **Safety:** no production sketch or shared API changed; no flash, reset, live coin, finance, migration, signer, witness, release, merge or deployment. Physical acceptance NOT TESTED.
+- **Blockers:** QA review; Master #367 matrix refresh; CORE authenticated controller contract; active v0.6 P0 #177; private registry v11 unavailable; physical 150 power cuts / 30-device 24-hour soak / electrical recovery; accounting/replay and v1-to-v2 migration.
+- **Rollback:** forward revert of `1922dcba...`; no force-push.
+- **NEXT ACTION:** obtain exact-head Focused/Mbed/Full CI at `1922dcba...` or synchronized docs head through an approved repository workflow trigger; if unavailable, request repository administration. Keep PR #367 DRAFT and preserve deny-only behavior.
+- **Sequencing deviation:** pre-change IN_PROGRESS marker was not committed before the source edit; disclosed in the current-state handover, not backdated.
+
+## 2026-11-27 — PHX-HARDWARE UTC23 — exact-head deny-latch CI evidence and Full blocker
+
+- **ID:** PHX-HW-PR367-CI-VERIFIED-20261127T23
+- **Local time:** 2026-11-28 07:48:26 Asia/Manila; **UTC:** 2026-11-27T23:48:26Z
+- **Scope / priority / status:** Hardware-owned deny-latch source contract and exact-head CI; P1; `validated` for focused source-contract and Mbed matrix only; Full integration remains `blocked`.
+- **Repository / branch / PR:** `BlazeDevStudio/BlazingSystems-Experiments`; `phoenix/hw-deny-latch-monotonicity-20261127-utc21`; PR #367 OPEN / DRAFT / UNMERGED.
+- **Source/test SHA:** `1922dcba792aad40e576583db43de0d066522bf6`; **docs head tested:** `4a78354c985abe26e02ac9574d70b45b6cf3f113`.
+- **Focused source-head:** [#46083988151](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46083988151), job `140789185854`, PASS. Logs show 7/7 direct mutations and 10/10 alias mutations rejected per board, logical-AND and comment/string decoys accepted, poll transport 20 cases per board.
+- **Mbed source-head:** [#46083988148](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46083988148), 3/3 PASS: source-contract `140789186405`, core 3.3.13 `140789186261`, core 4.0.0 `140789186428`.
+- **Focused docs-head:** [#46084256327](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46084256327), job `140790012861`, PASS with the same 10/10 alias results per board.
+- **Mbed docs-head:** [#46084256398](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46084256398), 3/3 PASS: source-contract `140790018452`, core 3.3.13 `140790018772`, core 4.0.0 `140790018749`.
+- **Full:** source-head [#46083988182](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46083988182) cancelled after handover-freshness failure; docs-head [#46084256341](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46084256341) validation job `140790134787` fails at `tests/controllers.sh` because candidate sketches omit `config_revision` while main sketches contain it. At checkpoint 13 target jobs PASS, `firmware (orangepi_pc)` IN_PROGRESS; downstream stages skipped.
+- **Interpretation:** focused lab and Mbed evidence are exact-SHA CI verification, not hardware acceptance. Full controller parity remains QA/CORE-owned. No production sketch or shared API changed.
+- **Blockers:** P0 #177, QA controller parity, CORE authenticated poll/receipt contract, Master matrix refresh, physical 150 power cuts, 30-device/24-hour soak, electrical recovery, protected witness, durable accounting/replay, v1-to-v2 migration and independent signoff.
+- **NEXT ACTION:** QA/CORE resolve controller parity without weakening deny-default; Master updates the role matrix; Hardware rechecks terminal Full status and exact current docs-head runs. Keep PR #367 DRAFT.
+- **Supersession:** this entry supersedes the initial UTC23 observation that no exact-head run had appeared; the earlier observation is retained.
+
+## 2026-11-27 — PHX-HARDWARE UTC23 — final exact-head Focused CI PASS and Full controller-parity blocker
+
+- **ID:** PHX-HW-PR367-FINAL-CI-20261127T23
+- **Local time:** 2026-11-28 07:50:04 Asia/Manila; **UTC:** 2026-11-27T23:50:04Z
+- **Scope / priority / status:** Hardware-owned deny-latch source-contract and exact-head CI; P1; focused source-contract **validated**; Mbed and Full on current docs head **in_progress**; prior docs-head Full terminal **blocked**.
+- **Current PR/docs head:** `f7abed43a46f9e85976d5c2897f927609cd2f446`; source/test SHA `1922dcba792aad40e576583db43de0d066522bf6`; PR #367 OPEN / DRAFT / UNMERGED.
+- **Current-head Focused:** [#46084613154](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46084613154), job `140791154901`: PASS; ESP8266/ESP32 each 7/7 direct mutations and 10/10 alias mutations rejected; logical-AND and comment/string decoys accepted; poll transport matrix 20 cases/board.
+- **Current-head Mbed:** [#46084613147](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46084613147): source-contract `140791155163` PASS; core 3.3.13 `140791155501` and 4.0.0 `140791155419` still in progress.
+- **Current-head Full:** [#46084613152](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46084613152): validation `140791194190` failed at controller parity; 11/14 target jobs PASS and 3 IN_PROGRESS at last read.
+- **Terminal prior Full:** [#46084256341](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46084256341), docs head `4a78354c...`: terminal FAILURE at QA-owned `tests/controllers.sh` `config_revision` requirement; 14/14 target jobs PASS; downstream simulation/update/signing/publication skipped.
+- **Source-head Mbed:** [#46083988148](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46083988148) 3/3 PASS. **Source-head Focused:** [#46083988151](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46083988151) PASS.
+- **Blockers:** QA controller parity; CORE authenticated register/poll/receipt contract; P0 #177; Master role-matrix refresh; physical acceptance, witness, durable accounting/replay and migration.
+- **NEXT ACTION:** QA/CORE resolve parity without unauthenticated fields; Master refresh #367 matrix; Hardware recheck current-head Mbed/Full runs and preserve DRAFT/deny-only state.
+
+
+## 2026-11-28 — PHX-HARDWARE UTC00 — modularize deny-latch source contract and exact-head CI recheck
+
+- **ID:** PHX-HW-PR367-CONTRACT-MODULARIZATION-20261128T00
+- **Recorded:** 2026-11-28T00:41:06Z; repository `BlazeDevStudio/BlazingSystems-Experiments`; branch `phoenix/hw-deny-latch-monotonicity-20261127-utc21`; PR #367 OPEN / DRAFT / UNMERGED.
+- **Source/test SHA:** `985a54c289b8e3c796c2bcc977f652b178b293c0`; one Hardware-owned host contract file refactored into named alias-family and assignment validators. No production sketch or shared API changed.
+- **Focused:** [#46089157326](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46089157326), job `140805735661`: PASS; 7/7 direct and 10/10 alias mutations rejected per board; decoy/positive controls accepted.
+- **Mbed:** [#46089157351](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46089157351); source-contract `140805735998` PASS; core 3.3.13 `140805736279` PASS; core 4.0.0 `140805736289` IN_PROGRESS at readback.
+- **Full:** push [#46089151346](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46089151346) validation `140805785941` FAIL at handover freshness; PR [#46089157387](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46089157387) validation `140805804838` same. CI-0701 PASS; target builds mostly PASS/in progress; downstream stages skipped. This is not yet the QA controller-parity failure.
+- **Known prior Full blocker:** [#46084788285](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46084788285) on `778220aa...` reached `tests/controllers.sh:21` and failed the QA-owned `config_revision` assertion; all 14 target/platform jobs passed there. Do not add an unauthenticated placeholder.
+- **Blockers:** P0 #177 poll-before-first-sample; QA controller parity; CORE authenticated register/poll/receipt contract; physical 150 cuts/30-device soak/electrical recovery; witness; durable accounting/replay; v1-to-v2 migration; independent QA/release signoff; private Drive registry v11 unavailable.
+- **NEXT ACTION:** canonical handover sync then exact-head Full rerun; QA/CORE resolve their owned contract; keep coin/relay denied and PR DRAFT.
+
+
+## 2026-11-28 — PHX-HARDWARE UTC00 — final exact-head handover and controller-parity recheck
+
+- **ID:** PHX-HW-PR367-FINAL-RECHECK-20261128T00
+- **Source/test SHA:** `985a54c289b8e3c796c2bcc977f652b178b293c0`; **pre-final-docs head:** `ea6a16506b2e1f7d421de6d5a9599fd3225e73f1`; PR #367 OPEN / DRAFT / UNMERGED.
+- **Focused:** [#46089589007](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46089589007), job `140807120453`: PASS.
+- **Mbed:** [#46089589064](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46089589064): source contract PASS; ESP32 core 3.3.13 PASS; core 4.0.0 IN_PROGRESS at readback.
+- **Full:** [#46089588999](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46089588999): CI-0701 and handover history tests PASS; validation job `140807165566` FAIL at QA-owned `tests/controllers.sh` after handover freshness passed. Synthetic merge ref `abbaf991c42137f8eb0014a3551c970e40b923e2`; target jobs partially in progress.
+- **Proven parity cause:** `tests/controllers.sh:21` requires `config_revision`; neither candidate sketch at PR head `ea6a165...` contains that token. Do not insert a fake or unauthenticated field; QA/MASTER own assertion reconciliation and CORE owns the authenticated contract.
+- **Status:** source-contract CI VERIFIED; Mbed partial CI VERIFIED; Full handover gate PASS / QA parity FAIL; P0 #177 and all physical/financial/witness/migration/release gates remain open.
+- **NEXT ACTION:** QA/MASTER reconcile controller parity; CORE publish authenticated register/poll/receipt/disposition; Hardware recheck terminal exact-head jobs and keep coin/relay denied.
+
+## PHX-HARDWARE UTC01 — PR #367 exact-head final evidence and child #368
+
+- Parent PR #367: OPEN / DRAFT / UNMERGED; branch phoenix/hw-deny-latch-monotonicity-20261127-utc21; docs/PR head 4e558a06ff558dffef8a966a6e412029e7340119; source/test commit 985a54c289b8e3c796c2bcc977f652b178b293c0.
+- Focused run #46089846162 (https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46089846162), job 140807946248: PASS at exact head 4e558a06ff558dffef8a966a6e412029e7340119.
+- Mbed run #46089846114 (https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46089846114): PASS 3/3 — source contract 140807946755, ESP32 core 3.3.13 140807946800, core 4.0.0 140807946564.
+- Full run #46089846111 (https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46089846111): TERMINAL FAILURE at validation job 140808002601, QA-owned tests/controllers.sh:21 literal config_revision assertion. All 14 target/platform jobs including Android passed; validation-dependent simulation/update/sign/publication stages were skipped. This is not a firmware compile failure.
+- Master UTC01 checkpoint #7231916175 (https://github.com/BlazeDevStudio/BlazingSystems-Experiments/issues/172#issuecomment-7231916175) confirms QA owns replacing the positive marker assertion with source-linked deny-only vectors; CORE owns the authenticated register/poll/receipt/disposition contract; P0 #177 remains open.
+- Child PR #368 is a separate Hardware-owned source-contract extension based on #367 at 4e558a06ff558dffef8a966a6e412029e7340119; child branch phoenix/hw-deny-latch-cast-alias-20261128-utc01, current child head bc2e90392378b29bd633d098afc7cf29498a1d32. Its focused alias-cast tests passed at exact head d8bf447e; current corrected-head Focused/Mbed/Full runs are pending/in progress. Do not transfer #367 evidence to #368 or vice versa.
+- No production .ino, CORE API, finance, journal disposition, QA assertion, migration, signer, witness or COE source changed. Coin/relay remain deny-only. Physical GPIO/relay, LittleFS power-loss, 150 power cuts, 30-device/24-hour soak and electrical recovery remain NOT TESTED. HARDWARE ACCEPTED = NO; PRODUCTION READY = NO-GO.
