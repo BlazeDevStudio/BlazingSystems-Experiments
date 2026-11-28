@@ -1,3 +1,19 @@
+## PHX-HARDWARE UTC14 — STORCHK-0674 mutation harness correction
+
+**Updated:** 2026-11-28T14:58:00Z  
+**DRAFT PR:** [#376](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/376)  
+**Branch:** `phoenix/hw-storage-superblock-rw-guard-20261128-utc14`  
+**Previous head:** `af17462bf79859439a7a852e6c2ccbf3d39f23b6`
+
+The second exact-head focused run [#46157057143](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46157057143), job `141015924749`, also failed in the test harness: the remaining escaped-slash expression was interpreted by `sed` as a label (`sed: can't find label for jump`). The existing mountinfo and physical-parent matrix passed before this step. This is a test harness syntax issue, not a parser false-acceptance result.
+
+Correction: remove the fragile path-addressed `sed` mutations and use a small AWK helper that locates the exact mountpoint, changes only the post-separator superblock-options field, and exits nonzero unless exactly one row was changed. The `rwx`, `notrw`, and missing-`rw` token cases remain. The parser logic is unchanged.
+
+Full run [#46157057189](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46157057189) was in progress at the time of this update; no terminal result is claimed. This source-test correction is co-committed with the canonical handover/current-state/ledger refresh so the next Full run evaluates a synchronized exact head.
+
+All evidence remains SIMULATED / CI only. No mount, write, power cut, flash, reset, payment, migration, merge, release or deployment occurred. Production NO-GO.
+
+---
 ## PHX-HARDWARE UTC14 — STORCHK-0674 test-harness correction
 
 **Updated:** 2026-11-28T14:56:00Z  

@@ -3500,3 +3500,10 @@ Application/source snapshot is still exact520; this note is metadata only.
 - Exact focused run #46156833024 job 141015236831 failed at the test step with `sed: can't find label for jump`; existing STORCHK mountinfo and physical-parent tests passed. This was a harness syntax error, not a parser false-acceptance result.
 - Prior focused run #46156397146 job 141013890732 passed the original read-only-superblock regression on exact checkout 13f8732d93b7a5897dcd23dceccb0853b14b40ee. Corrected test and current-state records are co-committed for a new exact-head run.
 - SIMULATED / CI only; no hardware or customer operation. Historical ledger prefix preserved byte-for-byte; this record is append-only. Production NO-GO.
+
+## 2026-11-28 — PHX-HARDWARE STORCHK-0674 mutation harness correction
+
+- PR #376: replaced path-addressed `sed` mutations with an AWK helper that changes exactly one mountinfo superblock-options field; retained `rwx`, `notrw`, and missing-`rw` failure injections.
+- Exact focused run #46157057143 job 141015924749 failed because the remaining escaped-slash `sed` address was parsed as a label. Existing mountinfo and physical-parent tests passed before the new harness step. This was a test-harness syntax failure, not a parser false-acceptance result.
+- Previous focused run #46156397146 job 141013890732 passed the original read-only-superblock regression at exact checkout 13f8732d93b7a5897dcd23dceccb0853b14b40ee. New harness is co-committed with root handover/current-state/ledger records for another exact-head run.
+- SIMULATED / CI only; no physical operation. Historical ledger prefix preserved byte-for-byte; this record is append-only. Production NO-GO.
