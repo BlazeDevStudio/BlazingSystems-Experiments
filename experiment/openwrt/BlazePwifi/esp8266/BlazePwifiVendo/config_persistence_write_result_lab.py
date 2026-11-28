@@ -107,6 +107,7 @@ def main() -> None:
         assert_esp32,
     )
     print("CONFIG_PERSISTENCE_WRITE_RESULT_PASS ESP8266+ESP32")
+    # CheckedEEPROMClass allocator and flash-read failure paths run in this CI entrypoint.
     checked_eeprom_begin_main()
 
 

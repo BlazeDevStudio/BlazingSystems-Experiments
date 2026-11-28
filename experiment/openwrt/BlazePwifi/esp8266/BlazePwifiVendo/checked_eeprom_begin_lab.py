@@ -92,6 +92,10 @@ def main() -> None:
     )
     expect_runtime_rejected("oversized-sector", oversized)
     expect_runtime_rejected(
+        "allocation-failure-guard-removed",
+        source.replace("if(!_data){", "if(false){", 1),
+    )
+    expect_runtime_rejected(
         "flash-read-failure-ignored",
         source.replace(
             "if(!ESP.flashRead(address,_data,_size)){",

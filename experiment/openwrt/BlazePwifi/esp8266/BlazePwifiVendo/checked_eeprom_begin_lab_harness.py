@@ -9,7 +9,26 @@ def checked_eeprom_begin_harness(source: str) -> str:
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include <cstdlib>
+#include <cstddef>
 #include <new>
+
+static bool fail_next_array_allocation = false;
+void* operator new[](std::size_t size) {
+    if (fail_next_array_allocation) {
+        fail_next_array_allocation = false;
+        throw std::bad_alloc();
+    }
+    void *memory = std::malloc(size);
+    if (!memory) throw std::bad_alloc();
+    return memory;
+}
+void operator delete[](void *memory) noexcept { std::free(memory); }
+void operator delete[](void *memory, std::size_t) noexcept { std::free(memory); }
+void* operator new[](std::size_t size, const std::nothrow_t&) noexcept {
+    try { return ::operator new[](size); } catch (...) { return nullptr; }
+}
+void operator delete[](void *memory, const std::nothrow_t&) noexcept { ::operator delete[](memory); }
 
 class EEPROMClass {
 protected:
@@ -55,6 +74,13 @@ int main() {
     if (store.beginChecked(4097)) return 3;
     if (ESP.read_calls != 0 || store.data() != nullptr || store.size() != 0) return 4;
     puts("CHECKED_EEPROM_INVALID_SIZE_DENY_PASS");
+
+    InspectableCheckedEEPROM allocation_failure_store;
+    fail_next_array_allocation = true;
+    if (allocation_failure_store.beginChecked(128)) return 12;
+    if (allocation_failure_store.data() != nullptr || allocation_failure_store.size() != 0 ||
+        allocation_failure_store.dirty() || ESP.read_calls != 0) return 13;
+    puts("CHECKED_EEPROM_ALLOCATION_FAILURE_FAIL_CLOSED_PASS");
 
     store.markDirty();
     ESP.read_result = false;
