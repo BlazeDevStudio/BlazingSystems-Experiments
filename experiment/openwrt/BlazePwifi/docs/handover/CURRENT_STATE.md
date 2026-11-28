@@ -1,3 +1,19 @@
+## PHX-HARDWARE UTC14 — STORCHK-0674 mutation harness corrected
+
+**Updated:** 2026-11-28T14:59:00Z  
+**DRAFT PR:** [#376](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/pull/376)  
+**Branch:** `phoenix/hw-storage-superblock-rw-guard-20261128-utc14`  
+**Previous head:** `3111858ac8fb48b559b7bda53bd807e7f551c481`
+
+The second focused run [#46157057143](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46157057143), job `141015924749`, failed because the remaining escaped-slash `sed` expression was parsed as a label. Existing STORCHK mountinfo and physical-parent tests passed before the new harness step. This was a test-harness syntax failure, not a parser false-acceptance result.
+
+Correction: the three new superblock-option mutations now use a bounded AWK helper that finds exactly one requested mountpoint and changes only the post-separator superblock-options field. It fails if the target row is missing or duplicated. The `rwx`, `notrw`, and missing-`rw` cases remain. The full script passed locally against the corrected parser; hosted exact-head verification is pending.
+
+Full run [#46157057189](https://github.com/BlazeDevStudio/BlazingSystems-Experiments/actions/runs/46157057189) was in progress at the time of this update; no terminal result is claimed. This source-test correction is co-committed with canonical handover/current-state/ledger updates so the next Full validation checks a synchronized head.
+
+All evidence remains SIMULATED / CI only. No mount, write, power cut, flash, reset, payment, migration, merge, release or deployment occurred. Production NO-GO.
+
+---
 ## PHX-HARDWARE UTC14 — STORCHK-0674 mutation harness correction
 
 **Updated:** 2026-11-28T14:58:00Z  

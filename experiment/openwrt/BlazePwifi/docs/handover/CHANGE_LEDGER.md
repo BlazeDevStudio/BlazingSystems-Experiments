@@ -3507,3 +3507,10 @@ Application/source snapshot is still exact520; this note is metadata only.
 - Exact focused run #46157057143 job 141015924749 failed because the remaining escaped-slash `sed` address was parsed as a label. Existing mountinfo and physical-parent tests passed before the new harness step. This was a test-harness syntax failure, not a parser false-acceptance result.
 - Previous focused run #46156397146 job 141013890732 passed the original read-only-superblock regression at exact checkout 13f8732d93b7a5897dcd23dceccb0853b14b40ee. New harness is co-committed with root handover/current-state/ledger records for another exact-head run.
 - SIMULATED / CI only; no physical operation. Historical ledger prefix preserved byte-for-byte; this record is append-only. Production NO-GO.
+
+## 2026-11-28 — PHX-HARDWARE STORCHK-0674 mutation harness corrected
+
+- PR #376: replaced fragile path-addressed `sed` superblock mutations with an AWK helper that modifies exactly one mountpoint's post-separator options field and fails on missing/duplicate rows.
+- Focused run #46157057143 job 141015924749 failed at the harness step because an escaped-slash `sed` address was parsed as a label; the existing mountinfo and physical-parent matrix passed before that step. This was a harness syntax defect, not a parser false-acceptance result.
+- Local corrected script passed: writable positive control accepted; read-only target/scratch superblocks and mount flags plus `rwx`, `notrw`, and missing-`rw` options rejected with no success output. Hosted exact-head run pending.
+- SIMULATED / CI only; no physical operation. Historical ledger prefix preserved byte-for-byte; this record is append-only. Production NO-GO.
